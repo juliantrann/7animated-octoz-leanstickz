@@ -244,3 +244,4 @@ import FV7z.Rfi.Holds
 import FV7z.Fdm.Holds
 import FV7z.Csu.Fd
 import FV7z.Sbrk.Next
+import FV7z.Dmc.Holds

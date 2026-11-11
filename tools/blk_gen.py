@@ -210,6 +210,10 @@ FNS = {
     "fdm": dict(grp="Fdm", cn="frame_dummy", a=0x41d440, n=0x35, pos=True,
                 stops=(0x22, 0x30), calls=True, tag="PLAN.md G3, startup",
                 src="libgcc's `frame_dummy` (`libgcc/crtstuff.c`; `objdump -d`)"),
+    # glibc's `__default_morecore` (`malloc/morecore.c`): `__sbrk (n)`, a null pointer for its -1.
+    "dmc": dict(grp="Dmc", cn="__default_morecore", a=0x635ab0, n=0x1f, pos=True, stops=(0x1e,), calls=True,
+                tag="PLAN.md G3, `malloc`",
+                src="glibc 2.31's `__default_morecore` (`malloc/morecore.c`; `objdump -d`)"),
     "eli": dict(grp="Eli", cn="elision_init", a=0x5ffc50, n=0xb1, pos=True, fs=True, stops=(0xab, 0xac),
                 calls=True, tag="PLAN.md G3, startup",
                 src="glibc 2.31's `elision_init` (`sysdeps/unix/sysv/linux/x86/elision-conf.c`; `objdump -d`)"),
