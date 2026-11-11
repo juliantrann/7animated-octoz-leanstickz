@@ -181,6 +181,10 @@ FNS = {
     "pti": dict(grp="Pti", cn="__pthread_tunables_init", a=0x5ffbc0, n=72, pos=True, fs=True, stops=(0x42, 0x43),
                 calls=True, tag="PLAN.md G3, startup",
                 src="glibc 2.31's `__pthread_tunables_init` (`nptl/pthread_mutex_conf.c`; `objdump -d`)"),
+    # glibc 2.31 sysdeps/unix/sysv/linux/x86/elision-conf.c. Stops: the `ret` (0xab), `call __stack_chk_fail` (0xac).
+    "eli": dict(grp="Eli", cn="elision_init", a=0x5ffc50, n=0xb1, pos=True, fs=True, stops=(0xab, 0xac),
+                calls=True, tag="PLAN.md G3, startup",
+                src="glibc 2.31's `elision_init` (`sysdeps/unix/sysv/linux/x86/elision-conf.c`; `objdump -d`)"),
     # glibc 2.31 elf/dl-tunables.c. Stops: the callback's tail call `jmp rdx` (0x55), the `ret` (0x60).
     "tgv": dict(grp="Tgv", cn="__tunable_get_val", a=0x66f3a0, n=109, pos=True, stops=(0x55, 0x60),
                 tag="PLAN.md G3, startup",

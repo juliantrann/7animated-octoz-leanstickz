@@ -98,4 +98,22 @@ theorem tgv32_ok {d : Addr} (c : Seg prof F Wl L s₀ o) (hin : CodeIn L tgv_at 
   rw [hsp₂]
   rfl
 
+/-- A 32-bit tunable `d` not set, as `tgv32_ok` takes it: its type code 0 and its `initialized` byte 0, these and its
+value where the run may load. -/
+structure Unset (F : Footprint) (V : Addr → Byte) (d : Addr) : Prop where
+  ty : ∀ i < 4, Foot F.data ((ent d + 8#64).add i)
+  va : ∀ i < 8, Foot F.data ((ent d + 32#64).add i)
+  ini : ∀ i < 1, Foot F.data ((ent d + 40#64).add i)
+  t0 : rdd(V, ent d + 8#64) = 0
+  z : rdb(V, ent d + 40#64) = 0
+
+/-- The same of bytes that are `V`'s outside a range above the entry. -/
+theorem Unset.out {d : Addr} {V V' : Addr → Byte} {lo hi : Nat} (h : Unset F V d) (hd : (ent d).toNat + 48 ≤ lo)
+    (hlo : lo ≤ 2 ^ 64) (ho : ∀ a : Addr, ¬ (lo ≤ a.toNat ∧ a.toNat < hi) → V' a = V a) : Unset F V' d := by
+  refine ⟨h.ty, h.va, h.ini, ?_, ?_⟩
+  · rw [← h.t0]
+    exact congrArg (ofBytesLE 32) (Sga.rd_out ho (by bv_omega) (by bv_omega))
+  · rw [← h.z]
+    exact congrArg (ofBytesLE 8) (Sga.rd_out ho (by bv_omega) (by bv_omega))
+
 end FV7z.Tgv
