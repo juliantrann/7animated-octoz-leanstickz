@@ -162,6 +162,16 @@ FNS = {
     "nef": dict(grp="Nef", cn="__new_exitfn", a=0x623430, n=0x111, pos=True, stops=(0xaa, 0xb3, 0xde, 0xfd),
                 calls=True, hand=(0x9c,), tag="PLAN.md G3, startup",
                 src="glibc 2.31's `__new_exitfn` (`stdlib/cxa_atexit.c`; `objdump -d`)"),
+    # glibc 2.31 sysdeps/x86_64/setjmp.S with `__sigjmp_save` (setjmp/sigjmp.c) after it, where its last `jmp` goes.
+    # Stops: the `ret` (0x82), a signal mask to save (0x88). By hand: `rdsspq rax` (0x59).
+    "ssj": dict(grp="Ssj", cn="__sigsetjmp", a=0x67e040, n=0xa4, pos=True, fs=True, stops=(0x82, 0x88), calls=True,
+                hand=(0x59,), tag="PLAN.md G3, startup",
+                src="glibc 2.31's `__sigsetjmp` and `__sigjmp_save` (`sysdeps/x86_64/setjmp.S`, `setjmp/sigjmp.c`;\n"
+                    "`objdump -d`)"),
+    # glibc 2.31 sysdeps/x86_64/bsd-_setjmp.S. Stop: the `jmp` to `__sigsetjmp` (0x6).
+    "sjp": dict(grp="Sjp", cn="_setjmp", a=0x622340, n=11, pos=True, stops=(0x6,), calls=True,
+                tag="PLAN.md G3, startup",
+                src="glibc 2.31's `_setjmp` (`sysdeps/x86_64/bsd-_setjmp.S`; `objdump -d`)"),
     # glibc 2.31 nptl/nptl-init.c (`__pthread_tunables_init`, static). Stops: the `ret` (0x42), `__stack_chk_fail`
     # (0x43).
     "pti": dict(grp="Pti", cn="__pthread_tunables_init", a=0x5ffbc0, n=72, pos=True, fs=True, stops=(0x42, 0x43),
