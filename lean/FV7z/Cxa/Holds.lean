@@ -2,23 +2,22 @@ import FV7z.Cxa.Cuts
 import FV7z.Nef.Holds
 import FV7z.Pim.Frame
 /-!
-# `__cxa_atexit` registers the first exit function (PLAN.md G3, startup)
+# `__cxa_atexit` registers an exit function (PLAN.md G3, startup)
 
-glibc 2.31's `__cxa_atexit (func, arg, d)` at `0x623690` in `7zzs`, as `__libc_start_main` calls it with the
-program's `fini` before any other exit function is there and before any other thread exists: the lock
-`__exit_funcs_lock` at `0x7a8400` is taken with an unlocked `cmpxchg` and given back with `sub`,
-`__new_exitfn (&__exit_funcs)` gives the
-first place of the list `l` that `__exit_funcs` at `0x7923b0` points at, and the place gets its four words: the flavor
-4 (`ef_cxa`), the function mangled with the pointer guard at `fs:0x30` (`PTR_MANGLE`: xor, then rotate left by 17),
-the argument and the DSO handle.
+glibc 2.31's `__cxa_atexit (func, arg, d)` at `0x623690` in `7zzs`, with one thread and the first list of
+`__exit_funcs` not full: the lock `__exit_funcs_lock` at `0x7a8400` is taken with an unlocked `cmpxchg` and given back
+with `sub`, `__new_exitfn (&__exit_funcs)` gives the next place `p` of the list `l` that `__exit_funcs` at `0x7923b0`
+points at, and the place gets its four words: the flavor 4 (`ef_cxa`), the function mangled with the pointer guard at
+`fs:0x30` (`PTR_MANGLE`: xor, then rotate left by 17), the argument and the DSO handle.
 
 - `cx_47`, `call_61`, `movq_75`, `movhps_103`, `movups_112`, `sb_130`, `ret_145`: the instructions outside the blocks.
 - `tb16`, `Vst_append`, `st16`, `two_q`: the 16 bytes that `movups` stores are the two quadwords.
 - `vc_*`: the verification conditions of the pieces.
 - `Reg`: what the bytes after the call have of those before it.
-- `cxa_first`: called with one thread (`fs:0x18` is 0), a function that is not null, the lock free, no exit function
-  run, the list with no place taken and no list after it, the run reaches the return address with `rax` 0, the
-  registers a call keeps as at the entry, the place filled, the lock free again.
+- `cxa_ok`: called with one thread (`fs:0x18` is 0), a function that is not null, the lock free, no exit function
+  run, the list with `n < 32` places taken (none and no list after it, or the last of them not free again), the run
+  reaches the return address with `rax` 0, the registers a call keeps as at the entry, place `n` filled, the lock
+  free again.
 
 The ways with a null function, more threads, a lock that is held and no place (`__new_exitfn` returns null) are not
 ones of this call.
@@ -26,7 +25,7 @@ ones of this call.
 open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn FV7z.Start
 open FV7z.Sga (vo vr vs rd_out sk0')
 open FV7z.Raf (Out off_ft rd_out2)
-open FV7z.Nef (rd_out3)
+open FV7z.Nef (rd_out3 rd_out4)
 namespace FV7z.Cxa
 
 /-- `cmpxchg [0x7a8400], edx`, not locked. -/
@@ -275,12 +274,11 @@ theorem sp_c (sp : Addr) (h : 56 ≤ sp.toNat) :
     sp - 8 = sp - 56#64 + BitVec.ofNat 64 48 := by
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> bv_omega
 
-/-- Addresses in the list at `l`: its count, its first place's four words. -/
-theorem l_c (l : Addr) (h : l.toNat + 48 ≤ 2 ^ 64) :
-    (l + 8#64).toNat = l.toNat + 8 ∧ (l + 16#64).toNat = l.toNat + 16 ∧ l + 16#64 + 8#64 = l + 24#64 ∧
-    (l + 24#64).toNat = l.toNat + 24 ∧ l + 16#64 + 16#64 = l + 32#64 ∧ (l + 32#64).toNat = l.toNat + 32 ∧
-    l + 32#64 + 8#64 = l + 40#64 ∧ (l + 40#64).toNat = l.toNat + 40 ∧ l + 16#64 ≠ 0 := by
-  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> bv_omega
+/-- Addresses in the place at `p`: its four words. -/
+theorem p_c (p : Addr) (h0 : 0 < p.toNat) (h : p.toNat + 32 ≤ 2 ^ 64) :
+    (p + 8#64).toNat = p.toNat + 8 ∧ (p + 16#64).toNat = p.toNat + 16 ∧ p + 16#64 + 8#64 = p + 24#64 ∧
+    (p + 24#64).toNat = p.toNat + 24 ∧ p ≠ 0 := by
+  refine ⟨?_, ?_, ?_, ?_, ?_⟩ <;> bv_omega
 
 /-- Addresses in the thread's block at `fb`: `multiple_threads` and the pointer guard. -/
 theorem f_c (fb : Addr) (h : fb.toNat + 56 ≤ 2 ^ 64) :
@@ -288,27 +286,30 @@ theorem f_c (fb : Addr) (h : fb.toNat + 56 ≤ 2 ^ 64) :
   refine ⟨?_, ?_⟩ <;> bv_omega
 
 /-- What the bytes `V'` after the call have of the bytes `V` before it, the stack pointer `sp` at the entry, the
-list `l`: all outside the 56 bytes under `sp`, the list's count with its first place, and the lock with the counter
-of `__new_exitfn`; the count 1, the place's flavor 4 with the function `fn` (mangled), the argument and the DSO
-handle, the counter one more, the lock free. -/
-structure Reg (V V' : Addr → Byte) (sp l : Addr) (fn arg dso : BitVec 64) : Prop where
+list `l`, its place `p` that had `n` places before it: all outside the 56 bytes under `sp`, the list's count, the
+place, and the lock with the counter of `__new_exitfn`; the count `n + 1`, the place's flavor 4 with the function
+`fn` (mangled), the argument and the DSO handle, the counter one more, the lock free. -/
+structure Reg (V V' : Addr → Byte) (sp l p : Addr) (n : Nat) (fn arg dso : BitVec 64) : Prop where
   out : ∀ a : Addr, ¬ (sp.toNat - 56 ≤ a.toNat ∧ a.toNat < sp.toNat) →
-    ¬ (l.toNat + 8 ≤ a.toNat ∧ a.toNat < l.toNat + 48) → ¬ (8029184 ≤ a.toNat ∧ a.toNat < 8029200) → V' a = V a
-  idx : rdq(V', l + 8#64) = 1
-  flv : rdq(V', l + 16#64) = 4
-  fn : rdq(V', l + 24#64) = fn
-  arg : rdq(V', l + 32#64) = arg
-  dso : rdq(V', l + 40#64) = dso
+    ¬ (l.toNat + 8 ≤ a.toNat ∧ a.toNat < l.toNat + 16) → ¬ (p.toNat ≤ a.toNat ∧ a.toNat < p.toNat + 32) →
+    ¬ (8029184 ≤ a.toNat ∧ a.toNat < 8029200) → V' a = V a
+  idx : rdq(V', l + 8#64) = BitVec.ofNat 64 (n + 1)
+  flv : rdq(V', p) = 4
+  fn : rdq(V', p + 8#64) = fn
+  arg : rdq(V', p + 16#64) = arg
+  dso : rdq(V', p + 24#64) = dso
   cnt : rdq(V', 8029192#64) = rdq(V, 8029192#64) + 1
   lock : rdd(V', 8029184#64) = 0
 
 variable {prof : Profile} {L : List (Addr × List Byte)} {s₀ X : State} {o : Oracle} {t : Nat}
   {gev : List Event} {gP : State → Nat → List Event → Prop} {gE : Outcome → List Event → Prop} {V : Addr → Byte}
 
+set_option maxHeartbeats 800000 in
 /-- `__cxa_atexit (fn, arg, dso)` with one thread, `fn` not null, the lock free, no exit function run, the list `l`
-of `__exit_funcs` with no place taken and no list after it: the run reaches the return address with `rax` 0, the
-list's first place filled (`Reg`), the registers a call keeps as at the entry. -/
-theorem cxa_first {fb sp l : Addr} {fn arg dso : BitVec 64} (c : Seg prof F Wl L s₀ o)
+of `__exit_funcs` with `n < 32` places taken, none of them and no list after it or the last of them not free again:
+the run reaches the return address with `rax` 0, the list's place `p = l + 16 + 32 n` filled (`Reg`), the registers
+a call keeps as at the entry. -/
+theorem cxa_ok {fb sp l p : Addr} {n : Nat} {fn arg dso : BitVec 64} (c : Seg prof F Wl L s₀ o)
     (hfs : s₀.cpu.seg.fsBase = fb) (hin : CodeIn L cxa_at cxa) (hinn : CodeIn L Nef.nef_at Nef.nef)
     (hK : KeptW Wl s₀ X) (hA : Agree F X.proc.mm.mem V) (hrip : X.cpu.rip = cxa_at)
     (hsp : X.cpu.gpr.rsp = sp) (hdi : X.cpu.gpr.rdi = fn) (hsi : X.cpu.gpr.rsi = arg) (hdx : X.cpu.gpr.rdx = dso)
@@ -317,21 +318,25 @@ theorem cxa_first {fb sp l : Addr} {fn arg dso : BitVec 64} (c : Seg prof F Wl L
     (hra : rdq(V, sp) = e₂.add j₂) (hs8 : sp.toNat + 8 ≤ 2 ^ 64) (h0 : fn ≠ 0)
     (hft : ∀ i < 56, Foot F.data (Addr.add fb i)) (hfn : fb.toNat + 56 ≤ 2 ^ 64)
     (hfsd : fb.toNat + 112 ≤ sp.toNat ∨ sp.toNat ≤ fb.toNat)
-    (hfld : fb.toNat + 56 ≤ l.toNat ∨ l.toNat + 48 ≤ fb.toNat)
+    (hfld : fb.toNat + 56 ≤ l.toNat ∨ l.toNat + 1040 ≤ fb.toNat)
     (hfcd : fb.toNat + 56 ≤ 8029184 ∨ 8029200 ≤ fb.toNat) (hmt : rdd(V, fb + 24#64) = 0)
     (hfl : ∀ i < 1, Foot F.data (Addr.add 8010388#64 i)) (hflag : rdb(V, 8010388#64) = 0)
     (hp : ∀ i < 8, Foot F.data (Addr.add 7938992#64 i)) (hl : rdq(V, 7938992#64) = l) (hl0 : l ≠ 0)
-    (hlw : ∀ i < 48, Foot Wl (Addr.add l i)) (hld : l.toNat + 104 ≤ sp.toNat)
+    (hn : n < 32) (hpe : p = l + BitVec.ofNat 64 (16 + 32 * n))
+    (hlw : ∀ i < 1040, Foot Wl (Addr.add l i)) (hld : l.toNat + 1096 ≤ sp.toNat)
     (hkw : ∀ i < 16, Foot Wl (Addr.add 8029184#64 i)) (hcd : 8029256 ≤ sp.toNat)
-    (hlc : l.toNat + 48 ≤ 8029184 ∨ 8029200 ≤ l.toNat)
-    (hlock : rdd(V, 8029184#64) = 0) (hidx : rdq(V, l + 8#64) = 0) (hnext : rdq(V, l) = 0)
+    (hlc : l.toNat + 1040 ≤ 8029184 ∨ 8029200 ≤ l.toNat)
+    (hlock : rdd(V, 8029184#64) = 0) (hidx : rdq(V, l + 8#64) = BitVec.ofNat 64 n)
+    (hnext : n = 0 → rdq(V, l) = 0) (hprev : 0 < n → rdq(V, p - 32#64) ≠ 0)
     (k : ∀ V' g' Z t', KeptW Wl s₀ Z → Agree F Z.proc.mm.mem V' →
-      Reg V V' sp l ((fn ^^^ rdq(V, fb + 48#64)).rotateLeft 17) arg dso →
+      Reg V V' sp l p n ((fn ^^^ rdq(V, fb + 48#64)).rotateLeft 17) arg dso →
       Z.cpu.rip = e₂.add j₂ → Z.cpu.gpr = g' → g'.rax = 0 → Osv.Back X.cpu.gpr g' →
       GoG prof L o gev gP gE Z t') :
     GoG prof L o gev gP gE X t := by
   obtain ⟨sa, sb, sc, sd, se, sf, sg, sh, si, sj, sk, sm, sn, so⟩ := sp_c sp (by omega)
-  obtain ⟨t8, t16, a24, t24, a32, t32, a40, t40, n16⟩ := l_c l (by omega)
+  obtain ⟨t8, -, ep, -, -, hpos⟩ := Nef.l_n l n hn (by omega)
+  rw [← hpe] at ep hpos
+  obtain ⟨p8, p16, a24, p24, np⟩ := p_c p (by omega) (by omega)
   obtain ⟨f24, f48⟩ := f_c fb hfn
   have ek : (8029184#64).toNat = 8029184 := rfl
   have ec : (8029192#64).toNat = 8029192 := rfl
@@ -340,6 +345,7 @@ theorem cxa_first {fb sp l : Addr} {fn arg dso : BitVec 64} (c : Seg prof F Wl L
   have hstd : ∀ i < 56, Foot F.data (Addr.add (sp - 56#64) i) := fun i hi => c.hws _ (hst i hi)
   have hf24 : ∀ i < 4, Foot F.data ((fb + 24#64).add i) := off_ft hft 24 rfl (by decide)
   have hf48 : ∀ i < 8, Foot F.data ((fb + 48#64).add i) := off_ft hft 48 rfl (by decide)
+  have hpw : ∀ i < 32, Foot Wl (Addr.add p i) := off_ft hlw (16 + 32 * n) hpe (by omega)
   -- the frame
   refine (c_0 prof fb).run c hfs hin _ hK hA (by rw [addr_add_zero]; exact hrip)
     (vc_0 (by rw [hsp]; omega) (by rw [hsp, sa]; exact off_ft hst 32 rfl (by decide)) (by rw [hdi]; exact h0)
@@ -387,33 +393,36 @@ theorem cxa_first {fb sp l : Addr} {fn arg dso : BitVec 64} (c : Seg prof F Wl L
   have h3 : ∀ a : Addr, ¬ (sp.toNat - 56 ≤ a.toNat ∧ a.toNat < sp.toNat) →
       ¬ (8029184 ≤ a.toNat ∧ a.toNat < 8029188) → V₃ a = V a := fun a h1 h2 =>
     (o3 a (by omega)).trans ((o2 a h2).trans (hF.out a (by omega)))
-  refine Nef.nef_first (l := l) c hinn hKZ hAZ hrZ (by rw [hZsp, se]; exact fun i hi => hst i (by omega))
+  refine Nef.nef_ok (l := l) (p := p) (n := n) c hinn hKZ hAZ hrZ (by rw [hZsp, se]; exact fun i hi => hst i (by omega))
     (by rw [hZsp, sc]; exact off_ft hstd 24 rfl (by decide)) hin (lt_len (j := 66) (by decide))
     (by rw [hZsp]; exact hra3) (by rw [hZsp]; omega) hfl
     (by rw [← hflag]; exact congrArg (ofBytesLE 8) (rd_out2 h3 (by omega) (by omega) (by omega)))
     (by rw [hZdi]; exact hp) (by rw [hZdi, hZsp]; omega)
     (by rw [hZdi, ← hl]; exact congrArg (ofBytesLE 64) (rd_out2 h3 (by omega) (by omega) (by omega))) hl0
-    (fun i hi => hlw i (by omega)) (by rw [hZsp]; omega) (off_ft hkw 8 (by decide) (by decide))
+    hn hpe hlw (by rw [hZsp]; omega) (off_ft hkw 8 (by decide) (by decide))
     (by rw [hZsp]; omega) (by omega)
     (by rw [← hidx]; exact congrArg (ofBytesLE 64) (rd_out2 h3 (by omega) (by omega) (by omega)))
-    (by rw [← hnext]; exact congrArg (ofBytesLE 64) (rd_out2 h3 (by omega) (by omega) (by omega))) ?_
+    (fun h => by rw [← hnext h]; exact congrArg (ofBytesLE 64) (rd_out2 h3 (by omega) (by omega) (by omega)))
+    (fun h e => by
+      obtain ⟨-, -, em⟩ := hpos h
+      exact hprev h ((congrArg (ofBytesLE 64) (rd_out2 h3 (by omega) (by omega) (by omega))).symm.trans e)) ?_
   rintro V₄ g' Z₂ u₂ hK₄ hA₄ hN hr₄ rfl hax₄ ⟨b1, b2, b3, b4, b5, b6, b7⟩
   rw [hZsp] at hN b1
   have n4 : ∀ a : Addr, ¬ (sp.toNat - 56 ≤ a.toNat ∧ a.toNat < sp.toNat - 32) →
-      ¬ (l.toNat + 8 ≤ a.toNat ∧ a.toNat < l.toNat + 24) → ¬ (8029192 ≤ a.toNat ∧ a.toNat < 8029200) →
-      V₄ a = V₃ a := fun a h1 h2 h3 => hN.out a (by omega) h2 h3
+      ¬ (l.toNat + 8 ≤ a.toNat ∧ a.toNat < l.toNat + 16) → ¬ (p.toNat ≤ a.toNat ∧ a.toNat < p.toNat + 8) →
+      ¬ (8029192 ≤ a.toNat ∧ a.toNat < 8029200) → V₄ a = V₃ a := fun a h1 h2 h3 h4 => hN.out a (by omega) h2 h3 h4
   have hS₄ : St X.cpu.gpr Z₂.cpu.gpr sp fn :=
     ⟨b1.trans sf, b2.trans hZ.1, b3.trans hZ.2.1, b4.trans hZ.2.2.1, b5.trans hZ.2.2.2.1, b6.trans hZ.2.2.2.2.1,
       b7.trans hZ.2.2.2.2.2⟩
   have h41 : ∀ a : Addr, ¬ (sp.toNat - 56 ≤ a.toNat ∧ a.toNat < sp.toNat - 24) →
-      ¬ (l.toNat + 8 ≤ a.toNat ∧ a.toNat < l.toNat + 24) → ¬ (8029184 ≤ a.toNat ∧ a.toNat < 8029200) →
-      V₄ a = V₁ a := fun a h1 h2 h3 =>
-    (n4 a (by omega) h2 (by omega)).trans ((o3 a (by omega)).trans (o2 a (by omega)))
+      ¬ (l.toNat + 8 ≤ a.toNat ∧ a.toNat < l.toNat + 16) → ¬ (p.toNat ≤ a.toNat ∧ a.toNat < p.toNat + 8) →
+      ¬ (8029184 ≤ a.toNat ∧ a.toNat < 8029200) → V₄ a = V₁ a := fun a h1 h2 h3 h4 =>
+    (n4 a (by omega) h2 h3 (by omega)).trans ((o3 a (by omega)).trans (o2 a (by omega)))
   -- a place was given
-  refine (c_66 prof fb).run c hfs hin _ hK₄ hA₄ hr₄ (vc_66 (by rw [hax₄]; exact n16)) ?_
+  refine (c_66 prof fb).run c hfs hin _ hK₄ hA₄ hr₄ (vc_66 (by rw [hax₄]; exact np)) ?_
   rintro j' g fl V₄ ⟨rfl, rfl, rfl⟩ Y₅ t₅ hK₅ hA₅ hr₅ hg₅ -
   have hS₅ : St X.cpu.gpr Y₅.cpu.gpr sp fn := by rw [hg₅]; exact ⟨hS₄.rsp, hS₄.rbx, hS₄.kp⟩
-  have hax₅ : Y₅.cpu.gpr.rax = l + 16#64 := by rw [hg₅]; exact hax₄
+  have hax₅ : Y₅.cpu.gpr.rax = p := by rw [hg₅]; exact hax₄
   -- the argument
   have e0 : eaD Y₅ 4 0 = sp - 24#64 := by
     show Y₅.cpu.gpr.rsp + 0#64 = _
@@ -425,22 +434,21 @@ theorem cxa_first {fb sp l : Addr} {fn arg dso : BitVec 64} (c : Seg prof F Wl L
   rintro Y₆ t₆ hK₆ hA₆ ⟨hr₆, hg₆, hx₆⟩
   have harg : rdq(V₄, sp - 24#64) = arg := by
     rw [← hF.sarg]
-    exact congrArg (ofBytesLE 64) (rd_out3 h41 (by omega) (by omega) (by omega) (by omega))
+    exact congrArg (ofBytesLE 64) (rd_out4 h41 (by omega) (by omega) (by omega) (by omega) (by omega))
   rw [e0, harg] at hx₆
   have hS₆ : St X.cpu.gpr Y₆.cpu.gpr sp fn := by rw [hg₆]; exact ⟨hS₅.rsp, hS₅.rbx, hS₅.kp⟩
-  have hax₆ : Y₆.cpu.gpr.rax = l + 16#64 := by rw [hg₆]; exact hax₅
+  have hax₆ : Y₆.cpu.gpr.rax = p := by rw [hg₆]; exact hax₅
   -- the flavor, the function mangled
   have hpg : rdq(V₄, fb + 48#64) = rdq(V, fb + 48#64) :=
-    congrArg (ofBytesLE 64) ((rd_out3 h41 (by omega) (by omega) (by omega) (by omega)).trans
+    congrArg (ofBytesLE 64) ((rd_out4 h41 (by omega) (by omega) (by omega) (by omega) (by omega)).trans
       (hF.out.rd (by omega) (by omega)))
   refine c.runV hfs hin (blk_80 prof fb) rfl _ hK₆ hA₆ hr₆ (vc_80 (pg := rdq(V, fb + 48#64))
-    (by rw [hax₆]; exact off_ft hlw 16 rfl (by decide)) hf48 (by rw [hax₆]; omega) (by omega)
+    (by rw [hax₆]; exact fun i hi => hpw i (by omega)) hf48 (by rw [hax₆]; omega) (by omega)
     (by rw [hax₆]; omega) hpg) ?_
   rintro g fl V₅ ⟨rfl, o5, hf5⟩ Y₇ t₇ hK₇ hA₇ hr₇ hg₇ hv₇
   rw [hax₆] at o5 hf5
-  rw [t16] at o5
   have hS₇ : St X.cpu.gpr Y₇.cpu.gpr sp fn := by rw [hg₇]; exact ⟨hS₆.rsp, hS₆.rbx, hS₆.kp⟩
-  have hax₇ : Y₇.cpu.gpr.rax = l + 16#64 := by rw [hg₇]; exact hax₆
+  have hax₇ : Y₇.cpu.gpr.rax = p := by rw [hg₇]; exact hax₆
   have hdi₇ : Y₇.cpu.gpr.rdi = (fn ^^^ rdq(V, fb + 48#64)).rotateLeft 17 := by
     rw [hg₇]
     show (Y₆.cpu.gpr.rbx ^^^ _).rotateLeft 17 = _
@@ -461,53 +469,52 @@ theorem cxa_first {fb sp l : Addr} {fn arg dso : BitVec 64} (c : Seg prof F Wl L
   have hdso : rdq(V₅, sp - 16) = dso := by
     rw [← hF.sdso]
     exact congrArg (ofBytesLE 64) ((o5.rd (by omega) (by omega)).trans
-      (rd_out3 h41 (by omega) (by omega) (by omega) (by omega)))
+      (rd_out4 h41 (by omega) (by omega) (by omega) (by omega) (by omega)))
   rw [e8, hdso, hx₇, lane_lo] at hx₈
   have hS₈ : St X.cpu.gpr Y₈.cpu.gpr sp fn := by rw [hg₈]; exact ⟨hS₇.rsp, hS₇.rbx, hS₇.kp⟩
-  have hax₈ : Y₈.cpu.gpr.rax = l + 16#64 := by rw [hg₈]; exact hax₇
+  have hax₈ : Y₈.cpu.gpr.rax = p := by rw [hg₈]; exact hax₇
   have hdi₈ : Y₈.cpu.gpr.rdi = (fn ^^^ rdq(V, fb + 48#64)).rotateLeft 17 := by rw [hg₈]; exact hdi₇
   -- the function
   refine c.runV hfs hin (((blk_108 prof).at cxa_at).fs fb) rfl _ hK₈ hA₈ hr₈
-    (vc_108 (by rw [hax₈, a24]; exact off_ft hlw 24 rfl (by decide)) (by rw [hax₈]; omega)) ?_
+    (vc_108 (by rw [hax₈]; exact off_ft hpw 8 rfl (by decide)) (by rw [hax₈]; omega)) ?_
   rintro g fl V₆ ⟨rfl, o6, hf6⟩ Y₉ t₉ hK₉ hA₉ hr₉ hg₉ hv₉
-  rw [hax₈, t16] at o6
-  rw [hax₈, a24, hdi₈] at hf6
+  rw [hax₈] at o6
+  rw [hax₈, hdi₈] at hf6
   have hS₉ : St X.cpu.gpr Y₉.cpu.gpr sp fn := by rw [hg₉]; exact ⟨hS₈.rsp, hS₈.rbx, hS₈.kp⟩
-  have hax₉ : Y₉.cpu.gpr.rax = l + 16#64 := by rw [hg₉]; exact hax₈
+  have hax₉ : Y₉.cpu.gpr.rax = p := by rw [hg₉]; exact hax₈
   -- the argument and the DSO handle
-  have e16 : eaD Y₉ 0 16 = l + 32#64 := by
+  have e16 : eaD Y₉ 0 16 = p + 16#64 := by
     show Y₉.cpu.gpr.rax + 16#64 = _
     rw [hax₉]
-    exact a32
   refine c.s_movups_st hK₉ hA₉ hin (lt_len (by decide)) hr₉ (movups_112 _) (fun i hi => ?_) ?_
   · rw [e16]
-    exact off_ft hlw 32 rfl (by decide) i hi
+    exact off_ft hpw 16 rfl (by decide) i hi
   rintro Y₁₀ t₁₀ hK₁₀ hA₁₀ ⟨hr₁₀, hg₁₀⟩
   have hx₉ : xlo Y₉ 0 = (dso ++ arg).setWidth 128 := by
     show (Y₉.cpu.vec.zmm (xmmOf 0)).setWidth 128 = _
     rw [hv₉]
     exact hx₈
   rw [e16, hx₉, st16] at hA₁₀
-  obtain ⟨V₇, ⟨o7, ha7, hd7⟩, hA₁₀⟩ : ∃ V₇, (Out (l + 32#64).toNat ((l + 32#64).toNat + 16) V₆ V₇ ∧
-      rdq(V₇, l + 32#64) = arg ∧ rdq(V₇, l + 32#64 + 8#64) = dso) ∧ Agree F Y₁₀.proc.mm.mem V₇ :=
-    ⟨_, two_q V₆ (l + 32#64) arg dso (by omega), hA₁₀⟩
-  rw [t32] at o7
-  rw [a40] at hd7
+  obtain ⟨V₇, ⟨o7, ha7, hd7⟩, hA₁₀⟩ : ∃ V₇, (Out (p + 16#64).toNat ((p + 16#64).toNat + 16) V₆ V₇ ∧
+      rdq(V₇, p + 16#64) = arg ∧ rdq(V₇, p + 16#64 + 8#64) = dso) ∧ Agree F Y₁₀.proc.mm.mem V₇ :=
+    ⟨_, two_q V₆ (p + 16#64) arg dso (by omega), hA₁₀⟩
+  rw [p16] at o7
+  rw [a24] at hd7
   have hS₁₀ : St X.cpu.gpr Y₁₀.cpu.gpr sp fn := by rw [hg₁₀]; exact ⟨hS₉.rsp, hS₉.rbx, hS₉.kp⟩
   have h71 : ∀ a : Addr, ¬ (sp.toNat - 56 ≤ a.toNat ∧ a.toNat < sp.toNat - 24) →
-      ¬ (l.toNat + 8 ≤ a.toNat ∧ a.toNat < l.toNat + 48) → ¬ (8029184 ≤ a.toNat ∧ a.toNat < 8029200) →
-      V₇ a = V₁ a := fun a h1 h2 h3 =>
-    (o7 a (by omega)).trans ((o6 a (by omega)).trans ((o5 a (by omega)).trans (h41 a h1 (by omega) h3)))
+      ¬ (l.toNat + 8 ≤ a.toNat ∧ a.toNat < l.toNat + 16) → ¬ (p.toNat ≤ a.toNat ∧ a.toNat < p.toNat + 32) →
+      ¬ (8029184 ≤ a.toNat ∧ a.toNat < 8029200) → V₇ a = V₁ a := fun a h1 h2 h3 h4 =>
+    (o7 a (by omega)).trans ((o6 a (by omega)).trans ((o5 a (by omega)).trans (h41 a h1 h2 (by omega) h4)))
   -- the lock given back
   have hmt7 : rdd(V₇, fb + 24#64) = 0 := by
     rw [← hmt]
-    exact congrArg (ofBytesLE 32) ((rd_out3 h71 (by omega) (by omega) (by omega) (by omega)).trans
+    exact congrArg (ofBytesLE 32) ((rd_out4 h71 (by omega) (by omega) (by omega) (by omega) (by omega)).trans
       (hF.out.rd (by omega) (by omega)))
   have hl7 : rdd(V₇, 8029184#64) = 1 := by
     rw [← hl2]
     exact congrArg (ofBytesLE 32) ((o7.rd (by omega) (by omega)).trans ((o6.rd (by omega) (by omega)).trans
-      ((o5.rd (by omega) (by omega)).trans ((rd_out3 n4 (by omega) (by omega) (by omega) (by omega)).trans
-        (o3.rd (by omega) (by omega))))))
+      ((o5.rd (by omega) (by omega)).trans ((rd_out4 n4 (by omega) (by omega) (by omega) (by omega)
+        (by omega)).trans (o3.rd (by omega) (by omega))))))
   refine (c_116 prof fb).run c hfs hin _ hK₁₀ hA₁₀ hr₁₀ (vc_116 hf24 hmt7) ?_
   rintro j' g fl V₇ ⟨rfl, rfl, rfl⟩ Y₁₁ t₁₁ hK₁₁ hA₁₁ hr₁₁ hg₁₁ -
   have hS₁₁ : St X.cpu.gpr Y₁₁.cpu.gpr sp fn := by rw [hg₁₁]; exact ⟨hS₁₀.rsp, hS₁₀.rbx, hS₁₀.kp⟩
@@ -526,8 +533,9 @@ theorem cxa_first {fb sp l : Addr} {fn arg dso : BitVec 64} (c : Seg prof F Wl L
     (by rw [hS₁₂.rsp, sj, so]; exact off_ft hstd 48 rfl (by decide))) ?_
   rintro j' g fl V₈ ⟨rfl, rfl, rfl⟩ Y₁₃ t₁₃ hK₁₃ hA₁₃ hr₁₃ hg₁₃ -
   have hb : ∀ a : Addr, ¬ (sp.toNat - 56 ≤ a.toNat ∧ a.toNat < sp.toNat - 24) →
-      ¬ (l.toNat + 8 ≤ a.toNat ∧ a.toNat < l.toNat + 48) → ¬ (8029184 ≤ a.toNat ∧ a.toNat < 8029200) →
-      V₈ a = V₁ a := fun a h1 h2 h3 => (o8 a (by omega)).trans (h71 a h1 h2 h3)
+      ¬ (l.toNat + 8 ≤ a.toNat ∧ a.toNat < l.toNat + 16) → ¬ (p.toNat ≤ a.toNat ∧ a.toNat < p.toNat + 32) →
+      ¬ (8029184 ≤ a.toNat ∧ a.toNat < 8029200) → V₈ a = V₁ a := fun a h1 h2 h3 h4 =>
+    (o8 a (by omega)).trans (h71 a h1 h2 h3 h4)
   have hsp₁₃ : Y₁₃.cpu.gpr.rsp = sp := by
     rw [hg₁₃]
     show Y₁₂.cpu.gpr.rsp + 24#64 = _
@@ -537,21 +545,21 @@ theorem cxa_first {fb sp l : Addr} {fn arg dso : BitVec 64} (c : Seg prof F Wl L
   · rw [hsp₁₃]
     exact hlr i hi
   · rw [hsp₁₃, ← hra]
-    exact congrArg (ofBytesLE 64) ((rd_out3 hb hs8 (by omega) (by omega) (by omega)).trans
+    exact congrArg (ofBytesLE 64) ((rd_out4 hb hs8 (by omega) (by omega) (by omega) (by omega)).trans
       (hF.out.rd hs8 (by omega)))
   rintro Z t' hKZ' hAZ' ⟨hrZ', hgZ'⟩
   have hbx : Y₁₃.cpu.gpr.rbx = X.cpu.gpr.rbx := by
     rw [hg₁₃]
     show rdq(V₈, Y₁₂.cpu.gpr.rsp + 16#64) = _
     rw [hS₁₂.rsp, sj, ← hF.sbx]
-    exact congrArg (ofBytesLE 64) (rd_out3 hb (by omega) (by omega) (by omega) (by omega))
+    exact congrArg (ofBytesLE 64) (rd_out4 hb (by omega) (by omega) (by omega) (by omega) (by omega))
   have hkp : Y₁₃.cpu.gpr.rbp = X.cpu.gpr.rbp ∧ Y₁₃.cpu.gpr.r12 = X.cpu.gpr.r12 ∧
       Y₁₃.cpu.gpr.r13 = X.cpu.gpr.r13 ∧ Y₁₃.cpu.gpr.r14 = X.cpu.gpr.r14 ∧ Y₁₃.cpu.gpr.r15 = X.cpu.gpr.r15 := by
     rw [hg₁₃]
     exact hS₁₂.kp
   have hax : Y₁₃.cpu.gpr.rax = 0 := by rw [hg₁₃]
   refine k V₈ _ Z t' hKZ' hAZ'
-    ⟨fun a h1 h2 h3 => (hb a (by omega) h2 h3).trans (hF.out a (by omega)), ?_, ?_, ?_, ?_, ?_, ?_, hl8⟩
+    ⟨fun a h1 h2 h3 h4 => (hb a (by omega) h2 h3 h4).trans (hF.out a (by omega)), ?_, ?_, ?_, ?_, ?_, ?_, hl8⟩
     hrZ' hgZ' hax ⟨?_, hbx, hkp.1, hkp.2.1, hkp.2.2.1, hkp.2.2.2.1, hkp.2.2.2.2⟩
   · rw [← hN.idx]
     exact congrArg (ofBytesLE 64) ((o8.rd (by omega) (by omega)).trans ((o7.rd (by omega) (by omega)).trans
