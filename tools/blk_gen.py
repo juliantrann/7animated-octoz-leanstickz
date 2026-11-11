@@ -225,6 +225,14 @@ FNS = {
                        0x3dc, 0x632, 0x5cf, 0x270, 0x18e),
                 calls=True, tag="PLAN.md G3, `malloc`",
                 src="glibc 2.31's `sysmalloc` (`malloc/malloc.c`; `objdump -d`)"),
+    # glibc 2.31 malloc/malloc.c, the way of the first call (`tcache_init`'s, of 0x280 bytes: the main arena, its bins
+    # empty, its top the initial one, so `sysmalloc`). Stops: the branches that way does not take, and the `ret`
+    # (0x3b6). By hand: `cmp qword fs:[-0x28], 0` (1087), the test of the thread's cache.
+    "imm": dict(grp="Imm", cn="_int_malloc", a=0x630be0, n=3702, pos=True, fs=True,
+                stops=(0x2e, 0x6a, 0x160, 0x3c0, 0x44b, 0x47f, 0x610, 0x63e, 0x7b9, 0x808, 0x988, 0x9e7, 0xa2b, 0xc07,
+                       0xc20, 0xc77, 0xcef, 0x3b6),
+                calls=True, hand=(1087,), tag="PLAN.md G3, `malloc`",
+                src="glibc 2.31's `_int_malloc` (`malloc/malloc.c`; `objdump -d`)"),
     "eli": dict(grp="Eli", cn="elision_init", a=0x5ffc50, n=0xb1, pos=True, fs=True, stops=(0xab, 0xac),
                 calls=True, tag="PLAN.md G3, startup",
                 src="glibc 2.31's `elision_init` (`sysdeps/unix/sysv/linux/x86/elision-conf.c`; `objdump -d`)"),
