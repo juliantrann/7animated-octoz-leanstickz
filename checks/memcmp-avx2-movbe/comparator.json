@@ -1,0 +1,23 @@
+{
+  "challenge_module": "Challenges.V2606.MemcmpAvx2Movbe",
+  "solution_module": "FV7z.Memcmp.Avx2MovbeHolds",
+  "theorem_names": [
+    "FV7z.V2606.memcmpAvx2Movbe_holds"
+  ],
+  "permitted_axioms": [
+    "propext",
+    "Quot.sound",
+    "Classical.choice"
+  ],
+  "external_kernels": {
+    "con-leche": [
+      "con-leche"
+    ],
+    "con-ron": [
+      "con-ron"
+    ],
+    "nanoda": [
+      "nanoda_bin"
+    ]
+  }
+}

@@ -1,0 +1,54 @@
+# The project's checks (tools/ci.sh; PLAN.md §7, G0 "CI") on a push to a branch ci/** (never on main: push the commit
+# to check to ci/full).
+name: ci
+on:
+  push:
+    branches: ['ci/**']
+jobs:
+  ci:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 240
+    steps:
+      - uses: actions/checkout@v4
+      - name: packages
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -yq strace bubblewrap binutils gcc python3 xz-utils dpkg qemu-user
+          # lake comparator sandboxes the kernels with bwrap, which needs unprivileged user namespaces
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0 || true
+      - name: elan
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh | sh -s -- -y --default-toolchain none
+          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+      - name: cache (sources, toolchains, Lean builds)
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.elan/toolchains
+            refs
+            upstream
+            release/26.06
+            lean/.lake
+            build/rebuild
+          key: fv7z-${{ hashFiles('pins/*', 'patches/*', 'lean/lake-manifest.json', 'lean/lean-toolchain') }}
+          restore-keys: fv7z-
+      - name: setup
+        run: tools/setup.sh
+      - name: checks
+        run: tools/ci.sh
+        env:
+          CI_LOG_DIR: build/ci-logs
+      - name: logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-outputs
+          path: |
+            build/*.insncov.summary
+            build/*.insncov.full.insns
+            build/systrace/union.*
+            build/mintrace/status
+            build/mintrace/functions
+            build/7zzs.featneed.tsv
+            build/7zzs.dispatch.txt
+            build/ci-logs

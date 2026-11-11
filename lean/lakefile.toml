@@ -1,0 +1,59 @@
+# FV_7zip: Lean 4 binary-level verification of 7-Zip 26.06 `7zzs` (linux-x64), see ../PLAN.md.
+# Built on Zellic's x86-64 Linux model (../refs/zellic-x86, pinned commit 059a6a9).
+name = "fv7z"
+version = "0.1.0"
+defaultTargets = ["FV7z"]
+# Keep a runaway elaboration from exhausting this 3 GB machine.
+moreLeanArgs = ["-M2500"]
+moreGlobalServerArgs = ["-M2500"]
+
+[leanOptions]
+autoImplicit = false
+relaxedAutoImplicit = false
+
+[[require]]
+name = "zellic-x86-release"
+path = "../refs/zellic-x86"
+
+[[lean_lib]]
+name = "FV7z"
+
+# G0 measurement tool (not part of any statement): instruction coverage of the model on 7zzs.
+[[lean_exe]]
+name = "insncov"
+root = "Tools.InsnCov"
+
+# The challenges: each checked theorem stated by `sorry`, for `tools/check.sh` (not a default target).
+[[lean_lib]]
+name = "Challenges"
+globs = ["Challenges.+"]
+
+# G1 test tool (not part of any statement): the model's side of the differential test of instruction semantics.
+[[lean_exe]]
+name = "difftest"
+root = "Tools.DiffTest"
+
+# G1 test tool (not part of any statement): the model's side of the differential test of the G1 system calls.
+[[lean_exe]]
+name = "systest"
+root = "Tools.SysTest"
+
+[[lean_exe]]
+name = "xsavetest"
+root = "Tools.XsaveTest"
+
+# G2 measurement tool (not part of any statement): the optional processor features each function needs, for the
+# dispatch check (tools/dispatch.py).
+[[lean_exe]]
+name = "featneed"
+root = "Tools.FeatNeed"
+
+# G2 tool (not part of any statement): the decoder's instructions over a byte range of a binary, for writing `Dec` facts.
+[[lean_exe]]
+name = "decshow"
+root = "Tools.DecShow"
+
+# G2 tool (not part of any statement): the code and decoding facts of a byte range of 7zzs, as Lean source.
+[[lean_exe]]
+name = "resgen"
+root = "Tools.ResGen"

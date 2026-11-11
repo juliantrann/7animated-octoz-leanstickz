@@ -1,0 +1,4 @@
+# The G0 measurements tools/ci.sh holds the project to (PLAN.md §7, G0): a run may lower a count, not raise it. After
+# a change lowers one, write the new count here.
+insncov.full.issues 3
+insncov.min.issues 6538

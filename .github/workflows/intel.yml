@@ -1,0 +1,67 @@
+# PLAN.md §7, G1: the processor-dependent checks (x87, xsave, difftest) on an Intel processor besides the i7-14650HX
+# they were measured on. GitHub assigns the runner's processor; most are AMD EPYC. Each job of the matrix looks at its
+# processor first and stops there unless it is Intel, so a run costs a minute per AMD job and gives every Intel
+# runner it meets a full run of the three checks. Started by hand: gh workflow run intel.yml
+name: intel
+on:
+  workflow_dispatch:
+jobs:
+  intel:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, ubuntu-22.04]
+        try: [1, 2, 3, 4, 5, 6]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 120
+    steps:
+      - name: processor
+        id: cpu
+        run: |
+          model=$(sed -n 's/^model name\s*: //p' /proc/cpuinfo | head -1)
+          flags=$(sed -n 's/^flags\s*: //p' /proc/cpuinfo | head -1)
+          has() { case " $flags " in *" $1 "*) echo yes ;; *) echo no ;; esac; }
+          line="$model; avx512f $(has avx512f), rtm $(has rtm), movbe $(has movbe), bmi1 $(has bmi1)"
+          echo "cpu: $line"
+          echo "- ${{ matrix.os }} #${{ matrix.try }}: $line" >> "$GITHUB_STEP_SUMMARY"
+          if grep -q GenuineIntel /proc/cpuinfo; then echo intel=1 >> "$GITHUB_OUTPUT"; else echo intel=0 >> "$GITHUB_OUTPUT"; fi
+      - if: steps.cpu.outputs.intel == '1'
+        uses: actions/checkout@v4
+      - name: packages
+        if: steps.cpu.outputs.intel == '1'
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -yq strace bubblewrap binutils gcc python3 xz-utils dpkg
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0 || true
+      - name: elan
+        if: steps.cpu.outputs.intel == '1'
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh | sh -s -- -y --default-toolchain none
+          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+      - name: cache (sources, toolchains, Lean builds)
+        if: steps.cpu.outputs.intel == '1'
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            ~/.elan/toolchains
+            refs
+            upstream
+            release/26.06
+            lean/.lake
+            build/rebuild
+          key: fv7z-${{ hashFiles('pins/*', 'patches/*', 'lean/lake-manifest.json', 'lean/lean-toolchain') }}
+          restore-keys: fv7z-
+      - name: setup
+        if: steps.cpu.outputs.intel == '1'
+        run: tools/setup.sh
+      - name: checks
+        if: steps.cpu.outputs.intel == '1'
+        run: tools/ci.sh build x87 xsave difftest
+        env:
+          CI_LOG_DIR: build/ci-logs
+      - name: logs
+        if: always() && steps.cpu.outputs.intel == '1'
+        uses: actions/upload-artifact@v4
+        with:
+          name: intel-${{ matrix.os }}-${{ matrix.try }}
+          path: build/ci-logs

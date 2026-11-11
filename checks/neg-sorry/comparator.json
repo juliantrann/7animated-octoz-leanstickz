@@ -1,0 +1,24 @@
+{
+  "challenge_module": "Challenges.V2606.Sections",
+  "solution_module": "Challenges.V2606.Sections",
+  "theorem_names": [
+    "FV7z.V2606.zzs_valid",
+    "FV7z.V2606.lzmaDecOpt_sec"
+  ],
+  "permitted_axioms": [
+    "propext",
+    "Quot.sound",
+    "Classical.choice"
+  ],
+  "external_kernels": {
+    "con-leche": [
+      "con-leche"
+    ],
+    "con-ron": [
+      "con-ron"
+    ],
+    "nanoda": [
+      "nanoda_bin"
+    ]
+  }
+}

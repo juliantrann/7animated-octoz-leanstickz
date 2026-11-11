@@ -1,0 +1,24 @@
+{
+  "challenge_module": "Challenges.V2606.AuxInit",
+  "solution_module": "FV7z.Auxv.InitHolds",
+  "theorem_names": [
+    "FV7z.V2606.auxInit_holds",
+    "FV7z.V2606.auxInit_table"
+  ],
+  "permitted_axioms": [
+    "propext",
+    "Quot.sound",
+    "Classical.choice"
+  ],
+  "external_kernels": {
+    "con-leche": [
+      "con-leche"
+    ],
+    "con-ron": [
+      "con-ron"
+    ],
+    "nanoda": [
+      "nanoda_bin"
+    ]
+  }
+}

@@ -1,0 +1,38 @@
+import FV7z.Lemmas.Sp
+import FV7z.Lemmas.BlkOps2
+/-!
+# The stretches of straight-line code of `_fini` (PLAN.md G3, startup)
+
+Each distinct stretch between labels and jumps (`p*`, 1 of them) and each distinct jump (`j*`, 0) as its own
+list of bytes: what the model's decoder makes of its instructions on every processor, whatever bytes follow
+(`Leaf.Dec`, by evaluation), their effects (`o*`, `Op`s of `BlkOps.lean`), and the stretch as a `Blk`. Generated from
+the decoder's own output (`decshow`) by `tools/blk_gen.py`.
+-/
+namespace FV7z.Fin
+set_option maxRecDepth 20000
+open ZellicX86 Decode FV7z.Leaf
+
+/-- Decoding at a fixed offset, by evaluation. -/
+macro "dec_rfl" : tactic => `(tactic| (intro feat f; rfl))
+
+/-- The stretch at `0`. -/
+def p0 : List Byte := [
+  0xf3, 0x0f, 0x1e, 0xfa, 0x48, 0x83, 0xec, 0x08, 0x48, 0x83, 0xc4, 0x08]
+
+theorem p0_0 : ∀ feat, Dec feat p0 0 (FV7z.mk .endbr64 32 [] 4) := by dec_rfl
+theorem p0_4 : ∀ feat, Dec feat p0 4 (FV7z.mk .sub 64 [gr 64 4, Src.opd 64 (.i 8)] 4) := by dec_rfl
+theorem p0_8 : ∀ feat, Dec feat p0 8 (FV7z.mk .add 64 [gr 64 4, Src.opd 64 (.i 8)] 4) := by dec_rfl
+
+/-- What the stretch does. -/
+def o0 : List Op := [
+  Op.nop,
+  Op.sub 64 4 (.i 8),
+  Op.add 64 4 (.i 8)]
+
+theorem b0 (prof : Profile) : Blk prof p0 0 12 o0 :=
+  .cons (p0_0 _) (OpI.endbr) (by decide) <|
+  .cons (p0_4 _) (OpI.sub (.i 8) (.inr rfl)) (by decide) <|
+  .cons (p0_8 _) (OpI.add (.i 8) (.inr rfl)) (by decide) <|
+  .nil 12
+
+end FV7z.Fin

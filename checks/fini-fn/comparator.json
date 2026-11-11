@@ -1,0 +1,23 @@
+{
+  "challenge_module": "Challenges.V2606.FiniFn",
+  "solution_module": "FV7z.Fin.InitHolds",
+  "theorem_names": [
+    "FV7z.V2606.finiFn_holds"
+  ],
+  "permitted_axioms": [
+    "propext",
+    "Quot.sound",
+    "Classical.choice"
+  ],
+  "external_kernels": {
+    "con-leche": [
+      "con-leche"
+    ],
+    "con-ron": [
+      "con-ron"
+    ],
+    "nanoda": [
+      "nanoda_bin"
+    ]
+  }
+}

@@ -1,0 +1,12 @@
+# Fetched or built by tools/setup.sh and the tools; pinned in pins/ and patches/, not kept here.
+/refs/
+/upstream/
+/release/
+/build/
+.lake/
+/checks/*/.check.*
+__pycache__/
+# Kept in another repository (private/ is its checkout; the two files are links into it).
+/private/
+/PLAN.md
+/CODEMAP.md

@@ -1,0 +1,13 @@
+{"version": "1.2.0",
+ "packagesDir": ".lake/packages",
+ "packages":
+ [{"type": "path",
+   "scope": "",
+   "name": "«zellic-x86-release»",
+   "manifestFile": "lake-manifest.json",
+   "inherited": false,
+   "dir": "../refs/zellic-x86",
+   "configFile": "lakefile.toml"}],
+ "name": "fv7z",
+ "lakeDir": ".lake",
+ "fixedToolchain": false}
