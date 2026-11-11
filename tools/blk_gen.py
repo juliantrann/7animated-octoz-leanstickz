@@ -181,6 +181,10 @@ FNS = {
     "pti": dict(grp="Pti", cn="__pthread_tunables_init", a=0x5ffbc0, n=72, pos=True, fs=True, stops=(0x42, 0x43),
                 calls=True, tag="PLAN.md G3, startup",
                 src="glibc 2.31's `__pthread_tunables_init` (`nptl/pthread_mutex_conf.c`; `objdump -d`)"),
+    # glibc 2.31 malloc/arena.c. Stops: the `ret` (0x183), `call __stack_chk_fail` (0x184).
+    "pmi": dict(grp="Pmi", cn="ptmalloc_init", a=0x632170, n=0x189, pos=True, fs=True, stops=(0x183, 0x184),
+                calls=True, tag="PLAN.md G3, malloc",
+                src="glibc 2.31's `ptmalloc_init` (`malloc/arena.c`; `objdump -d`)"),
     # glibc 2.31 sysdeps/unix/sysv/linux/x86/elision-conf.c. Stops: the `ret` (0xab), `call __stack_chk_fail` (0xac).
     "eli": dict(grp="Eli", cn="elision_init", a=0x5ffc50, n=0xb1, pos=True, fs=True, stops=(0xab, 0xac),
                 calls=True, tag="PLAN.md G3, startup",

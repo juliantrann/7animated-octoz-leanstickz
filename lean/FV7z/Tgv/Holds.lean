@@ -1,7 +1,7 @@
 import FV7z.Tgv.Cuts
 import FV7z.Raf.Holds
 /-!
-# `__tunable_get_val` of a 32-bit tunable not set (PLAN.md G3, startup)
+# `__tunable_get_val` of a tunable not set (PLAN.md G3, startup)
 
 glibc 2.31's `__tunable_get_val (id, valp, callback)` at `0x66f3a0` in `7zzs` (`elf/dl-tunables.c`), by the blocks
 of `Tgv/Cuts.lean`: for a tunable of type `TUNABLE_TYPE_INT_32` (its type code, at offset 8 of its entry, 0) that
@@ -12,6 +12,9 @@ which not said; here the caller's frame has only 4 bytes for them.)
 - `ent`: a tunable's entry. `ret_96`: the `ret`. `vc_0`, `vc_49`: the verification conditions.
 - `tgv32_ok`: from the entry to the return address, `*valp` the value's low 4 bytes, the registers a call keeps as
   at the entry (`Osv.Back`).
+- `vc_0w`, `vc_104`, `tgv64_ok`: the same for a tunable of another type (its type code not 0: `UINT_64`, `SIZE_T`),
+  `*valp` the value's 8 bytes.
+- `Unset`, `UnsetW`: what the two take of a tunable's entry; `.out`: under stores above the entry.
 -/
 open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn FV7z.Start
 open FV7z.Sga (vo vr vs)
@@ -113,6 +116,93 @@ theorem Unset.out {d : Addr} {V V' : Addr → Byte} {lo hi : Nat} (h : Unset F V
   refine ⟨h.ty, h.va, h.ini, ?_, ?_⟩
   · rw [← h.t0]
     exact congrArg (ofBytesLE 32) (Sga.rd_out ho (by bv_omega) (by bv_omega))
+  · rw [← h.z]
+    exact congrArg (ofBytesLE 8) (Sga.rd_out ho (by bv_omega) (by bv_omega))
+
+/-! ## A tunable of another type: 8 bytes -/
+
+/-- A tunable whose type code is not 0: to the store of its value's 8 bytes. -/
+theorem vc_0w {g : Gprs} {f : Rflags} {V : Addr → Byte} {d : Addr}
+    (hd : BitVec.setWidth 64 (BitVec.setWidth 32 g.rdi) = d)
+    (hty : ∀ i < 4, Foot F.data ((ent d + 8#64).add i)) (hva : ∀ i < 8, Foot F.data ((ent d + 32#64).add i))
+    (ht : rdd(V, ent d + 8#64) ≠ 0) :
+    W_0 F Wl (fun j' g' _ V' => j' = 104 ∧
+      g' = { g with rdi := d, rcx := 7935584#64, rax := rdq(V, ent d + 32#64),
+                    r8 := BitVec.setWidth 64 rdd(V, ent d + 8#64) } ∧ V' = V) g f V := by
+  obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
+  dsimp only at hd
+  simp only [ent] at hty hva ht
+  wpx [W_0, W_42, W_47, o0, o1, o2, hd, ent, BitVec.and_self]
+  exact ⟨hty, hva, fun _ => trivial, fun _ => ⟨fun _ => trivial, fun h => absurd (by simpa using h) ht⟩⟩
+
+/-- The store of the 8 bytes. -/
+theorem vc_104 {g : Gprs} {f : Rflags} {V : Addr → Byte} (hp : ∀ i < 8, Foot Wl (Addr.add g.rsi i)) :
+    W_104 F Wl (fun j' g' _ V' => j' = 49 ∧ g' = g ∧ V' = Vst V g.rsi (toBytesLE g.rax 8)) g f V := by
+  obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
+  wpx [W_104, o6]
+  exact hp
+
+/-- `__tunable_get_val (d, valp, _)` for a tunable `d` of a type other than `TUNABLE_TYPE_INT_32` (its type code
+not 0), not set: the run reaches the return address with the value's 8 bytes at `valp`. -/
+theorem tgv64_ok {d : Addr} (c : Seg prof F Wl L s₀ o) (hin : CodeIn L tgv_at tgv) (hK : KeptW Wl s₀ X)
+    (hA : Agree F X.proc.mm.mem V) (hrip : X.cpu.rip = tgv_at)
+    (hd : BitVec.setWidth 64 (BitVec.setWidth 32 X.cpu.gpr.rdi) = d)
+    (hty : ∀ i < 4, Foot F.data ((ent d + 8#64).add i)) (hva : ∀ i < 8, Foot F.data ((ent d + 32#64).add i))
+    (hin0 : ∀ i < 1, Foot F.data ((ent d + 40#64).add i))
+    (ht : rdd(V, ent d + 8#64) ≠ 0) (hz : rdb(V, ent d + 40#64) = 0)
+    (hp : ∀ i < 8, Foot Wl (Addr.add X.cpu.gpr.rsi i)) (hpf : X.cpu.gpr.rsi.toNat + 8 ≤ 2 ^ 64)
+    (hpd : (ent d + 40#64).toNat < X.cpu.gpr.rsi.toNat ∨ X.cpu.gpr.rsi.toNat + 8 ≤ (ent d + 40#64).toNat)
+    (hl : ∀ i < 8, Foot F.data (Addr.add X.cpu.gpr.rsp i))
+    {e₂ : Addr} {code₂ : List Byte} (hin₂ : CodeIn L e₂ code₂) {j₂ : Nat} (h₂ : j₂ < code₂.length)
+    (hra : rdq(V, X.cpu.gpr.rsp) = e₂.add j₂) (hs8 : X.cpu.gpr.rsp.toNat + 8 ≤ 2 ^ 64)
+    (hrd : X.cpu.gpr.rsp.toNat + 8 ≤ X.cpu.gpr.rsi.toNat ∨ X.cpu.gpr.rsi.toNat + 8 ≤ X.cpu.gpr.rsp.toNat)
+    (k : ∀ g' Z t', KeptW Wl s₀ Z →
+      Agree F Z.proc.mm.mem (Vst V X.cpu.gpr.rsi (toBytesLE rdq(V, ent d + 32#64) 8)) →
+      Z.cpu.rip = e₂.add j₂ → Z.cpu.gpr = g' → Osv.Back X.cpu.gpr g' → GoG prof L o gev gP gE Z t') :
+    GoG prof L o gev gP gE X t := by
+  refine (c_0 prof).run c hin _ hK hA (by rw [addr_add_zero]; exact hrip) (vc_0w hd hty hva ht) ?_
+  rintro j' g fl V₀ ⟨rfl, rfl, rfl⟩ Y₀ t₀ hK₀ hA₀ hr₀ hg₀ -
+  refine (c_104 prof).run c hin _ hK₀ hA₀ hr₀ (vc_104 (by rw [hg₀]; exact hp)) ?_
+  rintro j' g fl V₁ ⟨rfl, rfl, rfl⟩ Y₁ t₁ hK₁ hA₁ hr₁ hg₁ -
+  have e₁ : Vst V₀ Y₀.cpu.gpr.rsi (toBytesLE Y₀.cpu.gpr.rax 8) =
+      Vst V₀ X.cpu.gpr.rsi (toBytesLE rdq(V₀, ent d + 32#64) 8) := by rw [hg₀]
+  rw [e₁] at hA₁
+  have hz₁ : rdb(Vst V₀ X.cpu.gpr.rsi (toBytesLE rdq(V₀, ent d + 32#64) 8), ent d + 40#64) = 0 := by
+    pv
+    exact hz
+  refine (c_49 prof).run c hin _ hK₁ hA₁ hr₁ (vc_49 (by rw [hg₁, hg₀]) (by rw [hg₁, hg₀]) hin0 hz₁) ?_
+  rintro j' g fl V₂ ⟨rfl, rfl, rfl⟩ Y₂ t₂ hK₂ hA₂ hr₂ hg₂ -
+  have hsp₂ : Y₂.cpu.gpr.rsp = X.cpu.gpr.rsp := by rw [hg₂, hg₁, hg₀]
+  refine c.s_ret hK₂ hA₂ hin (lt_len (by decide)) hr₂ (ret_96 _) (fun i hi => by rw [hsp₂]; exact hl i hi) hin₂ h₂
+    ?_ ?_
+  · rw [hsp₂, ← hra]
+    pv
+  rintro Z t' hKZ hAZ ⟨hrZ, hgZ⟩
+  have keep : Y₂.cpu.gpr.rbx = X.cpu.gpr.rbx ∧ Y₂.cpu.gpr.rbp = X.cpu.gpr.rbp ∧ Y₂.cpu.gpr.r12 = X.cpu.gpr.r12 ∧
+      Y₂.cpu.gpr.r13 = X.cpu.gpr.r13 ∧ Y₂.cpu.gpr.r14 = X.cpu.gpr.r14 ∧ Y₂.cpu.gpr.r15 = X.cpu.gpr.r15 := by
+    rw [hg₂, hg₁, hg₀]
+    exact ⟨rfl, rfl, rfl, rfl, rfl, rfl⟩
+  refine k _ Z t' hKZ hAZ hrZ hgZ ⟨?_, keep.1, keep.2.1, keep.2.2.1, keep.2.2.2.1, keep.2.2.2.2.1, keep.2.2.2.2.2⟩
+  show Y₂.cpu.gpr.rsp + 8 = _
+  rw [hsp₂]
+  rfl
+
+/-- A tunable `d` of a type other than `TUNABLE_TYPE_INT_32` not set, as `tgv64_ok` takes it. -/
+structure UnsetW (F : Footprint) (V : Addr → Byte) (d : Addr) : Prop where
+  ty : ∀ i < 4, Foot F.data ((ent d + 8#64).add i)
+  va : ∀ i < 8, Foot F.data ((ent d + 32#64).add i)
+  ini : ∀ i < 1, Foot F.data ((ent d + 40#64).add i)
+  tw : rdd(V, ent d + 8#64) ≠ 0
+  z : rdb(V, ent d + 40#64) = 0
+
+/-- The same of bytes that are `V`'s outside a range above the entry. -/
+theorem UnsetW.out {d : Addr} {V V' : Addr → Byte} {lo hi : Nat} (h : UnsetW F V d) (hd : (ent d).toNat + 48 ≤ lo)
+    (hlo : lo ≤ 2 ^ 64) (ho : ∀ a : Addr, ¬ (lo ≤ a.toNat ∧ a.toNat < hi) → V' a = V a) : UnsetW F V' d := by
+  refine ⟨h.ty, h.va, h.ini, ?_, ?_⟩
+  · have e : rdd(V', ent d + 8#64) = rdd(V, ent d + 8#64) :=
+      congrArg (ofBytesLE 32) (Sga.rd_out ho (by bv_omega) (by bv_omega))
+    rw [e]
+    exact h.tw
   · rw [← h.z]
     exact congrArg (ofBytesLE 8) (Sga.rd_out ho (by bv_omega) (by bv_omega))
 
