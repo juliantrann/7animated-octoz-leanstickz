@@ -224,3 +224,7 @@ import FV7z.Raf.Holds
 import FV7z.Lpi.Holds
 import FV7z.Tgv.Holds
 import FV7z.Pti.Holds
+import FV7z.Lemmas.BlkOps11
+import FV7z.Lemmas.Rmw3
+import FV7z.Nef.Holds
+import FV7z.Cxa.Holds

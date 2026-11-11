@@ -150,6 +150,18 @@ FNS = {
     "raf": dict(grp="Raf", cn="__register_atfork", a=0x62da60, n=439, pos=True, fs=True, vop=True,
                 stops=(0xbf, 0xc0, 0x118, 0x150), calls=True, hand=(0x2b, 0xaa), tag="PLAN.md G3, startup",
                 src="glibc 2.31's `__register_atfork` (`nptl/register-atfork.c`; `objdump -d`)"),
+    # glibc 2.31 stdlib/cxa_atexit.c (`__cxa_atexit`, its `__internal_atexit` inlined). Stops: the `ret` (0x91), the
+    # process has more than one thread (0x98: the lock is taken with `lock cmpxchg`; 0xc0: it is released with `xchg`),
+    # `__new_exitfn` gave no entry (0xed), the function is null (0x108: `__assert_fail`). By hand: `cmpxchg [m], r`
+    # (0x2f), `sub dword [m], 1` (0x82).
+    "cxa": dict(grp="Cxa", cn="__cxa_atexit", a=0x623690, n=318, pos=True, fs=True,
+                stops=(0x91, 0x98, 0xc0, 0xed, 0x108), calls=True, hand=(0x2f, 0x82), tag="PLAN.md G3, startup",
+                src="glibc 2.31's `__cxa_atexit` (`stdlib/cxa_atexit.c`; `objdump -d`)"),
+    # glibc 2.31 stdlib/cxa_atexit.c. Stops: the `ret` (0xaa), the last block is full (0xb3: `calloc`), the list is
+    # null (0xde: `__assert_fail`), `__exit_funcs_done` is set (0xfd). By hand: `add qword [m], 1` (0x9c).
+    "nef": dict(grp="Nef", cn="__new_exitfn", a=0x623430, n=0x111, pos=True, stops=(0xaa, 0xb3, 0xde, 0xfd),
+                calls=True, hand=(0x9c,), tag="PLAN.md G3, startup",
+                src="glibc 2.31's `__new_exitfn` (`stdlib/cxa_atexit.c`; `objdump -d`)"),
     # glibc 2.31 nptl/nptl-init.c (`__pthread_tunables_init`, static). Stops: the `ret` (0x42), `__stack_chk_fail`
     # (0x43).
     "pti": dict(grp="Pti", cn="__pthread_tunables_init", a=0x5ffbc0, n=72, pos=True, fs=True, stops=(0x42, 0x43),
@@ -393,6 +405,8 @@ def effect(mn, sz, ol, pc=None):
                 f"OpI.{mn} {src(ops[1])}")
     if mn in ('shl', 'shr', 'sar') and sz == 64 and ks in (('r', 'r'), ('r', 'i')):   # FV7z/Lemmas/BlkOps3.lean
         return tsrc(8), f"Op.{mn}64 {f[0][1]} {src(ops[1])}", f"OpI.{mn}64 {src(ops[1])}"
+    if mn in ('rol', 'ror') and sz == 64 and ks in (('r', 'r'), ('r', 'i')):   # FV7z/Lemmas/BlkOps11.lean
+        return tsrc(8), f"Op.{mn}64 {f[0][1]} {src(ops[1])}", f"OpI.{mn}64 {src(ops[1])}"
     if mn in ('push', 'pop') and ks == ('r',) and sz == 64:
         return terms, f"Op.{mn} {f[0][1]}", f"OpI.{mn}"
     raise Exception(f"no effect for {mn} {sz} {ol}")
@@ -586,7 +600,7 @@ end FV7z.{grp}
                          f"theorem j{k}_0 : ∀ feat, Dec feat j{k} 0 (FV7z.mk {mnl(mn)} {sz} [{operand(ol[0])[1]}] {ln}) := "
                          "by dec_rfl\n")
     open(out + "/Pats.lean", "w").write(f"""import FV7z.Lemmas.Sp{"Fs" if FSM else ""}
-{"import FV7z.Lemmas.BlkOps10" + chr(10) if any("Op.cmpm 16" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps9" + chr(10) if any("Op.cmpma" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps8" + chr(10) if any(k in x for x in P for k in ("Op.vla", "Op.vsa", "Op.addma", "Op.cmpmia 8", "Op.stia 8")) else ""}{"import FV7z.Lemmas.BlkOps7" + chr(10) if any(k in x for x in P for k in ("Op.vl", "Op.vs", "Op.cdqe")) else ""}{"import FV7z.Lemmas.BlkOps6" + chr(10) if any(k in x for x in P for k in ("Op.stf8", "Op.stfi", "Op.xormf")) else ""}{("import FV7z.Lemmas.BlkOps5" if any("Op.ldsxb" in x for x in P) else
+{"import FV7z.Lemmas.BlkOps11" + chr(10) if any(k in x for x in P for k in ("Op.rol64", "Op.ror64")) else ""}{"import FV7z.Lemmas.BlkOps10" + chr(10) if any("Op.cmpm 16" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps9" + chr(10) if any("Op.cmpma" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps8" + chr(10) if any(k in x for x in P for k in ("Op.vla", "Op.vsa", "Op.addma", "Op.cmpmia 8", "Op.stia 8")) else ""}{"import FV7z.Lemmas.BlkOps7" + chr(10) if any(k in x for x in P for k in ("Op.vl", "Op.vs", "Op.cdqe")) else ""}{"import FV7z.Lemmas.BlkOps6" + chr(10) if any(k in x for x in P for k in ("Op.stf8", "Op.stfi", "Op.xormf")) else ""}{("import FV7z.Lemmas.BlkOps5" if any("Op.ldsxb" in x for x in P) else
   "import FV7z.Lemmas.BlkOps4" if any("Op.imul64" in x for x in P) else
   "import FV7z.Lemmas.BlkOps3" if any(k in x for x in P for k in ("Op.shl64", "Op.shr64", "Op.sar64")) else
   "import FV7z.Lemmas.BlkOps2") + chr(10) if pos else ""}/-!
