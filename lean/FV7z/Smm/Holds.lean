@@ -12,6 +12,8 @@ The three runs of `Smm/PartA.lean`, `Smm/PartB.lean` and `Smm/PartC.lean`, one a
   the first left (`V₂`), which is `Va` over the bytes at the entry, each but for the stack below and `__curbrk`.
 - `Ve_eq`, `Ve_rd`, `Ve_out`: the bytes at the return as seven stores; the top, the two size words and the
   arena's two sizes read from them; the bytes outside those are the bytes under `Ve`.
+- `Va_out`, `Vb_out`, `sm_same`: a byte at the return outside the new pages, the stack below the entry's stack
+  pointer, `__curbrk` and the words above is as at the entry.
 -/
 open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn FV7z.Start
 open FV7z.Tun (rd_Vst rd_Vst_self Vst_out)
@@ -415,5 +417,48 @@ theorem Ve_out (g : Gprs) (V : Addr → Byte) (sm ab : BitVec 64) (hu : ab.toNat
   rw [Ve_eq, Vst_out _ _ _ _ (by sd) (by sd), Vst_out _ _ _ _ (by sd) (by sd), Vst_out _ _ _ _ (by sd) (by sd),
     Vst_out _ _ _ _ (by sd) (by sd), Vst_out _ _ _ _ (by sd) (by sd), Vst_out _ _ _ _ (by sd) (by sd),
     Vst_out _ _ _ _ (by sd) (by sd)]
+
+/-! ## The bytes the call leaves as they were -/
+
+/-- The bytes at the first call outside the frame: those at the entry. -/
+theorem Va_out (g : Gprs) (V : Addr → Byte) (hsp : 104 ≤ g.rsp.toNat) {a : Addr}
+    (h : ¬ (g.rsp.toNat - 104 ≤ a.toNat ∧ a.toNat < g.rsp.toNat)) : Va g V a = V a := by
+  obtain ⟨q1, q2, q3, q4, q5, q6⟩ := fl g.rsp
+  unfold Va
+  simp only [q1, q2, q3, q4, q5, q6]
+  clear q1 q2 q3 q4 q5 q6
+  rw [Vst_out _ _ _ _ (by sd) (by sd), Vst_out _ _ _ _ (by sd) (by sd), Vst_out _ _ _ _ (by sd) (by sd),
+    Vst_out _ _ _ _ (by sd) (by sd), Vst_out _ _ _ _ (by sd) (by sd), Vst_out _ _ _ _ (by sd) (by sd),
+    Vst_out _ _ _ _ (by sd) (by sd), Vst_out _ _ _ _ (by sd) (by sd), Vst_out _ _ _ _ (by sd) (by sd),
+    Vst_out _ _ _ _ (by sd) (by sd), Vst_out _ _ _ _ (by sd) (by sd)]
+
+/-- The bytes at 1644 outside `mp_.sbrk_base`, `av->system_mem` and the frame's second word: those at 900. -/
+theorem Vb_out (g : Gprs) (V : Addr → Byte) (sm : BitVec 64) (hsp : g.rsp.toNat + 16 ≤ 2 ^ 64) {a : Addr}
+    (h1 : ¬ (7940584 ≤ a.toNat ∧ a.toNat < 7940592)) (h2 : ¬ (7942856 ≤ a.toNat ∧ a.toNat < 7942864))
+    (h3 : ¬ (g.rsp.toNat + 8 ≤ a.toNat ∧ a.toNat < g.rsp.toNat + 16)) : Vb g V sm a = V a := by
+  unfold Vb
+  rw [Vst_out _ _ _ _ (by sd) (by sd), Vst_out _ _ _ _ (by sd) (by sd), Vst_out _ _ _ _ (by sd) (by sd)]
+
+/-- A byte at the return of `sysmalloc` (`sm_ok`) that is not in the new pages, the 160 bytes below the entry's
+stack pointer, `__curbrk`, `mp_.sbrk_base`, `av->top`, the arena's two sizes or the two size words in the heap: as
+at the entry. -/
+theorem sm_same {gX g₂ g₃ : Gprs} {V V₂ V₃ : Addr → Byte} {sm sm' ab : BitVec 64} {lo hi : Nat}
+    (hsp : 160 ≤ gX.rsp.toNat) (h2 : g₂.rsp.toNat = gX.rsp.toNat - 104)
+    (hu : ab.toNat + g₃.rbp.toNat + 16 ≤ 2 ^ 64)
+    (hfr₂ : ∀ a : Addr, ¬ (lo ≤ a.toNat ∧ a.toNat < hi) →
+      ¬ (gX.rsp.toNat - 160 ≤ a.toNat ∧ a.toNat < gX.rsp.toNat - 104) →
+      ¬ (0x7a4c38 ≤ a.toNat ∧ a.toNat < 0x7a4c40) → V₂ a = Va gX V a)
+    (hfr₃ : ∀ a : Addr, ¬ (gX.rsp.toNat - 160 ≤ a.toNat ∧ a.toNat < gX.rsp.toNat - 104) →
+      ¬ (0x7a4c38 ≤ a.toNat ∧ a.toNat < 0x7a4c40) → V₃ a = Vb g₂ V₂ sm a)
+    {a : Addr} (a1 : ¬ (lo ≤ a.toNat ∧ a.toNat < hi))
+    (a2 : ¬ (gX.rsp.toNat - 160 ≤ a.toNat ∧ a.toNat < gX.rsp.toNat))
+    (a3 : ¬ (0x7a4c38 ≤ a.toNat ∧ a.toNat < 0x7a4c40)) (a4 : ¬ (7940584 ≤ a.toNat ∧ a.toNat < 7940592))
+    (a5 : ¬ (7940768 ≤ a.toNat ∧ a.toNat < 7940776)) (a6 : ¬ (7942856 ≤ a.toNat ∧ a.toNat < 7942872))
+    (a7 : ¬ (ab.toNat + 8 ≤ a.toNat ∧ a.toNat < ab.toNat + 16))
+    (a8 : ¬ (ab.toNat + g₃.rbp.toNat + 8 ≤ a.toNat ∧ a.toNat < ab.toNat + g₃.rbp.toNat + 16)) :
+    Ve g₃ V₃ sm' ab a = V a := by
+  rw [Ve_out g₃ V₃ sm' ab hu a5 a7 a8 a6, hfr₃ a (by omega) a3,
+    Vb_out g₂ V₂ sm (by omega) a4 (by omega) (by omega), hfr₂ a a1 (by omega) a3,
+    Va_out gX V (by omega) (by omega)]
 
 end FV7z.Smm
