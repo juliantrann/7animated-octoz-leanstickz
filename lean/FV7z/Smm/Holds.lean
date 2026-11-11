@@ -14,6 +14,8 @@ The three runs of `Smm/PartA.lean`, `Smm/PartB.lean` and `Smm/PartC.lean`, one a
   arena's two sizes read from them; the bytes outside those are the bytes under `Ve`.
 - `Va_out`, `Vb_out`, `sm_same`: a byte at the return outside the new pages, the stack below the entry's stack
   pointer, `__curbrk` and the words above is as at the entry.
+- `Vb_sb`, `sm_brk`: at the return `mp_.sbrk_base` is the break of the entry, `__curbrk` as the second `MORECORE`
+  left it.
 -/
 open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn FV7z.Start
 open FV7z.Tun (rd_Vst rd_Vst_self Vst_out)
@@ -460,5 +462,28 @@ theorem sm_same {gX g₂ g₃ : Gprs} {V V₂ V₃ : Addr → Byte} {sm sm' ab :
   rw [Ve_out g₃ V₃ sm' ab hu a5 a7 a8 a6, hfr₃ a (by omega) a3,
     Vb_out g₂ V₂ sm (by omega) a4 (by omega) (by omega), hfr₂ a a1 (by omega) a3,
     Va_out gX V (by omega) (by omega)]
+
+/-- `mp_.sbrk_base` in the bytes at 1644: the break before the first `MORECORE`. -/
+theorem Vb_sb (g : Gprs) (V : Addr → Byte) (sm : BitVec 64) (h1 : 8029888 ≤ g.rsp.toNat)
+    (h2 : g.rsp.toNat + 16 ≤ 2 ^ 64) : rdq(Vb g V sm, 7940584#64) = g.rax := by
+  unfold Vb
+  rw [rd_Vst _ _ _ _ _ (by sd) (by sd) (.inr (by sd)), rd_Vst _ _ _ _ _ (by sd) (by sd) (.inr (by sd)),
+    rd_Vst_self _ _ _ (by sd) (by sd), ofBytesLE_toBytesLE (n := 8) rfl]
+
+/-- At the return of `sysmalloc` (`sm_ok`), `mp_.sbrk_base` is the break of the entry and `__curbrk` is as the
+second `MORECORE` left it. -/
+theorem sm_brk {gX g₂ g₃ : Gprs} {V₂ V₃ : Addr → Byte} {sm sm' ab : BitVec 64}
+    (hsp : 8029888 + 160 ≤ gX.rsp.toNat) (h2 : g₂.rsp.toNat = gX.rsp.toNat - 104)
+    (hab : 8029888 ≤ ab.toNat) (hu : ab.toNat + g₃.rbp.toNat + 16 ≤ 2 ^ 64)
+    (hfr₃ : ∀ a : Addr, ¬ (gX.rsp.toNat - 160 ≤ a.toNat ∧ a.toNat < gX.rsp.toNat - 104) →
+      ¬ (0x7a4c38 ≤ a.toNat ∧ a.toNat < 0x7a4c40) → V₃ a = Vb g₂ V₂ sm a) :
+    rdq(Ve g₃ V₃ sm' ab, 7940584#64) = g₂.rax ∧ rdq(Ve g₃ V₃ sm' ab, curbrk) = rdq(V₃, curbrk) := by
+  have e1 : (7940584#64 : BitVec 64).toNat = 7940584 := rfl
+  have e2 : curbrk.toNat = 8014904 := by decide
+  refine ⟨?_, ?_⟩
+  · rw [rd_eq (V := V₃) (by decide) fun a h1 h2 => Ve_out g₃ V₃ sm' ab hu (by omega) (by omega) (by omega) (by omega),
+      rd_eq (V := Vb g₂ V₂ sm) (by decide) fun a h1 h2 => hfr₃ a (by omega) (by omega)]
+    exact Vb_sb g₂ V₂ sm (by omega) (by omega)
+  · rw [rd_eq (V := V₃) (by decide) fun a h1 h2 => Ve_out g₃ V₃ sm' ab hu (by omega) (by omega) (by omega) (by omega)]
 
 end FV7z.Smm
