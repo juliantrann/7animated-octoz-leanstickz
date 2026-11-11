@@ -245,3 +245,5 @@ import FV7z.Fdm.Holds
 import FV7z.Csu.Fd
 import FV7z.Sbrk.Next
 import FV7z.Dmc.Holds
+import FV7z.Lemmas.CallR
+import FV7z.Smm.Vc

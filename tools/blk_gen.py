@@ -214,6 +214,17 @@ FNS = {
     "dmc": dict(grp="Dmc", cn="__default_morecore", a=0x635ab0, n=0x1f, pos=True, stops=(0x1e,), calls=True,
                 tag="PLAN.md G3, `malloc`",
                 src="glibc 2.31's `__default_morecore` (`malloc/morecore.c`; `objdump -d`)"),
+    # glibc 2.31 malloc/malloc.c, the way of the first call (the main arena, its top the initial one, of size 0, the
+    # heap contiguous, no hook). Stops: no arena (0x290), a request not below the `mmap` threshold (0x190), a top
+    # that is not the initial one (0x6d), the assertions (0x755, 0x7fc), another arena (0xa9), a heap not
+    # contiguous (0x400, 0x7d3), nothing to ask for (0x4fd), `MORECORE` failing (0x4f0, 0x6d0),
+    # `__after_morecore_hook` set (0x6f8, 0x718), `mp_.sbrk_base` set (0x3ca), the new space following the old top
+    # (0x3dc), an old top of some size (0x632, 0x5cf), no room (0x270), the `ret` (0x18e).
+    "smm": dict(grp="Smm", cn="sysmalloc", a=0x630360, n=0x880, pos=True,
+                stops=(0x290, 0x190, 0x6d, 0x755, 0x7fc, 0xa9, 0x400, 0x7d3, 0x4fd, 0x4f0, 0x6d0, 0x6f8, 0x718, 0x3ca,
+                       0x3dc, 0x632, 0x5cf, 0x270, 0x18e),
+                calls=True, tag="PLAN.md G3, `malloc`",
+                src="glibc 2.31's `sysmalloc` (`malloc/malloc.c`; `objdump -d`)"),
     "eli": dict(grp="Eli", cn="elision_init", a=0x5ffc50, n=0xb1, pos=True, fs=True, stops=(0xab, 0xac),
                 calls=True, tag="PLAN.md G3, startup",
                 src="glibc 2.31's `elision_init` (`sysdeps/unix/sysv/linux/x86/elision-conf.c`; `objdump -d`)"),
@@ -375,6 +386,17 @@ def effect(mn, sz, ol, pc=None):
         return terms, "Op.nop", "OpI.endbr"
     if mn in ('cmp', 'test') and sz == 8 and ks in (('r', 'r'), ('r', 'i')):
         return tsrc(8), f"Op.{mn} 8 {f[0][1]} {src(ops[1])}", f"OpI.{mn}8 {src(ops[1])}"
+    if mn == 'cmp' and ks == ('m', 'r') and sz in (32, 64):   # FV7z/Lemmas/BlkOps12.lean
+        assert f[0][4] == sz
+        return terms, f"Op.cmpmr {sz} {mem(ops[0])} {f[1][1]}", f"OpI.cmpmr {hw2(sz)}"
+    if mn == 'cmp' and ks == ('mr', 'r') and sz in (32, 64):
+        assert f[0][1] == sz
+        return terms, f"Op.cmpmra {sz} {absa(ops[0])} {f[1][1]}", f"OpIA.cmpmr_rip {hw2(sz)} (by decide)"
+    if mn == 'test' and ks == ('m', 'i') and sz == 8:
+        assert f[0][4] == 8
+        return terms, f"Op.testmi 8 {mem(ops[0])} {f[1][1]}", "OpI.testmi8"
+    if mn == 'test' and ks == ('mr', 'i') and sz == 8:
+        return terms, f"Op.testmia 8 {absa(ops[0])} {f[1][1]}", "OpIA.testmi8_rip (by decide)"
     if mn == 'cmp' and ks == ('m', 'i') and sz in (8, 32):
         assert f[0][4] == sz
         return terms, f"Op.cmpmi {sz} {mem(ops[0])} {f[1][1]}", f"OpI.cmpmi {'(.inl rfl)' if sz == 8 else '(.inr rfl)'}"
@@ -650,7 +672,7 @@ end FV7z.{grp}
                          f"theorem j{k}_0 : ∀ feat, Dec feat j{k} 0 (FV7z.mk {mnl(mn)} {sz} [{operand(ol[0])[1]}] {ln}) := "
                          "by dec_rfl\n")
     open(out + "/Pats.lean", "w").write(f"""import FV7z.Lemmas.Sp{"Fs" if FSM else ""}
-{"import FV7z.Lemmas.BlkOps11" + chr(10) if any(k in x for x in P for k in ("Op.rol64", "Op.ror64")) else ""}{"import FV7z.Lemmas.BlkOps10" + chr(10) if any("Op.cmpm 16" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps9" + chr(10) if any("Op.cmpma" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps8" + chr(10) if any(k in x for x in P for k in ("Op.vla", "Op.vsa", "Op.addma", "Op.cmpmia 8", "Op.stia 8")) else ""}{"import FV7z.Lemmas.BlkOps7" + chr(10) if any(k in x for x in P for k in ("Op.vl", "Op.vs", "Op.cdqe")) else ""}{"import FV7z.Lemmas.BlkOps6" + chr(10) if any(k in x for x in P for k in ("Op.stf8", "Op.stfi", "Op.xormf")) else ""}{("import FV7z.Lemmas.BlkOps5" if any("Op.ldsxb" in x for x in P) else
+{"import FV7z.Lemmas.BlkOps12" + chr(10) if any(k in x for x in P for k in ("Op.cmpmr", "Op.testmi")) else ""}{"import FV7z.Lemmas.BlkOps11" + chr(10) if any(k in x for x in P for k in ("Op.rol64", "Op.ror64")) else ""}{"import FV7z.Lemmas.BlkOps10" + chr(10) if any("Op.cmpm 16" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps9" + chr(10) if any("Op.cmpma" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps8" + chr(10) if any(k in x for x in P for k in ("Op.vla", "Op.vsa", "Op.addma", "Op.cmpmia 8", "Op.stia 8")) else ""}{"import FV7z.Lemmas.BlkOps7" + chr(10) if any(k in x for x in P for k in ("Op.vl", "Op.vs", "Op.cdqe")) else ""}{"import FV7z.Lemmas.BlkOps6" + chr(10) if any(k in x for x in P for k in ("Op.stf8", "Op.stfi", "Op.xormf")) else ""}{("import FV7z.Lemmas.BlkOps5" if any("Op.ldsxb" in x for x in P) else
   "import FV7z.Lemmas.BlkOps4" if any("Op.imul64" in x for x in P) else
   "import FV7z.Lemmas.BlkOps3" if any(k in x for x in P for k in ("Op.shl64", "Op.shr64", "Op.sar64")) else
   "import FV7z.Lemmas.BlkOps2") + chr(10) if pos else ""}/-!
