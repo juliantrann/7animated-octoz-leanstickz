@@ -162,6 +162,10 @@ FNS = {
     "nef": dict(grp="Nef", cn="__new_exitfn", a=0x623430, n=0x111, pos=True, stops=(0xaa, 0xb3, 0xde, 0xfd),
                 calls=True, hand=(0x9c,), tag="PLAN.md G3, startup",
                 src="glibc 2.31's `__new_exitfn` (`stdlib/cxa_atexit.c`; `objdump -d`)"),
+    # glibc 2.31 csu/elf-init.c. Stop: the `ret` (0x93). The two `call *(%r15,%rbx,8)` (0x40, 0x78) and the `call`
+    # of `_init` (0x5b) are cut points by `calls`.
+    "csu": dict(grp="Csu", cn="__libc_csu_init", a=0x613ca0, n=0x94, pos=True, stops=(0x93,), calls=True,
+                tag="PLAN.md G3, startup", src="glibc 2.31's `__libc_csu_init` (`csu/elf-init.c`; `objdump -d`)"),
     # glibc 2.31 sysdeps/x86_64/setjmp.S with `__sigjmp_save` (setjmp/sigjmp.c) after it, where its last `jmp` goes.
     # Stops: the `ret` (0x82), a signal mask to save (0x88). By hand: `rdsspq rax` (0x59).
     "ssj": dict(grp="Ssj", cn="__sigsetjmp", a=0x67e040, n=0xa4, pos=True, fs=True, stops=(0x82, 0x88), calls=True,
