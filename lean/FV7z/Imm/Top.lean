@@ -5,6 +5,7 @@ import FV7z.Imm.Tail
 - `vc_2549`: what the pieces from offset 2549 need on the way of the first call: `av` the main arena, the top's
   size not above `av->system_mem` and below `nb + MINSIZE`, no fast chunks. They end at the `call` (offset 3280)
   with `av` in `rsi`, `nb` in `rdi`; the one store is of `r11` in the frame.
+- `im_b`: the run from offset 2549 to the entry of `sysmalloc`, the return address pushed.
 -/
 open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn FV7z.Start
 open FV7z.Raf (off_ft)
@@ -53,4 +54,45 @@ theorem vc_2549 {fb tp szw sm : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte
   · omega
   · rw [h] at hlt
     omega
+
+variable {prof : Profile} {L : List (Addr × List Byte)} {s₀ X : State} {o : Oracle} {t : Nat}
+  {gev : List Event} {gP : State → Nat → List Event → Prop} {gE : Outcome → List Event → Prop} {V : Addr → Byte}
+
+/-- From offset 2549 (`use_top`) under `vc_2549`'s conditions: the run reaches the entry of `sysmalloc` with the
+arena in `rsi`, `nb` in `rdi`, the return address (offset 3285) pushed; the bytes are those before with `r11` in the
+frame and the return address below it. -/
+theorem im_b {fb tp szw sm : Addr} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb)
+    (hin : CodeIn L imm_at imm) (hinS : CodeIn L Smm.smm_at Smm.smm) (hK : KeptW Wl s₀ X)
+    (hA : Agree F X.proc.mm.mem V) (hrip : X.cpu.rip = imm_at.add 2549) (hbx : X.cpu.gpr.rbx = 7940672#64)
+    (hsp : 8029888 ≤ X.cpu.gpr.rsp.toNat) (hsp2 : X.cpu.gpr.rsp.toNat + 40 ≤ 2 ^ 64)
+    (hW : ∀ a : Addr, 7940480 ≤ a.toNat → a.toNat < 7943136 → Foot F.data a)
+    (htf : ∀ i < 8, Foot F.data (Addr.add (tp + 8#64) i))
+    (hst : ∀ i < 8, Foot Wl (Addr.add (X.cpu.gpr.rsp + 24#64) i))
+    (hsd : ∀ i < 40, Foot F.data (Addr.add X.cpu.gpr.rsp i))
+    (hlr : ∀ i < 8, Foot Wl (Addr.add (X.cpu.gpr.rsp - 8) i))
+    (htop : rdq(V, 7940768#64) = tp) (hsz : rdq(V, tp + 8#64) = szw) (hsm : rdq(V, 7942856#64) = sm)
+    (hle : (szw &&& 18446744073709551608#64).toNat ≤ sm.toNat)
+    (hlt : (szw &&& 18446744073709551608#64).toNat < (X.cpu.gpr.r13 + 32#64).toNat)
+    (hfc : rdd(V, 7940680#64) = 0)
+    (k : ∀ Z t', KeptW Wl s₀ Z →
+      Agree F Z.proc.mm.mem (Vst (Vst V (X.cpu.gpr.rsp + 24#64) (toBytesLE X.cpu.gpr.r11 8))
+        (X.cpu.gpr.rsp - 8) (toBytesLE (imm_at.add (3280 + 5)) 8)) →
+      Z.cpu.rip = Smm.smm_at → Z.cpu.gpr.rsi = 7940672#64 → Z.cpu.gpr.rdi = X.cpu.gpr.r13 →
+      (Z.cpu.gpr.rsp = X.cpu.gpr.rsp - 8 ∧ Z.cpu.gpr.rbp = rdq(V, X.cpu.gpr.rsp + 32#64) ∧
+        Z.cpu.gpr.rbx = X.cpu.gpr.rbx ∧ Z.cpu.gpr.r12 = X.cpu.gpr.r12 ∧ Z.cpu.gpr.r13 = X.cpu.gpr.r13 ∧
+        Z.cpu.gpr.r14 = X.cpu.gpr.r14 ∧ Z.cpu.gpr.r15 = X.cpu.gpr.r15) →
+      GoG prof L o gev gP gE Z t') :
+    GoG prof L o gev gP gE X t := by
+  refine (c_2549 prof fb).run c hfs hin _ hK hA hrip
+    (vc_2549 hbx hsp hsp2 hW htf hst hsd htop hsz hsm hle hlt hfc) ?_
+  rintro j' g fl V₁ ⟨rfl, rfl, hsi, hdi, hbp, hsp₁, hbx₁, h12, h13, h14, h15⟩ Y t₁ hK₁ hA₁ hr₁ hg₁ -
+  subst hg₁
+  refine c.s_call hK₁ hA₁ hin (lt_len (by decide)) hr₁ (call_3280 _) hinS (Smm.lt_len (j := 0) (by decide))
+    tgt_3280 (by rw [hsp₁]; exact hlr) ?_
+  rintro Z t' hK' hA' ⟨hr', hg'⟩
+  rw [hsp₁] at hA' hg'
+  refine k Z t' hK' hA' hr' (by rw [hg']; exact hsi) (by rw [hg']; exact hdi) ⟨by rw [hg']; rfl,
+    by rw [hg']; exact hbp, by rw [hg']; exact hbx₁, by rw [hg']; exact h12, by rw [hg']; exact h13,
+    by rw [hg']; exact h14, by rw [hg']; exact h15⟩
+
 end FV7z.Imm
