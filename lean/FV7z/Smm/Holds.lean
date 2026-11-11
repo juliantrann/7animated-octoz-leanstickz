@@ -16,6 +16,7 @@ The three runs of `Smm/PartA.lean`, `Smm/PartB.lean` and `Smm/PartC.lean`, one a
   pointer, `__curbrk` and the words above is as at the entry.
 - `Vb_sb`, `sm_brk`: at the return `mp_.sbrk_base` is the break of the entry, `__curbrk` as the second `MORECORE`
   left it.
+- `sm_zero`: the new pages' bytes are 0 at the return, but for the two size words.
 -/
 open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn FV7z.Start
 open FV7z.Tun (rd_Vst rd_Vst_self Vst_out)
@@ -485,5 +486,21 @@ theorem sm_brk {gX g₂ g₃ : Gprs} {V₂ V₃ : Addr → Byte} {sm sm' ab : Bi
       rd_eq (V := Vb g₂ V₂ sm) (by decide) fun a h1 h2 => hfr₃ a (by omega) (by omega)]
     exact Vb_sb g₂ V₂ sm (by omega) (by omega)
   · rw [rd_eq (V := V₃) (by decide) fun a h1 h2 => Ve_out g₃ V₃ sm' ab hu (by omega) (by omega) (by omega) (by omega)]
+
+/-- A byte of the new pages at the return of `sysmalloc` (`sm_ok`), outside the two size words: 0. The new pages
+(`lo` to `hi`) are above the program's data and below the 160 bytes under the entry's stack pointer. -/
+theorem sm_zero {gX g₂ g₃ : Gprs} {V₂ V₃ : Addr → Byte} {sm sm' ab : BitVec 64} {lo hi : Nat}
+    (hlo : 8029888 ≤ lo) (hhi : hi ≤ gX.rsp.toNat - 160) (hsp : 160 ≤ gX.rsp.toNat)
+    (h2 : g₂.rsp.toNat = gX.rsp.toNat - 104) (hu : ab.toNat + g₃.rbp.toNat + 16 ≤ 2 ^ 64)
+    (hzero : ∀ a : Addr, lo ≤ a.toNat → a.toNat < hi → V₂ a = 0)
+    (hfr₃ : ∀ a : Addr, ¬ (gX.rsp.toNat - 160 ≤ a.toNat ∧ a.toNat < gX.rsp.toNat - 104) →
+      ¬ (0x7a4c38 ≤ a.toNat ∧ a.toNat < 0x7a4c40) → V₃ a = Vb g₂ V₂ sm a)
+    {a : Addr} (a1 : lo ≤ a.toNat) (a2 : a.toNat < hi)
+    (a7 : ¬ (ab.toNat + 8 ≤ a.toNat ∧ a.toNat < ab.toNat + 16))
+    (a8 : ¬ (ab.toNat + g₃.rbp.toNat + 8 ≤ a.toNat ∧ a.toNat < ab.toNat + g₃.rbp.toNat + 16)) :
+    Ve g₃ V₃ sm' ab a = 0 := by
+  rw [Ve_out g₃ V₃ sm' ab hu (by omega) a7 a8 (by omega), hfr₃ a (by omega) (by omega),
+    Vb_out g₂ V₂ sm (by omega) (by omega) (by omega) (by omega)]
+  exact hzero a a1 a2
 
 end FV7z.Smm
