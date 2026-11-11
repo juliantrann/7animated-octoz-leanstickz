@@ -1,23 +1,13 @@
--- PROBE_ARGS: -Dprofiler=true -Dprofiler.threshold=1000
-import FV7z.Ndi.Cuts
-import FV7z.Sga.Holds
+import FV7z.Ndi.Mem
 open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn
+/-!
+# `_dl_non_dynamic_init`: the conditions of its first two cut points (PLAN.md G3, startup)
+
+The prologue, and the way from the return of `_dl_get_origin` to the first `getenv` when the kernel gave no vDSO.
+-/
 open FV7z.Sga (vo vr vs)
 namespace FV7z.Ndi
-
 variable {F : Footprint} {Wl : List Rgn}
-
-/-- Bytes through a store apart from them, both at addresses that are numbers (`simp (disch := decide)`). -/
-theorem rq {V : Addr → Byte} {a x : Addr} {w n m : Nat} {v : BitVec w}
-    (h : a.toNat + n ≤ 2 ^ 64 ∧ x.toNat + m ≤ 2 ^ 64 ∧ (a.toNat + n ≤ x.toNat ∨ x.toNat + m ≤ a.toNat)) :
-    List.map (Vst V a (toBytesLE v n)) (byteAddrs x m) = List.map V (byteAddrs x m) :=
-  vr (toBytesLE_length _ _) h.1 h.2.1 h.2.2
-
-/-- The bytes of a region inside the data segment (`0x777000` to `0x7a9000`). -/
-theorem gf {P : Addr → Prop} (h : ∀ x : Addr, 7827456 ≤ x.toNat → x.toNat < 8032256 → P x) (a : Addr) (n : Nat)
-    (hd : 7827456 ≤ a.toNat ∧ a.toNat + n ≤ 8032256) : ∀ i < n, P (Addr.add a i) := fun i hi =>
-  h _ (by rw [toNat_add_of_fits hi (by omega)]; omega) (by rw [toNat_add_of_fits hi (by omega)]; omega)
-
 /-- The bytes after the five `push`es. -/
 def frV (V : Addr → Byte) (g : Gprs) : Addr → Byte :=
   Vst (Vst (Vst (Vst (Vst V (g.rsp - 8) (toBytesLE g.r14 8)) (g.rsp - 16#64) (toBytesLE g.r13 8))
@@ -40,13 +30,8 @@ theorem vc_0 {g : Gprs} {f : Rflags} {V : Addr → Byte}
   have w4 := w (rsp - 32#64) 8 (by omega) (by bv_omega)
   have w5 := w (rsp - 40#64) 0 (by omega) (by bv_omega)
   clear w hst
-  have e16 : rsp - 8 - 8 = rsp - 16#64 := by bv_omega
-  have e24 : rsp - 16#64 - 8 = rsp - 24#64 := by bv_omega
-  have e32 : rsp - 24#64 - 8 = rsp - 32#64 := by bv_omega
-  have e40 : rsp - 32#64 - 8 = rsp - 40#64 := by bv_omega
-  have e120 : rsp - 40#64 - 80#64 = rsp - 120#64 := by bv_omega
   wpx [W_0, o0, Op.push]
-  simp only [e16, e24, e32, e40, e120]
+  simp only [s16, s24, s32, s40, s120]
   exact ⟨w1, w2, w3, w4, w5, trivial, trivial⟩
 
 /-- The bytes after the stores up to `getenv ("LD_WARN")`: `_dl_origin_path`'s neighbour `0x793828` (the main map's
@@ -62,21 +47,18 @@ null) and not a secure exec (`__libc_enable_secure` at `0x791ce0` is 0): to the 
 theorem vc_21 {g : Gprs} {f : Rflags} {V : Addr → Byte} {ph pn : BitVec 64}
     (hr : ∀ x : Addr, 7827456 ≤ x.toNat → x.toNat < 8032256 → Foot F.data x)
     (hw : ∀ x : Addr, 7827456 ≤ x.toNat → x.toNat < 8032256 → Foot Wl x)
-    (h1 : rdq(V, 8029448#64) = 0) (h2 : rdq(V, 8029568#64) = ph) (h3 : rdq(V, 8029592#64) = pn)
-    (h4 : rdq(V, 8029424#64) = 0) (h5 : rdd(V, 7937248#64) = 0) :
+    (h1 : rdq(V, 8029448#64) = 0#64) (h2 : rdq(V, 8029568#64) = ph) (h3 : rdq(V, 8029592#64) = pn)
+    (h4 : rdq(V, 8029424#64) = 0#64) (h5 : rdd(V, 7937248#64) = 0#32) :
     W_21 F Wl (fun j' g' _ V' => j' = 2018 ∧
-      g' = { g with rax := 0, rdx := 0, rbp := 0, rdi := 7289136#64 } ∧ V' = aV V g.rax ph pn) g f V := by
+      g' = { g with rax := 0#64, rdx := 0#64, rbp := 0#64, rdi := 7289136#64 } ∧ V' = aV V g.rax ph pn) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   unfold aV
   wpx [W_21, W_2800, W_2816, W_2827, W_2838, W_2849, W_2860, W_1945, W_2011, o1, o35, o36, o37, o38, o39, o40, o2, o3,
     Op.cmpmia, Op.sta, Op.lda, Op.stia]
-  have R := fun a n hd => gf (P := Foot F.data) hr a n hd
-  have Wr := fun a n hd => gf (P := Foot Wl) hw a n hd
-  simp (disch := decide) only [rq, h1, h2, h3, h4, h5]
-  refine ⟨R _ 8 (by decide), Wr _ 8 (by decide), R _ 8 (by decide), Wr _ 8 (by decide), R _ 8 (by decide),
-    Wr _ 2 (by decide), fun _ => ⟨R _ 8 (by decide), fun h => absurd h (by decide), fun _ => ⟨Wr _ 8 (by decide),
-      Wr _ 8 (by decide), Wr _ 8 (by decide), Wr _ 8 (by decide), R _ 4 (by decide), Wr _ 8 (by decide), fun _ => ?_,
-      fun h => absurd h (by decide)⟩⟩, fun h => absurd h (by decide)⟩
-  done
-
+  simp (disch := decide) only [rq, h1, h2, h3, h4, h5, BitVec.xor_self]
+  exact ⟨gf hr _ 8 (by decide), gf hw _ 8 (by decide), gf hr _ 8 (by decide), gf hw _ 8 (by decide),
+    gf hr _ 8 (by decide), gf hw _ 2 (by decide), fun _ => ⟨gf hr _ 8 (by decide), fun h => absurd h (by decide),
+      fun _ => ⟨gf hw _ 8 (by decide), gf hw _ 8 (by decide), gf hw _ 8 (by decide), gf hw _ 8 (by decide),
+        gf hr _ 4 (by decide), gf hw _ 8 (by decide), fun _ => ⟨rfl, rfl⟩, fun h => absurd h (by decide)⟩⟩,
+    fun h => absurd h (by decide)⟩
 end FV7z.Ndi
