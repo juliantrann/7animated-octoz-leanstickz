@@ -186,6 +186,13 @@ FNS = {
                 calls=True, tag="PLAN.md G3, malloc",
                 src="glibc 2.31's `ptmalloc_init` (`malloc/arena.c`; `objdump -d`)"),
     # glibc 2.31 sysdeps/unix/sysv/linux/x86/elision-conf.c. Stops: the `ret` (0xab), `call __stack_chk_fail` (0xac).
+    # glibc 2.31 nptl/pthread_mutex_lock.c (`__pthread_mutex_lock`), up to the first `__assert_fail`. Stops: the `ret`
+    # (0x5b); `__pthread_force_elision` is set (0x60); the mutex is not of a plain kind (0x90: the `jmp` to
+    # `__pthread_mutex_lock_full`); it is not a timed one (0x98); the lock is held (0xd0: `__lll_lock_wait`); it has an
+    # owner (0x185: `__assert_fail`). By hand: `lock cmpxchg [rdi], edx` (0x2f), `add dword [rdi + 12], 1` (0x4f).
+    "pml": dict(grp="Pml", cn="pthread_mutex_lock", a=0x5fc450, n=0x1a4, pos=True, fs=True,
+                stops=(0x5b, 0x60, 0x90, 0x98, 0xd0, 0x185), calls=True, hand=(0x2f, 0x4f), tag="PLAN.md G3, pthread",
+                src="glibc 2.31's `__pthread_mutex_lock` (`nptl/pthread_mutex_lock.c`; `objdump -d`)"),
     "eli": dict(grp="Eli", cn="elision_init", a=0x5ffc50, n=0xb1, pos=True, fs=True, stops=(0xab, 0xac),
                 calls=True, tag="PLAN.md G3, startup",
                 src="glibc 2.31's `elision_init` (`sysdeps/unix/sysv/linux/x86/elision-conf.c`; `objdump -d`)"),
