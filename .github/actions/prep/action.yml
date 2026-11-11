@@ -22,18 +22,21 @@ runs:
       shell: bash
       run: |
         # the runner's package mirror (azure.archive.ubuntu.com) sometimes does not resolve, on some days no name of
-        # ubuntu.com does, and apt then waits for minutes: short timeouts, and after a failed try the next mirror
-        # (apt checks the archive's signatures whatever the mirror)
+        # ubuntu.com does, and apt then waits for minutes: short timeouts, and the first mirror whose name resolves
+        # and that serves the packages (apt checks the archive's signatures whatever the mirror)
         apt="sudo apt-get -o Acquire::Retries=1 -o Acquire::http::Timeout=20 -o Acquire::https::Timeout=20"
-        mirrors=("" http://archive.ubuntu.com/ubuntu/ https://mirrors.kernel.org/ubuntu/
-          https://mirror.math.princeton.edu/pub/ubuntu/)
-        for try in 0 1 2 3; do
-          [ -z "${mirrors[$try]}" ] || echo "${mirrors[$try]}" | sudo tee /etc/apt/apt-mirrors.txt
-          $apt update -q &&
-            $apt install -yq strace bubblewrap binutils gcc python3 xz-utils dpkg qemu-user && break
-          [ "$try" != 3 ] || exit 1
-          sleep 5
+        ok=
+        for m in http://azure.archive.ubuntu.com/ubuntu/ http://archive.ubuntu.com/ubuntu/ \
+            https://mirrors.kernel.org/ubuntu/ https://mirror.math.princeton.edu/pub/ubuntu/; do
+          h=${m#*//}
+          timeout 20 getent hosts "${h%%/*}" || { echo "no address for ${h%%/*}"; continue; }
+          echo "$m" | sudo tee /etc/apt/apt-mirrors.txt
+          if $apt update -q && $apt install -yq strace bubblewrap binutils gcc python3 xz-utils dpkg qemu-user; then
+            ok=1
+            break
+          fi
         done
+        [ -n "$ok" ]
         # lake comparator sandboxes the kernels with bwrap, which needs unprivileged user namespaces
         sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0 || true
     - name: elan
