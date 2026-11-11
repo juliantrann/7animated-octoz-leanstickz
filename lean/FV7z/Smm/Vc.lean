@@ -7,7 +7,8 @@ glibc 2.31's `sysmalloc (nb, av)` at `0x630360` in `7zzs` (`malloc/malloc.c`), o
 main arena (`0x792a40`), its top the initial one (`0x792aa0`, of size 0), the heap contiguous.
 
 - `Hi`, `rd_hi`: a read below the end of the program's data (`0x7a86c0`) through a store above it.
-- `and_m4096`: `x &&& -4096`, the page below; `jle_no`: the flags of an `and` with a result above 0.
+- `and_m4096`: `x &&& -4096`, the page below; `and_m8`: `x &&& -8`; `jle_no`: the flags of an `and` with a
+  result above 0.
 - `vc_0`: from the entry to the first `call *__morecore` (894): the size asked for is
   `(nb + mp_.top_pad + 4096 + 31) &&& -4096`.
 - `vc_900`: from its return to 1644: `mp_.sbrk_base` and `av->system_mem` stored, the correction that aligns the
@@ -50,6 +51,30 @@ theorem nat_and_m4096 (n : Nat) (h : n < 2 ^ 64) : n &&& 18446744073709547520 = 
 theorem and_m4096 (x : BitVec 64) : (x &&& (0 - 4096#64)).toNat = x.toNat / 4096 * 4096 := by
   rw [show (0 - 4096#64 : BitVec 64) = 18446744073709547520#64 by decide, BitVec.toNat_and]
   exact nat_and_m4096 _ x.isLt
+
+theorem nat_and_m8 (n : Nat) (h : n < 2 ^ 64) : n &&& 18446744073709551608 = n / 8 * 8 := by
+  have hm : (18446744073709551608 : Nat) = (2 ^ 61 - 1) <<< 3 := by decide
+  have hr : n / 8 * 8 = (n >>> 3) <<< 3 := by rw [Nat.shiftRight_eq_div_pow, Nat.shiftLeft_eq]
+  rw [hm, hr]
+  apply Nat.eq_of_testBit_eq
+  intro i
+  rw [Nat.testBit_and, Nat.testBit_shiftLeft, Nat.testBit_shiftLeft, Nat.testBit_shiftRight,
+    Nat.testBit_two_pow_sub_one]
+  by_cases h1 : i ≥ 3
+  · have e : 3 + (i - 3) = i := by omega
+    rw [e]
+    by_cases h2 : i < 64
+    · have : i - 3 < 61 := by omega
+      simp [h1, this]
+    · have h3 : n.testBit i = false :=
+        Nat.testBit_lt_two_pow (Nat.lt_of_lt_of_le h (Nat.pow_le_pow_right (by decide) (by omega)))
+      simp [h3]
+  · simp [h1]
+
+/-- `x &&& -8`: a chunk's size from its size word. -/
+theorem and_m8 (x : BitVec 64) : (x &&& 18446744073709551608#64).toNat = x.toNat / 8 * 8 := by
+  rw [BitVec.toNat_and]
+  exact nat_and_m8 _ x.isLt
 
 /-- After an `and` with a result above 0, `jle` is not taken. -/
 theorem jle_no (f : Rflags) {R : BitVec 64} (af : Bool) (h0 : 0 < R.toNat) (h1 : R.toNat < 2 ^ 63) :

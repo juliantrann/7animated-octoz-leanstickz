@@ -8,6 +8,7 @@ import FV7z.Smm.PartA
   called a second time, its argument the correction that ends the heap at a page (`corr2`).
 - `lo4_toNat`, `corr_toNat`, `corr2_zero`, `corr2_pos`: the corrections as numbers: the second is 0 when the
   break was a page's start, and otherwise what is left of the break's page.
+- `top_ok`: the new top, from the aligned break to the end of the heap, is not smaller than the first size.
 - `sm_b_s`, `sm_b_z`: from offset 900 to offset 1690, the return of the second `MORECORE`, with
   `Dmc.dmc_same` (the break moves within its page; a new start) and `Dmc.dmc_zero` (no system call).
 -/
@@ -169,6 +170,23 @@ theorem corr2_pos {b R : BitVec 64} (hb : b.toNat % 4096 ≠ 0) (hR : R.toNat % 
   have h2 := corr2_toNat b (corr b) R (by omega)
   rw [h2]
   unfold pageUp
+  omega
+
+/-- The new top, from the aligned break to the end of the heap, holds the size asked of the first `MORECORE`. -/
+theorem top_ok {b R nb : BitVec 64} (hR : R.toNat % 4096 = 0) (hnb : nb.toNat + 32 ≤ R.toNat)
+    (h : b.toNat + R.toNat < 2 ^ 48) :
+    (nb + 32#64).toNat ≤
+      ((b + R - (b + corr b) + corr2 b (corr b) R ||| 1#64) &&& 18446744073709551608#64).toNat := by
+  have hc := corr_toNat b
+  have h2 := corr2_toNat b (corr b) R (by omega)
+  have hv : (b + R - (b + corr b) + corr2 b (corr b) R).toNat =
+      R.toNat + (corr2 b (corr b) R).toNat - (corr b).toNat := by bv_omega
+  have ho : (b + R - (b + corr b) + corr2 b (corr b) R).toNat ≤
+      (b + R - (b + corr b) + corr2 b (corr b) R ||| 1#64).toNat := by
+    rw [BitVec.toNat_or]
+    exact Nat.left_le_or
+  rw [and_m8]
+  have hn : (nb + 32#64).toNat ≤ nb.toNat + 32 := by bv_omega
   omega
 
 /-! ## The second `MORECORE` -/
