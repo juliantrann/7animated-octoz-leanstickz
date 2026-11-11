@@ -10,6 +10,8 @@ The three runs of `Smm/PartA.lean`, `Smm/PartB.lean` and `Smm/PartC.lean`, one a
   chunk's memory `b + corr b + 16` (`b` the break at the entry), the registers a call keeps are kept, the break is
   `b + size + corr2`, and the bytes are `Ve` over what the second `MORECORE` left (`V₃`), which is `Vb` over what
   the first left (`V₂`), which is `Va` over the bytes at the entry, each but for the stack below and `__curbrk`.
+- `Ve_eq`, `Ve_rd`, `Ve_out`: the bytes at the return as seven stores; the top, the two size words and the
+  arena's two sizes read from them; the bytes outside those are the bytes under `Ve`.
 -/
 open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn FV7z.Start
 open FV7z.Tun (rd_Vst rd_Vst_self Vst_out)
@@ -362,5 +364,56 @@ theorem sm_ok {lim : Nat} {b fsb : Addr} {ks : Kst} {pad sm mx : BitVec 64} (c :
     rw [hax₁, z6] at hB₂ hw hq₃
     rw [List.append_assoc]
     exact tail V₃ s₂ Z₃ t₃ _ c₂ hB₂ (.inr rfl) hK₃ hA₃ hr₃ hax₃ hw (fun a h1 h3 => hfr₃ a (by omega) h3) hq₃
+
+/-! ## The bytes at the return -/
+
+theorem e8 (ab : BitVec 64) : ab + 16#64 + 18446744073709551608#64 = ab + 8#64 := by bv_omega
+
+/-- The bytes at the return as seven stores: four after the second `MORECORE`, three for the chunk. -/
+theorem Ve_eq (g : Gprs) (V : Addr → Byte) (sm ab : BitVec 64) : Ve g V sm ab =
+    Vst (Vst (Vst (Vst (Vst (Vst (Vst V (7940768#64) (toBytesLE ab 8)) (ab + 8#64)
+      (toBytesLE (g.rax - ab + g.r14 ||| 1#64) 8)) (7942856#64) (toBytesLE (sm + g.r14) 8)) (7942864#64)
+      (toBytesLE (sm + g.r14) 8)) (7940768#64) (toBytesLE (ab + g.rbp) 8)) (ab + 8#64)
+      (toBytesLE (g.rbp ||| 1#64) 8)) (ab + g.rbp + 8#64)
+      (toBytesLE (((g.rax - ab + g.r14 ||| 1#64) &&& 18446744073709551608#64) - g.rbp ||| 1#64) 8) := by
+  show Vst (Vst (Vst (Vc g V sm ab) (7940768#64) (toBytesLE (ab + g.rbp) 8))
+    (ab + 16#64 + 18446744073709551608#64) (toBytesLE (g.rbp ||| 1#64) 8)) (ab + g.rbp + 8#64)
+    (toBytesLE (((g.rax - ab + g.r14 ||| 1#64) &&& 18446744073709551608#64) - g.rbp ||| 1#64) 8) = _
+  rw [e8]
+
+/-- The arena and the heap at the return: the top is `ab + nb`, the chunk `ab` has the size `nb` and the bit of a
+previous chunk in use, the top's size is what is left of the heap, with the same bit, and `av->system_mem` and
+`av->max_system_mem` are the heap's size. -/
+theorem Ve_rd (g : Gprs) (V : Addr → Byte) (sm ab : BitVec 64) (hab : 8029888 ≤ ab.toNat)
+    (hnb : 8 ≤ g.rbp.toNat) (hu : ab.toNat + g.rbp.toNat + 16 ≤ 2 ^ 64) :
+    rdq(Ve g V sm ab, 7940768#64) = ab + g.rbp ∧
+    rdq(Ve g V sm ab, ab + 8#64) = g.rbp ||| 1#64 ∧
+    rdq(Ve g V sm ab, ab + g.rbp + 8#64) =
+      ((g.rax - ab + g.r14 ||| 1#64) &&& 18446744073709551608#64) - g.rbp ||| 1#64 ∧
+    rdq(Ve g V sm ab, 7942856#64) = sm + g.r14 ∧ rdq(Ve g V sm ab, 7942864#64) = sm + g.r14 := by
+  rw [Ve_eq]
+  refine ⟨?_, ?_, ?_, ?_, ?_⟩
+  · rw [rd_Vst _ _ _ _ _ (by sd) (by sd) (.inr (by sd)), rd_Vst _ _ _ _ _ (by sd) (by sd) (.inr (by sd)),
+      rd_Vst_self _ _ _ (by sd) (by sd), ofBytesLE_toBytesLE (n := 8) rfl]
+  · rw [rd_Vst _ _ _ _ _ (by sd) (by sd) (.inr (by sd)), rd_Vst_self _ _ _ (by sd) (by sd),
+      ofBytesLE_toBytesLE (n := 8) rfl]
+  · rw [rd_Vst_self _ _ _ (by sd) (by sd), ofBytesLE_toBytesLE (n := 8) rfl]
+  · rw [rd_Vst _ _ _ _ _ (by sd) (by sd) (.inr (by sd)), rd_Vst _ _ _ _ _ (by sd) (by sd) (.inr (by sd)),
+      rd_Vst _ _ _ _ _ (by sd) (by sd) (.inl (by sd)), rd_Vst _ _ _ _ _ (by sd) (by sd) (.inr (by sd)),
+      rd_Vst_self _ _ _ (by sd) (by sd), ofBytesLE_toBytesLE (n := 8) rfl]
+  · rw [rd_Vst _ _ _ _ _ (by sd) (by sd) (.inr (by sd)), rd_Vst _ _ _ _ _ (by sd) (by sd) (.inr (by sd)),
+      rd_Vst _ _ _ _ _ (by sd) (by sd) (.inl (by sd)), rd_Vst_self _ _ _ (by sd) (by sd),
+      ofBytesLE_toBytesLE (n := 8) rfl]
+
+/-- The bytes at the return outside the top's word, the two size words and the two sizes of the arena: those at
+1690. -/
+theorem Ve_out (g : Gprs) (V : Addr → Byte) (sm ab : BitVec 64) (hu : ab.toNat + g.rbp.toNat + 16 ≤ 2 ^ 64)
+    {a : Addr} (h1 : ¬ (7940768 ≤ a.toNat ∧ a.toNat < 7940776))
+    (h2 : ¬ (ab.toNat + 8 ≤ a.toNat ∧ a.toNat < ab.toNat + 16))
+    (h3 : ¬ (ab.toNat + g.rbp.toNat + 8 ≤ a.toNat ∧ a.toNat < ab.toNat + g.rbp.toNat + 16))
+    (h4 : ¬ (7942856 ≤ a.toNat ∧ a.toNat < 7942872)) : Ve g V sm ab a = V a := by
+  rw [Ve_eq, Vst_out _ _ _ _ (by sd) (by sd), Vst_out _ _ _ _ (by sd) (by sd), Vst_out _ _ _ _ (by sd) (by sd),
+    Vst_out _ _ _ _ (by sd) (by sd), Vst_out _ _ _ _ (by sd) (by sd), Vst_out _ _ _ _ (by sd) (by sd),
+    Vst_out _ _ _ _ (by sd) (by sd)]
 
 end FV7z.Smm
