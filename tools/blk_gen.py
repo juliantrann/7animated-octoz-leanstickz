@@ -193,6 +193,12 @@ FNS = {
     "pml": dict(grp="Pml", cn="pthread_mutex_lock", a=0x5fc450, n=0x1a4, pos=True, fs=True,
                 stops=(0x5b, 0x60, 0x90, 0x98, 0xd0, 0x185), calls=True, hand=(0x2f, 0x4f), tag="PLAN.md G3, pthread",
                 src="glibc 2.31's `__pthread_mutex_lock` (`nptl/pthread_mutex_lock.c`; `objdump -d`)"),
+    # glibc 2.31 nptl/pthread_mutex_unlock.c (`__pthread_mutex_unlock`, `__pthread_mutex_unlock_usercnt` inlined).
+    # Stops: the `ret` (0x36); not a plain kind (0x40: `__pthread_mutex_unlock_full`); not timed (0x50); somebody
+    # waits (0x70: `futex`). By hand: `sub dword [rdi + 12], 1` (0x1b), `xchg [rdi], eax` (0x2b).
+    "pmu": dict(grp="Pmu", cn="pthread_mutex_unlock", a=0x5fd1d0, n=0x76, pos=True,
+                stops=(0x36, 0x40, 0x50, 0x70), calls=True, hand=(0x1b, 0x2b), tag="PLAN.md G3, pthread",
+                src="glibc 2.31's `__pthread_mutex_unlock` (`nptl/pthread_mutex_unlock.c`; `objdump -d`)"),
     "eli": dict(grp="Eli", cn="elision_init", a=0x5ffc50, n=0xb1, pos=True, fs=True, stops=(0xab, 0xac),
                 calls=True, tag="PLAN.md G3, startup",
                 src="glibc 2.31's `elision_init` (`sysdeps/unix/sysv/linux/x86/elision-conf.c`; `objdump -d`)"),
