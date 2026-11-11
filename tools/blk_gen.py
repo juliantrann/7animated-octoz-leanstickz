@@ -227,11 +227,11 @@ FNS = {
                 src="glibc 2.31's `sysmalloc` (`malloc/malloc.c`; `objdump -d`)"),
     # glibc 2.31 malloc/malloc.c, the way of the first call (`tcache_init`'s, of 0x280 bytes: the main arena, its bins
     # empty, its top the initial one, so `sysmalloc`). Stops: the branches that way does not take, and the `ret`
-    # (0x3b6). By hand: `cmp qword fs:[-0x28], 0` (1087), the test of the thread's cache.
+    # (0x3b6). `cmp qword fs:[-0x28], 0` (1087) is the test of the thread's cache.
     "imm": dict(grp="Imm", cn="_int_malloc", a=0x630be0, n=3702, pos=True, fs=True,
                 stops=(0x2e, 0x6a, 0x160, 0x3c0, 0x44b, 0x47f, 0x610, 0x63e, 0x7b9, 0x808, 0x988, 0x9e7, 0xa2b, 0xc07,
                        0xc20, 0xc77, 0xcef, 0x3b6),
-                calls=True, hand=(1087,), tag="PLAN.md G3, `malloc`",
+                calls=True, tag="PLAN.md G3, `malloc`",
                 src="glibc 2.31's `_int_malloc` (`malloc/malloc.c`; `objdump -d`)"),
     "eli": dict(grp="Eli", cn="elision_init", a=0x5ffc50, n=0xb1, pos=True, fs=True, stops=(0xab, 0xac),
                 calls=True, tag="PLAN.md G3, startup",
@@ -383,6 +383,9 @@ def effect(mn, sz, ol, pc=None):
     if mn == 'mov' and ks == ('mf', 'i'):
         assert f[0][4] == sz
         return terms, f"Op.stfi fb {sz} {mem(ops[0])} {f[1][1]}", f"OpIF.stfi {hw4(sz)}"
+    if mn == 'cmp' and ks == ('mf', 'i') and sz in (32, 64):   # FV7z/Lemmas/BlkOps13.lean
+        assert f[0][4] == sz
+        return terms, f"Op.cmpmif fb {sz} {mem(ops[0])} {f[1][1]}", f"OpIF.cmpmif {hw2(sz)}"
     if mn == 'xor' and ks == ('r', 'mf') and sz in (32, 64):
         assert f[1][4] == sz
         return terms, f"Op.xormf fb {sz} {f[0][1]} {mem(ops[1])}", f"OpIF.xormf {hw2(sz)}"
@@ -680,7 +683,7 @@ end FV7z.{grp}
                          f"theorem j{k}_0 : ∀ feat, Dec feat j{k} 0 (FV7z.mk {mnl(mn)} {sz} [{operand(ol[0])[1]}] {ln}) := "
                          "by dec_rfl\n")
     open(out + "/Pats.lean", "w").write(f"""import FV7z.Lemmas.Sp{"Fs" if FSM else ""}
-{"import FV7z.Lemmas.BlkOps12" + chr(10) if any(k in x for x in P for k in ("Op.cmpmr", "Op.testmi")) else ""}{"import FV7z.Lemmas.BlkOps11" + chr(10) if any(k in x for x in P for k in ("Op.rol64", "Op.ror64")) else ""}{"import FV7z.Lemmas.BlkOps10" + chr(10) if any("Op.cmpm 16" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps9" + chr(10) if any("Op.cmpma" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps8" + chr(10) if any(k in x for x in P for k in ("Op.vla", "Op.vsa", "Op.addma", "Op.cmpmia 8", "Op.stia 8")) else ""}{"import FV7z.Lemmas.BlkOps7" + chr(10) if any(k in x for x in P for k in ("Op.vl", "Op.vs", "Op.cdqe")) else ""}{"import FV7z.Lemmas.BlkOps6" + chr(10) if any(k in x for x in P for k in ("Op.stf8", "Op.stfi", "Op.xormf")) else ""}{("import FV7z.Lemmas.BlkOps5" if any("Op.ldsxb" in x for x in P) else
+{"import FV7z.Lemmas.BlkOps13" + chr(10) if any("Op.cmpmif" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps12" + chr(10) if any(k in x for x in P for k in ("Op.cmpmr", "Op.testmi")) else ""}{"import FV7z.Lemmas.BlkOps11" + chr(10) if any(k in x for x in P for k in ("Op.rol64", "Op.ror64")) else ""}{"import FV7z.Lemmas.BlkOps10" + chr(10) if any("Op.cmpm 16" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps9" + chr(10) if any("Op.cmpma" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps8" + chr(10) if any(k in x for x in P for k in ("Op.vla", "Op.vsa", "Op.addma", "Op.cmpmia 8", "Op.stia 8")) else ""}{"import FV7z.Lemmas.BlkOps7" + chr(10) if any(k in x for x in P for k in ("Op.vl", "Op.vs", "Op.cdqe")) else ""}{"import FV7z.Lemmas.BlkOps6" + chr(10) if any(k in x for x in P for k in ("Op.stf8", "Op.stfi", "Op.xormf")) else ""}{("import FV7z.Lemmas.BlkOps5" if any("Op.ldsxb" in x for x in P) else
   "import FV7z.Lemmas.BlkOps4" if any("Op.imul64" in x for x in P) else
   "import FV7z.Lemmas.BlkOps3" if any(k in x for x in P for k in ("Op.shl64", "Op.shr64", "Op.sar64")) else
   "import FV7z.Lemmas.BlkOps2") + chr(10) if pos else ""}/-!

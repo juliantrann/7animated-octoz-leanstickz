@@ -93,14 +93,15 @@ theorem sp_984 (prof : Profile) (fb : Addr) : SpF prof imm imm_at fb 984 fun F W
   SpF.blk (blk_984 prof)
 
 theorem w_1069 : p9 <+: imm.drop 1069 := by decide +kernel
-theorem blk_1069 (prof : Profile) : Blk prof imm 1069 1087 o9 := (b9 prof).shift w_1069
-theorem sp_1069 (prof : Profile) (fb : Addr) : SpF prof imm imm_at fb 1069 fun F Wl Q => wp F Wl o9 (Q 1087) :=
-  SpF.blk (blk_1069 prof)
-
+theorem blk_1069 (prof : Profile) (fb : Addr) : BlkF prof imm imm_at fb 1069 1097 (o9 fb) :=
+  (b9 prof fb).shift (by decide) w_1069
 theorem wj_1097 : j7 <+: imm.drop 1097 := by decide +kernel
 theorem spj_1097 (prof : Profile) (fb : Addr) : SpF prof imm imm_at fb 1097 fun _ _ Q g f V =>
     (f.cond 4 = true → Q 1115 g (rfz f) V) ∧ (f.cond 4 = false → Q 1099 g (rfz f) V) :=
   (Sp.jcc (j := 1097) (tgt := 1115) (Dec.shift (j7_0 _) wj_1097 (by decide)) (lt_len (by decide)) (by decide) (lt_len (by decide))).fs
+theorem sp_1069 (prof : Profile) (fb : Addr) : SpF prof imm imm_at fb 1069 fun F Wl Q => wp F Wl (o9 fb) fun g f V =>
+    (f.cond 4 = true → Q 1115 g (rfz f) V) ∧ (f.cond 4 = false → Q 1099 g (rfz f) V) :=
+  SpF.blkF_then (blk_1069 prof fb) (spj_1097 prof fb)
 
 theorem w_1115 : p10 <+: imm.drop 1115 := by decide +kernel
 theorem blk_1115 (prof : Profile) : Blk prof imm 1115 1138 o10 := (b10 prof).shift w_1115

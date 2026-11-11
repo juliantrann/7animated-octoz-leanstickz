@@ -1,4 +1,5 @@
 import FV7z.Lemmas.SpFs
+import FV7z.Lemmas.BlkOps13
 import FV7z.Lemmas.BlkOps12
 import FV7z.Lemmas.BlkOps9
 import FV7z.Lemmas.BlkOps3
@@ -294,29 +295,32 @@ theorem b8 (prof : Profile) : Blk prof p8 0 85 o8 :=
 /-- The stretch at `1069`. -/
 def p9 : List Byte := [
   0x49, 0x8d, 0x45, 0xef, 0x48, 0xc1, 0xe8, 0x04, 0x49, 0x89, 0xc7, 0x31, 0xc0, 0x48, 0x89, 0x44,
-  0x24, 0x10]
+  0x24, 0x10, 0x64, 0x48, 0x83, 0x3c, 0x25, 0xd8, 0xff, 0xff, 0xff, 0x00]
 
 theorem p9_0 : ∀ feat, Dec feat p9 0 (FV7z.mk .lea 64 [gr 64 0, .mem (mg (some 13) none 1 18446744073709551599 0)] 4) := by dec_rfl
 theorem p9_4 : ∀ feat, Dec feat p9 4 (FV7z.mk .shr 64 [gr 64 0, Src.opd 8 (.i 4)] 4) := by dec_rfl
 theorem p9_8 : ∀ feat, Dec feat p9 8 (FV7z.mk .mov 64 [gr 64 15, Src.opd 64 (.r 0)] 3) := by dec_rfl
 theorem p9_11 : ∀ feat, Dec feat p9 11 (FV7z.mk .xor 32 [gr 32 0, Src.opd 32 (.r 0)] 2) := by dec_rfl
 theorem p9_13 : ∀ feat, Dec feat p9 13 (FV7z.mk .mov 64 [.mem (mg (some 4) none 1 16 64), gr 64 0] 5) := by dec_rfl
+theorem p9_18 : ∀ feat, Dec feat p9 18 (FV7z.mk .cmp 64 [.mem (mf none none 1 18446744073709551576 64), .imm 64 0] 10) := by dec_rfl
 
 /-- What the stretch does. -/
-def o9 : List Op := [
+def o9 (fb : Addr) : List Op := [
   Op.lea 64 0 (some 13) none 1 18446744073709551599,
   Op.shr64 0 (.i 4),
   Op.mov 64 15 (.r 0),
   Op.xor 32 0 (.r 0),
-  Op.st 64 (some 4) none 1 16 0]
+  Op.st 64 (some 4) none 1 16 0,
+  Op.cmpmif fb 64 none none 1 18446744073709551576 0]
 
-theorem b9 (prof : Profile) : Blk prof p9 0 18 o9 :=
-  .cons (p9_0 _) (OpI.lea (.inr rfl)) (by decide) <|
-  .cons (p9_4 _) (OpI.shr64 (.i 4)) (by decide) <|
-  .cons (p9_8 _) (OpI.mov (.r 0) (.inr rfl)) (by decide) <|
-  .cons (p9_11 _) (OpI.xor (.r 0) (.inl rfl)) (by decide) <|
-  .cons (p9_13 _) (OpI.st (.inr (.inr (.inr rfl)))) (by decide) <|
-  .nil 18
+theorem b9 (prof : Profile) (fb : Addr) : BlkF prof p9 (0x63100d : Addr) fb 0 28 (o9 fb) :=
+  .cons (p9_0 _) (((OpI.lea (.inr rfl)).at _).fs _) (by decide) <|
+  .cons (p9_4 _) (((OpI.shr64 (.i 4)).at _).fs _) (by decide) <|
+  .cons (p9_8 _) (((OpI.mov (.r 0) (.inr rfl)).at _).fs _) (by decide) <|
+  .cons (p9_11 _) (((OpI.xor (.r 0) (.inl rfl)).at _).fs _) (by decide) <|
+  .cons (p9_13 _) (((OpI.st (.inr (.inr (.inr rfl)))).at _).fs _) (by decide) <|
+  .cons (p9_18 _) (OpIF.cmpmif (.inr rfl)) (by decide) <|
+  .nil 28
 
 def j7 : List Byte := [0x74, 0x10]
 theorem j7_0 : ∀ feat, Dec feat j7 0 (FV7z.mk (.jcc 4) 64 [.rel 16] 2) := by dec_rfl
