@@ -21,16 +21,18 @@ runs:
       if: inputs.packages == 'true'
       shell: bash
       run: |
-        # the runner's first package mirror (azure.archive.ubuntu.com) sometimes does not resolve, and apt then waits
-        # for minutes: short timeouts, and from the second try on Ubuntu's own archive
+        # the runner's package mirror (azure.archive.ubuntu.com) sometimes does not resolve, on some days no name of
+        # ubuntu.com does, and apt then waits for minutes: short timeouts, and after a failed try the next mirror
+        # (apt checks the archive's signatures whatever the mirror)
         apt="sudo apt-get -o Acquire::Retries=1 -o Acquire::http::Timeout=20 -o Acquire::https::Timeout=20"
-        for try in 1 2 3 4; do
+        mirrors=("" http://archive.ubuntu.com/ubuntu/ https://mirrors.kernel.org/ubuntu/
+          https://mirror.math.princeton.edu/pub/ubuntu/)
+        for try in 0 1 2 3; do
+          [ -z "${mirrors[$try]}" ] || echo "${mirrors[$try]}" | sudo tee /etc/apt/apt-mirrors.txt
           $apt update -q &&
             $apt install -yq strace bubblewrap binutils gcc python3 xz-utils dpkg qemu-user && break
-          [ "$try" != 4 ] || exit 1
-          printf 'http://archive.ubuntu.com/ubuntu/\thttp://security.ubuntu.com/ubuntu/\n' | tr '\t' '\n' |
-            sudo tee /etc/apt/apt-mirrors.txt
-          sleep 10
+          [ "$try" != 3 ] || exit 1
+          sleep 5
         done
         # lake comparator sandboxes the kernels with bwrap, which needs unprivileged user namespaces
         sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0 || true
