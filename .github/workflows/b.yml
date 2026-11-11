@@ -1,0 +1,79 @@
+# Runs on a push to a branch ci/** (never on main). j0 sets up and builds (tools/ci.sh pins build); j1 ... j10 run
+# the other steps of tools/ci.sh in parallel on the cache j0 saved. A newer push cancels the run before it.
+name: b
+run-name: 'b${{ github.run_number }}'
+on:
+  push:
+    branches: ['ci/**']
+concurrency:
+  group: b-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  j0:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 350
+    outputs:
+      key: ${{ steps.prep.outputs.key }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: prep
+        uses: ./.github/actions/prep
+        with:
+          packages: 'true'
+      - name: setup
+        run: tools/setup.sh
+      - name: pins, build
+        run: tools/ci.sh pins build
+        env:
+          CI_LOG_DIR: build/ci-logs
+      - if: always()
+        uses: ./.github/actions/keep
+        with:
+          key: ${{ steps.prep.outputs.key }}
+  checks:
+    needs: j0
+    runs-on: ubuntu-24.04
+    timeout-minutes: 350
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { name: j1, steps: axioms proofs, shard: 1/4 }
+          - { name: j2, steps: proofs, shard: 2/4 }
+          - { name: j3, steps: proofs, shard: 3/4 }
+          - { name: j4, steps: proofs, shard: 4/4 }
+          - { name: j5, steps: g0 min dispatch }
+          - { name: j6, steps: systest systrace }
+          - { name: j7, steps: difftest x87 xsave, seed: 1 }
+          - { name: j8, steps: difftest x87 xsave, seed: 2 }
+          - { name: j9, steps: difftest x87 xsave, seed: 3 }
+          - { name: j10, steps: difftest x87 xsave, seed: 4 }
+    name: ${{ matrix.name }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/prep
+        with:
+          key: ${{ needs.j0.outputs.key }}
+          packages: 'true'
+      - name: setup
+        run: tools/setup.sh
+      - name: run
+        run: tools/ci.sh ${{ matrix.steps }}
+        env:
+          CI_LOG_DIR: build/ci-logs
+          CHECK_SHARD: ${{ matrix.shard }}
+          TEST_SEED: ${{ matrix.seed }}
+      - name: logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: log-${{ matrix.name }}
+          path: |
+            build/*.insncov.summary
+            build/*.insncov.full.insns
+            build/systrace/union.*
+            build/mintrace/status
+            build/mintrace/functions
+            build/7zzs.featneed.tsv
+            build/7zzs.dispatch.txt
+            build/ci-logs

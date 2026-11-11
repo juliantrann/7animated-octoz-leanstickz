@@ -1,0 +1,60 @@
+# What every job starts with: the packages the checks need (optional), elan, and the cache of sources, toolchains and
+# Lean builds. `key` empty: this job builds, so it restores the newest cache of this branch and gets in `key` the
+# name to save its own under (.github/actions/keep). `key` given: the cache a job of this run saved, exactly.
+# The paths below and in ../keep/action.yml must be the same list (a cache is found by its key and its paths).
+name: prep
+inputs:
+  key:
+    description: the cache key an earlier job of this run saved (empty in the job that builds)
+    default: ''
+  packages:
+    description: install the packages of the checks (strace, bubblewrap, qemu-user, ...)
+    default: 'false'
+outputs:
+  key:
+    description: the key this run's cache is saved under
+    value: ${{ steps.key.outputs.key }}
+runs:
+  using: composite
+  steps:
+    - name: packages
+      if: inputs.packages == 'true'
+      shell: bash
+      run: |
+        sudo apt-get update -q
+        sudo apt-get install -yq strace bubblewrap binutils gcc python3 xz-utils dpkg qemu-user
+        # lake comparator sandboxes the kernels with bwrap, which needs unprivileged user namespaces
+        sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0 || true
+    - name: elan
+      shell: bash
+      run: |
+        curl -sSfL https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh |
+          sh -s -- -y --default-toolchain none
+        echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+    - name: machine
+      shell: bash
+      run: |
+        echo "$(sed -n 's/^model name\s*: //p' /proc/cpuinfo | head -1), $(nproc) CPUs," \
+          "$(awk '/MemTotal/ {printf "%.1f", $2/1048576}' /proc/meminfo) GiB RAM" | tee -a "$GITHUB_STEP_SUMMARY"
+    - id: key
+      shell: bash
+      env:
+        PINS: ${{ hashFiles('pins/*', 'patches/*', 'lean/lake-manifest.json', 'lean/lean-toolchain') }}
+        GIVEN: ${{ inputs.key }}
+      run: |
+        echo "base=fv7z-$PINS-" >> "$GITHUB_OUTPUT"
+        echo "key=${GIVEN:-fv7z-$PINS-$GITHUB_SHA-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT}" >> "$GITHUB_OUTPUT"
+    - name: cache (sources, toolchains, Lean builds)
+      uses: actions/cache/restore@v4
+      with:
+        path: |
+          ~/.elan/toolchains
+          refs
+          upstream
+          release/26.06
+          lean/.lake
+          build/rebuild
+        key: ${{ steps.key.outputs.key }}
+        restore-keys: |
+          ${{ steps.key.outputs.base }}
+          fv7z-

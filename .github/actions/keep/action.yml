@@ -1,0 +1,21 @@
+# Saves the cache ../prep/action.yml restores, under the key it gave. Run it with `if: always()`: a build that stopped
+# at an error, or was cancelled by a newer push, keeps the modules it did build.
+name: keep
+inputs:
+  key:
+    description: the key output of the step that ran ../prep
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: save the cache
+      uses: actions/cache/save@v4
+      with:
+        path: |
+          ~/.elan/toolchains
+          refs
+          upstream
+          release/26.06
+          lean/.lake
+          build/rebuild
+        key: ${{ inputs.key }}

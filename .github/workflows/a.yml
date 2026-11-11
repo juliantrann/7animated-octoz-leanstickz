@@ -1,0 +1,103 @@
+# Runs on a push to a branch wip/** (never on main). j0 builds lean/wip-targets and runs lean/wip-run; p0, p1, ...
+# each check one file of lean/probe/ (sorted by name) on the cache j0 saved. A newer push cancels the run before it.
+name: a
+run-name: 'a${{ github.run_number }}'
+on:
+  push:
+    branches: ['wip/**']
+concurrency:
+  group: a-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  j0:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 350
+    outputs:
+      key: ${{ steps.prep.outputs.key }}
+      probes: ${{ steps.probes.outputs.list }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: prep
+        uses: ./.github/actions/prep
+      - id: probes
+        run: |
+          echo "list=$(find lean/probe -maxdepth 1 -name '*.lean' -printf '%f\n' 2>/dev/null | sort | jq -R . | jq -sc .)" \
+            >> "$GITHUB_OUTPUT"
+      - name: model
+        run: |
+          if [ ! -d refs/zellic-x86/.git ]; then
+            mkdir -p refs
+            git clone -q https://github.com/Zellic/x86-formal-verification-research.git refs/zellic-x86
+            git -C refs/zellic-x86 checkout -q 059a6a9dc31a974b01b6aeebfa5c88f9dc37c3ac
+            git -C refs/zellic-x86 checkout -q -b fv7z-g1
+          fi
+          tools/zellic_patch.sh check 2>/dev/null || tools/zellic_patch.sh reapply
+          tools/zellic_patch.sh check
+      - name: release
+        run: tools/fetch_release.sh
+      - name: build
+        run: |
+          cd lean
+          targets=$( [ -f wip-targets ] && grep -v '^\s*#' wip-targets | xargs || echo FV7z )
+          echo "targets: $targets"
+          set -o pipefail
+          start=$(date +%s)
+          lake build $targets 2>&1 | tee ../lean-build.log
+          echo "built in $(( $(date +%s) - start )) s" | tee -a ../lean-build.log
+      - name: run
+        # lean/wip-run: shell commands run in lean/ after the build (measurements for the proof in progress)
+        run: |
+          if [ -s lean/wip-run ]; then (cd lean && bash wip-run) 2>&1 | tee lean/wip-run.log; fi
+      - name: report
+        if: always()
+        run: |
+          { echo '```'; grep -E -A12 '^error|error:' lean-build.log | head -300; tail -5 lean-build.log; echo '```'; } >> "$GITHUB_STEP_SUMMARY" || true
+          [ -s lean/wip-run.log ] && { echo '```'; head -400 lean/wip-run.log; echo '```'; } >> "$GITHUB_STEP_SUMMARY" || true
+      - if: always()
+        uses: ./.github/actions/keep
+        with:
+          key: ${{ steps.prep.outputs.key }}
+      - name: log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: log-j0
+          path: |
+            lean-build.log
+            lean/wip-run.log
+  probe:
+    needs: j0
+    name: p${{ strategy.job-index }}
+    # also after a build that failed: the probes usually are about the module that does not build yet
+    if: ${{ !cancelled() && needs.j0.outputs.probes != '' && needs.j0.outputs.probes != '[]' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 350
+    strategy:
+      fail-fast: false
+      matrix:
+        file: ${{ fromJSON(needs.j0.outputs.probes) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/prep
+        with:
+          key: ${{ needs.j0.outputs.key }}
+      - name: run
+        run: |
+          cd lean
+          set -o pipefail
+          # PROBE_ARGS in the file's first lines: `-- PROBE_ARGS: -DmaxHeartbeats=0` (extra arguments for lean)
+          args=$(sed -n '1,5s/^-- PROBE_ARGS: //p' "probe/${{ matrix.file }}" | head -1)
+          echo "lean -M14000 $args probe/${{ matrix.file }}"
+          # shellcheck disable=SC2086
+          /usr/bin/time -f 'probe: %e s, %M KiB peak, exit %x' \
+            timeout 340m lake env lean -M14000 $args "probe/${{ matrix.file }}" 2>&1 | tee ../probe.log
+      - name: report
+        if: always()
+        run: |
+          { echo '### ${{ matrix.file }}'; echo '```'; head -c 60000 probe.log; echo '```'; } >> "$GITHUB_STEP_SUMMARY" || true
+      - name: log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: log-p${{ strategy.job-index }}
+          path: probe.log

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# The project's checks (PLAN.md §7, G0 "CI"), run by .github/workflows/ci.yml and by hand; exit status 0 iff all pass.
+# The project's checks, run by .github/workflows/b.yml (in parallel jobs) and by hand; exit status 0 iff all pass.
 # Run tools/setup.sh first (once). Steps:
 #   pins       refs/zellic-x86 = pinned commit + patches/zellic-x86.patch; the other sources at their commits;
 #              release/26.06/7zz, 7zzs with the pinned SHA-256
@@ -12,6 +12,7 @@
 #   difftest   tools/difftest/run.py: the model's instruction semantics against this processor, 0 mismatches
 #   x87        tools/fcwprobe: FCW and FSW after each x87 state load as Profile.x87LoadsKnown says (Intel)
 #   xsave      tools/xsavetest/run.py: the model's XSAVE, XSAVEC and XRSTOR against this processor, 0 mismatches
+#              (difftest and xsave draw their cases from the seed $TEST_SEED, 1 when unset)
 #   systest    tools/systest/run.py: the model's G1 system calls against this kernel, 0 mismatches
 #   systrace   tools/systrace.sh: no thread under the single-threaded flags (PLAN.md §5, option (a))
 #   min        tools/mintrace.sh: under qemu-user's baseline processor the same commands translate none of the
@@ -49,9 +50,11 @@ sys.exit(bad)
 PY
 }
 step_proofs() {
-  local rc=0 id
+  # CHECK_SHARD=K/N: only every N-th check, starting at the K-th (the checks spread over N parallel jobs)
+  local rc=0 id i=0 shard=${CHECK_SHARD:-1/1}
   for d in checks/*/; do
     id=$(basename "$d")
+    i=$((i + 1)); [ $(( (i - 1) % ${shard#*/} + 1 )) = "${shard%/*}" ] || continue
     if tools/check.sh "$id" > "$log/check.$id" 2>&1 && grep -q 'Your solution is okay!' "$log/check.$id"; then
       if [[ $id == neg-* ]]; then echo "FAIL: $id accepted"; rc=1; else echo "ok: $id accepted"; fi
     else
@@ -84,7 +87,7 @@ step_g0() {
 }
 step_difftest() {
   echo "cpu: $(sed -n 's/^model name\s*: //p' /proc/cpuinfo | head -1)"
-  python3 -I tools/difftest/run.py -n 200 -s 1 > "$log/difftest.full"; local rc=$?
+  python3 -I tools/difftest/run.py -n 200 -s "${TEST_SEED:-1}" > "$log/difftest.full"; local rc=$?
   # the host's features, each mismatch's first cases, and the per-form table when any differs
   grep -E '^(host features|NM )' "$log/difftest.full"
   if [ $rc != 0 ]; then grep -A3 '^DIFF' "$log/difftest.full" | head -60; awk '$NF ~ /^[1-9]/' "$log/difftest.full"; fi
@@ -95,7 +98,7 @@ step_x87() {
   gcc -O1 -Wall -o build/fcwprobe tools/fcwprobe/fcw.c && build/fcwprobe
 }
 step_xsave() {
-  python3 -I tools/xsavetest/run.py -n 150 -s 1 --dump "$log/xsave.diffs" > "$log/xsave.full"; local rc=$?
+  python3 -I tools/xsavetest/run.py -n 150 -s "${TEST_SEED:-1}" --dump "$log/xsave.diffs" > "$log/xsave.full"; local rc=$?
   grep -E '^(host|NM )' "$log/xsave.full"
   [ $rc != 0 ] && grep -A2 '^DIFF' "$log/xsave.full" | cut -c1-400 | head -40
   tail -8 "$log/xsave.full"; return $rc
@@ -128,4 +131,7 @@ for s in "${steps[@]}"; do
 done
 echo "=== summary (logs: $log)"
 rc=0; for s in "${steps[@]}"; do printf '  %-9s %s\n' "$s" "${result[$s]}"; [ "${result[$s]}" = pass ] || rc=1; done
+if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
+  for s in "${steps[@]}"; do echo "- $s: ${result[$s]}"; done >> "$GITHUB_STEP_SUMMARY"
+fi
 exit $rc
