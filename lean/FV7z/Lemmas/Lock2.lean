@@ -10,6 +10,8 @@ The instructions of `pthread_mutex_lock`'s and `pthread_mutex_unlock`'s plain pa
   is `eax`: it becomes the register, `ZF` is set. As in `Lemmas/Lock.lean`, the word within one cache line.
 - `add_mi32`, `Seg.s_add_mi32`: `add dword [b + d], imm`; `sub_mi32`, `Seg.s_sub_mi32`: `sub dword [b + d], imm`.
 - `xchg_bd32`, `Seg.s_xchg_bd32`: `xchg dword [b + d], r32`, the word within one cache line.
+- `Seg.s_call_x`: `call` to a byte of a segment other than its first (`__register_frame_info`, whose code here
+  begins with `__register_frame_info_bases`).
 -/
 namespace FV7z
 open ZellicX86 Decode
@@ -199,5 +201,26 @@ theorem s_xchg_bd32 (c : Seg prof F Wl L s₀ o) (hK : KeptW Wl s₀ X) (hA : Ag
       hac (c.dec hK' hin hrip hd) hsl hwr
     rw [show eaD (X.withMem M) b d = eaD X b d from rfl, hv] at hr
     exact ⟨_, _, hr, hKs.nx rfl rfl rfl, hAs, rip_add hrip M len, rfl⟩) k'
+
+/-- `call` to the `tgt`-th byte of a segment: a function whose entry is not the first byte of its code. -/
+theorem s_call_x (c : Seg prof F Wl L s₀ o) (hK : KeptW Wl s₀ X)
+    (hA : Agree F X.proc.mm.mem V) (hin : CodeIn L e' code) (hj : j < code.length)
+    (hrip : X.cpu.rip = e'.add j) {rel len : Nat} (hd : Dec prof.feat code j (FV7z.mk .call 64 [.rel rel] len))
+    {e₂ : Addr} {code₂ : List Byte} {tgt : Nat} (hin₂ : CodeIn L e₂ code₂) (h₂ : tgt < code₂.length)
+    (htgt : e'.add (j + len) + BitVec.ofNat 64 rel = e₂.add tgt)
+    (hst : ∀ i < 8, Foot Wl (Addr.add (X.cpu.gpr.rsp - 8) i))
+    (k' : ContG prof F Wl L s₀ o gev gP gE (Vst V (X.cpu.gpr.rsp - 8) (toBytesLE (e'.add (j + len)) 8))
+      fun Y => Y.cpu.rip = e₂.add tgt ∧ Y.cpu.gpr = X.cpu.gpr.set 4 (X.cpu.gpr.rsp - 8)) :
+    GoG prof L o gev gP gE X t :=
+  c.next hK hA hin hj hrip (fun M hK' hA' htf hac => by
+    have hra : (X.withMem M).cpu.rip.add len = e'.add (j + len) := rip_add hrip M len
+    have hca := ((c.codeAt hK' hin₂) tgt h₂).1
+    obtain ⟨hw, hKs, hAs⟩ := c.store_ok (X := X.withMem M) hK' hA'
+      (bs := toBytesLE (e'.add (j + len)) 8) (a := X.cpu.gpr.rsp - 8) (by simpa using hst)
+    rw [toBytesLE_length] at hw
+    have hr := call_rel (s := X.withMem M) (o := o) (t := t + 1) htf hac (c.dec hK' hin hrip hd)
+      (by rw [hK'.thread]; exact c.ready.plain.2.2.1) (by rw [hra, htgt]; exact hca) hw
+    rw [hra, htgt] at hr
+    exact ⟨_, _, hr, hKs.upd rfl rfl rfl, hAs, rfl, rfl⟩) k'
 
 end FV7z.Fn.Seg
