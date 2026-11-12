@@ -3,10 +3,9 @@
 name = "fv7z"
 version = "0.1.0"
 defaultTargets = ["FV7z"]
-# Keep a runaway elaboration from exhausting the machine: the imports of the malloc proofs alone take 2 GB, and
-# `Mhi.Run` needs 3.1 GB (checked on the 16 GB Actions runners).
-moreLeanArgs = ["-M3500"]
-moreGlobalServerArgs = ["-M3500"]
+# Keep a runaway elaboration from exhausting this 3 GB machine.
+moreLeanArgs = ["-M2500"]
+moreGlobalServerArgs = ["-M2500"]
 
 [leanOptions]
 autoImplicit = false
