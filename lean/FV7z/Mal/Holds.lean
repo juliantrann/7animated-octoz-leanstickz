@@ -59,7 +59,6 @@ theorem regs3 (g : Gprs) (V : Addr → Byte) (h : 24 ≤ g.rsp.toNat) (h' : g.rs
       rd_Vst _ _ _ _ _ (by rw [l, e2]; omega) h' (.inl (by rw [l, e2]; omega)),
       rd_Vst _ _ _ _ _ (by rw [l, e1]; omega) h' (.inl (by rw [l, e1]; omega))]
 
-set_option maxHeartbeats 1000000 in
 /-- From the entry to the `jmp rax`, the hook not 0. -/
 theorem vc_0 {g : Gprs} {f : Rflags} {V : Addr → Byte}
     (hk : rdq(V, 7940656#64) ≠ 0#64) (hfh : ∀ i < 8, Foot F.data (Addr.add (7940656#64) i))
@@ -85,10 +84,19 @@ theorem vc_0 {g : Gprs} {f : Rflags} {V : Addr → Byte}
     rd_Vst _ _ _ _ _ (by rw [l, e8]; omega) (by rw [e0]; omega) (.inr (by rw [e0, e8]; omega))
   have hk' : (rdq(V, 7940656#64) == 0#64) = false := beq_eq_false_iff_ne.2 hk
   wpx [W_0, W_368, o0, o1, Op.lda, Vm, BitVec.and_self, e, hk']
-  all_goals first
-    | assumption
-    | rfl
-    | (and_intros <;> first | assumption | rfl | exact fun h => absurd h (by decide))
+  trace_state
+  sorry
+
+/-- The slots of the pushes and the return address, from the stack pointer `r`. -/
+theorem offs (r : Addr) (h : 24 ≤ r.toNat) (h' : r.toNat + 8 ≤ 2 ^ 64) :
+    (r - 8 - 8 - 8).toNat = r.toNat - 24 + 0 ∧ (r - 8 - 8 - 8 + 8).toNat = r.toNat - 24 + 8 ∧
+      (r - 8 - 8 - 8 + 8 + 8).toNat = r.toNat - 24 + 16 ∧ (r - 8 - 8 - 8 + 24#64).toNat = r.toNat - 24 + 24 :=
+  ⟨by bv_omega, by bv_omega, by bv_omega, by bv_omega⟩
+
+theorem addk (r x : Addr) (k i : Nat) (hx : x.toNat = r.toNat - 24 + k) (h : 24 ≤ r.toNat) (hk : k + i < 32)
+    (h' : r.toNat + 8 ≤ 2 ^ 64) : Addr.add (r - 24) (k + i) = Addr.add x i := by
+  simp only [Addr.add]
+  bv_omega
 
 variable {prof : Profile} {L : List (Addr × List Byte)} {s₀ X : State} {o : Oracle} {t : Nat}
   {gev : List Event} {gP : State → Nat → List Event → Prop} {gE : Outcome → List Event → Prop} {V : Addr → Byte}
@@ -111,12 +119,12 @@ theorem mal_hook (c : Seg prof F Wl L s₀ o) (hin : CodeIn L mal_at mal) (hK : 
       ∀ i < 8, Foot F.data (Addr.add x i) := by
     intro x k hk hx i hi
     have := c.hws _ (hst (k + i) (by omega))
-    have e : Addr.add (X.cpu.gpr.rsp - 24) (k + i) = Addr.add x i := by simp only [Addr.add]; bv_omega
-    rwa [e] at this
-  have r0 := w (X.cpu.gpr.rsp - 8 - 8 - 8) 0 (by omega) (by bv_omega)
-  have r1 := w (X.cpu.gpr.rsp - 8 - 8 - 8 + 8) 8 (by omega) (by bv_omega)
-  have r2 := w (X.cpu.gpr.rsp - 8 - 8 - 8 + 8 + 8) 16 (by omega) (by bv_omega)
-  have r3 := w (X.cpu.gpr.rsp - 8 - 8 - 8 + 24#64) 24 (by omega) (by bv_omega)
+    rwa [addk _ x k i hx (by omega) (by omega) hs] at this
+  obtain ⟨q0, q8, q16, q24⟩ := offs _ (by omega) hs
+  have r0 := w (X.cpu.gpr.rsp - 8 - 8 - 8) 0 (by omega) q0
+  have r1 := w (X.cpu.gpr.rsp - 8 - 8 - 8 + 8) 8 (by omega) q8
+  have r2 := w (X.cpu.gpr.rsp - 8 - 8 - 8 + 8 + 8) 16 (by omega) q16
+  have r3 := w (X.cpu.gpr.rsp - 8 - 8 - 8 + 24#64) 24 (by omega) q24
   refine (c_0 prof).run c hin _ hK hA (by rw [addr_add_zero]; exact hrip)
     (vc_0 (by rw [hk]; exact hk0) hfh hsp (fun i hi => hst i (by omega)) r0 r1 r2 r3) ?_
   rintro j' g fl V₁ ⟨rfl, rfl, rfl⟩ Y t₁ hK₁ hA₁ hr₁ hg₁ -
