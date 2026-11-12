@@ -261,3 +261,5 @@ import FV7z.Lemmas.Lock3
 import FV7z.Tci.Cuts
 import FV7z.Tci.Hand
 import FV7z.Tci.Holds
+import FV7z.Lemmas.BlkOps14
+import FV7z.Im2.Cuts
