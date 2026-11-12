@@ -190,4 +190,55 @@ theorem mal_first {lim : Nat} {b fsb S : Addr} {ks : Kst} {pad sm mx : BitVec 64
   rw [hgZ] at hD hregs
   exact k Vd V₁ M evs s₁ Z' t'' hc hB' hK' hA' hD hO hM hr hax hregs hev
 
+/-- The new pages of the first `malloc`'s `sbrk` as one region, `[pageUp b, pageUp (b + size))`: a choice of the
+regions `N` for `mal_first`. -/
+def Nr (b pad : Addr) : List Rgn :=
+  [⟨BitVec.ofNat 64 (pageUp b.toNat / 4096 * 4096),
+    pageUp (b + size pad 656#64).toNat / 4096 * 4096 - pageUp b.toNat / 4096 * 4096⟩]
+
+theorem pg_toNat {b : Addr} (hb : b.toNat < 2 ^ 47) :
+    (BitVec.ofNat 64 (pageUp b.toNat / 4096 * 4096)).toNat = pageUp b.toNat / 4096 * 4096 :=
+  Nat.mod_eq_of_lt (by unfold pageUp; omega)
+
+theorem brk_up {b pad : Addr} (hb : b.toNat < 2 ^ 47) (hnb : 656 + pad.toNat + 4127 < 2 ^ 47) :
+    (b + size pad 656#64).toNat = b.toNat + (size pad 656#64).toNat ∧ 4096 ≤ (size pad 656#64).toNat := by
+  have hR : (size pad 656#64).toNat = (4127 + pad.toNat + 656) / 4096 * 4096 :=
+    Smm.size_toNat (pad := pad) (nb := 656#64) (by show 656 + pad.toNat + 4127 < 2 ^ 47; omega)
+  generalize size pad 656#64 = R at hR ⊢
+  exact ⟨by bv_omega, by omega⟩
+
+/-- `Nr` lies in the new pages (`hN` of `mal_first`). -/
+theorem Nr_in {b pad : Addr} (hb : b.toNat < 2 ^ 47) (hnb : 656 + pad.toNat + 4127 < 2 ^ 47) :
+    ∀ r ∈ Nr b pad, r.In (pageUp b.toNat / 4096 * 4096) (pageUp (b + size pad 656#64).toNat / 4096 * 4096) := by
+  intro r hr
+  simp only [Nr, List.mem_singleton] at hr
+  subst hr
+  obtain ⟨e, hR⟩ := brk_up (pad := pad) hb hnb
+  show _ ≤ (BitVec.ofNat 64 (pageUp b.toNat / 4096 * 4096)).toNat ∧
+    (BitVec.ofNat 64 (pageUp b.toNat / 4096 * 4096)).toNat +
+      (pageUp (b + size pad 656#64).toNat / 4096 * 4096 - pageUp b.toNat / 4096 * 4096) ≤ _
+  rw [pg_toNat hb, e]
+  unfold pageUp
+  omega
+
+/-- The heap bytes `mal_first` writes (`hh`) are in `Nr` or in the rest of the break's page, if `Wl` has that rest. -/
+theorem Nr_hh {b pad : Addr} {Wl : List Rgn} (hb : b.toNat < 2 ^ 47) (hnb : 656 + pad.toNat + 4127 < 2 ^ 47)
+    (hw : ∀ a : Addr, b.toNat ≤ a.toNat → a.toNat < pageUp b.toNat / 4096 * 4096 → Foot Wl a) :
+    ∀ a : Addr, (b + corr b).toNat ≤ a.toNat → a.toNat < (b + corr b).toNat + 656 + 80 →
+      Foot (Nr b pad ++ Wl) a := by
+  intro a h1 h2
+  have hc : (corr b).toNat < 16 := by rw [Smm.corr_toNat]; omega
+  have ec : (b + corr b).toNat = b.toNat + (corr b).toNat := by bv_omega
+  rw [ec] at h1 h2
+  by_cases hlt : a.toNat < pageUp b.toNat / 4096 * 4096
+  · exact foot_append_iff.2 (.inr (hw a (by omega) hlt))
+  · refine foot_append_iff.2 (.inl ⟨_, List.mem_singleton_self _, ?_⟩)
+    obtain ⟨e, hR⟩ := brk_up (pad := pad) hb hnb
+    show (BitVec.ofNat 64 (pageUp b.toNat / 4096 * 4096)).toNat ≤ a.toNat ∧
+      a.toNat < (BitVec.ofNat 64 (pageUp b.toNat / 4096 * 4096)).toNat +
+        (pageUp (b + size pad 656#64).toNat / 4096 * 4096 - pageUp b.toNat / 4096 * 4096)
+    rw [pg_toNat hb, e]
+    unfold pageUp at hlt ⊢
+    omega
+
 end FV7z.Mal
