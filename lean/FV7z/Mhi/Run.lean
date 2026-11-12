@@ -6,6 +6,7 @@ import FV7z.Tci.Holds
 
 - `Tp`, `C2`, `Sz`: the top after the first `_int_malloc`, the second `MORECORE`'s correction and the top's size
   word.
+- `or1_m8`, `sub656`, `sz_ok`: the top's size word as a number; at least 96 bytes, not above the system's memory.
 - `Vh_hi`, `Vh_regs`: `Vh` above the entry's stack pointer, and the three pushed registers.
 - `mhi_ok`: `mhi_head`, `Tci.tci_ok` and `mhi_tail`: from the entry of `malloc_hook_ini` with 50 bytes asked for,
   the first `malloc` of the process, to its return address with the chunk `Tp b + 16` in `rax`.
@@ -99,6 +100,50 @@ theorem z16 {W : Addr → Byte} {x : Addr} (h : ∀ i < 2, W (Addr.add x i) = 0)
 
 theorem f24' (x : Addr) (h : x.toNat + 24 < 2 ^ 64) : (x + 24#64).toNat = x.toNat + 24 := by bv_omega
 
+/-- `x ||| 1` and `x` have the same eighths. -/
+theorem or1_div8 (x : Nat) : (x ||| 1) / 8 = x / 8 := by
+  have h := Nat.or_div_two_pow (a := x) (b := 1) (n := 3)
+  have h1 : (1 : Nat) / 2 ^ 3 = 0 := by decide
+  rw [h1, Nat.or_zero] at h
+  exact h
+
+/-- A size from a size word with the in-use bit set: the bit does not count. -/
+theorem or1_m8 (x : Addr) : ((x ||| 1#64) &&& 18446744073709551608#64).toNat = x.toNat / 8 * 8 := by
+  rw [Smm.and_m8, BitVec.toNat_or]
+  exact congrArg (· * 8) (or1_div8 x.toNat)
+
+/-- 656 off a multiple of 8 that is not smaller: still a multiple of 8. -/
+theorem sub656 (Y : Addr) (N : Nat) (hy : Y.toNat = N / 8 * 8) (h : 656 + 8 ≤ N) :
+    (Y - 656#64).toNat / 8 * 8 = N / 8 * 8 - 656 := by
+  have hz : (Y - 656#64).toNat = Y.toNat - 656 := by bv_omega
+  rw [hz, hy]
+  omega
+
+/-- The top's size after the first `_int_malloc` (`Sz` without the in-use bit) is at least 96 bytes and not above
+the system's memory: the two checks of `sysmalloc`'s second run and of `_int_malloc`'s split. -/
+theorem sz_ok {b pad sm : Addr} (hb : b.toNat < 2 ^ 47) (hnb : 656 + pad.toNat + 4127 < 2 ^ 47)
+    (hsm : sm.toNat < 2 ^ 47) :
+    (Sz b pad &&& 18446744073709551608#64).toNat ≤ (sm + size pad 656#64 + C2 b pad).toNat ∧
+      96 ≤ (Sz b pad &&& 18446744073709551608#64).toNat := by
+  have hR : (size pad 656#64).toNat = (4127 + pad.toNat + 656) / 4096 * 4096 :=
+    Smm.size_toNat (pad := pad) (nb := 656#64) (by show 656 + pad.toNat + 4127 < 2 ^ 47; omega)
+  have hc := Smm.corr_toNat b
+  have h2 := Smm.corr2_toNat b (corr b) (size pad 656#64) (by omega)
+  show ((((b + size pad 656#64 - (b + corr b) + corr2 b (corr b) (size pad 656#64) ||| 1#64)
+      &&& 18446744073709551608#64) - 656#64 ||| 1#64) &&& 18446744073709551608#64).toNat ≤
+      (sm + size pad 656#64 + corr2 b (corr b) (size pad 656#64)).toNat ∧
+    96 ≤ ((((b + size pad 656#64 - (b + corr b) + corr2 b (corr b) (size pad 656#64) ||| 1#64)
+      &&& 18446744073709551608#64) - 656#64 ||| 1#64) &&& 18446744073709551608#64).toNat
+  generalize corr2 b (corr b) (size pad 656#64) = C at *
+  generalize size pad 656#64 = R at *
+  generalize corr b = c at *
+  have hv : (b + R - (b + c) + C).toNat = R.toNat + C.toNat - c.toNat := by bv_omega
+  have hs : (sm + R + C).toNat = sm.toNat + R.toNat + C.toNat := by bv_omega
+  have hy : ((b + R - (b + c) + C ||| 1#64) &&& 18446744073709551608#64).toNat =
+      (R.toNat + C.toNat - c.toNat) / 8 * 8 := by rw [or1_m8, hv]
+  rw [or1_m8, sub656 _ _ hy (by omega), hs]
+  omega
+
 variable {prof : Profile} {L : List (Addr × List Byte)} {s₀ X : State} {o : Oracle} {t : Nat}
   {gev : List Event} {gP : State → Nat → List Event → Prop} {gE : Outcome → List Event → Prop} {V : Addr → Byte}
 
@@ -152,8 +197,6 @@ theorem mhi_ok {lim : Nat} {b fsb S : Addr} {ks : Kst} {pad sm mx : BitVec 64} (
     (hN : ∀ r ∈ N, r.In (pageUp b.toNat / 4096 * 4096) (pageUp (b + size pad 656#64).toNat / 4096 * 4096))
     (hh : ∀ a : Addr, (b + corr b).toNat ≤ a.toNat → a.toNat < (b + corr b).toNat + 656 + 80 → Foot (N ++ Wl) a)
     (hz : ∀ a : Addr, b.toNat ≤ a.toNat → a.toNat < pageUp b.toNat / 4096 * 4096 → V a = 0)
-    (hle : (Sz b pad &&& 18446744073709551608#64).toNat ≤ (sm + size pad 656#64 + C2 b pad).toNat)
-    (hge : 96 ≤ (Sz b pad &&& 18446744073709551608#64).toNat)
     {e₂ : Addr} {code₂ : List Byte} (hin₂ : CodeIn L e₂ code₂) {j₂ : Nat} (h₂ : j₂ < code₂.length)
     (hra : rdq(V, S + 232#64) = e₂.add j₂)
     (k : ∀ (Vd V₁ M : Addr → Byte) (evs : List Event) (s₁ Z : State) (t' : Nat),
@@ -175,6 +218,7 @@ theorem mhi_ok {lim : Nat} {b fsb S : Addr} {ks : Kst} {pad sm mx : BitVec 64} (
     GoG prof L o gev gP gE X t := by
   have hbt := hB.brk_lt
   have hb47 : b.toNat < 2 ^ 47 := by omega
+  obtain ⟨hle, hge⟩ := sz_ok hb47 hnb hsu
   obtain ⟨a232, e200, m64, a200, a208, a16, q208, q16, q232, q240, p1, p2, p3, q24⟩ := sof S hS (by omega)
   have h656 : (656#64 : BitVec 64).toNat = 656 := rfl
   have hsn := Smm.size_toNat (pad := pad) (nb := 656#64) (by rw [h656]; omega)
