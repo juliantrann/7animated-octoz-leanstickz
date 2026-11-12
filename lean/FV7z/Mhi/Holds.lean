@@ -97,7 +97,8 @@ theorem vc_236 {fb C : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (hbx : 
   subst hbx
   have hC' : (C == 0) = false := beq_eq_false_iff_ne.2 hC
   have e4 : C + 2#64 * 2#64 = C + 4#64 := rfl
-  wpx [W_236, W_249, W_267, W_272, o12, o13, o14, o15, Op.cmpmra, Op.ldf, Op.ldzx, htb, htc, hC', e4, hn, BitVec.and_self,
+  wpx [W_236, W_249, W_267, W_272, o12, o13, o14, o15, Op.cmpmra, Op.ldf, Op.ldzx, htb, htc, hC', e4, hn,
+    BitVec.and_self,
     BitVec.reduceAdd, BitVec.reduceAnd, BitVec.reduceSetWidth, BitVec.reduceHShiftRight, BitVec.reduceHShiftLeft,
     BitVec.reduceUShiftRight, BitVec.reduceShiftLeft, BitVec.reduceBEq, BitVec.reduceEq, BitVec.reduceToNat,
     BitVec.reduceSub, BitVec.reduceMul, BitVec.reduceLT, BitVec.reduceULT, BitVec.reduceOr, BitVec.reduceXOr,
