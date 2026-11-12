@@ -269,6 +269,7 @@ import FV7z.Im2.RunN
 import FV7z.Mhi.Cuts
 import FV7z.Mhi.Hand
 import FV7z.Mhi.Holds
+import FV7z.Mhi.HoldsN
 import FV7z.Mhi.Tail
 import FV7z.Mhi.Head
 import FV7z.Mhi.Run

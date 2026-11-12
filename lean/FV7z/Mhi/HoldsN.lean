@@ -1,5 +1,10 @@
 import FV7z.Mhi.Holds
-/-! Probe: `Mhi.vc_341` with the request `n` symbolic (9 ≤ n ≤ 4096); show the goal after `wpx`. -/
+/-!
+# `malloc_hook_ini`: the size checks for every request `9 ≤ n ≤ 4096` (PLAN.md G3, `malloc`)
+
+- `vc_341n`: `__malloc_hook` read back 0, `request2size` (`n + 23 &&& -16`) and the tcache index
+  (`nb - 17 >>> 4`), on to offset 68.
+-/
 open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn FV7z.Start
 namespace FV7z.Mhi
 variable {F : Footprint} {Wl : List Rgn}
@@ -28,6 +33,6 @@ theorem vc_341n {fb n : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (hbp :
     Bool.not_false, Bool.not_true, Bool.false_eq_true, false_imp_iff, true_imp_iff, Bool.or_self, Bool.true_or,
     Bool.or_true, false_implies, true_implies, and_true, true_and, reduceIte, or_true, true_or, or_false, false_or,
     ne_eq, Nat.reduceEqDiff, not_false_eq_true, ofBytesLE_toBytesLE, Bool.true_eq_false, BitVec.xor_self]
-  first | exact ⟨hfh, fun _ _ => trivial⟩ | exact hfh | exact ⟨hfh, fun _ => trivial⟩ | (trace_state; sorry)
+  first | exact ⟨hfh, fun _ _ => trivial⟩ | exact hfh | exact ⟨hfh, fun _ => trivial⟩
 
 end FV7z.Mhi
