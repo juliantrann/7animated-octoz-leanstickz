@@ -255,6 +255,11 @@ FNS = {
     "mhi": dict(grp="Mhi", cn="malloc_hook_ini", a=0x632ba0, n=832, pos=True, fs=True,
                 stops=(0x24, 0x165, 0x188, 0x56, 0x120, 0x1a8, 0x178, 0x9a, 0xbb), calls=True,
                 tag="PLAN.md G3, `malloc`", src="glibc 2.31's `malloc_hook_ini` (`malloc/hooks.c`; `objdump -d`)"),
+    # glibc 2.31 malloc/malloc.c (`__libc_malloc`), the way of a hook set (the first call: `__malloc_hook` =
+    # `malloc_hook_ini`): three pushes, the hook read, three pops, `jmp rax` with the return address in `rsi`. Stops:
+    # no hook (0x1b), the `jmp rax` (0x179, by hand).
+    "mal": dict(grp="Mal", cn="__libc_malloc", a=0x633160, n=784, pos=True, stops=(0x1b, 0x179),
+                tag="PLAN.md G3, `malloc`", src="glibc 2.31's `__libc_malloc` (`malloc/malloc.c`; `objdump -d`)"),
     "eli": dict(grp="Eli", cn="elision_init", a=0x5ffc50, n=0xb1, pos=True, fs=True, stops=(0xab, 0xac),
                 calls=True, tag="PLAN.md G3, startup",
                 src="glibc 2.31's `elision_init` (`sysdeps/unix/sysv/linux/x86/elision-conf.c`; `objdump -d`)"),
