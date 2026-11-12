@@ -100,8 +100,9 @@ theorem vc_0 {g : Gprs} {f : Rflags} {V : Addr → Byte}
     rd_Vst _ _ _ _ _ (by rw [l, e8]; omega) (by rw [e0]; omega) (.inr (by rw [e0, e8]; omega))
   have hk' : (rdq(V, 7940656#64) == 0#64) = false := beq_eq_false_iff_ne.2 hk
   wpx [W_0, W_368, o0, o1, Op.lda, Vm, BitVec.and_self, e, hk']
-  trace_state
-  sorry
+  refine ⟨s1, hfh, s2, s3, fun _ => ⟨r3, r0, r1, r2⟩, fun h => absurd h ?_⟩
+  rw [show (rdq(V, 7940656#64) == 0) = false from hk']
+  decide
 
 variable {prof : Profile} {L : List (Addr × List Byte)} {s₀ X : State} {o : Oracle} {t : Nat}
   {gev : List Event} {gP : State → Nat → List Event → Prop} {gE : Outcome → List Event → Prop} {V : Addr → Byte}
