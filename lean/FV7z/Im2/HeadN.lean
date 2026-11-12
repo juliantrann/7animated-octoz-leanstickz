@@ -1,6 +1,14 @@
 import FV7z.Im2.Head
-/-! Probe: `_int_malloc`'s second call, entry to 1115, for every request `9 ≤ n ≤ 120` (`nb` 32 … 128, a fastbin
-size): one `wpx` per `nb`. -/
+/-!
+# `_int_malloc`: from the entry to offset 1115, the second call, every request `9 ≤ n ≤ 120` (PLAN.md G3, `malloc`)
+
+The size `nb` (`request2size`) is 32 … 128, a fastbin size: the way is that of `n = 50` (`Im2/Head.lean`), with the
+fastbin and the smallbin of `nb` read. One `wpx` per `nb`.
+
+- `nat_and_m16`, `and_m16`: `x &&& -16`.
+- `clsB`: `n + 23` above 31 and rounded to `16 k`, `2 ≤ k ≤ 8`.
+- `V1n`, `G1n`, `vc_0n`: the bytes and registers at 1115.
+-/
 open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn FV7z.Start
 open FV7z.Imm (imm imm_at rd_off rd_off_self rd_below stk_f pu)
 namespace FV7z.Im2
@@ -47,7 +55,8 @@ def V1n (S : Addr) (g : Gprs) (nb : Addr) (V : Addr → Byte) : Addr → Byte :=
     (S + 152#64) (toBytesLE g.r12 8)) (S + 144#64) (toBytesLE g.rbp 8)) (S + 136#64) (toBytesLE g.rbx 8))
     (S + 40#64) (toBytesLE ((nb >>> 4).setWidth 32) 4)) (S + 112#64) (toBytesLE (110#32) 4))
     (S + 64#64) (toBytesLE (nb >>> 6) 8)) (S + 80#64) (toBytesLE (nb >>> 9) 8))
-    (S + 116#64) (toBytesLE ((nb >>> 9).setWidth 32 + 91#32) 4)) (S + 76#64) (toBytesLE ((nb >>> 6).setWidth 32 + 48#32) 4))
+    (S + 116#64) (toBytesLE ((nb >>> 9).setWidth 32 + 91#32) 4))
+    (S + 76#64) (toBytesLE ((nb >>> 6).setWidth 32 + 48#32) 4))
     (S + 108#64) (toBytesLE (119#32) 4)) (S + 104#64) (toBytesLE (124#32) 4)) (S + 96#64) (toBytesLE (0#64) 8))
     (S + 88#64) (toBytesLE (0#64) 8)) (S + 16#64) (toBytesLE (0#64) 8)) (S + 16#64) (toBytesLE nb 8)
 
@@ -91,20 +100,34 @@ theorem vc_0n {fb S n : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (hrsp 
   have s6 : rdq(V, 7940872#64) = 7940848#64 := hbk 6 (by decide) (by decide)
   have s7 : rdq(V, 7940888#64) = 7940864#64 := hbk 7 (by decide) (by decide)
   have s8 : rdq(V, 7940904#64) = 7940880#64 := hbk 8 (by decide) (by decide)
-  have qf0 := rd_below (S := S) (x := 7940688#64) (n := 8) (hx := by rw [BitVec.toNat_ofNat]; omega) (hS := hS)
-  have qf1 := rd_below (S := S) (x := 7940696#64) (n := 8) (hx := by rw [BitVec.toNat_ofNat]; omega) (hS := hS)
-  have qf2 := rd_below (S := S) (x := 7940704#64) (n := 8) (hx := by rw [BitVec.toNat_ofNat]; omega) (hS := hS)
-  have qf3 := rd_below (S := S) (x := 7940712#64) (n := 8) (hx := by rw [BitVec.toNat_ofNat]; omega) (hS := hS)
-  have qf4 := rd_below (S := S) (x := 7940720#64) (n := 8) (hx := by rw [BitVec.toNat_ofNat]; omega) (hS := hS)
-  have qf5 := rd_below (S := S) (x := 7940728#64) (n := 8) (hx := by rw [BitVec.toNat_ofNat]; omega) (hS := hS)
-  have qf6 := rd_below (S := S) (x := 7940736#64) (n := 8) (hx := by rw [BitVec.toNat_ofNat]; omega) (hS := hS)
-  have qs2 := rd_below (S := S) (x := 7940808#64) (n := 8) (hx := by rw [BitVec.toNat_ofNat]; omega) (hS := hS)
-  have qs3 := rd_below (S := S) (x := 7940824#64) (n := 8) (hx := by rw [BitVec.toNat_ofNat]; omega) (hS := hS)
-  have qs4 := rd_below (S := S) (x := 7940840#64) (n := 8) (hx := by rw [BitVec.toNat_ofNat]; omega) (hS := hS)
-  have qs5 := rd_below (S := S) (x := 7940856#64) (n := 8) (hx := by rw [BitVec.toNat_ofNat]; omega) (hS := hS)
-  have qs6 := rd_below (S := S) (x := 7940872#64) (n := 8) (hx := by rw [BitVec.toNat_ofNat]; omega) (hS := hS)
-  have qs7 := rd_below (S := S) (x := 7940888#64) (n := 8) (hx := by rw [BitVec.toNat_ofNat]; omega) (hS := hS)
-  have qs8 := rd_below (S := S) (x := 7940904#64) (n := 8) (hx := by rw [BitVec.toNat_ofNat]; omega) (hS := hS)
+  have qf0 := rd_below (S := S) (x := 7940688#64) (n := 8)
+    (hx := by rw [BitVec.toNat_ofNat]; omega) (hS := hS)
+  have qf1 := rd_below (S := S) (x := 7940696#64) (n := 8)
+    (hx := by rw [BitVec.toNat_ofNat]; omega) (hS := hS)
+  have qf2 := rd_below (S := S) (x := 7940704#64) (n := 8)
+    (hx := by rw [BitVec.toNat_ofNat]; omega) (hS := hS)
+  have qf3 := rd_below (S := S) (x := 7940712#64) (n := 8)
+    (hx := by rw [BitVec.toNat_ofNat]; omega) (hS := hS)
+  have qf4 := rd_below (S := S) (x := 7940720#64) (n := 8)
+    (hx := by rw [BitVec.toNat_ofNat]; omega) (hS := hS)
+  have qf5 := rd_below (S := S) (x := 7940728#64) (n := 8)
+    (hx := by rw [BitVec.toNat_ofNat]; omega) (hS := hS)
+  have qf6 := rd_below (S := S) (x := 7940736#64) (n := 8)
+    (hx := by rw [BitVec.toNat_ofNat]; omega) (hS := hS)
+  have qs2 := rd_below (S := S) (x := 7940808#64) (n := 8)
+    (hx := by rw [BitVec.toNat_ofNat]; omega) (hS := hS)
+  have qs3 := rd_below (S := S) (x := 7940824#64) (n := 8)
+    (hx := by rw [BitVec.toNat_ofNat]; omega) (hS := hS)
+  have qs4 := rd_below (S := S) (x := 7940840#64) (n := 8)
+    (hx := by rw [BitVec.toNat_ofNat]; omega) (hS := hS)
+  have qs5 := rd_below (S := S) (x := 7940856#64) (n := 8)
+    (hx := by rw [BitVec.toNat_ofNat]; omega) (hS := hS)
+  have qs6 := rd_below (S := S) (x := 7940872#64) (n := 8)
+    (hx := by rw [BitVec.toNat_ofNat]; omega) (hS := hS)
+  have qs7 := rd_below (S := S) (x := 7940888#64) (n := 8)
+    (hx := by rw [BitVec.toNat_ofNat]; omega) (hS := hS)
+  have qs8 := rd_below (S := S) (x := 7940904#64) (n := 8)
+    (hx := by rw [BitVec.toNat_ofNat]; omega) (hS := hS)
   have q1 := rd_below (S := S) (x := 8013224#64) (n := 8) (hx := by rw [BitVec.toNat_ofNat]; omega) (hS := hS)
   have q3 := rd_below (S := S) (n := 8) (hx := hfb) (hS := hS)
   have q5 := rd_below (S := S) (x := 7940592#64) (n := 8) (hx := by rw [BitVec.toNat_ofNat]; omega) (hS := hS)
@@ -118,7 +141,8 @@ theorem vc_0n {fb S n : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (hrsp 
   ( simp only [Nat.reduceMul] at e
     wpx [W_0, W_9, W_304, W_320, W_960, W_563, W_848, W_86, W_984, W_1069, W_1099, o0, o1, o2, o3, o4, o5, o6, o8,
       o9, o10, o11, Op.cmpma, Op.cmpmif, Op.cmpmra, Op.shr64, p1, p2, p3, p4, p5, p6, p7, q1, q3, q5, rd_off,
-      rd_off_self, hS, hS', m, d1, d2, e, hgm, htb, htc, BitVec.and_self, G1n, V1n, f0, f1, f2, f3, f4, f5, f6, s2, s3, s4, s5, s6, s7, s8, qf0, qf1, qf2, qf3, qf4, qf5, qf6, qs2, qs3, qs4, qs5, qs6, qs7, qs8,
+      rd_off_self, hS, hS', m, d1, d2, e, hgm, htb, htc, BitVec.and_self, G1n, V1n, f0, f1, f2, f3, f4, f5, f6, s2, s3,
+      s4, s5, s6, s7, s8, qf0, qf1, qf2, qf3, qf4, qf5, qf6, qs2, qs3, qs4, qs5, qs6, qs7, qs8,
       BitVec.reduceAdd, BitVec.reduceAnd, BitVec.reduceSetWidth, BitVec.reduceHShiftRight, BitVec.reduceHShiftLeft,
       BitVec.reduceUShiftRight, BitVec.reduceShiftLeft, BitVec.reduceBEq, BitVec.reduceEq, BitVec.reduceToNat,
       BitVec.reduceSub, BitVec.reduceMul, BitVec.reduceLT, BitVec.reduceULT, BitVec.reduceOr, BitVec.reduceXOr,

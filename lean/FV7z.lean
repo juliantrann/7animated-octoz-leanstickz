@@ -264,6 +264,7 @@ import FV7z.Tci.Holds
 import FV7z.Lemmas.BlkOps14
 import FV7z.Im2.Cuts
 import FV7z.Im2.Run
+import FV7z.Im2.HeadN
 import FV7z.Mhi.Cuts
 import FV7z.Mhi.Hand
 import FV7z.Mhi.Holds

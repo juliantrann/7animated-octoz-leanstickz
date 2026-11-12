@@ -10,11 +10,11 @@ theorem vc_341n {fb n : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (hbp :
     W_341 fb F Wl (fun j' g' _ V' => j' = 68 ∧
       g' = { g with rax := n + 23#64 &&& 18446744073709551600#64,
                     rbx := (n + 23#64 &&& 18446744073709551600#64) - 17#64 >>> 4 } ∧ V' = V) g f V := by
+  have m : n.msb = false := by
+    rw [BitVec.msb_eq_decide]; exact decide_eq_false (by show ¬ (2 ^ 63 ≤ n.toNat); omega)
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at hbp ⊢
   subst hbp
-  have m : n.msb = false := by
-    rw [BitVec.msb_eq_decide]; simp only [decide_eq_false_iff_not, Nat.not_le]; omega
   wpx [W_341, W_47, W_56, W_192, o16, o1, o2, o10, Op.lda, Op.shr64, m, hhk, BitVec.and_self,
     BitVec.reduceAdd, BitVec.reduceAnd, BitVec.reduceSetWidth, BitVec.reduceHShiftRight, BitVec.reduceHShiftLeft,
     BitVec.reduceUShiftRight, BitVec.reduceShiftLeft, BitVec.reduceBEq, BitVec.reduceEq, BitVec.reduceToNat,
