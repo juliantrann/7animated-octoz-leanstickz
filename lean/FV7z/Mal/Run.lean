@@ -43,7 +43,8 @@ theorem fofs (fsb : Addr) (h1 : 40 ≤ fsb.toNat) (h2 : fsb.toNat + 48 < 2 ^ 64)
 
 /-- The break's page below the stack. -/
 theorem bnd {b pad S : Addr} (hb : b.toNat < 2 ^ 47) (hnb : 656 + pad.toNat + 4127 < 2 ^ 47)
-    (h : (b + size pad 656#64).toNat + 4096 + 168 ≤ S.toNat) : pageUp b.toNat / 4096 * 4096 + 168 ≤ S.toNat := by
+    (h : (b + size pad 656#64).toNat + 4096 + 168 ≤ S.toNat) :
+    pageUp b.toNat / 4096 * 4096 + 168 ≤ S.toNat ∧ b.toNat + 4096 + 168 ≤ S.toNat := by
   have hR : (size pad 656#64).toNat = (4127 + pad.toNat + 656) / 4096 * 4096 :=
     Smm.size_toNat (pad := pad) (nb := 656#64) (by show 656 + pad.toNat + 4127 < 2 ^ 47; omega)
   generalize size pad 656#64 = R at hR h
@@ -140,7 +141,7 @@ theorem mal_first {lim : Nat} {b fsb S : Addr} {ks : Kst} {pad sm mx : BitVec 64
       List.map (Vm X.cpu.gpr V) (byteAddrs x n) = List.map V (byteAddrs x n) :=
     fun x n h1 h2 => R x n (by omega)
   obtain ⟨f24, f32, f40⟩ := fofs fsb (by omega) (by omega)
-  have hpg := bnd hb47 hnb hbs
+  obtain ⟨hpg, hbS⟩ := bnd hb47 hnb hbs
   have ho : ∀ a : Addr, ¬ (S.toNat + 208 ≤ a.toNat ∧ a.toNat < S.toNat + 232) → Vm X.cpu.gpr V a = V a :=
     fun a ha => VL a (by omega)
   have g32 : ∀ d ∈ Pmi.t32, (Tgv.ent d).toNat + 48 ≤ 7940484 := fun d hd => by
