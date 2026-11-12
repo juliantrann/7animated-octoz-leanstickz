@@ -1,6 +1,11 @@
 import FV7z.Mhi.HoldsN
 import FV7z.Mhi.Head
-/-! Probe: `mhi_head` for every request `9 ≤ n ≤ 1032` (`vc_341n`). -/
+/-!
+# `malloc_hook_ini`: from the entry to the call of `tcache_init`, `9 ≤ n ≤ 1032` (PLAN.md G3, `malloc`)
+
+- `mhi_headn`: `mhi_head` with `vc_341n`: `tcache_init` is reached with the tcache index of `n + 23 &&& -16` in
+  `rbx` and `n` in `rbp`.
+-/
 open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn FV7z.Start
 open FV7z.Raf (off_ft)
 open FV7z.Tun (rd_Vst rd_Vst_self Vst_out)
