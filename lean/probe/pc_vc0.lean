@@ -33,8 +33,8 @@ theorem vc_0 {g : Gprs} {f : Rflags} {V : Addr → Byte}
     (r3 : ∀ i < 8, Foot F.data (Addr.add (g.rsp - 8 - 8 - 8 + 24#64) i)) :
     W_0 F Wl (fun j' g' _ V' => j' = 377 ∧ V' = Vm g V ∧
       g' = { g with rax := rdq(V, 7940656#64), rsi := rdq(Vm g V, g.rsp - 8 - 8 - 8 + 24#64),
-        rbx := rdq(Vm g V, g.rsp - 8 - 8 - 8), rbp := rdq(Vm g V, g.rsp - 8 - 8 - 8 + 8),
-        r12 := rdq(Vm g V, g.rsp - 8 - 8 - 8 + 8 + 8), rsp := g.rsp - 8 - 8 - 8 + 8 + 8 + 8 }) g f V := by
+                    rbx := rdq(Vm g V, g.rsp - 8 - 8 - 8), rbp := rdq(Vm g V, g.rsp - 8 - 8 - 8 + 8),
+                    r12 := rdq(Vm g V, g.rsp - 8 - 8 - 8 + 8 + 8), rsp := g.rsp - 8 - 8 - 8 + 8 + 8 + 8 }) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at hsp hst r0 r1 r2 r3 ⊢
   obtain ⟨s1, s2, s3⟩ := Mhi.push3 hst

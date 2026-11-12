@@ -22,18 +22,34 @@ abbrev Vm (g : Gprs) (V : Addr → Byte) : Addr → Byte :=
   Vst (Vst (Vst V (g.rsp - 8) (toBytesLE g.r12 8)) (g.rsp - 8 - 8) (toBytesLE g.rbp 8)) (g.rsp - 8 - 8 - 8)
     (toBytesLE g.rbx 8)
 
+/-- The slots of the pushes and the return address, from the stack pointer `r`. -/
+theorem offs (r : Addr) (h : 24 ≤ r.toNat) (h' : r.toNat + 8 ≤ 2 ^ 64) :
+    (r - 8 - 8 - 8).toNat = r.toNat - 24 + 0 ∧ (r - 8 - 8 - 8 + 8).toNat = r.toNat - 24 + 8 ∧
+      (r - 8 - 8 - 8 + 8 + 8).toNat = r.toNat - 24 + 16 ∧ (r - 8 - 8 - 8 + 24#64).toNat = r.toNat - 24 + 24 :=
+  ⟨by bv_omega, by bv_omega, by bv_omega, by bv_omega⟩
+
+theorem addk (r x : Addr) (k i : Nat) (hx : x.toNat = r.toNat - 24 + k) (h : 24 ≤ r.toNat) (hk : k + i < 32)
+    (h' : r.toNat + 8 ≤ 2 ^ 64) : Addr.add (r - 24) (k + i) = Addr.add x i := by
+  simp only [Addr.add]
+  bv_omega
+
+theorem p8 (x : Addr) (n : Nat) (h : x.toNat = n) (hn : n + 8 < 2 ^ 64) : (x + 8).toNat = n + 8 := by
+  bv_omega
+
 /-- The pops and the load of the return address read back what the pushes left. -/
 theorem regs3 (g : Gprs) (V : Addr → Byte) (h : 24 ≤ g.rsp.toNat) (h' : g.rsp.toNat + 8 ≤ 2 ^ 64) :
     rdq(Vm g V, g.rsp - 8 - 8 - 8) = g.rbx ∧ rdq(Vm g V, g.rsp - 8 - 8 - 8 + 8) = g.rbp ∧
       rdq(Vm g V, g.rsp - 8 - 8 - 8 + 8 + 8) = g.r12 ∧ rdq(Vm g V, g.rsp - 8 - 8 - 8 + 24#64) = rdq(V, g.rsp) ∧
       g.rsp - 8 - 8 - 8 + 8 + 8 + 8 = g.rsp := by
-  have a4 : g.rsp - 8 - 8 - 8 + 8 + 8 + 8 = g.rsp := by bv_omega
-  have a2 : g.rsp - 8 - 8 - 8 + 8 + 8 = g.rsp - 8 := by bv_omega
-  have a3 : g.rsp - 8 - 8 - 8 + 24#64 = g.rsp := by bv_omega
-  have a1 : g.rsp - 8 - 8 - 8 + 8 = g.rsp - 8 - 8 := by bv_omega
   have e1 : (g.rsp - 8).toNat = g.rsp.toNat - 8 := by bv_omega
   have e2 : (g.rsp - 8 - 8).toNat = g.rsp.toNat - 16 := by bv_omega
   have e3 : (g.rsp - 8 - 8 - 8).toNat = g.rsp.toNat - 24 := by bv_omega
+  obtain ⟨q0, q8, q16, q24⟩ := offs g.rsp h h'
+  have t := p8 _ _ q16 (by omega)
+  have a4 : g.rsp - 8 - 8 - 8 + 8 + 8 + 8 = g.rsp := BitVec.eq_of_toNat_eq (by rw [t]; omega)
+  have a2 : g.rsp - 8 - 8 - 8 + 8 + 8 = g.rsp - 8 := BitVec.eq_of_toNat_eq (by rw [q16, e1]; omega)
+  have a3 : g.rsp - 8 - 8 - 8 + 24#64 = g.rsp := BitVec.eq_of_toNat_eq (by rw [q24]; omega)
+  have a1 : g.rsp - 8 - 8 - 8 + 8 = g.rsp - 8 - 8 := BitVec.eq_of_toNat_eq (by rw [q8, e2]; omega)
   have l : ∀ v : Addr, (toBytesLE v 8).length = 8 := fun v => toBytesLE_length _ _
   have hR := g.rsp.isLt
   rw [a4, a2, a3, a1]
