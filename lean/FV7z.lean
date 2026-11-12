@@ -257,3 +257,7 @@ import FV7z.Imm.Tail
 import FV7z.Imm.Top
 import FV7z.Imm.Mid
 import FV7z.Imm.Head
+import FV7z.Lemmas.Lock3
+import FV7z.Tci.Cuts
+import FV7z.Tci.Hand
+import FV7z.Tci.Holds

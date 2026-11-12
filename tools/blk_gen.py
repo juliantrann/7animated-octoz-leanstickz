@@ -233,6 +233,13 @@ FNS = {
                        0xc20, 0xc77, 0xcef, 0x3b6),
                 calls=True, tag="PLAN.md G3, `malloc`",
                 src="glibc 2.31's `_int_malloc` (`malloc/malloc.c`; `objdump -d`)"),
+    # glibc 2.31 malloc/malloc.c (`tcache_init`), the way of one thread with the arena set by `ptmalloc_init`. Stops:
+    # no arena yet (0xa0: `get_free_list`/`arena_get2`), more than one thread (0x110: `lock cmpxchg`; 0x130: `xchg`),
+    # `_int_malloc` gave null (0xe0: `arena_get_retry`), the `ret` (0x96). By hand:
+    # `cmpxchg [rbp], edx` (0x2a), `sub dword [rbp], 1` (0x57), `rep stos` (0x92).
+    "tci": dict(grp="Tci", cn="tcache_init", a=0x631a60, n=346, pos=True, fs=True,
+                stops=(0xa0, 0x110, 0xe0, 0x130, 0x96), calls=True, hand=(0x2a, 0x57, 0x92),
+                tag="PLAN.md G3, `malloc`", src="glibc 2.31's `tcache_init` (`malloc/malloc.c`; `objdump -d`)"),
     "eli": dict(grp="Eli", cn="elision_init", a=0x5ffc50, n=0xb1, pos=True, fs=True, stops=(0xab, 0xac),
                 calls=True, tag="PLAN.md G3, startup",
                 src="glibc 2.31's `elision_init` (`sysdeps/unix/sysv/linux/x86/elision-conf.c`; `objdump -d`)"),
