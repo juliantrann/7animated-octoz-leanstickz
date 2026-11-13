@@ -7,7 +7,7 @@ import FV7z.Im2.HeadN
 `nb` = 32 (`Im2/HeadN.lean`; the registers at 563 are those of that way, no store before). One `wpx` per `n`.
 
 - `clsS`: `n` one of 0 … 8.
-- `Cls`, `Cls.cases`, `Cls.bnd`: the requests `n ≤ 120` and their chunk sizes `nb`, a fastbin size.
+- `Cls`, `Cls.cases`, `Cls.bnd`: the requests `n ≤ 1000` and their chunk sizes `nb = 16 k`, `2 ≤ k ≤ 63`.
 - `vc_0s`: 0 → 1115, with `Im2.G1n`, `Im2.V1n`.
 -/
 open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn FV7z.Start
@@ -21,23 +21,23 @@ theorem clsS {n : Addr} (h : n.toNat ≤ 8) :
     n = 0#64 ∨ n = 1#64 ∨ n = 2#64 ∨ n = 3#64 ∨ n = 4#64 ∨ n = 5#64 ∨ n = 6#64 ∨ n = 7#64 ∨ n = 8#64 := by
   bv_omega
 
-/-- The requests `n ≤ 120` and their chunk sizes `nb` (`request2size`): `n + 23 &&& -16` from 9 on, 32 (`MINSIZE`)
-below. -/
+/-- The requests `n ≤ 1000` and their chunk sizes `nb` (`request2size`): `n + 23 &&& -16` from 9 on, 32 (`MINSIZE`)
+below; the fastbin and smallbin sizes. -/
 def Cls (n nb : Addr) : Prop :=
-  (9 ≤ n.toNat ∧ n.toNat ≤ 120 ∧ n + 23#64 &&& 18446744073709551600#64 = nb) ∨ (n.toNat ≤ 8 ∧ nb = 32#64)
+  (9 ≤ n.toNat ∧ n.toNat ≤ 1000 ∧ n + 23#64 &&& 18446744073709551600#64 = nb) ∨ (n.toNat ≤ 8 ∧ nb = 32#64)
 
-/-- `nb` is one of the seven fastbin sizes. -/
-theorem Cls.cases {n nb : Addr} (h : Cls n nb) :
-    nb = 32#64 ∨ nb = 48#64 ∨ nb = 64#64 ∨ nb = 80#64 ∨ nb = 96#64 ∨ nb = 112#64 ∨ nb = 128#64 := by
+/-- `nb` is `16 k`, `2 ≤ k ≤ 63`. -/
+theorem Cls.cases {n nb : Addr} (h : Cls n nb) : ∃ k, 2 ≤ k ∧ k ≤ 63 ∧ nb = BitVec.ofNat 64 (16 * k) := by
   rcases h with ⟨h1, h2, rfl⟩ | ⟨-, rfl⟩
-  · obtain ⟨-, -, -, k₀, hk1, hk2, enb⟩ := Im2.clsB h1 h2
-    rw [enb]
-    rcases (show k₀ = 2 ∨ k₀ = 3 ∨ k₀ = 4 ∨ k₀ = 5 ∨ k₀ = 6 ∨ k₀ = 7 ∨ k₀ = 8 by omega) with
-      rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp
-  · exact .inl rfl
+  · have e : (n + 23#64).toNat = n.toNat + 23 := by rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega
+    exact ⟨(n.toNat + 23) / 16, by omega, by omega,
+      BitVec.eq_of_toNat_eq (by rw [Im2.and_m16, e, BitVec.toNat_ofNat]; omega)⟩
+  · exact ⟨2, by decide, by decide, rfl⟩
 
-theorem Cls.bnd {n nb : Addr} (h : Cls n nb) : 32 ≤ nb.toNat ∧ nb.toNat ≤ 128 := by
-  rcases h.cases with h | h | h | h | h | h | h <;> subst h <;> decide
+theorem Cls.bnd {n nb : Addr} (h : Cls n nb) : 32 ≤ nb.toNat ∧ nb.toNat ≤ 1008 := by
+  obtain ⟨k, h1, h2, rfl⟩ := h.cases
+  rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+  omega
 
 set_option maxHeartbeats 4000000 in
 /-- `Im2.vc_0n` for the requests `n ≤ 8`: from the entry to 1115 by `0 → 63 → 544 → 563`, `nb` = 32. -/

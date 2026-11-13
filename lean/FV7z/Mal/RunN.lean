@@ -1,10 +1,10 @@
 import FV7z.Mal.Run
 import FV7z.Mhi.RunN
 /-!
-# The first `malloc (n)` of the process for `n ≤ 120` (PLAN.md G3, `malloc`)
+# The first `malloc (n)` of the process for `n ≤ 1000` (PLAN.md G3, `malloc`)
 
 - `mal_firstn`: `mal_first` with `Mhi.mhi_okn`.
-- `Nr_hhn`: `Nr_hh` up to 144 bytes above the first chunk.
+- `Nr_hhn`: `Nr_hh` up to 1024 bytes above the first chunk.
 -/
 open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn FV7z.Start
 open FV7z.Raf (off_ft)
@@ -21,7 +21,7 @@ variable {prof : Profile} {L : List (Addr × List Byte)} {s₀ X : State} {o : O
   {gev : List Event} {gP : State → Nat → List Event → Prop} {gE : Outcome → List Event → Prop} {V : Addr → Byte}
 
 set_option maxHeartbeats 2000000 in
-/-- `mal_first` for every request `n ≤ 120` (`Mhi.mhi_okn`): the top split for `nb` bytes, `nb` the chunk size of `n`
+/-- `mal_first` for every request `n ≤ 1000` (`Mhi.mhi_okn`): the top split for `nb` bytes, `nb` the chunk size of `n`
 (`Im3.Cls`). -/
 theorem mal_firstn {lim : Nat} {b fsb S n nb : Addr} {ks : Kst} {pad sm mx : BitVec 64} (c : Seg prof F Wl L s₀ o)
     (hB : Base s₀ lim b fsb ks) (hin : CodeIn L mal_at mal) (hinH : CodeIn L mhi_at mhi)
@@ -67,7 +67,7 @@ theorem mal_firstn {lim : Nat} {b fsb S n nb : Addr} {ks : Kst} {pad sm mx : Bit
     (hbs : (b + size pad 656#64).toNat + 4096 + 168 ≤ S.toNat)
     {N : List Rgn}
     (hN : ∀ r ∈ N, r.In (pageUp b.toNat / 4096 * 4096) (pageUp (b + size pad 656#64).toNat / 4096 * 4096))
-    (hh : ∀ a : Addr, (b + corr b).toNat ≤ a.toNat → a.toNat < (b + corr b).toNat + 656 + 144 → Foot (N ++ Wl) a)
+    (hh : ∀ a : Addr, (b + corr b).toNat ≤ a.toNat → a.toNat < (b + corr b).toNat + 656 + 1024 → Foot (N ++ Wl) a)
     (hz : ∀ a : Addr, b.toNat ≤ a.toNat → a.toNat < pageUp b.toNat / 4096 * 4096 → V a = 0)
     {e₂ : Addr} {code₂ : List Byte} (hin₂ : CodeIn L e₂ code₂) {j₂ : Nat} (h₂ : j₂ < code₂.length)
     (hra : rdq(V, S + 232#64) = e₂.add j₂)
@@ -152,10 +152,10 @@ theorem mal_firstn {lim : Nat} {b fsb S n nb : Addr} {ks : Kst} {pad sm mx : Bit
   rw [hgZ] at hD hregs
   exact k Vd V₁ M evs s₁ Z' t'' hc hB' hK' hA' hD hO hM hr hax hregs hev
 
-/-- `Nr_hh` up to 144 bytes above the first chunk (the split of up to 128 bytes). -/
+/-- `Nr_hh` up to 1024 bytes above the first chunk (the split of up to 1008 bytes). -/
 theorem Nr_hhn {b pad : Addr} {Wl : List Rgn} (hb : b.toNat < 2 ^ 47) (hnb : 656 + pad.toNat + 4127 < 2 ^ 47)
     (hw : ∀ a : Addr, b.toNat ≤ a.toNat → a.toNat < pageUp b.toNat / 4096 * 4096 → Foot Wl a) :
-    ∀ a : Addr, (b + corr b).toNat ≤ a.toNat → a.toNat < (b + corr b).toNat + 656 + 144 →
+    ∀ a : Addr, (b + corr b).toNat ≤ a.toNat → a.toNat < (b + corr b).toNat + 656 + 1024 →
       Foot (Nr b pad ++ Wl) a := by
   intro a h1 h2
   have hc : (corr b).toNat < 16 := by rw [Smm.corr_toNat]; omega

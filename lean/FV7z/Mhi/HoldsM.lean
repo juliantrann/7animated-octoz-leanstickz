@@ -3,8 +3,8 @@ import FV7z.Lemmas.Ksplit
 /-!
 # `malloc_hook_ini`: the tcache and size checks for every chunk size `16 k`, `2 ≤ k ≤ 63` (PLAN.md G3, `malloc`)
 
-`vc_236n`, `vc_130n` from the fastbin sizes to all the smallbin sizes (the requests `n ≤ 1000`), one `wpx` per `k`
-(`ksplit`):
+The checks of `malloc_hook_ini` after the tcache index, for all the fastbin and smallbin sizes (the requests `n ≤ 1000`),
+one `wpx` per `k` (`ksplit`):
 
 - `vc_236m`: the tcache bin `k - 2` (below `mp_.tcache_bins` = 64) empty, on to offset 99.
 - `vc_130m`: the size word `nb ||| 1` of the chunk back from `_int_malloc`, on to 180.

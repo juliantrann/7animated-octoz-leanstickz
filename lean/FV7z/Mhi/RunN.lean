@@ -2,10 +2,10 @@ import FV7z.Mhi.Run
 import FV7z.Mhi.TailN
 import FV7z.Mhi.HeadN
 /-!
-# `malloc_hook_ini (n)` for `n ≤ 120`, the whole run (PLAN.md G3, `malloc`)
+# `malloc_hook_ini (n)` for `n ≤ 1000`, the whole run (PLAN.md G3, `malloc`)
 
-- `sz_okn`: the top after the first `_int_malloc` has at least 160 bytes.
-- `cXn`, `t72n`: offsets of the tcache counts and of the split.
+- `sz_okn`: the top after the first `_int_malloc` has at least 1040 bytes.
+- `cXn`, `t72n`: offsets of the 64 tcache counts and of the split.
 - `mhi_okn`: `mhi_headn`, `Tci.tci_ok`, `mhi_tailn`: as `mhi_ok`, the top split for `nb` bytes (`VspN`, `nb` the
   chunk size of `n`, `Im3.Cls`), the fastbins 0 at the entry.
 -/
@@ -21,11 +21,11 @@ open FV7z.Tci (K5 mt)
 namespace FV7z.Mhi
 variable {F : Footprint} {Wl : List Rgn}
 
-/-- `sz_ok` with the lower bound 160 (the split of 128 bytes leaves a chunk). -/
+/-- `sz_ok` with the lower bound 1040 (the split of up to 1008 bytes leaves a chunk). -/
 theorem sz_okn {b pad sm : Addr} (hb : b.toNat < 2 ^ 47) (hnb : 656 + pad.toNat + 4127 < 2 ^ 47)
     (hsm : sm.toNat < 2 ^ 47) :
     (Sz b pad &&& 18446744073709551608#64).toNat ≤ (sm + size pad 656#64 + C2 b pad).toNat ∧
-      160 ≤ (Sz b pad &&& 18446744073709551608#64).toNat := by
+      1040 ≤ (Sz b pad &&& 18446744073709551608#64).toNat := by
   have hR : (size pad 656#64).toNat = (4127 + pad.toNat + 656) / 4096 * 4096 :=
     Smm.size_toNat (pad := pad) (nb := 656#64) (by show 656 + pad.toNat + 4127 < 2 ^ 47; omega)
   have hc := Smm.corr_toNat b
@@ -33,7 +33,7 @@ theorem sz_okn {b pad sm : Addr} (hb : b.toNat < 2 ^ 47) (hnb : 656 + pad.toNat 
   show ((((b + size pad 656#64 - (b + corr b) + corr2 b (corr b) (size pad 656#64) ||| 1#64)
       &&& 18446744073709551608#64) - 656#64 ||| 1#64) &&& 18446744073709551608#64).toNat ≤
       (sm + size pad 656#64 + corr2 b (corr b) (size pad 656#64)).toNat ∧
-    160 ≤ ((((b + size pad 656#64 - (b + corr b) + corr2 b (corr b) (size pad 656#64) ||| 1#64)
+    1040 ≤ ((((b + size pad 656#64 - (b + corr b) + corr2 b (corr b) (size pad 656#64) ||| 1#64)
       &&& 18446744073709551608#64) - 656#64 ||| 1#64) &&& 18446744073709551608#64).toNat
   generalize corr2 b (corr b) (size pad 656#64) = C at *
   generalize size pad 656#64 = R at *
@@ -45,14 +45,14 @@ theorem sz_okn {b pad sm : Addr} (hb : b.toNat < 2 ^ 47) (hnb : 656 + pad.toNat 
   rw [or1_m8, sub656 _ _ hy (by omega), hs]
   omega
 
-/-- The tcache counts of the seven fastbin sizes. -/
-theorem cXn {b : Addr} (hb : b.toNat < 2 ^ 47) (i : Nat) (hi : i < 7) :
+/-- The tcache counts of the 64 bins. -/
+theorem cXn {b : Addr} (hb : b.toNat < 2 ^ 47) (i : Nat) (hi : i < 64) :
     (b + corr b + 16#64 + BitVec.ofNat 64 (2 * i)).toNat = b.toNat + (corr b).toNat + 16 + 2 * i := by
   have := (mt b hb).2.2.1
   rw [BitVec.toNat_add, BitVec.toNat_ofNat, (mt b hb).1]; omega
 
 /-- The size word after the split of `nb` bytes. -/
-theorem t72n {b nb : Addr} (hb : b.toNat < 2 ^ 47) (h : nb.toNat ≤ 128) :
+theorem t72n {b nb : Addr} (hb : b.toNat < 2 ^ 47) (h : nb.toNat ≤ 1008) :
     (Tp b + nb + 8#64).toNat = b.toNat + (corr b).toNat + 664 + nb.toNat := by
   have := Smm.corr_toNat b
   show (b + corr b + 656#64 + nb + 8#64).toNat = _
@@ -62,7 +62,7 @@ variable {prof : Profile} {L : List (Addr × List Byte)} {s₀ X : State} {o : O
   {gev : List Event} {gP : State → Nat → List Event → Prop} {gE : Outcome → List Event → Prop} {V : Addr → Byte}
 
 set_option maxHeartbeats 2000000 in
-/-- `mhi_ok` for every request `n ≤ 120`: `_int_malloc` splits the top for `nb` bytes (`VspN`, `nb` the chunk size
+/-- `mhi_ok` for every request `n ≤ 1000`: `_int_malloc` splits the top for `nb` bytes (`VspN`, `nb` the chunk size
 of `n`, `Im3.Cls`); the fastbins are 0 at the entry. -/
 theorem mhi_okn {lim : Nat} {b fsb S n nb : Addr} {ks : Kst} {pad sm mx : BitVec 64} (c : Seg prof F Wl L s₀ o)
     (hB : Base s₀ lim b fsb ks) (hin : CodeIn L mhi_at mhi) (hinP : CodeIn L Pmi.pmi_at Pmi.pmi)
@@ -106,7 +106,7 @@ theorem mhi_okn {lim : Nat} {b fsb S n nb : Addr} {ks : Kst} {pad sm mx : BitVec
     (hbs : (b + size pad 656#64).toNat + 4096 + 168 ≤ S.toNat)
     {N : List Rgn}
     (hN : ∀ r ∈ N, r.In (pageUp b.toNat / 4096 * 4096) (pageUp (b + size pad 656#64).toNat / 4096 * 4096))
-    (hh : ∀ a : Addr, (b + corr b).toNat ≤ a.toNat → a.toNat < (b + corr b).toNat + 656 + 144 → Foot (N ++ Wl) a)
+    (hh : ∀ a : Addr, (b + corr b).toNat ≤ a.toNat → a.toNat < (b + corr b).toNat + 656 + 1024 → Foot (N ++ Wl) a)
     (hz : ∀ a : Addr, b.toNat ≤ a.toNat → a.toNat < pageUp b.toNat / 4096 * 4096 → V a = 0)
     {e₂ : Addr} {code₂ : List Byte} (hin₂ : CodeIn L e₂ code₂) {j₂ : Nat} (h₂ : j₂ < code₂.length)
     (hra : rdq(V, S + 232#64) = e₂.add j₂)
@@ -130,7 +130,7 @@ theorem mhi_okn {lim : Nat} {b fsb S n nb : Addr} {ks : Kst} {pad sm mx : BitVec
   have hbt := hB.brk_lt
   have hb47 : b.toNat < 2 ^ 47 := by omega
   obtain ⟨hle, hge⟩ := sz_okn hb47 hnb hsu
-  obtain ⟨hn32, hn128⟩ := hcls.bnd
+  obtain ⟨hn32, hn1008⟩ := hcls.bnd
   obtain ⟨a232, e200, m64, a200, a208, a16, q208, q16, q232, q240, p1, p2, p3, q24⟩ := sof S hS (by omega)
   have h656 : (656#64 : BitVec 64).toNat = 656 := rfl
   have hsn := Smm.size_toNat (pad := pad) (nb := 656#64) (by rw [h656]; omega)
@@ -293,7 +293,7 @@ theorem mhi_okn {lim : Nat} {b fsb S n nb : Addr} {ks : Kst} {pad sm mx : BitVec
         exact ⟨(hw m h1 h2).1, (hw m h1 h2).2.1, (hw m h1 h2).2.2, by omega⟩]
     exact T1 x n (by omega)
   have cX := cXn hb47
-  have t72n := t72n (b := b) hb47 hn128
+  have t72n := t72n (b := b) hb47 hn1008
   refine mhi_tailn (S := S + 16#64) (T := Tp b) (szw := Sz b pad) (sm := sm + size pad 656#64 + C2 b pad)
     (C := b + corr b + 16#64) c' hB'.fsb hin hinI hK' hA' hcls hr' (k5.1.trans bx₀) (bpZ.trans bp₀)
     (spZ.trans q208)
@@ -353,7 +353,7 @@ theorem mhi_okn {lim : Nat} {b fsb S n nb : Addr} {ks : Kst} {pad sm mx : BitVec
     (by rw [congrArg (ofBytesLE 64) (MV _ 8 (by rw [t8]; omega) (.inr (by rw [t8]; omega)))]; exact hO.tsz)
     (by rw [congrArg (ofBytesLE 64) (MV _ 8 (by decide) (.inl (by simp only [BitVec.toNat_ofNat]; omega)))]
         exact hO.sys)
-    hle hge hin₂ h₂
+    hle (by omega) hin₂ h₂
     (by
       rw [q232, congrArg (ofBytesLE 64) (HI _ 8 (by rw [a232]; omega) (by rw [a232]; omega)),
         congrArg (ofBytesLE 64) (rd_eq (V := V) (by rw [a232]; omega) fun a a1 a2 =>
