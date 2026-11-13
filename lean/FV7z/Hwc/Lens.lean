@@ -26,11 +26,9 @@ theorem a16 (P : Addr) (j : Nat) :
 
 theorem a8m (P : Addr) (j : Nat) :
     P + BitVec.ofNat 64 (16 * (j + 1)) + 18446744073709551608#64 = P + BitVec.ofNat 64 (16 * j + 8) := by
-  rw [BitVec.add_assoc]
-  refine congrArg (P + ·) ?_
-  apply BitVec.eq_of_toNat_eq
-  simp only [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.reducePow, Nat.reduceMod]
-  omega
+  -- not `omega` on `toNat`: with `2^64 - 8` it ran out of kernel memory (a114)
+  rw [show 16 * (j + 1) = 16 * j + 8 + 8 by omega, BitVec.ofNat_add]
+  simp only [BitVec.add_assoc, BitVec.reduceOfNat, BitVec.reduceAdd, BitVec.add_zero]
 
 /-- Entry `j` after the capability with the mask `s`, `temp.len = T`. -/
 def addc (ℓ : Nat → Addr) (s T : Addr) (E j : Nat) : Addr :=
