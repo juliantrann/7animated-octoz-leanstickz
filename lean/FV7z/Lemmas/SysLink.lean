@@ -87,11 +87,11 @@ theorem userPath_ok {a : Addr} {m : Nat} (hm : m < pathMax)
   have g2 := growFor_ok (acc := .read) h2
   unfold userPath
   rw [he]
-  dsimp only
+  try dsimp only
   rw [g1, req_pure_bind]
-  dsimp only
+  try dsimp only
   rw [he]
-  dsimp only
+  try dsimp only
   rw [g2, req_pure_bind]
 
 /-- An executable's path, as the kernel writes it, starts with `/`. -/
@@ -157,7 +157,7 @@ theorem syscall_readlink {len m n : Nat} {p : List Byte} (htf : s.cpu.rflags.tf 
   have hu := userPath_ok (s := nx s len (sysGpr s len) (rf0 s)) (a := s.cpu.gpr.rdi) hm htop hr hnz hz
   rw [show readBytes (nx s len (sysGpr s len) (rf0 s)).proc.mm.mem s.cpu.gpr.rdi m = p from hp] at hu
   unfold sysReadlink readlinkAt
-  simp only [hrdi, hrsi, hrdx, hn, hn', ↓reduceIte, hu, req_pure_bind, eq_self_iff_true, or_true,
+  simp only [hrdi, hrsi, hrdx, hn, hn', ↓reduceIte, hu, req_pure_bind, or_true,
     Int.toNat_natCast]
   show (Req.bind (Req.request (.readlink none p)) _).runStream o t = _
   rw [Req.runStream_bind,
@@ -175,7 +175,7 @@ theorem syscall_readlink {len m n : Nat} {p : List Byte} (htf : s.cpu.rflags.tf 
   cases r with
   | error e => rfl
   | target bs =>
-    simp only [C (bs.take n) (List.length_take_le n bs), req_pure_bind, eq_self_iff_true, ↓reduceIte, List.take_length, linkRes]
+    simp only [C (bs.take n) (List.length_take_le n bs), req_pure_bind, ↓reduceIte, List.take_length, linkRes]
     rfl
   | procExe x =>
     by_cases hx : x.bytes.length < pathMax
