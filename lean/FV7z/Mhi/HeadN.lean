@@ -114,8 +114,8 @@ theorem mhi_headn {fb n nb : Addr} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.
   have hfh : ∀ i < 8, Foot F.data (Addr.add (7940656#64) i) :=
     fun i hi => c.hws _ (D (7940656#64) 8 (by decide) (by decide) i hi)
   -- from 68 on, both ways
-  have K : ∀ j' g fl V₃, (j' = 68 ∧ (∃ a, g = { Z₁.cpu.gpr with rax := a,
-        rbx := (nb + 18446744073709551599#64) >>> 4 }) ∧ V₃ = Vd) →
+  have K : ∀ j' g fl V₃,
+      (j' = 68 ∧ (∃ a, g = { Z₁.cpu.gpr with rax := a, rbx := (nb + 18446744073709551599#64) >>> 4 }) ∧ V₃ = Vd) →
       ∀ Y₃ t₃, KeptW Wl s₀ Y₃ → Agree F Y₃.proc.mm.mem V₃ → Y₃.cpu.rip = mhi_at.add j' → Y₃.cpu.gpr = g →
         Y₃.cpu.rflags = fl → GoG prof L o gev gP gE Y₃ t₃ := by
     rintro j' g fl V₃ ⟨rfl, ⟨a, rfl⟩, rfl⟩ Y₃ t₃ hK₃ hA₃ hr₃ hg₃ -
