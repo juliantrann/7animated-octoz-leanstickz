@@ -177,7 +177,8 @@ theorem vc_83 {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte}
       Bool.or_true, false_implies, true_implies, and_true, true_and, reduceIte, or_true, true_or, or_false, false_or,
       ne_eq, Nat.reduceEqDiff, not_false_eq_true, ofBytesLE_toBytesLE, Bool.true_eq_false, BitVec.xor_self,
       BitVec.add_zero]
-  first | exact hfl | exact ⟨hfl, fun h => absurd h (by decide)⟩ | exact ⟨hfl, fun _ => rfl⟩
+  first | exact hfl | exact ⟨hfl, rfl⟩ | exact ⟨hfl, fun h => absurd h (by decide)⟩
+    | exact ⟨hfl, fun _ => rfl⟩
 
 set_option maxHeartbeats 50000000 in
 /-- From the return of `_int_malloc` (114) to 164: the chunk not null, its size word `16 k ||| 1`. -/

@@ -33,10 +33,11 @@ macro "hwx" "[" ls:Lean.Parser.Tactic.simpLemma,* "]" : tactic =>
     Bool.true_or, Bool.or_true, false_implies, true_implies, and_true, true_and, reduceIte, or_true, true_or,
     or_false, false_or, ne_eq, not_false_eq_true, Bool.true_eq_false, BitVec.ofNat_eq_ofNat, $ls,*])
 
-/-- The goals `hwx` leaves: the flags and hypotheses introduced, the conjunctions split, each closed by a hypothesis,
-`rfl` or `decide`. -/
+/-- The goals `hwx` leaves: the flags introduced (not the bytes `i < 8` of a footprint), the conjunctions split, each
+closed by a hypothesis or `rfl` (no `decide`: on a `Foot` it runs past `maxRecDepth`, which `first` does not catch). -/
 macro "hcl" : tactic =>
-  `(tactic| ((all_goals (intros; repeat' apply And.intro)); all_goals first | assumption | rfl | decide | skip))
+  `(tactic| ((all_goals (repeat' (first | intro (_ : Rflags) | intro (_ : Bool) | apply And.intro)));
+    all_goals first | assumption | rfl | skip))
 
 /-- A flag `bt` set (`fl.cf = …`, not eliminated by `hwx`): introduced and rewritten with the hypotheses. -/
 macro "hflg" : tactic =>
@@ -167,14 +168,14 @@ theorem vc_132 {g : Gprs} {f : Rflags} {V : Addr → Byte} {c n : Nat} (hc : c <
         Bool.not_false, Bool.false_eq_true, false_implies, true_implies, BitVec.sub_zero, BitVec.reduceAdd,
         BitVec.reduceAnd, BitVec.reduceSetWidth, BitVec.reduceHShiftLeft, BitVec.reduceShiftLeft, BitVec.reduceToNat,
         BitVec.reduceSub, BitVec.reduceOfNat, BitVec.reduceBEq, Nat.reduceMul, Nat.reduceAdd, decide_true,
-        decide_false, BitVec.ofNat_eq_ofNat]
-      all_goals (repeat' apply And.intro)
-      all_goals first | exact hfs | exact Or.inr ⟨rfl, hz, rfl⟩ | rfl | decide | skip
+        decide_false, BitVec.ofNat_eq_ofNat, Bool.true_eq_false, Nat.reduceEqDiff, false_and, and_false, or_false,
+        false_or, hz]
+      hcl
   · have hz' : ((0#64 - 1#64 <<< (c + 1)) &&& r8 == 0#64) = false := by simp only [hz, beq_eq_false_iff_ne]; exact hz
     wpx [W_132, o5, Op.shl64, e1, es, hz', Bool.not_true, Bool.not_false, Bool.false_eq_true, false_implies,
-      true_implies, BitVec.ofNat_eq_ofNat]
-    all_goals (repeat' apply And.intro)
-    all_goals first | exact Or.inl ⟨rfl, rfl, hz⟩ | rfl | skip
+      true_implies, BitVec.ofNat_eq_ofNat, Bool.true_eq_false, Nat.reduceEqDiff, false_and, and_false, or_false,
+      false_or, ne_eq, hz, not_false_eq_true]
+    hcl
 
 /-- After the probe: `temp` at `rsp` (16-aligned), `cnt` to `rbp - 0x78`, the loop over the bits of `h` from bit 0
 (1840): `rbx = 0` entries so far, `r8 = 1`, `rdx = temp`. -/
@@ -259,7 +260,7 @@ theorem vc_1895 {g : Gprs} {f : Rflags} {V : Addr → Byte} {b : Nat} {m T e k :
   rcases hc with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
   all_goals
     hwx [W_1895, W_2066, W_1943, o55, o60, o56, Op.shl64, hd, he, hk]
-    all_goals (repeat' apply And.intro)
+    all_goals (repeat' (first | intro (_ : Rflags) | apply And.intro))
     all_goals first | assumption | rfl | (exact Or.inl ⟨by decide, rfl, rfl⟩) |
       (exact Or.inr ⟨by decide, rfl, rfl⟩) | skip
 
