@@ -11,6 +11,17 @@ variable {F : Footprint} {Wl : List Rgn}
 /-- Not unfolded: the state at 2549, shown by the goal left. -/
 def Show (_g : Gprs) (_V : Addr → Byte) : Prop := False
 
+/-- `wpx` with the reads and rewrites of the probe; the blocks of one piece as the extra lemmas. -/
+macro "wpl" "[" ls:Lean.Parser.Tactic.simpLemma,* "]" : tactic =>
+  `(tactic| wpx [Op.cmpma, Op.cmpmif, Op.cmpmra, Op.shr64, rd_off, rd_off_self, BitVec.and_self,
+    BitVec.reduceAdd, BitVec.reduceAnd, BitVec.reduceSetWidth, BitVec.reduceHShiftRight, BitVec.reduceHShiftLeft,
+    BitVec.reduceUShiftRight, BitVec.reduceShiftLeft, BitVec.reduceBEq, BitVec.reduceEq, BitVec.reduceToNat,
+    BitVec.reduceSub, BitVec.reduceMul, BitVec.reduceLT, BitVec.reduceULT, BitVec.reduceOr, BitVec.reduceXOr,
+    Nat.reduceAdd, Nat.reduceLeDiff, Nat.reduceLT, decide_false, decide_true, Bool.or_false, Bool.false_or,
+    Bool.not_false, Bool.not_true, Bool.false_eq_true, false_imp_iff, true_imp_iff, Bool.or_self, Bool.true_or,
+    Bool.or_true, false_implies, true_implies, and_true, true_and, reduceIte, or_true, true_or, or_false, false_or,
+    ne_eq, Nat.reduceEqDiff, not_false_eq_true, ofBytesLE_toBytesLE, Bool.true_eq_false, $ls,*])
+
 set_option maxHeartbeats 200000000 in
 theorem vc_L128 {fb S n : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (hrsp : g.rsp = S + 184#64)
     (hsi : g.rsi = n) (hdi : g.rdi = 7940672#64) (m : n.msb = false)
@@ -46,17 +57,55 @@ theorem vc_L128 {fb S n : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (hrs
   have D : ∀ (x : Addr) (n : Nat), 7940480 ≤ x.toNat → x.toNat + n ≤ 7943136 →
       ∀ i < n, Foot F.data (Addr.add x i) :=
     fun x n h1 h2 i hi => hW _ (by simp only [Addr.add]; bv_omega) (by simp only [Addr.add]; bv_omega)
-  wpx [W_0, W_9, W_304, W_320, W_340, W_352, W_482, W_512, W_1069, W_1099, W_1115, W_1138, W_1968, W_1977,
-    W_2012, W_2048, W_2480, W_2488, W_2505, o0, o1, o2, o3, o4, o5, o6, o7, o8, o9, o10, o11, o12, o13, o14, o15,
-    o16, o17, o18, Op.cmpma, Op.cmpmif, Op.cmpmra, Op.shr64, p1, p2, p3, p4, p5, p6, p7, q1, q2, q3, q5, q6, q7, q8,
-    sk, qk, rd_off, rd_off_self, hS, hS', m, d1, d2, e, hgm, hfc, htb, htc, hun, hm2, hm3, BitVec.and_self,
-    BitVec.reduceAdd, BitVec.reduceAnd, BitVec.reduceSetWidth, BitVec.reduceHShiftRight, BitVec.reduceHShiftLeft,
-    BitVec.reduceUShiftRight, BitVec.reduceShiftLeft, BitVec.reduceBEq, BitVec.reduceEq, BitVec.reduceToNat,
-    BitVec.reduceSub, BitVec.reduceMul, BitVec.reduceLT, BitVec.reduceULT, BitVec.reduceOr, BitVec.reduceXOr,
-    Nat.reduceAdd, Nat.reduceLeDiff, Nat.reduceLT, decide_false, decide_true, Bool.or_false, Bool.false_or,
-    Bool.not_false, Bool.not_true, Bool.false_eq_true, false_imp_iff, true_imp_iff, Bool.or_self, Bool.true_or,
-    Bool.or_true, false_implies, true_implies, and_true, true_and, reduceIte, or_true, true_or, or_false, false_or,
-    ne_eq, Nat.reduceEqDiff, not_false_eq_true, ofBytesLE_toBytesLE, Bool.true_eq_false]
+  -- 0 → 512
+  wpl [W_0, W_9, W_304, W_320, W_340, W_352, W_482, o0, o1, o2, o3, o4, o5, o6,
+    p1, p2, p3, p4, p5, p6, p7, q1, q2, q3, q5, q6, q7, q8, sk, qk, hS, hS', m, d1, d2, e, hgm, hfc, htb, htc, hun,
+    hm2, hm3]
+  repeat' first
+    | apply And.intro
+    | intro (_ : Rflags)
+    | intro (_ : Rflags.zf _ = false)
+    | intro (_ : Rflags.zf _ = true)
+    | rfl
+    | with_reducible exact stk_f hsw (by decide)
+    | with_reducible exact stk_f hsd (by decide)
+    | with_reducible exact hgf
+    | with_reducible exact htf
+    | with_reducible exact D _ _ (by decide) (by decide)
+  -- 512 → 1115
+  any_goals wpl [W_512, W_1069, W_1099, o7, o8, o9,
+    p1, p2, p3, p4, p5, p6, p7, q1, q2, q3, q5, q6, q7, q8, sk, qk, hS, hS', m, d1, d2, e, hgm, hfc, htb, htc, hun,
+    hm2, hm3]
+  repeat' first
+    | apply And.intro
+    | intro (_ : Rflags)
+    | intro (_ : Rflags.zf _ = false)
+    | intro (_ : Rflags.zf _ = true)
+    | rfl
+    | with_reducible exact stk_f hsw (by decide)
+    | with_reducible exact stk_f hsd (by decide)
+    | with_reducible exact hgf
+    | with_reducible exact htf
+    | with_reducible exact D _ _ (by decide) (by decide)
+  -- 1115 → 2012
+  any_goals wpl [W_1115, W_1138, W_1968, W_1977, o10, o11, o12, o13,
+    p1, p2, p3, p4, p5, p6, p7, q1, q2, q3, q5, q6, q7, q8, sk, qk, hS, hS', m, d1, d2, e, hgm, hfc, htb, htc, hun,
+    hm2, hm3]
+  repeat' first
+    | apply And.intro
+    | intro (_ : Rflags)
+    | intro (_ : Rflags.zf _ = false)
+    | intro (_ : Rflags.zf _ = true)
+    | rfl
+    | with_reducible exact stk_f hsw (by decide)
+    | with_reducible exact stk_f hsd (by decide)
+    | with_reducible exact hgf
+    | with_reducible exact htf
+    | with_reducible exact D _ _ (by decide) (by decide)
+  -- 2012 → 2549
+  any_goals wpl [W_2012, W_2048, W_2480, W_2488, W_2505, o14, o15, o16, o17, o18,
+    p1, p2, p3, p4, p5, p6, p7, q1, q2, q3, q5, q6, q7, q8, sk, qk, hS, hS', m, d1, d2, e, hgm, hfc, htb, htc, hun,
+    hm2, hm3]
   repeat' first
     | apply And.intro
     | intro (_ : Rflags)
@@ -105,17 +154,55 @@ theorem vc_L257 {fb S n : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (hrs
   have D : ∀ (x : Addr) (n : Nat), 7940480 ≤ x.toNat → x.toNat + n ≤ 7943136 →
       ∀ i < n, Foot F.data (Addr.add x i) :=
     fun x n h1 h2 i hi => hW _ (by simp only [Addr.add]; bv_omega) (by simp only [Addr.add]; bv_omega)
-  wpx [W_0, W_9, W_304, W_320, W_340, W_352, W_482, W_512, W_1069, W_1099, W_1115, W_1138, W_1968, W_1977,
-    W_2012, W_2048, W_2480, W_2488, W_2505, o0, o1, o2, o3, o4, o5, o6, o7, o8, o9, o10, o11, o12, o13, o14, o15,
-    o16, o17, o18, Op.cmpma, Op.cmpmif, Op.cmpmra, Op.shr64, p1, p2, p3, p4, p5, p6, p7, q1, q2, q3, q5, q6, q7, q8,
-    sk, qk, rd_off, rd_off_self, hS, hS', m, d1, d2, e, hgm, hfc, htb, htc, hun, hm2, hm3, BitVec.and_self,
-    BitVec.reduceAdd, BitVec.reduceAnd, BitVec.reduceSetWidth, BitVec.reduceHShiftRight, BitVec.reduceHShiftLeft,
-    BitVec.reduceUShiftRight, BitVec.reduceShiftLeft, BitVec.reduceBEq, BitVec.reduceEq, BitVec.reduceToNat,
-    BitVec.reduceSub, BitVec.reduceMul, BitVec.reduceLT, BitVec.reduceULT, BitVec.reduceOr, BitVec.reduceXOr,
-    Nat.reduceAdd, Nat.reduceLeDiff, Nat.reduceLT, decide_false, decide_true, Bool.or_false, Bool.false_or,
-    Bool.not_false, Bool.not_true, Bool.false_eq_true, false_imp_iff, true_imp_iff, Bool.or_self, Bool.true_or,
-    Bool.or_true, false_implies, true_implies, and_true, true_and, reduceIte, or_true, true_or, or_false, false_or,
-    ne_eq, Nat.reduceEqDiff, not_false_eq_true, ofBytesLE_toBytesLE, Bool.true_eq_false]
+  -- 0 → 512
+  wpl [W_0, W_9, W_304, W_320, W_340, W_352, W_482, o0, o1, o2, o3, o4, o5, o6,
+    p1, p2, p3, p4, p5, p6, p7, q1, q2, q3, q5, q6, q7, q8, sk, qk, hS, hS', m, d1, d2, e, hgm, hfc, htb, htc, hun,
+    hm2, hm3]
+  repeat' first
+    | apply And.intro
+    | intro (_ : Rflags)
+    | intro (_ : Rflags.zf _ = false)
+    | intro (_ : Rflags.zf _ = true)
+    | rfl
+    | with_reducible exact stk_f hsw (by decide)
+    | with_reducible exact stk_f hsd (by decide)
+    | with_reducible exact hgf
+    | with_reducible exact htf
+    | with_reducible exact D _ _ (by decide) (by decide)
+  -- 512 → 1115
+  any_goals wpl [W_512, W_1069, W_1099, o7, o8, o9,
+    p1, p2, p3, p4, p5, p6, p7, q1, q2, q3, q5, q6, q7, q8, sk, qk, hS, hS', m, d1, d2, e, hgm, hfc, htb, htc, hun,
+    hm2, hm3]
+  repeat' first
+    | apply And.intro
+    | intro (_ : Rflags)
+    | intro (_ : Rflags.zf _ = false)
+    | intro (_ : Rflags.zf _ = true)
+    | rfl
+    | with_reducible exact stk_f hsw (by decide)
+    | with_reducible exact stk_f hsd (by decide)
+    | with_reducible exact hgf
+    | with_reducible exact htf
+    | with_reducible exact D _ _ (by decide) (by decide)
+  -- 1115 → 2012
+  any_goals wpl [W_1115, W_1138, W_1968, W_1977, o10, o11, o12, o13,
+    p1, p2, p3, p4, p5, p6, p7, q1, q2, q3, q5, q6, q7, q8, sk, qk, hS, hS', m, d1, d2, e, hgm, hfc, htb, htc, hun,
+    hm2, hm3]
+  repeat' first
+    | apply And.intro
+    | intro (_ : Rflags)
+    | intro (_ : Rflags.zf _ = false)
+    | intro (_ : Rflags.zf _ = true)
+    | rfl
+    | with_reducible exact stk_f hsw (by decide)
+    | with_reducible exact stk_f hsd (by decide)
+    | with_reducible exact hgf
+    | with_reducible exact htf
+    | with_reducible exact D _ _ (by decide) (by decide)
+  -- 2012 → 2549
+  any_goals wpl [W_2012, W_2048, W_2480, W_2488, W_2505, o14, o15, o16, o17, o18,
+    p1, p2, p3, p4, p5, p6, p7, q1, q2, q3, q5, q6, q7, q8, sk, qk, hS, hS', m, d1, d2, e, hgm, hfc, htb, htc, hun,
+    hm2, hm3]
   repeat' first
     | apply And.intro
     | intro (_ : Rflags)
