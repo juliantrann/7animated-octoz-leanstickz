@@ -313,6 +313,14 @@ FNS = {
     # leaves it null), the `ret` (0x10f), the link's contents do not start with `/` (0x136: `__assert_fail`). The
     # `syscall` (`readlink`, 0x31) and the `call`s of `malloc` (0x7c, 0x116) and `mempcpy` (0x12c) are cut points.
     # By hand: the stack probe `or qword [rsp], 0` (0x11).
+    # glibc 2.31 elf/dl-hwcaps.c, the way without a vDSO (`_dl_sysinfo_map` null) and with 3 or 4 capabilities (the
+    # platform, `x86_64`, maybe `avx512_1`, `tls`). Stops (from gdb traces with `_dl_hwcap` 2 and 6): the vDSO's
+    # notes (0xa6), the `ret` (0x691), more than 6 capabilities (0x339, 0x3cd), a stack probe of a page (0x7ca), one
+    # capability (0x81e), too many bytes or `malloc` gave null (0x83e, 0x853), an empty platform (0x85b, 0x8d8),
+    # the counts disagree (0x90a). By hand: the stack probe `or qword [rsp + rax - 8], 0` (0x6ec).
+    "hwc": dict(grp="Hwc", cn="_dl_important_hwcaps", a=0x6ad140, n=2345, pos=True, fs=True,
+                stops=(0xa6, 0x691, 0x339, 0x3cd, 0x7ca, 0x81e, 0x83e, 0x853, 0x85b, 0x8d8, 0x90a), calls=True,
+                hand=(0x6ec,), tag="PLAN.md G3, startup", src="glibc 2.31's `_dl_important_hwcaps` (`elf/dl-hwcaps.c`; `objdump -d`)"),
     "gor": dict(grp="Gor", cn="_dl_get_origin", a=0x6aefa0, n=352, pos=True, stops=(0xa4, 0x10f, 0x136), calls=True,
                 hand=(0x11,),
                 tag="PLAN.md G3, startup",
@@ -516,6 +524,8 @@ def effect(mn, sz, ol, pc=None):
         return terms, f"Op.ldsxb {f[0][1]} {mem(ops[1])}", "OpI.ldsxb"
     if mn == 'movsxd' and ks == ('r', 'm') and sz == 64 and f[1][4] == 32:
         return terms, f"Op.ldsx {f[0][1]} {mem(ops[1])}", "OpI.ldsx"
+    if mn == 'bit (BitMn.bt)' and ks == ('r', 'r') and sz == 64:   # FV7z/Lemmas/BlkOps16.lean
+        return terms, f"Op.bt64 {f[0][1]} {f[1][1]}", "OpI.bt64"
     if mn == 'movsxd' and ks == ('r', 'r') and sz == 64 and f[1][0] == 32:   # FV7z/Lemmas/BlkOps15.lean
         return terms, f"Op.sxr {f[0][1]} {f[1][1]}", "OpI.sxr"
     if mn == 'lea' and ks == ('r', 'mr') and sz == 64:
@@ -756,7 +766,7 @@ end FV7z.{grp}
                          f"theorem j{k}_0 : ∀ feat, Dec feat j{k} 0 (FV7z.mk {mnl(mn)} {sz} [{operand(ol[0])[1]}] {ln}) := "
                          "by dec_rfl\n")
     open(out + "/Pats.lean", "w").write(f"""import FV7z.Lemmas.Sp{"Fs" if FSM else ""}
-{"import FV7z.Lemmas.BlkOps15" + chr(10) if any("Op.sxr" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps14" + chr(10) if any(k in x for x in P for k in ("Op.zxr", "Op.test 16", "Op.cmpmif fb 8")) else ""}{"import FV7z.Lemmas.BlkOps13" + chr(10) if any("Op.cmpmif" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps12" + chr(10) if any(k in x for x in P for k in ("Op.cmpmr", "Op.testmi")) else ""}{"import FV7z.Lemmas.BlkOps11" + chr(10) if any(k in x for x in P for k in ("Op.rol64", "Op.ror64")) else ""}{"import FV7z.Lemmas.BlkOps10" + chr(10) if any("Op.cmpm 16" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps9" + chr(10) if any("Op.cmpma" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps8" + chr(10) if any(k in x for x in P for k in ("Op.vla", "Op.vsa", "Op.addma", "Op.cmpmia 8", "Op.stia 8")) else ""}{"import FV7z.Lemmas.BlkOps7" + chr(10) if any(k in x for x in P for k in ("Op.vl", "Op.vs", "Op.cdqe")) else ""}{"import FV7z.Lemmas.BlkOps6" + chr(10) if any(k in x for x in P for k in ("Op.stf8", "Op.stfi", "Op.xormf")) else ""}{("import FV7z.Lemmas.BlkOps5" if any("Op.ldsxb" in x for x in P) else
+{"import FV7z.Lemmas.BlkOps16" + chr(10) if any("Op.bt64" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps15" + chr(10) if any("Op.sxr" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps14" + chr(10) if any(k in x for x in P for k in ("Op.zxr", "Op.test 16", "Op.cmpmif fb 8")) else ""}{"import FV7z.Lemmas.BlkOps13" + chr(10) if any("Op.cmpmif" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps12" + chr(10) if any(k in x for x in P for k in ("Op.cmpmr", "Op.testmi")) else ""}{"import FV7z.Lemmas.BlkOps11" + chr(10) if any(k in x for x in P for k in ("Op.rol64", "Op.ror64")) else ""}{"import FV7z.Lemmas.BlkOps10" + chr(10) if any("Op.cmpm 16" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps9" + chr(10) if any("Op.cmpma" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps8" + chr(10) if any(k in x for x in P for k in ("Op.vla", "Op.vsa", "Op.addma", "Op.cmpmia 8", "Op.stia 8")) else ""}{"import FV7z.Lemmas.BlkOps7" + chr(10) if any(k in x for x in P for k in ("Op.vl", "Op.vs", "Op.cdqe")) else ""}{"import FV7z.Lemmas.BlkOps6" + chr(10) if any(k in x for x in P for k in ("Op.stf8", "Op.stfi", "Op.xormf")) else ""}{("import FV7z.Lemmas.BlkOps5" if any("Op.ldsxb" in x for x in P) else
   "import FV7z.Lemmas.BlkOps4" if any("Op.imul64" in x for x in P) else
   "import FV7z.Lemmas.BlkOps3" if any(k in x for x in P for k in ("Op.shl64", "Op.shr64", "Op.sar64")) else
   "import FV7z.Lemmas.BlkOps2") + chr(10) if pos else ""}/-!
