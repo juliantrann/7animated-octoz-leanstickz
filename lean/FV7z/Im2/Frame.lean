@@ -76,7 +76,7 @@ theorem Fr.base {S : Addr} (g : Gprs) (V : Addr → Byte) (hS : S.toNat + 256 < 
     simp only [Vsv, rd_off_self _ hS, toBytesLE_length, ofBytesLE_toBytesLE, Nat.reduceAdd, Nat.reduceLeDiff]
   bp := by
     simp only [Vsv, rd_off _ hS, rd_off_self _ hS, toBytesLE_length, ofBytesLE_toBytesLE, Nat.reduceAdd,
-      Nat.reduceLeDiff]
+      Nat.reduceLeDiff, or_true]
   r12 := by
     simp only [Vsv, rd_off _ hS, rd_off_self _ hS, toBytesLE_length, ofBytesLE_toBytesLE, Nat.reduceAdd,
       Nat.reduceLeDiff, or_true]
