@@ -11,7 +11,7 @@ places: 1465 (`rax = E - j`, `rdx = P + 16 j`), 1478 (the bit of `m` set, `rax =
 open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn
 namespace FV7z.Hwc
 
-theorem sub1 {x y : Nat} (h : x = y + 1) (hx : x < 2 ^ 64) : BitVec.ofNat 64 x - 1#64 = BitVec.ofNat 64 y := by
+theorem sub1 {x y : Nat} (h : x = y + 1) : BitVec.ofNat 64 x - 1#64 = BitVec.ofNat 64 y := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_sub, BitVec.toNat_ofNat, Nat.reducePow, Nat.reduceMod]
   omega
@@ -19,7 +19,7 @@ theorem sub1 {x y : Nat} (h : x = y + 1) (hx : x < 2 ^ 64) : BitVec.ofNat 64 x -
 theorem a16 (P : Addr) (j : Nat) :
     P + BitVec.ofNat 64 (16 * j) + 16#64 = P + BitVec.ofNat 64 (16 * (j + 1)) := by
   rw [BitVec.add_assoc]
-  congr 1
+  refine congrArg (P + ·) ?_
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.reducePow, Nat.reduceMod]
   omega
@@ -27,7 +27,7 @@ theorem a16 (P : Addr) (j : Nat) :
 theorem a8m (P : Addr) (j : Nat) :
     P + BitVec.ofNat 64 (16 * (j + 1)) + 18446744073709551608#64 = P + BitVec.ofNat 64 (16 * j + 8) := by
   rw [BitVec.add_assoc]
-  congr 1
+  refine congrArg (P + ·) ?_
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.reducePow, Nat.reduceMod]
   omega
@@ -47,8 +47,7 @@ theorem Done.set (hD : Done ℓ₀ s T E j ℓ) (hz : ¬s &&& BitVec.ofNat 64 (E
   refine ⟨fun i hi => ?_, fun i hi => ?_⟩
   · unfold upd
     by_cases h : i = j
-    · subst h
-      rw [ite_eq_left rfl, hD.2 i (Nat.le_refl _)]
+    · rw [ite_eq_left h, h, hD.2 j (Nat.le_refl _)]
       unfold addc
       rw [ite_eq_right hz]
     · rw [ite_eq_right h]
@@ -61,8 +60,7 @@ theorem Done.clr (hD : Done ℓ₀ s T E j ℓ) (hz : s &&& BitVec.ofNat 64 (E -
     Done ℓ₀ s T E (j + 1) ℓ := by
   refine ⟨fun i hi => ?_, fun i hi => hD.2 i (by omega)⟩
   by_cases h : i = j
-  · subst h
-    rw [hD.2 i (Nat.le_refl _)]
+  · rw [h, hD.2 j (Nat.le_refl _)]
     unfold addc
     rw [ite_eq_left hz]
   · exact hD.1 i (by omega)
@@ -100,8 +98,8 @@ theorem at1465 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (hi
     (h08 : S08 prof F Wl L s₀ o gev gP gE g₁ σ ℓ₀ V₀ s T E j) :
     ∀ (X : State) (t : Nat) (V : Addr → Byte) (ℓ : Nat → Addr) (a8 a9 : Addr), KeptW Wl s₀ X →
       Agree F X.proc.mm.mem V → X.cpu.rip = hwc_at.add 1465 →
-      X.cpu.gpr = { g₁ with rax := BitVec.ofNat 64 (E - j), rdx := g₁.r14 + BitVec.ofNat 64 (16 * j),
-        r8 := a8, r9 := a9 } →
+      X.cpu.gpr = { g₁ with
+        rax := BitVec.ofNat 64 (E - j), rdx := g₁.r14 + BitVec.ofNat 64 (16 * j), r8 := a8, r9 := a9 } →
       Tab V g₁.r14 E σ ℓ → Done ℓ₀ s T E j ℓ → Same V₀ V (g₁.r14.toNat + 16 * E) (2 ^ 64) →
       Same V₀ V 0 g₁.r14.toNat → GoG prof L o gev gP gE X t := by
   intro X t V ℓ a8 a9 hK hA hrip hgx hT hD hS1 hS0
@@ -109,7 +107,7 @@ theorem at1465 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (hi
   rintro j' g fl V' ⟨rfl, rfl, rfl⟩ Y t' hKY hAY hrY hgY -
   have hra : X.cpu.gpr.rax - 1#64 = BitVec.ofNat 64 (E - 1 - j) := by
     rw [hgx]
-    exact sub1 (x := E - j) (y := E - 1 - j) (by omega) (by omega)
+    exact sub1 (x := E - j) (y := E - 1 - j) (by omega)
   have hrd : X.cpu.gpr.rdx + 16#64 = g₁.r14 + BitVec.ofNat 64 (16 * (j + 1)) := by
     rw [hgx]
     exact a16 _ _
@@ -121,9 +119,9 @@ theorem at1465 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (hi
   rw [hgx] at hgY
   by_cases hz : s &&& BitVec.ofNat 64 (E - 1 - j) = 0#64
   · rw [ite_eq_left hz] at hrY
-    exact h08 Y t' V ℓ a8 a9 hKY hAY hrY (hgY.trans rfl) hz hT (hD.clr hz) hS1 hS0
+    exact h08 Y t' _ ℓ a8 a9 hKY hAY hrY (hgY.trans rfl) hz hT (hD.clr hz) hS1 hS0
   · rw [ite_eq_right hz] at hrY
-    exact h78 Y t' V ℓ a8 a9 hKY hAY hrY (hgY.trans rfl) hz hT hD hS1 hS0
+    exact h78 Y t' _ ℓ a8 a9 hKY hAY hrY (hgY.trans rfl) hz hT hD hS1 hS0
 
 /-- 1478 and 1508 for entry `j`, `j + n + 1 = E`: to 1448 (`rcx ≠ 0`) or 1522 with `rbx - 16` and the lengths
 `addc`. -/
@@ -149,7 +147,7 @@ theorem lens78_08 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) 
     obtain rfl : j = E - 1 := by omega
     refine ⟨?_, ?_⟩
     · intro X t V ℓ a8 a9 _ _ _ _ hz
-      exact (hz (by rw [Nat.sub_self]; exact BitVec.and_zero)).elim
+      exact (hz (by rw [Nat.sub_self]; first | exact BitVec.and_zero | simp)).elim
     · intro X t V ℓ a8 a9 hK hA hrip hgx hz hT hD hS1 hS0
       have hgx' : X.cpu.gpr = { g₁ with
           rax := 0#64, rdx := g₁.r14 + BitVec.ofNat 64 (16 * E), r8 := a8, r9 := a9 } := by
@@ -159,7 +157,7 @@ theorem lens78_08 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) 
       have hrc : X.cpu.gpr.rcx = g₁.rcx := by rw [hgx']
       rw [hrc] at hrY
       rw [hgx'] at hgY
-      exact k Y t' V a8 a9 hKY hAY hrY (hgY.trans rfl)
+      exact k Y t' _ a8 a9 hKY hAY hrY (hgY.trans rfl)
         (hT.congr (fun _ _ => rfl) fun i hi => hD.1 i (by omega)) hS1 hS0
   | succ n ih =>
     intro j hj
@@ -175,7 +173,7 @@ theorem lens78_08 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) 
         toNat_off (by omega)
       have hL : rdq(V, X.cpu.gpr.rdx + 18446744073709551608#64) = ℓ j := by
         rw [hrd]
-        exact (hT j (by omega)).2.trans (hD.2 j (Nat.le_refl _) ▸ rfl)
+        exact (hT j (by omega)).2
       have hT' : rdq(V, X.cpu.gpr.rbx + 18446744073709551608#64) = T := by
         rw [hrb, hS1.rdq hB hB' hB']
         exact hT0
@@ -191,7 +189,7 @@ theorem lens78_08 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) 
       rintro j' g fl V' ⟨rfl, rfl, rfl⟩ Y t' hKY hAY hrY hgY -
       have hra : X.cpu.gpr.rax - 1#64 = BitVec.ofNat 64 (E - 1 - (j + 1)) := by
         rw [hgx]
-        exact sub1 (x := E - 1 - j) (y := E - 1 - (j + 1)) (by omega) (by omega)
+        exact sub1 (x := E - 1 - j) (y := E - 1 - (j + 1)) (by omega)
       have hrd2 : X.cpu.gpr.rdx + 16#64 = g₁.r14 + BitVec.ofNat 64 (16 * (j + 1 + 1)) := by
         rw [hgx]
         exact a16 _ _
@@ -220,11 +218,11 @@ theorem lens78_08 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) 
         rw [hgx]
         intro h
         have := congrArg BitVec.toNat h
-        simp only [G78, BitVec.toNat_ofNat, Nat.reducePow] at this
+        simp only [BitVec.toNat_ofNat, Nat.reducePow] at this
         omega
       refine (c_1508 prof fb).run c hfs hin _ hK hA hrip (vc_1508l hra) ?_
       rintro j' g fl V' ⟨rfl, rfl, rfl⟩ Y t' hKY hAY hrY hgY -
-      refine at1465 c hfs hin hsi hE (j := j + 1) (by omega) ih78 ih08 Y t' V ℓ a8 a9 hKY hAY hrY ?_ hT hD hS1 hS0
+      refine at1465 c hfs hin hsi hE (j := j + 1) (by omega) ih78 ih08 Y t' _ ℓ a8 a9 hKY hAY hrY ?_ hT hD hS1 hS0
       rw [hgY, hgx, G78, show E - 1 - j = E - (j + 1) by omega]
 
 end FV7z.Hwc
