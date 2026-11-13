@@ -272,6 +272,9 @@ import FV7z.Im3.Holds
 import FV7z.Im4.Cuts
 import FV7z.Im5.Cuts
 import FV7z.Lemmas.Ksplit
+import FV7z.Im4.S0
+import FV7z.Im4.H0a
+import FV7z.Im4.H0b
 import FV7z.Im4.Holds
 import FV7z.Im4.S1115
 import FV7z.Im4.R1115a

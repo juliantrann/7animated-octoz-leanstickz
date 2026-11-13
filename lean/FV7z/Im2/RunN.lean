@@ -158,8 +158,9 @@ theorem im_secondn {fb S T szw sm n nb : Addr} (c : Seg prof F Wl L s₀ o) (hfs
     intro Y t₁ hK₁ hA₁ hr₁ hg₁
     refine (c_1115 prof fb).run c hfs hin _ hK₁ hA₁ hr₁
       (by rw [hg₁]; exact Im4.vc_1115g hcase hS hlo hun hm0 hm1 hm2 hm3 hWd hs184 hsd) ?_
-    rintro j' g fl V₂ ⟨rfl, rfl, rfl⟩ Y₂ t₂ hK₂ hA₂ hr₂ hg₂ -
-    exact im_from2549 c hfs hin hK₂ hA₂ hr₂ (by rw [hg₂] <;> rfl) (by rw [hg₂] <;> rfl) (by rw [hg₂] <;> rfl)
+    rintro j' g fl V₂ ⟨rfl, hbx₂, h13₂, hsp₂, rfl⟩ Y₂ t₂ hK₂ hA₂ hr₂ hg₂ -
+    exact im_from2549 c hfs hin hK₂ hA₂ hr₂ (by rw [hg₂]; exact hbx₂) (by rw [hg₂]; exact h13₂)
+      (by rw [hg₂]; exact hsp₂)
       (Fr.v2n S X.cpu.gpr n nb V hS) (by omega) (by omega) hS hW hsw hT hTS htw hrw hpb hp0 htop hsz hsm hle hge
       hin₂ h₂ hra k
   rcases hcls with ⟨hn, hn', rfl⟩ | ⟨hn, rfl⟩
