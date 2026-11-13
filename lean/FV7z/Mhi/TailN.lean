@@ -87,8 +87,9 @@ theorem mhi_tailn {fb S T szw sm C n nb : Addr} (c : Seg prof F Wl L s₀ o) (hf
   have hWd : ∀ a : Addr, 7940480 ≤ a.toNat → a.toNat < 7943136 → Foot F.data a := fun a h1 h2 => c.hws _ (hW a h1 h2)
   -- 236 → 99
   refine (c_236 prof fb).run c hfs hin _ hK hA hrip
-    (vc_236m hk1 hk2 (by rw [hbx, hnbk]) htb htc hC hn (fun i hi => hWd _ (by simp only [Addr.add]; bv_omega)
-      (by simp only [Addr.add]; bv_omega)) htf hfn) ?_
+    (vc_236m hk1 (by omega) (by rw [hbx, hnbk]) htb htc hC hn
+      (fun i hi => hWd _ (by simp only [Addr.add]; bv_omega)
+        (by simp only [Addr.add]; bv_omega)) htf hfn) ?_
   rintro j' g fl V₁ ⟨rfl, rfl, hv₁⟩ Y₁ t₁ hK₁ hA₁ hr₁ hg₁ -
   rw [hv₁] at hA₁
   -- 99 → 125
@@ -152,7 +153,7 @@ theorem mhi_tailn {fb S T szw sm C n nb : Addr} (c : Seg prof F Wl L s₀ o) (hf
     simp at this
     omega
   refine (c_130 prof fb).run c hfs hin _ hK₃ hA₃ (by rw [hr₃])
-    (vc_130m hk1 hk2 (by rw [hax₃]; exact hT0) (by rw [hax₃, e8, ← hnbk]; exact VspN_hd _ hT' (by omega))
+    (vc_130m hk1 (by omega) (by rw [hax₃]; exact hT0) (by rw [hax₃, e8, ← hnbk]; exact VspN_hd _ hT' (by omega))
       (by rw [hax₃, e8]; exact fun i hi => c.hws _ (htw i hi))) ?_
   rintro j' g fl V₄ ⟨rfl, rfl, hv₄⟩ Y₄ t₄ hK₄ hA₄ hr₄ hg₄ -
   rw [hv₄] at hA₄
