@@ -42,7 +42,12 @@ jobs:
           echo "targets: $targets"
           set -o pipefail
           start=$(date +%s)
-          lake build $targets 2>&1 | tee ../lean-build.log
+          : > ../lean-build.log
+          # lean/heavy-targets: modules built one at a time first (memory)
+          for h in $( [ -f heavy-targets ] && grep -v '^\s*#' heavy-targets | xargs ); do
+            lake build "$h" 2>&1 | tee -a ../lean-build.log
+          done
+          lake build $targets 2>&1 | tee -a ../lean-build.log
           echo "built in $(( $(date +%s) - start )) s" | tee -a ../lean-build.log
       - name: run
         # lean/wip-run: shell commands run in lean/ after the build (measurements for the proof in progress)

@@ -35,6 +35,8 @@ step_pins() {
 }
 step_build() {
   (cd refs/zellic-x86 && lake build 2>&1 | grep -E 'error|warning: declaration uses .sorry.|Build completed'; exit "${PIPESTATUS[0]}") &&
+  (cd lean && for h in $(grep -v '^\s*#' heavy-targets | xargs); do
+     lake build "$h" 2>&1 | grep -E 'error|Build completed'; [ "${PIPESTATUS[0]}" = 0 ] || exit 1; done) &&
   (cd lean && lake build FV7z Challenges insncov featneed difftest systest xsavetest 2>&1 | grep -E 'error|Build completed'; exit "${PIPESTATUS[0]}")
 }
 step_axioms() {
