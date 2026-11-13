@@ -36,6 +36,8 @@ step_pins() {
 step_build() {
   # the kernel check of Im5.L* recurses deep (a95): no limit on the main thread's stack
   ulimit -s unlimited 2>/dev/null || true
+  # the lakefile keeps -M2500 for the 3 GB VM; on a runner (CI set) more (Im5.L*: ~2.5 GB per theorem)
+  if [ -n "${CI:-}" ]; then sed -i 's/"-M2500"/"-M6000"/g' lean/lakefile.toml; fi
   (cd refs/zellic-x86 && lake build 2>&1 | grep -E 'error|warning: declaration uses .sorry.|Build completed'; exit "${PIPESTATUS[0]}") &&
   (cd lean && for h in $(grep -v '^\s*#' heavy-targets | xargs); do
      lake build "$h" 2>&1 | grep -E 'error|Build completed'; [ "${PIPESTATUS[0]}" = 0 ] || exit 1; done) &&
