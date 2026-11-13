@@ -268,6 +268,7 @@ import FV7z.Im2.HeadN
 import FV7z.Im2.RunN
 import FV7z.Im3.Cuts
 import FV7z.Im3.Holds
+import FV7z.Im4.Cuts
 import FV7z.Mhi.Cuts
 import FV7z.Mhi.Hand
 import FV7z.Mhi.Holds
