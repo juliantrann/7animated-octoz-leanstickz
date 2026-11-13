@@ -250,6 +250,14 @@ FNS = {
                 stops=(0x2e, 0x6a, 0x160, 0x3c0, 0x45b, 0x47f, 0x610, 0x63e, 0x3b6),
                 calls=True, tag="PLAN.md G3, `malloc`",
                 src="glibc 2.31's `_int_malloc` (`malloc/malloc.c`; `objdump -d`)"),
+    # The same function on the second call for a request `1001 ≤ n ≤ 4096` (`nb` 1024 … 4112, a largebin size): the
+    # index `48 + (nb >> 6)` (480) or `91 + (nb >> 9)` (490), no `malloc_consolidate` (517), from 1115 the unsorted bin
+    # empty, the largebin of `nb` empty (2000), the binmap from block 2 (exit 2511) or 3 (exit 2486) on to 2549 (gdb
+    # trace of `n` = 2000 and 4096). Stops: the branches that way does not take, 2549 itself and the `ret`.
+    "im5": dict(grp="Im5", code=("Imm", "imm"), cn="_int_malloc", a=0x630be0, n=3702, pos=True, fs=True,
+                stops=(0x2e, 0x1ec, 0x20b, 0x350, 0x3c0, 0x47f, 0x610, 0x63e, 0x7d2, 0x808, 0x9d1, 0x9f5, 0xc07, 0x3b6),
+                calls=True, tag="PLAN.md G3, `malloc`",
+                src="glibc 2.31's `_int_malloc` (`malloc/malloc.c`; `objdump -d`)"),
     "imm": dict(grp="Imm", cn="_int_malloc", a=0x630be0, n=3702, pos=True, fs=True,
                 stops=(0x2e, 0x6a, 0x160, 0x3c0, 0x44b, 0x47f, 0x610, 0x63e, 0x7b9, 0x808, 0x988, 0x9e7, 0xa2b, 0xc07,
                        0xc20, 0xc77, 0xcef, 0x3b6),
