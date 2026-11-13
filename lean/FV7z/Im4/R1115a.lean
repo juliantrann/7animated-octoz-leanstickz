@@ -24,7 +24,7 @@ theorem vc_1115a (k : Nat) (hk1 : 9 ≤ k) (hk2 : k ≤ 35) : P1115 F Wl k := by
   have D : ∀ (x : Addr) (n : Nat), 7940480 ≤ x.toNat → x.toNat + n ≤ 7943136 →
       ∀ i < n, Foot F.data (Addr.add x i) :=
     fun x n h1 h2 i hi => hW _ (by simp only [Addr.add]; bv_omega) (by simp only [Addr.add]; bv_omega)
-  ksplit k from 9 using hk1 hk2 <;>
+  ksplit k from 9 to 35 using hk1 hk2 <;>
   ( simp only [Nat.reduceMul, Nat.reduceAdd]
     wpx [W_1115, W_1138, W_1968, W_2012, W_2048, W_2480, W_2488, W_2505, W_2513, W_2530, W_2535, V1n, G1n, G2n,
       o12, o13, o14, o15, o16, o17, o18, o19, o20, o21, q1, q2, q3, q4, q5, rd_off, rd_off_self, hS, hS', hun, hm0,

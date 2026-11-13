@@ -12,7 +12,7 @@ What the code after offset 2549 needs of the bytes there, whatever way the size 
 
 - `Vsv`: the six pushes; `Fr.base`: `Fr` of them.
 - `Fr.vst`: a store of `k` bytes at `S + d`, `8 ≤ d`, `d + k ≤ 136`, keeps `Fr` (one `refine` per store, the bounds
-  by `decide`).
+  by `decide`; `Fr.base` only at the end: an `exact` of it against a longer chain unfolds the stores).
 - `Fr.v2n`: `Fr` of `V2n` (the fastbin and smallbin sizes).
 -/
 open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn FV7z.Start
@@ -73,32 +73,30 @@ theorem Fr.base {S : Addr} (g : Gprs) (V : Addr → Byte) (hS : S.toNat + 256 < 
       vst_off (a := a) (d := 168) (k := 8) _ _ hS (by omega) (by omega),
       vst_off (a := a) (d := 176) (k := 8) _ _ hS (by omega) (by omega)]
   bx := by
-    simp only [Vsv, rd_off _ hS, rd_off_self _ hS, toBytesLE_length, ofBytesLE_toBytesLE, Nat.reduceAdd,
-      Nat.reduceLeDiff, or_true, true_or]
+    simp only [Vsv, rd_off_self _ hS, toBytesLE_length, ofBytesLE_toBytesLE, Nat.reduceAdd, Nat.reduceLeDiff]
   bp := by
     simp only [Vsv, rd_off _ hS, rd_off_self _ hS, toBytesLE_length, ofBytesLE_toBytesLE, Nat.reduceAdd,
-      Nat.reduceLeDiff, or_true, true_or]
+      Nat.reduceLeDiff]
   r12 := by
     simp only [Vsv, rd_off _ hS, rd_off_self _ hS, toBytesLE_length, ofBytesLE_toBytesLE, Nat.reduceAdd,
-      Nat.reduceLeDiff, or_true, true_or]
+      Nat.reduceLeDiff, or_true]
   r13 := by
     simp only [Vsv, rd_off _ hS, rd_off_self _ hS, toBytesLE_length, ofBytesLE_toBytesLE, Nat.reduceAdd,
-      Nat.reduceLeDiff, or_true, true_or]
+      Nat.reduceLeDiff, or_true]
   r14 := by
     simp only [Vsv, rd_off _ hS, rd_off_self _ hS, toBytesLE_length, ofBytesLE_toBytesLE, Nat.reduceAdd,
-      Nat.reduceLeDiff, or_true, true_or]
+      Nat.reduceLeDiff, or_true]
   r15 := by
     simp only [Vsv, rd_off _ hS, rd_off_self _ hS, toBytesLE_length, ofBytesLE_toBytesLE, Nat.reduceAdd,
-      Nat.reduceLeDiff, or_true, true_or]
+      Nat.reduceLeDiff, or_true]
 
 /-- `Fr` of `V2n`: the bytes of the fastbin and smallbin sizes at 2549. -/
 theorem Fr.v2n (S : Addr) (g : Gprs) (n nb : Addr) (V : Addr → Byte) (hS : S.toNat + 256 < 2 ^ 64) :
     Fr S g V (V2n S g n nb V) := by
   have b := Fr.base g V hS
   unfold V2n V1n
-  repeat' (first
-    | exact b
-    | decide
-    | refine Fr.vst _ hS ?_ ?_ ?_)
+  repeat (first
+    | refine Fr.vst _ hS ?_ (by decide) (by decide)
+    | exact b)
 
 end FV7z.Im2

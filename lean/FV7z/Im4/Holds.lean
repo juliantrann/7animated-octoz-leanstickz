@@ -59,7 +59,7 @@ theorem vc_0m {fb S n : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (hrsp 
       ∀ i < n, Foot F.data (Addr.add x i) :=
     fun x n h1 h2 i hi => hW _ (by simp only [Addr.add]; bv_omega) (by simp only [Addr.add]; bv_omega)
   clear hbk
-  ksplit k from 9 using hk1 hk2 <;>
+  ksplit k from 9 to 63 using hk1 hk2 <;>
   ( simp only [Nat.reduceMul, Nat.reduceAdd] at e sk qk ⊢
     wpx [W_0, W_9, W_304, W_320, W_340, W_848, W_86, W_984, W_1069, W_1099, o0, o1, o2, o3, o4, o5, o6, o7,
       o8, o9, Op.cmpma, Op.cmpmif, Op.cmpmra, Op.shr64, p1, p2, p3, p4, p5, p6, p7, q1, q3, q5, sk, qk, rd_off,
