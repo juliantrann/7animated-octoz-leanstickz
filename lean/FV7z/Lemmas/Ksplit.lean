@@ -2,12 +2,12 @@
 # `ksplit`: a goal over `lo ≤ k ≤ hi` as one goal per value of `k` (PLAN.md G3, `malloc`)
 
 The verification conditions of `_int_malloc` for a class of request sizes are proved one `wpx` per chunk size `16 k`:
-`ksplit k from lo using h1 h2` (`h1 : lo ≤ k`, `h2 : k ≤ hi`) puts `k = lo + j`, `j ≤ hi - lo`, and peels `j = 0`,
-`j = i + 1`, … down the bound. The value is left as `lo + (0 + 1 + … + 1)`: `simp only [Nat.reduceAdd,
-Nat.reduceMul]` makes it a numeral. Each step is a term (`kpeel`, `kdec`, `kzero`), not `omega`: `omega` sees
-the whole context, and with the bounds of the verification conditions (`toNat` of sums, `2 ^ 64`) a failing call did
-not come back in six hours. (No `interval_cases` without Mathlib; `omega` on a disjunction of fifty cases splits
-`2 ^ 50` ways.)
+`ksplit k from lo using h1 h2` (`h1 : lo ≤ k`, `h2 : k ≤ hi`) puts `k = lo + j` and `j ≤ hi - lo` (`kbase`), then
+peels `j = 0`, `j = i + 1`, … down the bound. The value is left as `lo + (0 + 1 + … + 1)`: `simp only
+[Nat.reduceAdd, Nat.reduceMul]` makes it a numeral. Each step is a term (`kpeel`, `kdec`, `kzero`), not `omega`:
+`omega` sees the whole context, and with the bounds of the verification conditions (`toNat` of sums, `2 ^ 64`) a
+failing call did not come back in six hours. (No `interval_cases` without Mathlib; `omega` on a disjunction of fifty
+cases splits `2 ^ 50` ways.)
 -/
 namespace FV7z
 
@@ -17,11 +17,9 @@ theorem kpeel (j : Nat) : j = 0 ∨ ∃ i, j = i + 1 :=
   | 0 => .inl rfl
   | i + 1 => .inr ⟨i, rfl⟩
 
-/-- `k` from `lo` on. -/
-theorem kbase {lo k : Nat} (h : lo ≤ k) : ∃ j, k = lo + j := ⟨k - lo, (Nat.add_sub_of_le h).symm⟩
-
-/-- The bound on the step. -/
-theorem kbound {lo j hi : Nat} (h : lo + j ≤ hi) : j ≤ hi - lo := by omega
+/-- `k` from `lo` on, the step below `hi - lo`. -/
+theorem kbase {lo k hi : Nat} (h1 : lo ≤ k) (h2 : k ≤ hi) : ∃ j, k = lo + j ∧ j ≤ hi - lo :=
+  ⟨k - lo, (Nat.add_sub_of_le h1).symm, Nat.sub_le_sub_right h2 lo⟩
 
 /-- One step down the bound. -/
 theorem kdec {j m : Nat} (h : j + 1 ≤ m + 1) : j ≤ m := Nat.le_of_succ_le_succ h
@@ -33,8 +31,7 @@ theorem kzero {j : Nat} (h : j + 1 ≤ 0) : False := Nat.not_succ_le_zero _ h
 syntax "ksplit " ident " from " num " using " ident ident : tactic
 macro_rules
   | `(tactic| ksplit $k from $lo using $h1 $h2) => `(tactic| (
-      obtain ⟨j, rfl⟩ := FV7z.kbase (lo := $lo) $h1
-      have hb := FV7z.kbound $h2
+      obtain ⟨j, rfl, hb⟩ := FV7z.kbase (lo := $lo) $h1 $h2
       simp only [Nat.reduceSub] at hb
       repeat' (first
         | exact (FV7z.kzero hb).elim
