@@ -337,7 +337,7 @@ structure Cx (prof : Profile) (F : Footprint) (Wl : List Rgn) (L : List (Addr ×
   hic : CodeIn L 4198472#64 pc
   hc0 : 0 < pc.length
   hcmp : Str.NcmpAt prof L o 4198472#64 Pm
-  hPm : ∀ W : Addr → Byte, (∀ x : Addr, 7938048 ≤ x.toNat → x.toNat < 7942144 → W x = V x) → Pm W
+  hPm : ∀ W : Addr → Byte, (∀ x : Addr, 7938048 ≤ x.toNat → x.toNat < 7940480 → W x = V x) → Pm W
   hE : E.Ok V F sp
   n1 : NmOk E V F 7289136#64 7
   n2 : NmOk E V F 7289144#64 15
@@ -358,9 +358,9 @@ theorem w8 {sp : Addr} (hstk : ∀ i < 72, Foot Wl (Addr.add (sp - 72#64) i)) :
   rwa [show Addr.add (sp - 72#64) (64 + i) = Addr.add (sp - 8#64) i by simp only [Addr.add]; bv_omega] at this
 
 /-- Bytes that are `M`'s outside the 72 below `sp`, `M` being `V` but for the body's variables, are `V`'s on the
-page of the GOT. -/
+GOT (`[0x792000, 0x792980)`, the page of the GOT below `main_arena`, which `malloc` writes). -/
 theorem got_kept {sp : Addr} {V M W : Addr → Byte} (h72 : 8032256 + 72 ≤ sp.toNat) (hM : Eqo sp W M)
-    (hG : Gk V M) : ∀ x : Addr, 7938048 ≤ x.toNat → x.toNat < 7942144 → W x = V x := fun x h1 h2 =>
+    (hG : Gk V M) : ∀ x : Addr, 7938048 ≤ x.toNat → x.toNat < 7940480 → W x = V x := fun x h1 h2 =>
   (hM x (by unfold Scr; omega)).trans (hG x (by
     simp only [nv, Bool.or_eq_false_iff, Bool.and_eq_false_iff, decide_eq_false_iff_not]
     omega))
