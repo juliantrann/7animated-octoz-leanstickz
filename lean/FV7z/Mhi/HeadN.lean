@@ -1,10 +1,10 @@
 import FV7z.Mhi.HoldsN
 import FV7z.Mhi.Head
 /-!
-# `malloc_hook_ini`: from the entry to the call of `tcache_init`, `9 ≤ n ≤ 1032` (PLAN.md G3, `malloc`)
+# `malloc_hook_ini`: from the entry to the call of `tcache_init`, `n ≤ 1032` (PLAN.md G3, `malloc`)
 
-- `mhi_headn`: `mhi_head` with `vc_341n`: `tcache_init` is reached with the tcache index of `n + 23 &&& -16` in
-  `rbx` and `n` in `rbp`.
+- `mhi_headn`: `mhi_head` with `vc_341n` (`vc_341s` for `n ≤ 8`): `tcache_init` is reached with the tcache index
+  of `nb` (`n + 23 &&& -16`, 32 for `n ≤ 8`) in `rbx` and `n` in `rbp`.
 -/
 open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn FV7z.Start
 open FV7z.Raf (off_ft)
@@ -16,13 +16,15 @@ variable {F : Footprint} {Wl : List Rgn}
 variable {prof : Profile} {L : List (Addr × List Byte)} {s₀ X : State} {o : Oracle} {t : Nat}
   {gev : List Event} {gP : State → Nat → List Event → Prop} {gE : Outcome → List Event → Prop} {V : Addr → Byte}
 
-/-- `mhi_head` for every request `9 ≤ n ≤ 1032`: `tcache_init` is reached with the tcache index of
-`n + 23 &&& -16` in `rbx` and `n` in `rbp`. -/
-theorem mhi_headn {fb n : Addr} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb)
+/-- `mhi_head` for every request `n ≤ 1032`: `tcache_init` is reached with the tcache index of `nb`
+(`n + 23 &&& -16`, 32 for `n ≤ 8`) in `rbx` and `n` in `rbp`. -/
+theorem mhi_headn {fb n nb : Addr} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb)
     (hin : CodeIn L mhi_at mhi) (hinP : CodeIn L Pmi.pmi_at Pmi.pmi) (hinG : CodeIn L Tgv.tgv_at Tgv.tgv)
     (hinT : CodeIn L Tci.tci_at Tci.tci)
     (hK : KeptW Wl s₀ X) (hA : Agree F X.proc.mm.mem V) (hrip : X.cpu.rip = mhi_at)
-    (hdi : X.cpu.gpr.rdi = n) (hn : 9 ≤ n.toNat) (hn' : n.toNat ≤ 1032) (hlo : 8029888 + 64 ≤ X.cpu.gpr.rsp.toNat)
+    (hdi : X.cpu.gpr.rdi = n)
+    (hcls : (9 ≤ n.toNat ∧ n.toNat ≤ 1032 ∧ n + 23#64 &&& 18446744073709551600#64 = nb) ∨ (n.toNat ≤ 8 ∧ nb = 32#64))
+    (hlo : 8029888 + 64 ≤ X.cpu.gpr.rsp.toNat)
     (hf0 : 8013232 + 40 ≤ fb.toNat) (hf1 : fb.toNat + 48 ≤ X.cpu.gpr.rsp.toNat - 64)
     (hst : ∀ i < 64, Foot Wl (Addr.add (X.cpu.gpr.rsp - 64#64) i))
     (hfl : ∀ i < 8, Foot F.data (Addr.add (fb + 40#64) i))
@@ -39,7 +41,7 @@ theorem mhi_headn {fb n : Addr} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg
       Agree F Z.proc.mm.mem (Vst Vd (X.cpu.gpr.rsp - 32#64) (toBytesLE (mhi_at.add (231 + 5)) 8)) →
       Pmi.Dat fb (X.cpu.gpr.rsp - 32#64) 1 (Vh X.cpu.gpr.rsp X.cpu.gpr V) Vd →
       Z.cpu.rip = Tci.tci_at → Z.cpu.gpr.rsp = X.cpu.gpr.rsp - 32#64 →
-      Z.cpu.gpr.rbx = ((n + 23#64 &&& 18446744073709551600#64) + 18446744073709551599#64) >>> 4 →
+      Z.cpu.gpr.rbx = (nb + 18446744073709551599#64) >>> 4 →
       Z.cpu.gpr.rbp = n →
       (Z.cpu.gpr.r12 = X.cpu.gpr.r12 ∧ Z.cpu.gpr.r13 = X.cpu.gpr.r13 ∧ Z.cpu.gpr.r14 = X.cpu.gpr.r14 ∧
         Z.cpu.gpr.r15 = X.cpu.gpr.r15) →
@@ -108,32 +110,42 @@ theorem mhi_headn {fb n : Addr} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg
       rd_Vst _ _ _ _ _ (by rw [l8, e3]; omega) (by decide) (.inr (by rw [e3, e0]; omega)),
       rd_Vst_self _ _ _ (l8 _) (by decide)]
     exact ofBytesLE_toBytesLE (n := 8) rfl _
-  refine (c_341 prof fb).run c hfs hin _ hK₂ hA₂ hr₂
-    (vc_341n (by rw [bp₂, hg₀]; show Y₁.cpu.gpr.rbp = _; rw [hg₁]; exact hdi) hn (by omega) hhk
-      (fun i hi => c.hws _ (D (7940656#64) 8 (by decide) (by decide) i hi))) ?_
-  rintro j' g fl V₃ ⟨rfl, rfl, hv₃⟩ Y₃ t₃ hK₃ hA₃ hr₃ hg₃ -
-  rw [hv₃] at hA₃
-  -- 68 → 231
-  refine (c_68 prof fb).run c hfs hin _ hK₃ hA₃ hr₃
-    (vc_68 (by rw [congrArg (ofBytesLE 64) (RD _ 8 (by omega) (.inr (by omega)) (.inl (by omega))
-        (.inr (by omega)))]; exact htc)
-      (by rw [RD _ 1 (by omega) (.inr (by omega)) (.inl (by omega)) (.inr (by omega))]; exact hsd) hft hfs1) ?_
-  rintro j' g fl V₄ ⟨rfl, rfl, hv₄⟩ Y₄ t₄ hK₄ hA₄ hr₄ hg₄ -
-  rw [hv₄] at hA₄
-  have sp₄ : Y₄.cpu.gpr.rsp = X.cpu.gpr.rsp - 24#64 := by
-    rw [hg₄, hg₃]; show Z₁.cpu.gpr.rsp = _; rw [sp₂, sp₀]; exact sp8
-  -- the call of `tcache_init`
-  refine c.s_call hK₄ hA₄ hin (lt_len (by decide)) hr₄ (call_231 _) hinT (Tci.lt_len (j := 0) (by decide)) tgt_231
-    (by rw [sp₄, e24]; exact off_ft hst 32 o32 (by decide)) ?_
-  rintro Z t' hK' hA' ⟨hr', hg'⟩
-  rw [sp₄, e24] at hA'
-  refine k Vd Z t' hK' hA' hD hr' (by rw [hg']; show Y₄.cpu.gpr.rsp - 8 = _; rw [sp₄, e24])
-    (by rw [hg', hg₄, hg₃]; rfl)
-    (by rw [hg', hg₄, hg₃]; show Z₁.cpu.gpr.rbp = _; rw [bp₂, hg₀]; show Y₁.cpu.gpr.rbp = _; rw [hg₁]; exact hdi)
-    ⟨?_, ?_, ?_, ?_⟩
-  · rw [hg', hg₄, hg₃]; show Z₁.cpu.gpr.r12 = _; rw [r12₂, hg₀]; show Y₁.cpu.gpr.r12 = _; rw [hg₁]
-  · rw [hg', hg₄, hg₃]; show Z₁.cpu.gpr.r13 = _; rw [r13₂, hg₀]; show Y₁.cpu.gpr.r13 = _; rw [hg₁]
-  · rw [hg', hg₄, hg₃]; show Z₁.cpu.gpr.r14 = _; rw [r14₂, hg₀]; show Y₁.cpu.gpr.r14 = _; rw [hg₁]
-  · rw [hg', hg₄, hg₃]; show Z₁.cpu.gpr.r15 = _; rw [r15₂, hg₀]; show Y₁.cpu.gpr.r15 = _; rw [hg₁]
+  have bp₁ : Z₁.cpu.gpr.rbp = n := by rw [bp₂, hg₀]; show Y₁.cpu.gpr.rbp = _; rw [hg₁]; exact hdi
+  have hfh : ∀ i < 8, Foot F.data (Addr.add (7940656#64) i) :=
+    fun i hi => c.hws _ (D (7940656#64) 8 (by decide) (by decide) i hi)
+  -- from 68 on, both ways
+  have K : ∀ j' g fl V₃, (j' = 68 ∧ (∃ a, g = { Z₁.cpu.gpr with rax := a,
+        rbx := (nb + 18446744073709551599#64) >>> 4 }) ∧ V₃ = Vd) →
+      ∀ Y₃ t₃, KeptW Wl s₀ Y₃ → Agree F Y₃.proc.mm.mem V₃ → Y₃.cpu.rip = mhi_at.add j' → Y₃.cpu.gpr = g →
+        Y₃.cpu.rflags = fl → GoG prof L o gev gP gE Y₃ t₃ := by
+    rintro j' g fl V₃ ⟨rfl, ⟨a, rfl⟩, rfl⟩ Y₃ t₃ hK₃ hA₃ hr₃ hg₃ -
+    -- 68 → 231
+    refine (c_68 prof fb).run c hfs hin _ hK₃ hA₃ hr₃
+      (vc_68 (by rw [congrArg (ofBytesLE 64) (RD _ 8 (by omega) (.inr (by omega)) (.inl (by omega))
+          (.inr (by omega)))]; exact htc)
+        (by rw [RD _ 1 (by omega) (.inr (by omega)) (.inl (by omega)) (.inr (by omega))]; exact hsd) hft hfs1) ?_
+    rintro j' g fl V₄ ⟨rfl, rfl, hv₄⟩ Y₄ t₄ hK₄ hA₄ hr₄ hg₄ -
+    rw [hv₄] at hA₄
+    have sp₄ : Y₄.cpu.gpr.rsp = X.cpu.gpr.rsp - 24#64 := by
+      rw [hg₄, hg₃]; show Z₁.cpu.gpr.rsp = _; rw [sp₂, sp₀]; exact sp8
+    -- the call of `tcache_init`
+    refine c.s_call hK₄ hA₄ hin (lt_len (by decide)) hr₄ (call_231 _) hinT (Tci.lt_len (j := 0) (by decide)) tgt_231
+      (by rw [sp₄, e24]; exact off_ft hst 32 o32 (by decide)) ?_
+    rintro Z t' hK' hA' ⟨hr', hg'⟩
+    rw [sp₄, e24] at hA'
+    refine k Vd Z t' hK' hA' hD hr' (by rw [hg']; show Y₄.cpu.gpr.rsp - 8 = _; rw [sp₄, e24])
+      (by rw [hg', hg₄, hg₃]; rfl)
+      (by rw [hg', hg₄, hg₃]; exact bp₁)
+      ⟨?_, ?_, ?_, ?_⟩
+    · rw [hg', hg₄, hg₃]; show Z₁.cpu.gpr.r12 = _; rw [r12₂, hg₀]; show Y₁.cpu.gpr.r12 = _; rw [hg₁]
+    · rw [hg', hg₄, hg₃]; show Z₁.cpu.gpr.r13 = _; rw [r13₂, hg₀]; show Y₁.cpu.gpr.r13 = _; rw [hg₁]
+    · rw [hg', hg₄, hg₃]; show Z₁.cpu.gpr.r14 = _; rw [r14₂, hg₀]; show Y₁.cpu.gpr.r14 = _; rw [hg₁]
+    · rw [hg', hg₄, hg₃]; show Z₁.cpu.gpr.r15 = _; rw [r15₂, hg₀]; show Y₁.cpu.gpr.r15 = _; rw [hg₁]
+  rcases hcls with ⟨hn, hn', rfl⟩ | ⟨hn, rfl⟩
+  · exact (c_341 prof fb).run c hfs hin _ hK₂ hA₂ hr₂ (vc_341n bp₁ hn (by omega) hhk hfh)
+      fun j' g fl V₃ ⟨h1, h2, h3⟩ => K j' g fl V₃ ⟨h1, ⟨_, h2⟩, h3⟩
+  · have ei : ((32#64 : Addr) + 18446744073709551599#64) >>> 4 = 0#64 := by decide
+    exact (c_341 prof fb).run c hfs hin _ hK₂ hA₂ hr₂ (vc_341s bp₁ hn hhk hfh)
+      fun j' g fl V₃ ⟨h1, h2, h3⟩ => K j' g fl V₃ ⟨h1, ⟨n + 23#64, by rw [h2, ei]⟩, h3⟩
 
 end FV7z.Mhi

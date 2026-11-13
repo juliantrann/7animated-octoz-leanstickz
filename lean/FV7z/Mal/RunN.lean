@@ -1,7 +1,7 @@
 import FV7z.Mal.Run
 import FV7z.Mhi.RunN
 /-!
-# The first `malloc (n)` of the process for `9 ≤ n ≤ 120` (PLAN.md G3, `malloc`)
+# The first `malloc (n)` of the process for `n ≤ 120` (PLAN.md G3, `malloc`)
 
 - `mal_firstn`: `mal_first` with `Mhi.mhi_okn`.
 - `Nr_hhn`: `Nr_hh` up to 144 bytes above the first chunk.
@@ -21,8 +21,9 @@ variable {prof : Profile} {L : List (Addr × List Byte)} {s₀ X : State} {o : O
   {gev : List Event} {gP : State → Nat → List Event → Prop} {gE : Outcome → List Event → Prop} {V : Addr → Byte}
 
 set_option maxHeartbeats 2000000 in
-/-- `mal_first` for every request `9 ≤ n ≤ 120` (`Mhi.mhi_okn`): the top split for `n + 23 &&& -16` bytes. -/
-theorem mal_firstn {lim : Nat} {b fsb S n : Addr} {ks : Kst} {pad sm mx : BitVec 64} (c : Seg prof F Wl L s₀ o)
+/-- `mal_first` for every request `n ≤ 120` (`Mhi.mhi_okn`): the top split for `nb` bytes, `nb` the chunk size of `n`
+(`Im3.Cls`). -/
+theorem mal_firstn {lim : Nat} {b fsb S n nb : Addr} {ks : Kst} {pad sm mx : BitVec 64} (c : Seg prof F Wl L s₀ o)
     (hB : Base s₀ lim b fsb ks) (hin : CodeIn L mal_at mal) (hinH : CodeIn L mhi_at mhi)
     (hinP : CodeIn L Pmi.pmi_at Pmi.pmi)
     (hinG : CodeIn L Tgv.tgv_at Tgv.tgv) (hinT : CodeIn L Tci.tci_at Tci.tci) (hinI : CodeIn L imm_at imm)
@@ -30,7 +31,7 @@ theorem mal_firstn {lim : Nat} {b fsb S n : Addr} {ks : Kst} {pad sm mx : BitVec
     (hinK : CodeIn L Sbrk.sbk_at Sbrk.sbk) (hinb : CodeIn L Brk.brk_at Brk.brk)
     (hK : KeptW Wl s₀ X) (hA : Agree F X.proc.mm.mem V) (hrip : X.cpu.rip = mal_at)
     (hhook : rdq(V, 7940656#64) = mhi_at)
-    (hrsp : X.cpu.gpr.rsp = S + 232#64) (hdi : X.cpu.gpr.rdi = n) (hn9 : 9 ≤ n.toNat) (hn120 : n.toNat ≤ 120)
+    (hrsp : X.cpu.gpr.rsp = S + 232#64) (hdi : X.cpu.gpr.rdi = n) (hcls : Im3.Cls n nb)
     (hsp : 8029888 + 168 ≤ S.toNat) (hS : S.toNat + 512 < 2 ^ 64)
     (hst : ∀ i < 408, Foot Wl (Addr.add (S - 168) i))
     (hW : ∀ a : Addr, 7940480 ≤ a.toNat → a.toNat < 7943136 → Foot Wl a)
@@ -79,8 +80,7 @@ theorem mal_firstn {lim : Nat} {b fsb S n : Addr} {ks : Kst} {pad sm mx : BitVec
         (pageUp b.toNat / 4096 * 4096) (pageUp (b + size pad 656#64).toNat / 4096 * 4096)
         (S.toNat - 168) (S.toNat + 200) →
       (∀ a : Addr, a.toNat < S.toNat + 24 ∨ S.toNat + 208 ≤ a.toNat →
-        M a = VspN (Tp b) (Sz b pad) (n + 23#64 &&& 18446744073709551600#64)
-          (Vst V₁ (fsb + 18446744073709551576#64) (toBytesLE (b + corr b + 16#64) 8)) a) →
+        M a = VspN (Tp b) (Sz b pad) nb (Vst V₁ (fsb + 18446744073709551576#64) (toBytesLE (b + corr b + 16#64) 8)) a) →
       Z.cpu.rip = e₂.add j₂ → Z.cpu.gpr.rax = Tp b + 16#64 →
       (Z.cpu.gpr.rsp = S + 240#64 ∧ Z.cpu.gpr.rbx = X.cpu.gpr.rbx ∧ Z.cpu.gpr.rbp = X.cpu.gpr.rbp ∧
         Z.cpu.gpr.r12 = X.cpu.gpr.r12) →
@@ -117,7 +117,7 @@ theorem mal_firstn {lim : Nat} {b fsb S n : Addr} {ks : Kst} {pad sm mx : BitVec
   intro Z t' hKZ hAZ hrZ hgZ
   rw [addr_add_zero] at hrZ
   refine Mhi.mhi_okn (V := Vm X.cpu.gpr V) c hB hinH hinP hinG hinT hinI hinS hinD hinK hinb hKZ hAZ hrZ
-    (by rw [hgZ]; exact hrsp) (by rw [hgZ]; exact hdi) hn9 hn120 hsp hS hst hW hhk hcur hml hpb hgmf hft hfa hfm
+    (by rw [hgZ]; exact hrsp) (by rw [hgZ]; exact hdi) hcls hsp hS hst hW hhk hcur hml hpb hgmf hft hfa hfm
     hfl hfs1 hfs hfb (by rw [Rc (7940484#64) 4 (by decide) (by decide)]; exact hmi)
     (fun d hd => (h32 d hd).out (by have := g32 d hd; omega) (by omega) ho)
     (fun d hd => (h64 d hd).out (by have := g64 d hd; omega) (by omega) ho)

@@ -1,9 +1,10 @@
 import FV7z.Mhi.Holds
+import FV7z.Im3.Holds
 /-!
 # `malloc_hook_ini`: the size checks for every request `9 ≤ n ≤ 4096` (PLAN.md G3, `malloc`)
 
 - `vc_341n`: `__malloc_hook` read back 0, `request2size` (`n + 23 &&& -16`) and the tcache index
-  (`nb - 17 >>> 4`), on to offset 68.
+  (`nb - 17 >>> 4`), on to offset 68; `vc_341s` for `n ≤ 8` (`nb` = 32, the index 0, one `wpx` per `n`).
 - `vc_236n`, `vc_130n` (`9 ≤ n ≤ 120`, `nb` a fastbin size, one `wpx` per `nb`): the tcache bin of `nb` empty, on
   to offset 99; the size word `nb ||| 1` of the chunk back from `_int_malloc`, on to 180.
 -/
@@ -110,5 +111,27 @@ theorem vc_130n {fb nb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte}
       Bool.or_true, false_implies, true_implies, and_true, true_and, reduceIte, or_true, true_or, or_false, false_or,
       ne_eq, Nat.reduceEqDiff, not_false_eq_true, ofBytesLE_toBytesLE, Bool.true_eq_false, BitVec.xor_self]
     first | exact hfz)
+
+/-- `vc_341n` for the requests `n ≤ 8`: `request2size` gives `MINSIZE` (`n + 23` below 32), the tcache index 0. -/
+theorem vc_341s {fb n : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (hbp : g.rbp = n) (hn : n.toNat ≤ 8)
+    (hhk : rdq(V, 7940656#64) = 0#64) (hfh : ∀ i < 8, Foot F.data (Addr.add (7940656#64) i)) :
+    W_341 fb F Wl (fun j' g' _ V' => j' = 68 ∧ g' = { g with rax := n + 23#64, rbx := 0#64 } ∧ V' = V) g f V := by
+  have hc := Im3.clsS hn
+  have m : n.msb = false := by
+    rw [BitVec.msb_eq_decide]; exact decide_eq_false (by show ¬ (2 ^ 63 ≤ n.toNat); omega)
+  obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
+  dsimp only at hbp ⊢
+  subst hbp
+  rcases hc with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
+  ( wpx [W_341, W_47, W_56, W_192, o16, o1, o2, o10, Op.lda, Op.shr64, hhk, BitVec.and_self,
+      BitVec.reduceAdd, BitVec.reduceAnd, BitVec.reduceSetWidth, BitVec.reduceHShiftRight, BitVec.reduceHShiftLeft,
+      BitVec.reduceUShiftRight, BitVec.reduceShiftLeft, BitVec.reduceBEq, BitVec.reduceEq, BitVec.reduceToNat,
+      BitVec.reduceSub, BitVec.reduceMul, BitVec.reduceLT, BitVec.reduceULT, BitVec.reduceOr, BitVec.reduceXOr,
+      BitVec.reduceNot, m,
+      Nat.reduceAdd, Nat.reduceLeDiff, Nat.reduceLT, decide_false, decide_true, Bool.or_false, Bool.false_or,
+      Bool.not_false, Bool.not_true, Bool.false_eq_true, false_imp_iff, true_imp_iff, Bool.or_self, Bool.true_or,
+      Bool.or_true, false_implies, true_implies, and_true, true_and, reduceIte, or_true, true_or, or_false, false_or,
+      ne_eq, Nat.reduceEqDiff, not_false_eq_true, ofBytesLE_toBytesLE, Bool.true_eq_false, BitVec.xor_self]
+    first | exact ⟨hfh, fun _ _ => trivial⟩ | exact hfh | exact ⟨hfh, fun _ => trivial⟩)
 
 end FV7z.Mhi
