@@ -21,8 +21,8 @@ theorem kpeel (j : Nat) : j = 0 ∨ ∃ i, j = i + 1 :=
 theorem kbase {lo k hi : Nat} (h1 : lo ≤ k) (h2 : k ≤ hi) : ∃ j, k = lo + j ∧ j ≤ hi - lo :=
   ⟨k - lo, (Nat.add_sub_of_le h1).symm, Nat.sub_le_sub_right h2 lo⟩
 
-/-- One step down the bound. -/
-theorem kdec {j m : Nat} (h : j + 1 ≤ m + 1) : j ≤ m := Nat.le_of_succ_le_succ h
+/-- One step down the bound (`m - 1` then a numeral: no unification of `m + 1` with a literal). -/
+theorem kdec {j m : Nat} (h : j + 1 ≤ m) : j ≤ m - 1 := Nat.le_sub_one_of_lt h
 
 /-- Past the bound. -/
 theorem kzero {j : Nat} (h : j + 1 ≤ 0) : False := Nat.not_succ_le_zero _ h
@@ -33,12 +33,17 @@ macro_rules
   | `(tactic| ksplit $k from $lo using $h1 $h2) => `(tactic| (
       obtain ⟨j, rfl, hb⟩ := FV7z.kbase (lo := $lo) $h1 $h2
       simp only [Nat.reduceSub] at hb
-      repeat' (first
-        | exact (FV7z.kzero hb).elim
-        | (rcases FV7z.kpeel j with rfl | ⟨j, rfl⟩
-           try replace hb := FV7z.kdec hb))))
+      repeat' (rcases FV7z.kpeel j with rfl | ⟨j, rfl⟩ <;>
+        try (first
+          | exact (FV7z.kzero hb).elim
+          | (replace hb := FV7z.kdec hb; simp only [Nat.reduceSub] at hb)))))
 
+set_option maxHeartbeats 20000 in
 example (k : Nat) (h1 : 3 ≤ k) (h2 : k ≤ 6) : 6 ≤ k * 2 ∧ k * 2 ≤ 12 := by
   ksplit k from 3 using h1 h2 <;> decide
+
+set_option maxHeartbeats 20000 in
+example (k : Nat) (h1 : 5 ≤ k) (h2 : k ≤ 5) : k = 5 := by
+  ksplit k from 5 using h1 h2 <;> rfl
 
 end FV7z
