@@ -70,9 +70,13 @@ theorem add32n {n : Nat} (h : n + 1 < 2 ^ 32) : BitVec.ofNat 32 n + 1#32 = BitVe
 theorem dec64n {n : Nat} (h1 : 1 ≤ n) (h : n < 2 ^ 32) :
     BitVec.setWidth 64 (BitVec.setWidth 32 (BitVec.ofNat 64 n + 18446744073709551615#64)) =
       BitVec.ofNat 64 (n - 1) := by
-  apply BitVec.eq_of_toNat_eq
-  simp only [BitVec.toNat_setWidth, BitVec.toNat_add, BitVec.toNat_ofNat]
-  omega
+  obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
+  have e : BitVec.ofNat 64 (m + 1) + 18446744073709551615#64 = BitVec.ofNat 64 m := by
+    rw [show (18446744073709551615#64) = BitVec.ofNat 64 18446744073709551615 from rfl, BitVec.ofNat_add_ofNat]
+    apply BitVec.eq_of_toNat_eq
+    rw [BitVec.toNat_ofNat, BitVec.toNat_ofNat, show m + 1 + 18446744073709551615 = m + 2 ^ 64 by omega,
+      Nat.add_mod_right]
+  rw [e, sw32n (by omega), sw64n (by omega), Nat.add_sub_cancel]
 
 theorem ne32n {n m : Nat} (h : n < 2 ^ 32) (hm : m < 2 ^ 32) (hne : n ≠ m) :
     decide (BitVec.ofNat 32 n = BitVec.ofNat 32 m) = false :=
@@ -103,9 +107,10 @@ theorem vc_0 {g : Gprs} {f : Rflags} {V : Addr → Byte} (hst : ∀ i < 32, Foot
 
 /-- The arguments of `readlink ("/proc/self/exe", rsp, 4096)`. -/
 theorem vc_22 {g : Gprs} {f : Rflags} {V : Addr → Byte} :
-    W_22 F Wl (fun j' g' _ V' => j' = 49 ∧ g' = { g with rax := BitVec.setWidth 64 89#32,
-      rdx := BitVec.setWidth 64 4096#32, rsp := g.rsp - 8#64, rbp := g.rsp - 8#64, rsi := g.rsp - 8#64,
-      rdi := 7366691#64 } ∧ V' = V) g f V := by
+    W_22 F Wl (fun j' g' _ V' => j' = 49 ∧
+      g' = { g with
+        rax := BitVec.setWidth 64 89#32, rdx := BitVec.setWidth 64 4096#32, rsp := g.rsp - 8#64,
+        rbp := g.rsp - 8#64, rsi := g.rsp - 8#64, rdi := 7366691#64 } ∧ V' = V) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   wpx [W_22, o1]
   all_goals first | rfl | exact ⟨rfl, rfl⟩ | exact ⟨rfl, rfl, rfl⟩
@@ -119,8 +124,8 @@ theorem vc_51e {g : Gprs} {f : Rflags} {V : Addr → Byte} (hax : 4294963200 < (
   have d2 : decide (BitVec.setWidth 32 rax = 4294963200#32) = false :=
     decide_eq_false fun h => by rw [h] at hax; exact absurd hax (by decide)
   wpx [W_51, W_58, W_62, W_71, W_80, o2, o3, o4, o5, o6, Op.cdqe, Sbrk.cond_14, d1, d2, Bool.or_false,
-    Bool.not_false, Bool.false_eq_true, false_implies, Bool.or_self]
-  all_goals first | rfl | exact ⟨rfl, rfl⟩ | exact ⟨rfl, rfl, rfl⟩ | trivial
+    Bool.not_false, Bool.false_eq_true, Bool.true_eq_false, false_implies, Bool.or_self]
+  all_goals first | rfl | exact ⟨rfl, rfl⟩ | exact ⟨rfl, rfl, rfl⟩ | trivial | (intro h; cases h)
 
 /-- `readlink` gave `n` bytes, `1 ≤ n < 4096`, the first `/`: to the loop at 114 with `ecx = n`, `rax` the end. -/
 theorem vc_51k {g : Gprs} {f : Rflags} {V : Addr → Byte} {n : Nat} (hn1 : 1 ≤ n) (hn2 : n < 4096)
@@ -135,8 +140,8 @@ theorem vc_51k {g : Gprs} {f : Rflags} {V : Addr → Byte} {n : Nat} (hn1 : 1 �
   have d1 : decide (n < 4294963200) = true := decide_eq_true (by omega)
   have d2 : decide (BitVec.ofNat 32 n = 4294963200#32) = false := ne32n (by omega) (by omega) (by omega)
   have d3 : (BitVec.ofNat 32 n == 0) = false := beq_eq_false_iff_ne.2 fun e => by
-    have := congrArg BitVec.toNat e
-    simp only [BitVec.toNat_ofNat] at this
+    have h := congrArg BitVec.toNat e
+    rw [BitVec.toNat_ofNat, show (0 : BitVec 32).toNat = 0 from rfl] at h
     omega
   have d4 : (BitVec.ofNat 32 n).msb = false :=
     BitVec.msb_eq_false_iff_two_mul_lt.2 (by rw [BitVec.toNat_ofNat]; omega)
@@ -147,10 +152,13 @@ theorem vc_51k {g : Gprs} {f : Rflags} {V : Addr → Byte} {n : Nat} (hn1 : 1 �
     d1, d2, d3, d4, hb, d5, d6, BitVec.and_self, Bool.or_false, Bool.false_or, Bool.not_true, Bool.not_false,
     Bool.false_eq_true, false_implies, Bool.or_self, bne_self_eq_false, Bool.bne_false]
   all_goals first | exact hf | trivial | skip
-  refine ⟨hf, ?_⟩
-  refine ⟨?_, ?_, ⟨rfl, rfl, rfl, rfl⟩, rfl⟩
-  · exact sw64n (by omega)
-  · rw [sx32n (by omega), BitVec.add_comm]
+  all_goals (try simp only [Kp, eq_self_iff_true, and_true, true_and, and_self])
+  all_goals first
+    | exact ⟨hf, sw64n (by omega), by rw [sx32n (by omega), BitVec.add_comm]⟩
+    | exact ⟨sw64n (by omega), by rw [sx32n (by omega), BitVec.add_comm]⟩
+    | exact ⟨hf, sw64n (by omega)⟩
+    | exact hf
+    | skip
 
 /-- The loop, `c ≥ 2` bytes before `rax`: the byte at `c - 1` a `/` (to the `malloc` at 278 with `c + 1`, `ebx` the
 `c - 1` bytes to copy), or not (back to 114 with `c - 1`). -/
@@ -180,20 +188,20 @@ theorem vc_114 {g : Gprs} {f : Rflags} {V : Addr → Byte} {c : Nat} (hc1 : 2 �
     wpx [W_114, W_96, W_112, W_119, W_272, o7, o8, o9, o10, o16, Op.sxr, Op.cmpmi, e32, d1, ea, Tun.rd1, d2, ec, ed,
       Bool.not_false, Bool.not_true, Bool.false_eq_true, false_implies, true_implies]
     all_goals first | exact hf | skip
-    first
-    | exact ⟨hf, fun _ => .inl ⟨hs, rfl, rfl, rfl, ⟨rfl, rfl, rfl, rfl⟩, rfl⟩, fun h => absurd rfl h⟩
-    | exact ⟨hf, .inl ⟨hs, rfl, rfl, rfl, ⟨rfl, rfl, rfl, rfl⟩, rfl⟩⟩
-    | exact .inl ⟨hs, rfl, rfl, rfl, ⟨rfl, rfl, rfl, rfl⟩, rfl⟩
-    | skip
+    all_goals (try simp only [Kp, eq_true hs, ne_eq, not_true_eq_false, not_false_eq_true, true_and, and_true,
+      false_and, and_false, true_or, false_or, or_false, Bool.true_eq_false, false_implies, and_self,
+      eq_self_iff_true])
+    all_goals first | exact hf | trivial | skip
   · have d2 : decide (V (rbp + BitVec.ofNat 64 (c - 1)) = 47#8) = false := decide_eq_false hs
+    have e32' := sw32n (n := c - 1) (by omega)
+    have e64' := sw64n (n := c - 1) (by omega)
     wpx [W_114, W_96, W_112, W_119, W_272, o7, o8, o9, o10, o16, Op.sxr, Op.cmpmi, e32, d1, ea, Tun.rd1, d2, ec, ed,
       Bool.not_false, Bool.not_true, Bool.false_eq_true, false_implies, true_implies]
     all_goals first | exact hf | skip
-    first
-    | exact ⟨hf, fun h => absurd h (by decide), fun _ => .inr ⟨hs, rfl, rfl, rfl, ⟨rfl, rfl, rfl, rfl⟩, rfl⟩⟩
-    | exact ⟨hf, .inr ⟨hs, rfl, rfl, rfl, ⟨rfl, rfl, rfl, rfl⟩, rfl⟩⟩
-    | exact .inr ⟨hs, rfl, rfl, rfl, ⟨rfl, rfl, rfl, rfl⟩, rfl⟩
-    | skip
+    all_goals (try simp only [Kp, eq_false hs, ne_eq, not_true_eq_false, not_false_eq_true, true_and, and_true,
+      false_and, and_false, true_or, false_or, or_false, Bool.true_eq_false, false_implies, and_self,
+      eq_self_iff_true, e32', e64'])
+    all_goals first | exact hf | trivial | skip
 
 /-- The loop at `ecx = 1`: no `/` after the first, `malloc (2)`. -/
 theorem vc_114o {g : Gprs} {f : Rflags} {V : Addr → Byte} (hcx : g.rcx = BitVec.ofNat 64 1) :
@@ -203,7 +211,8 @@ theorem vc_114o {g : Gprs} {f : Rflags} {V : Addr → Byte} (hcx : g.rcx = BitVe
   subst hcx
   wpx [W_114, W_96, W_112, W_119, W_272, o7, o8, o9, o10, o16, Op.sxr, Op.cmpmi, BitVec.reduceSetWidth,
     BitVec.reduceOfNat, decide_true, Bool.not_true, Bool.false_eq_true, false_implies, true_implies]
-  all_goals first | exact ⟨rfl, rfl, ⟨rfl, rfl, rfl, rfl⟩, rfl⟩ | exact ⟨rfl, ⟨rfl, rfl, rfl, rfl⟩, rfl⟩ | skip
+  all_goals first | exact ⟨rfl, rfl, ⟨rfl, rfl, rfl, rfl⟩, rfl⟩ | exact ⟨rfl, ⟨rfl, rfl, rfl, rfl⟩, rfl⟩ |
+    exact ⟨rfl, rfl, rfl, rfl⟩ | skip
 
 /-- After `malloc (2)` returned `p ≠ 0`: `/` and a NUL stored at `p`, to the epilogue. -/
 theorem vc_129 {g : Gprs} {f : Rflags} {V : Addr → Byte} (hp : g.rax ≠ 0) (hw : ∀ i < 2, Foot Wl (Addr.add g.rax i)) :
@@ -215,7 +224,8 @@ theorem vc_129 {g : Gprs} {f : Rflags} {V : Addr → Byte} (hp : g.rax ≠ 0) (h
     rw [BitVec.and_self]
     exact beq_eq_false_iff_ne.2 hp
   wpx [W_129, W_137, o11, o12, dz, Bool.false_eq_true, false_implies]
-  all_goals first | exact ⟨hw, rfl, rfl, ⟨rfl, rfl, rfl, rfl⟩, rfl⟩ | exact ⟨hw, rfl, ⟨rfl, rfl, rfl, rfl⟩, rfl⟩ | skip
+  all_goals first | exact ⟨hw, rfl, rfl, ⟨rfl, rfl, rfl, rfl⟩, rfl⟩ | exact ⟨hw, rfl, ⟨rfl, rfl, rfl, rfl⟩, rfl⟩ |
+    exact ⟨hw, ⟨rfl, rfl, rfl, rfl⟩⟩ | skip
 
 /-- After `malloc (k + 2)` returned `p ≠ 0`: the arguments of `mempcpy (p, rbp, k)`, `ebx = k`. -/
 theorem vc_283 {g : Gprs} {f : Rflags} {V : Addr → Byte} {k : Nat} (hk : k < 2 ^ 31) (hp : g.rax ≠ 0)
@@ -231,7 +241,7 @@ theorem vc_283 {g : Gprs} {f : Rflags} {V : Addr → Byte} {k : Nat} (hk : k < 2
   have e32 := sw32n (n := k) (by omega)
   have ex := sx32n (n := k) hk
   wpx [W_283, W_291, o11, o17, Op.sxr, dz, e32, ex, Bool.false_eq_true, false_implies]
-  all_goals first | exact ⟨rfl, rfl, rfl, rfl, rfl, ⟨rfl, rfl, rfl, rfl⟩, rfl⟩ | skip
+  all_goals first | exact ⟨rfl, rfl, rfl, rfl, rfl, ⟨rfl, rfl, rfl, rfl⟩, rfl⟩ | exact ⟨rfl, rfl, rfl, rfl⟩ | skip
 
 /-- After `mempcpy`: the NUL at its end `rax`, to the epilogue. -/
 theorem vc_305 {g : Gprs} {f : Rflags} {V : Addr → Byte} (hw : ∀ i < 1, Foot Wl (Addr.add g.rax i)) :
@@ -269,8 +279,7 @@ theorem vc_255 {g : Gprs} {f : Rflags} {V : Addr → Byte} (hf : ∀ i < 32, Foo
     fun a k hk ha => ha ▸ hf k hk
   wpx [W_255, o15, Op.pop]
   refine ⟨fun i hi => slot _ i (by omega) ?_, fun i hi => slot _ (8 + i) (by omega) ?_,
-    fun i hi => slot _ (16 + i) (by omega) ?_, fun i hi => slot _ (24 + i) (by omega) ?_, ?_⟩
-  all_goals first | (simp only [Addr.add]; bv_omega) | exact ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩ |
-    exact ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩ | skip
+    fun i hi => slot _ (16 + i) (by omega) ?_, fun i hi => slot _ (24 + i) (by omega) ?_⟩
+  all_goals first | rfl | (simp only [Addr.add]; bv_omega) | skip
 
 end FV7z.Gor

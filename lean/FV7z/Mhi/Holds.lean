@@ -156,4 +156,19 @@ theorem vc_180 {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte}
   · have e : Addr.add rsp (16 + i) = Addr.add (rsp + 8 + 8) i := by simp only [Addr.add]; bv_omega
     exact e ▸ hst _ (by omega)
 
+/-- `vc_180`, and `r13`, `r14`, `r15` kept. -/
+theorem vc_180r {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte}
+    (hst : ∀ i < 24, Foot F.data (Addr.add g.rsp i)) :
+    W_180 fb F Wl (fun j' g' _ V' => j' = 187 ∧ V' = V ∧ g'.rax = g.r8 ∧ g'.rsp = g.rsp + 8 + 8 + 8 ∧
+      g'.rbx = rdq(V, g.rsp) ∧ g'.rbp = rdq(V, g.rsp + 8) ∧ g'.r12 = rdq(V, g.rsp + 8 + 8) ∧
+      g'.r13 = g.r13 ∧ g'.r14 = g.r14 ∧ g'.r15 = g.r15) g f V := by
+  obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
+  dsimp only at hst
+  wpx [W_180, o9]
+  refine ⟨fun i hi => hst i (by omega), fun i hi => ?_, fun i hi => ?_⟩
+  · have e : Addr.add rsp (8 + i) = Addr.add (rsp + 8) i := by simp only [Addr.add]; bv_omega
+    exact e ▸ hst _ (by omega)
+  · have e : Addr.add rsp (16 + i) = Addr.add (rsp + 8 + 8) i := by simp only [Addr.add]; bv_omega
+    exact e ▸ hst _ (by omega)
+
 end FV7z.Mhi

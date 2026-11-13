@@ -128,6 +128,7 @@ theorem mhi_okn {lim : Nat} {b fsb S n nb : Addr} {ks : Kst} {pad sm mx : BitVec
       Z.cpu.rip = e₂.add j₂ → Z.cpu.gpr.rax = Tp b + 16#64 →
       (Z.cpu.gpr.rsp = S + 240#64 ∧ Z.cpu.gpr.rbx = X.cpu.gpr.rbx ∧ Z.cpu.gpr.rbp = X.cpu.gpr.rbp ∧
         Z.cpu.gpr.r12 = X.cpu.gpr.r12) →
+      (Z.cpu.gpr.r13 = X.cpu.gpr.r13 ∧ Z.cpu.gpr.r14 = X.cpu.gpr.r14 ∧ Z.cpu.gpr.r15 = X.cpu.gpr.r15) →
       (∃ g₁ g₂ : Gprs, g₁.rdi = 656#64 ∧ g₂.rax = b ∧ g₂.r14 = size pad 656#64 ∧
         (evs = [smEv g₁ pad b] ∨ evs = [smEv g₁ pad b, smEv2 g₂])) →
       GoG prof L o (gev ++ evs) gP gE Z t') :
@@ -160,7 +161,7 @@ theorem mhi_okn {lim : Nat} {b fsb S n nb : Addr} {ks : Kst} {pad sm mx : BitVec
   refine mhi_headn c hB.fsb hin hinP hinG hinT hK hA hrip hdi hclh (by rw [hrsp, a232]; omega) (by omega)
     (by rw [hrsp, a232]; omega) (by rw [hrsp, m64]; exact off_ft hst 336 rfl (by decide)) hfl hfa hW hgmf
     (fun i hi => c.hws _ (hft i hi)) hfs1 hmi h32 h64 htc hsd ?_
-  rintro Vd Z₀ t₀ hK₀ hA₀ hD hr₀ sp₀ bx₀ bp₀ ⟨r12₀, -, -, -⟩
+  rintro Vd Z₀ t₀ hK₀ hA₀ hD hr₀ sp₀ bx₀ bp₀ ⟨r12₀, r13₀, r14₀, r15₀⟩
   rw [hrsp, e200] at hA₀ hD sp₀
   have l8 : ∀ v : Addr, (toBytesLE v 8).length = 8 := fun v => toBytesLE_length _ _
   have hpg : pageUp b.toNat / 4096 * 4096 + 168 ≤ S.toNat := by unfold pageUp; omega
@@ -373,10 +374,12 @@ theorem mhi_okn {lim : Nat} {b fsb S n nb : Addr} {ks : Kst} {pad sm mx : BitVec
         congrArg (ofBytesLE 64) (rd_eq (V := V) (by rw [a232]; omega) fun a a1 a2 =>
           Vh_hi _ _ _ (by rw [a232]; omega) a1)]
       exact hra) ?_
-  rintro M Z' t'' hK'' hA'' hM hr'' hax ⟨sp, bx, bp, r12⟩
+  rintro M Z' t'' hK'' hA'' hM hr'' hax ⟨sp, bx, bp, r12⟩ ⟨r13', r14', r15'⟩
   obtain ⟨v1, v2, v3⟩ := Vh_regs (S + 232#64) X.cpu.gpr V (by rw [a232]; omega)
   refine k Vd V₁ M evs s₁ Z' t'' c' hB' hK'' hA'' hD hO (fun a ha => hM a (by rw [a16]; omega)) hr'' hax
-    ⟨sp.trans q240, ?_, ?_, ?_⟩ ⟨g₁, g₂, hg1, hg2.1, hg2.2, hev⟩
+    ⟨sp.trans q240, ?_, ?_, ?_⟩
+    ⟨r13'.trans (k5.2.2.1.trans r13₀), r14'.trans (k5.2.2.2.1.trans r14₀), r15'.trans (k5.2.2.2.2.trans r15₀)⟩
+    ⟨g₁, g₂, hg1, hg2.1, hg2.2, hev⟩
   · rw [bx, p1, congrArg (ofBytesLE 64) (HI _ 8 (by rw [u3, a232]; omega) (by rw [u3, a232]; omega))]
     exact v1
   · rw [bp, p2, congrArg (ofBytesLE 64) (HI _ 8 (by rw [u2, a232]; omega) (by rw [u2, a232]; omega))]

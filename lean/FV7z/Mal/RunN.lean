@@ -86,6 +86,7 @@ theorem mal_firstn {lim : Nat} {b fsb S n nb : Addr} {ks : Kst} {pad sm mx : Bit
       Z.cpu.rip = e₂.add j₂ → Z.cpu.gpr.rax = Tp b + 16#64 →
       (Z.cpu.gpr.rsp = S + 240#64 ∧ Z.cpu.gpr.rbx = X.cpu.gpr.rbx ∧ Z.cpu.gpr.rbp = X.cpu.gpr.rbp ∧
         Z.cpu.gpr.r12 = X.cpu.gpr.r12) →
+      (Z.cpu.gpr.r13 = X.cpu.gpr.r13 ∧ Z.cpu.gpr.r14 = X.cpu.gpr.r14 ∧ Z.cpu.gpr.r15 = X.cpu.gpr.r15) →
       (∃ g₁ g₂ : Gprs, g₁.rdi = 656#64 ∧ g₂.rax = b ∧ g₂.r14 = size pad 656#64 ∧
         (evs = [smEv g₁ pad b] ∨ evs = [smEv g₁ pad b, smEv2 g₂])) →
       GoG prof L o (gev ++ evs) gP gE Z t') :
@@ -150,9 +151,9 @@ theorem mal_firstn {lim : Nat} {b fsb S n nb : Addr} {ks : Kst} {pad sm mx : Bit
     (by rw [Rc (8013220#64) 4 (by decide) (by decide)]; exact hp0)
     hmg hlim hbl hbs hN hpd hh (fun a h1 h2 => by rw [VL a (.inl (by omega))]; exact hz a h1 h2) hin₂ h₂
     (by rw [rd_eq (x := S + 232#64) (n := 8) (by omega) (fun a h1 _ => VL a (.inr (by omega)))]; exact hra) ?_
-  intro Vd V₁ M evs s₁ Z' t'' hc hB' hK' hA' hD hO hM hr hax hregs hev
-  rw [hgZ] at hD hregs
-  exact k Vd V₁ M evs s₁ Z' t'' hc hB' hK' hA' hD hO hM hr hax hregs hev
+  intro Vd V₁ M evs s₁ Z' t'' hc hB' hK' hA' hD hO hM hr hax hregs hr13 hev
+  rw [hgZ] at hD hregs hr13
+  exact k Vd V₁ M evs s₁ Z' t'' hc hB' hK' hA' hD hO hM hr hax hregs hr13 hev
 
 /-- `Nr_hh` up to `nb + 16` bytes above the first chunk (the split of `nb` bytes, `nb ≤ 1008` or `nb ≤ pad`). -/
 theorem Nr_hhn {b pad nb : Addr} {Wl : List Rgn} (hb : b.toNat < 2 ^ 47) (hnb : 656 + pad.toNat + 4127 < 2 ^ 47)

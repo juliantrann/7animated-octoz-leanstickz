@@ -97,6 +97,7 @@ theorem mhi_tailn {fb S T szw sm C n nb : Addr} (c : Seg prof F Wl L s₀ o) (hf
       Z.cpu.rip = e₂.add j₂ → Z.cpu.gpr.rax = T + 16#64 →
       (Z.cpu.gpr.rsp = S + 224#64 ∧ Z.cpu.gpr.rbx = rdq(V, S + 192#64) ∧ Z.cpu.gpr.rbp = rdq(V, S + 200#64) ∧
         Z.cpu.gpr.r12 = rdq(V, S + 208#64)) →
+      (Z.cpu.gpr.r13 = X.cpu.gpr.r13 ∧ Z.cpu.gpr.r14 = X.cpu.gpr.r14 ∧ Z.cpu.gpr.r15 = X.cpu.gpr.r15) →
       GoG prof L o gev gP gE Z t') :
     GoG prof L o gev gP gE X t := by
   obtain ⟨kb, hk1, hk2, hnbk⟩ := hcls.cases
@@ -106,20 +107,23 @@ theorem mhi_tailn {fb S T szw sm C n nb : Addr} (c : Seg prof F Wl L s₀ o) (hf
     fun i hi => hWd _ (by simp only [Addr.add]; bv_omega) (by simp only [Addr.add]; bv_omega)
   -- from 99 on, both ways
   suffices K : ∀ (Y₁ : State) (t₁ : Nat), KeptW Wl s₀ Y₁ → Agree F Y₁.proc.mm.mem V → Y₁.cpu.rip = mhi_at.add 99 →
-      Y₁.cpu.gpr.rsp = S + 192#64 → Y₁.cpu.gpr.rbp = n → GoG prof L o gev gP gE Y₁ t₁ by
+      Y₁.cpu.gpr.rsp = S + 192#64 → Y₁.cpu.gpr.rbp = n → Y₁.cpu.gpr.r13 = X.cpu.gpr.r13 →
+      Y₁.cpu.gpr.r14 = X.cpu.gpr.r14 → Y₁.cpu.gpr.r15 = X.cpu.gpr.r15 → GoG prof L o gev gP gE Y₁ t₁ by
     -- 236 → 99: the tcache bin `kb - 2` (`kb ≤ 65`) empty, or none (`kb ≥ 66`)
     by_cases h65 : kb ≤ 65
     · refine (c_236 prof fb).run c hfs hin _ hK hA hrip
         (vc_236m hk1 h65 (by rw [hbx, hnbk]) htb htc hC hn htf' htf hfn) ?_
       rintro j' g fl V₁ ⟨rfl, rfl, hv₁⟩ Y₁ t₁ hK₁ hA₁ hr₁ hg₁ -
       rw [hv₁] at hA₁
-      exact K Y₁ t₁ hK₁ hA₁ hr₁ (by rw [hg₁]; exact hrsp) (by rw [hg₁]; exact hbp)
+      exact K Y₁ t₁ hK₁ hA₁ hr₁ (by rw [hg₁]; exact hrsp) (by rw [hg₁]; exact hbp) (by rw [hg₁]) (by rw [hg₁])
+        (by rw [hg₁])
     · refine (c_236 prof fb).run c hfs hin _ hK hA hrip
         (vc_236l (by omega) hk2 (by rw [hbx, hnbk]) htb htf') ?_
       rintro j' g fl V₁ ⟨rfl, rfl, hv₁⟩ Y₁ t₁ hK₁ hA₁ hr₁ hg₁ -
       rw [hv₁] at hA₁
-      exact K Y₁ t₁ hK₁ hA₁ hr₁ (by rw [hg₁]; exact hrsp) (by rw [hg₁]; exact hbp)
-  intro Y₁ t₁ hK₁ hA₁ hr₁ sp₁ bp₁
+      exact K Y₁ t₁ hK₁ hA₁ hr₁ (by rw [hg₁]; exact hrsp) (by rw [hg₁]; exact hbp) (by rw [hg₁]) (by rw [hg₁])
+        (by rw [hg₁])
+  intro Y₁ t₁ hK₁ hA₁ hr₁ sp₁ bp₁ h13₁ h14₁ h15₁
   -- 99 → 125
   refine (c_99 prof fb).run c hfs hin _ hK₁ hA₁ hr₁ (vc_99 h1 hf1) ?_
   rintro j' g fl V₂ ⟨rfl, rfl, hv₂⟩ Y₂ t₂ hK₂ hA₂ hr₂ hg₂ -
@@ -166,7 +170,7 @@ theorem mhi_tailn {fb S T szw sm C n nb : Addr} (c : Seg prof F Wl L s₀ o) (hf
     hin (lt_len (j := 125 + 5) (by decide)) (by
       rw [rd_Vst_self _ _ _ l8 (by rw [s184]; omega)]
       exact ofBytesLE_toBytesLE (n := 8) rfl _) ?_
-  rintro M Z₁ t₃ hfr hK₃ hA₃ hr₃ hax₃ ⟨sp₃, bx₃, bp₃, r12₃, -, -, -⟩
+  rintro M Z₁ t₃ hfr hK₃ hA₃ hr₃ hax₃ ⟨sp₃, bx₃, bp₃, r12₃, r13₃, r14₃, r15₃⟩
   have hT' : T.toNat + nb.toNat + 16 < 2 ^ 64 := by omega
   -- the bytes above the frame
   have FAR : ∀ (x : Addr) (m : Nat), S.toNat + 192 ≤ x.toNat → x.toNat + m ≤ 2 ^ 64 →
@@ -188,8 +192,8 @@ theorem mhi_tailn {fb S T szw sm C n nb : Addr} (c : Seg prof F Wl L s₀ o) (hf
   have sp₄ : Y₄.cpu.gpr.rsp = S + 192#64 := by rw [hg₄]; exact sp₃
   -- 180 → 187
   refine (c_180 prof fb).run c hfs hin _ hK₄ hA₄ hr₄
-    (vc_180 (by rw [sp₄]; exact fun i hi => c.hws _ (off_ft hsw 192 rfl (by decide) i hi))) ?_
-  rintro j' g fl V₅ ⟨rfl, hv₅, ax₅, sp₅, bx₅, bp₅, r12₅⟩ Y₅ t₅ hK₅ hA₅ hr₅ hg₅ -
+    (vc_180r (by rw [sp₄]; exact fun i hi => c.hws _ (off_ft hsw 192 rfl (by decide) i hi))) ?_
+  rintro j' g fl V₅ ⟨rfl, hv₅, ax₅, sp₅, bx₅, bp₅, r12₅, r13₅, r14₅, r15₅⟩ Y₅ t₅ hK₅ hA₅ hr₅ hg₅ -
   subst hg₅
   rw [hv₅] at hA₅
   have e216 : S + 192#64 + 8 + 8 + 8 = S + 216#64 := by bv_omega
@@ -210,12 +214,36 @@ theorem mhi_tailn {fb S T szw sm C n nb : Addr} (c : Seg prof F Wl L s₀ o) (hf
   rintro Z t' hK' hA' ⟨hr', hg'⟩
   refine k _ Z t' hK' hA' (fun a ha => VspN_frm l8 hS hfr ha) hr'
     (by rw [hg']; exact ax₅.trans (by rw [hg₄]; exact hax₃))
-    ⟨by rw [hg']; show Y₅.cpu.gpr.rsp + 8 = _; rw [sp₅]; bv_omega, ?_, ?_, ?_⟩
+    ⟨by rw [hg']; show Y₅.cpu.gpr.rsp + 8 = _; rw [sp₅]; bv_omega, ?_, ?_, ?_⟩ ⟨?_, ?_, ?_⟩
   · rw [hg']
     exact bx₅.trans (congrArg (ofBytesLE 64) (FAR _ _ (by omega) (by omega)))
   · rw [hg']
     exact bp₅.trans (congrArg (ofBytesLE 64) (FAR _ _ (by omega) (by omega)))
   · rw [hg']
     exact r12₅.trans (congrArg (ofBytesLE 64) (FAR _ _ (by omega) (by omega)))
+  · rw [hg']
+    show Y₅.cpu.gpr.r13 = _
+    rw [r13₅, hg₄]
+    show Z₁.cpu.gpr.r13 = _
+    rw [r13₃, hg₀]
+    show Y₂.cpu.gpr.r13 = _
+    rw [hg₂]
+    exact h13₁
+  · rw [hg']
+    show Y₅.cpu.gpr.r14 = _
+    rw [r14₅, hg₄]
+    show Z₁.cpu.gpr.r14 = _
+    rw [r14₃, hg₀]
+    show Y₂.cpu.gpr.r14 = _
+    rw [hg₂]
+    exact h14₁
+  · rw [hg']
+    show Y₅.cpu.gpr.r15 = _
+    rw [r15₅, hg₄]
+    show Z₁.cpu.gpr.r15 = _
+    rw [r15₃, hg₀]
+    show Y₂.cpu.gpr.r15 = _
+    rw [hg₂]
+    exact h15₁
 
 end FV7z.Mhi
