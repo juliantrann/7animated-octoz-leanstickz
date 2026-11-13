@@ -21,14 +21,10 @@ macro "wpl" "[" ls:Lean.Parser.Tactic.simpLemma,* "]" : tactic =>
     ne_eq, Nat.reduceEqDiff, not_false_eq_true, ofBytesLE_toBytesLE, Bool.true_eq_false, $ls,*])
 
 set_option hygiene false in
-/-- The goals a piece leaves: the cases of the flags, the footprints, the frame (the hypotheses by name). -/
+/-- The goals a piece leaves: the frame, the footprints, what `simp` has yet to reduce (before any `intro`: a flag
+equation or `LogF` taken as a hypothesis is not reduced), the cases of the flags (the hypotheses by name). -/
 macro "cl" : tactic => `(tactic| repeat' first
     | apply And.intro
-    | intro (_ : Rflags)
-    | intro (_ : Rflags.zf _ = false)
-    | intro (_ : Rflags.zf _ = true)
-    | intro (_ : (_ : Rflags) = _)
-    | intro (_ : LogF _ _ _)
     | refine Im2.Fr.vst _ hS ?_ (by decide) (by decide)
     | exact Im2.Fr.base _ _ hS
     | rfl
@@ -38,6 +34,11 @@ macro "cl" : tactic => `(tactic| repeat' first
     | with_reducible exact htf
     | with_reducible exact D _ _ (by decide) (by decide)
     | (wpl [eaG]; with_reducible exact D _ _ (by decide) (by decide))
+    | wpl [p1, p2, p3, p4, p5, p6, p7, q1, q2, q3, q5, q6, q7, q8, sk, qk, hS, hS', m, d1, d2, e, hgm, hfc, htb,
+        htc, hun, hm2, hm3]
+    | intro (_ : Rflags)
+    | intro (_ : Rflags.zf _ = false)
+    | intro (_ : Rflags.zf _ = true)
     | decide)
 
 set_option maxHeartbeats 200000000 in
