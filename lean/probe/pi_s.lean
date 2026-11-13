@@ -29,6 +29,8 @@ theorem vc_0s {fb S n nb : Addr} (hnb : nb = 32#64) {g : Gprs} {f : Rflags} {V :
     W_0 fb F Wl (fun j' g' _ V' => j' = 1115 ∧ g' = G1n S g n nb ∧ V' = V1n S g nb V) g f V := by
   subst hnb
   have hc := clsS hn
+  have m : n.msb = false := by
+    rw [BitVec.msb_eq_decide]; exact decide_eq_false (by show ¬ (2 ^ 63 ≤ n.toNat); omega)
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at hrsp hsi hdi ⊢
   subst hrsp hdi
@@ -92,7 +94,7 @@ theorem vc_0s {fb S n nb : Addr} (hnb : nb = 32#64) {g : Gprs} {f : Rflags} {V :
       BitVec.reduceAdd, BitVec.reduceAnd, BitVec.reduceSetWidth, BitVec.reduceHShiftRight, BitVec.reduceHShiftLeft,
       BitVec.reduceUShiftRight, BitVec.reduceShiftLeft, BitVec.reduceBEq, BitVec.reduceEq, BitVec.reduceToNat,
       BitVec.reduceSub, BitVec.reduceMul, BitVec.reduceLT, BitVec.reduceULT, BitVec.reduceOr, BitVec.reduceXOr,
-      BitVec.reduceMsb,
+      m,
       Nat.reduceAdd, Nat.reduceLeDiff, Nat.reduceLT, decide_false, decide_true, Bool.or_false, Bool.false_or,
       Bool.not_false, Bool.not_true, Bool.false_eq_true, false_imp_iff, true_imp_iff, Bool.or_self, Bool.true_or,
       Bool.or_true, false_implies, true_implies, and_true, true_and, reduceIte, or_true, true_or, or_false, false_or,
@@ -118,6 +120,8 @@ theorem vc_341s {fb n : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (hbp :
     (hhk : rdq(V, 7940656#64) = 0#64) (hfh : ∀ i < 8, Foot F.data (Addr.add (7940656#64) i)) :
     W_341 fb F Wl (fun j' g' _ V' => j' = 68 ∧ g' = { g with rax := n + 23#64, rbx := 0#64 } ∧ V' = V) g f V := by
   have hc := Im3.clsS hn
+  have m : n.msb = false := by
+    rw [BitVec.msb_eq_decide]; exact decide_eq_false (by show ¬ (2 ^ 63 ≤ n.toNat); omega)
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at hbp ⊢
   subst hbp
@@ -126,7 +130,7 @@ theorem vc_341s {fb n : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (hbp :
       BitVec.reduceAdd, BitVec.reduceAnd, BitVec.reduceSetWidth, BitVec.reduceHShiftRight, BitVec.reduceHShiftLeft,
       BitVec.reduceUShiftRight, BitVec.reduceShiftLeft, BitVec.reduceBEq, BitVec.reduceEq, BitVec.reduceToNat,
       BitVec.reduceSub, BitVec.reduceMul, BitVec.reduceLT, BitVec.reduceULT, BitVec.reduceOr, BitVec.reduceXOr,
-      BitVec.reduceNot, BitVec.reduceMsb,
+      BitVec.reduceNot, m,
       Nat.reduceAdd, Nat.reduceLeDiff, Nat.reduceLT, decide_false, decide_true, Bool.or_false, Bool.false_or,
       Bool.not_false, Bool.not_true, Bool.false_eq_true, false_imp_iff, true_imp_iff, Bool.or_self, Bool.true_or,
       Bool.or_true, false_implies, true_implies, and_true, true_and, reduceIte, or_true, true_or, or_false, false_or,
