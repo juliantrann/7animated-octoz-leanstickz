@@ -62,7 +62,8 @@ theorem Tab.stL (hT : Tab V P E σ ℓ) (hP : P.toNat + 16 * E ≤ 2 ^ 64) {j : 
     by_cases hij : i = j
     · subst hij
       rw [ite_eq_left rfl, Tun.rd_Vst_self _ _ _ l8 (by rw [ej]; omega), ofBytesLE_toBytesLE (n := 8) rfl]
-    · rw [ite_eq_right hij, Tun.rd_Vst _ _ _ _ _ (by rw [l8, ej]; omega) (by rw [e2]; omega) (by rw [l8, ej, e2]; omega)]
+    · rw [ite_eq_right hij,
+        Tun.rd_Vst _ _ _ _ _ (by rw [l8, ej]; omega) (by rw [e2]; omega) (by rw [l8, ej, e2]; omega)]
       exact h2
 
 /-- The pointer of entry `j` stored. -/
@@ -79,7 +80,8 @@ theorem Tab.stS (hT : Tab V P E σ ℓ) (hP : P.toNat + 16 * E ≤ 2 ^ 64) {j : 
     by_cases hij : i = j
     · subst hij
       rw [ite_eq_left rfl, Tun.rd_Vst_self _ _ _ l8 (by rw [ej]; omega), ofBytesLE_toBytesLE (n := 8) rfl]
-    · rw [ite_eq_right hij, Tun.rd_Vst _ _ _ _ _ (by rw [l8, ej]; omega) (by rw [e1]; omega) (by rw [l8, ej, e1]; omega)]
+    · rw [ite_eq_right hij,
+        Tun.rd_Vst _ _ _ _ _ (by rw [l8, ej]; omega) (by rw [e1]; omega) (by rw [l8, ej, e1]; omega)]
       exact h1
   · rw [Tun.rd_Vst _ _ _ _ _ (by rw [l8, ej]; omega) (by rw [e2]; omega) (by rw [l8, ej, e2]; omega)]
     exact h2
