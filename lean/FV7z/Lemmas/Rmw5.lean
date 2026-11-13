@@ -21,13 +21,14 @@ theorem or_mi64i {b ix d v len : Nat} (htf : s.cpu.rflags.tf = false) (hac : s.c
       fl.tf = s.cpu.rflags.tf ∧ fl.ac = s.cpu.rflags.ac ∧ fl.df = s.cpu.rflags.df := by
   refine ⟨?fl, ?t', instruction_next htf hdec ?h, ?h1, ?h2, ?h3⟩
   case h =>
-    simp only [exec, Sem.or, alu, logicOp, mk, mbi, gr, bind, Prog.bind, readOp, Bool.false_eq_true, ↓reduceIte,
+    simp only [exec, Sem.or, alu, logicOp, mk, mbi, bind, Prog.bind, readOp, Bool.false_eq_true, ↓reduceIte,
       memRef, effOffset, pure, Prog.readReg, Prog.read, Prog.write, Prog.run, writeOp, Prog.readFlags,
       BitVec.mul_one]
     rw [checkAccess_ok (s := advance s len) hac hwr]
     simp only [Prog.undefinedBit, Prog.undefined, bind, pure, Prog.bind, Prog.run, Req.bind, Prog.writeFlags, done]
     have hc := checkAccess_ok (feat := prof.feat) (s := advance s len)
-      (m := ⟨eaI s b ix d, (some b == some 4 || some b == some 5) && !false && !false⟩) (acc := .write) (n := 8)
+      (m := ⟨(advance s len).cpu.gpr.get (regOf b) + (advance s len).cpu.gpr.get (regOf ix) + BitVec.ofNat 64 d,
+        (some b == some 4 || some b == some 5) && !false && !false⟩) (acc := .write) (n := 8)
       hac hwr
     simp only [Nat.reduceDiv, hc]
     rfl
