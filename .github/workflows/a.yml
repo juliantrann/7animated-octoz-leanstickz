@@ -11,7 +11,7 @@ concurrency:
 jobs:
   j0:
     runs-on: ubuntu-24.04
-    timeout-minutes: 350
+    timeout-minutes: 150
     outputs:
       key: ${{ steps.prep.outputs.key }}
       probes: ${{ steps.probes.outputs.list }}
@@ -71,7 +71,7 @@ jobs:
     # also after a build that failed: the probes usually are about the module that does not build yet
     if: ${{ !cancelled() && needs.j0.outputs.probes != '' && needs.j0.outputs.probes != '[]' }}
     runs-on: ubuntu-24.04
-    timeout-minutes: 350
+    timeout-minutes: 150
     strategy:
       fail-fast: false
       matrix:
@@ -90,7 +90,7 @@ jobs:
           echo "lean -M14000 $args probe/${{ matrix.file }}"
           # shellcheck disable=SC2086
           /usr/bin/time -f 'probe: %e s, %M KiB peak, exit %x' \
-            timeout 340m lake env lean -M14000 $args "probe/${{ matrix.file }}" 2>&1 | tee ../probe.log
+            timeout 140m lake env lean -M14000 $args "probe/${{ matrix.file }}" 2>&1 | tee ../probe.log
       - name: report
         if: always()
         run: |

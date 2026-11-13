@@ -34,7 +34,7 @@ theorem vc_236m {fb C : Addr} {k : Nat} {g : Gprs} {f : Rflags} {V : Addr → By
   dsimp only at hbx ⊢
   subst hbx
   clear hn hfn
-  ksplit k from 2 <;>
+  ksplit k from 2 using hk1 hk2 <;>
   ( simp only [Nat.reduceMul, Nat.reduceAdd, Nat.reduceSub] at nk fk ⊢
     try simp only [e0] at nk fk
     wpx [W_236, W_249, W_267, W_272, o12, o13, o14, o15, Op.cmpmra, Op.ldf, Op.ldzx, htb, htc, hC', nk,
@@ -60,7 +60,7 @@ theorem vc_130m {fb : Addr} {k : Nat} {g : Gprs} {f : Rflags} {V : Addr → Byte
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at hax hsz hfz ⊢
   have hax' : (rax == 0) = false := beq_eq_false_iff_ne.2 hax
-  ksplit k from 2 <;>
+  ksplit k from 2 using hk1 hk2 <;>
   ( simp only [Nat.reduceMul, Nat.reduceAdd] at hsz ⊢
     wpx [W_130, W_142, W_150, o6, o7, o8, hax', hsz, BitVec.and_self,
       BitVec.reduceAdd, BitVec.reduceAnd, BitVec.reduceSetWidth, BitVec.reduceHShiftRight, BitVec.reduceHShiftLeft,
