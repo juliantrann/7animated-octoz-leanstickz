@@ -271,6 +271,13 @@ import FV7z.Im3.Cuts
 import FV7z.Im3.Holds
 import FV7z.Im4.Cuts
 import FV7z.Im5.Cuts
+import FV7z.Im5.S0
+import FV7z.Im5.L1
+import FV7z.Im5.L2
+import FV7z.Im5.L3
+import FV7z.Im5.L4
+import FV7z.Im5.L5
+import FV7z.Im5.L6
 import FV7z.Lemmas.Ksplit
 import FV7z.Im4.S0
 import FV7z.Im4.H0a
