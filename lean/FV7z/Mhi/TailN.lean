@@ -1,13 +1,13 @@
 import FV7z.Mhi.Tail
 import FV7z.Mhi.HoldsM
-import FV7z.Im5.RunA
+import FV7z.Im5.Cls
 /-!
 # `malloc_hook_ini`: from the return of `tcache_init` to the return address, `n ≤ 4104` (PLAN.md G3, `malloc`)
 
 - `VspN_hd`, `VspN_far`, `VspN_frm`: the size word after the split; the bytes outside the frame of `_int_malloc`
   (`VspN_frm` through its frame `Im2.Fr`).
 - `mhi_tailn`: `vc_236m` (`k ≤ 65`) or `vc_236l` (`k ≥ 66`, no tcache bin), `vc_99`, the `call` of `_int_malloc`
-  (`Im5.im_secondA`), `vc_130m`, `vc_180` and the `ret`.
+  (`Im5.SecA`, a hypothesis), `vc_130m`, `vc_180` and the `ret`.
 -/
 open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn FV7z.Start
 open FV7z.Raf (off_ft)
@@ -15,7 +15,7 @@ open FV7z.Tun (rd_Vst rd_Vst_self Vst_out)
 open FV7z.Sbrk (rd_eq)
 open FV7z.Imm (imm imm_at add_n)
 open FV7z.Im2 (VspN VspN_rd V2n V2n_out)
-open FV7z.Im5 (ClsA im_secondA)
+open FV7z.Im5 (ClsA SecA)
 namespace FV7z.Mhi
 variable {F : Footprint} {Wl : List Rgn}
 
@@ -61,7 +61,7 @@ variable {prof : Profile} {L : List (Addr × List Byte)} {s₀ X : State} {o : O
 index of `nb`, `rbp` = `n`) to the return address with `T + 16` in `rax`. -/
 theorem mhi_tailn {fb S T szw sm C n nb : Addr} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb)
     (hin : CodeIn L mhi_at mhi) (hinI : CodeIn L imm_at imm) (hK : KeptW Wl s₀ X) (hA : Agree F X.proc.mm.mem V)
-    (hcls : ClsA n nb)
+    (hcls : ClsA n nb) (hsec : SecA n nb)
     (hrip : X.cpu.rip = mhi_at.add 236) (hbx : X.cpu.gpr.rbx = (nb + 18446744073709551599#64) >>> 4)
     (hbp : X.cpu.gpr.rbp = n)
     (hrsp : X.cpu.gpr.rsp = S + 192#64) (hS : S.toNat + 256 < 2 ^ 64) (hlo : 8029888 ≤ S.toNat)
@@ -151,10 +151,11 @@ theorem mhi_tailn {fb S T szw sm C n nb : Addr} (c : Seg prof F Wl L s₀ o) (hf
   have n4 : ∀ (x : Nat), x + 4 ≤ S.toNat → (BitVec.ofNat 64 x).toNat + 4 ≤ S.toNat := fun x h => by
     rw [BitVec.toNat_ofNat]; omega
   have hT8 : (T + 8#64).toNat + 8 ≤ S.toNat := by rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega
-  refine im_secondA (S := S) (T := T) (szw := szw) (sm := sm) (n := n) c hfs hinI hK₀ hA₀ hr₀
+  unfold SecA at hsec
+  refine hsec (S := S) (T := T) (szw := szw) (sm := sm) c hfs hinI hK₀ hA₀ hr₀
     (by rw [hg₀]; show Y₂.cpu.gpr.rsp - 8 = _; rw [esp, e184])
     (by rw [hg₀, hg₂]; show Y₁.cpu.gpr.rbp = _; exact bp₁)
-    (by rw [hg₀, hg₂]; rfl) hcls hS hlo hfb
+    (by rw [hg₀, hg₂]; rfl) hS hlo hfb
     (by rw [q _ (n8 _ (by omega))]; exact hgm) (by rw [d _ (n4 _ (by omega))]; exact hfc)
     (fun k hk => by rw [q _ (n8 _ (by omega))]; exact hfz k hk)
     (fun i i1 i2 => by rw [q _ (n8 _ (by omega))]; exact hbk i i1 i2)

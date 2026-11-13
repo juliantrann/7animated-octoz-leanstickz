@@ -396,4 +396,64 @@ theorem vc_1050 {g : Gprs} {f : Rflags} {V : Addr → Byte} {n t t' r s : Nat} {
     hwx [W_1050, W_1056, o17, o18, Op.shl64, Op.shl, Op.sxr, hN, BitVec.add_zero]
     hcl
 
+/-- After `malloc` (`rax` = `P`, not null): the strings' pointers (`P + r`) at `P` and `P + 16`, `cnt - 1` at
+`rbp - 0x78`, `1 << (cnt - 1)` at `rbp - 0x68`, `1 << cnt` at `rbp - 0x80`; `cnt` ≠ 2: on to the loop over the
+combinations (1248) with `r12 = 1 << (cnt - 1)`, `r14 = P`, `r15` the first string. -/
+theorem vc_1116 {g : Gprs} {f : Rflags} {V : Addr → Byte} {n m q k e r : Nat} {D B A : Addr}
+    (hn : (n = 3 ∧ m = 2 ∧ q = 1 ∧ k = 4 ∧ e = 8 ∧ r = 128) ∨ (n = 4 ∧ m = 3 ∧ q = 2 ∧ k = 8 ∧ e = 16 ∧ r = 256))
+    (hP : g.rax ≠ 0#64) (h12 : g.r12 = BitVec.ofNat 64 n) (h13 : g.r13 = BitVec.ofNat 64 r)
+    (hN : rdd(V, (g.rbp + 18446744073709551520#64)) = BitVec.ofNat 32 n)
+    (hD : rdq(V, (g.rbp + 18446744073709551512#64)) = D)
+    (hK : rdd(Vst (Vst (Vst (Vst (Vst V (g.rbp + 18446744073709551496#64) (toBytesLE (BitVec.ofNat 32 m) 4))
+        g.rax (toBytesLE (g.rax + BitVec.ofNat 64 r) 8)) (g.rax + 16#64) (toBytesLE (g.rax + BitVec.ofNat 64 r) 8))
+        (g.rbp + 18446744073709551512#64) (toBytesLE (BitVec.ofNat 32 k) 4)) (g.rbp + 18446744073709551488#64)
+        (toBytesLE (BitVec.ofNat 64 e) 8), (g.rbp + 18446744073709551512#64)) = BitVec.ofNat 32 k)
+    (hB : rdq(Vst (Vst (Vst (Vst (Vst V (g.rbp + 18446744073709551496#64) (toBytesLE (BitVec.ofNat 32 m) 4))
+        g.rax (toBytesLE (g.rax + BitVec.ofNat 64 r) 8)) (g.rax + 16#64) (toBytesLE (g.rax + BitVec.ofNat 64 r) 8))
+        (g.rbp + 18446744073709551512#64) (toBytesLE (BitVec.ofNat 32 k) 4)) (g.rbp + 18446744073709551488#64)
+        (toBytesLE (BitVec.ofNat 64 e) 8), D) = B)
+    (hA : rdq(Vst (Vst (Vst (Vst (Vst (Vst (Vst (Vst V (g.rbp + 18446744073709551496#64)
+        (toBytesLE (BitVec.ofNat 32 m) 4))
+        g.rax (toBytesLE (g.rax + BitVec.ofNat 64 r) 8)) (g.rax + 16#64) (toBytesLE (g.rax + BitVec.ofNat 64 r) 8))
+        (g.rbp + 18446744073709551512#64) (toBytesLE (BitVec.ofNat 32 k) 4)) (g.rbp + 18446744073709551488#64)
+        (toBytesLE (BitVec.ofNat 64 e) 8))
+        (g.rbp + 18446744073709551448#64) (toBytesLE g.rax 8)) (g.rbp + 18446744073709551520#64)
+        (toBytesLE (BitVec.ofNat 64 q) 8))
+        (g.rbp + 18446744073709551528#64) (toBytesLE B 8), g.rbx) = A)
+    (hf1 : ∀ i < 4, Foot F.data (Addr.add (g.rbp + 18446744073709551520#64) i))
+    (hf2 : ∀ i < 8, Foot F.data (Addr.add (g.rbp + 18446744073709551512#64) i))
+    (hf3 : ∀ i < 4, Foot F.data (Addr.add (g.rbp + 18446744073709551512#64) i))
+    (hf4 : ∀ i < 8, Foot F.data (Addr.add D i))
+    (hf5 : ∀ i < 8, Foot F.data (Addr.add g.rbx i))
+    (hs1 : ∀ i < 4, Foot Wl (Addr.add (g.rbp + 18446744073709551496#64) i))
+    (hs2 : ∀ i < 8, Foot Wl (Addr.add g.rax i))
+    (hs3 : ∀ i < 8, Foot Wl (Addr.add (g.rax + 16#64) i))
+    (hs4 : ∀ i < 4, Foot Wl (Addr.add (g.rbp + 18446744073709551512#64) i))
+    (hs5 : ∀ i < 8, Foot Wl (Addr.add (g.rbp + 18446744073709551488#64) i))
+    (hs6 : ∀ i < 8, Foot Wl (Addr.add (g.rbp + 18446744073709551448#64) i))
+    (hs7 : ∀ i < 8, Foot Wl (Addr.add (g.rbp + 18446744073709551520#64) i))
+    (hs8 : ∀ i < 8, Foot Wl (Addr.add (g.rbp + 18446744073709551528#64) i))
+    (hs9 : ∀ i < 8, Foot Wl (Addr.add (g.rbp + 18446744073709551456#64) i)) :
+    W_1116 fb F Wl (fun j' g' _ V' => j' = 1248 ∧
+      g' = { g with
+        rax := A, rcx := BitVec.ofNat 64 n, rdx := D, rsi := BitVec.ofNat 64 q, rdi := g.rax + BitVec.ofNat 64 r,
+        r8 := BitVec.ofNat 64 k, r12 := BitVec.ofNat 64 k, r13 := 1#64, r14 := g.rax, r15 := A } ∧
+      V' = Vst (Vst (Vst (Vst (Vst (Vst (Vst (Vst (Vst V (g.rbp + 18446744073709551496#64)
+        (toBytesLE (BitVec.ofNat 32 m) 4))
+        g.rax (toBytesLE (g.rax + BitVec.ofNat 64 r) 8)) (g.rax + 16#64) (toBytesLE (g.rax + BitVec.ofNat 64 r) 8))
+        (g.rbp + 18446744073709551512#64) (toBytesLE (BitVec.ofNat 32 k) 4)) (g.rbp + 18446744073709551488#64)
+        (toBytesLE (BitVec.ofNat 64 e) 8))
+        (g.rbp + 18446744073709551448#64) (toBytesLE g.rax 8)) (g.rbp + 18446744073709551520#64)
+        (toBytesLE (BitVec.ofNat 64 q) 8))
+        (g.rbp + 18446744073709551528#64) (toBytesLE B 8))
+        (g.rbp + 18446744073709551456#64) (toBytesLE g.r12 8)) g f V := by
+  obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
+  dsimp only at hP h12 h13 hN hD hK hB hA hf1 hf2 hf3 hf4 hf5 hs1 hs2 hs3 hs4 hs5 hs6 hs7 hs8 hs9 ⊢
+  have hP' : (rax == 0#64) = false := beq_eq_false_iff_ne.2 hP
+  subst h12 h13
+  rcases hn with ⟨rfl, rfl, rfl, rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl, rfl, rfl, rfl⟩
+  all_goals
+    hwx [W_1116, W_1141, W_1191, o19, o20, o21, Op.shl64, Op.shl, Op.ldsx, Op.nop, hP', hN, hD, hK, hB, hA]
+    hcl
+
 end FV7z.Hwc

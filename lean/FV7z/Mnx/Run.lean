@@ -5,8 +5,8 @@ import FV7z.Mhi.TailN
 # `malloc` after the first call: from 52 to the return address (PLAN.md G3, `malloc`)
 
 - `mal_tail`: as `Mhi.mhi_tailn` (the same code inline in `malloc_hook_ini`): `vc_52m` (`k ≤ 65`) or `vc_52l`
-  (`k ≥ 66`), `vc_83`, the `call` of `_int_malloc` (`Im5.im_secondA`: the chunk split off the top `T`), `vc_114m`,
-  `vc_164r` and the `ret`.
+  (`k ≥ 66`), `vc_83`, the `call` of `_int_malloc` (`Im5.SecA`, a hypothesis: the chunk split off the top `T`),
+  `vc_114m`, `vc_164r` and the `ret`.
 - `mal_next`: from the entry: `vc_0n` (`n ≥ 9`) or `vc_0s` (`n ≤ 8`), the three pushes (`Mal.Vm`, `Vm_out`), then
   `mal_tail` on the bytes after them; the pops read back what the pushes left (`Mal.regs3`).
 -/
@@ -16,7 +16,7 @@ open FV7z.Tun (rd_Vst rd_Vst_self Vst_out)
 open FV7z.Sbrk (rd_eq)
 open FV7z.Imm (imm imm_at add_n)
 open FV7z.Im2 (VspN VspN_rd V2n V2n_out)
-open FV7z.Im5 (ClsA im_secondA)
+open FV7z.Im5 (ClsA SecA)
 open FV7z.Mhi (VspN_hd VspN_far VspN_frm)
 namespace FV7z.Mnx
 variable {F : Footprint} {Wl : List Rgn}
@@ -28,7 +28,7 @@ variable {prof : Profile} {L : List (Addr × List Byte)} {s₀ X : State} {o : O
 return address with `T + 16` in `rax`, `n ≤ 4104` (`Im5.ClsA`): as `Mhi.mhi_tailn`. -/
 theorem mal_tail {fb S T szw sm C n nb : Addr} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb)
     (hin : CodeIn L mnx_at mnx) (hinI : CodeIn L imm_at imm) (hK : KeptW Wl s₀ X) (hA : Agree F X.proc.mm.mem V)
-    (hcls : ClsA n nb)
+    (hcls : ClsA n nb) (hsec : SecA n nb)
     (hrip : X.cpu.rip = mnx_at.add 52) (hbx : X.cpu.gpr.rbx = (nb + 18446744073709551599#64) >>> 4)
     (hbp : X.cpu.gpr.rbp = n)
     (hrsp : X.cpu.gpr.rsp = S + 192#64) (hS : S.toNat + 256 < 2 ^ 64) (hlo : 8029888 ≤ S.toNat)
@@ -118,10 +118,11 @@ theorem mal_tail {fb S T szw sm C n nb : Addr} (c : Seg prof F Wl L s₀ o) (hfs
   have n4 : ∀ (x : Nat), x + 4 ≤ S.toNat → (BitVec.ofNat 64 x).toNat + 4 ≤ S.toNat := fun x h => by
     rw [BitVec.toNat_ofNat]; omega
   have hT8 : (T + 8#64).toNat + 8 ≤ S.toNat := by rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega
-  refine im_secondA (S := S) (T := T) (szw := szw) (sm := sm) (n := n) c hfs hinI hK₀ hA₀ hr₀
+  unfold SecA at hsec
+  refine hsec (S := S) (T := T) (szw := szw) (sm := sm) c hfs hinI hK₀ hA₀ hr₀
     (by rw [hg₀]; show Y₂.cpu.gpr.rsp - 8 = _; rw [esp, e184])
     (by rw [hg₀, hg₂]; show Y₁.cpu.gpr.rbp = _; exact bp₁)
-    (by rw [hg₀, hg₂]; rfl) hcls hS hlo hfb
+    (by rw [hg₀, hg₂]; rfl) hS hlo hfb
     (by rw [q _ (n8 _ (by omega))]; exact hgm) (by rw [d _ (n4 _ (by omega))]; exact hfc)
     (fun k hk => by rw [q _ (n8 _ (by omega))]; exact hfz k hk)
     (fun i i1 i2 => by rw [q _ (n8 _ (by omega))]; exact hbk i i1 i2)
@@ -233,7 +234,7 @@ its entry (`rsp = S + 216`) to the return address: the chunk `T + 16` split off 
 call keeps as at the entry. -/
 theorem mal_next {fb S T szw sm C n nb : Addr} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb)
     (hin : CodeIn L mnx_at mnx) (hinI : CodeIn L imm_at imm) (hK : KeptW Wl s₀ X) (hA : Agree F X.proc.mm.mem V)
-    (hcls : ClsA n nb) (hrip : X.cpu.rip = mnx_at) (hdi : X.cpu.gpr.rdi = n)
+    (hcls : ClsA n nb) (hsec : SecA n nb) (hrip : X.cpu.rip = mnx_at) (hdi : X.cpu.gpr.rdi = n)
     (hrsp : X.cpu.gpr.rsp = S + 216#64) (hS : S.toNat + 256 < 2 ^ 64) (hlo : 8029888 ≤ S.toNat)
     (hfb : (fb + 18446744073709551576#64).toNat + 8 ≤ S.toNat) (hf24 : (fb + 24#64).toNat + 4 ≤ S.toNat)
     (hhk : rdq(V, 7940656#64) = 0#64) (hfh : ∀ i < 8, Foot F.data (Addr.add (7940656#64) i))
@@ -326,7 +327,7 @@ theorem mal_next {fb S T szw sm C n nb : Addr} (c : Seg prof F Wl L s₀ o) (hfs
     exact congrArg (ofBytesLE 64) (rd_eq (by rw [add_n _ _ (by omega)]; omega)
       fun a h1 _ => Vm_out V hrsp hS (.inr (by rw [add_n _ _ (by omega)] at h1; omega)))
   refine mal_tail (S := S) (T := T) (szw := szw) (sm := sm) (C := C) (n := n) (nb := nb) c hfs hin hinI hKY hAY
-    hcls hrY hbxY hbpY hspY hS hlo hfb (by rw [q _ hfb]; exact htc) hC
+    hcls hsec hrY hbxY hbpY hspY hS hlo hfb (by rw [q _ hfb]; exact htc) hC
     (fun i hi => by
       rw [O _ _ (by rw [add_n _ _ (by omega)]; omega)]
       exact hn i hi) hfn

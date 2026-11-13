@@ -1,9 +1,9 @@
 import FV7z.Im5.P5
 import FV7z.Im2.RunN
+import FV7z.Im5.Cls
 /-!
 # `_int_malloc`: the second call for every request `1001 ≤ n ≤ 4104` (PLAN.md G3, `malloc`)
 
-- `clsL`: `n + 23` above 31 and rounded to `16 k`, `64 ≤ k ≤ 257` (a largebin size).
 - `im_secondl`: from the entry through the cut points 512, 1115, 2012 to 2549 (`p5`), then `Im2.im_from2549`: the
   top split for `nb`, `T + 16` returned, the six registers back; the bytes at 2549 known only through the frame
   `Im2.Fr` (handed to the continuation).
@@ -13,16 +13,6 @@ open FV7z.Imm (imm imm_at)
 open FV7z.Im2 (VspN and_m16)
 namespace FV7z.Im5
 variable {F : Footprint} {Wl : List Rgn}
-
-/-- A request `1001 ≤ n ≤ 4104`: `n + 23` is above 31 and rounds to `16 k`, `64 ≤ k ≤ 257`. -/
-theorem clsL {n : Addr} (h1 : 1001 ≤ n.toNat) (h2 : n.toNat ≤ 4104) :
-    n.msb = false ∧ decide ((n + 23#64).toNat < 31) = false ∧ decide (n + 23#64 = 31#64) = false ∧
-    ∃ k, 64 ≤ k ∧ k ≤ 257 ∧ n + 23#64 &&& 18446744073709551600#64 = BitVec.ofNat 64 (16 * k) := by
-  have e : (n + 23#64).toNat = n.toNat + 23 := by rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega
-  refine ⟨?_, decide_eq_false (by omega), decide_eq_false (fun h => by rw [h, BitVec.toNat_ofNat] at e; omega),
-    (n.toNat + 23) / 16, by omega, by omega, BitVec.eq_of_toNat_eq ?_⟩
-  · rw [BitVec.msb_eq_decide]; exact decide_eq_false (by show ¬ (2 ^ 63 ≤ n.toNat); omega)
-  · rw [and_m16, e, BitVec.toNat_ofNat]; omega
 
 theorem lbi_ge (k : Nat) (hk : 64 ≤ k) : 64 ≤ lbi k := by
   unfold lbi

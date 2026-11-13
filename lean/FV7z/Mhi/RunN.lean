@@ -1,6 +1,7 @@
 import FV7z.Mhi.Run
 import FV7z.Mhi.TailN
 import FV7z.Mhi.HeadN
+import FV7z.Im5.RunA
 /-!
 # `malloc_hook_ini (n)` for `n ≤ 4104`, the whole run (PLAN.md G3, `malloc`)
 
@@ -303,7 +304,8 @@ theorem mhi_okn {lim : Nat} {b fsb S n nb : Addr} {ks : Kst} {pad sm mx : BitVec
   have cX := cXn hb47
   have t72n := t72n (b := b) hb47 hn4112
   refine mhi_tailn (S := S + 16#64) (T := Tp b) (szw := Sz b pad) (sm := sm + size pad 656#64 + C2 b pad)
-    (C := b + corr b + 16#64) c' hB'.fsb hin hinI hK' hA' hcls hr' (k5.1.trans bx₀) (bpZ.trans bp₀)
+    (C := b + corr b + 16#64) c' hB'.fsb hin hinI hK' hA' hcls (Im5.secA hcls) hr'
+    (k5.1.trans bx₀) (bpZ.trans bp₀)
     (spZ.trans q208)
     (by rw [a16]; omega) (by rw [a16]; omega) (by rw [hf40, a16]; omega)
     (by rw [rd_Vst_self _ _ _ (l8 _) (by rw [hf40]; omega)]; exact ofBytesLE_toBytesLE (n := 8) rfl _) hM0
