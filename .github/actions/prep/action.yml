@@ -55,7 +55,7 @@ runs:
       # proofs are checked on several threads at once and need more. Every job makes the same change, so the
       # cache stays valid.
       shell: bash
-      run: sed -i 's/"-M2500"/"-M6000"/g' lean/lakefile.toml && grep -n 'M6000' lean/lakefile.toml
+      run: sed -i 's/"-M2500"/"-M14000"/g' lean/lakefile.toml && grep -n "M14000" lean/lakefile.toml
     - id: key
       shell: bash
       env:

@@ -15,13 +15,6 @@ relaxedAutoImplicit = false
 name = "zellic-x86-release"
 path = "../refs/zellic-x86"
 
-# The modules of lean/heavy-targets, built one at a time, each alone on the runner: more memory than the rest (a86:
-# `Im5.L1` exceeded -M6000). Declared before `FV7z` so that Lake finds them here; the last -M wins.
-[[lean_lib]]
-name = "Heavy"
-roots = ["FV7z.Im5.L1", "FV7z.Im5.L2", "FV7z.Im5.L3", "FV7z.Im5.L4", "FV7z.Im5.L5", "FV7z.Im5.L6"]
-moreLeanArgs = ["-M14000"]
-
 [[lean_lib]]
 name = "FV7z"
 

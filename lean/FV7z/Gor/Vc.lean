@@ -280,6 +280,6 @@ theorem vc_255 {g : Gprs} {f : Rflags} {V : Addr → Byte} (hf : ∀ i < 32, Foo
   wpx [W_255, o15, Op.pop]
   refine ⟨fun i hi => slot _ i (by omega) ?_, fun i hi => slot _ (8 + i) (by omega) ?_,
     fun i hi => slot _ (16 + i) (by omega) ?_, fun i hi => slot _ (24 + i) (by omega) ?_⟩
-  all_goals first | rfl | (simp only [Addr.add]; bv_omega) | skip
+  all_goals first | with_reducible rfl | (simp only [Addr.add]; bv_omega) | skip
 
 end FV7z.Gor
