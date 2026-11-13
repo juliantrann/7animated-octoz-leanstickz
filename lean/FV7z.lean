@@ -265,6 +265,7 @@ import FV7z.Lemmas.BlkOps14
 import FV7z.Im2.Cuts
 import FV7z.Im2.Run
 import FV7z.Im2.HeadN
+import FV7z.Im2.Frame
 import FV7z.Im2.RunN
 import FV7z.Im3.Cuts
 import FV7z.Im3.Holds

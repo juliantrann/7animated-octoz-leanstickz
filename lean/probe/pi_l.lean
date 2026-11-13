@@ -1,15 +1,13 @@
 import FV7z.Im5.Cuts
-import FV7z.Im2.HeadN
+import FV7z.Im2.Frame
 /-! Probe: the requests `1001 ≤ n ≤ 4096` (`nb` = `16 k`, a largebin size): from the entry of `_int_malloc` to 2549
 through the cut points 512, 1115, 2012 of `Im5`, for `k` = 128 (index `48 + nb / 64`, the jump at 480) and `k` = 257
-(index `91 + nb / 512`, the jump at 490); the state at 2549 shown (`Show`), what is left shown and given up. -/
+(index `91 + nb / 512`, the jump at 490), one `wpx` per piece; at 2549 `rbx` = `av`, `r13` = `nb`, `rsp` = `S` and
+the frame `Im2.Fr`. What is left shown and given up. -/
 open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn FV7z.Start
 open FV7z.Imm (imm imm_at rd_off rd_off_self rd_below stk_f pu)
 namespace FV7z.Im5
 variable {F : Footprint} {Wl : List Rgn}
-
-/-- Not unfolded: the state at 2549, shown by the goal left. -/
-def Show (_g : Gprs) (_V : Addr → Byte) : Prop := False
 
 /-- `wpx` with the reads and rewrites of the probe; the blocks of one piece as the extra lemmas. -/
 macro "wpl" "[" ls:Lean.Parser.Tactic.simpLemma,* "]" : tactic =>
@@ -21,6 +19,25 @@ macro "wpl" "[" ls:Lean.Parser.Tactic.simpLemma,* "]" : tactic =>
     Bool.not_false, Bool.not_true, Bool.false_eq_true, false_imp_iff, true_imp_iff, Bool.or_self, Bool.true_or,
     Bool.or_true, false_implies, true_implies, and_true, true_and, reduceIte, or_true, true_or, or_false, false_or,
     ne_eq, Nat.reduceEqDiff, not_false_eq_true, ofBytesLE_toBytesLE, Bool.true_eq_false, $ls,*])
+
+/-- The goals a piece leaves: the cases of the flags, the footprints, the frame (the hypotheses by name). -/
+set_option hygiene false in
+macro "cl" : tactic => `(tactic| repeat' first
+    | apply And.intro
+    | intro (_ : Rflags)
+    | intro (_ : Rflags.zf _ = false)
+    | intro (_ : Rflags.zf _ = true)
+    | intro (_ : (_ : Rflags) = _)
+    | rfl
+    | with_reducible exact stk_f hsw (by decide)
+    | with_reducible exact stk_f hsd (by decide)
+    | with_reducible exact hgf
+    | with_reducible exact htf
+    | with_reducible exact D _ _ (by decide) (by decide)
+    | (wpl [eaG]; with_reducible exact D _ _ (by decide) (by decide))
+    | exact Im2.Fr.base _ _ hS
+    | refine Im2.Fr.vst _ hS ?_ ?_ ?_
+    | decide)
 
 set_option maxHeartbeats 200000000 in
 theorem vc_L128 {fb S n : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (hrsp : g.rsp = S + 184#64)
@@ -39,8 +56,8 @@ theorem vc_L128 {fb S n : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (hrs
     (htf : ∀ i < 8, Foot F.data (Addr.add (fb + 18446744073709551576#64) i))
     (hsw : ∀ i < 184, Foot Wl (Addr.add S i)) (hsd : ∀ i < 184, Foot F.data (Addr.add S i)) :
     W_0 fb F Wl (fun j g f V => j = 512 ∧ W_512 fb F Wl (fun j g f V => j = 1115 ∧ W_1115 fb F Wl
-      (fun j g f V => j = 2012 ∧ W_2012 fb F Wl (fun j' g' _ V' => j' = 2549 ∧ Show g' V') g f V) g f V) g f V)
-      g f V := by
+      (fun j g f V => j = 2012 ∧ W_2012 fb F Wl (fun j' g' _ V' => j' = 2549 ∧ g'.rbx = 7940672#64 ∧
+        g'.r13 = 2048#64 ∧ g'.rsp = S ∧ Im2.Fr S g V V') g f V) g f V) g f V) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at hrsp hsi hdi ⊢
   subst hrsp hsi hdi
@@ -61,63 +78,23 @@ theorem vc_L128 {fb S n : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (hrs
   wpl [W_0, W_9, W_304, W_320, W_340, W_352, W_482, o0, o1, o2, o3, o4, o5, o6,
     p1, p2, p3, p4, p5, p6, p7, q1, q2, q3, q5, q6, q7, q8, sk, qk, hS, hS', m, d1, d2, e, hgm, hfc, htb, htc, hun,
     hm2, hm3]
-  repeat' first
-    | apply And.intro
-    | intro (_ : Rflags)
-    | intro (_ : Rflags.zf _ = false)
-    | intro (_ : Rflags.zf _ = true)
-    | rfl
-    | with_reducible exact stk_f hsw (by decide)
-    | with_reducible exact stk_f hsd (by decide)
-    | with_reducible exact hgf
-    | with_reducible exact htf
-    | with_reducible exact D _ _ (by decide) (by decide)
+  cl
   -- 512 → 1115
   any_goals wpl [W_512, W_1069, W_1099, o7, o8, o9,
     p1, p2, p3, p4, p5, p6, p7, q1, q2, q3, q5, q6, q7, q8, sk, qk, hS, hS', m, d1, d2, e, hgm, hfc, htb, htc, hun,
     hm2, hm3]
-  repeat' first
-    | apply And.intro
-    | intro (_ : Rflags)
-    | intro (_ : Rflags.zf _ = false)
-    | intro (_ : Rflags.zf _ = true)
-    | rfl
-    | with_reducible exact stk_f hsw (by decide)
-    | with_reducible exact stk_f hsd (by decide)
-    | with_reducible exact hgf
-    | with_reducible exact htf
-    | with_reducible exact D _ _ (by decide) (by decide)
+  cl
   -- 1115 → 2012
   any_goals wpl [W_1115, W_1138, W_1968, W_1977, o10, o11, o12, o13,
     p1, p2, p3, p4, p5, p6, p7, q1, q2, q3, q5, q6, q7, q8, sk, qk, hS, hS', m, d1, d2, e, hgm, hfc, htb, htc, hun,
     hm2, hm3]
-  repeat' first
-    | apply And.intro
-    | intro (_ : Rflags)
-    | intro (_ : Rflags.zf _ = false)
-    | intro (_ : Rflags.zf _ = true)
-    | rfl
-    | with_reducible exact stk_f hsw (by decide)
-    | with_reducible exact stk_f hsd (by decide)
-    | with_reducible exact hgf
-    | with_reducible exact htf
-    | with_reducible exact D _ _ (by decide) (by decide)
+  cl
   -- 2012 → 2549
   any_goals wpl [W_2012, W_2048, W_2480, W_2488, W_2505, o14, o15, o16, o17, o18,
     p1, p2, p3, p4, p5, p6, p7, q1, q2, q3, q5, q6, q7, q8, sk, qk, hS, hS', m, d1, d2, e, hgm, hfc, htb, htc, hun,
     hm2, hm3]
-  repeat' first
-    | apply And.intro
-    | intro (_ : Rflags)
-    | intro (_ : Rflags.zf _ = false)
-    | intro (_ : Rflags.zf _ = true)
-    | rfl
-    | with_reducible exact stk_f hsw (by decide)
-    | with_reducible exact stk_f hsd (by decide)
-    | with_reducible exact hgf
-    | with_reducible exact htf
-    | with_reducible exact D _ _ (by decide) (by decide)
-    | (trace_state; sorry)
+  cl
+  all_goals (trace_state; sorry)
 
 set_option maxHeartbeats 200000000 in
 theorem vc_L257 {fb S n : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (hrsp : g.rsp = S + 184#64)
@@ -136,8 +113,8 @@ theorem vc_L257 {fb S n : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (hrs
     (htf : ∀ i < 8, Foot F.data (Addr.add (fb + 18446744073709551576#64) i))
     (hsw : ∀ i < 184, Foot Wl (Addr.add S i)) (hsd : ∀ i < 184, Foot F.data (Addr.add S i)) :
     W_0 fb F Wl (fun j g f V => j = 512 ∧ W_512 fb F Wl (fun j g f V => j = 1115 ∧ W_1115 fb F Wl
-      (fun j g f V => j = 2012 ∧ W_2012 fb F Wl (fun j' g' _ V' => j' = 2549 ∧ Show g' V') g f V) g f V) g f V)
-      g f V := by
+      (fun j g f V => j = 2012 ∧ W_2012 fb F Wl (fun j' g' _ V' => j' = 2549 ∧ g'.rbx = 7940672#64 ∧
+        g'.r13 = 4112#64 ∧ g'.rsp = S ∧ Im2.Fr S g V V') g f V) g f V) g f V) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at hrsp hsi hdi ⊢
   subst hrsp hsi hdi
@@ -158,62 +135,22 @@ theorem vc_L257 {fb S n : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (hrs
   wpl [W_0, W_9, W_304, W_320, W_340, W_352, W_482, o0, o1, o2, o3, o4, o5, o6,
     p1, p2, p3, p4, p5, p6, p7, q1, q2, q3, q5, q6, q7, q8, sk, qk, hS, hS', m, d1, d2, e, hgm, hfc, htb, htc, hun,
     hm2, hm3]
-  repeat' first
-    | apply And.intro
-    | intro (_ : Rflags)
-    | intro (_ : Rflags.zf _ = false)
-    | intro (_ : Rflags.zf _ = true)
-    | rfl
-    | with_reducible exact stk_f hsw (by decide)
-    | with_reducible exact stk_f hsd (by decide)
-    | with_reducible exact hgf
-    | with_reducible exact htf
-    | with_reducible exact D _ _ (by decide) (by decide)
+  cl
   -- 512 → 1115
   any_goals wpl [W_512, W_1069, W_1099, o7, o8, o9,
     p1, p2, p3, p4, p5, p6, p7, q1, q2, q3, q5, q6, q7, q8, sk, qk, hS, hS', m, d1, d2, e, hgm, hfc, htb, htc, hun,
     hm2, hm3]
-  repeat' first
-    | apply And.intro
-    | intro (_ : Rflags)
-    | intro (_ : Rflags.zf _ = false)
-    | intro (_ : Rflags.zf _ = true)
-    | rfl
-    | with_reducible exact stk_f hsw (by decide)
-    | with_reducible exact stk_f hsd (by decide)
-    | with_reducible exact hgf
-    | with_reducible exact htf
-    | with_reducible exact D _ _ (by decide) (by decide)
+  cl
   -- 1115 → 2012
   any_goals wpl [W_1115, W_1138, W_1968, W_1977, o10, o11, o12, o13,
     p1, p2, p3, p4, p5, p6, p7, q1, q2, q3, q5, q6, q7, q8, sk, qk, hS, hS', m, d1, d2, e, hgm, hfc, htb, htc, hun,
     hm2, hm3]
-  repeat' first
-    | apply And.intro
-    | intro (_ : Rflags)
-    | intro (_ : Rflags.zf _ = false)
-    | intro (_ : Rflags.zf _ = true)
-    | rfl
-    | with_reducible exact stk_f hsw (by decide)
-    | with_reducible exact stk_f hsd (by decide)
-    | with_reducible exact hgf
-    | with_reducible exact htf
-    | with_reducible exact D _ _ (by decide) (by decide)
+  cl
   -- 2012 → 2549
   any_goals wpl [W_2012, W_2048, W_2480, W_2488, W_2505, o14, o15, o16, o17, o18,
     p1, p2, p3, p4, p5, p6, p7, q1, q2, q3, q5, q6, q7, q8, sk, qk, hS, hS', m, d1, d2, e, hgm, hfc, htb, htc, hun,
     hm2, hm3]
-  repeat' first
-    | apply And.intro
-    | intro (_ : Rflags)
-    | intro (_ : Rflags.zf _ = false)
-    | intro (_ : Rflags.zf _ = true)
-    | rfl
-    | with_reducible exact stk_f hsw (by decide)
-    | with_reducible exact stk_f hsd (by decide)
-    | with_reducible exact hgf
-    | with_reducible exact htf
-    | with_reducible exact D _ _ (by decide) (by decide)
-    | (trace_state; sorry)
+  cl
+  all_goals (trace_state; sorry)
 
 end FV7z.Im5
