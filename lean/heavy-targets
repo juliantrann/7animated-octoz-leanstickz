@@ -1,8 +1,3 @@
 # Modules built one at a time before the rest (each `lake build` of one line: its dependencies in parallel, then it
-# alone). Four of them at once exceed the runner's 16 GB (a84: the runner was shut down while Im5.L* were built).
-FV7z.Im5.L1
-FV7z.Im5.L2
-FV7z.Im5.L3
-FV7z.Im5.L4
-FV7z.Im5.L5
-FV7z.Im5.L6
+# alone). Im5.L1 … L13: one theorem per k since a102 (9 s, 2 GB each); eight per theorem ran out of memory (a84).
+FV7z.Im5.P5
