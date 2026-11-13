@@ -20,14 +20,15 @@ macro "wpl" "[" ls:Lean.Parser.Tactic.simpLemma,* "]" : tactic =>
     Bool.or_true, false_implies, true_implies, and_true, true_and, reduceIte, or_true, true_or, or_false, false_or,
     ne_eq, Nat.reduceEqDiff, not_false_eq_true, ofBytesLE_toBytesLE, Bool.true_eq_false, $ls,*])
 
-/-- The goals a piece leaves: the cases of the flags, the footprints, the frame (the hypotheses by name). -/
 set_option hygiene false in
+/-- The goals a piece leaves: the cases of the flags, the footprints, the frame (the hypotheses by name). -/
 macro "cl" : tactic => `(tactic| repeat' first
     | apply And.intro
     | intro (_ : Rflags)
     | intro (_ : Rflags.zf _ = false)
     | intro (_ : Rflags.zf _ = true)
     | intro (_ : (_ : Rflags) = _)
+    | intro (_ : LogF _ _ _)
     | rfl
     | with_reducible exact stk_f hsw (by decide)
     | with_reducible exact stk_f hsd (by decide)
@@ -55,9 +56,9 @@ theorem vc_L128 {fb S n : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (hrs
     (hgf : ∀ i < 8, Foot F.data (Addr.add (8013224#64) i))
     (htf : ∀ i < 8, Foot F.data (Addr.add (fb + 18446744073709551576#64) i))
     (hsw : ∀ i < 184, Foot Wl (Addr.add S i)) (hsd : ∀ i < 184, Foot F.data (Addr.add S i)) :
-    W_0 fb F Wl (fun j g f V => j = 512 ∧ W_512 fb F Wl (fun j g f V => j = 1115 ∧ W_1115 fb F Wl
-      (fun j g f V => j = 2012 ∧ W_2012 fb F Wl (fun j' g' _ V' => j' = 2549 ∧ g'.rbx = 7940672#64 ∧
-        g'.r13 = 2048#64 ∧ g'.rsp = S ∧ Im2.Fr S g V V') g f V) g f V) g f V) g f V := by
+    W_0 fb F Wl (fun j g₁ f₁ V₁ => j = 512 ∧ W_512 fb F Wl (fun j g₂ f₂ V₂ => j = 1115 ∧ W_1115 fb F Wl
+      (fun j g₃ f₃ V₃ => j = 2012 ∧ W_2012 fb F Wl (fun j' g' _ V' => j' = 2549 ∧ g'.rbx = 7940672#64 ∧
+        g'.r13 = 2048#64 ∧ g'.rsp = S ∧ Im2.Fr S g V V') g₃ f₃ V₃) g₂ f₂ V₂) g₁ f₁ V₁) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at hrsp hsi hdi ⊢
   subst hrsp hsi hdi
@@ -112,9 +113,9 @@ theorem vc_L257 {fb S n : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (hrs
     (hgf : ∀ i < 8, Foot F.data (Addr.add (8013224#64) i))
     (htf : ∀ i < 8, Foot F.data (Addr.add (fb + 18446744073709551576#64) i))
     (hsw : ∀ i < 184, Foot Wl (Addr.add S i)) (hsd : ∀ i < 184, Foot F.data (Addr.add S i)) :
-    W_0 fb F Wl (fun j g f V => j = 512 ∧ W_512 fb F Wl (fun j g f V => j = 1115 ∧ W_1115 fb F Wl
-      (fun j g f V => j = 2012 ∧ W_2012 fb F Wl (fun j' g' _ V' => j' = 2549 ∧ g'.rbx = 7940672#64 ∧
-        g'.r13 = 4112#64 ∧ g'.rsp = S ∧ Im2.Fr S g V V') g f V) g f V) g f V) g f V := by
+    W_0 fb F Wl (fun j g₁ f₁ V₁ => j = 512 ∧ W_512 fb F Wl (fun j g₂ f₂ V₂ => j = 1115 ∧ W_1115 fb F Wl
+      (fun j g₃ f₃ V₃ => j = 2012 ∧ W_2012 fb F Wl (fun j' g' _ V' => j' = 2549 ∧ g'.rbx = 7940672#64 ∧
+        g'.r13 = 4112#64 ∧ g'.rsp = S ∧ Im2.Fr S g V V') g₃ f₃ V₃) g₂ f₂ V₂) g₁ f₁ V₁) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at hrsp hsi hdi ⊢
   subst hrsp hsi hdi
