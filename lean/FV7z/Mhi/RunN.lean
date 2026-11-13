@@ -149,7 +149,8 @@ theorem mhi_okn {lim : Nat} {b fsb S n nb : Addr} {ks : Kst} {pad sm mx : BitVec
   have hclh : (9 ≤ n.toNat ∧ n.toNat ≤ 1032 ∧ n + 23#64 &&& 18446744073709551600#64 = nb) ∨
       (n.toNat ≤ 8 ∧ nb = 32#64) := by
     rcases hcls with ⟨h1, h2, h3⟩ | h
-    exacts [.inl ⟨h1, by omega, h3⟩, .inr h]
+    · exact .inl ⟨h1, by omega, h3⟩
+    · exact .inr h
   refine mhi_headn c hB.fsb hin hinP hinG hinT hK hA hrip hdi hclh (by rw [hrsp, a232]; omega) (by omega)
     (by rw [hrsp, a232]; omega) (by rw [hrsp, m64]; exact off_ft hst 336 rfl (by decide)) hfl hfa hW hgmf
     (fun i hi => c.hws _ (hft i hi)) hfs1 hmi h32 h64 htc hsd ?_
