@@ -29,6 +29,8 @@ macro "cl" : tactic => `(tactic| repeat' first
     | intro (_ : Rflags.zf _ = true)
     | intro (_ : (_ : Rflags) = _)
     | intro (_ : LogF _ _ _)
+    | refine Im2.Fr.vst _ hS ?_ (by decide) (by decide)
+    | exact Im2.Fr.base _ _ hS
     | rfl
     | with_reducible exact stk_f hsw (by decide)
     | with_reducible exact stk_f hsd (by decide)
@@ -36,8 +38,6 @@ macro "cl" : tactic => `(tactic| repeat' first
     | with_reducible exact htf
     | with_reducible exact D _ _ (by decide) (by decide)
     | (wpl [eaG]; with_reducible exact D _ _ (by decide) (by decide))
-    | exact Im2.Fr.base _ _ hS
-    | refine Im2.Fr.vst _ hS ?_ ?_ ?_
     | decide)
 
 set_option maxHeartbeats 200000000 in
