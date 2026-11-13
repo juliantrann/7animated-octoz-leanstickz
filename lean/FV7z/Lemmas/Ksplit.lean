@@ -24,8 +24,10 @@ theorem kbase {lo k hi : Nat} (h1 : lo ≤ k) (h2 : k ≤ hi) : ∃ j, k = lo + 
 /-- One step down the bound (`m - 1` then a numeral: no unification of `m + 1` with a literal). -/
 theorem kdec {j m : Nat} (h : j + 1 ≤ m) : j ≤ m - 1 := Nat.le_sub_one_of_lt h
 
-/-- Past the bound. -/
-theorem kzero {j : Nat} (h : j + 1 ≤ 0) : False := Nat.not_succ_le_zero _ h
+/-- Past the bound (`m = 0` by `rfl`: up to definitional unfolding, whatever the form of the literal `m`). -/
+theorem kzero {j m : Nat} (h : j + 1 ≤ m) (hm : m = 0) : False := by
+  subst hm
+  exact Nat.not_succ_le_zero _ h
 
 /-- `ksplit k from lo using h1 h2`: with `h1 : lo ≤ k` and `h2 : k ≤ hi`, one goal for each `k` from `lo` to `hi`. -/
 syntax "ksplit " ident " from " num " using " ident ident : tactic
@@ -35,7 +37,7 @@ macro_rules
       simp only [Nat.reduceSub] at hb
       repeat' (rcases FV7z.kpeel j with rfl | ⟨j, rfl⟩ <;>
         try (first
-          | exact (FV7z.kzero hb).elim
+          | exact (FV7z.kzero hb rfl).elim
           | (replace hb := FV7z.kdec hb; simp only [Nat.reduceSub] at hb)))))
 
 set_option maxHeartbeats 20000 in
