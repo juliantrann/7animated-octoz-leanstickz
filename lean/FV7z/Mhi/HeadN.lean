@@ -1,7 +1,7 @@
 import FV7z.Mhi.HoldsN
 import FV7z.Mhi.Head
 /-!
-# `malloc_hook_ini`: from the entry to the call of `tcache_init`, `n ≤ 4096` (PLAN.md G3, `malloc`)
+# `malloc_hook_ini`: from the entry to the call of `tcache_init`, `n ≤ 4104` (PLAN.md G3, `malloc`)
 
 - `mhi_headn`: `mhi_head` with `vc_341n` (`vc_341s` for `n ≤ 8`): `tcache_init` is reached with the tcache index
   of `nb` (`n + 23 &&& -16`, 32 for `n ≤ 8`) in `rbx` and `n` in `rbp`.
@@ -16,14 +16,14 @@ variable {F : Footprint} {Wl : List Rgn}
 variable {prof : Profile} {L : List (Addr × List Byte)} {s₀ X : State} {o : Oracle} {t : Nat}
   {gev : List Event} {gP : State → Nat → List Event → Prop} {gE : Outcome → List Event → Prop} {V : Addr → Byte}
 
-/-- `mhi_head` for every request `n ≤ 4096`: `tcache_init` is reached with the tcache index of `nb`
+/-- `mhi_head` for every request `n ≤ 4104`: `tcache_init` is reached with the tcache index of `nb`
 (`n + 23 &&& -16`, 32 for `n ≤ 8`) in `rbx` and `n` in `rbp`. -/
 theorem mhi_headn {fb n nb : Addr} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb)
     (hin : CodeIn L mhi_at mhi) (hinP : CodeIn L Pmi.pmi_at Pmi.pmi) (hinG : CodeIn L Tgv.tgv_at Tgv.tgv)
     (hinT : CodeIn L Tci.tci_at Tci.tci)
     (hK : KeptW Wl s₀ X) (hA : Agree F X.proc.mm.mem V) (hrip : X.cpu.rip = mhi_at)
     (hdi : X.cpu.gpr.rdi = n)
-    (hcls : (9 ≤ n.toNat ∧ n.toNat ≤ 4096 ∧ n + 23#64 &&& 18446744073709551600#64 = nb) ∨ (n.toNat ≤ 8 ∧ nb = 32#64))
+    (hcls : (9 ≤ n.toNat ∧ n.toNat ≤ 4104 ∧ n + 23#64 &&& 18446744073709551600#64 = nb) ∨ (n.toNat ≤ 8 ∧ nb = 32#64))
     (hlo : 8029888 + 64 ≤ X.cpu.gpr.rsp.toNat)
     (hf0 : 8013232 + 40 ≤ fb.toNat) (hf1 : fb.toNat + 48 ≤ X.cpu.gpr.rsp.toNat - 64)
     (hst : ∀ i < 64, Foot Wl (Addr.add (X.cpu.gpr.rsp - 64#64) i))

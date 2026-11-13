@@ -4,7 +4,7 @@ import FV7z.Lemmas.Ksplit
 /-!
 # `_int_malloc` from the entry to 2549 for a largebin size `16 k`: the statement (PLAN.md G3, `malloc`)
 
-The requests `1001 ≤ n ≤ 4096`: `nb = 16 k`, `64 ≤ k ≤ 257`, a largebin size. The way: `0 → 304 → 320 → 340 → 352`,
+The requests `1001 ≤ n ≤ 4104`: `nb = 16 k`, `64 ≤ k ≤ 257`, a largebin size. The way: `0 → 304 → 320 → 340 → 352`,
 `482` (`have_fastchunks` 0) to 512, the largebin `lbi k` empty, `1069 → 1099 → 1115`, the unsorted bin empty, the
 binmap's blocks 2 and 3 empty, `2012 → 2048 → 2480/2505` to `use_top` at 2549. At 2549 `rbx` is `av`, `r13` is `nb`,
 `rsp` is `S` and the bytes are the frame `Im2.Fr` of the entry (the code from 2549 on: `Im2.im_from2549`).

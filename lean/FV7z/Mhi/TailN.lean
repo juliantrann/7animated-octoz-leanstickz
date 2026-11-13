@@ -2,7 +2,7 @@ import FV7z.Mhi.Tail
 import FV7z.Mhi.HoldsM
 import FV7z.Im5.RunA
 /-!
-# `malloc_hook_ini`: from the return of `tcache_init` to the return address, `n ≤ 4096` (PLAN.md G3, `malloc`)
+# `malloc_hook_ini`: from the return of `tcache_init` to the return address, `n ≤ 4104` (PLAN.md G3, `malloc`)
 
 - `VspN_hd`, `VspN_far`, `VspN_frm`: the size word after the split; the bytes outside the frame of `_int_malloc`
   (`VspN_frm` through its frame `Im2.Fr`).
@@ -57,7 +57,7 @@ theorem VspN_frm {S T szw nb : Addr} {g : Gprs} {V M : Addr → Byte} {r : List 
 variable {prof : Profile} {L : List (Addr × List Byte)} {s₀ X : State} {o : Oracle} {t : Nat}
   {gev : List Event} {gP : State → Nat → List Event → Prop} {gE : Outcome → List Event → Prop} {V : Addr → Byte}
 
-/-- `mhi_tail` for every request `n ≤ 4096` (`nb` its chunk size, `Im5.ClsA`): from offset 236 (`rbx` the tcache
+/-- `mhi_tail` for every request `n ≤ 4104` (`nb` its chunk size, `Im5.ClsA`): from offset 236 (`rbx` the tcache
 index of `nb`, `rbp` = `n`) to the return address with `T + 16` in `rax`. -/
 theorem mhi_tailn {fb S T szw sm C n nb : Addr} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb)
     (hin : CodeIn L mhi_at mhi) (hinI : CodeIn L imm_at imm) (hK : KeptW Wl s₀ X) (hA : Agree F X.proc.mm.mem V)

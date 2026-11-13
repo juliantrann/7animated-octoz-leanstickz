@@ -4,10 +4,10 @@ import FV7z.Lemmas.Ksplit
 # `malloc_hook_ini`: the tcache and size checks for every chunk size `16 k`, `2 ≤ k ≤ 257` (PLAN.md G3, `malloc`)
 
 The checks of `malloc_hook_ini` after the tcache index, for the fastbin, smallbin and largebin sizes up to 4112 (the
-requests `n ≤ 4096`), one `wpx` per `k` (`ksplit`):
+requests `n ≤ 4104`), one `wpx` per `k` (`ksplit`):
 
 - `vc_236m`: the tcache bin `k - 2` (below `mp_.tcache_bins` = 64, `k ≤ 65`) empty, on to offset 99.
-- `vc_236l`: `k - 2` not below `mp_.tcache_bins` (`66 ≤ k ≤ 257`, the requests `1033 ≤ n ≤ 4096`): straight to 99.
+- `vc_236l`: `k - 2` not below `mp_.tcache_bins` (`66 ≤ k ≤ 257`, the requests `1033 ≤ n ≤ 4104`): straight to 99.
 - `vc_130m`: the size word `nb ||| 1` of the chunk back from `_int_malloc`, on to 180.
 -/
 open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn FV7z.Start

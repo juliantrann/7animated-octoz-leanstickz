@@ -1,7 +1,7 @@
 import FV7z.Im5.P5
 import FV7z.Im2.RunN
 /-!
-# `_int_malloc`: the second call for every request `1001 ≤ n ≤ 4096` (PLAN.md G3, `malloc`)
+# `_int_malloc`: the second call for every request `1001 ≤ n ≤ 4104` (PLAN.md G3, `malloc`)
 
 - `clsL`: `n + 23` above 31 and rounded to `16 k`, `64 ≤ k ≤ 257` (a largebin size).
 - `im_secondl`: from the entry through the cut points 512, 1115, 2012 to 2549 (`p5`), then `Im2.im_from2549`: the
@@ -14,8 +14,8 @@ open FV7z.Im2 (VspN and_m16)
 namespace FV7z.Im5
 variable {F : Footprint} {Wl : List Rgn}
 
-/-- A request `1001 ≤ n ≤ 4096`: `n + 23` is above 31 and rounds to `16 k`, `64 ≤ k ≤ 257`. -/
-theorem clsL {n : Addr} (h1 : 1001 ≤ n.toNat) (h2 : n.toNat ≤ 4096) :
+/-- A request `1001 ≤ n ≤ 4104`: `n + 23` is above 31 and rounds to `16 k`, `64 ≤ k ≤ 257`. -/
+theorem clsL {n : Addr} (h1 : 1001 ≤ n.toNat) (h2 : n.toNat ≤ 4104) :
     n.msb = false ∧ decide ((n + 23#64).toNat < 31) = false ∧ decide (n + 23#64 = 31#64) = false ∧
     ∃ k, 64 ≤ k ∧ k ≤ 257 ∧ n + 23#64 &&& 18446744073709551600#64 = BitVec.ofNat 64 (16 * k) := by
   have e : (n + 23#64).toNat = n.toNat + 23 := by rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega
@@ -31,14 +31,14 @@ theorem lbi_ge (k : Nat) (hk : 64 ≤ k) : 64 ≤ lbi k := by
 variable {prof : Profile} {L : List (Addr × List Byte)} {s₀ X : State} {o : Oracle} {t : Nat}
   {gev : List Event} {gP : State → Nat → List Event → Prop} {gE : Outcome → List Event → Prop} {V : Addr → Byte}
 
-/-- `_int_malloc` on the second call (`av` the main arena) for a request `1001 ≤ n ≤ 4096` (`nb` its chunk size, a
+/-- `_int_malloc` on the second call (`av` the main arena) for a request `1001 ≤ n ≤ 4104` (`nb` its chunk size, a
 largebin size): the fastbins flag 0, the largebins (indices 64 … 99), the unsorted bin and the binmap's blocks 2 and
 3 empty, the tcache there, the top `T` big enough; the top is split, `T + 16` is returned, the six registers come
 back. The bytes after are `VspN` of some `M` with the frame `Im2.Fr` of the entry. -/
 theorem im_secondl {fb S T szw sm n nb : Addr} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb)
     (hin : CodeIn L imm_at imm) (hK : KeptW Wl s₀ X) (hA : Agree F X.proc.mm.mem V) (hrip : X.cpu.rip = imm_at)
     (hrsp : X.cpu.gpr.rsp = S + 184#64) (hsi : X.cpu.gpr.rsi = n) (hdi : X.cpu.gpr.rdi = 7940672#64)
-    (hn1 : 1001 ≤ n.toNat) (hn2 : n.toNat ≤ 4096) (hnb : n + 23#64 &&& 18446744073709551600#64 = nb)
+    (hn1 : 1001 ≤ n.toNat) (hn2 : n.toNat ≤ 4104) (hnb : n + 23#64 &&& 18446744073709551600#64 = nb)
     (hS : S.toNat + 256 < 2 ^ 64) (hlo : 8029888 ≤ S.toNat)
     (hfb : (fb + 18446744073709551576#64).toNat + 8 ≤ S.toNat)
     (hgm : rdq(V, 8013224#64) = 128#64) (hfc : rdd(V, 7940680#64) = 0)

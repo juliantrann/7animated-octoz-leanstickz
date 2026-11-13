@@ -1,9 +1,9 @@
 import FV7z.Im5.RunN
 /-!
-# `_int_malloc`: the second call for every request `n ≤ 4096` (PLAN.md G3, `malloc`)
+# `_int_malloc`: the second call for every request `n ≤ 4104` (PLAN.md G3, `malloc`)
 
-- `ClsA n nb`: `nb` the chunk size of a request `n ≤ 4096`: `Im3.Cls` (`n ≤ 1000`, the fastbin and smallbin sizes) or
-  `1001 ≤ n ≤ 4096` (a largebin size); `ClsA.cases` (`nb = 16 k`, `2 ≤ k ≤ 257`), `ClsA.bnd`.
+- `ClsA n nb`: `nb` the chunk size of a request `n ≤ 4104`: `Im3.Cls` (`n ≤ 1000`, the fastbin and smallbin sizes) or
+  `1001 ≤ n ≤ 4104` (a largebin size); `ClsA.cases` (`nb = 16 k`, `2 ≤ k ≤ 257`), `ClsA.bnd`.
 - `im_secondA`: `Im2.im_secondn` (with `Im2.Fr.v2n`) or `im_secondl`: the top split for `nb`, `T + 16` returned; the
   bytes after are `VspN` of some `M` with the frame `Im2.Fr` of the entry.
 -/
@@ -13,9 +13,9 @@ open FV7z.Im2 (VspN and_m16)
 namespace FV7z.Im5
 variable {F : Footprint} {Wl : List Rgn}
 
-/-- `nb` the chunk size of a request `n ≤ 4096`. -/
+/-- `nb` the chunk size of a request `n ≤ 4104`. -/
 def ClsA (n nb : Addr) : Prop :=
-  Im3.Cls n nb ∨ (1001 ≤ n.toNat ∧ n.toNat ≤ 4096 ∧ n + 23#64 &&& 18446744073709551600#64 = nb)
+  Im3.Cls n nb ∨ (1001 ≤ n.toNat ∧ n.toNat ≤ 4104 ∧ n + 23#64 &&& 18446744073709551600#64 = nb)
 
 theorem ClsA.cases {n nb : Addr} (h : ClsA n nb) : ∃ k, 2 ≤ k ∧ k ≤ 257 ∧ nb = BitVec.ofNat 64 (16 * k) := by
   rcases h with h | ⟨h1, h2, rfl⟩
@@ -32,7 +32,7 @@ theorem ClsA.bnd {n nb : Addr} (h : ClsA n nb) : 32 ≤ nb.toNat ∧ nb.toNat �
 variable {prof : Profile} {L : List (Addr × List Byte)} {s₀ X : State} {o : Oracle} {t : Nat}
   {gev : List Event} {gP : State → Nat → List Event → Prop} {gE : Outcome → List Event → Prop} {V : Addr → Byte}
 
-/-- `_int_malloc` on the second call for every request `n ≤ 4096` (`ClsA`): the hypotheses of `Im2.im_secondn`
+/-- `_int_malloc` on the second call for every request `n ≤ 4104` (`ClsA`): the hypotheses of `Im2.im_secondn`
 (the fastbins 0, the smallbins and the binmap empty) and of `im_secondl` (the fastbins flag 0, the largebins empty). -/
 theorem im_secondA {fb S T szw sm n nb : Addr} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb)
     (hin : CodeIn L imm_at imm) (hK : KeptW Wl s₀ X) (hA : Agree F X.proc.mm.mem V) (hrip : X.cpu.rip = imm_at)

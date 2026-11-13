@@ -131,6 +131,7 @@ import FV7z.Start.ToOsv
 import FV7z.Lemmas.BlkOps5
 import FV7z.Lemmas.Signed
 import FV7z.Lemmas.SysUname
+import FV7z.Lemmas.SysLink
 import FV7z.Spec.OsVersion
 import FV7z.Uname.Blocks
 import FV7z.Uname.Cuts
@@ -218,6 +219,7 @@ import FV7z.Lemmas.BlkOps7
 import FV7z.Gts.Holds
 import FV7z.Grl.Holds
 import FV7z.Sga.Holds
+import FV7z.Gor.Cuts
 import FV7z.Lemmas.BlkOps8
 import FV7z.Lemmas.Rmw2
 import FV7z.Raf.Holds
@@ -226,6 +228,7 @@ import FV7z.Tgv.Holds
 import FV7z.Pti.Holds
 import FV7z.Lemmas.BlkOps11
 import FV7z.Lemmas.Rmw3
+import FV7z.Lemmas.Rmw4
 import FV7z.Nef.Holds
 import FV7z.Cxa.Holds
 import FV7z.Lemmas.Ssp
@@ -262,6 +265,7 @@ import FV7z.Tci.Cuts
 import FV7z.Tci.Hand
 import FV7z.Tci.Holds
 import FV7z.Lemmas.BlkOps14
+import FV7z.Lemmas.BlkOps15
 import FV7z.Im2.Cuts
 import FV7z.Im2.Run
 import FV7z.Im2.HeadN

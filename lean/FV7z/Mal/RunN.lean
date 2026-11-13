@@ -1,7 +1,7 @@
 import FV7z.Mal.Run
 import FV7z.Mhi.RunN
 /-!
-# The first `malloc (n)` of the process for `n ≤ 4096` (PLAN.md G3, `malloc`)
+# The first `malloc (n)` of the process for `n ≤ 4104` (PLAN.md G3, `malloc`)
 
 - `mal_firstn`: `mal_first` with `Mhi.mhi_okn`.
 - `Nr_hhn`: `Nr_hh` up to `nb + 16` bytes above the first chunk (`nb ≤ 1008` or `nb ≤ mp_.top_pad`).
@@ -21,7 +21,7 @@ variable {prof : Profile} {L : List (Addr × List Byte)} {s₀ X : State} {o : O
   {gev : List Event} {gP : State → Nat → List Event → Prop} {gE : Outcome → List Event → Prop} {V : Addr → Byte}
 
 set_option maxHeartbeats 2000000 in
-/-- `mal_first` for every request `n ≤ 4096` (`Mhi.mhi_okn`): the top split for `nb` bytes, `nb` the chunk size of `n`
+/-- `mal_first` for every request `n ≤ 4104` (`Mhi.mhi_okn`): the top split for `nb` bytes, `nb` the chunk size of `n`
 (`Im5.ClsA`; `nb ≤ 1008` or `nb ≤ mp_.top_pad`). -/
 theorem mal_firstn {lim : Nat} {b fsb S n nb : Addr} {ks : Kst} {pad sm mx : BitVec 64} (c : Seg prof F Wl L s₀ o)
     (hB : Base s₀ lim b fsb ks) (hin : CodeIn L mal_at mal) (hinH : CodeIn L mhi_at mhi)

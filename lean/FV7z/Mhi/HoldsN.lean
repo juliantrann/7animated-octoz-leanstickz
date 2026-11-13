@@ -1,7 +1,7 @@
 import FV7z.Mhi.Holds
 import FV7z.Im3.Holds
 /-!
-# `malloc_hook_ini`: `request2size` for every request `n ≤ 4096` (PLAN.md G3, `malloc`)
+# `malloc_hook_ini`: `request2size` for every request `n ≤ 4104` (PLAN.md G3, `malloc`)
 
 - `vc_341n`: `__malloc_hook` read back 0, `request2size` (`n + 23 &&& -16`) and the tcache index
   (`nb - 17 >>> 4`), on to offset 68; `vc_341s` for `n ≤ 8` (`nb` = 32, the index 0, one `wpx` per `n`).
@@ -12,7 +12,7 @@ namespace FV7z.Mhi
 variable {F : Footprint} {Wl : List Rgn}
 
 theorem vc_341n {fb n : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (hbp : g.rbp = n)
-    (hn : 9 ≤ n.toNat) (hn' : n.toNat ≤ 4096)
+    (hn : 9 ≤ n.toNat) (hn' : n.toNat ≤ 4104)
     (hhk : rdq(V, 7940656#64) = 0#64) (hfh : ∀ i < 8, Foot F.data (Addr.add (7940656#64) i)) :
     W_341 fb F Wl (fun j' g' _ V' => j' = 68 ∧
       g' = { g with rax := n + 23#64 &&& 18446744073709551600#64,

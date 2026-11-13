@@ -2,7 +2,7 @@ import FV7z.Mhi.Run
 import FV7z.Mhi.TailN
 import FV7z.Mhi.HeadN
 /-!
-# `malloc_hook_ini (n)` for `n ≤ 4096`, the whole run (PLAN.md G3, `malloc`)
+# `malloc_hook_ini (n)` for `n ≤ 4104`, the whole run (PLAN.md G3, `malloc`)
 
 - `sz_okn`: the top after the first `_int_malloc` has at least 1040 bytes and at least `mp_.top_pad + 32`.
 - `cXn`, `t72n`: offsets of the 64 tcache counts and of the split.
@@ -65,7 +65,7 @@ variable {prof : Profile} {L : List (Addr × List Byte)} {s₀ X : State} {o : O
   {gev : List Event} {gP : State → Nat → List Event → Prop} {gE : Outcome → List Event → Prop} {V : Addr → Byte}
 
 set_option maxHeartbeats 2000000 in
-/-- `mhi_ok` for every request `n ≤ 4096`: `_int_malloc` splits the top for `nb` bytes (`VspN`, `nb` the chunk size
+/-- `mhi_ok` for every request `n ≤ 4104`: `_int_malloc` splits the top for `nb` bytes (`VspN`, `nb` the chunk size
 of `n`, `Im5.ClsA`; `nb ≤ 1008` or `nb ≤ mp_.top_pad`); the fastbins are 0 at the entry. -/
 theorem mhi_okn {lim : Nat} {b fsb S n nb : Addr} {ks : Kst} {pad sm mx : BitVec 64} (c : Seg prof F Wl L s₀ o)
     (hB : Base s₀ lim b fsb ks) (hin : CodeIn L mhi_at mhi) (hinP : CodeIn L Pmi.pmi_at Pmi.pmi)
@@ -151,7 +151,7 @@ theorem mhi_okn {lim : Nat} {b fsb S n nb : Addr} {ks : Kst} {pad sm mx : BitVec
   have hf32 := f32 fsb (by omega)
   have hf24 := Tci.f24 fsb (by omega)
   have hfp := f24' fsb (by omega)
-  have hclh : (9 ≤ n.toNat ∧ n.toNat ≤ 4096 ∧ n + 23#64 &&& 18446744073709551600#64 = nb) ∨
+  have hclh : (9 ≤ n.toNat ∧ n.toNat ≤ 4104 ∧ n + 23#64 &&& 18446744073709551600#64 = nb) ∨
       (n.toNat ≤ 8 ∧ nb = 32#64) := by
     rcases hcls with (⟨h1, h2, h3⟩ | h) | ⟨h1, h2, h3⟩
     · exact .inl ⟨h1, by omega, h3⟩
