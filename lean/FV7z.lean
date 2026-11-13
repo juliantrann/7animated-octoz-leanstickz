@@ -315,6 +315,7 @@ import FV7z.Mhi.RunN
 import FV7z.Mal.Holds
 import FV7z.Mal.Run
 import FV7z.Mal.RunN
+import FV7z.Mnx.Run
 import FV7z.Mal.Pre
 import FV7z.Gor.Run
 import FV7z.Gor.Ok
