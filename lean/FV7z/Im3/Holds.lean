@@ -39,8 +39,8 @@ theorem Cls.cases {n nb : Addr} (h : Cls n nb) :
 theorem Cls.bnd {n nb : Addr} (h : Cls n nb) : 32 ≤ nb.toNat ∧ nb.toNat ≤ 128 := by
   rcases h.cases with h | h | h | h | h | h | h <;> subst h <;> decide
 
-/-- `Im2.vc_0n` for the requests `n ≤ 8`: from the entry to 1115 by `0 → 63 → 544 → 563`, `nb` = 32. -/
 set_option maxHeartbeats 4000000 in
+/-- `Im2.vc_0n` for the requests `n ≤ 8`: from the entry to 1115 by `0 → 63 → 544 → 563`, `nb` = 32. -/
 theorem vc_0s {fb S n nb : Addr} (hnb : nb = 32#64) {g : Gprs} {f : Rflags} {V : Addr → Byte}
     (hrsp : g.rsp = S + 184#64) (hsi : g.rsi = n) (hdi : g.rdi = 7940672#64) (hn : n.toNat ≤ 8)
     (hS : S.toNat + 256 < 2 ^ 64) (hlo : 8029888 ≤ S.toNat)
