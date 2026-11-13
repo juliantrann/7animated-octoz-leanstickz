@@ -1,6 +1,6 @@
 # Modules built one at a time before the rest (each `lake build` of one line: its dependencies in parallel, then it
-# alone). Im5.L1 … L13 one at a time: one theorem per k (Elab.async false), ~2.5 GB each, -M6000 in CI (a111: at
-# the lakefile's -M2500 each failed on its first k).
+# alone). Im5.L1 … L13 one at a time: one theorem per k (Elab.async false), 2 GB peak each, -M14000 in CI (a111: at
+# -M5000 each failed on its first k with kernel "excessive memory").
 FV7z.Im5.L1
 FV7z.Im5.L2
 FV7z.Im5.L3

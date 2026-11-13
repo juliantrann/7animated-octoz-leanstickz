@@ -39,8 +39,6 @@ jobs:
         run: |
           cd lean
           ulimit -s unlimited || ulimit -s 1048576 || true
-          # the lakefile keeps -M2500 for the 3 GB VM; the 16 GB runner allows more (Im5.L*: ~2.5 GB per theorem)
-          sed -i 's/"-M2500"/"-M6000"/g' lakefile.toml
           targets=$( [ -f wip-targets ] && grep -v '^\s*#' wip-targets | xargs || echo FV7z )
           echo "targets: $targets"
           set -o pipefail
