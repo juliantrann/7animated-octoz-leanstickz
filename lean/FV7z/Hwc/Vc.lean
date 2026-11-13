@@ -31,13 +31,18 @@ macro "hwx" "[" ls:Lean.Parser.Tactic.simpLemma,* "]" : tactic =>
     Nat.reducePow, Nat.reduceLeDiff, Nat.reduceLT, Nat.reduceEqDiff, decide_false, decide_true, Bool.or_false,
     Bool.false_or, Bool.not_false, Bool.not_true, Bool.false_eq_true, false_imp_iff, true_imp_iff, Bool.or_self,
     Bool.true_or, Bool.or_true, false_implies, true_implies, and_true, true_and, reduceIte, or_true, true_or,
-    or_false, false_or, ne_eq, not_false_eq_true, Bool.true_eq_false, BitVec.ofNat_eq_ofNat, $ls,*])
+    or_false, false_or, ne_eq, not_false_eq_true, Bool.true_eq_false, BitVec.ofNat_eq_ofNat, BitVec.ofBool_true,
+    BitVec.ofBool_false, BitVec.reduceNot, $ls,*])
 
-/-- The goals `hwx` leaves: the flags introduced (not the bytes `i < 8` of a footprint), the conjunctions split, each
-closed by a hypothesis or `rfl` (no `decide`: on a `Foot` it runs past `maxRecDepth`, which `first` does not catch). -/
+/-- The flags introduced (not the bytes `i < 8` of a footprint), the conjunctions split. -/
+macro "hsplit" : tactic =>
+  `(tactic| all_goals (repeat' (first | intro (_ : Rflags) | intro (_ : Bool) | apply And.intro)))
+
+/-- The goals `hwx` leaves: `hsplit`, each closed by a hypothesis or `rfl`, both reducible only: at the default
+transparency `assumption` (`Foot` against `Foot` of other addresses) and `decide` run past `maxRecDepth`, which
+`first` does not catch (a105). -/
 macro "hcl" : tactic =>
-  `(tactic| ((all_goals (repeat' (first | intro (_ : Rflags) | intro (_ : Bool) | apply And.intro)));
-    all_goals first | assumption | rfl | skip))
+  `(tactic| (hsplit; all_goals first | with_reducible assumption | with_reducible rfl | exact True.intro | skip))
 
 /-- A flag `bt` set (`fl.cf = …`, not eliminated by `hwx`): introduced and rewritten with the hypotheses. -/
 macro "hflg" : tactic =>
@@ -260,8 +265,8 @@ theorem vc_1895 {g : Gprs} {f : Rflags} {V : Addr → Byte} {b : Nat} {m T e k :
   rcases hc with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
   all_goals
     hwx [W_1895, W_2066, W_1943, o55, o60, o56, Op.shl64, hd, he, hk]
-    all_goals (repeat' (first | intro (_ : Rflags) | apply And.intro))
-    all_goals first | assumption | rfl | (exact Or.inl ⟨by decide, rfl, rfl⟩) |
+    hsplit
+    all_goals first | with_reducible assumption | with_reducible rfl | (exact Or.inl ⟨by decide, rfl, rfl⟩) |
       (exact Or.inr ⟨by decide, rfl, rfl⟩) | skip
 
 /-- The platform (`rbp - 0x60`, not null) and its length (`rbp - 0x68`) to the entry at `rax`; `rax` the next entry
