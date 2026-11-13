@@ -63,7 +63,7 @@ theorem vc_1294c {g : Gprs} {f : Rflags} {V : Addr → Byte} {m r j : Nat}
   subst h13 h14 hr
   rcases hc with ⟨rfl, rfl | rfl, rfl⟩ | ⟨rfl, rfl | rfl, rfl⟩
   all_goals
-    hwx [W_1294, W_1288, o25, o24, Op.shl, Op.cdqe]
+    hwx [W_1294, W_1288, o25, o24, Op.shl, Op.cdqe, sk0c]
     hcl
 
 /-- Bit `m` of `n` set: `temp[m]` (string `S`, length `L` at `rbx + 16 m`): to the `call` of `mempcpy` (1325). -/
@@ -82,7 +82,7 @@ theorem vc_1294s {g : Gprs} {f : Rflags} {V : Addr → Byte} {m r : Nat} {S L : 
   rcases hc with ⟨rfl, rfl | rfl⟩ | ⟨rfl, rfl | rfl⟩
   all_goals
     simp only [Nat.reduceMul, Nat.reduceAdd] at hL hS hf1 hf2
-    hwx [W_1294, W_1309, o25, o26, Op.shl, Op.cdqe, Op.shl64, hL, hS]
+    hwx [W_1294, W_1309, o25, o26, Op.shl, Op.cdqe, sk0c, Op.shl64, hL, hS]
     hcl
 
 /-- After `mempcpy`: `/` at `rax`, `rdi` after it, `m - 1`; to `j` (1343 when `m = 1`, else 1294). -/

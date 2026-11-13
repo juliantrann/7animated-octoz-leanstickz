@@ -51,6 +51,11 @@ macro "hflg" : tactic =>
 
 set_option maxRecDepth 100000
 
+/-- `Gprs.set 0` (as `Op.cdqe` writes `rax`) of the sixteen registers. -/
+theorem sk0c (a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 a15 v : BitVec 64) :
+    (Gprs.mk a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 a15).set 0 v =
+      Gprs.mk v a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 a15 := rfl
+
 /-! ## The instructions the pieces stop at -/
 
 def pc61 : List Byte := [0xe8, 0x1e, 0x22, 0xfc, 0xff]

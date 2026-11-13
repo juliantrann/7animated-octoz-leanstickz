@@ -1,4 +1,5 @@
 import FV7z.Hwc.Vc
+import FV7z.Lemmas.Ksplit
 /-!
 # `_dl_important_hwcaps`: the lengths and the pointers of the result, the return (PLAN.md G3, startup)
 
@@ -63,7 +64,8 @@ theorem vc_1392e {g : Gprs} {f : Rflags} {V : Addr → Byte} {E D : Nat} (hE : E
     (hf1 : ∀ k < 8, Foot F.data (Addr.add (g.rbp + 18446744073709551480#64) k))
     (hf2 : ∀ k < 8, Foot F.data (Addr.add (g.rbp + 18446744073709551464#64) k)) :
     W_1392 fb F Wl (fun j' g' _ V' => j' = 1448 ∧
-      g' = { g with rax := BitVec.ofNat 64 E, rcx := g.r12, rdx := BitVec.ofNat 64 (16 * (E - 1)),
+      g' = { g with
+        rax := BitVec.ofNat 64 E, rcx := g.r12, rdx := BitVec.ofNat 64 (16 * (E - 1)),
         rbx := g.rbx + BitVec.ofNat 64 D, rdi := 1#64, r10 := BitVec.ofNat 64 E } ∧
       V' = Vst V (g.r14 + BitVec.ofNat 64 (16 * (E - 1) + 8)) (toBytesLE 0#64 8)) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
@@ -80,7 +82,8 @@ theorem vc_1392e {g : Gprs} {f : Rflags} {V : Addr → Byte} {E D : Nat} (hE : E
 theorem vc_1448 {g : Gprs} {f : Rflags} {V : Addr → Byte} {c : Nat} (hc : c = 1 ∨ c = 2 ∨ c = 3 ∨ c = 4)
     (hr : g.rcx = BitVec.ofNat 64 c) (hd : g.rdi = 1#64) :
     W_1448 fb F Wl (fun j' g' _ V' => j' = 1465 ∧
-      g' = { g with rax := g.r10, rcx := BitVec.ofNat 64 (c - 1), rdx := g.r14,
+      g' = { g with
+        rax := g.r10, rcx := BitVec.ofNat 64 (c - 1), rdx := g.r14,
         rsi := BitVec.ofNat 64 (2 ^ (c - 1)) } ∧ V' = V) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at hr hd ⊢
@@ -158,7 +161,8 @@ theorem vc_1522 {g : Gprs} {f : Rflags} {V : Addr → Byte} {n E : Nat} (hn : n 
     (hf1 : ∀ k < 4, Foot F.data (Addr.add (g.rbp + 18446744073709551476#64) k))
     (hf2 : ∀ k < 1, Foot F.data (Addr.add (g.rbp + 18446744073709551496#64) k)) :
     W_1522 fb F Wl (fun j' g' _ V' => j' = 1568 ∧
-      g' = { g with rax := g.r14 + 32#64, rcx := BitVec.ofNat 64 (2 ^ (n - 1)), rdx := BitVec.ofNat 64 (E - 2),
+      g' = { g with
+        rax := g.r14 + 32#64, rcx := BitVec.ofNat 64 (2 ^ (n - 1)), rdx := BitVec.ofNat 64 (E - 2),
         rsi := g.r14 + 32#64, r8 := BitVec.ofNat 64 (E - 2) } ∧ V' = V) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at hE hm hf1 hf2 ⊢
@@ -219,7 +223,7 @@ theorem vc_1602 {g : Gprs} {f : Rflags} {V : Addr → Byte} {c E : Nat} (hn : c 
   rcases hn with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
   all_goals
     simp only [Nat.reduceSub, Nat.reduceMul]
-    hwx [W_1602, o44]
+    hwx [W_1602, o44, Op.shl64]
     hcl
 
 /-- `rdx = -16·2^(cnt-1)` (`rbp - 0x68`, 32 bits, negated, sign-extended), `rdi = T + 1` (`temp[cnt-1].len` at
@@ -280,7 +284,8 @@ theorem vc_1632e {g : Gprs} {f : Rflags} {V : Addr → Byte} {X M Q B0 B1 B2 B3 
     (hf4 : ∀ i < 8, Foot F.data (Addr.add (g.rbp + 18446744073709551608#64) i))
     (hf5 : ∀ i < 8, Foot F.data (Addr.add g.rbp i)) :
     W_1632 fb F Wl (fun j' g' _ V' => j' = 1681 ∧
-      g' = { g with rax := g.r14, rcx := 0#64, rsi := g.rsi + 16#64, rbx := B0, r12 := B1, r13 := B2, r14 := B3,
+      g' = { g with
+        rax := g.r14, rcx := 0#64, rsi := g.rsi + 16#64, rbx := B0, r12 := B1, r13 := B2, r14 := B3,
         r15 := B4, rbp := B5, rsp := g.rbp + 8#64 } ∧
       V' = Vst (Vst V g.rsi (toBytesLE (X + g.rdi) 8)) Q (toBytesLE M 8)) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
