@@ -38,6 +38,7 @@ jobs:
       - name: build
         run: |
           cd lean
+          ulimit -s unlimited || ulimit -s 1048576 || true
           targets=$( [ -f wip-targets ] && grep -v '^\s*#' wip-targets | xargs || echo FV7z )
           echo "targets: $targets"
           set -o pipefail

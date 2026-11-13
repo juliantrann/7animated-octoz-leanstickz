@@ -52,10 +52,14 @@ runs:
           "$(awk '/MemTotal/ {printf "%.1f", $2/1048576}' /proc/meminfo) GiB RAM" | tee -a "$GITHUB_STEP_SUMMARY"
     - name: memory limit
       # lean/lakefile.toml caps Lean at 2.5 GB for the development VM; with a runner's four cores one module's
-      # proofs are checked on several threads at once and need more. Every job makes the same change, so the
-      # cache stays valid.
+      # proofs are checked on several threads at once and need more (Im5.L*: over 2.5 GB, a88), but four Lean
+      # processes at 14 GB each got the 16 GB runner shut down (a95): 5 GB each. The kernel's check of Im5.L*
+      # recurses deeper than the default thread stack (a95: "deep recursion detected"): 1 GB stacks. Every job makes
+      # the same change, so the cache stays valid.
       shell: bash
-      run: sed -i 's/"-M2500"/"-M14000"/g' lean/lakefile.toml && grep -n "M14000" lean/lakefile.toml
+      run: |
+        sed -i 's/"-M2500"/"-M5000", "--tstack=1048576"/g' lean/lakefile.toml
+        grep -n "M5000" lean/lakefile.toml
     - id: key
       shell: bash
       env:
