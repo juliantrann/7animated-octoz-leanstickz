@@ -118,7 +118,8 @@ theorem mhi_headn {fb n nb : Addr} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.
       (j' = 68 ∧ (∃ a, g = { Z₁.cpu.gpr with rax := a, rbx := (nb + 18446744073709551599#64) >>> 4 }) ∧ V₃ = Vd) →
       ∀ Y₃ t₃, KeptW Wl s₀ Y₃ → Agree F Y₃.proc.mm.mem V₃ → Y₃.cpu.rip = mhi_at.add j' → Y₃.cpu.gpr = g →
         Y₃.cpu.rflags = fl → GoG prof L o gev gP gE Y₃ t₃ := by
-    rintro j' g fl V₃ ⟨rfl, ⟨a, rfl⟩, rfl⟩ Y₃ t₃ hK₃ hA₃ hr₃ hg₃ -
+    rintro j' g fl V₃ ⟨rfl, ⟨a, rfl⟩, hV₃⟩ Y₃ t₃ hK₃ hA₃ hr₃ hg₃ -
+    subst V₃
     -- 68 → 231
     refine (c_68 prof fb).run c hfs hin _ hK₃ hA₃ hr₃
       (vc_68 (by rw [congrArg (ofBytesLE 64) (RD _ 8 (by omega) (.inr (by omega)) (.inl (by omega))
