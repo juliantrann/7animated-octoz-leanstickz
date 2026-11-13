@@ -44,12 +44,12 @@ theorem vc_1392l {g : Gprs} {f : Rflags} {V : Addr → Byte} {i E : Nat}
   · ksplit i from 0 to 6 using h0 hi
     all_goals
       simp only [Nat.reduceMul, Nat.reduceAdd] at hs ⊢
-      hwx [W_1392, o32]
+      hwx [W_1392, o32, Op.shl64]
       hcl
   · ksplit i from 0 to 14 using h0 hi
     all_goals
       simp only [Nat.reduceMul, Nat.reduceAdd] at hs ⊢
-      hwx [W_1392, o32]
+      hwx [W_1392, o32, Op.shl64]
       hcl
 
 /-- The last `result[E-1].len = 0`: `2^cnt = E` (`rbp - 0x88`) and `16 cnt = D` (`rbp - 0x98`) back,
@@ -74,7 +74,7 @@ theorem vc_1392e {g : Gprs} {f : Rflags} {V : Addr → Byte} {E D : Nat} (hE : E
   rcases hE with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
   all_goals
     simp only [Nat.reduceMul, Nat.reduceAdd, Nat.reduceSub] at hR hD hs ⊢
-    hwx [W_1392, W_1417, W_1429, o32, o33, o34, hR, hD]
+    hwx [W_1392, W_1417, W_1429, o32, o33, o34, Op.shl64, hR, hD]
     hcl
 
 /-- The capability `c - 1` (`rcx = c`, `rdi = 1`): the mask `2^(c-1)` (`shl esi, cl`, `movsxd`), `rdx = P`,
