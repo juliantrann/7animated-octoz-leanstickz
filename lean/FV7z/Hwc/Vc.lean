@@ -31,10 +31,19 @@ macro "hwx" "[" ls:Lean.Parser.Tactic.simpLemma,* "]" : tactic =>
     Nat.reducePow, Nat.reduceLeDiff, Nat.reduceLT, Nat.reduceEqDiff, decide_false, decide_true, Bool.or_false,
     Bool.false_or, Bool.not_false, Bool.not_true, Bool.false_eq_true, false_imp_iff, true_imp_iff, Bool.or_self,
     Bool.true_or, Bool.or_true, false_implies, true_implies, and_true, true_and, reduceIte, or_true, true_or,
-    or_false, false_or, ne_eq, not_false_eq_true, Bool.true_eq_false, $ls,*])
+    or_false, false_or, ne_eq, not_false_eq_true, Bool.true_eq_false, BitVec.ofNat_eq_ofNat, $ls,*])
 
-/-- The goals `hwx` leaves: the conjunctions split, each closed by a hypothesis, `rfl` or `decide`. -/
-macro "hcl" : tactic => `(tactic| (all_goals (repeat' apply And.intro)) <;> first | assumption | rfl | decide | skip)
+/-- The goals `hwx` leaves: the flags and hypotheses introduced, the conjunctions split, each closed by a hypothesis,
+`rfl` or `decide`. -/
+macro "hcl" : tactic =>
+  `(tactic| ((all_goals (intros; repeat' apply And.intro)); all_goals first | assumption | rfl | decide | skip))
+
+/-- A flag `bt` set (`fl.cf = …`, not eliminated by `hwx`): introduced and rewritten with the hypotheses. -/
+macro "hflg" : tactic =>
+  `(tactic| all_goals (intros; try simp only [*, rfz_cf, rfz_zf, Bool.not_false, Bool.not_true, Bool.false_eq_true,
+    Bool.true_eq_false, false_implies, true_implies, and_true, true_and, BitVec.reduceBEq, decide_true, decide_false]))
+
+set_option maxRecDepth 100000
 
 /-! ## The instructions the pieces stop at -/
 
@@ -84,22 +93,13 @@ theorem vc_0 {g : Gprs} {f : Rflags} {V : Addr → Byte}
       g'.rdx = 0#64 ∧ V' = hV0 V g) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at hst hsp
-  have slot : ∀ (a : Addr) (k : Nat), k < 184 → a = Addr.add (rsp - 184#64) k → Foot Wl a :=
-    fun a k hk ha => ha ▸ hst k hk
+  have slot : ∀ a : Addr, (a - (rsp - 184#64)).toNat < 184 → Foot Wl a := fun a ha => by
+    have e : Addr.add (rsp - 184#64) (a - (rsp - 184#64)).toNat = a := by simp only [Addr.add]; bv_omega
+    exact e ▸ hst _ ha
   wpx [W_0, o0, Op.push, BitVec.xor_self]
   all_goals (repeat' apply And.intro)
   all_goals first
-    | exact fun i hi => slot _ (176 + i) (by omega) (by simp only [Addr.add]; bv_omega)
-    | exact fun i hi => slot _ (168 + i) (by omega) (by simp only [Addr.add]; bv_omega)
-    | exact fun i hi => slot _ (160 + i) (by omega) (by simp only [Addr.add]; bv_omega)
-    | exact fun i hi => slot _ (152 + i) (by omega) (by simp only [Addr.add]; bv_omega)
-    | exact fun i hi => slot _ (144 + i) (by omega) (by simp only [Addr.add]; bv_omega)
-    | exact fun i hi => slot _ (136 + i) (by omega) (by simp only [Addr.add]; bv_omega)
-    | exact fun i hi => slot _ (80 + i) (by omega) (by simp only [Addr.add]; bv_omega)
-    | exact fun i hi => slot _ (72 + i) (by omega) (by simp only [Addr.add]; bv_omega)
-    | exact fun i hi => slot _ (88 + i) (by omega) (by simp only [Addr.add]; bv_omega)
-    | exact fun i hi => slot _ (48 + i) (by omega) (by simp only [Addr.add]; bv_omega)
-    | exact fun i hi => slot _ (64 + i) (by omega) (by simp only [Addr.add]; bv_omega)
+    | exact fun i hi => slot _ (by simp only [Addr.add]; bv_omega)
     | rfl
     | decide
     | skip
@@ -134,10 +134,10 @@ theorem vc_112 {g : Gprs} {f : Rflags} {V : Addr → Byte} :
         r12 := g.rdx + 2#64 } else { g with r12 := g.rdx + 1#64 }) ∧ V' = V) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   wpx [W_112, W_122, o3, o4, Op.bt64]
-  all_goals intro fl hfl
+  all_goals intros
   all_goals (cases hb : r8.getLsbD (rcx.toNat % 64) <;>
-    simp only [hfl, hb, rfz_cf, Bool.not_false, Bool.not_true, Bool.false_eq_true, false_implies, true_implies,
-      and_true, true_and, if_true, if_false, Bool.true_eq_false, reduceIte])
+    simp only [*, rfz_cf, Bool.not_false, Bool.not_true, Bool.false_eq_true, false_implies, true_implies,
+      and_true, true_and, ite_true, ite_false, Bool.true_eq_false, reduceIte])
   hcl
 
 /-- After bit `c`: `rcx = c + 1`; on to the next bit (112) while bits remain above, else (`cnt = n` in `r12`): no vDSO
@@ -167,12 +167,12 @@ theorem vc_132 {g : Gprs} {f : Rflags} {V : Addr → Byte} {c n : Nat} (hc : c <
         Bool.not_false, Bool.false_eq_true, false_implies, true_implies, BitVec.sub_zero, BitVec.reduceAdd,
         BitVec.reduceAnd, BitVec.reduceSetWidth, BitVec.reduceHShiftLeft, BitVec.reduceShiftLeft, BitVec.reduceToNat,
         BitVec.reduceSub, BitVec.reduceOfNat, BitVec.reduceBEq, Nat.reduceMul, Nat.reduceAdd, decide_true,
-        decide_false]
+        decide_false, BitVec.ofNat_eq_ofNat]
       all_goals (repeat' apply And.intro)
       all_goals first | exact hfs | exact Or.inr ⟨rfl, hz, rfl⟩ | rfl | decide | skip
   · have hz' : ((0#64 - 1#64 <<< (c + 1)) &&& r8 == 0#64) = false := by simp only [hz, beq_eq_false_iff_ne]; exact hz
     wpx [W_132, o5, Op.shl64, e1, es, hz', Bool.not_true, Bool.not_false, Bool.false_eq_true, false_implies,
-      true_implies]
+      true_implies, BitVec.ofNat_eq_ofNat]
     all_goals (repeat' apply And.intro)
     all_goals first | exact Or.inl ⟨rfl, rfl, hz⟩ | rfl | skip
 
@@ -204,9 +204,7 @@ theorem vc_1840c {g : Gprs} {f : Rflags} {V : Addr → Byte} (hb : g.r14.getLsbD
   dsimp only at hb ⊢
   wpx [W_1840, W_2024, o53, o58, Op.bt64, Op.shl64, BitVec.reduceSetWidth, BitVec.reduceToNat, Nat.reduceMod,
     BitVec.add_zero]
-  all_goals intro fl hfl
-  all_goals simp only [hfl, hb, rfz_cf, Bool.not_false, Bool.not_true, Bool.false_eq_true, false_implies,
-    true_implies, and_true, true_and]
+  hflg
   hcl
 
 /-- Bit `b` (1 or 2) of `r14` set: the entry `rbx` of `temp` (`r12 = rdx + 16 rbx`) gets the string
@@ -230,9 +228,7 @@ theorem vc_1840s {g : Gprs} {f : Rflags} {V : Addr → Byte} {b : Nat} (hb1 : b 
   rcases hb1 with rfl | rfl
   all_goals
     hwx [W_1840, W_1861, o53, o54, Op.bt64, Op.shl64, Op.sxr, BitVec.add_zero]
-    all_goals try intro fl hfl
-    all_goals try simp only [hfl, hb, rfz_cf, Bool.not_false, Bool.not_true, Bool.false_eq_true, false_implies,
-      true_implies, and_true, true_and]
+    hflg
     hcl
 
 /-- After `strlen` (`rax` the length): the length to `temp[rbx].len` (`r12 + 8`); `rdx = temp` and `r8` back from
@@ -361,9 +357,7 @@ theorem vc_1010 {g : Gprs} {f : Rflags} {V : Addr → Byte} (hr : g.r12 = 4#64) 
   dsimp only at hr ha ⊢
   subst hr ha
   hwx [W_1010, W_1020, o15, o16, Op.shr64]
-  all_goals try intro fl hfl
-  all_goals try simp only [hfl, BitVec.reduceBEq, decide_true, decide_false, Bool.not_false, Bool.not_true,
-    Bool.false_eq_true, false_implies, true_implies, and_true, true_and, rfz_zf]
+  hflg
   hcl
 
 /-- `total << (cnt - 3)` (`t'`), `*ncapstr = 1 << cnt` (`rcx` the pointer, from `rbp - 0x58`); to the `call` of
