@@ -1,18 +1,21 @@
 import FV7z.Mhi.Tail
 import FV7z.Mhi.HoldsM
-import FV7z.Im2.RunN
+import FV7z.Im5.RunA
 /-!
-# `malloc_hook_ini`: from the return of `tcache_init` to the return address, `n ≤ 1000` (PLAN.md G3, `malloc`)
+# `malloc_hook_ini`: from the return of `tcache_init` to the return address, `n ≤ 4096` (PLAN.md G3, `malloc`)
 
-- `VspN_hd`, `VspN_far`: the size word after the split; the bytes outside the frame of `_int_malloc`.
-- `mhi_tailn`: `vc_236m`, `vc_99`, the `call` of `_int_malloc` (`Im2.im_secondn`), `vc_130m`, `vc_180` and the `ret`.
+- `VspN_hd`, `VspN_far`, `VspN_frm`: the size word after the split; the bytes outside the frame of `_int_malloc`
+  (`VspN_frm` through its frame `Im2.Fr`).
+- `mhi_tailn`: `vc_236m` (`k ≤ 65`) or `vc_236l` (`k ≥ 66`, no tcache bin), `vc_99`, the `call` of `_int_malloc`
+  (`Im5.im_secondA`), `vc_130m`, `vc_180` and the `ret`.
 -/
 open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn FV7z.Start
 open FV7z.Raf (off_ft)
 open FV7z.Tun (rd_Vst rd_Vst_self Vst_out)
 open FV7z.Sbrk (rd_eq)
 open FV7z.Imm (imm imm_at add_n)
-open FV7z.Im2 (VspN VspN_rd V2n V2n_out im_secondn)
+open FV7z.Im2 (VspN VspN_rd V2n V2n_out)
+open FV7z.Im5 (ClsA im_secondA)
 namespace FV7z.Mhi
 variable {F : Footprint} {Wl : List Rgn}
 
@@ -39,14 +42,26 @@ theorem VspN_far {S T szw nb : Addr} (g : Gprs) (n : Addr) (V : Addr → Byte) (
   unfold VspN
   exact vst_eq _ _ _ _ _ (vst_eq _ _ _ _ _ (vst_eq _ _ _ _ _ e))
 
+/-- Outside the frame of `_int_malloc` (and its return address), the bytes after the second call are those of the
+split on the bytes before: the frame `Im2.Fr` of the call. -/
+theorem VspN_frm {S T szw nb : Addr} {g : Gprs} {V M : Addr → Byte} {r : List Byte} (hr : r.length = 8)
+    (hS : S.toNat + 256 < 2 ^ 64) (hfr : Im2.Fr S g (Vst V (S + 184#64) r) M) {a : Addr}
+    (ha : a.toNat < S.toNat + 8 ∨ S.toNat + 192 ≤ a.toNat) :
+    VspN T szw nb M a = VspN T szw nb V a := by
+  have e : M a = V a := by
+    rw [hfr.out a (by omega), Vst_out _ _ _ _ (by rw [hr, add_n _ _ (by omega)]; omega)
+      (by rw [hr, add_n _ _ (by omega)]; omega)]
+  unfold VspN
+  exact vst_eq _ _ _ _ _ (vst_eq _ _ _ _ _ (vst_eq _ _ _ _ _ e))
+
 variable {prof : Profile} {L : List (Addr × List Byte)} {s₀ X : State} {o : Oracle} {t : Nat}
   {gev : List Event} {gP : State → Nat → List Event → Prop} {gE : Outcome → List Event → Prop} {V : Addr → Byte}
 
-/-- `mhi_tail` for every request `n ≤ 1000` (`nb` its chunk size, `Im3.Cls`): from offset 236 (`rbx` the tcache
+/-- `mhi_tail` for every request `n ≤ 4096` (`nb` its chunk size, `Im5.ClsA`): from offset 236 (`rbx` the tcache
 index of `nb`, `rbp` = `n`) to the return address with `T + 16` in `rax`. -/
 theorem mhi_tailn {fb S T szw sm C n nb : Addr} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb)
     (hin : CodeIn L mhi_at mhi) (hinI : CodeIn L imm_at imm) (hK : KeptW Wl s₀ X) (hA : Agree F X.proc.mm.mem V)
-    (hcls : Im3.Cls n nb)
+    (hcls : ClsA n nb)
     (hrip : X.cpu.rip = mhi_at.add 236) (hbx : X.cpu.gpr.rbx = (nb + 18446744073709551599#64) >>> 4)
     (hbp : X.cpu.gpr.rbp = n)
     (hrsp : X.cpu.gpr.rsp = S + 192#64) (hS : S.toNat + 256 < 2 ^ 64) (hlo : 8029888 ≤ S.toNat)
@@ -55,10 +70,12 @@ theorem mhi_tailn {fb S T szw sm C n nb : Addr} (c : Seg prof F Wl L s₀ o) (hf
     (hn : ∀ i < 64, ofBytesLE 16 ((byteAddrs (C + BitVec.ofNat 64 (2 * i)) 2).map V) = 0#16)
     (hfn : ∀ i < 64, ∀ j < 2, Foot F.data (Addr.add (C + BitVec.ofNat 64 (2 * i)) j))
     (h1 : rdd(V, fb + 24#64) = 0#32) (hf1 : ∀ i < 4, Foot F.data (Addr.add (fb + 24#64) i))
-    (hgm : rdq(V, 8013224#64) = 128#64)
+    (hgm : rdq(V, 8013224#64) = 128#64) (hfc : rdd(V, 7940680#64) = 0)
     (hfz : ∀ k < 7, rdq(V, BitVec.ofNat 64 (7940688 + 8 * k)) = 0#64)
     (hbk : ∀ i, 2 ≤ i → i ≤ 63 →
       rdq(V, BitVec.ofNat 64 (7940776 + 16 * i)) = BitVec.ofNat 64 (7940752 + 16 * i))
+    (hlb : ∀ i, 64 ≤ i → i ≤ 99 →
+      rdq(V, BitVec.ofNat 64 (7940768 + 16 * i)) = BitVec.ofNat 64 (7940752 + 16 * i))
     (htb : rdq(V, 7940592#64) = 64#64)
     (hun : rdq(V, 7940792#64) = 7940768#64)
     (hm0 : rdd(V, 7942816#64) = 0) (hm1 : rdd(V, 7942820#64) = 0) (hm2 : rdd(V, 7942824#64) = 0)
@@ -85,18 +102,29 @@ theorem mhi_tailn {fb S T szw sm C n nb : Addr} (c : Seg prof F Wl L s₀ o) (hf
   obtain ⟨kb, hk1, hk2, hnbk⟩ := hcls.cases
   have hnbt := hcls.bnd
   have hWd : ∀ a : Addr, 7940480 ≤ a.toNat → a.toNat < 7943136 → Foot F.data a := fun a h1 h2 => c.hws _ (hW a h1 h2)
-  -- 236 → 99
-  refine (c_236 prof fb).run c hfs hin _ hK hA hrip
-    (vc_236m hk1 (by omega) (by rw [hbx, hnbk]) htb htc hC hn
-      (fun i hi => hWd _ (by simp only [Addr.add]; bv_omega)
-        (by simp only [Addr.add]; bv_omega)) htf hfn) ?_
-  rintro j' g fl V₁ ⟨rfl, rfl, hv₁⟩ Y₁ t₁ hK₁ hA₁ hr₁ hg₁ -
-  rw [hv₁] at hA₁
+  have htf' : ∀ i < 8, Foot F.data (Addr.add (7940592#64) i) :=
+    fun i hi => hWd _ (by simp only [Addr.add]; bv_omega) (by simp only [Addr.add]; bv_omega)
+  -- from 99 on, both ways
+  suffices K : ∀ (Y₁ : State) (t₁ : Nat), KeptW Wl s₀ Y₁ → Agree F Y₁.proc.mm.mem V → Y₁.cpu.rip = mhi_at.add 99 →
+      Y₁.cpu.gpr.rsp = S + 192#64 → Y₁.cpu.gpr.rbp = n → GoG prof L o gev gP gE Y₁ t₁ by
+    -- 236 → 99: the tcache bin `kb - 2` (`kb ≤ 65`) empty, or none (`kb ≥ 66`)
+    by_cases h65 : kb ≤ 65
+    · refine (c_236 prof fb).run c hfs hin _ hK hA hrip
+        (vc_236m hk1 h65 (by rw [hbx, hnbk]) htb htc hC hn htf' htf hfn) ?_
+      rintro j' g fl V₁ ⟨rfl, rfl, hv₁⟩ Y₁ t₁ hK₁ hA₁ hr₁ hg₁ -
+      rw [hv₁] at hA₁
+      exact K Y₁ t₁ hK₁ hA₁ hr₁ (by rw [hg₁]; exact hrsp) (by rw [hg₁]; exact hbp)
+    · refine (c_236 prof fb).run c hfs hin _ hK hA hrip
+        (vc_236l (by omega) hk2 (by rw [hbx, hnbk]) htb htf') ?_
+      rintro j' g fl V₁ ⟨rfl, rfl, hv₁⟩ Y₁ t₁ hK₁ hA₁ hr₁ hg₁ -
+      rw [hv₁] at hA₁
+      exact K Y₁ t₁ hK₁ hA₁ hr₁ (by rw [hg₁]; exact hrsp) (by rw [hg₁]; exact hbp)
+  intro Y₁ t₁ hK₁ hA₁ hr₁ sp₁ bp₁
   -- 99 → 125
   refine (c_99 prof fb).run c hfs hin _ hK₁ hA₁ hr₁ (vc_99 h1 hf1) ?_
   rintro j' g fl V₂ ⟨rfl, rfl, hv₂⟩ Y₂ t₂ hK₂ hA₂ hr₂ hg₂ -
   rw [hv₂] at hA₂
-  have esp : Y₂.cpu.gpr.rsp = S + 192#64 := by rw [hg₂, hg₁]; exact hrsp
+  have esp : Y₂.cpu.gpr.rsp = S + 192#64 := by rw [hg₂]; exact sp₁
   have e184 : S + 192#64 - 8 = S + 184#64 := by bv_omega
   -- the call
   refine c.s_call hK₂ hA₂ hin (lt_len (by decide)) hr₂ (call_125 _) hinI (Imm.lt_len (j := 0) (by decide)) tgt_125
@@ -119,13 +147,14 @@ theorem mhi_tailn {fb S T szw sm C n nb : Addr} (c : Seg prof F Wl L s₀ o) (hf
   have n4 : ∀ (x : Nat), x + 4 ≤ S.toNat → (BitVec.ofNat 64 x).toNat + 4 ≤ S.toNat := fun x h => by
     rw [BitVec.toNat_ofNat]; omega
   have hT8 : (T + 8#64).toNat + 8 ≤ S.toNat := by rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega
-  refine im_secondn (S := S) (T := T) (szw := szw) (sm := sm) (n := n) c hfs hinI hK₀ hA₀ hr₀
+  refine im_secondA (S := S) (T := T) (szw := szw) (sm := sm) (n := n) c hfs hinI hK₀ hA₀ hr₀
     (by rw [hg₀]; show Y₂.cpu.gpr.rsp - 8 = _; rw [esp, e184])
-    (by rw [hg₀, hg₂]; show Y₁.cpu.gpr.rbp = _; rw [hg₁]; exact hbp)
+    (by rw [hg₀, hg₂]; show Y₁.cpu.gpr.rbp = _; exact bp₁)
     (by rw [hg₀, hg₂]; rfl) hcls hS hlo hfb
-    (by rw [q _ (n8 _ (by omega))]; exact hgm)
+    (by rw [q _ (n8 _ (by omega))]; exact hgm) (by rw [d _ (n4 _ (by omega))]; exact hfc)
     (fun k hk => by rw [q _ (n8 _ (by omega))]; exact hfz k hk)
     (fun i i1 i2 => by rw [q _ (n8 _ (by omega))]; exact hbk i i1 i2)
+    (fun i i1 i2 => by rw [q _ (n8 _ (by omega))]; exact hlb i i1 i2)
     (by rw [q _ hfb, htc]; exact hC)
     (by rw [q _ (n8 _ (by omega))]; exact htb) (by rw [q _ (n8 _ (by omega))]; exact hun)
     (by rw [d _ (n4 _ (by omega))]; exact hm0) (by rw [d _ (n4 _ (by omega))]; exact hm1)
@@ -137,14 +166,13 @@ theorem mhi_tailn {fb S T szw sm C n nb : Addr} (c : Seg prof F Wl L s₀ o) (hf
     hin (lt_len (j := 125 + 5) (by decide)) (by
       rw [rd_Vst_self _ _ _ l8 (by rw [s184]; omega)]
       exact ofBytesLE_toBytesLE (n := 8) rfl _) ?_
-  rintro Z₁ t₃ hK₃ hA₃ hr₃ hax₃ ⟨sp₃, bx₃, bp₃, r12₃, -, -, -⟩
+  rintro M Z₁ t₃ hfr hK₃ hA₃ hr₃ hax₃ ⟨sp₃, bx₃, bp₃, r12₃, -, -, -⟩
   have hT' : T.toNat + nb.toNat + 16 < 2 ^ 64 := by omega
   -- the bytes above the frame
   have FAR : ∀ (x : Addr) (m : Nat), S.toNat + 192 ≤ x.toNat → x.toNat + m ≤ 2 ^ 64 →
-      List.map (VspN T szw nb (V2n S Z₀.cpu.gpr n nb (Vst V (S + 184#64) (toBytesLE (mhi_at.add (125 + 5)) 8))))
-        (byteAddrs x m) = List.map V (byteAddrs x m) := fun x m h1 h2 => by
+      List.map (VspN T szw nb M) (byteAddrs x m) = List.map V (byteAddrs x m) := fun x m h1 h2 => by
     rw [← VspN_rd (T := T) (szw := szw) (nb := nb) V hT' h2 (.inr (by omega)) (.inr (by omega)) (by omega)]
-    exact rd_eq h2 fun a ha _ => VspN_far _ _ _ _ l8 hS (.inr (by omega))
+    exact rd_eq h2 fun a ha _ => VspN_frm l8 hS hfr (.inr (by omega))
   -- 130 → 180
   have e8 : T + 16#64 + 18446744073709551608#64 = T + 8#64 := by bv_omega
   have hT0 : T + 16#64 ≠ 0#64 := fun h => by
@@ -180,7 +208,7 @@ theorem mhi_tailn {fb S T szw sm C n nb : Addr} (c : Seg prof F Wl L s₀ o) (hf
     (by rw [sp₅]; exact fun i hi => c.hws _ (off_ft hsw 216 rfl (by decide) i hi)) hin₂ h₂
     (by rw [sp₅, FAR _ _ (by omega) (by omega)]; exact hra) ?_
   rintro Z t' hK' hA' ⟨hr', hg'⟩
-  refine k _ Z t' hK' hA' (fun a ha => VspN_far _ _ _ _ l8 hS ha) hr'
+  refine k _ Z t' hK' hA' (fun a ha => VspN_frm l8 hS hfr ha) hr'
     (by rw [hg']; exact ax₅.trans (by rw [hg₄]; exact hax₃))
     ⟨by rw [hg']; show Y₅.cpu.gpr.rsp + 8 = _; rw [sp₅]; bv_omega, ?_, ?_, ?_⟩
   · rw [hg']

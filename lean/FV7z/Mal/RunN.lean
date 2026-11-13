@@ -1,10 +1,10 @@
 import FV7z.Mal.Run
 import FV7z.Mhi.RunN
 /-!
-# The first `malloc (n)` of the process for `n ≤ 1000` (PLAN.md G3, `malloc`)
+# The first `malloc (n)` of the process for `n ≤ 4096` (PLAN.md G3, `malloc`)
 
 - `mal_firstn`: `mal_first` with `Mhi.mhi_okn`.
-- `Nr_hhn`: `Nr_hh` up to 1024 bytes above the first chunk.
+- `Nr_hhn`: `Nr_hh` up to `nb + 16` bytes above the first chunk (`nb ≤ 1008` or `nb ≤ mp_.top_pad`).
 -/
 open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn FV7z.Start
 open FV7z.Raf (off_ft)
@@ -21,8 +21,8 @@ variable {prof : Profile} {L : List (Addr × List Byte)} {s₀ X : State} {o : O
   {gev : List Event} {gP : State → Nat → List Event → Prop} {gE : Outcome → List Event → Prop} {V : Addr → Byte}
 
 set_option maxHeartbeats 2000000 in
-/-- `mal_first` for every request `n ≤ 1000` (`Mhi.mhi_okn`): the top split for `nb` bytes, `nb` the chunk size of `n`
-(`Im3.Cls`). -/
+/-- `mal_first` for every request `n ≤ 4096` (`Mhi.mhi_okn`): the top split for `nb` bytes, `nb` the chunk size of `n`
+(`Im5.ClsA`; `nb ≤ 1008` or `nb ≤ mp_.top_pad`). -/
 theorem mal_firstn {lim : Nat} {b fsb S n nb : Addr} {ks : Kst} {pad sm mx : BitVec 64} (c : Seg prof F Wl L s₀ o)
     (hB : Base s₀ lim b fsb ks) (hin : CodeIn L mal_at mal) (hinH : CodeIn L mhi_at mhi)
     (hinP : CodeIn L Pmi.pmi_at Pmi.pmi)
@@ -31,7 +31,7 @@ theorem mal_firstn {lim : Nat} {b fsb S n nb : Addr} {ks : Kst} {pad sm mx : Bit
     (hinK : CodeIn L Sbrk.sbk_at Sbrk.sbk) (hinb : CodeIn L Brk.brk_at Brk.brk)
     (hK : KeptW Wl s₀ X) (hA : Agree F X.proc.mm.mem V) (hrip : X.cpu.rip = mal_at)
     (hhook : rdq(V, 7940656#64) = mhi_at)
-    (hrsp : X.cpu.gpr.rsp = S + 232#64) (hdi : X.cpu.gpr.rdi = n) (hcls : Im3.Cls n nb)
+    (hrsp : X.cpu.gpr.rsp = S + 232#64) (hdi : X.cpu.gpr.rdi = n) (hcls : Im5.ClsA n nb)
     (hsp : 8029888 + 168 ≤ S.toNat) (hS : S.toNat + 512 < 2 ^ 64)
     (hst : ∀ i < 408, Foot Wl (Addr.add (S - 168) i))
     (hW : ∀ a : Addr, 7940480 ≤ a.toNat → a.toNat < 7943136 → Foot Wl a)
@@ -67,7 +67,9 @@ theorem mal_firstn {lim : Nat} {b fsb S n nb : Addr} {ks : Kst} {pad sm mx : Bit
     (hbs : (b + size pad 656#64).toNat + 4096 + 168 ≤ S.toNat)
     {N : List Rgn}
     (hN : ∀ r ∈ N, r.In (pageUp b.toNat / 4096 * 4096) (pageUp (b + size pad 656#64).toNat / 4096 * 4096))
-    (hh : ∀ a : Addr, (b + corr b).toNat ≤ a.toNat → a.toNat < (b + corr b).toNat + 656 + 1024 → Foot (N ++ Wl) a)
+    (hpd : nb.toNat ≤ 1008 ∨ nb.toNat ≤ pad.toNat)
+    (hh : ∀ a : Addr, (b + corr b).toNat ≤ a.toNat → a.toNat < (b + corr b).toNat + 656 + nb.toNat + 16 →
+      Foot (N ++ Wl) a)
     (hz : ∀ a : Addr, b.toNat ≤ a.toNat → a.toNat < pageUp b.toNat / 4096 * 4096 → V a = 0)
     {e₂ : Addr} {code₂ : List Byte} (hin₂ : CodeIn L e₂ code₂) {j₂ : Nat} (h₂ : j₂ < code₂.length)
     (hra : rdq(V, S + 232#64) = e₂.add j₂)
@@ -146,16 +148,17 @@ theorem mal_firstn {lim : Nat} {b fsb S n nb : Addr} {ks : Kst} {pad sm mx : Bit
     (by rw [Rc (7940584#64) 8 (by decide) (by decide)]; exact hsb)
     (by rw [Rc (7942864#64) 8 (by decide) (by decide)]; exact hmx) hms hsu
     (by rw [Rc (8013220#64) 4 (by decide) (by decide)]; exact hp0)
-    hmg hlim hbl hbs hN hh (fun a h1 h2 => by rw [VL a (.inl (by omega))]; exact hz a h1 h2) hin₂ h₂
+    hmg hlim hbl hbs hN hpd hh (fun a h1 h2 => by rw [VL a (.inl (by omega))]; exact hz a h1 h2) hin₂ h₂
     (by rw [rd_eq (x := S + 232#64) (n := 8) (by omega) (fun a h1 _ => VL a (.inr (by omega)))]; exact hra) ?_
   intro Vd V₁ M evs s₁ Z' t'' hc hB' hK' hA' hD hO hM hr hax hregs hev
   rw [hgZ] at hD hregs
   exact k Vd V₁ M evs s₁ Z' t'' hc hB' hK' hA' hD hO hM hr hax hregs hev
 
-/-- `Nr_hh` up to 1024 bytes above the first chunk (the split of up to 1008 bytes). -/
-theorem Nr_hhn {b pad : Addr} {Wl : List Rgn} (hb : b.toNat < 2 ^ 47) (hnb : 656 + pad.toNat + 4127 < 2 ^ 47)
+/-- `Nr_hh` up to `nb + 16` bytes above the first chunk (the split of `nb` bytes, `nb ≤ 1008` or `nb ≤ pad`). -/
+theorem Nr_hhn {b pad nb : Addr} {Wl : List Rgn} (hb : b.toNat < 2 ^ 47) (hnb : 656 + pad.toNat + 4127 < 2 ^ 47)
+    (hpd : nb.toNat ≤ 1008 ∨ nb.toNat ≤ pad.toNat)
     (hw : ∀ a : Addr, b.toNat ≤ a.toNat → a.toNat < pageUp b.toNat / 4096 * 4096 → Foot Wl a) :
-    ∀ a : Addr, (b + corr b).toNat ≤ a.toNat → a.toNat < (b + corr b).toNat + 656 + 1024 →
+    ∀ a : Addr, (b + corr b).toNat ≤ a.toNat → a.toNat < (b + corr b).toNat + 656 + nb.toNat + 16 →
       Foot (Nr b pad ++ Wl) a := by
   intro a h1 h2
   have hc : (corr b).toNat < 16 := by rw [Smm.corr_toNat]; omega
@@ -165,6 +168,8 @@ theorem Nr_hhn {b pad : Addr} {Wl : List Rgn} (hb : b.toNat < 2 ^ 47) (hnb : 656
   · exact foot_append_iff.2 (.inr (hw a (by omega) hlt))
   · refine foot_append_iff.2 (.inl ⟨_, List.mem_singleton_self _, ?_⟩)
     obtain ⟨e, hR⟩ := brk_up (pad := pad) hb hnb
+    have hR' : (size pad 656#64).toNat = (4127 + pad.toNat + 656) / 4096 * 4096 :=
+      Smm.size_toNat (pad := pad) (nb := 656#64) (by show 656 + pad.toNat + 4127 < 2 ^ 47; omega)
     show (BitVec.ofNat 64 (pageUp b.toNat / 4096 * 4096)).toNat ≤ a.toNat ∧
       a.toNat < (BitVec.ofNat 64 (pageUp b.toNat / 4096 * 4096)).toNat +
         (pageUp (b + size pad 656#64).toNat / 4096 * 4096 - pageUp b.toNat / 4096 * 4096)

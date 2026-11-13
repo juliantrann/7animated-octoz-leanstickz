@@ -2,12 +2,12 @@ import FV7z.Mhi.Run
 import FV7z.Mhi.TailN
 import FV7z.Mhi.HeadN
 /-!
-# `malloc_hook_ini (n)` for `n ≤ 1000`, the whole run (PLAN.md G3, `malloc`)
+# `malloc_hook_ini (n)` for `n ≤ 4096`, the whole run (PLAN.md G3, `malloc`)
 
-- `sz_okn`: the top after the first `_int_malloc` has at least 1040 bytes.
+- `sz_okn`: the top after the first `_int_malloc` has at least 1040 bytes and at least `mp_.top_pad + 32`.
 - `cXn`, `t72n`: offsets of the 64 tcache counts and of the split.
 - `mhi_okn`: `mhi_headn`, `Tci.tci_ok`, `mhi_tailn`: as `mhi_ok`, the top split for `nb` bytes (`VspN`, `nb` the
-  chunk size of `n`, `Im3.Cls`), the fastbins 0 at the entry.
+  chunk size of `n`, `Im5.ClsA`), the fastbins 0 at the entry.
 -/
 open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn FV7z.Start
 open FV7z.Raf (off_ft)
@@ -21,11 +21,12 @@ open FV7z.Tci (K5 mt)
 namespace FV7z.Mhi
 variable {F : Footprint} {Wl : List Rgn}
 
-/-- `sz_ok` with the lower bound 1040 (the split of up to 1008 bytes leaves a chunk). -/
+/-- `sz_ok` with the lower bounds 1040 and `pad + 32` (the split of up to 1008, or `pad`, bytes leaves a chunk). -/
 theorem sz_okn {b pad sm : Addr} (hb : b.toNat < 2 ^ 47) (hnb : 656 + pad.toNat + 4127 < 2 ^ 47)
     (hsm : sm.toNat < 2 ^ 47) :
     (Sz b pad &&& 18446744073709551608#64).toNat ≤ (sm + size pad 656#64 + C2 b pad).toNat ∧
-      1040 ≤ (Sz b pad &&& 18446744073709551608#64).toNat := by
+      1040 ≤ (Sz b pad &&& 18446744073709551608#64).toNat ∧
+      pad.toNat + 32 ≤ (Sz b pad &&& 18446744073709551608#64).toNat := by
   have hR : (size pad 656#64).toNat = (4127 + pad.toNat + 656) / 4096 * 4096 :=
     Smm.size_toNat (pad := pad) (nb := 656#64) (by show 656 + pad.toNat + 4127 < 2 ^ 47; omega)
   have hc := Smm.corr_toNat b
@@ -34,6 +35,8 @@ theorem sz_okn {b pad sm : Addr} (hb : b.toNat < 2 ^ 47) (hnb : 656 + pad.toNat 
       &&& 18446744073709551608#64) - 656#64 ||| 1#64) &&& 18446744073709551608#64).toNat ≤
       (sm + size pad 656#64 + corr2 b (corr b) (size pad 656#64)).toNat ∧
     1040 ≤ ((((b + size pad 656#64 - (b + corr b) + corr2 b (corr b) (size pad 656#64) ||| 1#64)
+      &&& 18446744073709551608#64) - 656#64 ||| 1#64) &&& 18446744073709551608#64).toNat ∧
+    pad.toNat + 32 ≤ ((((b + size pad 656#64 - (b + corr b) + corr2 b (corr b) (size pad 656#64) ||| 1#64)
       &&& 18446744073709551608#64) - 656#64 ||| 1#64) &&& 18446744073709551608#64).toNat
   generalize corr2 b (corr b) (size pad 656#64) = C at *
   generalize size pad 656#64 = R at *
@@ -52,7 +55,7 @@ theorem cXn {b : Addr} (hb : b.toNat < 2 ^ 47) (i : Nat) (hi : i < 64) :
   rw [BitVec.toNat_add, BitVec.toNat_ofNat, (mt b hb).1]; omega
 
 /-- The size word after the split of `nb` bytes. -/
-theorem t72n {b nb : Addr} (hb : b.toNat < 2 ^ 47) (h : nb.toNat ≤ 1008) :
+theorem t72n {b nb : Addr} (hb : b.toNat < 2 ^ 47) (h : nb.toNat ≤ 4112) :
     (Tp b + nb + 8#64).toNat = b.toNat + (corr b).toNat + 664 + nb.toNat := by
   have := Smm.corr_toNat b
   show (b + corr b + 656#64 + nb + 8#64).toNat = _
@@ -62,15 +65,15 @@ variable {prof : Profile} {L : List (Addr × List Byte)} {s₀ X : State} {o : O
   {gev : List Event} {gP : State → Nat → List Event → Prop} {gE : Outcome → List Event → Prop} {V : Addr → Byte}
 
 set_option maxHeartbeats 2000000 in
-/-- `mhi_ok` for every request `n ≤ 1000`: `_int_malloc` splits the top for `nb` bytes (`VspN`, `nb` the chunk size
-of `n`, `Im3.Cls`); the fastbins are 0 at the entry. -/
+/-- `mhi_ok` for every request `n ≤ 4096`: `_int_malloc` splits the top for `nb` bytes (`VspN`, `nb` the chunk size
+of `n`, `Im5.ClsA`; `nb ≤ 1008` or `nb ≤ mp_.top_pad`); the fastbins are 0 at the entry. -/
 theorem mhi_okn {lim : Nat} {b fsb S n nb : Addr} {ks : Kst} {pad sm mx : BitVec 64} (c : Seg prof F Wl L s₀ o)
     (hB : Base s₀ lim b fsb ks) (hin : CodeIn L mhi_at mhi) (hinP : CodeIn L Pmi.pmi_at Pmi.pmi)
     (hinG : CodeIn L Tgv.tgv_at Tgv.tgv) (hinT : CodeIn L Tci.tci_at Tci.tci) (hinI : CodeIn L imm_at imm)
     (hinS : CodeIn L Smm.smm_at Smm.smm) (hinD : CodeIn L Dmc.dmc_at Dmc.dmc)
     (hinK : CodeIn L Sbrk.sbk_at Sbrk.sbk) (hinb : CodeIn L Brk.brk_at Brk.brk)
     (hK : KeptW Wl s₀ X) (hA : Agree F X.proc.mm.mem V) (hrip : X.cpu.rip = mhi_at)
-    (hrsp : X.cpu.gpr.rsp = S + 232#64) (hdi : X.cpu.gpr.rdi = n) (hcls : Im3.Cls n nb)
+    (hrsp : X.cpu.gpr.rsp = S + 232#64) (hdi : X.cpu.gpr.rdi = n) (hcls : Im5.ClsA n nb)
     (hsp : 8029888 + 168 ≤ S.toNat) (hS : S.toNat + 512 < 2 ^ 64)
     (hst : ∀ i < 408, Foot Wl (Addr.add (S - 168) i))
     (hW : ∀ a : Addr, 7940480 ≤ a.toNat → a.toNat < 7943136 → Foot Wl a)
@@ -106,7 +109,9 @@ theorem mhi_okn {lim : Nat} {b fsb S n nb : Addr} {ks : Kst} {pad sm mx : BitVec
     (hbs : (b + size pad 656#64).toNat + 4096 + 168 ≤ S.toNat)
     {N : List Rgn}
     (hN : ∀ r ∈ N, r.In (pageUp b.toNat / 4096 * 4096) (pageUp (b + size pad 656#64).toNat / 4096 * 4096))
-    (hh : ∀ a : Addr, (b + corr b).toNat ≤ a.toNat → a.toNat < (b + corr b).toNat + 656 + 1024 → Foot (N ++ Wl) a)
+    (hpd : nb.toNat ≤ 1008 ∨ nb.toNat ≤ pad.toNat)
+    (hh : ∀ a : Addr, (b + corr b).toNat ≤ a.toNat → a.toNat < (b + corr b).toNat + 656 + nb.toNat + 16 →
+      Foot (N ++ Wl) a)
     (hz : ∀ a : Addr, b.toNat ≤ a.toNat → a.toNat < pageUp b.toNat / 4096 * 4096 → V a = 0)
     {e₂ : Addr} {code₂ : List Byte} (hin₂ : CodeIn L e₂ code₂) {j₂ : Nat} (h₂ : j₂ < code₂.length)
     (hra : rdq(V, S + 232#64) = e₂.add j₂)
@@ -129,8 +134,8 @@ theorem mhi_okn {lim : Nat} {b fsb S n nb : Addr} {ks : Kst} {pad sm mx : BitVec
     GoG prof L o gev gP gE X t := by
   have hbt := hB.brk_lt
   have hb47 : b.toNat < 2 ^ 47 := by omega
-  obtain ⟨hle, hge⟩ := sz_okn hb47 hnb hsu
-  obtain ⟨hn32, hn1008⟩ := hcls.bnd
+  obtain ⟨hle, hge, hgp⟩ := sz_okn hb47 hnb hsu
+  obtain ⟨hn32, hn4112⟩ := hcls.bnd
   obtain ⟨a232, e200, m64, a200, a208, a16, q208, q16, q232, q240, p1, p2, p3, q24⟩ := sof S hS (by omega)
   have h656 : (656#64 : BitVec 64).toNat = 656 := rfl
   have hsn := Smm.size_toNat (pad := pad) (nb := 656#64) (by rw [h656]; omega)
@@ -146,11 +151,12 @@ theorem mhi_okn {lim : Nat} {b fsb S n nb : Addr} {ks : Kst} {pad sm mx : BitVec
   have hf32 := f32 fsb (by omega)
   have hf24 := Tci.f24 fsb (by omega)
   have hfp := f24' fsb (by omega)
-  have hclh : (9 ≤ n.toNat ∧ n.toNat ≤ 1032 ∧ n + 23#64 &&& 18446744073709551600#64 = nb) ∨
+  have hclh : (9 ≤ n.toNat ∧ n.toNat ≤ 4096 ∧ n + 23#64 &&& 18446744073709551600#64 = nb) ∨
       (n.toNat ≤ 8 ∧ nb = 32#64) := by
-    rcases hcls with ⟨h1, h2, h3⟩ | h
+    rcases hcls with (⟨h1, h2, h3⟩ | h) | ⟨h1, h2, h3⟩
     · exact .inl ⟨h1, by omega, h3⟩
     · exact .inr h
+    · exact .inl ⟨by omega, h2, h3⟩
   refine mhi_headn c hB.fsb hin hinP hinG hinT hK hA hrip hdi hclh (by rw [hrsp, a232]; omega) (by omega)
     (by rw [hrsp, a232]; omega) (by rw [hrsp, m64]; exact off_ft hst 336 rfl (by decide)) hfl hfa hW hgmf
     (fun i hi => c.hws _ (hft i hi)) hfs1 hmi h32 h64 htc hsd ?_
@@ -294,7 +300,7 @@ theorem mhi_okn {lim : Nat} {b fsb S n nb : Addr} {ks : Kst} {pad sm mx : BitVec
         exact ⟨(hw m h1 h2).1, (hw m h1 h2).2.1, (hw m h1 h2).2.2, by omega⟩]
     exact T1 x n (by omega)
   have cX := cXn hb47
-  have t72n := t72n (b := b) hb47 hn1008
+  have t72n := t72n (b := b) hb47 hn4112
   refine mhi_tailn (S := S + 16#64) (T := Tp b) (szw := Sz b pad) (sm := sm + size pad 656#64 + C2 b pad)
     (C := b + corr b + 16#64) c' hB'.fsb hin hinI hK' hA' hcls hr' (k5.1.trans bx₀) (bpZ.trans bp₀)
     (spZ.trans q208)
@@ -317,6 +323,7 @@ theorem mhi_okn {lim : Nat} {b fsb S n nb : Addr} {ks : Kst} {pad sm mx : BitVec
       exact hmt)
     (fun i hi => c'.hws _ (foot_append_iff.2 (.inr (hfm i hi))))
     (by rw [congrArg (ofBytesLE 64) (D1 8013224 8 (by omega) fun m h1 h2 => by omega)]; exact hD.gmf)
+    (by rw [congrArg (ofBytesLE 32) (D1 7940680 4 (by omega) fun m h1 h2 => by omega)]; exact hD.flg)
     (fun k hk => by
       rw [congrArg (ofBytesLE 64) (E1 (7940688 + 8 * k) 8 (by omega) fun m h1 h2 =>
         ⟨by unfold Pmi.Wr; omega, by omega⟩)]
@@ -325,6 +332,12 @@ theorem mhi_okn {lim : Nat} {b fsb S n nb : Addr} {ks : Kst} {pad sm mx : BitVec
       rw [congrArg (ofBytesLE 64) (D1 (7940776 + 16 * i) 8 (by omega) fun m h1 h2 => by omega)]
       have hb := (hD.bins (i - 1) (by omega)).2
       rw [show 7940792 + 16 * (i - 1) = 7940776 + 16 * i by omega,
+        show 7940768 + 16 * (i - 1) = 7940752 + 16 * i by omega] at hb
+      exact hb)
+    (fun i i1 i2 => by
+      rw [congrArg (ofBytesLE 64) (D1 (7940768 + 16 * i) 8 (by omega) fun m h1 h2 => by omega)]
+      have hb := (hD.bins (i - 1) (by omega)).1
+      rw [show 7940784 + 16 * (i - 1) = 7940768 + 16 * i by omega,
         show 7940768 + 16 * (i - 1) = 7940752 + 16 * i by omega] at hb
       exact hb)
     (by rw [congrArg (ofBytesLE 64) (E1 7940592 8 (by omega) fun m h1 h2 => ⟨by unfold Pmi.Wr; omega, by omega⟩)]
