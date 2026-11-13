@@ -218,17 +218,11 @@ theorem vc_1840c {g : Gprs} {f : Rflags} {V : Addr → Byte} (hb : g.r14.getLsbD
   hflg
   hcl
 
-/-- `rdi` at 1890: `b + (8 b + 0x6f3870)`. -/
-theorem rdi9 (b : Nat) :
-    BitVec.ofNat 64 b + (BitVec.ofNat 64 b * 8#64 + 7288944#64) = BitVec.ofNat 64 (7288944 + 9 * b) := by
-  apply BitVec.eq_of_toNat_eq
-  simp only [BitVec.toNat_add, BitVec.toNat_mul, BitVec.toNat_ofNat, Nat.reducePow, Nat.reduceMod]
-  omega
-
 /-- Bit `b` (1 or 2) of `r14` set: the entry `rbx` of `temp` (`r12 = rdx + 16 rbx`) gets the string
 `0x6f3870 + 9 b` (`x86_64`, `avx512_1`); `r8` to `rbp - 0x50`, `rdx` to `rbp - 0x48`; to the `call` of `strlen`
-(1890) with `rdi` the string. `r15` is kept, its sign extension and the bit by `hx`, `hb'`: with `r15 = 1` folded
-(`signExtend`, `*`, `+` all to literals) the kernel recursed too deep (a110). -/
+(1890) with `rdi` the string, `b + (8 b + 0x6f3870)` as it is: `r15` is kept, its sign extension and the bit by
+`hx`, `hb'`; with `r15 = 1` folded (`signExtend`, `*`, `+` all to literals) the kernel recursed too deep (a110), and
+`b + (8 b + c) = c + 9 b` by `omega` ran out of kernel memory (a112). -/
 theorem vc_1840s {g : Gprs} {f : Rflags} {V : Addr → Byte} {b : Nat} (hb1 : b = 1 ∨ b = 2)
     (hr15 : g.r15 = BitVec.ofNat 64 b) (hb : g.r14.getLsbD b = true)
     (hs1 : ∀ i < 8, Foot Wl (Addr.add (g.rbp + 18446744073709551536#64) i))
@@ -237,10 +231,10 @@ theorem vc_1840s {g : Gprs} {f : Rflags} {V : Addr → Byte} {b : Nat} (hb1 : b 
     W_1840 fb F Wl (fun j' g' _ V' => j' = 1890 ∧
       g' = { g with
         r13 := g.rbx <<< 4, r12 := g.rdx + g.rbx <<< 4, rax := 7288944#64,
-        rdi := BitVec.ofNat 64 (7288944 + 9 * b) } ∧
+        rdi := BitVec.ofNat 64 b + (BitVec.ofNat 64 b * 8#64 + 7288944#64) } ∧
       V' = Vst (Vst (Vst V (g.rbp + 18446744073709551536#64) (toBytesLE g.r8 8))
         (g.rbp + 18446744073709551544#64) (toBytesLE g.rdx 8))
-        (g.rdx + g.rbx <<< 4) (toBytesLE (BitVec.ofNat 64 (7288944 + 9 * b)) 8)) g f V := by
+        (g.rdx + g.rbx <<< 4) (toBytesLE (BitVec.ofNat 64 b + (BitVec.ofNat 64 b * 8#64 + 7288944#64)) 8)) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at hr15 hb hs1 hs2 hs3 ⊢
   have hx : (r15.setWidth 32).signExtend 64 = BitVec.ofNat 64 b := by
@@ -250,7 +244,7 @@ theorem vc_1840s {g : Gprs} {f : Rflags} {V : Addr → Byte} {b : Nat} (hb1 : b 
     subst hr15
     rcases hb1 with rfl | rfl <;> simpa only [BitVec.toNat_ofNat, Nat.reducePow, Nat.reduceMod] using hb
   clear hr15
-  hwx [W_1840, W_1861, o53, o54, Op.bt64, Op.shl64, Op.sxr, BitVec.add_zero, hx, hb', rdi9]
+  hwx [W_1840, W_1861, o53, o54, Op.bt64, Op.shl64, Op.sxr, BitVec.add_zero, hx, hb']
   hflg
   hcl
 
