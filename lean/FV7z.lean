@@ -220,6 +220,8 @@ import FV7z.Gts.Holds
 import FV7z.Grl.Holds
 import FV7z.Sga.Holds
 import FV7z.Gor.Cuts
+import FV7z.Gor.Mem
+import FV7z.Gor.Vc
 import FV7z.Lemmas.BlkOps8
 import FV7z.Lemmas.Rmw2
 import FV7z.Raf.Holds

@@ -83,7 +83,16 @@ theorem userPath_ok {a : Addr} {m : Nat} (hm : m < pathMax)
       omega
     rw [e]
     exact hr _ (mem_byteAddrs.2 ⟨m + 1 + i, by omega, rfl⟩)
-  simp only [userPath, he, growFor_ok (sub (m + 1) (by omega)), growFor_ok h2, req_pure_bind]
+  have g1 := growFor_ok (acc := .read) (sub (m + 1) (by omega))
+  have g2 := growFor_ok (acc := .read) h2
+  unfold userPath
+  rw [he]
+  dsimp only
+  rw [g1, req_pure_bind]
+  dsimp only
+  rw [he]
+  dsimp only
+  rw [g2, req_pure_bind]
 
 /-- An executable's path, as the kernel writes it, starts with `/`. -/
 theorem ExePath.bytes_head (x : ExePath) : ∃ r, x.bytes = 0x2f :: r := by
@@ -107,10 +116,11 @@ theorem linkRes_len (n : Nat) (r : LinkResult) : (linkRes n r).2.length ≤ n :=
   | error e => exact Nat.zero_le n
   | target bs => exact List.length_take_le n bs
   | procExe x =>
-    unfold linkRes
-    split
-    · exact List.length_take_le n x.bytes
-    · exact Nat.zero_le n
+    by_cases h : x.bytes.length < pathMax
+    · simp only [linkRes, h, ↓reduceIte]
+      exact List.length_take_le n x.bytes
+    · simp only [linkRes, h, ↓reduceIte]
+      exact Nat.zero_le n
 
 /-- The event of `readlink (path, buf, n)` from registers `g`: the path `p` read, `ret` returned, `bs` written. -/
 abbrev linkEv (g : Gprs) (p : List Byte) (ret : BitVec 64) (bs : List Byte) : Event :=
@@ -150,7 +160,9 @@ theorem syscall_readlink {len m n : Nat} {p : List Byte} (htf : s.cpu.rflags.tf 
   simp only [hrdi, hrsi, hrdx, hn, hn', ↓reduceIte, hu, req_pure_bind, eq_self_iff_true, or_true,
     Int.toNat_natCast]
   show (Req.bind (Req.request (.readlink none p)) _).runStream o t = _
-  rw [Req.runStream_bind]
+  rw [Req.runStream_bind,
+    show (Req.request (Request.readlink none p)).runStream o t = (o t (.readlink none p), t + 1) from rfl]
+  dsimp only
   generalize o t (.readlink none p) = r
   -- the bytes copied: all of them
   have C : ∀ bs : List Byte, bs.length ≤ n →
@@ -163,12 +175,12 @@ theorem syscall_readlink {len m n : Nat} {p : List Byte} (htf : s.cpu.rflags.tf 
   cases r with
   | error e => rfl
   | target bs =>
-    simp only [C (bs.take n) (List.length_take_le n bs), req_pure_bind, ↓reduceIte, List.take_length, linkRes]
+    simp only [C (bs.take n) (List.length_take_le n bs), req_pure_bind, eq_self_iff_true, ↓reduceIte, List.take_length, linkRes]
     rfl
   | procExe x =>
     by_cases hx : x.bytes.length < pathMax
     · simp only [hx, ↓reduceIte, C (x.bytes.take n) (List.length_take_le n x.bytes), req_pure_bind,
-        List.take_length, linkRes]
+        eq_self_iff_true, List.take_length, linkRes]
       rfl
     · simp only [hx, ↓reduceIte, linkRes]
       rfl
