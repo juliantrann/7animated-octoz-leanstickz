@@ -2,6 +2,7 @@ import FV7z.Gor.Cuts
 import FV7z.Lemmas.Rmw4
 import FV7z.Lemmas.SysLink
 import FV7z.Memcmp.Words
+import FV7z.Tun.Inv
 /-!
 # `_dl_get_origin`: the bytes, the path asked for, `mempcpy` (PLAN.md G3, startup)
 
