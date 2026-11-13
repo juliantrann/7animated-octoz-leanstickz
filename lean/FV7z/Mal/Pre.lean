@@ -7,6 +7,9 @@ import FV7z.Mal.RunN
   page of `b`.
 - `MPre.lo`: the same for bytes `W` that agree with `V` below `b + 4096` (a caller's stack writes, say).
 - `far`: after `mal_firstn`, the bytes of the caller's stack above the frame of `malloc` (`S + 240` on) as at the call.
+- `near`: after `mal_firstn`, the bytes below the break as at the call but for `main_arena` and `mp_`
+  (`[0x792980, 0x7933e0)`), `global_max_fast`, `__curbrk` and the three TLS words below `fsb - 16`.
+- `After`: the three memory facts of `mal_firstn`'s continuation in one; `After.far`, `After.near`.
 -/
 open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn FV7z.Start
 open FV7z.Brk (curbrk)
@@ -133,5 +136,66 @@ theorem far {b fsb pad sm nb S : Addr} {g : Gprs} {V Vd V₁ M : Addr → Byte}
   all_goals (try simp only [toBytesLE_length, e1, e2, f40, a200, a232, hsp, pageUp, Pmi.Wr, BitVec.toNat_ofNat,
     Nat.reduceMod])
   all_goals omega
+
+/-- The bytes after `mal_firstn` below the break `b`: as at the call but for the words `malloc` writes. -/
+theorem near {b fsb pad sm nb S : Addr} {g : Gprs} {V Vd V₁ M : Addr → Byte}
+    (hD : Pmi.Dat fsb (S + 200#64) 1 (Vh (S + 232#64) g (Vm g V)) Vd)
+    (hO : Imm.Out (Vst Vd (S + 200#64) (toBytesLE (mhi_at.add (231 + 5)) 8)) V₁ b 656#64 (size pad 656#64) (C2 b pad)
+      sm (pageUp b.toNat / 4096 * 4096) (pageUp (b + size pad 656#64).toNat / 4096 * 4096)
+      (S.toNat - 168) (S.toNat + 200))
+    (hM : ∀ a : Addr, a.toNat < S.toNat + 24 ∨ S.toNat + 208 ≤ a.toNat →
+      M a = VspN (Tp b) (Sz b pad) nb (Vst V₁ (fsb + 18446744073709551576#64) (toBytesLE (b + corr b + 16#64) 8)) a)
+    (hsp : g.rsp = S + 232#64) (hS : S.toNat + 512 < 2 ^ 64) (hsl : 8029888 + 168 ≤ S.toNat)
+    (hbs : (b + size pad 656#64).toNat + 4096 + 168 ≤ S.toNat)
+    (hfs : 8029888 + 40 ≤ fsb.toNat) (hfb : fsb.toNat + 48 ≤ b.toNat)
+    (hT0 : (b + corr b).toNat + 656 + nb.toNat + 16 ≤ S.toNat) (hT1 : (Tp b).toNat = (b + corr b).toNat + 656)
+    (hbc : b.toNat ≤ (b + corr b).toNat)
+    {a : Addr} (ha : a.toNat < b.toNat) (h1 : ¬ (7940480 ≤ a.toNat ∧ a.toNat < 7943136))
+    (h2 : ¬ (8013224 ≤ a.toNat ∧ a.toNat < 8013232)) (h3 : ¬ (8014904 ≤ a.toNat ∧ a.toNat < 8014912))
+    (h4 : ¬ (fsb.toNat - 40 ≤ a.toNat ∧ a.toNat < fsb.toNat - 16)) : M a = V a := by
+  obtain ⟨-, -, f40⟩ := fofs fsb (by omega) (by omega)
+  have a200 : (S + 200#64).toNat = S.toNat + 200 := by bv_omega
+  have a232 : (S + 232#64).toNat = S.toNat + 232 := by bv_omega
+  have e1 : (Tp b + 8#64).toNat = (Tp b).toNat + 8 := by rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega
+  have e2 : (Tp b + nb + 8#64).toNat = (Tp b).toNat + nb.toNat + 8 := by
+    rw [BitVec.toNat_add, BitVec.toNat_add, BitVec.toNat_ofNat]; omega
+  rw [hM a (.inl (by omega))]
+  unfold VspN
+  rw [Tun.Vst_out _ _ _ _ ?_ ?_, Tun.Vst_out _ _ _ _ ?_ ?_, Tun.Vst_out _ _ _ _ ?_ ?_, Tun.Vst_out _ _ _ _ ?_ ?_,
+    hO.same a ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_, Tun.Vst_out _ _ _ _ ?_ ?_, hD.out a ?_ ?_, Mhi.Vh_out _ _ _ ?_ ?_ ?_,
+    Vm_out _ _ ?_ ?_]
+  all_goals (try simp only [toBytesLE_length, e1, e2, f40, a200, a232, hsp, pageUp, Pmi.Wr, BitVec.toNat_ofNat,
+    Nat.reduceMod])
+  all_goals omega
+
+/-- The bytes `M` at the return of the first `malloc` from those at the call (`V`, registers `g`, frame `S`). -/
+def After (fsb S b pad sm nb : Addr) (g : Gprs) (V M : Addr → Byte) : Prop :=
+  ∃ Vd V₁ : Addr → Byte, Pmi.Dat fsb (S + 200#64) 1 (Vh (S + 232#64) g (Vm g V)) Vd ∧
+    Imm.Out (Vst Vd (S + 200#64) (toBytesLE (mhi_at.add (231 + 5)) 8)) V₁ b 656#64 (size pad 656#64) (C2 b pad) sm
+      (pageUp b.toNat / 4096 * 4096) (pageUp (b + size pad 656#64).toNat / 4096 * 4096)
+      (S.toNat - 168) (S.toNat + 200) ∧
+    ∀ a : Addr, a.toNat < S.toNat + 24 ∨ S.toNat + 208 ≤ a.toNat →
+      M a = VspN (Tp b) (Sz b pad) nb (Vst V₁ (fsb + 18446744073709551576#64) (toBytesLE (b + corr b + 16#64) 8)) a
+
+theorem After.far {b fsb pad sm nb S : Addr} {g : Gprs} {V M : Addr → Byte} (h : After fsb S b pad sm nb g V M)
+    (hsp : g.rsp = S + 232#64) (hS : S.toNat + 512 < 2 ^ 64) (hsl : 8029888 + 168 ≤ S.toNat)
+    (hbs : (b + size pad 656#64).toNat + 4096 + 168 ≤ S.toNat)
+    (hfs : 8029888 + 40 ≤ fsb.toNat) (hfb : fsb.toNat + 48 ≤ b.toNat)
+    (hT0 : (b + corr b).toNat + 656 + nb.toNat + 16 ≤ S.toNat) (hT1 : (Tp b).toNat = (b + corr b).toNat + 656)
+    {a : Addr} (ha : S.toNat + 240 ≤ a.toNat) : M a = V a :=
+  let ⟨_, _, hD, hO, hM⟩ := h
+  far hD hO hM hsp hS hsl hbs hfs hfb hT0 hT1 ha
+
+theorem After.near {b fsb pad sm nb S : Addr} {g : Gprs} {V M : Addr → Byte} (h : After fsb S b pad sm nb g V M)
+    (hsp : g.rsp = S + 232#64) (hS : S.toNat + 512 < 2 ^ 64) (hsl : 8029888 + 168 ≤ S.toNat)
+    (hbs : (b + size pad 656#64).toNat + 4096 + 168 ≤ S.toNat)
+    (hfs : 8029888 + 40 ≤ fsb.toNat) (hfb : fsb.toNat + 48 ≤ b.toNat)
+    (hT0 : (b + corr b).toNat + 656 + nb.toNat + 16 ≤ S.toNat) (hT1 : (Tp b).toNat = (b + corr b).toNat + 656)
+    (hbc : b.toNat ≤ (b + corr b).toNat)
+    {a : Addr} (ha : a.toNat < b.toNat) (h1 : ¬ (7940480 ≤ a.toNat ∧ a.toNat < 7943136))
+    (h2 : ¬ (8013224 ≤ a.toNat ∧ a.toNat < 8013232)) (h3 : ¬ (8014904 ≤ a.toNat ∧ a.toNat < 8014912))
+    (h4 : ¬ (fsb.toNat - 40 ≤ a.toNat ∧ a.toNat < fsb.toNat - 16)) : M a = V a :=
+  let ⟨_, _, hD, hO, hM⟩ := h
+  near hD hO hM hsp hS hsl hbs hfs hfb hT0 hT1 hbc ha h1 h2 h3 h4
 
 end FV7z.Mal
