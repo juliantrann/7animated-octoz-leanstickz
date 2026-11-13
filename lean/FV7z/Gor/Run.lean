@@ -113,6 +113,12 @@ variable {prof : Profile} {F : Footprint} {Wl N : List Rgn} {L : List (Addr × L
   {gev : List Event} {gP : State → Nat → List Event → Prop} {gE : Outcome → List Event → Prop}
   {lim : Nat} {b fsb : Addr} {ks : Kst} {pad sm mx : BitVec 64}
 
+/-- A byte below the break `b` that the first `malloc` does not write (`Mal.near`): not in `main_arena` and `mp_`,
+`global_max_fast`, `__curbrk`, the TLS words below `fsb - 16`. -/
+abbrev Lo (b fsb a : Addr) : Prop :=
+  a.toNat < b.toNat ∧ ¬ (7940480 ≤ a.toNat ∧ a.toNat < 7943136) ∧ ¬ (8013224 ≤ a.toNat ∧ a.toNat < 8013232) ∧
+    ¬ (8014904 ≤ a.toNat ∧ a.toNat < 8014912) ∧ ¬ (fsb.toNat - 40 ≤ a.toNat ∧ a.toNat < fsb.toNat - 16)
+
 /-- The caller's continuation after the `malloc (n)` of `_dl_get_origin` and the copy of the `s` bytes of the
 directory: the new root `s₁` and its `Seg`, the bytes `W` (the NUL at `p + s`, the others `M` but for `[p, p + s]` and
 the slot below `B`), `M` from `Vc` (the bytes at the `call`, `Vb` but for the slot) by `Mal.After`, `M` and `Vb` the
@@ -126,7 +132,7 @@ def Kd (prof : Profile) (F : Footprint) (Wl N : List Rgn) (L : List (Addr × Lis
     2 ≤ n → n ≤ 4097 → 1 ≤ s → s + 1 ≤ n → g.rsp = B - 8 →
     (∀ a : Addr, a.toNat < B.toNat - 8 ∨ B.toNat ≤ a.toNat → Vc a = Vb a) →
     After fsb (B - 240#64) b pad sm (nbOf n) g Vc M →
-    (∀ a : Addr, B.toNat ≤ a.toNat → M a = Vb a) →
+    (∀ a : Addr, B.toNat ≤ a.toNat → M a = Vb a) → (∀ a : Addr, Lo b fsb a → M a = Vb a) →
     W (Addr.add (Tp b + 16#64) s) = 0 →
     (∀ a : Addr, (a.toNat < (Tp b + 16#64).toNat ∨ (Tp b + 16#64).toNat + s + 1 ≤ a.toNat) →
       (a.toNat < B.toNat - 8 ∨ B.toNat ≤ a.toNat) → W a = M a) →
@@ -168,7 +174,7 @@ theorem gmal (c : Seg prof F Wl L s₀ o) (hin : CodeIn L gor_at gor)
       (∀ a : Addr, a.toNat < B.toNat - 8 ∨ B.toNat ≤ a.toNat → Vc a = Vb a) →
       After fsb (B - 240#64) b pad sm (nbOf n) (X.cpu.gpr.set 4 (B - 8)) Vc M →
       (∀ a : Addr, B.toNat ≤ a.toNat → M a = Vb a) →
-      (∀ a : Addr, a.toNat < 7940480 → M a = Vb a) →
+      (∀ a : Addr, Lo b fsb a → M a = Vb a) →
       Z.cpu.rip = gor_at.add (jc + 5) → Z.cpu.gpr.rax = Tp b + 16#64 → Z.cpu.gpr.rsp = B →
       Z.cpu.gpr.rbx = X.cpu.gpr.rbx → Z.cpu.gpr.rbp = X.cpu.gpr.rbp → Z.cpu.gpr.r12 = X.cpu.gpr.r12 →
       Z.cpu.gpr.r13 = X.cpu.gpr.r13 → Z.cpu.gpr.r14 = X.cpu.gpr.r14 → Z.cpu.gpr.r15 = X.cpu.gpr.r15 →
@@ -213,9 +219,9 @@ theorem gmal (c : Seg prof F Wl L s₀ o) (hin : CodeIn L gor_at gor)
   have MV : ∀ a : Addr, B.toNat ≤ a.toNat → M a = Vb a := fun a ha => by
     rw [hAf.far hspY (by rw [hS]; omega) (by rw [hS]; omega) (by rw [hS]; omega) mc.hfs mc.hfb (by rw [hS]; omega) hT1
       (a := a) (by rw [hS]; omega), hVc a (.inr ha)]
-  have ML : ∀ a : Addr, a.toNat < 7940480 → M a = Vb a := fun a ha => by
+  have ML : ∀ a : Addr, Lo b fsb a → M a = Vb a := fun a ⟨ha, h1, h2, h3, h4⟩ => by
     rw [hAf.near hspY (by rw [hS]; omega) (by rw [hS]; omega) (by rw [hS]; omega) mc.hfs mc.hfb (by rw [hS]; omega) hT1
-      hbc (a := a) (by omega) (by omega) (by omega) (by omega) (by omega), hVc a (.inl (by omega))]
+      hbc (a := a) ha h1 h2 h3 h4, hVc a (.inl (by omega))]
   refine k s₁ _ M evs Z t₂ hc hB' hK' hA' hVc hAf MV ML hr hax ?_ hregs.2.1 hregs.2.2.1 hregs.2.2.2 hr13.1 hr13.2.1
     hr13.2.2 hev
   rw [hregs.1, BitVec.sub_add_cancel]
@@ -251,7 +257,7 @@ theorem g124 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L gor_at gor)
   obtain ⟨hbc, hc15, hT0, -, hpN⟩ := lay hb47 mc.hnb mc.hpd hnb
   refine gmal c hin mc (n := 2) (call_124 _) (by omega) (by decide) hK hA hrip hdi (le_refl _) (by omega) hsp hpre
     hst hsl hBt hbs ?_
-  intro s₁ Vc M evs Z t₂ hc hB' hK' hA' hVc hAf MV _ hr hax hsp' _ _ _ _ h14 h15 hev
+  intro s₁ Vc M evs Z t₂ hc hB' hK' hA' hVc hAf MV ML hr hax hsp' _ _ _ _ h14 h15 hev
   have hpt : (Tp b + 16#64).toNat + 2 ≤ 2 ^ 64 := by rw [hpN]; omega
   refine t129 hc hin hK' hA' hr hsp' hax (fun h => by
       have h' : (Tp b + 16#64).toNat = 0 := by rw [h]; rfl
@@ -264,7 +270,7 @@ theorem g124 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L gor_at gor)
   have R : ∀ d < 4136, rdq(M, B + BitVec.ofNat 64 d) = rdq(Vb, B + BitVec.ofNat 64 d) := fun d hd =>
     rd_hi MV (by rw [off4 (by omega) hBt]; omega) (by rw [off4 (by omega) hBt]; omega)
   refine k 2 1 s₁ Vc M _ evs Z₂ t₃ (X.cpu.gpr.set 4 (B - 8)) hc hB' hK₂ hA₂ (le_refl _) (by omega) (le_refl _)
-    (le_refl _) rfl hVc hAf MV ?_ (fun a h1 _ => Tun.Vst_out _ _ _ _ (by rw [toBytesLE_length]; omega)
+    (le_refl _) rfl hVc hAf MV ML ?_ (fun a h1 _ => Tun.Vst_out _ _ _ _ (by rw [toBytesLE_length]; omega)
       (by rw [toBytesLE_length]; omega)) hr₂ hax₂ hsp₂ (hbx₂.trans (R 4104 (by omega)))
     (hbp₂.trans (R 4112 (by omega))) (h12₂.trans (R 4120 (by omega))) (h13₂.trans (R 4128 (by omega)))
     (h14₂.trans h14) (h15₂.trans h15) hev
@@ -293,6 +299,8 @@ theorem g278 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L gor_at gor)
   have hbt := mc.hB.brk_lt
   have hpd := mc.hpd
   have hb47 : b.toNat < 2 ^ 47 := by omega
+  have hbl := mc.hbl
+  have hfs := mc.hfs
   obtain ⟨hn1, hnb⟩ := nbOf_bnd (n := s + 2) (by omega)
   obtain ⟨hbc, hc15, hT0, -, hpN⟩ := lay hb47 mc.hnb mc.hpd hnb
   have hb8 : (B - 8).toNat = B.toNat - 8 := by bv_omega
@@ -308,13 +316,14 @@ theorem g278 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L gor_at gor)
     (fun i hi => foot_append_iff.2 (.inr (slot8 hst i hi))) (fun i hi => foot_wn mc.hown (hBw i hi))
     (fun i hi => foot_wn mc.hown (hf i hi)) hinc hc0 hcpy
     (hPm _ fun a ha => by
-      rw [Tun.Vst_out _ _ _ _ (by rw [toBytesLE_length, hb8]; omega) (.inl (by rw [hb8]; omega)), ML a ha]) hinr hj
+      rw [Tun.Vst_out _ _ _ _ (by rw [toBytesLE_length, hb8]; omega) (.inl (by rw [hb8]; omega)),
+        ML a ⟨by omega, by omega, by omega, by omega, by omega⟩]) hinr hj
     (by rw [rd_hi MV (by rw [off4 (by omega) hBt]; omega) (by rw [off4 (by omega) hBt]; omega)]; exact hra) ?_
   intro Z₂ t₃ W hK₂ hA₂ _ hnul hout hr₂ hax₂ hsp₂ hbx₂ hbp₂ h12₂ h13₂ h14₂ h15₂
   have R : ∀ d < 4136, rdq(M, B + BitVec.ofNat 64 d) = rdq(Vb, B + BitVec.ofNat 64 d) := fun d hd =>
     rd_hi MV (by rw [off4 (by omega) hBt]; omega) (by rw [off4 (by omega) hBt]; omega)
   exact k (s + 2) s s₁ Vc M W evs Z₂ t₃ (X.cpu.gpr.set 4 (B - 8)) hc hB' hK₂ hA₂ (by omega) (by omega) hs1
-    (by omega) rfl hVc hAf MV hnul hout hr₂ hax₂ hsp₂ (hbx₂.trans (R 4104 (by omega)))
+    (by omega) rfl hVc hAf MV ML hnul hout hr₂ hax₂ hsp₂ (hbx₂.trans (R 4104 (by omega)))
     (hbp₂.trans (R 4112 (by omega))) (h12₂.trans (R 4120 (by omega))) (h13₂.trans (R 4128 (by omega)))
     (h14₂.trans h14) (h15₂.trans h15) hev
 

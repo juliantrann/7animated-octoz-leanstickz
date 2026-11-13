@@ -71,6 +71,7 @@ theorem gor_ok (c : Seg prof F Wl L s₀ o) (hin : CodeIn L gor_at gor)
         Vc a = Vg V X.cpu.gpr x a) →
       After fsb (X.cpu.gpr.rsp - 4136#64 - 240#64) b pad sm (nbOf n) g Vc M →
       (∀ a : Addr, X.cpu.gpr.rsp.toNat - 4136 ≤ a.toNat → M a = Vg V X.cpu.gpr x a) →
+      (∀ a : Addr, Lo b fsb a → M a = Vg V X.cpu.gpr x a) →
       W (Addr.add (Tp b + 16#64) s) = 0 →
       (∀ a : Addr, (a.toNat < (Tp b + 16#64).toNat ∨ (Tp b + 16#64).toNat + s + 1 ≤ a.toNat) →
         (a.toNat < X.cpu.gpr.rsp.toNat - 4144 ∨ X.cpu.gpr.rsp.toNat - 4136 ≤ a.toNat) → W a = M a) →
@@ -115,10 +116,10 @@ theorem gor_ok (c : Seg prof F Wl L s₀ o) (hin : CodeIn L gor_at gor)
     refine g124 c hin mc hKZ hAZ hrZ hdi hsp (hpre.lo mc.hfs mc.hfb fun a ha => Vg_lo h32 hl (by omega)) hsm
       (by rw [hB]; omega) (by rw [hB]; omega) (by rw [hB]; omega) (fun i hi => by rw [eB]; exact hfr i hi) hinr hj
       r5 ?_
-    intro n s s₁ Vc M W evs Z₁ t₁ g hc hB' hK₁ hA₁ hn2 hn hs1 hsn hg hVc hAf MV hnul hout hr hax
+    intro n s s₁ Vc M W evs Z₁ t₁ g hc hB' hK₁ hA₁ hn2 hn hs1 hsn hg hVc hAf MV ML hnul hout hr hax
       hsp₁ hbx hbp₁ h12 h13 h14₁ h15₁ hev
     exact k x n s s₁ Vc M W evs Z₁ t₁ g hl hc hB' hK₁ hA₁ hn2 hn hs1 hsn hg
-      (fun a ha => hVc a (by rw [hB]; omega)) hAf (fun a ha => MV a (by rw [hB]; exact ha)) hnul
+      (fun a ha => hVc a (by rw [hB]; omega)) hAf (fun a ha => MV a (by rw [hB]; exact ha)) ML hnul
       (fun a h1 h2 => hout a h1 (by rw [hB]; omega)) hr hax (by rw [hsp₁, eS])
       (hbx.trans r1) (hbp₁.trans r2) (h12.trans r3) (h13.trans r4) (h14₁.trans h14) (h15₁.trans h15) hev
   · -- `malloc (s + 2)`
@@ -132,10 +133,10 @@ theorem gor_ok (c : Seg prof F Wl L s₀ o) (hin : CodeIn L gor_at gor)
       (hpre.lo mc.hfs mc.hfb fun a ha => Vg_lo h32 hl (by omega)) hsm (by rw [hB]; omega) (by rw [hB]; omega)
       (by rw [hB]; omega) hbuf (fun i hi => by rw [eB]; exact hfr i hi) hinc hc0 hcpy
       (fun W hW => hPm W fun a ha => (hW a ha).trans (Vg_lo h32 hl (by omega))) hinr hj r5 ?_
-    intro n s s₁ Vc M W evs Z₁ t₁ g hc hB' hK₁ hA₁ hn2 hn hs1' hsn hg hVc hAf MV hnul hout hr hax
+    intro n s s₁ Vc M W evs Z₁ t₁ g hc hB' hK₁ hA₁ hn2 hn hs1' hsn hg hVc hAf MV ML hnul hout hr hax
       hsp₁ hbx₁ hbp₁ h12 h13 h14₁ h15₁ hev
     exact k x n s s₁ Vc M W evs Z₁ t₁ g hl hc hB' hK₁ hA₁ hn2 hn hs1' hsn hg
-      (fun a ha => hVc a (by rw [hB]; omega)) hAf (fun a ha => MV a (by rw [hB]; exact ha)) hnul
+      (fun a ha => hVc a (by rw [hB]; omega)) hAf (fun a ha => MV a (by rw [hB]; exact ha)) ML hnul
       (fun a h1 h2 => hout a h1 (by rw [hB]; omega)) hr hax (by rw [hsp₁, eS])
       (hbx₁.trans r1) (hbp₁.trans r2) (h12.trans r3) (h13.trans r4) (h14₁.trans h14) (h15₁.trans h15) hev
 
