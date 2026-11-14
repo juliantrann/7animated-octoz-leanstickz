@@ -88,7 +88,8 @@ theorem whole (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (hin
     fun a h1 h2 => hFs a (by rw [hr8] at h1; omega) (by rw [hr8] at h2; omega)
   obtain ⟨q, hq⟩ : ∃ q, E = 8 ∧ q = 2 ∨ E = 16 ∧ q = 3 := by
     rcases hn with ⟨-, -, rfl, -, -⟩ | ⟨-, -, rfl, -, -⟩
-    exacts [⟨2, Or.inl ⟨rfl, rfl⟩⟩, ⟨3, Or.inr ⟨rfl, rfl⟩⟩]
+    · exact ⟨2, Or.inl ⟨rfl, rfl⟩⟩
+    · exact ⟨3, Or.inr ⟨rfl, rfl⟩⟩
   obtain ⟨i0bp, i0r15, i0r14, i0r13, i0r12, i0bx, i0di⟩ := iV0_rd V hsp hr0 (by omega)
   -- the entry to 58
   refine to58 c hfs hin hinh hinc hc0 hcpy hinm hm0 hmal hinl hl0 hlenA hint hn hPm hPa hPl he he2 hal hFs hpg
