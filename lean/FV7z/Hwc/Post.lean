@@ -95,7 +95,7 @@ theorem post (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (hin 
   refine zero (g₀ := ⟨rax, BitVec.ofNat 64 E, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11,
       BitVec.ofNat 64 cnt, r13, r14, r15⟩) (σ := fun i => rdq(V₀, r14 + BitVec.ofNat 64 (16 * i))) (V₀ := V₀)
     c hfs hin hED rfl hfr
-    (by omega) hR hD (fun a h1 h2 => (hW a h1 h2).1) hf88 hf98 ?_ (E - 1) 0 (by omega) X t V₀
+    (by dsimp only; omega) hR hD (fun a h1 h2 => (hW a h1 h2).1) hf88 hf98 ?_ (E - 1) 0 (by omega) X t V₀
     (fun i => rdq(V₀, r14 + BitVec.ofNat 64 (16 * i + 8))) rdx hK hA hrip (hgx.trans rfl)
     (fun _ _ => ⟨rfl, rfl⟩) (fun j hj => absurd hj (Nat.not_lt_zero _)) (Same.refl _ _ _) (Same.refl _ _ _)
   -- 1448: the capabilities
