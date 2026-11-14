@@ -35,12 +35,12 @@ theorem kr {V V₁ : Addr → Byte} {P : Addr → Prop} (h : ∀ a, P a → V a 
 /-- A load of 8 bytes the loop kept, in the frame. -/
 theorem kfr {V V₁ : Addr → Byte} {r x : Addr} (h : ∀ a, Kp r a → V a = V₁ a) (h1 : r.toNat - 80 ≤ x.toNat)
     (h2 : x.toNat + 8 ≤ 2 ^ 64) : rdq(V, x) = rdq(V₁, x) := by
-  rw [kr h (rgn (lo := r.toNat - 80) (hi := 2 ^ 64) (fun a h1 _ => Or.inr h1) h1 h2 h2)]
+  rw [kr h (rgn (p := Kp r) (lo := r.toNat - 80) (hi := 2 ^ 64) (fun a h1 _ => Or.inr h1) h1 h2 h2)]
 
 /-- A load the loop kept, below the heap. -/
 theorem klo {V V₁ : Addr → Byte} {r x : Addr} {n : Nat} (h : ∀ a, Kp r a → V a = V₁ a)
     (h1 : x.toNat + n ≤ 7940480) : List.map V (byteAddrs x n) = List.map V₁ (byteAddrs x n) :=
-  kr h (rgn (lo := 0) (hi := 7940480) (fun a _ h2 => Or.inl h2) (Nat.zero_le _) h1 (by omega))
+  kr h (rgn (p := Kp r) (lo := 0) (hi := 7940480) (fun a _ h2 => Or.inl h2) (Nat.zero_le _) h1 (by omega))
 
 theorem m88 (r : Addr) : r + 18446744073709551536#64 - 8 = r + 18446744073709551528#64 := by bv_omega
 theorem p88 (r : Addr) : r + 18446744073709551528#64 + 8 = r + 18446744073709551536#64 := by bv_omega
@@ -131,7 +131,7 @@ theorem step (c : Seg prof F Wl L s₀ o) (hin : CodeIn L ipa_at ipa)
   · rw [di₂, dx₂]; ireg hWB
   · rw [di₂, dx₂]; ipd
   · rw [di₂, dx₂, s₂]; ipd
-  intro Z t₃ V₂ hK₃ hA₃ hr₃ hs₃ - hbx₃ hbp₃ h12₃ h13₃ h14₃ h15₃ - hout₃
+  intro Z t₃ V₂ hK₃ hA₃ hr₃ hs₃ _ hbx₃ hbp₃ h12₃ h13₃ h14₃ h15₃ _ hout₃
   have sZ : Z.cpu.gpr.rsp = r + 18446744073709551536#64 := by rw [hs₃, s₂, p88]
   have bpZ : Z.cpu.gpr.rbp = r := by rw [hbp₃, hg₂, set4_rbp, hg₁]; exact hbp
   have r12Z : Z.cpu.gpr.r12 = BitVec.ofNat 64 (7364032 + 8 * i) := by rw [h12₃, hg₂, set4_r12, hg₁]; exact h12
