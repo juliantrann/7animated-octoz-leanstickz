@@ -95,12 +95,12 @@ theorem NmOk.mvg {E : Ev} {V V' : Addr → Byte} {F F' : Footprint} {sp a : Addr
   exact
     { hn := h.hn
       lo := h.lo
-      nnz := fun k hk => by rw [qa k hk.le]; exact h.nnz k hk
-      nz := by rw [qa n le_rfl]; exact h.nz
+      nnz := fun k hk => by rw [qa k (Nat.le_of_lt hk)]; exact h.nnz k hk
+      nz := by rw [qa n (Nat.le_refl n)]; exact h.nz
       npg := fun x h1 h2 => hF _ (h.npg x h1 h2)
       nom := fun i hi hk => by
-        rw [qp i hi n le_rfl]
-        exact h.nom i hi fun k hk' => by rw [← qp i hi k hk'.le, ← qa k hk'.le]; exact hk k hk' }
+        rw [qp i hi n (Nat.le_refl n)]
+        exact h.nom i hi fun k hk' => by rw [← qp i hi k (Nat.le_of_lt hk'), ← qa k (Nat.le_of_lt hk')]; exact hk k hk' }
 
 theorem NmOk.mv {E : Ev} {V V' : Addr → Byte} {F : Footprint} {N : List Rgn} {sp a : Addr} {n : Nat}
     (h : NmOk E V F a n) (hE : E.Ok V F sp) (hown : F.own = []) (hs : Same sp V V') :
