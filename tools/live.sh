@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Live status of a CI job while it runs (GitHub gives a job's log only once the job ends).
 #   tools/live.sh start NAME LOG   in the background: a check run NAME on this commit, its output every 120 s:
-#                                  the lean processes (age s, RSS MB, module), memory, the tail of LOG
+#                                  the lean processes (age s, CPU s, RSS MB, module), memory, the tail of LOG
 #   tools/live.sh stop NAME        marks the check run NAME completed (call from an `if: always()` step)
 # Read it while the job runs:
 #   gh api repos/OWNER/REPO/commits/SHA/check-runs -q '.check_runs[]|select(.name=="NAME")|.output.summary'
@@ -23,8 +23,9 @@ start)
       echo "t = $t s, run $GITHUB_RUN_ID"
       echo '```'
       free -m | sed -n 2p
-      ps -eo etimes=,rss=,args= | grep '[b]in/lean ' |
-        awk '{m=$NF; for(i=3;i<=NF;i++) if($i ~ /FV7z\/.*\.lean$/) m=$i; printf "%6ds %6d MB %s\n", $1, $2/1024, m}'
+      ps -eo etimes=,times=,rss=,args= | grep '[b]in/lean ' |
+        awk '{m=$NF; for(i=4;i<=NF;i++) if($i ~ /FV7z\//) m=$i; sub(/\.(setup\.json|lean)$/, "", m)
+          printf "%6ds %6ds cpu %6d MB %s\n", $1, $2, $3/1024, m}'
       echo '---'
       tail -n 40 "$log" 2>/dev/null | cut -c1-200
       echo '```'

@@ -67,6 +67,8 @@ jobs:
           exit $fail
       - name: run
         # lean/wip-run: shell commands run in lean/ after the build (measurements for the proof in progress)
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           if [ -s lean/wip-run ]; then (cd lean && bash wip-run) 2>&1 | tee lean/wip-run.log; fi
       - name: report
