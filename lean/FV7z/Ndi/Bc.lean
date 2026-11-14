@@ -80,9 +80,9 @@ theorem bc_e8 {sp : Addr} (h : 8 ≤ sp.toNat) : (sp - 8#64).toNat = sp.toNat - 
 theorem bc_a112 (sp : Addr) : sp - 8#64 + 18446744073709551512#64 = sp + 18446744073709551504#64 := by bv_omega
 theorem bc_q8 (sp : Addr) : sp - 8#64 + 8 = sp := by bv_omega
 theorem bc_lt {sp : Addr} {x : Nat} (h : 8 ≤ sp.toNat) (hx : x < sp.toNat - 408) : x < (sp - 8#64).toNat - 400 := by
-  rw [bc_e8 h]; omega
+  rw [bc_e8 h, Nat.sub_sub]; exact hx
 theorem bc_ge {sp : Addr} {x : Nat} (h : 8 ≤ sp.toNat) (hx : (sp - 8#64).toNat - 400 ≤ x) : sp.toNat - 408 ≤ x := by
-  rw [bc_e8 h] at hx; omega
+  rw [bc_e8 h, Nat.sub_sub] at hx; exact hx
 theorem bc_lt8 {sp : Addr} {x : Nat} (h : 8 ≤ sp.toNat) (hx : x < (sp - 8#64).toNat + 8) : x < sp.toNat := by
   rw [bc_e8 h] at hx; omega
 
