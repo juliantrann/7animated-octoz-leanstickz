@@ -79,6 +79,12 @@ theorem Pl.mv {V V' : Addr → Byte} {F : Footprint} {sp p : Addr} {n : Nat} (h 
 theorem bc_e8 {sp : Addr} (h : 8 ≤ sp.toNat) : (sp - 8#64).toNat = sp.toNat - 8 := by bv_omega
 theorem bc_a112 (sp : Addr) : sp - 8#64 + 18446744073709551512#64 = sp + 18446744073709551504#64 := by bv_omega
 theorem bc_q8 (sp : Addr) : sp - 8#64 + 8 = sp := by bv_omega
+theorem bc_lt {sp : Addr} {x : Nat} (h : 8 ≤ sp.toNat) (hx : x < sp.toNat - 408) : x < (sp - 8#64).toNat - 400 := by
+  rw [bc_e8 h]; omega
+theorem bc_ge {sp : Addr} {x : Nat} (h : 8 ≤ sp.toNat) (hx : (sp - 8#64).toNat - 400 ≤ x) : sp.toNat - 408 ≤ x := by
+  rw [bc_e8 h] at hx; omega
+theorem bc_lt8 {sp : Addr} {x : Nat} (h : 8 ≤ sp.toNat) (hx : x < (sp - 8#64).toNat + 8) : x < sp.toNat := by
+  rw [bc_e8 h] at hx; omega
 
 variable {F : Footprint} {Wl : List Rgn}
 variable {prof : Profile} {L : List (Addr × List Byte)} {s₀ : State} {o : Oracle}
@@ -161,7 +167,8 @@ theorem ndi_bc {pl pc : List Byte} {Pm : (Addr → Byte) → Prop} {E : Ev} {V W
   refine ndi_b (ph := 4194368#64) (pn := 8#64) c cx hin (by rw [Ipa.ipa_length]; decide) h1 hd1 hd2 h4 h5 hK hA
     hM hrip hsp ?_
   intro Z t₁ W' hKZ hAZ hMZ hrZ hspZ hdiZ h15Z
-  have hs8 : (sp - 8#64).toNat = sp.toNat - 8 := bc_e8 (by omega)
+  have h8 : 8 ≤ sp.toNat := by omega
+  have hs8 : (sp - 8#64).toNat = sp.toNat - 8 := bc_e8 h8
   -- the bytes at the entry of `_dl_init_paths`
   have vh : ∀ a : Addr, (a.toNat < sp.toNat - 72 ∨ sp.toNat ≤ a.toNat) →
       Vst W' (sp - 8#64) (toBytesLE (ndi_at.add 2063) 8) a = hV V X.cpu.gpr.rax 4194368#64 8#64 a :=
@@ -181,11 +188,11 @@ theorem ndi_bc {pl pc : List Byte} {Pm : (Addr → Byte) → Prop} {E : Ev} {V W
   refine Ipa.whole c hfs hin hinh hinc hc0 hcpy hinm hm0 hmal hinl hl0 hlenA hinz hz0 hset hint
     (V := Vst W' (sp - 8#64) (toBytesLE (ndi_at.add 2063) 8)) (e := sp - 8#64) (p := p) hn
     (fun W hW => hPq W fun a h1 h2 h3 => (hW a h1 h2).trans (vi a (.inl (by omega)) h3))
-    (fun W hW => hPa W fun a h1 h2 h3 => (hW a (by rw [hs8]; omega) h2).trans (vi a (.inl (by omega)) h3))
+    (fun W hW => hPa W fun a h1 h2 h3 => (hW a (bc_lt h8 h1) h2).trans (vi a (.inl (by omega)) h3))
     (fun W hW => hPk W fun a h1 h2 => (hW a h1).trans (vi a (.inl (by omega)) h2))
     (fun W hW => hPs W fun a h1 h2 h3 => (hW a h1 h2).trans (vi a (.inl (by omega)) h3))
     (by rw [hs8]; omega) (by rw [hs8]; omega) (by rw [bc_a112]; exact hal)
-    (fun a h1 h2 => hFs a (by rw [hs8] at h1; omega) (by rw [hs8] at h2; omega)) hpg
+    (fun a h1 h2 => hFs a (bc_ge h8 h1) (bc_lt8 h8 h2)) hpg
     (fun i hi => by
       rw [vlo (Addr.add 7288953#64 i) (by rw [toNat_add_of_fits (n := 6) hi (by ipd)]; ipd)]; exact hx1 i hi)
     (by rw [vlo (Addr.add 7288953#64 6) (by rw [toNat_add_of_fits (n := 7) (by decide) (by ipd)]; ipd)]; exact hx1z)
