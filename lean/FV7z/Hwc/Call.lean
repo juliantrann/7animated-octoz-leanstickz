@@ -47,7 +47,7 @@ theorem w_1111 : pc1111 <+: hwc.drop 1111 := by decide +kernel
 theorem call_1111 (feat : Features) : Dec feat hwc 1111 (FV7z.mk .call 64 [.rel 18446744073709050820] 5) :=
   Dec.shift (j := 1111) (k := 0) (pc1111_0 feat) w_1111 (Nat.zero_le _)
 
-theorem tgt_1111 : hwc_at.add (1111 + 5) + BitVec.ofNat 64 18446744073709050820 = Mal.mal_at := by decide
+theorem tgt_1111 : hwc_at.add (1111 + 5) + BitVec.ofNat 64 18446744073709050820 = 6500704#64 := by decide
 
 variable {prof : Profile} {F : Footprint} {Wl : List Rgn} {L : List (Addr × List Byte)} {s₀ : State} {o : Oracle}
   {gev : List Event} {gP : State → Nat → List Event → Prop} {gE : Outcome → List Event → Prop} {fb : Addr}
@@ -59,7 +59,7 @@ set_option maxHeartbeats 4000000 in
 up), out of the reach of `malloc`. -/
 theorem from1111 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (hin : CodeIn L hwc_at hwc)
     (hinc : CodeIn L 4198592#64 cpy) (hc0 : 0 < cpy.length) (hcpy : Gor.PcpyAt prof L o 4198592#64 Pm)
-    (hinm : CodeIn L Mal.mal_at mlc) (hm0 : 0 < mlc.length) (hmal : Mal.At prof L o Mal.mal_at Pa)
+    (hinm : CodeIn L 6500704#64 mlc) (hm0 : 0 < mlc.length) (hmal : Mal.At prof L o 6500704#64 Pa)
     {V : Addr → Byte} {cnt E H s : Nat} {R bp sp Q : Addr} {ln st : Nat → Addr}
     (hPm : ∀ W : Addr → Byte, (∀ a : Addr, a.toNat < 7940480 → W a = V a) → Pm W)
     (hPa : ∀ W : Addr → Byte, (∀ a : Addr, a.toNat < sp.toNat - 8 → W a = V a) → Pa W)
