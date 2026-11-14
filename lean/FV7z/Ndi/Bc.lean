@@ -76,6 +76,16 @@ theorem Pl.mv {V V' : Addr → Byte} {F : Footprint} {sp p : Addr} {n : Nat} (h 
         exact h.nz
       pg := h.pg }
 
+/-- `Pl` for a footprint with `F`'s data. -/
+theorem pl_foot {V : Addr → Byte} {F F' : Footprint} {sp p : Addr} {n : Nat} (h : Pl V F sp p n)
+    (hF : ∀ a, Foot F.data a → Foot F'.data a) : Pl V F' sp p n :=
+  { h with pg := fun x h1 h2 => hF _ (h.pg x h1 h2) }
+
+/-- `Tgv.UnsetW` for a footprint with `F`'s data. -/
+theorem unset_foot {V : Addr → Byte} {F F' : Footprint} {d : Addr} (h : Tgv.UnsetW F V d)
+    (hF : ∀ a, Foot F.data a → Foot F'.data a) : Tgv.UnsetW F' V d :=
+  ⟨fun i hi => hF _ (h.ty i hi), fun i hi => hF _ (h.va i hi), fun i hi => hF _ (h.ini i hi), h.tw, h.z⟩
+
 theorem bc_e8 {sp : Addr} (h : 8 ≤ sp.toNat) : (sp - 8#64).toNat = sp.toNat - 8 := by bv_omega
 theorem bc_a112 (sp : Addr) : sp - 8#64 + 18446744073709551512#64 = sp + 18446744073709551504#64 := by bv_omega
 theorem bc_q8 (sp : Addr) : sp - 8#64 + 8 = sp := by bv_omega
