@@ -24,14 +24,7 @@ theorem set4_rsi (g : Gprs) (v : Addr) : (g.set 4 v).rsi = g.rsi := rfl
 
 /-! The addresses of the prologue, as `e + (2^64 - c)`. -/
 theorem t8 (e : Addr) : e - 8 = e + 18446744073709551608#64 := by bv_omega
-theorem t16 (e : Addr) : e + 18446744073709551608#64 - 8 = e + 18446744073709551600#64 := by bv_omega
-theorem t24 (e : Addr) : e + 18446744073709551600#64 - 8 = e + 18446744073709551592#64 := by bv_omega
-theorem t32 (e : Addr) : e + 18446744073709551592#64 - 8 = e + 18446744073709551584#64 := by bv_omega
-theorem t40 (e : Addr) : e + 18446744073709551584#64 - 8 = e + 18446744073709551576#64 := by bv_omega
-theorem t48 (e : Addr) : e + 18446744073709551576#64 - 8 = e + 18446744073709551568#64 := by bv_omega
-theorem t88 (e : Addr) : e + 18446744073709551608#64 + 18446744073709551536#64 = e + 18446744073709551528#64 := by
-  bv_omega
-theorem t88' (e : Addr) : e + 18446744073709551568#64 - 40#64 = e + 18446744073709551528#64 := by bv_omega
+theorem t40s (e : Addr) : e - 40#64 = e + 18446744073709551576#64 := by bv_omega
 theorem t88s (e : Addr) : e - 88#64 = e + 18446744073709551528#64 := by bv_omega
 theorem t96 (e : Addr) : e + 18446744073709551528#64 - 8 = e + 18446744073709551520#64 := by bv_omega
 theorem t104 (e : Addr) : e + 18446744073709551512#64 + 8#64 = e + 18446744073709551520#64 := by bv_omega
@@ -44,7 +37,7 @@ theorem iV0_eq (V : Addr → Byte) {g : Gprs} {e : Addr} (h : g.rsp = e) :
       (e + 18446744073709551592#64) (toBytesLE g.r14 8)) (e + 18446744073709551584#64) (toBytesLE g.r13 8))
       (e + 18446744073709551576#64) (toBytesLE g.r12 8)) (e + 18446744073709551568#64) (toBytesLE g.rbx 8))
       (e + 18446744073709551528#64) (toBytesLE g.rdi 8) := by
-  simp only [iV0, h, t8, t16, t24, t32, t40, t48, t88]
+  simp only [iV0, h, t8, BitVec.add_assoc, BitVec.reduceAdd]
 
 /-- The prologue stores in `[e - 88, e)` only. -/
 theorem iV0_out (V : Addr → Byte) {g : Gprs} {e : Addr} (h : g.rsp = e) (hr0 : 96 ≤ e.toNat)
@@ -117,7 +110,7 @@ theorem to58 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (hin 
   rintro j' g' fl V' ⟨rfl, hsp', hbp', hcx', hdx', hsi', hdi', hbx', h12', h13', h14', h15', rfl⟩
     Y₁ t₁ hK₁ hA₁ hr₁ hg₁ -
   have s₁ : Y₁.cpu.gpr.rsp = e + 18446744073709551528#64 := by
-    simp only [hg₁, hsp', hsp, t8, t16, t24, t32, t40, t48, t88']
+    simp only [hg₁, hsp', hsp, t8, t40s, BitVec.add_assoc, BitVec.reduceAdd]
   -- 53: `call _dl_important_hwcaps`
   refine c.s_call hK₁ hA₁ hin (lt_len (by omega)) hr₁ (call_53 _) hinh (by rw [Hwc.hwc_length]; decide) tgt_53
     (by rw [s₁, t96]; ireg hFW) ?_
