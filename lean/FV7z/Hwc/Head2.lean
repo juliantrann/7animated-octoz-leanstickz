@@ -68,10 +68,13 @@ theorem np4 (bp : Addr) : bp + 18446744073709551360#64 + BitVec.ofNat 64 (16 * 4
 theorem and15 (x : Addr) : (x &&& 15#64).toNat = x.toNat % 16 := by
   rw [BitVec.toNat_and, show (15#64 : Addr).toNat = 2 ^ 4 - 1 from rfl, Nat.and_two_pow_sub_one_eq_mod]
 
+theorem m16 : (18446744073709551600#64 : Addr) = ~~~15#64 := by
+  apply BitVec.eq_of_toNat_eq; rw [BitVec.toNat_not]; try rfl
+
 /-- Rounding `x + 15` down to a multiple of 16 gives `x` when `x` is one (bit by bit, no `bv_decide`). -/
 theorem alg (x : Addr) (hx : x.toNat % 16 = 0) : (x + 15#64) &&& 18446744073709551600#64 = x := by
   have h0 : x &&& 15#64 = 0#64 := BitVec.eq_of_toNat_eq (by rw [and15, hx]; try rfl)
-  rw [BitVec.add_eq_or_of_and_eq_zero x 15#64 h0, (by decide : (18446744073709551600#64 : Addr) = ~~~15#64)]
+  rw [BitVec.add_eq_or_of_and_eq_zero x 15#64 h0, m16]
   apply BitVec.eq_of_getLsbD_eq
   intro i hi
   have h1 := congrArg (fun y : Addr => y.getLsbD i) h0
@@ -84,15 +87,15 @@ theorem al3 {bp : Addr} (h : bp &&& 15#64 = 0#64) :
   have h' := and15 bp
   rw [h] at h'
   apply alg
-  simp only [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.reducePow, Nat.reduceMod] at h' ⊢
-  omega
+  rw [BitVec.toNat_add, Nat.mod_mod_of_dvd _ (by decide : 16 ∣ 2 ^ 64), Nat.add_mod, ← h']
+  try decide
 theorem al4 {bp : Addr} (h : bp &&& 15#64 = 0#64) :
     (bp + 18446744073709551360#64 + 15#64) &&& 18446744073709551600#64 = bp + 18446744073709551360#64 := by
   have h' := and15 bp
   rw [h] at h'
   apply alg
-  simp only [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.reducePow, Nat.reduceMod] at h' ⊢
-  omega
+  rw [BitVec.toNat_add, Nat.mod_mod_of_dvd _ (by decide : 16 ∣ 2 ^ 64), Nat.add_mod, ← h']
+  try decide
 
 /-- The prologue's bytes (`hV0`) with the slots as offsets from `bp`. -/
 theorem hV0_bp (V : Addr → Byte) (g : Gprs) {bp : Addr} (h : g.rsp = bp + 8#64) : hV0 V g =
