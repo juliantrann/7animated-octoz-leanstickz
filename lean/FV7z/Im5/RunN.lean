@@ -4,7 +4,7 @@ import FV7z.Im5.Cls
 /-!
 # `_int_malloc`: the second call for every request `1001 ≤ n ≤ 4104` (PLAN.md G3, `malloc`)
 
-- `im_secondl`: from the entry through the cut points 512, 1115, 2012 to 2549 (`p5`), then `Im2.im_from2549`: the
+- `im_secondl`: from the entry through the cut points 512, 1115, 2012 to 2549 (`pall`), then `Im2.im_from2549`: the
   top split for `nb`, `T + 16` returned, the six registers back; the bytes at 2549 known only through the frame
   `Im2.Fr` (handed to the continuation).
 -/
@@ -63,7 +63,7 @@ theorem im_secondl {fb S T szw sm n nb : Addr} (c : Seg prof F Wl L s₀ o) (hfs
   have hsd : ∀ i < 184, Foot F.data (Addr.add S i) := fun i hi => c.hws _ (hs184 i hi)
   have hWd : ∀ a : Addr, 7940480 ≤ a.toNat → a.toNat < 7943136 → Foot F.data a := fun a h1 h2 => c.hws _ (hW a h1 h2)
   refine (c_0 prof fb).run c hfs hin _ hK hA (by rw [hrip]; rfl)
-    (p5 hk1 hk2 hrsp hsi hdi m d1 d2 e hS hlo hfb hgm hfc (hlb _ (lbi_ge k₅ hk1) (lbi_le k₅)) htc htb hun hm2 hm3
+    (pall hk1 hk2 hrsp hsi hdi m d1 d2 e hS hlo hfb hgm hfc (hlb _ (lbi_ge k₅ hk1) (lbi_le k₅)) htc htb hun hm2 hm3
       hWd hgf htf hs184 hsd) ?_
   rintro j₁ g₁ f₁ V₁ ⟨rfl, h₁⟩ Y₁ t₁ hK₁ hA₁ hr₁ hg₁ hf₁
   refine (c_512 prof fb).run c hfs hin _ hK₁ hA₁ hr₁ (by rw [hg₁, hf₁]; exact h₁) ?_
