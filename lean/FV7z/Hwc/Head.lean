@@ -373,8 +373,8 @@ theorem from1778_4 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb)
   have s₆ : Y₆.cpu.gpr.rsp = R := by rw [hg₆]; exact s₅
   have d₆ : Y₆.cpu.gpr.rdx = R := by rw [hg₆]; try rfl
   have x₆ : Y₆.cpu.gpr.rbx = 1#64 := by rw [hg₆]; try rfl
-  have r8₆ : Y₆.cpu.gpr.r8 = 2#64 := by rw [hg₆]; try decide
-  have r14₆ : Y₆.cpu.gpr.r14 = 4#64 := by rw [hg₆]; try decide
+  have r8₆ : Y₆.cpu.gpr.r8 = 2#64 := by rw [hg₆]; show (1#64 + 1#64 : BitVec 64) = 2#64; decide
+  have r14₆ : Y₆.cpu.gpr.r14 = 4#64 := by rw [hg₆]; show (6#64 ^^^ 1#64 <<< 1 : BitVec 64) = 4#64; decide
   have r15₆ : Y₆.cpu.gpr.r15 = BitVec.ofNat 64 2 := by rw [hg₆]; try decide
   -- 1840: bit 2 set, `avx512_1` to entry 1
   refine (c_1840 prof fb).run c hfs hin _ hK₆ hA₆ hr₆
