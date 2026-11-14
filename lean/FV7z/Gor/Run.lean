@@ -113,10 +113,11 @@ variable {prof : Profile} {F : Footprint} {Wl N : List Rgn} {L : List (Addr × L
   {gev : List Event} {gP : State → Nat → List Event → Prop} {gE : Outcome → List Event → Prop}
   {lim : Nat} {b fsb : Addr} {ks : Kst} {pad sm mx : BitVec 64}
 
-/-- A byte below the break `b` that the first `malloc` does not write (`Mal.near`): not in `main_arena` and `mp_`,
+/-- A byte below the break `b` that the first `malloc` does not write (`Mal.near`): not in `main_arena` up to
+`system_mem`/`max_system_mem` (`[0x792980, 0x7932d8)`; `mp_` and `_dl_pagesize` after it are kept), not
 `global_max_fast`, `__curbrk`, the TLS words below `fsb - 16`. -/
 abbrev Lo (b fsb a : Addr) : Prop :=
-  a.toNat < b.toNat ∧ ¬ (7940480 ≤ a.toNat ∧ a.toNat < 7943136) ∧ ¬ (8013224 ≤ a.toNat ∧ a.toNat < 8013232) ∧
+  a.toNat < b.toNat ∧ ¬ (7940480 ≤ a.toNat ∧ a.toNat < 7942872) ∧ ¬ (8013224 ≤ a.toNat ∧ a.toNat < 8013232) ∧
     ¬ (8014904 ≤ a.toNat ∧ a.toNat < 8014912) ∧ ¬ (fsb.toNat - 40 ≤ a.toNat ∧ a.toNat < fsb.toNat - 16)
 
 /-- The caller's continuation after the `malloc (n)` of `_dl_get_origin` and the copy of the `s` bytes of the

@@ -7,8 +7,9 @@ import FV7z.Mal.RunN
   page of `b`.
 - `MPre.lo`: the same for bytes `W` that agree with `V` below `b + 4096` (a caller's stack writes, say).
 - `far`: after `mal_firstn`, the bytes of the caller's stack above the frame of `malloc` (`S + 240` on) as at the call.
-- `near`: after `mal_firstn`, the bytes below the break as at the call but for `main_arena` and `mp_`
-  (`[0x792980, 0x7933e0)`), `global_max_fast`, `__curbrk` and the three TLS words below `fsb - 16`.
+- `near`: after `mal_firstn`, the bytes below the break as at the call but for the words it writes from `0x792980`
+  to `0x7932d8` (`main_arena`, `mp_.sbrk_base`, `system_mem`), `global_max_fast`, `__curbrk` and the three TLS
+  words below `fsb - 16` (so `_dl_pagesize`, `0x7933d8`, is kept).
 - `After`: the three memory facts of `mal_firstn`'s continuation in one; `After.far`, `After.near`.
 -/
 open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn FV7z.Start
@@ -150,7 +151,7 @@ theorem near {b fsb pad sm nb S : Addr} {g : Gprs} {V Vd V₁ M : Addr → Byte}
     (hfs : 8029888 + 40 ≤ fsb.toNat) (hfb : fsb.toNat + 48 ≤ b.toNat)
     (hT0 : (b + corr b).toNat + 656 + nb.toNat + 16 ≤ S.toNat) (hT1 : (Tp b).toNat = (b + corr b).toNat + 656)
     (hbc : b.toNat ≤ (b + corr b).toNat)
-    {a : Addr} (ha : a.toNat < b.toNat) (h1 : ¬ (7940480 ≤ a.toNat ∧ a.toNat < 7943136))
+    {a : Addr} (ha : a.toNat < b.toNat) (h1 : ¬ (7940480 ≤ a.toNat ∧ a.toNat < 7942872))
     (h2 : ¬ (8013224 ≤ a.toNat ∧ a.toNat < 8013232)) (h3 : ¬ (8014904 ≤ a.toNat ∧ a.toNat < 8014912))
     (h4 : ¬ (fsb.toNat - 40 ≤ a.toNat ∧ a.toNat < fsb.toNat - 16)) : M a = V a := by
   obtain ⟨-, -, f40⟩ := fofs fsb (by omega) (by omega)
@@ -192,7 +193,7 @@ theorem After.near {b fsb pad sm nb S : Addr} {g : Gprs} {V M : Addr → Byte} (
     (hfs : 8029888 + 40 ≤ fsb.toNat) (hfb : fsb.toNat + 48 ≤ b.toNat)
     (hT0 : (b + corr b).toNat + 656 + nb.toNat + 16 ≤ S.toNat) (hT1 : (Tp b).toNat = (b + corr b).toNat + 656)
     (hbc : b.toNat ≤ (b + corr b).toNat)
-    {a : Addr} (ha : a.toNat < b.toNat) (h1 : ¬ (7940480 ≤ a.toNat ∧ a.toNat < 7943136))
+    {a : Addr} (ha : a.toNat < b.toNat) (h1 : ¬ (7940480 ≤ a.toNat ∧ a.toNat < 7942872))
     (h2 : ¬ (8013224 ≤ a.toNat ∧ a.toNat < 8013232)) (h3 : ¬ (8014904 ≤ a.toNat ∧ a.toNat < 8014912))
     (h4 : ¬ (fsb.toNat - 40 ≤ a.toNat ∧ a.toNat < fsb.toNat - 16)) : M a = V a :=
   let ⟨_, _, hD, hO, hM⟩ := h
