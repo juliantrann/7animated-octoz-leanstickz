@@ -65,13 +65,34 @@ theorem np3 (bp : Addr) : bp + 18446744073709551376#64 + BitVec.ofNat 64 (16 * 3
 theorem np4 (bp : Addr) : bp + 18446744073709551360#64 + BitVec.ofNat 64 (16 * 4 + 16) +
     BitVec.ofNat 64 18446744073709551608 = bp + 18446744073709551432#64 := by bv_omega
 
+theorem and15 (x : Addr) : (x &&& 15#64).toNat = x.toNat % 16 := by
+  rw [BitVec.toNat_and, show (15#64 : Addr).toNat = 2 ^ 4 - 1 from rfl, Nat.and_two_pow_sub_one_eq_mod]
+
+/-- Rounding `x + 15` down to a multiple of 16 gives `x` when `x` is one (bit by bit, no `bv_decide`). -/
+theorem alg (x : Addr) (hx : x.toNat % 16 = 0) : (x + 15#64) &&& 18446744073709551600#64 = x := by
+  have h0 : x &&& 15#64 = 0#64 := BitVec.eq_of_toNat_eq (by rw [and15, hx]; try rfl)
+  rw [BitVec.add_eq_or_of_and_eq_zero x 15#64 h0, (by decide : (18446744073709551600#64 : Addr) = ~~~15#64)]
+  apply BitVec.eq_of_getLsbD_eq
+  intro i hi
+  have h1 := congrArg (fun y : Addr => y.getLsbD i) h0
+  simp only [BitVec.getLsbD_and, BitVec.getLsbD_or, BitVec.getLsbD_not, BitVec.getLsbD_zero] at h1 ⊢
+  cases hxi : x.getLsbD i <;> cases h15 : (15#64 : Addr).getLsbD i <;> simp_all
+
 /-- `temp` is 16-aligned when `bp` is. -/
 theorem al3 {bp : Addr} (h : bp &&& 15#64 = 0#64) :
     (bp + 18446744073709551376#64 + 15#64) &&& 18446744073709551600#64 = bp + 18446744073709551376#64 := by
-  bv_decide
+  have h' := and15 bp
+  rw [h] at h'
+  apply alg
+  simp only [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.reducePow, Nat.reduceMod] at h' ⊢
+  omega
 theorem al4 {bp : Addr} (h : bp &&& 15#64 = 0#64) :
     (bp + 18446744073709551360#64 + 15#64) &&& 18446744073709551600#64 = bp + 18446744073709551360#64 := by
-  bv_decide
+  have h' := and15 bp
+  rw [h] at h'
+  apply alg
+  simp only [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.reducePow, Nat.reduceMod] at h' ⊢
+  omega
 
 /-- The prologue's bytes (`hV0`) with the slots as offsets from `bp`. -/
 theorem hV0_bp (V : Addr → Byte) (g : Gprs) {bp : Addr} (h : g.rsp = bp + 8#64) : hV0 V g =
