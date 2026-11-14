@@ -123,7 +123,8 @@ theorem whole (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (hin
     intro k hk
     have hb : (BitVec.ofNat 64 (sA k)).toNat + 1 ≤ 7937664 := by
       rcases (by omega : k = 0 ∨ k = 1 ∨ k = 2) with rfl | rfl | rfl <;> decide +kernel
-    rw [kr hlo5 (rgn (lo := 0) (hi := 7937664) (fun a _ h => Or.inl h) (Nat.zero_le _) hb (by omega))]
+    rw [kr hlo5 (rgn (p := fun a : Addr => a.toNat < 7937664 ∨ 7937720 ≤ a.toNat ∧ a.toNat < 7940480)
+      (lo := 0) (hi := 7937664) (fun a _ h => Or.inl h) (Nat.zero_le _) hb (by omega))]
     exact hslV k hk
   -- the loop from `i = 0`, to the `ret`
   refine loop c hin hinz hz0 hset hq (r := e + 18446744073709551608#64)
@@ -131,7 +132,7 @@ theorem whole (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (hin
     (by rw [hr8]; omega) (fun x h1 h2 => hFr x h1 h2) hFR hW7b (fun x h1 h2 => hWb x (by omega) h2)
     h72 h64 h56 h80 hlen hsl hB1 hB2 hBW hA1 hA2' (fun a h1 h2 => (hAf a h1 h2).1) ?_
     0 (Nat.zero_le _) Z₃ t₃ V₅ B (A + 8#64) hK₃ hA₃ hr₃ hs₃ hbp₃ h15₃ (by omega) h14₃ (by ipd)
-    (by rw [h12₃]; rfl) (by rw [hbx₃]; rfl) h13₃ (fun _ _ => rfl)
+    (by rw [h12₃]; try rfl) (by rw [hbx₃]; try rfl) h13₃ (fun _ _ => rfl)
   -- 450: `ret`
   unfold Fin450
   intro Y t' V' hKY hAY hrY hsY hbxY h12Y h13Y h14Y h15Y hbpY hkY
