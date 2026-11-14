@@ -104,9 +104,10 @@ theorem forall_LogF {w : Nat} (f : Rflags) (r : BitVec w) (P : Rflags → Prop) 
 
 /-! ## The tactic -/
 
-/-- Runs `wp` of a list of effects (unfolded, or given among the extra lemmas) from registers given as `Gprs.mk`. -/
-macro "wpx" "[" ls:Lean.Parser.Tactic.simpLemma,* "]" : tactic =>
-  `(tactic| simp only [wp, Op.sub, Op.cmp, Op.add, Op.add8, Op.and, Op.or, Op.xor, Op.test, Op.inc, Op.dec, Op.neg,
+/-- Runs `wp` of a list of effects (unfolded, or given among the extra lemmas) from registers given as `Gprs.mk`;
+an optional `simp` configuration first (`Im5.lwp`: `-implicitDefEqProofs`). -/
+macro "wpx" cfg:Lean.Parser.Tactic.optConfig "[" ls:Lean.Parser.Tactic.simpLemma,* "]" : tactic =>
+  `(tactic| simp $cfg only [wp, Op.sub, Op.cmp, Op.add, Op.add8, Op.and, Op.or, Op.xor, Op.test, Op.inc, Op.dec, Op.neg,
     Op.sbb, Op.mov, Op.cmov32, Op.cmov64, Op.imul, Op.nop, Op.shl, Op.shr, Op.sar, Op.lea, Op.lea32a, Op.ld, Op.ld8,
     Op.ldzx, Op.subm, Op.cmpm, Op.addm, Op.andm, Op.pop, Op.st, Op.sti, Op.push,
     Src.val, gv, wr, wrLo, eaG, optV,

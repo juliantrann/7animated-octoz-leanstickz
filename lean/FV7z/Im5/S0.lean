@@ -26,9 +26,12 @@ theorem lbi_le (k : Nat) (hk : k ≤ 257 := by omega) : lbi k ≤ 99 := by
   unfold lbi
   split <;> omega
 
-/-- `wpx` with the reads and rewrites of the largebin way; the blocks of one piece as the extra lemmas. -/
+/-- `wpx` with the reads and rewrites of the largebin way; the blocks of one piece as the extra lemmas. Explicit
+proofs for the `rfl` steps (`-implicitDefEqProofs`): with the implicit ones the kernel checks the goals for
+definitional equality itself and, for `k % 16 = 2` (`vc_L66`, `vc_L82`, …), hits "deep recursion" at 7 GB (runs
+43594561890 to 43599958643). -/
 macro "lwp" "[" ls:Lean.Parser.Tactic.simpLemma,* "]" : tactic =>
-  `(tactic| wpx [Op.cmpma, Op.cmpmif, Op.cmpmra, Op.shr64, rd_off, rd_off_self, BitVec.and_self,
+  `(tactic| wpx -implicitDefEqProofs [Op.cmpma, Op.cmpmif, Op.cmpmra, Op.shr64, rd_off, rd_off_self, BitVec.and_self,
     BitVec.reduceAdd, BitVec.reduceAnd, BitVec.reduceSetWidth, BitVec.reduceHShiftRight, BitVec.reduceHShiftLeft,
     BitVec.reduceUShiftRight, BitVec.reduceShiftLeft, BitVec.reduceBEq, BitVec.reduceEq, BitVec.reduceToNat,
     BitVec.reduceSub, BitVec.reduceMul, BitVec.reduceLT, BitVec.reduceULT, BitVec.reduceOr, BitVec.reduceXOr,
