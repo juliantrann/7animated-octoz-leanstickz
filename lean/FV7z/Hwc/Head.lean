@@ -60,8 +60,8 @@ def At1681 (prof : Profile) (L : List (Addr × List Byte)) (o : Oracle) (gev : L
     Y.cpu.gpr.r15 = rdq(V, bp + 18446744073709551608#64) → Y.cpu.gpr.rbp = rdq(V, bp) →
     Tab W P E (pt (fun _ => P + BitVec.ofNat 64 (16 * E)) (caps E (hl_ln cnt) cnt (fun _ => 0#64)) H
       (hl_ln cnt (cnt - 1))) (caps E (hl_ln cnt) cnt (fun _ => 0#64)) →
-    Same V W 0 7940480 → Same V W ((bp + 18446744073709551448#64).toNat + 104) N.toNat →
-    rdq(W, N) = BitVec.ofNat 64 E → Same V W (N.toNat + 8) (2 ^ 64) → GoG prof L o gev gP gE Y t'
+    SameO V W 0 7940480 N → SameO V W ((bp + 18446744073709551448#64).toNat + 104) (2 ^ 64) N →
+    rdq(W, N) = BitVec.ofNat 64 E → GoG prof L o gev gP gE Y t'
 
 /-! ## `h = 2`: `x86_64` -/
 
@@ -73,8 +73,10 @@ theorem from1778_3 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb)
     (hinm : CodeIn L 6500704#64 mlc) (hm0 : 0 < mlc.length) (hmal : Mal.At prof L o 6500704#64 Pa)
     (hins : CodeIn L 4198664#64 sl) (hs0 : 0 < sl.length) (hlen : Str.LenAt prof L o 4198664#64 Pl)
     {V : Addr → Byte} {R bp Q N p : Addr}
-    (hPm : ∀ W : Addr → Byte, (∀ a : Addr, a.toNat < 7940480 → W a = V a) → Pm W)
-    (hPa : ∀ W : Addr → Byte, (∀ a : Addr, a.toNat < R.toNat - 8 → W a = V a) → Pa W)
+    (hPm : ∀ W : Addr → Byte, (∀ a : Addr, a.toNat < 7940480 → (a.toNat < N.toNat ∨ N.toNat + 8 ≤ a.toNat) →
+      W a = V a) → Pm W)
+    (hPa : ∀ W : Addr → Byte, (∀ a : Addr, a.toNat < R.toNat - 8 → (a.toNat < N.toNat ∨ N.toNat + 8 ≤ a.toNat) →
+      W a = V a) → Pa W)
     (hPl : ∀ W : Addr → Byte, (∀ a : Addr, a.toNat < 7940480 → W a = V a) → Pl W)
     (hRl : 7940488 ≤ R.toNat) (hRF : R.toNat + 72 = (bp + 18446744073709551448#64).toNat)
     (hfb : (bp + 18446744073709551448#64).toNat + 176 ≤ 2 ^ 64)
@@ -86,7 +88,8 @@ theorem from1778_3 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb)
     (htls : ∀ i < 3, Foot F.data ((7366106#64).add i))
     (hp : rdq(V, bp + 18446744073709551520#64) = p) (hp0 : p ≠ 0#64)
     (hpl : rdq(V, bp + 18446744073709551512#64) = 0#64) (hpd : p.toNat ≤ 7940480 ∨ R.toNat ≤ p.toNat)
-    (hNv : rdq(V, bp + 18446744073709551528#64) = N) (hND : (bp + 18446744073709551448#64).toNat + 176 ≤ N.toNat)
+    (hNv : rdq(V, bp + 18446744073709551528#64) = N)
+    (hND : N.toNat + 8 ≤ 7940480 ∨ (bp + 18446744073709551448#64).toNat + 176 ≤ N.toNat)
     (hN64 : N.toNat + 8 ≤ 2 ^ 64) (hsN : ∀ i < 8, Foot Wl (Addr.add N i))
     (hQ : rdq(V, bp + 18446744073709551504#64) = Q) (hsQ : ∀ i < 8, Foot Wl (Addr.add Q i))
     (hQ64 : Q.toNat + 8 ≤ 2 ^ 64)
@@ -202,8 +205,8 @@ theorem from1778_3 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb)
   -- 682 on
   refine from682 (V := _) c hfs hin hinc hc0 hcpy hinm hm0 hmal (cnt := 3) (E := 8) (H := 4) (t := 23) (s := 151)
     (R := R) (bp := bp) (sp := R) (Q := Q) (N := N) (p := p) (S0 := 7288953#64) (S1 := 0#64)
-    (fun W hW => hPm W fun a ha => (hW a ha).trans (by vout))
-    (fun W hW => hPa W fun a ha => (hW a ha).trans (by vout))
+    (fun W hW => hPm W fun a ha hn => (hW a ha hn).trans (by vout))
+    (fun W hW => hPa W fun a ha hn => (hW a ha hn).trans (by vout))
     (.inl ⟨rfl, rfl, rfl, rfl, rfl⟩) (by omega) (Nat.le_refl _) (by omega) hfb
     (fun i hi => rng hFW (by fomega) (by fomega) (by fomega) i hi)
     (fun a h1 h2 => hFs a (by omega) h2) (fun a h1 h2 => hFD a (by omega) (by omega))
@@ -212,11 +215,10 @@ theorem from1778_3 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb)
     (rng hpg (by decide) (by decide) (by decide)) (by decide) (fun h => absurd h (by decide))
     (fun h => absurd h (by decide)) htls (by vpeel; exact hp) hp0 (by vpeel; exact hpl) hpd
     (by vpeel; exact hNv) hND hN64 hsN (by vpeel; exact hQ) hsQ hQ64 hQd ?_ Y₆ t₆ hK₆ hA₆ hr₆ ?_ ?_ ?_ ?_ ?_ ?_
-  · intro Y t' W P hKY hAY hrY haxY hlo hpe hWP hspY hbxY h12Y h13Y h14Y h15Y hbpY hTab hS0 hSs hNE hSh
+  · intro Y t' W P hKY hAY hrY haxY hlo hpe hWP hspY hbxY h12Y h13Y h14Y h15Y hbpY hTab hS0 hSs hNE
     exact k Y t' W P hKY hAY hrY haxY hlo hpe hWP hspY (hbxY.trans (by vpeel)) (h12Y.trans (by vpeel))
       (h13Y.trans (by vpeel)) (h14Y.trans (by vpeel)) (h15Y.trans (by vpeel)) (hbpY.trans (by vpeel)) hTab
-      (Same.trans (fun a _ h2 => by vout) hS0) (Same.trans (fun a h1 h2 => by vout) hSs) hNE
-      (Same.trans (fun a h1 h2 => by vout) hSh)
+      (SameO.trans (fun a _ h2 => by vout) hS0) (SameO.trans (fun a h1 h2 => by vout) hSs) hNE
   · rw [hg₆]
     show R + (Z.cpu.gpr.r13 + 16#64) = _
     rw [r13₅]
@@ -240,8 +242,10 @@ theorem from1778_4 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb)
     (hinm : CodeIn L 6500704#64 mlc) (hm0 : 0 < mlc.length) (hmal : Mal.At prof L o 6500704#64 Pa)
     (hins : CodeIn L 4198664#64 sl) (hs0 : 0 < sl.length) (hlen : Str.LenAt prof L o 4198664#64 Pl)
     {V : Addr → Byte} {R bp Q N p : Addr}
-    (hPm : ∀ W : Addr → Byte, (∀ a : Addr, a.toNat < 7940480 → W a = V a) → Pm W)
-    (hPa : ∀ W : Addr → Byte, (∀ a : Addr, a.toNat < R.toNat - 8 → W a = V a) → Pa W)
+    (hPm : ∀ W : Addr → Byte, (∀ a : Addr, a.toNat < 7940480 → (a.toNat < N.toNat ∨ N.toNat + 8 ≤ a.toNat) →
+      W a = V a) → Pm W)
+    (hPa : ∀ W : Addr → Byte, (∀ a : Addr, a.toNat < R.toNat - 8 → (a.toNat < N.toNat ∨ N.toNat + 8 ≤ a.toNat) →
+      W a = V a) → Pa W)
     (hPl : ∀ W : Addr → Byte, (∀ a : Addr, a.toNat < 7940480 → W a = V a) → Pl W)
     (hRl : 7940488 ≤ R.toNat) (hRF : R.toNat + 88 = (bp + 18446744073709551448#64).toNat)
     (hfb : (bp + 18446744073709551448#64).toNat + 176 ≤ 2 ^ 64)
@@ -254,7 +258,8 @@ theorem from1778_4 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb)
     (htls : ∀ i < 3, Foot F.data ((7366106#64).add i))
     (hp : rdq(V, bp + 18446744073709551520#64) = p) (hp0 : p ≠ 0#64)
     (hpl : rdq(V, bp + 18446744073709551512#64) = 0#64) (hpd : p.toNat ≤ 7940480 ∨ R.toNat ≤ p.toNat)
-    (hNv : rdq(V, bp + 18446744073709551528#64) = N) (hND : (bp + 18446744073709551448#64).toNat + 176 ≤ N.toNat)
+    (hNv : rdq(V, bp + 18446744073709551528#64) = N)
+    (hND : N.toNat + 8 ≤ 7940480 ∨ (bp + 18446744073709551448#64).toNat + 176 ≤ N.toNat)
     (hN64 : N.toNat + 8 ≤ 2 ^ 64) (hsN : ∀ i < 8, Foot Wl (Addr.add N i))
     (hQ : rdq(V, bp + 18446744073709551504#64) = Q) (hsQ : ∀ i < 8, Foot Wl (Addr.add Q i))
     (hQ64 : Q.toNat + 8 ≤ 2 ^ 64)
@@ -449,8 +454,8 @@ theorem from1778_4 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb)
   -- 682 on
   refine from682 (V := _) c hfs hin hinc hc0 hcpy hinm hm0 hmal (cnt := 4) (E := 16) (H := 8) (t := 32)
     (s := 320) (R := R) (bp := bp) (sp := R) (Q := Q) (N := N) (p := p) (S0 := 7288953#64) (S1 := 7288962#64)
-    (fun W hW => hPm W fun a ha => (hW a ha).trans (by vout))
-    (fun W hW => hPa W fun a ha => (hW a ha).trans (by vout))
+    (fun W hW => hPm W fun a ha hn => (hW a ha hn).trans (by vout))
+    (fun W hW => hPa W fun a ha hn => (hW a ha hn).trans (by vout))
     (.inr ⟨rfl, rfl, rfl, rfl, rfl⟩) (by omega) (Nat.le_refl _) (by omega) hfb
     (fun i hi => rng hFW (by fomega) (by fomega) (by fomega) i hi)
     (fun a h1 h2 => hFs a (by omega) h2) (fun a h1 h2 => hFD a (by omega) (by omega))
@@ -460,11 +465,10 @@ theorem from1778_4 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb)
     (fun _ => by decide) htls (by vpeel; exact hp) hp0 (by vpeel; exact hpl) hpd
     (by vpeel; exact hNv) hND hN64 hsN (by vpeel; exact hQ) hsQ hQ64 hQd ?_ Y₁₀ t₁₀ hK₁₀ hA₁₀ hr₁₀
     ?_ ?_ ?_ ?_ ?_ ?_
-  · intro Y t' W P hKY hAY hrY haxY hlo hpe hWP hspY hbxY h12Y h13Y h14Y h15Y hbpY hTab hS0 hSs hNE hSh
+  · intro Y t' W P hKY hAY hrY haxY hlo hpe hWP hspY hbxY h12Y h13Y h14Y h15Y hbpY hTab hS0 hSs hNE
     exact k Y t' W P hKY hAY hrY haxY hlo hpe hWP hspY (hbxY.trans (by vpeel)) (h12Y.trans (by vpeel))
       (h13Y.trans (by vpeel)) (h14Y.trans (by vpeel)) (h15Y.trans (by vpeel)) (hbpY.trans (by vpeel)) hTab
-      (Same.trans (fun a _ h2 => by vout) hS0) (Same.trans (fun a h1 h2 => by vout) hSs) hNE
-      (Same.trans (fun a h1 h2 => by vout) hSh)
+      (SameO.trans (fun a _ h2 => by vout) hS0) (SameO.trans (fun a h1 h2 => by vout) hSs) hNE
   · rw [hg₁₀]
     show R + (Z₂.cpu.gpr.r13 + 16#64) = _
     rw [r13₉]

@@ -110,8 +110,8 @@ variable {prof : Profile} {L : List (Addr × List Byte)} {s₀ : State} {o : Ora
   {cpy mlc sl : List Byte} {Pm Pa Pl : (Addr → Byte) → Prop}
 
 /-- What the caller gets at the `ret` (1681): `rsp` on the return address, the registers a call keeps those of the
-entry (`g`), the table at `P` (`Tab`), `ncapstr` (`*N = E`), `max_capstrlen` (`*Q`), the bytes below the image and
-above the frame as at the entry. -/
+entry (`g`), the table at `P` (`Tab`), `ncapstr` (`*N = E`), `max_capstrlen` (`*Q`), the bytes below the
+allocator's (`0x792980`) and above the frame as at the entry but for `*N`. -/
 def At0 (prof : Profile) (L : List (Addr × List Byte)) (o : Oracle) (gev : List Event)
     (gP : State → Nat → List Event → Prop) (gE : Outcome → List Event → Prop) (F : Footprint) (Wl : List Rgn)
     (s₀ : State) (V : Addr → Byte) (g : Gprs) (bp R Q N : Addr) (cnt E H s : Nat) : Prop :=
@@ -123,8 +123,8 @@ def At0 (prof : Profile) (L : List (Addr × List Byte)) (o : Oracle) (gev : List
     Y.cpu.gpr.r14 = g.r14 → Y.cpu.gpr.r15 = g.r15 → Y.cpu.gpr.rbp = g.rbp →
     Tab W P E (pt (fun _ => P + BitVec.ofNat 64 (16 * E)) (caps E (hl_ln cnt) cnt (fun _ => 0#64)) H
       (hl_ln cnt (cnt - 1))) (caps E (hl_ln cnt) cnt (fun _ => 0#64)) →
-    Same V W 0 7940480 → Same V W (bp.toNat + 8) N.toNat →
-    rdq(W, N) = BitVec.ofNat 64 E → Same V W (N.toNat + 8) (2 ^ 64) → GoG prof L o gev gP gE Y t'
+    SameO V W 0 7940480 N → SameO V W (bp.toNat + 8) (2 ^ 64) N →
+    rdq(W, N) = BitVec.ofNat 64 E → GoG prof L o gev gP gE Y t'
 
 set_option maxHeartbeats 16000000 in
 /-- `_dl_important_hwcaps (p, 0, N, Q)` from its entry (`rsp = bp + 8`) to its `ret`: `h = _dl_hwcap` 2 or 6,
@@ -137,8 +137,10 @@ theorem from0 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (hin
     {V : Addr → Byte} {h R bp Q N p : Addr} {cnt E H s : Nat}
     (hn : h = 2#64 ∧ cnt = 3 ∧ E = 8 ∧ H = 4 ∧ s = 151 ∧ R = bp + 18446744073709551376#64 ∨
       h = 6#64 ∧ cnt = 4 ∧ E = 16 ∧ H = 8 ∧ s = 320 ∧ R = bp + 18446744073709551360#64)
-    (hPm : ∀ W : Addr → Byte, (∀ a : Addr, a.toNat < 7940480 → W a = V a) → Pm W)
-    (hPa : ∀ W : Addr → Byte, (∀ a : Addr, a.toNat < R.toNat - 8 → W a = V a) → Pa W)
+    (hPm : ∀ W : Addr → Byte, (∀ a : Addr, a.toNat < 7940480 → (a.toNat < N.toNat ∨ N.toNat + 8 ≤ a.toNat) →
+      W a = V a) → Pm W)
+    (hPa : ∀ W : Addr → Byte, (∀ a : Addr, a.toNat < R.toNat - 8 → (a.toNat < N.toNat ∨ N.toNat + 8 ≤ a.toNat) →
+      W a = V a) → Pa W)
     (hPl : ∀ W : Addr → Byte, (∀ a : Addr, a.toNat < 7940480 → W a = V a) → Pl W)
     (hbl : 8388872 ≤ bp.toNat) (hbh : bp.toNat + 16 ≤ 2 ^ 64) (hal : bp &&& 15#64 = 0#64)
     (hFs : ∀ a : Addr, bp.toNat - 264 ≤ a.toNat → a.toNat < bp.toNat + 8 → Foot Wl a ∧ Foot F.data a)
@@ -150,7 +152,8 @@ theorem from0 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (hin
     (hhw : rdq(V, 8014536#64) = h) (hfh : ∀ i < 8, Foot F.data (Addr.add 8014536#64 i))
     (hsm : rdq(V, 8029424#64) = 0#64) (hfm : ∀ i < 8, Foot F.data (Addr.add 8029424#64 i))
     (hp0 : p ≠ 0#64) (hpd : p.toNat ≤ 7940480 ∨ R.toNat ≤ p.toNat)
-    (hND : bp.toNat + 8 ≤ N.toNat) (hN64 : N.toNat + 8 ≤ 2 ^ 64) (hsN : ∀ i < 8, Foot Wl (Addr.add N i))
+    (hND : N.toNat + 8 ≤ 7940480 ∨ bp.toNat + 8 ≤ N.toNat) (hN64 : N.toNat + 8 ≤ 2 ^ 64)
+    (hsN : ∀ i < 8, Foot Wl (Addr.add N i))
     (hsQ : ∀ i < 8, Foot Wl (Addr.add Q i)) (hQ64 : Q.toNat + 8 ≤ 2 ^ 64)
     (hQd : Q.toNat + 8 ≤ bp.toNat - 40 ∨ bp.toNat + 8 ≤ Q.toNat) :
     ∀ (X : State) (t₀ : Nat), KeptW Wl s₀ X → Agree F X.proc.mm.mem V → X.cpu.rip = hwc_at →
@@ -283,8 +286,8 @@ theorem from0 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (hin
     rw [Gor.probe_same] at hA₈
     refine from1778_3 c hfs hin hinc hc0 hcpy hinm hm0 hmal hins hs0 hlen (V := _)
       (R := bp + 18446744073709551376#64) (bp := bp) (Q := Q) (N := N) (p := p)
-      (fun W hW => hPm W fun a ha => (hW a ha).trans (by vout))
-      (fun W hW => hPa W fun a ha => (hW a ha).trans (by vout))
+      (fun W hW => hPm W fun a ha hn => (hW a ha hn).trans (by vout))
+      (fun W hW => hPa W fun a ha hn => (hW a ha hn).trans (by vout))
       (fun W hW => hPl W fun a ha => (hW a ha).trans (by vout))
       (by omega) (by omega) hfb (al3 hal) (fun a h1 h2 => hFs a (by omega) (by omega)) hpg
       (fun q hq => by
@@ -298,12 +301,11 @@ theorem from0 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (hin
       htls (by vpeel; vself) hp0 (by vpeel; vself) hpd (by vpeel; vself) (by omega) hN64 hsN (by vpeel; vself)
       hsQ hQ64 (by omega) ?_ Y₈ t₉ hK₈ hA₈ hr₈ (by rw [hg₈]; exact r8₇) (by rw [hg₈]; exact r12₇)
       (by rw [hg₈]; exact b₇) (by rw [hg₈]; exact s₇)
-    intro Y t' W P hKY hAY hrY haxY hlo hpe hWP hspY hbxY h12Y h13Y h14Y h15Y hbpY hTab hS0 hSs hNE hSh
+    intro Y t' W P hKY hAY hrY haxY hlo hpe hWP hspY hbxY h12Y h13Y h14Y h15Y hbpY hTab hS0 hSs hNE
     exact k Y t' W P hKY hAY hrY haxY hlo hpe hWP hspY (hbxY.trans (by vpeel; vself))
       (h12Y.trans (by vpeel; vself)) (h13Y.trans (by vpeel; vself)) (h14Y.trans (by vpeel; vself))
-      (h15Y.trans (by vpeel; vself)) (hbpY.trans (by vpeel; vself)) hTab (Same.trans (fun a _ h2 => by vout) hS0)
-      (Same.trans (fun a h1 h2 => by vout) (hSs.mono (by omega) (Nat.le_refl _))) hNE
-      (Same.trans (fun a h1 h2 => by vout) hSh)
+      (h15Y.trans (by vpeel; vself)) (hbpY.trans (by vpeel; vself)) hTab (SameO.trans (fun a _ h2 => by vout) hS0)
+      (SameO.trans (fun a h1 h2 => by vout) (hSs.mono (by omega) (Nat.le_refl _))) hNE
   · -- `h = 6`: 112 with bit 0 clear
     have e360 := f360 (bp := bp) (by omega) (by omega)
     refine (c_112 prof fb).run c hfs hin _ hK₃ hA₃ hr₃ vc_112 ?_
@@ -391,8 +393,8 @@ theorem from0 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (hin
     rw [Gor.probe_same] at hA₁₀
     refine from1778_4 c hfs hin hinc hc0 hcpy hinm hm0 hmal hins hs0 hlen (V := _)
       (R := bp + 18446744073709551360#64) (bp := bp) (Q := Q) (N := N) (p := p)
-      (fun W hW => hPm W fun a ha => (hW a ha).trans (by vout))
-      (fun W hW => hPa W fun a ha => (hW a ha).trans (by vout))
+      (fun W hW => hPm W fun a ha hn => (hW a ha hn).trans (by vout))
+      (fun W hW => hPa W fun a ha hn => (hW a ha hn).trans (by vout))
       (fun W hW => hPl W fun a ha => (hW a ha).trans (by vout))
       (by omega) (by omega) hfb (al4 hal) (fun a h1 h2 => hFs a (by omega) (by omega)) hpg
       (fun q hq => by
@@ -414,11 +416,10 @@ theorem from0 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (hin
       htls (by vpeel; vself) hp0 (by vpeel; vself) hpd (by vpeel; vself) (by omega) hN64 hsN (by vpeel; vself)
       hsQ hQ64 (by omega) ?_ Y₁₀ t₁₁ hK₁₀ hA₁₀ hr₁₀ (by rw [hg₁₀]; exact r8₉) (by rw [hg₁₀]; exact r12₉)
       (by rw [hg₁₀]; exact b₉) (by rw [hg₁₀]; exact s₉)
-    intro Y t' W P hKY hAY hrY haxY hlo hpe hWP hspY hbxY h12Y h13Y h14Y h15Y hbpY hTab hS0 hSs hNE hSh
+    intro Y t' W P hKY hAY hrY haxY hlo hpe hWP hspY hbxY h12Y h13Y h14Y h15Y hbpY hTab hS0 hSs hNE
     exact k Y t' W P hKY hAY hrY haxY hlo hpe hWP hspY (hbxY.trans (by vpeel; vself))
       (h12Y.trans (by vpeel; vself)) (h13Y.trans (by vpeel; vself)) (h14Y.trans (by vpeel; vself))
-      (h15Y.trans (by vpeel; vself)) (hbpY.trans (by vpeel; vself)) hTab (Same.trans (fun a _ h2 => by vout) hS0)
-      (Same.trans (fun a h1 h2 => by vout) (hSs.mono (by omega) (Nat.le_refl _))) hNE
-      (Same.trans (fun a h1 h2 => by vout) hSh)
+      (h15Y.trans (by vpeel; vself)) (hbpY.trans (by vpeel; vself)) hTab (SameO.trans (fun a _ h2 => by vout) hS0)
+      (SameO.trans (fun a h1 h2 => by vout) (hSs.mono (by omega) (Nat.le_refl _))) hNE
 
 end FV7z.Hwc

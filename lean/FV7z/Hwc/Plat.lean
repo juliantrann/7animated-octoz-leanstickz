@@ -47,8 +47,10 @@ theorem mid1050 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (h
     (hinc : CodeIn L 4198592#64 cpy) (hc0 : 0 < cpy.length) (hcpy : Gor.PcpyAt prof L o 4198592#64 Pm)
     (hinm : CodeIn L 6500704#64 mlc) (hm0 : 0 < mlc.length) (hmal : Mal.At prof L o 6500704#64 Pa)
     {V V₂ : Addr → Byte} {cnt E H t s : Nat} {R bp sp Q N : Addr} {ln st : Nat → Addr}
-    (hPm : ∀ W : Addr → Byte, (∀ a : Addr, a.toNat < 7940480 → W a = V a) → Pm W)
-    (hPa : ∀ W : Addr → Byte, (∀ a : Addr, a.toNat < sp.toNat - 8 → W a = V a) → Pa W)
+    (hPm : ∀ W : Addr → Byte, (∀ a : Addr, a.toNat < 7940480 → (a.toNat < N.toNat ∨ N.toNat + 8 ≤ a.toNat) →
+      W a = V a) → Pm W)
+    (hPa : ∀ W : Addr → Byte, (∀ a : Addr, a.toNat < sp.toNat - 8 → (a.toNat < N.toNat ∨ N.toNat + 8 ≤ a.toNat) →
+      W a = V a) → Pa W)
     (hn : cnt = 3 ∧ E = 8 ∧ H = 4 ∧ t = 23 ∧ s = 151 ∨ cnt = 4 ∧ E = 16 ∧ H = 8 ∧ t = 32 ∧ s = 320)
     (hlv : cnt = 3 ∧ (ln 0).toNat = 6 ∧ (ln 1).toNat = 0 ∧ (ln 2).toNat = 3 ∨
       cnt = 4 ∧ (ln 0).toNat = 6 ∧ (ln 1).toNat = 8 ∧ (ln 2).toNat = 0 ∧ (ln 3).toNat = 3)
@@ -71,7 +73,8 @@ theorem mid1050 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (h
     (hD8 : rdq(V₂, bp + 18446744073709551464#64) = BitVec.ofNat 64 (16 * cnt))
     (hL : rdq(V₂, bp + 18446744073709551536#64) = ln (cnt - 1))
     (hl : rdq(V₂, bp + 18446744073709551544#64) = ln 0)
-    (hNv : rdq(V, bp + 18446744073709551528#64) = N) (hND : (bp + 18446744073709551448#64).toNat + 176 ≤ N.toNat)
+    (hNv : rdq(V, bp + 18446744073709551528#64) = N)
+    (hND : N.toNat + 8 ≤ 7940480 ∨ (bp + 18446744073709551448#64).toNat + 176 ≤ N.toNat)
     (hN64 : N.toNat + 8 ≤ 2 ^ 64) (hsN : ∀ i < 8, Foot Wl (Addr.add N i))
     (hQ : rdq(V, bp + 18446744073709551504#64) = Q) (hsQ : ∀ i < 8, Foot Wl (Addr.add Q i))
     (hQ64 : Q.toNat + 8 ≤ 2 ^ 64)
@@ -87,8 +90,8 @@ theorem mid1050 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (h
       Y.cpu.gpr.r15 = rdq(V, bp + 18446744073709551608#64) → Y.cpu.gpr.rbp = rdq(V, bp) →
       Tab W P E (pt (fun _ => P + BitVec.ofNat 64 (16 * E)) (caps E ln cnt (fun _ => 0#64)) H (ln (cnt - 1)))
         (caps E ln cnt (fun _ => 0#64)) →
-      Same V W 0 7940480 → Same V W ((bp + 18446744073709551448#64).toNat + 104) N.toNat →
-      rdq(W, N) = BitVec.ofNat 64 E → Same V W (N.toNat + 8) (2 ^ 64) → GoG prof L o gev gP gE Y t') :
+      SameO V W 0 7940480 N → SameO V W ((bp + 18446744073709551448#64).toNat + 104) (2 ^ 64) N →
+      rdq(W, N) = BitVec.ofNat 64 E → GoG prof L o gev gP gE Y t') :
     ∀ (X : State) (t₀ : Nat), KeptW Wl s₀ X → Agree F X.proc.mm.mem V₂ → X.cpu.rip = hwc_at.add 1050 →
       X.cpu.gpr.rsi = BitVec.ofNat 64 cnt → X.cpu.gpr.rax = BitVec.ofNat 64 t →
       X.cpu.gpr.rdx = R + BitVec.ofNat 64 (16 * (cnt - 1)) → X.cpu.gpr.r12 = BitVec.ofNat 64 cnt →
@@ -107,22 +110,21 @@ theorem mid1050 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (h
       List.map V₂ (byteAddrs x n) = List.map V (byteAddrs x n) :=
     fun {x n} hx h1 h2 h3 => (hSm x.toNat (x.toNat + n) h1 h2 h3).rd (Nat.le_refl _) (Nat.le_refl _) hx
   refine from1050 c hfs hin hinc hc0 hcpy hinm hm0 hmal (V := V₂)
-    (fun W hW => hPm W fun a ha => (hW a ha).trans (hSV a (by fomega) (by fomega) (by fomega)))
-    (fun W hW => hPa W fun a ha => (hW a ha).trans (hSV a (by fomega) (by fomega) (by fomega)))
+    (fun W hW => hPm W fun a ha hn => (hW a ha hn).trans (hSV a (by fomega) (by fomega) (by fomega)))
+    (fun W hW => hPa W fun a ha hn => (hW a ha hn).trans (hSV a (by fomega) (by fomega) (by fomega)))
     hn hlv hspl hRs hRF hfb hst hFr hFT hT hsrc hs64 hsd
     (by rw [hS1 (by fomega) (by fomega) (by fomega) (by fomega)]; exact hNv) hND hN64 hsN hD8 hL hl
     (by rw [hS1 (by fomega) (by fomega) (by fomega) (by fomega)]; exact hQ) hsQ hQ64 hQd ?_
     X t₀ hK hA hrip hsi hax hdx h12 hbx hbp hsp
-  intro Y t' W P hKY hAY hrY haxY hlo hpe hWP hspY hbxY h12Y h13Y h14Y h15Y hbpY hTab hS0 _ hSh hWN hSN
+  intro Y t' W P hKY hAY hrY haxY hlo hpe hWP hspY hbxY h12Y h13Y h14Y h15Y hbpY hTab hS0 _ hSh hWN
   have hcp := caps_congr (E := E) (Tl := tlen V₂ R) (Tl' := ln) cnt (fun _ => 0#64) (fun j hj => (hT j hj).2)
   rw [hcp] at hAY hTab
   rw [hS1 (by fomega) (by fomega) (by fomega) (by fomega)] at hbxY h12Y h13Y h14Y h15Y
   rw [hS1 (by fomega) (by fomega) (by fomega) (by fomega)] at hbpY
   exact k Y t' W P hKY hAY hrY haxY hlo hpe hWP hspY hbxY h12Y h13Y h14Y h15Y hbpY hTab
-    (fun a h1 h2 => (hS0 a h1 h2).trans (hSV a (by fomega) (by fomega) (by fomega)))
-    (fun a h1 h2 => (hSh a (by fomega) h2).trans (hSV a (by fomega) (by fomega) (by fomega)))
+    (fun a h1 h2 hn => (hS0 a h1 h2 hn).trans (hSV a (by fomega) (by fomega) (by fomega)))
+    (fun a h1 h2 hn => (hSh a (by fomega) h2 hn).trans (hSV a (by fomega) (by fomega) (by fomega)))
     hWN
-    (fun a h1 h2 => (hSN a h1 h2).trans (hSV a (by fomega) (by fomega) (by fomega)))
 
 /-! ## 682 → 1050 -/
 
@@ -134,8 +136,10 @@ theorem from682 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (h
     (hinc : CodeIn L 4198592#64 cpy) (hc0 : 0 < cpy.length) (hcpy : Gor.PcpyAt prof L o 4198592#64 Pm)
     (hinm : CodeIn L 6500704#64 mlc) (hm0 : 0 < mlc.length) (hmal : Mal.At prof L o 6500704#64 Pa)
     {V : Addr → Byte} {cnt E H t s : Nat} {R bp sp Q N p S0 S1 : Addr}
-    (hPm : ∀ W : Addr → Byte, (∀ a : Addr, a.toNat < 7940480 → W a = V a) → Pm W)
-    (hPa : ∀ W : Addr → Byte, (∀ a : Addr, a.toNat < sp.toNat - 8 → W a = V a) → Pa W)
+    (hPm : ∀ W : Addr → Byte, (∀ a : Addr, a.toNat < 7940480 → (a.toNat < N.toNat ∨ N.toNat + 8 ≤ a.toNat) →
+      W a = V a) → Pm W)
+    (hPa : ∀ W : Addr → Byte, (∀ a : Addr, a.toNat < sp.toNat - 8 → (a.toNat < N.toNat ∨ N.toNat + 8 ≤ a.toNat) →
+      W a = V a) → Pa W)
     (hn : cnt = 3 ∧ E = 8 ∧ H = 4 ∧ t = 23 ∧ s = 151 ∨ cnt = 4 ∧ E = 16 ∧ H = 8 ∧ t = 32 ∧ s = 320)
     (hspl : 7940480 ≤ sp.toNat)
     (hRs : sp.toNat ≤ R.toNat) (hRF : R.toNat + 16 * cnt ≤ (bp + 18446744073709551448#64).toNat)
@@ -152,7 +156,8 @@ theorem from682 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (h
     (htls : ∀ i < 3, Foot F.data ((7366106#64).add i))
     (hp : rdq(V, bp + 18446744073709551520#64) = p) (hp0 : p ≠ 0#64)
     (hpl : rdq(V, bp + 18446744073709551512#64) = 0#64) (hpd : p.toNat ≤ 7940480 ∨ sp.toNat ≤ p.toNat)
-    (hNv : rdq(V, bp + 18446744073709551528#64) = N) (hND : (bp + 18446744073709551448#64).toNat + 176 ≤ N.toNat)
+    (hNv : rdq(V, bp + 18446744073709551528#64) = N)
+    (hND : N.toNat + 8 ≤ 7940480 ∨ (bp + 18446744073709551448#64).toNat + 176 ≤ N.toNat)
     (hN64 : N.toNat + 8 ≤ 2 ^ 64) (hsN : ∀ i < 8, Foot Wl (Addr.add N i))
     (hQ : rdq(V, bp + 18446744073709551504#64) = Q) (hsQ : ∀ i < 8, Foot Wl (Addr.add Q i))
     (hQ64 : Q.toNat + 8 ≤ 2 ^ 64)
@@ -168,8 +173,8 @@ theorem from682 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (h
       Y.cpu.gpr.r15 = rdq(V, bp + 18446744073709551608#64) → Y.cpu.gpr.rbp = rdq(V, bp) →
       Tab W P E (pt (fun _ => P + BitVec.ofNat 64 (16 * E)) (caps E (hl_ln cnt) cnt (fun _ => 0#64)) H
         (hl_ln cnt (cnt - 1))) (caps E (hl_ln cnt) cnt (fun _ => 0#64)) →
-      Same V W 0 7940480 → Same V W ((bp + 18446744073709551448#64).toNat + 104) N.toNat →
-      rdq(W, N) = BitVec.ofNat 64 E → Same V W (N.toNat + 8) (2 ^ 64) → GoG prof L o gev gP gE Y t') :
+      SameO V W 0 7940480 N → SameO V W ((bp + 18446744073709551448#64).toNat + 104) (2 ^ 64) N →
+      rdq(W, N) = BitVec.ofNat 64 E → GoG prof L o gev gP gE Y t') :
     ∀ (X : State) (t₀ : Nat), KeptW Wl s₀ X → Agree F X.proc.mm.mem V → X.cpu.rip = hwc_at.add 682 →
       X.cpu.gpr.rax = R + BitVec.ofNat 64 (16 * (cnt - 2)) → X.cpu.gpr.rcx = BitVec.ofNat 64 (cnt - 1) →
       X.cpu.gpr.r12 = BitVec.ofNat 64 cnt → X.cpu.gpr.rbx = R → X.cpu.gpr.rbp = bp → X.cpu.gpr.rsp = sp →
