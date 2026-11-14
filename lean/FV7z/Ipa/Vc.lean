@@ -1,5 +1,4 @@
-import FV7z.Ipa.Cuts
-import FV7z.Hwc.Vc
+import FV7z.Ipa.Tac
 /-!
 # `_dl_init_paths`: the pieces between its `call`s (PLAN.md G3, startup)
 
@@ -27,43 +26,6 @@ namespace FV7z.Ipa
 
 set_option maxRecDepth 100000
 set_option Elab.async false
-
-/-- The side conditions of the addresses: sums made `toNat` sums, then `omega`. -/
-macro "ipd" : tactic => `(tactic| ((try simp only [FV7z.toBytesLE_length, BitVec.toNat_add, BitVec.toNat_ofNat,
-  Nat.reducePow, Nat.reduceMod, Nat.reduceAdd, Nat.reduceMul]) <;> omega))
-
-/-- A load through the stores apart from it, down to the store it reads (or to the memory under them); the side
-conditions as goals, so that a failing one stops the `repeat` (a failing discharger of `simp`, like a `by` inside a
-`rw`, only logs its error). -/
-macro "ipeel" : tactic =>
-  `(tactic| repeat (focus (rw [FV7z.Tun.rd_Vst _ _ _ _ _ ?_ ?_ ?_]; rotate_left; iterate 3 ipd)))
-
-/-- `ipeel` for the loads at `x` only. -/
-macro "ipeelx" x:term : tactic =>
-  `(tactic| repeat (focus (rw [FV7z.Tun.rd_Vst _ _ _ $x _ ?_ ?_ ?_]; rotate_left; iterate 3 ipd)))
-
-/-- A byte outside the stores. -/
-macro "iout" : tactic =>
-  `(tactic| repeat (focus (rw [FV7z.Tun.Vst_out _ _ _ _ ?_ ?_]; rotate_left; iterate 2 ipd)))
-
-/-- The load of the 8 bytes a store stored. -/
-macro "iself" : tactic => `(tactic| (rw [FV7z.Tun.rd_Vst_self _ _ _ (FV7z.toBytesLE_length _ _) (by ipd),
-  FV7z.ofBytesLE_toBytesLE (n := 8) rfl]; try rfl))
-
-/-- The goals of a piece: the flags and the conjunctions split, each closed by a hypothesis, `rfl`, or a region. -/
-macro "icl" : tactic =>
-  `(tactic| (all_goals (repeat' (first | intro (_ : Rflags) | intro (_ : Bool) | intro (_ : _ = _) |
-    apply And.intro)); all_goals first | with_reducible assumption | with_reducible rfl | exact True.intro | skip))
-
-/-- `n` bytes from `x` inside a region. -/
-theorem rgn {p : Addr → Prop} {lo hi : Nat} (hp : ∀ a : Addr, lo ≤ a.toNat → a.toNat < hi → p a) {x : Addr}
-    {n : Nat} (h1 : lo ≤ x.toNat) (h2 : x.toNat + n ≤ hi) (h3 : x.toNat + n ≤ 2 ^ 64) : ∀ i < n, p (x.add i) :=
-  fun i hi' => by
-    have e := toNat_add_of_fits hi' h3
-    exact hp _ (by rw [e]; omega) (by rw [e]; omega)
-
-/-- A footprint goal of a region, its bounds by `ipd`. -/
-macro "ireg" h:term : tactic => `(tactic| (refine rgn $h ?_ ?_ ?_ <;> ipd))
 
 /-! ## The `call`s and the `ret`s -/
 
@@ -173,23 +135,50 @@ theorem vc_75 {g : Gprs} {f : Rflags} {V : Addr → Byte} {n q : Nat} (hq : n = 
       BitVec.reduceExtractLsb', Nat.reduceMod, Nat.reduceDiv]
     icl
 
-/-- The bytes `vc_153` stores. -/
-def M153 (V : Addr → Byte) (B A r : Addr) (q : Nat) : Addr → Byte :=
-  Vst (Vst (Vst (Vst (Vst (Vst (Vst (Vst (Vst V A (toBytesLE B 8)) 8029552#64 (toBytesLE B 8))
-    (B + 8#64) (toBytesLE 7362447#64 8)) (B + 24#64) (toBytesLE 7364064#64 8))
-    (r + 18446744073709551552#64) (toBytesLE (BitVec.ofNat 64 (40 * q)) 8))
-    7937672#64 (toBytesLE 0#32 4)) (B + 16#64) (toBytesLE 0#64 8)) (B + 32#64) (toBytesLE 22#64 8))
-    (r + 18446744073709551544#64) (toBytesLE (BitVec.ofNat 64 (2 ^ 64 - 40 * q)) 8)
+/-- From `B` in `r15` (168): `_dl_all_dirs`, the first element (`/lib/x86_64-linux-gnu/`, 22 bytes), `40 q` and
+`-40 q` to `r - 0x40`, `r - 0x48`, `n ≠ 0`: to the `memset` of its status array (267). -/
+theorem vc_168 {g : Gprs} {f : Rflags} {V : Addr → Byte} {n q : Nat} (hq : n = 8 ∧ q = 2 ∨ n = 16 ∧ q = 3)
+    (hbx : g.rbx = BitVec.ofNat 64 (5 * q))
+    (hn : rdq(V, g.rbp + 18446744073709551560#64) = BitVec.ofNat 64 n)
+    (hr : 8029560 + 88 ≤ g.rbp.toNat) (hr2 : g.rbp.toNat + 16 ≤ 2 ^ 64)
+    (hBl : 7940480 ≤ g.r15.toNat) (hBh : g.r15.toNat + 160 * q ≤ g.rbp.toNat - 88)
+    (hWB : ∀ a : Addr, g.r15.toNat ≤ a.toNat → a.toNat < g.r15.toNat + 160 * q → Foot Wl a)
+    (hWF : ∀ a : Addr, g.rbp.toNat - 80 ≤ a.toNat → a.toNat < g.rbp.toNat + 8 → Foot Wl a ∧ Foot F.data a)
+    (hW7a : ∀ a : Addr, 8029552 ≤ a.toNat → a.toNat < 8029560 → Foot Wl a)
+    (hWb : ∀ a : Addr, 7937664 ≤ a.toNat → a.toNat < 7937720 → Foot Wl a) :
+    W_168 F Wl (fun j' g' _ V' => j' = 267 ∧ g'.r15 = g.r15 ∧ g'.r14 = g.r14 + 8#64 ∧ g'.r12 = 7364032#64 ∧
+      g'.rbx = 7364087#64 ∧ g'.r13 = g.r13 ∧ g'.rbp = g.rbp ∧ g'.rsp = g.rsp ∧
+      rdq(V', g.rbp + 18446744073709551552#64) = BitVec.ofNat 64 (40 * q) ∧
+      rdq(V', g.rbp + 18446744073709551544#64) = BitVec.ofNat 64 (2 ^ 64 - 40 * q) ∧
+      (∀ a : Addr, (a.toNat < 7937664 ∨ 7937720 ≤ a.toNat ∧ a.toNat < 7940480 ∨
+        g.rbp.toNat - 80 ≤ a.toNat ∧ a.toNat < g.rbp.toNat - 72 ∨ g.rbp.toNat - 56 ≤ a.toNat) → V' a = V a)) g f V := by
+  obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
+  dsimp only at hbx hn hr hr2 hBl hBh hWB hWF ⊢
+  subst hbx
+  have hr0 : 96 ≤ rbp.toNat := by omega
+  have hWFW : ∀ a : Addr, rbp.toNat - 80 ≤ a.toNat → a.toNat < rbp.toNat + 8 → Foot Wl a :=
+    fun a h1 h2 => (hWF a h1 h2).1
+  have hWFD : ∀ a : Addr, rbp.toNat - 80 ≤ a.toNat → a.toNat < rbp.toNat + 8 → Foot F.data a :=
+    fun a h1 h2 => (hWF a h1 h2).2
+  rcases hq with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
+  all_goals
+    hwx [W_168, o5, Op.sta, Op.stia, Op.cmpmi]
+    ipeelx (rbp + 18446744073709551560#64)
+    hwx [hn]
+    icl
+  all_goals first
+    | (ireg hWB) | (ireg hWFW) | (ireg hWFD) | (ireg hW7a) | (ireg hWb)
+    | (ipeel; iself)
+    | (intro a ha; iout)
+    | skip
 
-/-- After `malloc (160 q)` (`B ≠ 0`): `B` to `A[0]` and `_dl_all_dirs`, the first element (`/lib/x86_64-linux-gnu/`,
-22 bytes), `40 q` and `-40 q` to `r - 0x40`, `r - 0x48`, `n ≠ 0`: to the `memset` of its status array (267). -/
+/-- After `malloc (160 q)` (`B ≠ 0`): `B` to `A[0]`, then `vc_168`. -/
 theorem vc_153 {g : Gprs} {f : Rflags} {V : Addr → Byte} {n q : Nat} (hq : n = 8 ∧ q = 2 ∨ n = 16 ∧ q = 3)
     (hB : g.rax ≠ 0#64) (hbx : g.rbx = BitVec.ofNat 64 (5 * q))
     (hn : rdq(V, g.rbp + 18446744073709551560#64) = BitVec.ofNat 64 n)
-    (hr : 7940480 + 88 ≤ g.rbp.toNat) (hr2 : g.rbp.toNat + 16 ≤ 2 ^ 64)
+    (hr : 8029560 + 88 ≤ g.rbp.toNat) (hr2 : g.rbp.toNat + 16 ≤ 2 ^ 64)
     (hBl : 7940480 ≤ g.rax.toNat) (hBh : g.rax.toNat + 160 * q ≤ g.rbp.toNat - 88)
     (hAl : 7940480 ≤ g.r14.toNat) (hAh : g.r14.toNat + 40 ≤ g.rbp.toNat - 88)
-    (h7a : 8029560 ≤ g.rbp.toNat - 88)
     (hWA : ∀ a : Addr, g.r14.toNat ≤ a.toNat → a.toNat < g.r14.toNat + 40 → Foot Wl a)
     (hWB : ∀ a : Addr, g.rax.toNat ≤ a.toNat → a.toNat < g.rax.toNat + 160 * q → Foot Wl a)
     (hWF : ∀ a : Addr, g.rbp.toNat - 80 ≤ a.toNat → a.toNat < g.rbp.toNat + 8 → Foot Wl a ∧ Foot F.data a)
@@ -202,24 +191,18 @@ theorem vc_153 {g : Gprs} {f : Rflags} {V : Addr → Byte} {n q : Nat} (hq : n =
       (∀ a : Addr, (a.toNat < 7937664 ∨ 7937720 ≤ a.toNat ∧ a.toNat < 7940480 ∨
         g.rbp.toNat - 80 ≤ a.toNat ∧ a.toNat < g.rbp.toNat - 72 ∨ g.rbp.toNat - 56 ≤ a.toNat) → V' a = V a)) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
-  dsimp only at hB hbx hn hr hr2 hBl hBh hAl hAh h7a hWA hWB hWF ⊢
-  subst hbx
+  dsimp only at hB hbx hn hr hr2 hBl hBh hAl hAh hWA hWB hWF ⊢
+  have hr0 : 96 ≤ rbp.toNat := by omega
   have hB' : (rax == 0#64) = false := beq_eq_false_iff_ne.2 hB
-  have hWFW : ∀ a : Addr, rbp.toNat - 80 ≤ a.toNat → a.toNat < rbp.toNat + 8 → Foot Wl a :=
-    fun a h1 h2 => (hWF a h1 h2).1
-  have hWFD : ∀ a : Addr, rbp.toNat - 80 ≤ a.toNat → a.toNat < rbp.toNat + 8 → Foot F.data a :=
-    fun a h1 h2 => (hWF a h1 h2).2
-  rcases hq with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
-  all_goals
-    hwx [W_153, W_168, o4, o5, Op.sta, Op.stia, Op.cmpmi, hB']
-    ipeelx (rbp + 18446744073709551560#64)
-    hwx [hn]
-    icl
-  all_goals first
-    | (ireg hWA) | (ireg hWB) | (ireg hWFW) | (ireg hWFD) | (ireg hW7a) | (ireg hWb)
-    | (ipeel; iself)
-    | (intro a ha; iout)
-    | skip
+  have hn' : rdq(Vst V r14 (toBytesLE rax 8), rbp + 18446744073709551560#64) = BitVec.ofNat 64 n := by
+    rw [Tun.rd_Vst _ _ _ _ _ (by ifd) (by ifd) (by ifd)]; exact hn
+  hwx [W_153, o4, hB']
+  refine ⟨by ireg hWA, ?_⟩
+  unfold W_168
+  refine wp_mono o5 (fun g' f' V' h => ⟨fun hc => absurd (h.1 hc).1 (by decide), fun hc => ?_⟩)
+    (vc_168 (V := Vst V r14 (toBytesLE rax 8)) hq hbx hn' hr hr2 hBl hBh hWB hWF hW7a hWb)
+  obtain ⟨-, h15, h14, h12, hbx', h13, hbp, hsp, h64, h72, hk⟩ := h.2 hc
+  exact ⟨rfl, h15, h14, h12, hbx', h13, hbp, hsp, h64, h72, fun a ha => (hk a ha).trans (by iout)⟩
 
 /-- The arguments of `memset (r15 + 0x28, 0, r13)`. -/
 theorem vc_267 {g : Gprs} {f : Rflags} {V : Addr → Byte} :
@@ -283,6 +266,7 @@ theorem vc_293 {g : Gprs} {f : Rflags} {V : Addr → Byte} {i n q : Nat} (hq : n
       (∀ a : Addr, (a.toNat < 7940480 ∨ g.rbp.toNat - 88 ≤ a.toNat) → V' a = V a)) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at hr12 hbx h72 h64 h56 hr hr2 hBl hBh hAl hAh hWA hWB hFD ⊢
+  have hr0 : 96 ≤ rbp.toNat := by omega
   have e12 : r12 + 8#64 = BitVec.ofNat 64 (7364040 + 8 * i) := by
     rw [hr12]; apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.reducePow]; omega
@@ -303,8 +287,8 @@ theorem vc_293 {g : Gprs} {f : Rflags} {V : Addr → Byte} {i n q : Nat} (hq : n
     | ((rw [hbx]; obtain rfl | rfl | rfl : i = 0 ∨ i = 1 ∨ i = 2 := by omega) <;> rfl)
     | skip
 
-/-- The ends of the lists (`r15` the last element, `r14` the last slot of `A`), `llp` null (`r - 0x50`):
-`_dl_init_paths` returns (450), the registers the prologue pushed popped. -/
+/-- The ends of the lists (`r15` the last element, `r14` the last slot of `A`), `llp` null (`r - 0x50`): to the
+epilogue (425). -/
 theorem vc_384 {g : Gprs} {f : Rflags} {V : Addr → Byte}
     (hllp : rdq(V, g.rbp + 18446744073709551536#64) = 0#64)
     (hr : 7940480 + 88 ≤ g.rbp.toNat) (hr2 : g.rbp.toNat + 16 ≤ 2 ^ 64)
@@ -313,21 +297,38 @@ theorem vc_384 {g : Gprs} {f : Rflags} {V : Addr → Byte}
     (hWA : ∀ a : Addr, g.r14.toNat ≤ a.toNat → a.toNat < g.r14.toNat + 8 → Foot Wl a)
     (hWB : ∀ a : Addr, g.r15.toNat ≤ a.toNat → a.toNat < g.r15.toNat + 8 → Foot Wl a)
     (hW7a : ∀ a : Addr, 8014920 ≤ a.toNat → a.toNat < 8014928 → Foot Wl a)
+    (hFD : ∀ a : Addr, g.rbp.toNat - 80 ≤ a.toNat → a.toNat < g.rbp.toNat → Foot F.data a) :
+    W_384 F Wl (fun j' g' _ V' => j' = 425 ∧ g' = g ∧
+      (∀ a : Addr, (a.toNat < 7940480 ∨ g.rbp.toNat - 88 ≤ a.toNat) → V' a = V a)) g f V := by
+  obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
+  dsimp only at hllp hr hr2 hBl hBh hAl hAh h7a hWA hWB hFD ⊢
+  have hr0 : 96 ≤ rbp.toNat := by omega
+  hwx [W_384, o11, Op.cmpmi, Op.stia, hllp]
+  icl
+  all_goals first
+    | (ireg hWA) | (ireg hWB) | (ireg hW7a) | (ireg hFD)
+    | (intro a ha; iout)
+    | skip
+
+/-- The epilogue: `-1` to `__rtld_env_path_list.dirs` (`0x791eb0`), the registers the prologue pushed popped, to the
+`ret` (450). -/
+theorem vc_425 {g : Gprs} {f : Rflags} {V : Addr → Byte}
+    (hr : 96 ≤ g.rbp.toNat) (hr2 : g.rbp.toNat + 16 ≤ 2 ^ 64)
     (hWb : ∀ a : Addr, 7937712 ≤ a.toNat → a.toNat < 7937720 → Foot Wl a)
-    (hFD : ∀ a : Addr, g.rbp.toNat - 80 ≤ a.toNat → a.toNat < g.rbp.toNat + 8 → Foot F.data a) :
-    W_384 F Wl (fun j' g' _ V' => j' = 450 ∧ g'.rsp = g.rbp + 8#64 ∧
+    (hFD : ∀ a : Addr, g.rbp.toNat - 40 ≤ a.toNat → a.toNat < g.rbp.toNat + 8 → Foot F.data a) :
+    W_425 F Wl (fun j' g' _ V' => j' = 450 ∧ g'.rsp = g.rbp + 8#64 ∧
       g'.rbx = rdq(V, g.rbp + 18446744073709551576#64) ∧ g'.r12 = rdq(V, g.rbp + 18446744073709551584#64) ∧
       g'.r13 = rdq(V, g.rbp + 18446744073709551592#64) ∧ g'.r14 = rdq(V, g.rbp + 18446744073709551600#64) ∧
       g'.r15 = rdq(V, g.rbp + 18446744073709551608#64) ∧ g'.rbp = rdq(V, g.rbp) ∧
-      (∀ a : Addr, (a.toNat < 7937712 ∨ 7937720 ≤ a.toNat ∧ a.toNat < 7940480 ∨ g.rbp.toNat - 88 ≤ a.toNat) →
-        V' a = V a)) g f V := by
+      (∀ a : Addr, (a.toNat < 7937712 ∨ 7937720 ≤ a.toNat) → V' a = V a)) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
-  dsimp only at hllp hr hr2 hBl hBh hAl hAh hWA hWB hFD ⊢
-  hwx [W_384, W_416, W_425, o11, o12, o13, Op.cmpmi, Op.stia, hllp]
+  dsimp only at hr hr2 hFD ⊢
+  have hr0 : 96 ≤ rbp.toNat := hr
+  hwx [W_425, o13, Op.stia, BitVec.add_zero]
   ipeel
   icl
   all_goals first
-    | (ireg hWA) | (ireg hWB) | (ireg hW7a) | (ireg hWb) | (ireg hFD)
+    | (ireg hWb) | (ireg hFD)
     | (intro a ha; iout)
     | skip
 

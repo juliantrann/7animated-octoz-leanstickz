@@ -106,6 +106,7 @@ theorem step (c : Seg prof F Wl L s₀ o) (hin : CodeIn L ipa_at ipa)
     fun x h1 h2 => (hFs x h1 h2).1
   have hFD : ∀ x : Addr, r.toNat - 88 ≤ x.toNat → x.toNat < r.toNat + 8 → Foot F.data x :=
     fun x h1 h2 => (hFs x h1 h2).2
+  have hr0 : 96 ≤ r.toNat := by omega
   have hnq : 40 + 4 * n ≤ 40 * q := by omega
   have hn16 : n ≤ 16 := by omega
   -- 267: the arguments of `memset`
@@ -123,8 +124,8 @@ theorem step (c : Seg prof F Wl L s₀ o) (hin : CodeIn L ipa_at ipa)
     rw [hg₂, set4_rdi, hg₁]; show X.cpu.gpr.r15 + 40#64 = _; rw [h15]
   have dx₂ : Y₂.cpu.gpr.rdx = BitVec.ofNat 64 (4 * n) := by rw [hg₂, set4_rdx, hg₁]; exact h13
   refine hset c hK₂ hA₂ hr₂ (hPs _ fun x hx => ?_) hin (lt_len (j := 281) (by omega)) ?_ ?_ ?_ ?_ ?_ ?_
-  · rw [Tun.Vst_out _ _ _ _ (by ipd) (by ipd)]; exact hkp x (Or.inl hx)
-  · rw [s₂, Tun.rd_Vst_self _ _ _ (toBytesLE_length _ _) (by ipd), ofBytesLE_toBytesLE (n := 8) rfl]
+  · rw [Tun.Vst_out _ _ _ _ (by ifd) (by ifd)]; exact hkp x (Or.inl hx)
+  · rw [s₂, Tun.rd_Vst_self _ _ _ (toBytesLE_length _ _) (by ifd), ofBytesLE_toBytesLE (n := 8) rfl]
     try rfl
   · rw [s₂]; ireg hFD
   · rw [di₂, dx₂]; ireg hWB
@@ -140,7 +141,7 @@ theorem step (c : Seg prof F Wl L s₀ o) (hin : CodeIn L ipa_at ipa)
   have rbxZ : Z.cpu.gpr.rbx = BitVec.ofNat 64 (sA i) := by rw [hbx₃, hg₂, set4_rbx, hg₁]; exact hbx
   have hk₂ : ∀ x, Kp r x → V₂ x = V₁ x := fun x hx => by
     have hx' : x.toNat < 7940480 ∨ r.toNat - 80 ≤ x.toNat := hx
-    rw [hout₃ x (by rw [di₂, dx₂]; ipd), Tun.Vst_out _ _ _ _ (by ipd) (by ipd)]
+    rw [hout₃ x (by rw [di₂, dx₂]; ifd), Tun.Vst_out _ _ _ _ (by ifd) (by ifd)]
     exact hkp x hx
   -- 281: the last directory or not
   refine (c_281 prof).run c hin _ hK₃ hA₃ hr₃ (vc_281 hi r12Z) ?_
@@ -153,31 +154,39 @@ theorem step (c : Seg prof F Wl L s₀ o) (hin : CodeIn L ipa_at ipa)
   have r15₄ : Y₄.cpu.gpr.r15 = b := by rw [hg₄]; exact r15Z
   have rbx₄ : Y₄.cpu.gpr.rbx = BitVec.ofNat 64 (sA i) := by rw [hg₄]; exact rbxZ
   by_cases h3 : i = 3
-  · -- 384: the ends of the lists, the epilogue
+  · -- 384: the ends of the lists; 425: the epilogue
     rw [if_pos h3] at hr₄
     refine (c_384 prof).run c hin _ hK₄ hA₄ hr₄
-      (vc_384 (by rw [bp₄, kfr hk₂ (by ipd) (by ipd)]; exact h80) (by rw [bp₄]; omega) (by rw [bp₄]; omega)
+      (vc_384 (by rw [bp₄, kfr hk₂ (by ifd) (by ifd)]; exact h80) (by rw [bp₄]; omega) (by rw [bp₄]; omega)
         (by rw [r15₄]; exact hb1) (by rw [r15₄, bp₄]; omega) (by rw [r14₄]; exact ha1) (by rw [r14₄, bp₄]; omega)
         (by rw [bp₄]; omega) (by rw [r14₄]; exact hWA)
-        (by rw [r15₄]; exact fun x h1 h2 => hWB x h1 (by omega)) hW7a hWb
-        (by rw [bp₄]; exact fun x h1 h2 => hFD x (by omega) h2)) ?_
-    rintro j' g' fl V' ⟨rfl, hsp', hbx', h12', h13', h14', h15', hbp', hkeep⟩ Y₅ t₅ hK₅ hA₅ hr₅ hg₅ -
-    refine kfin h3 Y₅ t₅ V' hK₅ hA₅ hr₅ (by rw [hg₅, hsp', bp₄])
-      (by rw [hg₅, hbx', bp₄, kfr hk₂ (by ipd) (by ipd)]) (by rw [hg₅, h12', bp₄, kfr hk₂ (by ipd) (by ipd)])
-      (by rw [hg₅, h13', bp₄, kfr hk₂ (by ipd) (by ipd)]) (by rw [hg₅, h14', bp₄, kfr hk₂ (by ipd) (by ipd)])
-      (by rw [hg₅, h15', bp₄, kfr hk₂ (by ipd) (by ipd)]) (by rw [hg₅, hbp', bp₄, kfr hk₂ (by omega) (by omega)])
+        (by rw [r15₄]; exact fun x h1 h2 => hWB x h1 (by omega)) hW7a
+        (by rw [bp₄]; exact fun x h1 h2 => hFD x (by omega) (by omega))) ?_
+    rintro j' g' fl V' ⟨rfl, rfl, hkeep⟩ Y₅ t₅ hK₅ hA₅ hr₅ hg₅ -
+    have hk₅ : ∀ x, Kp r x → V' x = V₁ x := fun x hx => by
+      have hx' : x.toNat < 7940480 ∨ r.toNat - 80 ≤ x.toNat := hx
+      rw [hkeep x (by rw [bp₄]; omega)]; exact hk₂ x hx
+    have bp₅ : Y₅.cpu.gpr.rbp = r := by rw [hg₅]; exact bp₄
+    refine (c_425 prof).run c hin _ hK₅ hA₅ hr₅
+      (vc_425 (by rw [bp₅]; omega) (by rw [bp₅]; omega) hWb
+        (by rw [bp₅]; exact fun x h1 h2 => hFD x (by omega) h2)) ?_
+    rintro j' g' fl V'' ⟨rfl, hsp', hbx', h12', h13', h14', h15', hbp', hkeep'⟩ Y₆ t₆ hK₆ hA₆ hr₆ hg₆ -
+    refine kfin h3 Y₆ t₆ V'' hK₆ hA₆ hr₆ (by rw [hg₆, hsp', bp₅])
+      (by rw [hg₆, hbx', bp₅, kfr hk₅ (by ifd) (by ifd)]) (by rw [hg₆, h12', bp₅, kfr hk₅ (by ifd) (by ifd)])
+      (by rw [hg₆, h13', bp₅, kfr hk₅ (by ifd) (by ifd)]) (by rw [hg₆, h14', bp₅, kfr hk₅ (by ifd) (by ifd)])
+      (by rw [hg₆, h15', bp₅, kfr hk₅ (by ifd) (by ifd)]) (by rw [hg₆, hbp', bp₅, kfr hk₅ (by omega) (by omega)])
       fun x hx => ?_
-    rw [hkeep x (by rw [bp₄]; omega)]
-    exact hk₂ x (show x.toNat < 7940480 ∨ r.toNat - 80 ≤ x.toNat by omega)
+    rw [hkeep' x (by omega)]
+    exact hk₅ x (show x.toNat < 7940480 ∨ r.toNat - 80 ≤ x.toNat by omega)
   · -- 293: the next element
     rw [if_neg h3] at hr₄
     have hi3 : i < 3 := by omega
     have hbn' := hbn hi3
     refine (c_293 prof).run c hin _ hK₄ hA₄ hr₄
-      (vc_293 hq hi3 r12₄ rbx₄ (by rw [bp₄, kfr hk₂ (by ipd) (by ipd)]; exact h72)
-        (by rw [bp₄, kfr hk₂ (by ipd) (by ipd)]; exact h64) (by rw [bp₄, kfr hk₂ (by ipd) (by ipd)]; exact h56)
-        (by rw [klo (x := BitVec.ofNat 64 (7364040 + 8 * i)) (n := 8) hk₂ (by ipd)]; exact hlen i hi3)
-        (by rw [klo (x := BitVec.ofNat 64 (sA i)) (n := 1) hk₂ (by have := sA_le i; ipd)]; exact hsl i hi3)
+      (vc_293 hq hi3 r12₄ rbx₄ (by rw [bp₄, kfr hk₂ (by ifd) (by ifd)]; exact h72)
+        (by rw [bp₄, kfr hk₂ (by ifd) (by ifd)]; exact h64) (by rw [bp₄, kfr hk₂ (by ifd) (by ifd)]; exact h56)
+        (by rw [klo (x := BitVec.ofNat 64 (7364040 + 8 * i)) (n := 8) hk₂ (by ifd)]; exact hlen i hi3)
+        (by rw [klo (x := BitVec.ofNat 64 (sA i)) (n := 1) hk₂ (by have := sA_le i; ifd)]; exact hsl i hi3)
         (by rw [bp₄]; omega) (by rw [bp₄]; omega) (by rw [r15₄]; exact hb1) (by rw [r15₄, bp₄]; omega)
         (by rw [r14₄]; exact ha1) (by rw [r14₄, bp₄]; omega) (by rw [r14₄]; exact hWA)
         (by rw [r15₄]; exact fun x h1 h2 => hWB x h1 (by omega))
@@ -220,6 +229,7 @@ theorem loop (c : Seg prof F Wl L s₀ o) (hin : CodeIn L ipa_at ipa)
       X.cpu.gpr.r12 = BitVec.ofNat 64 (7364032 + 8 * i) → X.cpu.gpr.rbx = BitVec.ofNat 64 (sA i) →
       X.cpu.gpr.r13 = BitVec.ofNat 64 (4 * n) → (∀ x, Kp r x → V x = V₁ x) → GoG prof L o gev gP gE X t := by
   have hq0 := hq
+  have hr0 : 96 ≤ r.toNat := by omega
   suffices H : ∀ d i, i + d = 3 → ∀ (X : State) (t : Nat) (V : Addr → Byte) (b a : Addr), KeptW Wl s₀ X →
       Agree F X.proc.mm.mem V → X.cpu.rip = ipa_at.add 267 → X.cpu.gpr.rsp = r + 18446744073709551536#64 →
       X.cpu.gpr.rbp = r → X.cpu.gpr.r15 = b → b.toNat = B.toNat + 40 * q * i → X.cpu.gpr.r14 = a →
@@ -244,7 +254,7 @@ theorem loop (c : Seg prof F Wl L s₀ o) (hin : CodeIn L ipa_at ipa)
         (fun x h1 h2 => hWB x (by omega) h2) (by omega) (by omega) (fun x h1 h2 => hWA x (by omega) (by omega))
         X t V hK hA hrip hsp hbp h15 h14 h12 hbx h13 hkp
         (fun _ Y t' V' hK' hA' hr' hs' hb' h15' h14' h12' hbx' h13' hk' =>
-          ih (i + 1) (by omega) Y t' V' _ _ hK' hA' hr' hs' hb' h15' (by ipd) h14' (by ipd) h12' hbx' h13' hk')
+          ih (i + 1) (by omega) Y t' V' _ _ hK' hA' hr' hs' hb' h15' (by ifd) h14' (by ifd) h12' hbx' h13' hk')
         (fun h => absurd h (by omega))
 
 end FV7z.Ipa
