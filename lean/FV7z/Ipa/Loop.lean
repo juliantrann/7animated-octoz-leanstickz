@@ -241,7 +241,7 @@ theorem step (c : Seg prof F Wl L s₀ o) (hin : CodeIn L ipa_at ipa)
   by_cases h3 : i = 3
   · rw [if_pos h3] at hr₄
     exact fin3 c hin hr hr2 hFD hWb h80 hb1 (by omega) (fun x h1 h2 => hWB x h1 (by omega)) ha1 ha2 hWA hk₂
-      (kfin h3) Y₄ t₄ hK₄ hA₄ hr₄ bp₄ r14₄ r15₄
+      (kfin h3) Y₄ t₄ hK₄ hA₄ hr₄ bp₄ r14₄ r15₄ hW7a
   · rw [if_neg h3] at hr₄
     have hi3 : i < 3 := by omega
     exact nxt c hin hq hi3 hr hr2 hFD hFR h72 h64 h56 hlen hsl hb1 (by have := hbn hi3; omega)
