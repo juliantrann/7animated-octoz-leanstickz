@@ -49,7 +49,8 @@ variable {prof : Profile} {F : Footprint} {Wl : List Rgn} {L : List (Addr × Lis
 `temp`. -/
 def At1681 (prof : Profile) (L : List (Addr × List Byte)) (o : Oracle) (gev : List Event)
     (gP : State → Nat → List Event → Prop) (gE : Outcome → List Event → Prop) (F : Footprint) (Wl : List Rgn)
-    (s₀ : State) (V : Addr → Byte) (bp R Q N : Addr) (cnt E H s : Nat) : Prop :=
+    (s₀ : State) (V : Addr → Byte) (bp R Q N : Addr) (cnt E H s : Nat)
+    (Pa : (Addr → Byte) → Prop) : Prop :=
   ∀ Y t' (W : Addr → Byte) (P : Addr), KeptW Wl s₀ Y →
     Agree F Y.proc.mm.mem (Vst W Q (toBytesLE (caps E (hl_ln cnt) cnt (fun _ => 0#64) 0) 8)) →
     Y.cpu.rip = hwc_at.add 1681 → Y.cpu.gpr.rax = P → 7940480 ≤ P.toNat → P.toNat + s ≤ R.toNat - 8 →
@@ -98,7 +99,7 @@ theorem from1778_3 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb)
     (hQ64 : Q.toNat + 8 ≤ 2 ^ 64)
     (hQd : Q.toNat + 8 ≤ (bp + 18446744073709551448#64).toNat + 128 ∨
       (bp + 18446744073709551448#64).toNat + 176 ≤ Q.toNat)
-    (k : At1681 prof L o gev gP gE F Wl s₀ V bp R Q N 3 8 4 151) :
+    (k : At1681 prof L o gev gP gE F Wl s₀ V bp R Q N 3 8 4 151 Pa) :
     ∀ (X : State) (t₀ : Nat), KeptW Wl s₀ X → Agree F X.proc.mm.mem V → X.cpu.rip = hwc_at.add 1778 →
       X.cpu.gpr.r8 = 2#64 → X.cpu.gpr.r12 = BitVec.ofNat 64 3 → X.cpu.gpr.rbp = bp → X.cpu.gpr.rsp = R →
       GoG prof L o gev gP gE X t₀ := by
@@ -268,7 +269,7 @@ theorem from1778_4 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb)
     (hQ64 : Q.toNat + 8 ≤ 2 ^ 64)
     (hQd : Q.toNat + 8 ≤ (bp + 18446744073709551448#64).toNat + 128 ∨
       (bp + 18446744073709551448#64).toNat + 176 ≤ Q.toNat)
-    (k : At1681 prof L o gev gP gE F Wl s₀ V bp R Q N 4 16 8 320) :
+    (k : At1681 prof L o gev gP gE F Wl s₀ V bp R Q N 4 16 8 320 Pa) :
     ∀ (X : State) (t₀ : Nat), KeptW Wl s₀ X → Agree F X.proc.mm.mem V → X.cpu.rip = hwc_at.add 1778 →
       X.cpu.gpr.r8 = 6#64 → X.cpu.gpr.r12 = BitVec.ofNat 64 4 → X.cpu.gpr.rbp = bp → X.cpu.gpr.rsp = R →
       GoG prof L o gev gP gE X t₀ := by

@@ -26,13 +26,21 @@ open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn
 namespace FV7z.Ipa
 
 set_option maxRecDepth 100000
+set_option Elab.async false
 
 /-- The side conditions of the addresses: sums made `toNat` sums, then `omega`. -/
 macro "ipd" : tactic => `(tactic| ((try simp only [FV7z.toBytesLE_length, BitVec.toNat_add, BitVec.toNat_ofNat,
   Nat.reducePow, Nat.reduceMod, Nat.reduceAdd, Nat.reduceMul]) <;> omega))
 
-/-- A load through the stores apart from it. -/
-macro "ipeel" : tactic => `(tactic| (simp (disch := ipd) only [FV7z.Tun.rd_Vst]))
+/-- A load through the stores apart from it, down to the store it reads (or to the memory under them); the side
+conditions as goals, so that a failing one stops the `repeat` (a failing discharger of `simp`, like a `by` inside a
+`rw`, only logs its error). -/
+macro "ipeel" : tactic =>
+  `(tactic| repeat (focus (rw [FV7z.Tun.rd_Vst _ _ _ _ _ ?_ ?_ ?_]; rotate_left; iterate 3 ipd)))
+
+/-- `ipeel` for the loads at `x` only. -/
+macro "ipeelx" x:term : tactic =>
+  `(tactic| repeat (focus (rw [FV7z.Tun.rd_Vst _ _ _ $x _ ?_ ?_ ?_]; rotate_left; iterate 3 ipd)))
 
 /-- A byte outside the stores. -/
 macro "iout" : tactic =>
@@ -161,7 +169,7 @@ theorem vc_75 {g : Gprs} {f : Rflags} {V : Addr → Byte} {n q : Nat} (hq : n = 
     exact hn
   rcases hq with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
   all_goals
-    hwx [W_75, W_91, o2, o3, Op.sta, Op.lda, Op.mul64, mulp, Op.shr64, Op.shl64, hA', hn',
+    hwx [W_75, W_91, o2, o3, Op.sta, Op.lda, Op.mul64, Op.mulp, Op.shr64, Op.shl64, hA', hn',
       BitVec.reduceExtractLsb', Nat.reduceMod, Nat.reduceDiv]
     icl
 
@@ -204,7 +212,7 @@ theorem vc_153 {g : Gprs} {f : Rflags} {V : Addr → Byte} {n q : Nat} (hq : n =
   rcases hq with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
   all_goals
     hwx [W_153, W_168, o4, o5, Op.sta, Op.stia, Op.cmpmi, hB']
-    ipeel
+    ipeelx (rbp + 18446744073709551560#64)
     hwx [hn]
     icl
   all_goals first
@@ -247,6 +255,12 @@ def lA : Nat → Nat
   | 1 => 5
   | _ => 9
 
+theorem sA_le (i : Nat) : sA i ≤ 7364130 := by
+  unfold sA; split <;> omega
+
+theorem sA_ge (i : Nat) : 7364087 ≤ sA i := by
+  unfold sA; split <;> omega
+
 /-- From the `memset` of element `i < 3` (at `r15`) to that of element `i + 1` (at `r15 + 40 q`): the pointers to it
 (`A[i + 1]`, the `next` of element `i`), its name (`sA i`, starting with `/`) and length, back to 267. -/
 theorem vc_293 {g : Gprs} {f : Rflags} {V : Addr → Byte} {i n q : Nat} (hq : n = 8 ∧ q = 2 ∨ n = 16 ∧ q = 3)
@@ -269,20 +283,24 @@ theorem vc_293 {g : Gprs} {f : Rflags} {V : Addr → Byte} {i n q : Nat} (hq : n
       (∀ a : Addr, (a.toNat < 7940480 ∨ g.rbp.toNat - 88 ≤ a.toNat) → V' a = V a)) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at hr12 hbx h72 h64 h56 hr hr2 hBl hBh hAl hAh hWA hWB hFD ⊢
-  subst hr12 hbx
-  obtain rfl | rfl | rfl : i = 0 ∨ i = 1 ∨ i = 2 := by omega
+  have e12 : r12 + 8#64 = BitVec.ofNat 64 (7364040 + 8 * i) := by
+    rw [hr12]; apply BitVec.eq_of_toNat_eq
+    simp only [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.reducePow]; omega
+  have hs1 := sA_ge i
+  have hs2 := sA_le i
+  have hbxn : rbx.toNat = sA i := by rw [hbx]; simp only [BitVec.toNat_ofNat, Nat.reducePow]; omega
+  rw [← hbx] at hsl
+  rcases hq with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
   all_goals
-    simp only [sA, lA, Nat.reduceMul, Nat.reduceAdd] at hlen hsl ⊢
-    rcases hq with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
-    all_goals
-      simp only [Nat.reduceMul, Nat.reduceAdd, Nat.reduceSub, Nat.reducePow] at h72 h64 h56 hBh hWB ⊢
-      hwx [W_293, W_362, o8, o9, Op.cmpmi, h72, h64]
-      ipeel
-      hwx [hlen, hsl, h56]
-      icl
+    simp only [Nat.reduceMul, Nat.reduceSub, Nat.reducePow] at h72 h64 h56 hBh hWB ⊢
+    hwx [W_293, W_362, o8, o9, Op.cmpmi, BitVec.add_zero, h72, h64, e12]
+    ipeel
+    hwx [hlen, hsl, h56]
+    icl
   all_goals first
     | (ireg hWA) | (ireg hWB) | (ireg hFD) | (ireg hFR)
     | (intro a ha; iout)
+    | ((rw [hbx]; obtain rfl | rfl | rfl : i = 0 ∨ i = 1 ∨ i = 2 := by omega) <;> rfl)
     | skip
 
 /-- The ends of the lists (`r15` the last element, `r14` the last slot of `A`), `llp` null (`r - 0x50`):

@@ -114,7 +114,8 @@ entry (`g`), the table at `P` (`Tab`), `ncapstr` (`*N = E`), `max_capstrlen` (`*
 allocator's (`0x792980`) and above the frame as at the entry but for `*N`. -/
 def At0 (prof : Profile) (L : List (Addr × List Byte)) (o : Oracle) (gev : List Event)
     (gP : State → Nat → List Event → Prop) (gE : Outcome → List Event → Prop) (F : Footprint) (Wl : List Rgn)
-    (s₀ : State) (V : Addr → Byte) (g : Gprs) (bp R Q N : Addr) (cnt E H s : Nat) : Prop :=
+    (s₀ : State) (V : Addr → Byte) (g : Gprs) (bp R Q N : Addr) (cnt E H s : Nat)
+    (Pa : (Addr → Byte) → Prop) : Prop :=
   ∀ Y t' (W : Addr → Byte) (P : Addr), KeptW Wl s₀ Y →
     Agree F Y.proc.mm.mem (Vst W Q (toBytesLE (caps E (hl_ln cnt) cnt (fun _ => 0#64) 0) 8)) →
     Y.cpu.rip = hwc_at.add 1681 → Y.cpu.gpr.rax = P → 7940480 ≤ P.toNat → P.toNat + s ≤ R.toNat - 8 →
@@ -161,7 +162,7 @@ theorem from0 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (hin
     (hQd : Q.toNat + 8 ≤ bp.toNat - 40 ∨ bp.toNat + 8 ≤ Q.toNat) :
     ∀ (X : State) (t₀ : Nat), KeptW Wl s₀ X → Agree F X.proc.mm.mem V → X.cpu.rip = hwc_at →
       X.cpu.gpr.rsp = bp + 8#64 → X.cpu.gpr.rdi = p → X.cpu.gpr.rsi = 0#64 → X.cpu.gpr.rdx = N →
-      X.cpu.gpr.rcx = Q → At0 prof L o gev gP gE F Wl s₀ V X.cpu.gpr bp R Q N cnt E H s →
+      X.cpu.gpr.rcx = Q → At0 prof L o gev gP gE F Wl s₀ V X.cpu.gpr bp R Q N cnt E H s Pa →
       GoG prof L o gev gP gE X t₀ := by
   intro X t₀ hK hA hrip hsp hdi hsi hdx hcx k
   have eF := fbb (bp := bp) (by omega) (by omega)
