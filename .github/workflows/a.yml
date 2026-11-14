@@ -1,5 +1,7 @@
 # Runs on a push to a branch wip/** (never on main). j0 builds lean/wip-targets and runs lean/wip-run; p0, p1, ...
-# each check one file of lean/probe/ (sorted by name) on the cache j0 saved. A newer push cancels the run before it.
+# each check one file of lean/probe/ (sorted by name) on the cache j0 saved; s0, s1, ... each build one module of
+# lean/split-targets on its own runner (on j0's cache; for modules too big to share a runner's 16 GB), and then
+# `join` builds lean/join-targets on j0's cache and the split modules' outputs. A newer push cancels the run before it.
 name: a
 run-name: 'a${{ github.run_number }}'
 on:
@@ -15,6 +17,7 @@ jobs:
     outputs:
       key: ${{ steps.prep.outputs.key }}
       probes: ${{ steps.probes.outputs.list }}
+      splits: ${{ steps.probes.outputs.splits }}
     steps:
       - uses: actions/checkout@v4
       - id: prep
@@ -23,6 +26,8 @@ jobs:
         run: |
           echo "list=$(find lean/probe -maxdepth 1 -name '*.lean' -printf '%f\n' 2>/dev/null | sort | jq -R . | jq -sc .)" \
             >> "$GITHUB_OUTPUT"
+          echo "splits=$( { [ -f lean/split-targets ] && grep -v '^\s*#' lean/split-targets | xargs -n1; } | jq -R . |
+            jq -sc .)" >> "$GITHUB_OUTPUT"
       - name: model
         run: |
           if [ ! -d refs/zellic-x86/.git ]; then
@@ -109,3 +114,93 @@ jobs:
         with:
           name: log-p${{ strategy.job-index }}
           path: probe.log
+  split:
+    needs: j0
+    name: s${{ strategy.job-index }}
+    if: ${{ !cancelled() && needs.j0.outputs.splits != '' && needs.j0.outputs.splits != '[]' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 150
+    strategy:
+      fail-fast: false
+      matrix:
+        module: ${{ fromJSON(needs.j0.outputs.splits) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/prep
+        with:
+          key: ${{ needs.j0.outputs.key }}
+      - name: build
+        run: |
+          cd lean
+          ulimit -s unlimited || ulimit -s 1048576 || true
+          set -o pipefail
+          echo "${{ matrix.module }}" | tee -a "$GITHUB_STEP_SUMMARY"
+          /usr/bin/time -f 'split: %e s, %M KiB peak, exit %x' lake build "${{ matrix.module }}" 2>&1 |
+            tee ../split.log
+      - name: report
+        if: always()
+        run: |
+          { echo '```'; grep -E -A12 '^error|error:' split.log | head -200; tail -4 split.log; echo '```'; } \
+            >> "$GITHUB_STEP_SUMMARY" || true
+      - name: outputs
+        # the module's own files (olean, ilean, trace, hashes; its C file), at their paths under lean/.lake/build
+        run: |
+          m=$(echo "${{ matrix.module }}" | tr . /)
+          echo "name=out-$(echo "${{ matrix.module }}" | tr . -)" >> "$GITHUB_ENV"
+          for d in lib/lean ir; do
+            mkdir -p "out/$d/$(dirname "$m")"
+            cp -v lean/.lake/build/$d/$m.* "out/$d/$(dirname "$m")/" || true
+          done
+          ls out/lib/lean/$m.olean
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.name }}
+          path: out
+          retention-days: 3
+          if-no-files-found: error
+      - name: log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: log-s${{ strategy.job-index }}
+          path: split.log
+  join:
+    needs: [j0, split]
+    if: ${{ !cancelled() && needs.j0.outputs.splits != '' && needs.j0.outputs.splits != '[]' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 150
+    steps:
+      - uses: actions/checkout@v4
+      - id: prep
+        uses: ./.github/actions/prep
+        with:
+          key: ${{ needs.j0.outputs.key }}
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: out-*
+          path: lean/.lake/build
+          merge-multiple: true
+      - name: build
+        run: |
+          cd lean
+          ulimit -s unlimited || ulimit -s 1048576 || true
+          set -o pipefail
+          targets=$( [ -f join-targets ] && grep -v '^\s*#' join-targets | xargs )
+          echo "targets: $targets"
+          [ -z "$targets" ] && exit 0
+          /usr/bin/time -f 'join: %e s, %M KiB peak, exit %x' lake build $targets 2>&1 | tee ../lean-build.log
+      - name: report
+        if: always()
+        run: |
+          { echo '```'; grep -E -A12 '^error|error:' lean-build.log | head -300; tail -5 lean-build.log; echo '```'; } \
+            >> "$GITHUB_STEP_SUMMARY" || true
+      - if: always()
+        uses: ./.github/actions/keep
+        with:
+          key: ${{ needs.j0.outputs.key }}-join
+      - name: log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: log-join
+          path: lean-build.log
