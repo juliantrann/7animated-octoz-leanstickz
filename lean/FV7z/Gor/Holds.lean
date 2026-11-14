@@ -44,7 +44,7 @@ theorem map_out (V : Addr → Byte) (a : Addr) (bs : List Byte) (x : Addr) (n : 
   map_eq x n fun i hi => Tun.Vst_out _ _ _ _ ha (by simp only [Addr.add]; bv_omega)
 
 /-- The first byte stored. -/
-theorem Vst_head (V : Addr → Byte) (a : Addr) (b : Byte) (bs : List Byte) (h : a.toNat + 1 + bs.length ≤ 2 ^ 64) :
+theorem Vst_head (V : Addr → Byte) (a : Addr) (b : Byte) (bs : List Byte) (h : a.toNat + 1 + bs.length < 2 ^ 64) :
     Vst V a (b :: bs) a = b := by
   show Vst (upd1 V a b) (a.add 1) bs a = b
   rw [Tun.Vst_out _ _ _ _ (by simp only [Addr.add]; bv_omega) (.inl (by simp only [Addr.add]; bv_omega))]
