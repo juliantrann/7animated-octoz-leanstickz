@@ -44,14 +44,6 @@ theorem nV_fV {W : Addr → Byte} {sp : Addr} {g : Gprs} (h8 : 8 ≤ sp.toNat) (
   rw [Tun.Vst_out _ _ _ _ (by rw [toBytesLE_length, m8 sp h8]; omega)
     (by rw [toBytesLE_length, m8 sp h8]; omega)]
 
-/-- Reads at a constant address agree where the bytes do. -/
-theorem rd_of {V V' : Addr → Byte} {x n : Nat} (hx : x + n < 2 ^ 64)
-    (h : ∀ a : Addr, x ≤ a.toNat → a.toNat < x + n → V' a = V a) :
-    List.map V' (byteAddrs (BitVec.ofNat 64 x) n) = List.map V (byteAddrs (BitVec.ofNat 64 x) n) :=
-  Sbrk.rd_eq (by rw [BitVec.toNat_ofNat]; omega) fun a h1 h2 => by
-    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)] at h1 h2
-    exact h a h1 h2
-
 variable {F : Footprint} {Wl N : List Rgn}
 variable {prof : Profile} {L : List (Addr × List Byte)} {s₀ : State} {o : Oracle}
   {gev : List Event} {gP : State → Nat → List Event → Prop} {gE : Outcome → List Event → Prop} {X : State} {t : Nat}
@@ -148,8 +140,9 @@ theorem ndi_ab {pl pc ip cpy : List Byte} {Pm : (Addr → Byte) → Prop} {E : E
     rw [hout a (.inr (by omega)) (.inr (by rw [hzn]; omega)), MV a (by rw [hzn]; omega),
       Vg_hi (a := a) h32 hx (by rw [hzn]; omega), nV_fV (a := a) (W := W) (g := X.cpu.gpr) (by omega) hsn (.inr ha)]
   have SM : Same sp (fV W sp X.cpu.gpr) W' := fun a h => by
-    rcases h with h | h | h
+    rcases h with h | h | h | h
     · exact HI a h
+    · exact LO a ⟨by omega, by omega, by omega, by omega, by omega⟩
     · exact LO a ⟨by omega, by omega, by omega, by omega, by omega⟩
     · exact LO a ⟨by omega, by omega, by omega, by omega, by omega⟩
   have LZ : ∀ a : Addr, 8014912 ≤ a.toNat → a.toNat < 8029888 → W' a = fV W sp X.cpu.gpr a := fun a a1 a2 =>

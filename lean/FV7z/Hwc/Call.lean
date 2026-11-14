@@ -171,7 +171,7 @@ theorem from1111 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (
     (fun W' hW' => hPa₂ W' fun a h1 h2 h3 => (hW' a h1 h2 h3).trans (h3.elim (fun h => hS0 a (Nat.zero_le _) h)
       (fun h => hS3 a (by omega) h2)))
     (fun a ha => by
-      have := Kn.lt ha
+      have := Mal.Kn.lt ha
       rw [hS0 a (Nat.zero_le _) (by omega), hKn₂ a ha]
       exact Tun.Vst_out _ _ _ _ (by rw [toBytesLE_length, hb8]; omega) (by rw [toBytesLE_length, hb8]; omega))
 
