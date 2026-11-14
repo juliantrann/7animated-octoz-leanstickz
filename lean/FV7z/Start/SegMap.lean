@@ -23,7 +23,7 @@ theorem launch_seg' {l : Launch} (h : Launch.Of V2606.zzs.blob.bytes V2606.zzs.b
       segFile l.files l.exe ph3, segAnon ph3]) (hhas : r.has (pageOf x).toNat = true) :
     ∃ mp, l.s₀.proc.mm.mem.map (pageOf x) = some mp ∧ mp.prot = r.prot ∧ mp.pkey = 0 ∧
       l.s₀.proc.mm.mem.backings mp.backing = r.backing ((pageOf x).toNat - r.first) ∧
-      l.s₀.proc.mm.mem.files.size = l.files.size := by
+      l.s₀.proc.mm.mem.files.size = l.files.size ∧ mp.special = r.special := by
   obtain ⟨hf, hx, -⟩ := h
   obtain ⟨hdr, phs, c, segs, stack, post, gd, hr, hv, -, hl, hm, hpost, -⟩ := ExecStart.start hx
   obtain ⟨-, rfl⟩ := readElf_zzs hf hr
@@ -32,7 +32,7 @@ theorem launch_seg' {l : Launch} (h : Launch.Of V2606.zzs.blob.bytes V2606.zzs.b
   have hfind := find_segs (vs := vsyscallRegions l.prof.linux.vsyscall) (stack := stack)
     (post_apart hv hpost hph hty hlo hhi) (zzs_find _ _ hmem hhas)
   refine ⟨⟨r.prot, (pageOf x).toNat, 0, r.special, r.origin ((pageOf x).toNat - r.first), (pageOf x).toNat,
-    r.maxProt, r.growsDown⟩, ?_, rfl, rfl, ?_, ?_⟩
+    r.maxProt, r.growsDown⟩, ?_, rfl, rfl, ?_, ?_, rfl⟩
   · rw [hm]
     simp only [regionsMemory, hfind, Option.map_some]
   · rw [hm]
@@ -78,5 +78,26 @@ theorem launch_prot {l : Launch} (h : Launch.Of V2606.zzs.blob.bytes V2606.zzs.b
       exact launch_seg h (by simp) (by rw [has_iff]; omega)
     · rw [← p4]
       exact launch_seg h (by simp) (by rw [has_iff]; omega)
+
+/-- The 27 pages of the RELRO segment (`0x777000`–`0x792000`) are mapped, to no special mapping: what
+`_dl_protect_relro`'s `mprotect` needs. A field of `Base`, as `brk` and `mprotect` keep it. -/
+def Relro (m : Memory) : Prop :=
+  ∀ i < 27, ∃ mp, m.mapAt (0x777 + i) = some mp ∧ mp.special = false
+
+/-- At the first instruction of `7zzs`, the RELRO pages are pages of the file part of the data segment. -/
+theorem launch_relro {l : Launch} (h : Launch.Of V2606.zzs.blob.bytes V2606.zzs.blob.size l) :
+    Relro l.s₀.proc.mm.mem := by
+  intro i hi
+  obtain ⟨-, -, -, ⟨a3, b3⟩, -⟩ := seg_pages l.files l.exe
+  have hx : (pageOf (BitVec.ofNat 64 ((0x777 + i) * 4096))).toNat = 0x777 + i := by
+    rw [pageOf_toNat, BitVec.toNat_ofNat]
+    omega
+  obtain ⟨mp, hm, -, -, -, -, hsp⟩ := launch_seg' h (r := segFile l.files l.exe ph3) (by simp)
+    (by rw [has_iff, hx]; omega)
+  have e : pageOf (BitVec.ofNat 64 ((0x777 + i) * 4096)) = BitVec.ofNat 52 (0x777 + i) :=
+    BitVec.eq_of_toNat_eq (by rw [hx, BitVec.toNat_ofNat]; omega)
+  refine ⟨mp, ?_, hsp.trans rfl⟩
+  rw [e] at hm
+  simp only [Memory.mapAt, show 0x777 + i < 2 ^ 52 by omega, ↓reduceIte, hm]
 
 end FV7z.Start

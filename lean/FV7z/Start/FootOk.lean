@@ -52,7 +52,7 @@ theorem seg_ordinary {l : Launch} (h : Launch.Of V2606.zzs.blob.bytes V2606.zzs.
     {x : Addr}
     (hmem : r ∈ [segFile l.files l.exe ph0, segFile l.files l.exe ph1, segFile l.files l.exe ph2,
       segFile l.files l.exe ph3, segAnon ph3]) (hhas : r.has (pageOf x).toNat = true) : Ordinary l.s₀ x := by
-  obtain ⟨mp, hm, hpr, hkey, hb, hsz⟩ := launch_seg' h hmem hhas
+  obtain ⟨mp, hm, hpr, hkey, hb, hsz, -⟩ := launch_seg' h hmem hhas
   have hcnt : (pageOf x).toNat - r.first < r.count := by
     rw [has_iff] at hhas
     omega

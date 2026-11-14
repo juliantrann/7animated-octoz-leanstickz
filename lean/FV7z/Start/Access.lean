@@ -79,7 +79,7 @@ theorem launch_seg_check {l : Launch} (h : Launch.Of V2606.zzs.blob.bytes V2606.
       segFile l.files l.exe ph3, segAnon ph3]) (hhas : r.has (pageOf x).toNat = true) (acc : Access)
     (ha : ∀ mp : Mapping, mp.prot = r.prot → mp.allows l.prof.feat acc = true) :
     l.s₀.proc.mm.mem.check l.prof.feat l.s₀.cpu.pkru acc x = none := by
-  obtain ⟨mp, hm, hpr, hkey, hb, hsz⟩ := launch_seg' h hmem hhas
+  obtain ⟨mp, hm, hpr, hkey, hb, hsz, -⟩ := launch_seg' h hmem hhas
   obtain ⟨hfh, hx, -⟩ := h
   have hk : l.kcfg.initPkru &&& 3 = 0 := hx.1
   obtain ⟨hdr, phs, c, -, -, hc⟩ := ExecStart.cpu hx

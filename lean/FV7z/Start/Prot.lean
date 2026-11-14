@@ -46,6 +46,16 @@ theorem prot_none {p : PageNum} (hm : m.map p = none) : (protMem m P n prot).map
   · have hi' : inPages P n p = false := by simpa using hi
     rw [prot_out hi', hm]
 
+/-- `mprotect` keeps `Relro`: the pages stay mapped, their mappings as special as before. -/
+theorem Relro.prot (hr : Relro m) : Relro (protMem m P n prot) := by
+  intro i hi
+  obtain ⟨mp, h1, h2⟩ := hr i hi
+  have hl : 0x777 + i < 2 ^ 52 := by omega
+  unfold Memory.mapAt at h1 ⊢
+  rw [if_pos hl] at h1 ⊢
+  obtain ⟨mp', e, -, -, hs, -⟩ := prot_some (P := P) (n := n) (prot := prot) h1
+  exact ⟨mp', e, hs.trans h2⟩
+
 /-- A page mapped after was mapped before. -/
 theorem prot_cases {p : PageNum} {mp : Mapping} (h : (protMem m P n prot).map p = some mp) :
     ∃ m0, m.map p = some m0 ∧ mp.backing = m0.backing ∧ mp.pkey = m0.pkey ∧ mp.special = m0.special ∧
@@ -362,7 +372,7 @@ theorem b_mprotect_ro (c : Seg prof F Wl L s₀ o) (hB : Base s₀ lim b fsb k) 
   refine c.s_mprotect_ro hK hA hin hj hrip hd hnr hprot hal hlen hwrap hmg hmap hB.rseq hGo hGc hfit hGw hGr hcode
     hww ?_
   rintro X' Y t' hK' hcpu rfl c' hA'
-  refine k' _ t' c' ⟨?_, ?_, ?_, ?_, hB.le, hB.top, ?_, ?_, ?_, ?_, ?_⟩ hA' ?_ ?_
+  refine k' _ t' c' ⟨?_, ?_, ?_, ?_, hB.le, hB.top, ?_, ?_, ?_, ?_, ?_, ?_⟩ hA' ?_ ?_
   · show X'.thread.rseq = none
     rw [hK'.thread]
     exact hB.rseq
@@ -391,6 +401,8 @@ theorem b_mprotect_ro (c : Seg prof F Wl L s₀ o) (hB : Base s₀ lim b fsb k) 
   · show X'.cpu.rflags.df = false
     rw [hK'.df]
     exact hB.df
+  · show Relro (protMem X'.proc.mm.mem _ _ _)
+    exact Relro.prot (Relro.of_map hK'.mem_map hB.relro)
   · show X'.cpu.rip.add len = _
     rw [hcpu, hrip, addr_add_add]
   · show ((X'.cpu.gpr.set 1 (X'.cpu.rip.add len)).set 11 ({ X'.cpu.rflags with rf := false } : Rflags).toBits).set 0

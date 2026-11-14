@@ -141,7 +141,6 @@ theorem ndi_pc {pl pc : List Byte} {Pm : (Addr → Byte) → Prop} {E : Ev} {V W
     (hfp : ∀ x : Addr, 4194368 ≤ x.toNat → x.toNat < 4194816 → Foot F.data x) (hph : Ph V)
     (hsn : sp.toNat + 128 ≤ 2 ^ 64) (hps : rdq(V, 7943128#64) = 4096#64) (hla : rdq(V, 7943392#64) = 0#64)
     (hmg : ∀ t p, o t (.memFail p) = none)
-    (hmap : ∀ i < 27, ∃ m, s₀.proc.mm.mem.mapAt (0x777 + i) = some m ∧ m.special = false)
     (hGo : G.own = []) (hGc : G.code = F.code) (hfit : ∀ r ∈ G.writes ++ G.reads, r.Fits)
     (hGw : ∀ r ∈ G.writes, ∀ a, r.Mem a → Foot F.writes a ∧ inPages 0x777 27 (pageOf a) = false)
     (hGr : ∀ r ∈ G.reads, ∀ a, r.Mem a → Foot F.writes a ∨ Foot F.reads a)
@@ -273,7 +272,7 @@ theorem ndi_pc {pl pc : List Byte} {Pm : (Addr → Byte) → Prop} {E : Ev} {V W
     (by
       rw [rd_of (by omega) fun a a1 a2 => uK a (by unfold Mal.Kn; omega) (by unfold Hv; omega)]
       exact hla)
-    hmg hmap hGo hGc hfit hGw hGr hcode hww hlG hl hin₂ h₂ (by rw [rS 120 (by omega)]; exact hret)
+    hmg hB.relro hGo hGc hfit hGw hGr hcode hww hlG hl hin₂ h₂ (by rw [rS 120 (by omega)]; exact hret)
     hK₂ hA₂ (Eqo.refl _ _) hr₂ (by rw [hs₂, bc_q8]) ?_
   intro s₁ Z₃ t₃ W₃ c₁ hB₁ hK₃ hA₃ hM₃ hr₃ hs₃ hbx hbp h12 h13 h14 h15
   exact k U s₁ Z₃ t₃ W₃ uv c₁ hB₁ hK₃ hA₃ hM₃ hr₃ hs₃ (hbx.trans (rS 80 (by omega)))
@@ -329,7 +328,6 @@ theorem ndi_bc {pl pc : List Byte} {Pm : (Addr → Byte) → Prop} {E : Ev} {V W
     (hfp : ∀ x : Addr, 4194368 ≤ x.toNat → x.toNat < 4194816 → Foot F.data x) (hph : Ph V)
     (hsn : sp.toNat + 128 ≤ 2 ^ 64) (hps : rdq(V, 7943128#64) = 4096#64) (hla : rdq(V, 7943392#64) = 0#64)
     (hmg : ∀ t p, o t (.memFail p) = none)
-    (hmap : ∀ i < 27, ∃ m, s₀.proc.mm.mem.mapAt (0x777 + i) = some m ∧ m.special = false)
     (hGo : G.own = []) (hGc : G.code = F.code) (hfit : ∀ r ∈ G.writes ++ G.reads, r.Fits)
     (hGw : ∀ r ∈ G.writes, ∀ a, r.Mem a → Foot F.writes a ∧ inPages 0x777 27 (pageOf a) = false)
     (hGr : ∀ r ∈ G.reads, ∀ a, r.Mem a → Foot F.writes a ∨ Foot F.reads a)
@@ -356,7 +354,7 @@ theorem ndi_bc {pl pc : List Byte} {Pm : (Addr → Byte) → Prop} {E : Ev} {V W
   intro Z t₁ W' hKZ hAZ hMZ hrZ hspZ hdiZ h15Z
   exact ndi_pc c cx hfs hd1 hd2 h4 h5 hin hinh hinc hc0 hcpy hinm hm0 hmal hinl hl0 hlenA hinz hz0 hset hint hn hPq
     hPa hPk hPs he hal hFs hpg hx1 hx1z hx2 hx2z htls hU hm6 hhw hfh hfm hpl0 hf1 hf2 hWb hfN hW7a hW7b hFR hlenV hslV
-    hB hpl hid him hfp hph hsn hps hla hmg hmap hGo hGc hfit hGw hGr hcode hww hlG hl hin₂ h₂ hret hKZ hAZ hMZ hrZ hspZ
+    hB hpl hid him hfp hph hsn hps hla hmg hGo hGc hfit hGw hGr hcode hww hlG hl hin₂ h₂ hret hKZ hAZ hMZ hrZ hspZ
     hdiZ
     (fun U s₁ Z₃ t₃ W₃ uv c₁ hB₁ hK₃ hA₃ hM₃ hr₃ hs₃ hbx hbp h12 h13 h14 h15 =>
       k U s₁ Z₃ t₃ W₃ uv c₁ hB₁ hK₃ hA₃ hM₃ hr₃ hs₃ hbx hbp h12 h13 h14 (h15.trans h15Z))

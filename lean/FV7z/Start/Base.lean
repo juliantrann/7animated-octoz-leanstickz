@@ -42,6 +42,7 @@ structure Base (s : State) (lim : Nat) (b fsb : Addr) (k : Kst) : Prop where
   tpend : s.thread.pending = []
   ppend : s.proc.signal.pending = []
   df : s.cpu.rflags.df = false
+  relro : Relro s.proc.mm.mem
 
 theorem free_of_map {m : Memory} {P n : Nat} (h : ∀ p : PageNum, P ≤ p.toNat → p.toNat < P + n → m.map p = none) :
     m.free P n = true := by
@@ -59,6 +60,30 @@ theorem mapAnon_out {m : Memory} {P n : Nat} {prot : Prot} {p : PageNum} (h : ¬
     (m.mapAnon P n prot).map p = m.map p := by
   have hn : inPages P n p = false := by simp [inPages, h]
   simp only [Memory.mapAnon, hn, Bool.false_eq_true, ↓reduceIte]
+
+/-- `Relro` of memory with the page map of memory with `Relro`. -/
+theorem Relro.of_map {m m' : Memory} (h : m'.map = m.map) (hr : Relro m) : Relro m' := by
+  intro i hi
+  obtain ⟨mp, h1, h2⟩ := hr i hi
+  refine ⟨mp, ?_, h2⟩
+  unfold Memory.mapAt at h1 ⊢
+  rw [h]
+  exact h1
+
+/-- New anonymous pages over unmapped ones keep `Relro`. -/
+theorem Relro.grow {m : Memory} {P n : Nat} {prot : Prot} (hr : Relro m)
+    (hf : ∀ p : PageNum, P ≤ p.toNat → p.toNat < P + n → m.map p = none) : Relro (m.mapAnon P n prot) := by
+  intro i hi
+  obtain ⟨mp, h1, h2⟩ := hr i hi
+  refine ⟨mp, ?_, h2⟩
+  have hl : 0x777 + i < 2 ^ 52 := by omega
+  unfold Memory.mapAt at h1 ⊢
+  rw [if_pos hl] at h1 ⊢
+  rw [mapAnon_out ?_]
+  · exact h1
+  · rintro ⟨q1, q2⟩
+    rw [hf _ q1 q2] at h1
+    cases h1
 
 /-- `V` with zeros at the addresses from `lo` up to `hi`: the bytes after new pages are mapped there. -/
 def Vz (V : Addr → Byte) (lo hi : Nat) : Addr → Byte := fun a => if lo ≤ a.toNat ∧ a.toNat < hi then 0 else V a
@@ -95,11 +120,12 @@ theorem Base.brk_lt {s : State} {lim : Nat} {b fsb : Addr} {k : Kst} (h : Base s
 
 /-- A state with room above its break has `Base`, up to the page of the break and the room. -/
 theorem Base.of_room {s : State} {n : Nat} (hr : s.thread.rseq = none) (hp : s.cpu.pkru &&& 3 = 0)
-    (h : BreakRoom s n) (hq : s.thread.pending = [] ∧ s.proc.signal.pending = []) (hdf : s.cpu.rflags.df = false) :
+    (h : BreakRoom s n) (hq : s.thread.pending = [] ∧ s.proc.signal.pending = []) (hdf : s.cpu.rflags.df = false)
+    (hrel : Relro s.proc.mm.mem) :
     Base s (pageUp (s.proc.mm.brk.toNat + n) / 4096) s.proc.mm.brk s.cpu.seg.fsBase ⟨s.thread.tid⟩ := by
   obtain ⟨h1, h2⟩ := h
   simp only [stackTopMax] at h1
-  refine ⟨hr, hp, rfl, rfl, ?_, ?_, fun p q1 q2 => free_page h2 q1 ?_, rfl, hq.1, hq.2, hdf⟩
+  refine ⟨hr, hp, rfl, rfl, ?_, ?_, fun p q1 q2 => free_page h2 q1 ?_, rfl, hq.1, hq.2, hdf, hrel⟩
   · simp only [pageUp]
     omega
   · omega
@@ -115,6 +141,7 @@ theorem launch_base {l : Launch} {m : Nat} (h : Launch.Of V2606.zzs.blob.bytes V
       ⟨l.s₀.thread.tid⟩ :=
   Base.of_room (launch_misc h).2.1 (launch_misc h).1 (launch_breakRoom h hroom hM (Nat.le_refl _))
     (launch_quiet h hq.1 hq.2) (by obtain ⟨_, _, _, _, _, _, _, _, hdf⟩ := launch_regs h; exact hdf)
+    (launch_relro h)
 
 end FV7z.Start
 
@@ -173,7 +200,7 @@ theorem b_brk_grow (c : Seg prof F Wl L s₀ o) (hB : Base s₀ lim b fsb k) (hK
   · rw [free_congr hK.mem_map]
     exact free_of_map fun p h1 h2 => hB.free p h1 (by omega)
   · rintro X' Y t' hK' hcpu rfl c' hA'
-    refine k' _ t' c' ⟨?_, ?_, rfl, ?_, hlim, hB.top, ?_, ?_, ?_, ?_, ?_⟩ hA' ?_ ?_
+    refine k' _ t' c' ⟨?_, ?_, rfl, ?_, hlim, hB.top, ?_, ?_, ?_, ?_, ?_, ?_⟩ hA' ?_ ?_
     · show X'.thread.rseq = none
       rw [hK'.thread]
       exact hB.rseq
@@ -199,6 +226,12 @@ theorem b_brk_grow (c : Seg prof F Wl L s₀ o) (hB : Base s₀ lim b fsb k) (hK
     · show X'.cpu.rflags.df = false
       rw [hK'.df]
       exact hB.df
+    · show Relro (X'.proc.mm.mem.mapAnon _ _ _)
+      have e : X'.proc.mm.brk = X.proc.mm.brk := hK'.brk.trans hK.brk.symm
+      refine Relro.grow (Relro.of_map hK'.mem_map hB.relro) fun p h1 h2 => ?_
+      rw [e] at h1 h2
+      rw [hK'.mem_map]
+      exact hB.free p h1 (by omega)
     · show X'.cpu.rip.add len = _
       rw [hcpu, hrip, addr_add_add]
     · show ((X'.cpu.gpr.set 1 (X'.cpu.rip.add len)).set 11 ({ X'.cpu.rflags with rf := false } : Rflags).toBits).set 0
@@ -217,7 +250,7 @@ theorem b_set_fs (c : Seg prof F Wl L s₀ o) (hB : Base s₀ lim b fsb k) (hK :
     GoG prof L o gev gP gE X t := by
   refine c.s_set_fs hK hA hin hj hrip hd hnr hopt ha hB.rseq ?_
   rintro X' Y t' hK' hcpu rfl c' hA'
-  refine k' _ t' c' ⟨?_, ?_, ?_, rfl, hB.le, hB.top, ?_, ?_, ?_, ?_, ?_⟩ hA' ?_ ?_
+  refine k' _ t' c' ⟨?_, ?_, ?_, rfl, hB.le, hB.top, ?_, ?_, ?_, ?_, ?_, ?_⟩ hA' ?_ ?_
   · show X'.thread.rseq = none
     rw [hK'.thread]
     exact hB.rseq
@@ -243,6 +276,8 @@ theorem b_set_fs (c : Seg prof F Wl L s₀ o) (hB : Base s₀ lim b fsb k) (hK :
   · show X'.cpu.rflags.df = false
     rw [hK'.df]
     exact hB.df
+  · show Relro X'.proc.mm.mem
+    exact Relro.of_map hK'.mem_map hB.relro
   · show X'.cpu.rip.add len = _
     rw [hcpu, hrip, addr_add_add]
   · show ((X'.cpu.gpr.set 1 (X'.cpu.rip.add len)).set 11 ({ X'.cpu.rflags with rf := false } : Rflags).toBits).set 0

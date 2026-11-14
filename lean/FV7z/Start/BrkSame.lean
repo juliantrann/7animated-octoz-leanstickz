@@ -135,7 +135,7 @@ theorem b_brk_same (c : Seg prof F Wl L s₀ o) (hB : Base s₀ lim b fsb k) (hK
   subst hbk
   refine c.s_brk_same hK hA hin hj hrip hd hnr hmg hlow heq hB.rseq ?_
   rintro X' Y t' hK' hcpu rfl c' hA'
-  refine k' _ t' c' ⟨?_, ?_, rfl, ?_, by rw [heq]; exact hB.le, hB.top, ?_, ?_, ?_, ?_, ?_⟩ hA' ?_ ?_
+  refine k' _ t' c' ⟨?_, ?_, rfl, ?_, by rw [heq]; exact hB.le, hB.top, ?_, ?_, ?_, ?_, ?_, ?_⟩ hA' ?_ ?_
   · show X'.thread.rseq = none
     rw [hK'.thread]
     exact hB.rseq
@@ -161,6 +161,8 @@ theorem b_brk_same (c : Seg prof F Wl L s₀ o) (hB : Base s₀ lim b fsb k) (hK
   · show X'.cpu.rflags.df = false
     rw [hK'.df]
     exact hB.df
+  · show Relro X'.proc.mm.mem
+    exact Relro.of_map hK'.mem_map hB.relro
   · show X'.cpu.rip.add len = _
     rw [hcpu, hrip, addr_add_add]
   · show ((X'.cpu.gpr.set 1 (X'.cpu.rip.add len)).set 11 ({ X'.cpu.rflags with rf := false } : Rflags).toBits).set 0
