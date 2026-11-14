@@ -23,7 +23,7 @@ start)
       echo "t = $t s, run $GITHUB_RUN_ID"
       echo '```'
       free -m | sed -n 2p
-      ps -eo etimes=,times=,rss=,args= | grep '[b]in/lean ' |
+      ps -C lean -o etimes=,times=,rss=,args= |
         awk '{m=$NF; for(i=4;i<=NF;i++) if($i ~ /FV7z\//) m=$i; sub(/\.(setup\.json|lean)$/, "", m)
           printf "%6ds %6ds cpu %6d MB %s\n", $1, $2, $3/1024, m}'
       echo '---'
