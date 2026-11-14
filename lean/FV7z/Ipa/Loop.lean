@@ -215,7 +215,7 @@ theorem step (c : Seg prof F Wl L s₀ o) (hin : CodeIn L ipa_at ipa)
   · rw [s₂]; ireg hFD
   · rw [di₂, dx₂]; ireg hWB
   · rw [di₂, dx₂]; ipd
-  · rw [di₂, dx₂, s₂]; ipd
+  · rw [di₂, dx₂, s₂]; ifd
   intro Z t₃ V₂ hK₃ hA₃ hr₃ hs₃ _ hbx₃ hbp₃ h12₃ h13₃ h14₃ h15₃ _ hout₃
   have sZ : Z.cpu.gpr.rsp = r + 18446744073709551536#64 := by rw [hs₃, s₂, p88]
   have bpZ : Z.cpu.gpr.rbp = r := by rw [hbp₃, hg₂, set4_rbp, hg₁]; exact hbp
