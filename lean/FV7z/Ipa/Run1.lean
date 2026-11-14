@@ -95,6 +95,7 @@ theorem to58 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (hin 
       (∀ a : Addr, e.toNat - 88 ≤ a.toNat → V₃ a = iV0 V X.cpu.gpr a) →
       (∀ W : Addr → Byte, (∀ a : Addr, 7940480 ≤ a.toNat → a.toNat < e.toNat - 96 →
         (a.toNat < P.toNat ∨ P.toNat + s ≤ a.toNat) → W a = V₃ a) → Pa W) →
+      (∀ a : Addr, Mal.Kn a → V₃ a = V a) →
       GoG prof L o gev gP gE Z t') :
     GoG prof L o gev gP gE X t := by
   have hr0 : 96 ≤ e.toNat := by omega
@@ -169,7 +170,7 @@ theorem to58 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (hin 
     (by ipd) (Or.inl (by rw [hb]; ipd)) Y₂ t₂ hK₂ hA₂ hr₂ (by rw [hg₂, set4_rsp, s₁, t96, t104])
     hdi₂ hsi₂ (by rw [hg₂, set4_rdx, hg₁, hdx']) (by rw [hg₂, set4_rcx, hg₁, hcx']) ?_
   -- at the `ret` (1681)
-  intro Y t' W P hKY hAY hrY hax hP1 hP2 hPf hspY hbxY h12Y h13Y h14Y h15Y hbpY _ hS1 hS2 hNE hPaW
+  intro Y t' W P hKY hAY hrY hax hP1 hP2 hPf hspY hbxY h12Y h13Y h14Y h15Y hbpY _ hS1 hS2 hNE hPaW hKnY
   rw [hb] at hS2
   -- the bytes `W` and the store of `max_capstrlen`
   have vY : ∀ a : Addr, (7937688 ≤ a.toNat ∨ a.toNat < 7937680) →
@@ -192,7 +193,7 @@ theorem to58 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (hin 
     (by rw [hgZ, set4_rbp, hbpY, hg₂, set4_rbp, hg₁, hbp', hsp, t8]) (by rw [hgZ]; exact hax)
     (by rw [hgZ, set4_rbx, hbxY, hg₂, set4_rbx, hg₁, hbx']) (by rw [hgZ, set4_r12, h12Y, hg₂, set4_r12, hg₁, h12'])
     (by rw [hgZ, set4_r13, h13Y, hg₂, set4_r13, hg₁, h13']) (by rw [hgZ, set4_r14, h14Y, hg₂, set4_r14, hg₁, h14'])
-    (by rw [hgZ, set4_r15, h15Y, hg₂, set4_r15, hg₁, h15']) hP1 (by omega) hPf ?_ ?_ ?_ ?_
+    (by rw [hgZ, set4_r15, h15Y, hg₂, set4_r15, hg₁, h15']) hP1 (by omega) hPf ?_ ?_ ?_ ?_ ?_
   · intro a h1 h2
     rw [vY a (by omega), hS1 a (Nat.zero_le _) h1 (by ipd), v2l a (by omega)]
   · rw [rdk vY (lo := 7937688) (hi := 2 ^ 64) (fun a h1 _ => Or.inl h1) (by ipd) (by ipd) (by ipd)]
@@ -202,5 +203,8 @@ theorem to58 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (hin 
   · intro W' hW'
     refine hPaW W' fun a h1 h2 h3 => ?_
     rw [hW' a h1 (by omega) h3, vY a (by omega)]
+  · intro a ha
+    have := Mal.Kn.lt ha
+    rw [vY a (by omega), hKnY a ha, v2l a (by omega)]
 
 end FV7z.Ipa

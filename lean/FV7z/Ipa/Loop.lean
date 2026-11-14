@@ -22,7 +22,7 @@ variable {prof : Profile} {F : Footprint} {Wl : List Rgn} {L : List (Addr × Lis
   {gev : List Event} {gP : State → Nat → List Event → Prop} {gE : Outcome → List Event → Prop}
 
 /-- The bytes the loop keeps. -/
-abbrev Kp (r x : Addr) : Prop := x.toNat < 7940480 ∨ r.toNat - 80 ≤ x.toNat
+abbrev Kp (r x : Addr) : Prop := x.toNat < 7940480 ∨ Mal.Kn x ∨ r.toNat - 80 ≤ x.toNat
 
 /-- A load of bytes two maps agree on. -/
 theorem kr {V V₁ : Addr → Byte} {P : Addr → Prop} (h : ∀ a, P a → V a = V₁ a) {x : Addr} {n : Nat}
@@ -35,7 +35,7 @@ theorem kr {V V₁ : Addr → Byte} {P : Addr → Prop} (h : ∀ a, P a → V a 
 /-- A load of 8 bytes the loop kept, in the frame. -/
 theorem kfr {V V₁ : Addr → Byte} {r x : Addr} (h : ∀ a, Kp r a → V a = V₁ a) (h1 : r.toNat - 80 ≤ x.toNat)
     (h2 : x.toNat + 8 ≤ 2 ^ 64) : rdq(V, x) = rdq(V₁, x) := by
-  rw [kr h (rgn (p := Kp r) (lo := r.toNat - 80) (hi := 2 ^ 64) (fun a h1 _ => Or.inr h1) h1 h2 h2)]
+  rw [kr h (rgn (p := Kp r) (lo := r.toNat - 80) (hi := 2 ^ 64) (fun a h1 _ => Or.inr (Or.inr h1)) h1 h2 h2)]
 
 /-- A load the loop kept, below the heap. -/
 theorem klo {V V₁ : Addr → Byte} {r x : Addr} {n : Nat} (h : ∀ a, Kp r a → V a = V₁ a)
@@ -65,8 +65,8 @@ def Fin450 (prof : Profile) (L : List (Addr × List Byte)) (o : Oracle) (gev : L
     Y.cpu.gpr.rbx = rdq(V₁, r + 18446744073709551576#64) → Y.cpu.gpr.r12 = rdq(V₁, r + 18446744073709551584#64) →
     Y.cpu.gpr.r13 = rdq(V₁, r + 18446744073709551592#64) → Y.cpu.gpr.r14 = rdq(V₁, r + 18446744073709551600#64) →
     Y.cpu.gpr.r15 = rdq(V₁, r + 18446744073709551608#64) → Y.cpu.gpr.rbp = rdq(V₁, r) →
-    (∀ x : Addr, (x.toNat < 7937712 ∨ 7937720 ≤ x.toNat ∧ x.toNat < 7940480 ∨ r.toNat - 80 ≤ x.toNat) →
-      V' x = V₁ x) → GoG prof L o gev gP gE Y t'
+    (∀ x : Addr, (x.toNat < 7937712 ∨ 7937720 ≤ x.toNat ∧ x.toNat < 7940480 ∨ r.toNat - 80 ≤ x.toNat ∨
+      Mal.Kn x) → V' x = V₁ x) → GoG prof L o gev gP gE Y t'
 
 set_option maxHeartbeats 4000000 in
 /-- After the last element (`i = 3`, at 384): the ends of the lists, then the epilogue (425) to the `ret`. -/
@@ -75,9 +75,9 @@ theorem fin3 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L ipa_at ipa) {V₁ V₂
     (hFD : ∀ x : Addr, r.toNat - 88 ≤ x.toNat → x.toNat < r.toNat + 8 → Foot F.data x)
     (hWb : ∀ x : Addr, 7937712 ≤ x.toNat → x.toNat < 7937720 → Foot Wl x)
     (h80 : rdq(V₁, r + 18446744073709551536#64) = 0#64)
-    (hb1 : 7940480 ≤ b.toNat) (hb2 : b.toNat + 8 ≤ r.toNat - 88)
+    (hb1 : 7940480 ≤ b.toNat) (hbk : 8032256 ≤ b.toNat) (hb2 : b.toNat + 8 ≤ r.toNat - 88)
     (hWB : ∀ x : Addr, b.toNat ≤ x.toNat → x.toNat < b.toNat + 8 → Foot Wl x)
-    (ha1 : 7940480 ≤ a.toNat) (ha2 : a.toNat + 8 ≤ r.toNat - 88)
+    (ha1 : 7940480 ≤ a.toNat) (hak : 8032256 ≤ a.toNat) (ha2 : a.toNat + 8 ≤ r.toNat - 88)
     (hWA : ∀ x : Addr, a.toNat ≤ x.toNat → x.toNat < a.toNat + 8 → Foot Wl x)
     (hk₂ : ∀ x, Kp r x → V₂ x = V₁ x) (kfin : Fin450 prof L o gev gP gE F Wl s₀ r V₁)
     (Y₄ : State) (t₄ : Nat) (hK₄ : KeptW Wl s₀ Y₄) (hA₄ : Agree F Y₄.proc.mm.mem V₂)
@@ -87,14 +87,17 @@ theorem fin3 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L ipa_at ipa) {V₁ V₂
   have hr0 : 96 ≤ r.toNat := by omega
   refine (c_384 prof).run c hin _ hK₄ hA₄ hr₄
     (vc_384 (by rw [bp₄, kfr hk₂ (by ifd) (by ifd)]; exact h80) (by rw [bp₄]; omega) (by rw [bp₄]; omega)
-      (by rw [r15₄]; exact hb1) (by rw [r15₄, bp₄]; omega) (by rw [r14₄]; exact ha1) (by rw [r14₄, bp₄]; omega)
-      (by rw [bp₄]; omega) (by rw [r14₄]; exact hWA)
+      (by rw [r15₄]; exact hb1) (by rw [r15₄]; exact hbk) (by rw [r15₄, bp₄]; omega) (by rw [r14₄]; exact ha1)
+      (by rw [r14₄]; exact hak) (by rw [r14₄, bp₄]; omega) (by rw [bp₄]; omega) (by rw [r14₄]; exact hWA)
       (by rw [r15₄]; exact hWB) hW7a
       (by rw [bp₄]; exact fun x h1 h2 => hFD x (by omega) (by omega))) ?_
-  rintro j' g' fl V' ⟨rfl, rfl, hkeep⟩ Y₅ t₅ hK₅ hA₅ hr₅ hg₅ -
+  rintro j' g' fl V' ⟨rfl, rfl, hkeep, hkn⟩ Y₅ t₅ hK₅ hA₅ hr₅ hg₅ -
   have hk₅ : ∀ x, Kp r x → V' x = V₁ x := fun x hx => by
-    have hx' : x.toNat < 7940480 ∨ r.toNat - 80 ≤ x.toNat := hx
-    rw [hkeep x (by rw [bp₄]; omega)]; exact hk₂ x hx
+    refine Eq.trans ?_ (hk₂ x hx)
+    rcases hx with hx | hx | hx
+    · exact hkeep x (by rw [bp₄]; omega)
+    · exact hkn x hx
+    · exact hkeep x (by rw [bp₄]; omega)
   have bp₅ : Y₅.cpu.gpr.rbp = r := by rw [hg₅]; exact bp₄
   refine (c_425 prof).run c hin _ hK₅ hA₅ hr₅
     (vc_425 (by rw [bp₅]; omega) (by rw [bp₅]; omega) hWb
@@ -105,8 +108,12 @@ theorem fin3 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L ipa_at ipa) {V₁ V₂
     (by rw [hg₆, h13', bp₅, kfr hk₅ (by ifd) (by ifd)]) (by rw [hg₆, h14', bp₅, kfr hk₅ (by ifd) (by ifd)])
     (by rw [hg₆, h15', bp₅, kfr hk₅ (by ifd) (by ifd)]) (by rw [hg₆, hbp', bp₅, kfr hk₅ (by omega) (by omega)])
     fun x hx => ?_
-  rw [hkeep' x (by omega)]
-  exact hk₅ x (show x.toNat < 7940480 ∨ r.toNat - 80 ≤ x.toNat by omega)
+  rcases hx with h | h | h | h
+  · rw [hkeep' x (by omega)]; exact hk₅ x (Or.inl (by omega))
+  · rw [hkeep' x (by omega)]; exact hk₅ x (Or.inl (by omega))
+  · rw [hkeep' x (by omega)]; exact hk₅ x (Or.inr (Or.inr h))
+  · have := Mal.Kn.lt h
+    rw [hkeep' x (by omega)]; exact hk₅ x (Or.inr (Or.inl h))
 
 set_option maxHeartbeats 4000000 in
 /-- Not the last element (`i < 3`, at 293): element `i + 1`, back to 267. -/
@@ -120,9 +127,9 @@ theorem nxt (c : Seg prof F Wl L s₀ o) (hin : CodeIn L ipa_at ipa) {V₁ V₂ 
     (h56 : rdq(V₁, r + 18446744073709551560#64) = BitVec.ofNat 64 n)
     (hlen : ∀ k < 3, rdq(V₁, BitVec.ofNat 64 (7364040 + 8 * k)) = BitVec.ofNat 64 (lA k))
     (hsl : ∀ k < 3, ofBytesLE 8 (List.map V₁ (byteAddrs (BitVec.ofNat 64 (sA k)) 1)) = 47#8)
-    (hb1 : 7940480 ≤ b.toNat) (hbn : b.toNat + 80 * q ≤ r.toNat - 88)
+    (hb1 : 7940480 ≤ b.toNat) (hbk : 8032256 ≤ b.toNat) (hbn : b.toNat + 80 * q ≤ r.toNat - 88)
     (hWB : ∀ x : Addr, b.toNat ≤ x.toNat → x.toNat < b.toNat + 80 * q → Foot Wl x)
-    (ha1 : 7940480 ≤ a.toNat) (ha2 : a.toNat + 8 ≤ r.toNat - 88)
+    (ha1 : 7940480 ≤ a.toNat) (hak : 8032256 ≤ a.toNat) (ha2 : a.toNat + 8 ≤ r.toNat - 88)
     (hWA : ∀ x : Addr, a.toNat ≤ x.toNat → x.toNat < a.toNat + 8 → Foot Wl x)
     (hk₂ : ∀ x, Kp r x → V₂ x = V₁ x)
     (knext : ∀ Y t' V', KeptW Wl s₀ Y → Agree F Y.proc.mm.mem V' → Y.cpu.rip = ipa_at.add 267 →
@@ -141,17 +148,20 @@ theorem nxt (c : Seg prof F Wl L s₀ o) (hin : CodeIn L ipa_at ipa) {V₁ V₂ 
       (by rw [bp₄, kfr hk₂ (by ifd) (by ifd)]; exact h64) (by rw [bp₄, kfr hk₂ (by ifd) (by ifd)]; exact h56)
       (by rw [klo (x := BitVec.ofNat 64 (7364040 + 8 * i)) (n := 8) hk₂ (by ifd)]; exact hlen i hi3)
       (by rw [klo (x := BitVec.ofNat 64 (sA i)) (n := 1) hk₂ (by have := sA_le i; ifd)]; exact hsl i hi3)
-      (by rw [bp₄]; omega) (by rw [bp₄]; omega) (by rw [r15₄]; exact hb1) (by rw [r15₄, bp₄]; omega)
-      (by rw [r14₄]; exact ha1) (by rw [r14₄, bp₄]; omega) (by rw [r14₄]; exact hWA)
+      (by rw [bp₄]; omega) (by rw [bp₄]; omega) (by rw [r15₄]; exact hb1) (by rw [r15₄]; exact hbk)
+      (by rw [r15₄, bp₄]; omega) (by rw [r14₄]; exact ha1) (by rw [r14₄]; exact hak) (by rw [r14₄, bp₄]; omega)
+      (by rw [r14₄]; exact hWA)
       (by rw [r15₄]; exact fun x h1 h2 => hWB x h1 (by omega))
       (by rw [bp₄]; exact fun x h1 h2 => hFD x (by omega) (by omega)) hFR) ?_
-  rintro j' g' fl V' ⟨rfl, h15', h14', h12', hbx', h13', hbp', hsp', hkeep⟩ Y₅ t₅ hK₅ hA₅ hr₅ hg₅ -
+  rintro j' g' fl V' ⟨rfl, h15', h14', h12', hbx', h13', hbp', hsp', hkeep, hkn⟩ Y₅ t₅ hK₅ hA₅ hr₅ hg₅ -
   refine knext Y₅ t₅ V' hK₅ hA₅ hr₅ (by rw [hg₅, hsp', s₄]) (by rw [hg₅, hbp', bp₄])
     (by rw [hg₅, h15', r15₄]) (by rw [hg₅, h14', r14₄]) (by rw [hg₅, h12']; congr 1; omega) (by rw [hg₅, hbx'])
     (by rw [hg₅, h13', r13₄]) fun x hx => ?_
-  have hx' : x.toNat < 7940480 ∨ r.toNat - 80 ≤ x.toNat := hx
-  rw [hkeep x (by rw [bp₄]; omega)]
-  exact hk₂ x hx
+  refine Eq.trans ?_ (hk₂ x hx)
+  rcases hx with hx | hx | hx
+  · exact hkeep x (by rw [bp₄]; omega)
+  · exact hkn x hx
+  · exact hkeep x (by rw [bp₄]; omega)
 
 set_option maxHeartbeats 4000000 in
 /-- One element: from 267 (element `i` at `b`, the next slot of `A` at `a`) to 267 with element `i + 1` at
@@ -172,9 +182,10 @@ theorem step (c : Seg prof F Wl L s₀ o) (hin : CodeIn L ipa_at ipa)
     (h80 : rdq(V₁, r + 18446744073709551536#64) = 0#64)
     (hlen : ∀ k < 3, rdq(V₁, BitVec.ofNat 64 (7364040 + 8 * k)) = BitVec.ofNat 64 (lA k))
     (hsl : ∀ k < 3, ofBytesLE 8 (List.map V₁ (byteAddrs (BitVec.ofNat 64 (sA k)) 1)) = 47#8)
-    (hb1 : 7940480 ≤ b.toNat) (hb2 : b.toNat + 40 * q ≤ bh) (hbn : i < 3 → b.toNat + 80 * q ≤ bh)
+    (hb1 : 7940480 ≤ b.toNat) (hbk : 8032256 ≤ b.toNat) (hb2 : b.toNat + 40 * q ≤ bh)
+    (hbn : i < 3 → b.toNat + 80 * q ≤ bh)
     (hbh : bh ≤ r.toNat - 88) (hWB : ∀ x : Addr, b.toNat ≤ x.toNat → x.toNat < bh → Foot Wl x)
-    (ha1 : 7940480 ≤ a.toNat) (ha2 : a.toNat + 8 ≤ r.toNat - 88)
+    (ha1 : 7940480 ≤ a.toNat) (hak : 8032256 ≤ a.toNat) (ha2 : a.toNat + 8 ≤ r.toNat - 88)
     (hWA : ∀ x : Addr, a.toNat ≤ x.toNat → x.toNat < a.toNat + 8 → Foot Wl x)
     (X : State) (t : Nat) (V : Addr → Byte) (hK : KeptW Wl s₀ X) (hA : Agree F X.proc.mm.mem V)
     (hrip : X.cpu.rip = ipa_at.add 267) (hsp : X.cpu.gpr.rsp = r + 18446744073709551536#64)
@@ -225,7 +236,11 @@ theorem step (c : Seg prof F Wl L s₀ o) (hin : CodeIn L ipa_at ipa)
   have r15Z : Z.cpu.gpr.r15 = b := by rw [h15₃, hg₂, set4_r15, hg₁]; exact h15
   have rbxZ : Z.cpu.gpr.rbx = BitVec.ofNat 64 (sA i) := by rw [hbx₃, hg₂, set4_rbx, hg₁]; exact hbx
   have hk₂ : ∀ x, Kp r x → V₂ x = V₁ x := fun x hx => by
-    have hx' : x.toNat < 7940480 ∨ r.toNat - 80 ≤ x.toNat := hx
+    have hx' : x.toNat < 7940480 ∨ 7943128 ≤ x.toNat ∧ x.toNat < 8032256 ∨ r.toNat - 80 ≤ x.toNat := by
+      rcases hx with h | h | h
+      · exact Or.inl h
+      · exact Or.inr (Or.inl (Mal.Kn.lt h))
+      · exact Or.inr (Or.inr h)
     rw [hout₃ x (by rw [di₂, dx₂]; ifd), Tun.Vst_out _ _ _ _ (by ifd) (by ifd)]
     exact hkp x hx
   -- 281: the last directory or not
@@ -240,12 +255,13 @@ theorem step (c : Seg prof F Wl L s₀ o) (hin : CodeIn L ipa_at ipa)
   have rbx₄ : Y₄.cpu.gpr.rbx = BitVec.ofNat 64 (sA i) := by rw [hg₄]; exact rbxZ
   by_cases h3 : i = 3
   · rw [if_pos h3] at hr₄
-    exact fin3 c hin hr hr2 hFD hWb h80 hb1 (by omega) (fun x h1 h2 => hWB x h1 (by omega)) ha1 ha2 hWA hk₂
+    exact fin3 c hin hr hr2 hFD hWb h80 hb1 hbk (by omega) (fun x h1 h2 => hWB x h1 (by omega)) ha1 hak ha2 hWA
+      hk₂
       (kfin h3) Y₄ t₄ hK₄ hA₄ hr₄ bp₄ r14₄ r15₄ hW7a
   · rw [if_neg h3] at hr₄
     have hi3 : i < 3 := by omega
-    exact nxt c hin hq hi3 hr hr2 hFD hFR h72 h64 h56 hlen hsl hb1 (by have := hbn hi3; omega)
-      (fun x h1 h2 => hWB x h1 (by have := hbn hi3; omega)) ha1 ha2 hWA hk₂ (knext hi3)
+    exact nxt c hin hq hi3 hr hr2 hFD hFR h72 h64 h56 hlen hsl hb1 hbk (by have := hbn hi3; omega)
+      (fun x h1 h2 => hWB x h1 (by have := hbn hi3; omega)) ha1 hak ha2 hWA hk₂ (knext hi3)
       Y₄ t₄ hK₄ hA₄ hr₄ s₄ bp₄ r12₄ r13₄ r14₄ r15₄ rbx₄
 
 set_option maxHeartbeats 4000000 in
@@ -267,9 +283,9 @@ theorem loop (c : Seg prof F Wl L s₀ o) (hin : CodeIn L ipa_at ipa)
     (h80 : rdq(V₁, r + 18446744073709551536#64) = 0#64)
     (hlen : ∀ k < 3, rdq(V₁, BitVec.ofNat 64 (7364040 + 8 * k)) = BitVec.ofNat 64 (lA k))
     (hsl : ∀ k < 3, ofBytesLE 8 (List.map V₁ (byteAddrs (BitVec.ofNat 64 (sA k)) 1)) = 47#8)
-    (hB1 : 7940480 ≤ B.toNat) (hB2 : B.toNat + 160 * q ≤ r.toNat - 88)
+    (hB1 : 7940480 ≤ B.toNat) (hBk : 8032256 ≤ B.toNat) (hB2 : B.toNat + 160 * q ≤ r.toNat - 88)
     (hWB : ∀ x : Addr, B.toNat ≤ x.toNat → x.toNat < B.toNat + 160 * q → Foot Wl x)
-    (hA1 : 7940480 ≤ A.toNat) (hA2 : A.toNat + 40 ≤ r.toNat - 88)
+    (hA1 : 7940480 ≤ A.toNat) (hAk : 8032256 ≤ A.toNat) (hA2 : A.toNat + 40 ≤ r.toNat - 88)
     (hWA : ∀ x : Addr, A.toNat ≤ x.toNat → x.toNat < A.toNat + 40 → Foot Wl x)
     (kfin : Fin450 prof L o gev gP gE F Wl s₀ r V₁) :
     ∀ i ≤ 3, ∀ (X : State) (t : Nat) (V : Addr → Byte) (b a : Addr), KeptW Wl s₀ X → Agree F X.proc.mm.mem V →
@@ -293,14 +309,16 @@ theorem loop (c : Seg prof F Wl L s₀ o) (hin : CodeIn L ipa_at ipa)
     | zero =>
       intro i hd X t V b a hK hA hrip hsp hbp h15 hb h14 ha h12 hbx h13 hkp
       exact step c hin hins hms0 hset (bh := B.toNat + 160 * _) hq0 (by omega) hPs hr hr2 hFs hFR hW7a hWb
-        h72 h64 h56 h80 hlen hsl (by omega) (by omega) (fun h => absurd h (by omega)) hB2
-        (fun x h1 h2 => hWB x (by omega) h2) (by omega) (by omega) (fun x h1 h2 => hWA x (by omega) (by omega))
+        h72 h64 h56 h80 hlen hsl (by omega) (by omega) (by omega) (fun h => absurd h (by omega)) hB2
+        (fun x h1 h2 => hWB x (by omega) h2) (by omega) (by omega) (by omega)
+        (fun x h1 h2 => hWA x (by omega) (by omega))
         X t V hK hA hrip hsp hbp h15 h14 h12 hbx h13 hkp (fun h => absurd h (by omega)) (fun _ => kfin)
     | succ d ih =>
       intro i hd X t V b a hK hA hrip hsp hbp h15 hb h14 ha h12 hbx h13 hkp
       exact step c hin hins hms0 hset (bh := B.toNat + 160 * _) hq0 (by omega) hPs hr hr2 hFs hFR hW7a hWb
-        h72 h64 h56 h80 hlen hsl (by omega) (by omega) (fun _ => by omega) hB2
-        (fun x h1 h2 => hWB x (by omega) h2) (by omega) (by omega) (fun x h1 h2 => hWA x (by omega) (by omega))
+        h72 h64 h56 h80 hlen hsl (by omega) (by omega) (by omega) (fun _ => by omega) hB2
+        (fun x h1 h2 => hWB x (by omega) h2) (by omega) (by omega) (by omega)
+        (fun x h1 h2 => hWA x (by omega) (by omega))
         X t V hK hA hrip hsp hbp h15 h14 h12 hbx h13 hkp
         (fun _ Y t' V' hK' hA' hr' hs' hb' h15' h14' h12' hbx' h13' hk' =>
           ih (i + 1) (by omega) Y t' V' _ _ hK' hA' hr' hs' hb' h15' (by ifd) h14' (by ifd) h12' hbx' h13' hk')

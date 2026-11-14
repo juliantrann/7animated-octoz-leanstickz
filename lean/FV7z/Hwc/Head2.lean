@@ -152,6 +152,7 @@ def At0 (prof : Profile) (L : List (Addr × List Byte)) (o : Oracle) (gev : List
     rdq(W, N) = BitVec.ofNat 64 E →
     (∀ W' : Addr → Byte, (∀ a : Addr, 7940480 ≤ a.toNat → a.toNat < R.toNat - 8 →
       (a.toNat < P.toNat ∨ P.toNat + s ≤ a.toNat) → W' a = W a) → Pa W') →
+    (∀ a : Addr, Mal.Kn a → W a = V a) →
     GoG prof L o gev gP gE Y t'
 
 set_option maxHeartbeats 16000000 in
@@ -317,7 +318,7 @@ theorem from0 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (hin
       (fun W hW => hPm W fun a ha hn => (hW a ha hn).trans (by vout))
       (fun W hW => hPa W fun a ha hn => (hW a ha hn).trans (by vout))
       (fun W hW => hPl W fun a ha => (hW a ha).trans (by vout))
-      (by omega) (by omega) hfb (al3 hal) (fun a h1 h2 => hFs a (by omega) (by omega)) hpg
+      (by omega) (by omega) (by omega) hfb (al3 hal) (fun a h1 h2 => hFs a (by omega) (by omega)) hpg
       (fun q hq => by
         have := lit_add (c := 7288953) (n := 6) (k := q) (by omega) (by decide)
         vout
@@ -329,11 +330,12 @@ theorem from0 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (hin
       htls (by vpeel; vself) hp0 (by vpeel; vself) hpd (by vpeel; vself) (by omega) hN64 hsN (by vpeel; vself)
       hsQ hQ64 (by omega) ?_ Y₈ t₉ hK₈ hA₈ hr₈ (by rw [hg₈]; exact r8₇) (by rw [hg₈]; exact r12₇)
       (by rw [hg₈]; exact b₇) (by rw [hg₈]; exact s₇)
-    intro Y t' W P hKY hAY hrY haxY hlo hpe hWP hspY hbxY h12Y h13Y h14Y h15Y hbpY hTab hS0 hSs hNE hPa'
+    intro Y t' W P hKY hAY hrY haxY hlo hpe hWP hspY hbxY h12Y h13Y h14Y h15Y hbpY hTab hS0 hSs hNE hPa' hKnY
     exact k Y t' W P hKY hAY hrY haxY hlo hpe hWP hspY (hbxY.trans (by vpeel; vself))
       (h12Y.trans (by vpeel; vself)) (h13Y.trans (by vpeel; vself)) (h14Y.trans (by vpeel; vself))
       (h15Y.trans (by vpeel; vself)) (hbpY.trans (by vpeel; vself)) hTab (SameO.trans (fun a _ h2 => by vout) hS0)
       (SameO.trans (fun a h1 h2 => by vout) (hSs.mono (by omega) (Nat.le_refl _))) hNE hPa'
+      (fun a ha => by have := Mal.Kn.lt ha; rw [hKnY a ha]; vout)
   · -- `h = 6`: 112 with bit 0 clear
     have e360 := f360 (bp := bp) (by omega) (by omega)
     refine (c_112 prof fb).run c hfs hin _ hK₃ hA₃ hr₃ vc_112 ?_
@@ -424,7 +426,7 @@ theorem from0 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (hin
       (fun W hW => hPm W fun a ha hn => (hW a ha hn).trans (by vout))
       (fun W hW => hPa W fun a ha hn => (hW a ha hn).trans (by vout))
       (fun W hW => hPl W fun a ha => (hW a ha).trans (by vout))
-      (by omega) (by omega) hfb (al4 hal) (fun a h1 h2 => hFs a (by omega) (by omega)) hpg
+      (by omega) (by omega) (by omega) hfb (al4 hal) (fun a h1 h2 => hFs a (by omega) (by omega)) hpg
       (fun q hq => by
         have := lit_add (c := 7288953) (n := 6) (k := q) (by omega) (by decide)
         vout
@@ -444,10 +446,11 @@ theorem from0 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (hin
       htls (by vpeel; vself) hp0 (by vpeel; vself) hpd (by vpeel; vself) (by omega) hN64 hsN (by vpeel; vself)
       hsQ hQ64 (by omega) ?_ Y₁₀ t₁₁ hK₁₀ hA₁₀ hr₁₀ (by rw [hg₁₀]; exact r8₉) (by rw [hg₁₀]; exact r12₉)
       (by rw [hg₁₀]; exact b₉) (by rw [hg₁₀]; exact s₉)
-    intro Y t' W P hKY hAY hrY haxY hlo hpe hWP hspY hbxY h12Y h13Y h14Y h15Y hbpY hTab hS0 hSs hNE hPa'
+    intro Y t' W P hKY hAY hrY haxY hlo hpe hWP hspY hbxY h12Y h13Y h14Y h15Y hbpY hTab hS0 hSs hNE hPa' hKnY
     exact k Y t' W P hKY hAY hrY haxY hlo hpe hWP hspY (hbxY.trans (by vpeel; vself))
       (h12Y.trans (by vpeel; vself)) (h13Y.trans (by vpeel; vself)) (h14Y.trans (by vpeel; vself))
       (h15Y.trans (by vpeel; vself)) (hbpY.trans (by vpeel; vself)) hTab (SameO.trans (fun a _ h2 => by vout) hS0)
       (SameO.trans (fun a h1 h2 => by vout) (hSs.mono (by omega) (Nat.le_refl _))) hNE hPa'
+      (fun a ha => by have := Mal.Kn.lt ha; rw [hKnY a ha]; vout)
 
 end FV7z.Hwc

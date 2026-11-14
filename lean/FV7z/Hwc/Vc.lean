@@ -18,6 +18,20 @@ platform and `tls`: `cnt` = 3 or 4.
   (to the `call` of `strlen`, 1890); `vc_1895`: after it, the next bit or the platform (682).
 -/
 open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn
+namespace FV7z.Mal
+
+/-- The bytes of `.bss` above `0x792980` that `malloc` does not store to: all from `_dl_pagesize` (`0x7933d8`, after
+`mp_` and `main_arena`) to the first page of the heap (`0x7a9000`) but `global_max_fast` (`0x7a45a8`), `__curbrk`
+(`0x7a4c38`, with the 16 bytes after it) and `0x7a8570` (`Mal.near`: the first `malloc` stores to these only). -/
+def Kn (a : Addr) : Prop :=
+  7943128 ≤ a.toNat ∧ a.toNat < 8013224 ∨ 8013232 ≤ a.toNat ∧ a.toNat < 8014904 ∨
+    8014928 ≤ a.toNat ∧ a.toNat < 8029552 ∨ 8029560 ≤ a.toNat ∧ a.toNat < 8032256
+
+theorem Kn.lt {a : Addr} (h : Kn a) : 7943128 ≤ a.toNat ∧ a.toNat < 8032256 := by
+  unfold Kn at h; omega
+
+end FV7z.Mal
+
 namespace FV7z.Hwc
 
 /-- `wpx` with the literals reduced (`simp only` runs no `simproc` it is not given), sums of offsets put together

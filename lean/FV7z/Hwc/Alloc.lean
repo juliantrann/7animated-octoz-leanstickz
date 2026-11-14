@@ -126,7 +126,7 @@ theorem from1050 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (
     (hn : cnt = 3 ∧ E = 8 ∧ H = 4 ∧ t = 23 ∧ s = 151 ∨ cnt = 4 ∧ E = 16 ∧ H = 8 ∧ t = 32 ∧ s = 320)
     (hlv : cnt = 3 ∧ (ln 0).toNat = 6 ∧ (ln 1).toNat = 0 ∧ (ln 2).toNat = 3 ∨
       cnt = 4 ∧ (ln 0).toNat = 6 ∧ (ln 1).toNat = 8 ∧ (ln 2).toNat = 0 ∧ (ln 3).toNat = 3)
-    (hspl : 7940480 ≤ sp.toNat)
+    (hspl : 7940480 ≤ sp.toNat) (hsK : 8032256 + 8 ≤ sp.toNat)
     (hRs : sp.toNat ≤ R.toNat) (hRF : R.toNat + 16 * cnt ≤ (bp + 18446744073709551448#64).toNat)
     (hfb : (bp + 18446744073709551448#64).toNat + 176 ≤ 2 ^ 64)
     (hst : ∀ i < 8, Foot Wl (Addr.add (sp - 8) i))
@@ -161,7 +161,7 @@ theorem from1050 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (
       SameO V W ((bp + 18446744073709551448#64).toNat + 88) (2 ^ 64) N → rdq(W, N) = BitVec.ofNat 64 E →
       (∀ W' : Addr → Byte, (∀ a : Addr, 7940480 ≤ a.toNat → a.toNat < sp.toNat - 8 →
         (a.toNat < P.toNat ∨ P.toNat + s ≤ a.toNat) → W' a = W a) → Pa W') →
-      GoG prof L o gev gP gE Y t') :
+      (∀ a : Addr, Mal.Kn a → W a = V a) → GoG prof L o gev gP gE Y t') :
     ∀ (X : State) (t₀ : Nat), KeptW Wl s₀ X → Agree F X.proc.mm.mem V → X.cpu.rip = hwc_at.add 1050 →
       X.cpu.gpr.rsi = BitVec.ofNat 64 cnt → X.cpu.gpr.rax = BitVec.ofNat 64 t →
       X.cpu.gpr.rdx = R + BitVec.ofNat 64 (16 * (cnt - 1)) → X.cpu.gpr.r12 = BitVec.ofNat 64 cnt →
@@ -213,7 +213,7 @@ theorem from1050 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (
       (by fomega) a (Nat.le_refl _) (by omega)))
     (fun W hW => hPa W fun a ha hn => (hW a ha).trans (hSm (lo := a.toNat) (hi := a.toNat + 1) (by fomega)
       (by fomega) a (Nat.le_refl _) (by omega)))
-    (H := H) (sp := sp) (ln := ln) (st := st) (by omega) hsz (by omega) (by fomega) hRs hRF hfb hst hFr hFT
+    (H := H) (sp := sp) (ln := ln) (st := st) (by omega) hsz (by omega) (by fomega) hRs hRF hfb hsK hst hFr hFT
     (fun m hm => by
       have e1 : (R + BitVec.ofNat 64 (16 * m + 8)).toNat = R.toNat + (16 * m + 8) := addO (by fomega)
       have e2 : (R + BitVec.ofNat 64 (16 * m)).toNat = R.toNat + 16 * m := addO (by fomega)
@@ -228,7 +228,7 @@ theorem from1050 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (
     (by rw [hS1 (by fomega) (by fomega) (by fomega)]; exact hQ) hsQ hQ64 hQd ?_ Y t' hKY hAY' hrY
     (by rw [hgY]) (by rw [hgY]; exact h12) (by rw [hgY]) (by rw [hgY]; exact hbx) (by rw [hgY]; exact hbp)
     (by rw [hgY]; exact hsp)
-  intro Z t₂ W P hKZ hAZ hrZ haxZ hlo hpe hWP hspZ hbxZ h12Z h13Z h14Z h15Z hbpZ hTab hS0 hSs hSh hPa'
+  intro Z t₂ W P hKZ hAZ hrZ haxZ hlo hpe hWP hspZ hbxZ h12Z h13Z h14Z h15Z hbpZ hTab hS0 hSs hSh hPa' hKnZ
   have htl : ∀ j < cnt, tlen (M5 V bp (R + BitVec.ofNat 64 (16 * (cnt - 1))) N cnt) R j = tlen V R j :=
     fun j hj => by
       have e : (R + BitVec.ofNat 64 (16 * j + 8)).toNat = R.toNat + (16 * j + 8) := addO (by fomega)
@@ -249,6 +249,9 @@ theorem from1050 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (
       (Nat.le_refl _) (by omega)))
     (fun a h1 h2 hn => (hSh a (by omega) h2).trans (hSm (lo := a.toNat) (hi := a.toNat + 1) (by fomega)
       (by fomega) a (Nat.le_refl _) (by omega)))
-    hWN hPa'
+    hWN hPa' (fun a ha => by
+      have := Mal.Kn.lt ha
+      exact (hKnZ a ha).trans (hSm (lo := a.toNat) (hi := a.toNat + 1) (by fomega) (by fomega) a (Nat.le_refl _)
+        (by omega)))
 
 end FV7z.Hwc

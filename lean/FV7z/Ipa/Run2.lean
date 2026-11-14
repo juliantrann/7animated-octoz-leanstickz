@@ -27,6 +27,7 @@ theorem to75 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L ipa_at ipa) {mlc : Lis
     (hfr3 : ∀ a : Addr, e.toNat - 88 ≤ a.toNat → V₃ a = iV0 V g a)
     (hPa3 : ∀ W : Addr → Byte, (∀ a : Addr, 7940480 ≤ a.toNat → a.toNat < e.toNat - 96 →
       (a.toNat < P.toNat ∨ P.toNat + s ≤ a.toNat) → W a = V₃ a) → Pa W)
+    (hKn3 : ∀ a : Addr, Mal.Kn a → V₃ a = V a)
     (Z : State) (t : Nat) (hK : KeptW Wl s₀ Z) (hA : Agree F Z.proc.mm.mem V₃) (hrip : Z.cpu.rip = ipa_at.add 58)
     (hsp : Z.cpu.gpr.rsp = e + 18446744073709551528#64)
     (k : ∀ Z' t' (V₄ : Addr → Byte) (A : Addr), KeptW Wl s₀ Z' → Agree F Z'.proc.mm.mem V₄ →
@@ -40,6 +41,7 @@ theorem to75 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L ipa_at ipa) {mlc : Lis
       (∀ a : Addr, e.toNat - 88 ≤ a.toNat → V₄ a = iV0 V g a) →
       (∀ W : Addr → Byte, (∀ a : Addr, 7940480 ≤ a.toNat → a.toNat < e.toNat - 96 →
         (a.toNat < A.toNat ∨ A.toNat + 40 ≤ a.toNat) → W a = V₄ a) → Pa W) →
+      (∀ a : Addr, Mal.Kn a → V₄ a = V a) → 8032256 ≤ A.toNat →
       GoG prof L o gev gP gE Z' t') :
     GoG prof L o gev gP gE Z t := by
   have hr0 : 96 ≤ e.toNat := by omega
@@ -65,11 +67,11 @@ theorem to75 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L ipa_at ipa) {mlc : Lis
   · rw [s₂, Tun.rd_Vst_self _ _ _ (toBytesLE_length _ _) (by ifd), ofBytesLE_toBytesLE (n := 8) rfl]
     try rfl
   -- 75: back from `malloc`
-  intro Z₂ t₃ V₄ A hK₃ hA₃ hr₃ hs₃ hax hbx₃ hbp₃ h12₃ h13₃ h14₃ h15₃ hA1 hA2 hAf hkeep hPa4
+  intro Z₂ t₃ V₄ A hK₃ hA₃ hr₃ hs₃ hax hbx₃ hbp₃ h12₃ h13₃ h14₃ h15₃ hA1 hA2 hAf hkeep hPa4 hKnA hAp
   simp only [hdi, s₂, BitVec.toNat_ofNat, Nat.reducePow, Nat.reduceMod, f96 hr0] at hA2 hAf hkeep hPa4
   refine k Z₂ t₃ V₄ A hK₃ hA₃ hr₃ (by rw [hs₃, s₂, t96p]) hax (by rw [hbx₃, hg₂, set4_rbx, hg₁])
     (by rw [hbp₃, hg₂, set4_rbp, hg₁]) (by rw [h12₃, hg₂, set4_r12, hg₁]) (by rw [h13₃, hg₂, set4_r13, hg₁])
-    (by rw [h14₃, hg₂, set4_r14, hg₁]) (by rw [h15₃, hg₂, set4_r15, hg₁]) hA1 hA2 hAf ?_ ?_ ?_ hPa4
+    (by rw [h14₃, hg₂, set4_r14, hg₁]) (by rw [h15₃, hg₂, set4_r15, hg₁]) hA1 hA2 hAf ?_ ?_ ?_ hPa4 ?_ hAp
   · intro a h1 h2
     rw [hkeep a (Or.inl h1), Tun.Vst_out _ _ _ _ (by ifd) (by ifd), Tun.Vst_out _ _ _ _ (by ipd) (by ipd),
       hlo3 a h1 (by omega)]
@@ -79,5 +81,8 @@ theorem to75 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L ipa_at ipa) {mlc : Lis
   · intro a ha
     rw [hkeep a (Or.inr (by omega)), Tun.Vst_out _ _ _ _ (by ifd) (by ifd), Tun.Vst_out _ _ _ _ (by ipd) (by ipd),
       hfr3 a ha]
+  · intro a ha
+    have := Mal.Kn.lt ha
+    rw [hKnA a ha, Tun.Vst_out _ _ _ _ (by ifd) (by ifd), Tun.Vst_out _ _ _ _ (by ipd) (by ipd), hKn3 a ha]
 
 end FV7z.Ipa

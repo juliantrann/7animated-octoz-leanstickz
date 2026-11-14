@@ -141,7 +141,7 @@ theorem vc_168 {g : Gprs} {f : Rflags} {V : Addr → Byte} {n q : Nat} (hq : n =
     (hbx : g.rbx = BitVec.ofNat 64 (5 * q))
     (hn : rdq(V, g.rbp + 18446744073709551560#64) = BitVec.ofNat 64 n)
     (hr : 8029560 + 88 ≤ g.rbp.toNat) (hr2 : g.rbp.toNat + 16 ≤ 2 ^ 64)
-    (hBl : 7940480 ≤ g.r15.toNat) (hBh : g.r15.toNat + 160 * q ≤ g.rbp.toNat - 88)
+    (hBl : 7940480 ≤ g.r15.toNat) (hBk : 8032256 ≤ g.r15.toNat) (hBh : g.r15.toNat + 160 * q ≤ g.rbp.toNat - 88)
     (hWB : ∀ a : Addr, g.r15.toNat ≤ a.toNat → a.toNat < g.r15.toNat + 160 * q → Foot Wl a)
     (hWF : ∀ a : Addr, g.rbp.toNat - 80 ≤ a.toNat → a.toNat < g.rbp.toNat + 8 → Foot Wl a ∧ Foot F.data a)
     (hW7a : ∀ a : Addr, 8029552 ≤ a.toNat → a.toNat < 8029560 → Foot Wl a)
@@ -151,9 +151,10 @@ theorem vc_168 {g : Gprs} {f : Rflags} {V : Addr → Byte} {n q : Nat} (hq : n =
       rdq(V', g.rbp + 18446744073709551552#64) = BitVec.ofNat 64 (40 * q) ∧
       rdq(V', g.rbp + 18446744073709551544#64) = BitVec.ofNat 64 (2 ^ 64 - 40 * q) ∧
       (∀ a : Addr, (a.toNat < 7937664 ∨ 7937720 ≤ a.toNat ∧ a.toNat < 7940480 ∨
-        g.rbp.toNat - 80 ≤ a.toNat ∧ a.toNat < g.rbp.toNat - 72 ∨ g.rbp.toNat - 56 ≤ a.toNat) → V' a = V a)) g f V := by
+        g.rbp.toNat - 80 ≤ a.toNat ∧ a.toNat < g.rbp.toNat - 72 ∨ g.rbp.toNat - 56 ≤ a.toNat) → V' a = V a) ∧
+      (∀ a : Addr, Mal.Kn a → V' a = V a)) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
-  dsimp only at hbx hn hr hr2 hBl hBh hWB hWF ⊢
+  dsimp only at hbx hn hr hr2 hBl hBk hBh hWB hWF ⊢
   subst hbx
   have hr0 : 96 ≤ rbp.toNat := by omega
   have hWFW : ∀ a : Addr, rbp.toNat - 80 ≤ a.toNat → a.toNat < rbp.toNat + 8 → Foot Wl a :=
@@ -169,6 +170,7 @@ theorem vc_168 {g : Gprs} {f : Rflags} {V : Addr → Byte} {n q : Nat} (hq : n =
   all_goals first
     | (ireg hWB) | (ireg hWFW) | (ireg hWFD) | (ireg hW7a) | (ireg hWb)
     | (ipeel; iself)
+    | (intro a ha; have := Mal.Kn.lt ha; unfold Mal.Kn at ha; iout)
     | (intro a ha; iout)
     | skip
 
@@ -177,8 +179,9 @@ theorem vc_153 {g : Gprs} {f : Rflags} {V : Addr → Byte} {n q : Nat} (hq : n =
     (hB : g.rax ≠ 0#64) (hbx : g.rbx = BitVec.ofNat 64 (5 * q))
     (hn : rdq(V, g.rbp + 18446744073709551560#64) = BitVec.ofNat 64 n)
     (hr : 8029560 + 88 ≤ g.rbp.toNat) (hr2 : g.rbp.toNat + 16 ≤ 2 ^ 64)
-    (hBl : 7940480 ≤ g.rax.toNat) (hBh : g.rax.toNat + 160 * q ≤ g.rbp.toNat - 88)
-    (hAl : 7940480 ≤ g.r14.toNat) (hAh : g.r14.toNat + 40 ≤ g.rbp.toNat - 88)
+    (hBl : 7940480 ≤ g.rax.toNat) (hBk : 8032256 ≤ g.rax.toNat) (hBh : g.rax.toNat + 160 * q ≤ g.rbp.toNat - 88)
+    (hAl : 7940480 ≤ g.r14.toNat) (hAk : 8032256 ≤ g.r14.toNat)
+    (hAh : g.r14.toNat + 40 ≤ g.rbp.toNat - 88)
     (hWA : ∀ a : Addr, g.r14.toNat ≤ a.toNat → a.toNat < g.r14.toNat + 40 → Foot Wl a)
     (hWB : ∀ a : Addr, g.rax.toNat ≤ a.toNat → a.toNat < g.rax.toNat + 160 * q → Foot Wl a)
     (hWF : ∀ a : Addr, g.rbp.toNat - 80 ≤ a.toNat → a.toNat < g.rbp.toNat + 8 → Foot Wl a ∧ Foot F.data a)
@@ -189,9 +192,10 @@ theorem vc_153 {g : Gprs} {f : Rflags} {V : Addr → Byte} {n q : Nat} (hq : n =
       rdq(V', g.rbp + 18446744073709551552#64) = BitVec.ofNat 64 (40 * q) ∧
       rdq(V', g.rbp + 18446744073709551544#64) = BitVec.ofNat 64 (2 ^ 64 - 40 * q) ∧
       (∀ a : Addr, (a.toNat < 7937664 ∨ 7937720 ≤ a.toNat ∧ a.toNat < 7940480 ∨
-        g.rbp.toNat - 80 ≤ a.toNat ∧ a.toNat < g.rbp.toNat - 72 ∨ g.rbp.toNat - 56 ≤ a.toNat) → V' a = V a)) g f V := by
+        g.rbp.toNat - 80 ≤ a.toNat ∧ a.toNat < g.rbp.toNat - 72 ∨ g.rbp.toNat - 56 ≤ a.toNat) → V' a = V a) ∧
+      (∀ a : Addr, Mal.Kn a → V' a = V a)) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
-  dsimp only at hB hbx hn hr hr2 hBl hBh hAl hAh hWA hWB hWF ⊢
+  dsimp only at hB hbx hn hr hr2 hBl hBk hBh hAl hAk hAh hWA hWB hWF ⊢
   have hr0 : 96 ≤ rbp.toNat := by omega
   have hB' : (rax == 0#64) = false := beq_eq_false_iff_ne.2 hB
   hwx [W_153, o4, hB']
@@ -199,13 +203,14 @@ theorem vc_153 {g : Gprs} {f : Rflags} {V : Addr → Byte} {n q : Nat} (hq : n =
   unfold W_168
   intro af
   -- the hypotheses of `vc_168` as goals, after its state is the one here
-  refine wp_mono o5 ?_ (vc_168 hq ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ hW7a hWb)
+  refine wp_mono o5 ?_ (vc_168 hq ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ hW7a hWb)
   · intro g' f' V' h
     refine ⟨fun hc => ?_, fun hc => ?_⟩
     · have h281 : (281 : Nat) = 267 := (h.1 hc).1
       omega
-    obtain ⟨-, h15, h14, h12, hbx', h13, hbp, hsp, h64, h72, hk⟩ := h.2 hc
-    exact ⟨rfl, h15, h14, h12, hbx', h13, hbp, hsp, h64, h72, fun a ha => (hk a ha).trans (by iout)⟩
+    obtain ⟨-, h15, h14, h12, hbx', h13, hbp, hsp, h64, h72, hk, hkn⟩ := h.2 hc
+    exact ⟨rfl, h15, h14, h12, hbx', h13, hbp, hsp, h64, h72, fun a ha => (hk a ha).trans (by iout),
+      fun a ha => (hkn a ha).trans (by have := Mal.Kn.lt ha; iout)⟩
   · exact hbx
   · (try dsimp only); rw [Tun.rd_Vst _ _ _ _ _ (by ifd) (by ifd) (by ifd)]; exact hn
   all_goals ((try dsimp only) <;> assumption)
@@ -260,8 +265,10 @@ theorem vc_293 {g : Gprs} {f : Rflags} {V : Addr → Byte} {i n q : Nat} (hq : n
     (hlen : rdq(V, BitVec.ofNat 64 (7364040 + 8 * i)) = BitVec.ofNat 64 (lA i))
     (hsl : ofBytesLE 8 (List.map V (byteAddrs (BitVec.ofNat 64 (sA i)) 1)) = 47#8)
     (hr : 7940480 + 88 ≤ g.rbp.toNat) (hr2 : g.rbp.toNat + 16 ≤ 2 ^ 64)
-    (hBl : 7940480 ≤ g.r15.toNat) (hBh : g.r15.toNat + 40 * q + 40 ≤ g.rbp.toNat - 88)
-    (hAl : 7940480 ≤ g.r14.toNat) (hAh : g.r14.toNat + 8 ≤ g.rbp.toNat - 88)
+    (hBl : 7940480 ≤ g.r15.toNat) (hBk : 8032256 ≤ g.r15.toNat)
+    (hBh : g.r15.toNat + 40 * q + 40 ≤ g.rbp.toNat - 88)
+    (hAl : 7940480 ≤ g.r14.toNat) (hAk : 8032256 ≤ g.r14.toNat)
+    (hAh : g.r14.toNat + 8 ≤ g.rbp.toNat - 88)
     (hWA : ∀ a : Addr, g.r14.toNat ≤ a.toNat → a.toNat < g.r14.toNat + 8 → Foot Wl a)
     (hWB : ∀ a : Addr, g.r15.toNat ≤ a.toNat → a.toNat < g.r15.toNat + 40 * q + 40 → Foot Wl a)
     (hFD : ∀ a : Addr, g.rbp.toNat - 80 ≤ a.toNat → a.toNat < g.rbp.toNat → Foot F.data a)
@@ -269,9 +276,10 @@ theorem vc_293 {g : Gprs} {f : Rflags} {V : Addr → Byte} {i n q : Nat} (hq : n
     W_293 F Wl (fun j' g' _ V' => j' = 267 ∧ g'.r15 = g.r15 + BitVec.ofNat 64 (40 * q) ∧ g'.r14 = g.r14 + 8#64 ∧
       g'.r12 = BitVec.ofNat 64 (7364040 + 8 * i) ∧ g'.rbx = BitVec.ofNat 64 (sA (i + 1)) ∧ g'.r13 = g.r13 ∧
       g'.rbp = g.rbp ∧ g'.rsp = g.rsp ∧
-      (∀ a : Addr, (a.toNat < 7940480 ∨ g.rbp.toNat - 88 ≤ a.toNat) → V' a = V a)) g f V := by
+      (∀ a : Addr, (a.toNat < 7940480 ∨ g.rbp.toNat - 88 ≤ a.toNat) → V' a = V a) ∧
+      (∀ a : Addr, Mal.Kn a → V' a = V a)) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
-  dsimp only at hr12 hbx h72 h64 h56 hr hr2 hBl hBh hAl hAh hWA hWB hFD ⊢
+  dsimp only at hr12 hbx h72 h64 h56 hr hr2 hBl hBk hBh hAl hAk hAh hWA hWB hFD ⊢
   have hr0 : 96 ≤ rbp.toNat := by omega
   have e12 : r12 + 8#64 = BitVec.ofNat 64 (7364040 + 8 * i) := by
     rw [hr12]; apply BitVec.eq_of_toNat_eq
@@ -289,6 +297,7 @@ theorem vc_293 {g : Gprs} {f : Rflags} {V : Addr → Byte} {i n q : Nat} (hq : n
     icl
   all_goals first
     | (ireg hWA) | (ireg hWB) | (ireg hFD) | (ireg hFR)
+    | (intro a ha; have := Mal.Kn.lt ha; unfold Mal.Kn at ha; iout)
     | (intro a ha; iout)
     | ((rw [hbx]; obtain rfl | rfl | rfl : i = 0 ∨ i = 1 ∨ i = 2 := by omega) <;> rfl)
     | skip
@@ -298,21 +307,24 @@ epilogue (425). -/
 theorem vc_384 {g : Gprs} {f : Rflags} {V : Addr → Byte}
     (hllp : rdq(V, g.rbp + 18446744073709551536#64) = 0#64)
     (hr : 7940480 + 88 ≤ g.rbp.toNat) (hr2 : g.rbp.toNat + 16 ≤ 2 ^ 64)
-    (hBl : 7940480 ≤ g.r15.toNat) (hBh : g.r15.toNat + 8 ≤ g.rbp.toNat - 88)
-    (hAl : 7940480 ≤ g.r14.toNat) (hAh : g.r14.toNat + 8 ≤ g.rbp.toNat - 88) (h7a : 8014928 ≤ g.rbp.toNat - 88)
+    (hBl : 7940480 ≤ g.r15.toNat) (hBk : 8032256 ≤ g.r15.toNat) (hBh : g.r15.toNat + 8 ≤ g.rbp.toNat - 88)
+    (hAl : 7940480 ≤ g.r14.toNat) (hAk : 8032256 ≤ g.r14.toNat)
+    (hAh : g.r14.toNat + 8 ≤ g.rbp.toNat - 88) (h7a : 8014928 ≤ g.rbp.toNat - 88)
     (hWA : ∀ a : Addr, g.r14.toNat ≤ a.toNat → a.toNat < g.r14.toNat + 8 → Foot Wl a)
     (hWB : ∀ a : Addr, g.r15.toNat ≤ a.toNat → a.toNat < g.r15.toNat + 8 → Foot Wl a)
     (hW7a : ∀ a : Addr, 8014920 ≤ a.toNat → a.toNat < 8014928 → Foot Wl a)
     (hFD : ∀ a : Addr, g.rbp.toNat - 80 ≤ a.toNat → a.toNat < g.rbp.toNat → Foot F.data a) :
     W_384 F Wl (fun j' g' _ V' => j' = 425 ∧ g' = g ∧
-      (∀ a : Addr, (a.toNat < 7940480 ∨ g.rbp.toNat - 88 ≤ a.toNat) → V' a = V a)) g f V := by
+      (∀ a : Addr, (a.toNat < 7940480 ∨ g.rbp.toNat - 88 ≤ a.toNat) → V' a = V a) ∧
+      (∀ a : Addr, Mal.Kn a → V' a = V a)) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
-  dsimp only at hllp hr hr2 hBl hBh hAl hAh h7a hWA hWB hFD ⊢
+  dsimp only at hllp hr hr2 hBl hBk hBh hAl hAk hAh h7a hWA hWB hFD ⊢
   have hr0 : 96 ≤ rbp.toNat := by omega
   hwx [W_384, o11, Op.cmpmi, Op.stia, hllp]
   icl
   all_goals first
     | (ireg hWA) | (ireg hWB) | (ireg hW7a) | (ireg hFD)
+    | (intro a ha; have := Mal.Kn.lt ha; unfold Mal.Kn at ha; iout)
     | (intro a ha; iout)
     | skip
 

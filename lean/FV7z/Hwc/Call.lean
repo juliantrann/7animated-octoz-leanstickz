@@ -19,7 +19,8 @@ namespace FV7z.Mal
 and `rdi = n ≤ 1024`, the run gets back to the return address with `rsp + 8`, the registers a call keeps kept,
 `rax = p` with `0x792980 ≤ p`, `p + n ≤ rsp`, the `n` bytes at `p` in the footprint, the bytes below `0x792980`
 and from the caller's `rsp` up as they were, and `Pm` again for the bytes that keep the ones from `0x792980` to the
-slot of the return address apart from the block (the state of the heap for the next call). -/
+slot of the return address apart from the block (the state of the heap for the next call), the bytes `Kn` as they
+were and the block in the heap (`0x7a9000 ≤ p`). -/
 def At (prof : Profile) (L : List (Addr × List Byte)) (o : Oracle) (e : Addr) (Pm : (Addr → Byte) → Prop) : Prop :=
   ∀ {F : Footprint} {Wl : List Rgn} {s₀ : State} {gev : List Event} {gP : State → Nat → List Event → Prop}
     {gE : Outcome → List Event → Prop} {X : State} {t : Nat} {V : Addr → Byte} {e' : Addr} {code : List Byte}
@@ -35,6 +36,7 @@ def At (prof : Profile) (L : List (Addr × List Byte)) (o : Oracle) (e : Addr) (
       (∀ a : Addr, a.toNat < 7940480 ∨ X.cpu.gpr.rsp.toNat + 8 ≤ a.toNat → V₂ a = V a) →
       (∀ W : Addr → Byte, (∀ a : Addr, 7940480 ≤ a.toNat → a.toNat < X.cpu.gpr.rsp.toNat →
         (a.toNat < p.toNat ∨ p.toNat + X.cpu.gpr.rdi.toNat ≤ a.toNat) → W a = V₂ a) → Pm W) →
+      (∀ a : Addr, Kn a → V₂ a = V a) → 8032256 ≤ p.toNat →
       GoG prof L o gev gP gE Z t') →
     GoG prof L o gev gP gE X t
 
@@ -69,7 +71,7 @@ theorem from1111 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (
     (hn : cnt = 3 ∧ E = 8 ∧ H = 4 ∨ cnt = 4 ∧ E = 16 ∧ H = 8)
     (hsz : 16 * E + rem cnt ln H ≤ s) (hs : s ≤ 1024) (hsp8 : 8 ≤ sp.toNat)
     (hRs : sp.toNat ≤ R.toNat) (hRF : R.toNat + 16 * cnt ≤ (bp + 18446744073709551448#64).toNat)
-    (hfb : (bp + 18446744073709551448#64).toNat + 176 ≤ 2 ^ 64)
+    (hfb : (bp + 18446744073709551448#64).toNat + 176 ≤ 2 ^ 64) (hsK : 8032256 + 8 ≤ sp.toNat)
     (hst : ∀ i < 8, Foot Wl (Addr.add (sp - 8) i))
     (hFr : ∀ a : Addr, (bp + 18446744073709551448#64).toNat ≤ a.toNat →
       a.toNat < (bp + 18446744073709551448#64).toNat + 176 → Foot Wl a ∧ Foot F.data a)
@@ -102,7 +104,8 @@ theorem from1111 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (
       Same V W 0 7940480 → Same V W sp.toNat (bp + 18446744073709551448#64).toNat →
       Same V W ((bp + 18446744073709551448#64).toNat + 88) (2 ^ 64) →
       (∀ W' : Addr → Byte, (∀ a : Addr, 7940480 ≤ a.toNat → a.toNat < sp.toNat - 8 →
-        (a.toNat < P.toNat ∨ P.toNat + s ≤ a.toNat) → W' a = W a) → Pa W') → GoG prof L o gev gP gE Y t') :
+        (a.toNat < P.toNat ∨ P.toNat + s ≤ a.toNat) → W' a = W a) → Pa W') →
+      (∀ a : Addr, Mal.Kn a → W a = V a) → GoG prof L o gev gP gE Y t') :
     ∀ (X : State) (t : Nat), KeptW Wl s₀ X → Agree F X.proc.mm.mem V → X.cpu.rip = hwc_at.add 1111 →
       X.cpu.gpr.rdi = BitVec.ofNat 64 s → X.cpu.gpr.r12 = BitVec.ofNat 64 cnt →
       X.cpu.gpr.r13 = BitVec.ofNat 64 (16 * E) → X.cpu.gpr.rbx = R → X.cpu.gpr.rbp = bp → X.cpu.gpr.rsp = sp →
@@ -124,7 +127,7 @@ theorem from1111 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (
     try rfl
   · rw [hsp₁]
     exact c.hws _ (hst i hi)
-  intro Z t₂ V₂ p hK₂ hA₂ hr₂ hsp₂ hax₂ hbx₂ hbp₂ h12₂ h13₂ _ _ hlo hpe hWP hV₂ hPa₂
+  intro Z t₂ V₂ p hK₂ hA₂ hr₂ hsp₂ hax₂ hbx₂ hbp₂ h12₂ h13₂ _ _ hlo hpe hWP hV₂ hPa₂ hKn₂ hph₂
   rw [hdi₁, es, hsp₁, hb8] at hPa₂
   rw [hdi₁, es] at hpe hWP
   rw [hsp₁, hb8] at hpe
@@ -167,5 +170,9 @@ theorem from1111 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (
     (fun a h1 h2 => (hS2 a h1 h2).trans (hV a (.inr (by omega))))
     (fun W' hW' => hPa₂ W' fun a h1 h2 h3 => (hW' a h1 h2 h3).trans (h3.elim (fun h => hS0 a (Nat.zero_le _) h)
       (fun h => hS3 a (by omega) h2)))
+    (fun a ha => by
+      have := Kn.lt ha
+      rw [hS0 a (Nat.zero_le _) (by omega), hKn₂ a ha]
+      exact Tun.Vst_out _ _ _ _ (by rw [toBytesLE_length, hb8]; omega) (by rw [toBytesLE_length, hb8]; omega))
 
 end FV7z.Hwc
