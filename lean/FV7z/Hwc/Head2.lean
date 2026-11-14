@@ -37,7 +37,14 @@ theorem f376 : (bp + 18446744073709551376#64).toNat + 240 = bp.toNat := by bv_om
 theorem f360 : (bp + 18446744073709551360#64).toNat + 256 = bp.toNat := by bv_omega
 end
 
-theorem bp8 {bp : Addr} (h : bp.toNat + 8 ≤ 2 ^ 64) : (bp + 8#64).toNat = bp.toNat + 8 := by bv_omega
+theorem bp8 {bp : Addr} (h : bp.toNat + 16 ≤ 2 ^ 64) : (bp + 8#64).toNat = bp.toNat + 8 := by bv_omega
+
+/-- The registers other than `rsp` after a `call` (`set 4`), by `rfl` on a variable (with the value a literal sum
+the unifier goes down `BitVec.add`). -/
+theorem set4_rsi (g : Gprs) (v : Addr) : (g.set 4 v).rsi = g.rsi := rfl
+theorem set4_rdi (g : Gprs) (v : Addr) : (g.set 4 v).rdi = g.rdi := rfl
+theorem set4_rbp (g : Gprs) (v : Addr) : (g.set 4 v).rbp = g.rbp := rfl
+theorem set4_r15 (g : Gprs) (v : Addr) : (g.set 4 v).r15 = g.r15 := rfl
 
 theorem n1 (bp : Addr) : bp + 8#64 - 8 = bp := by bv_omega
 theorem n2 (bp : Addr) : bp + 8#64 - 8 - 8 = bp + 18446744073709551608#64 := by bv_omega
@@ -92,7 +99,7 @@ theorem vc_132n {g : Gprs} {f : Rflags} {V : Addr → Byte} {c : Nat} (hc : c < 
     apply BitVec.eq_of_toNat_eq; simp only [BitVec.toNat_add, BitVec.toNat_ofNat]; omega
   have es : (BitVec.setWidth 8 (BitVec.ofNat 64 (c + 1))).toNat % 64 = c + 1 := by
     rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat]; omega
-  have hz' : ((0#64 - 1#64 <<< (c + 1)) &&& r8 == 0#64) = false := by simp only [hz, beq_eq_false_iff_ne]; exact hz
+  have hz' : ((0#64 - 1#64 <<< (c + 1)) &&& r8 == 0#64) = false := by simp only [beq_eq_false_iff_ne]; exact hz
   wpx [W_132, o5, Op.shl64, e1, es, hz', Bool.not_true, Bool.not_false, Bool.false_eq_true, false_implies,
     true_implies, BitVec.ofNat_eq_ofNat, Bool.true_eq_false, Nat.reduceEqDiff, false_and, and_false, or_false,
     false_or, ne_eq, hz, not_false_eq_true]
@@ -133,7 +140,7 @@ theorem from0 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (hin
     (hPm : ∀ W : Addr → Byte, (∀ a : Addr, a.toNat < 7940480 → W a = V a) → Pm W)
     (hPa : ∀ W : Addr → Byte, (∀ a : Addr, a.toNat < R.toNat - 8 → W a = V a) → Pa W)
     (hPl : ∀ W : Addr → Byte, (∀ a : Addr, a.toNat < 7940480 → W a = V a) → Pl W)
-    (hbl : 8388872 ≤ bp.toNat) (hbh : bp.toNat + 8 ≤ 2 ^ 64) (hal : bp &&& 15#64 = 0#64)
+    (hbl : 8388872 ≤ bp.toNat) (hbh : bp.toNat + 16 ≤ 2 ^ 64) (hal : bp &&& 15#64 = 0#64)
     (hFs : ∀ a : Addr, bp.toNat - 264 ≤ a.toNat → a.toNat < bp.toNat + 8 → Foot Wl a ∧ Foot F.data a)
     (hpg : ∀ x : Addr, 7286784 ≤ x.toNat → x.toNat < 7290880 → Foot F.data x)
     (hx1 : ∀ k < 6, V (Addr.add 7288953#64 k) ≠ 0) (hx1z : V (Addr.add 7288953#64 6) = 0)
@@ -151,11 +158,11 @@ theorem from0 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (hin
       X.cpu.gpr.rcx = Q → At0 prof L o gev gP gE F Wl s₀ V X.cpu.gpr bp R Q N cnt E H s →
       GoG prof L o gev gP gE X t₀ := by
   intro X t₀ hK hA hrip hsp hdi hsi hdx hcx k
-  have eF := fbb (bp := bp) (by omega) hbh
+  have eF := fbb (bp := bp) (by omega) (by omega)
   have hfb : (bp + 18446744073709551448#64).toNat + 176 ≤ 2 ^ 64 := by omega
-  have e440 := f440 (bp := bp) (by omega) hbh
-  have e432 := f432 (bp := bp) (by omega) hbh
-  have e560 := f560 (bp := bp) (by omega) hbh
+  have e440 := f440 (bp := bp) (by omega) (by omega)
+  have e432 := f432 (bp := bp) (by omega) (by omega)
+  have e560 := f560 (bp := bp) (by omega) (by omega)
   have e8 := bp8 hbh
   have ehw : (8014536#64 : Addr).toNat = 8014536 := rfl
   have esm : (8029424#64 : Addr).toNat = 8029424 := rfl
@@ -182,8 +189,8 @@ theorem from0 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (hin
   rintro Y₁ t₂ hK₁ hA₁ ⟨hr₁, hg₁⟩
   rw [s₀, n8] at hA₁ hg₁
   have s₁ : Y₁.cpu.gpr.rsp = bp + 18446744073709551432#64 := by rw [hg₁]; rfl
-  have si₁ : Y₁.cpu.gpr.rsi = bp + 18446744073709551560#64 := by rw [hg₁]; exact si₀
-  have di₁ : Y₁.cpu.gpr.rdi = 11#64 := by rw [hg₁]; exact di₀
+  have si₁ : Y₁.cpu.gpr.rsi = bp + 18446744073709551560#64 := by rw [hg₁, set4_rsi]; exact si₀
+  have di₁ : Y₁.cpu.gpr.rdi = 11#64 := by rw [hg₁, set4_rdi]; exact di₀
   refine Tgv.tgv64_ok (d := 11#64) c hint hK₁ hA₁ hr₁ (by rw [di₁]; decide) hU.ty hU.va hU.ini
     (hU.out (lo := (bp + 18446744073709551432#64).toNat) (hi := bp.toNat + 8)
       (by rw [eent]; simp only [BitVec.reduceToNat]; omega) (by omega) (fun a ha => by vout)).tw
@@ -197,8 +204,8 @@ theorem from0 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (hin
   rw [si₁] at hA₂
   obtain ⟨k1, -, k3, -, -, -, k7⟩ := hbk
   have sZ : Z.cpu.gpr.rsp = bp + 18446744073709551440#64 := by rw [hg₂, k1, s₁]; exact n9 bp
-  have bZ : Z.cpu.gpr.rbp = bp := by rw [hg₂, k3, hg₁]; exact b₀
-  have r15Z : Z.cpu.gpr.r15 = p := by rw [hg₂, k7, hg₁]; exact r15₀
+  have bZ : Z.cpu.gpr.rbp = bp := by rw [hg₂, k3, hg₁, set4_rbp]; exact b₀
+  have r15Z : Z.cpu.gpr.r15 = p := by rw [hg₂, k7, hg₁, set4_r15]; exact r15₀
   -- 66: the mask (6) and `_dl_hwcap`, to the loop
   refine (c_66 prof fb).run c hfs hin _ hK₂ hA₂ hr₂
     (vc_66 (h := h) hh (by rw [bZ]; vself; vpeel; exact hm6) (by vpeel; exact hhw) (by rw [r15Z]; exact hp0)
@@ -215,7 +222,7 @@ theorem from0 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (hin
   have r8₃ : Y₃.cpu.gpr.r8 = h := by rw [hg₃]; try rfl
   rcases hn with ⟨rfl, rfl, rfl, rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl, rfl, rfl, rfl⟩
   · -- `h = 2`: 112 with bit 0 clear
-    have e376 := f376 (bp := bp) (by omega) hbh
+    have e376 := f376 (bp := bp) (by omega) (by omega)
     refine (c_112 prof fb).run c hfs hin _ hK₃ hA₃ hr₃ vc_112 ?_
     rintro j' g fl V' ⟨rfl, rfl, rfl⟩ Y₄ t₅ hK₄ hA₄ hr₄ hg₄ -
     rw [if_neg (show ¬ (Y₃.cpu.gpr.r8.getLsbD (Y₃.cpu.gpr.rcx.toNat % 64) = true) by
@@ -298,7 +305,7 @@ theorem from0 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (hin
       (Same.trans (fun a h1 h2 => by vout) (hSs.mono (by omega) (Nat.le_refl _))) hNE
       (Same.trans (fun a h1 h2 => by vout) hSh)
   · -- `h = 6`: 112 with bit 0 clear
-    have e360 := f360 (bp := bp) (by omega) hbh
+    have e360 := f360 (bp := bp) (by omega) (by omega)
     refine (c_112 prof fb).run c hfs hin _ hK₃ hA₃ hr₃ vc_112 ?_
     rintro j' g fl V' ⟨rfl, rfl, rfl⟩ Y₄ t₅ hK₄ hA₄ hr₄ hg₄ -
     rw [if_neg (show ¬ (Y₃.cpu.gpr.r8.getLsbD (Y₃.cpu.gpr.rcx.toNat % 64) = true) by
