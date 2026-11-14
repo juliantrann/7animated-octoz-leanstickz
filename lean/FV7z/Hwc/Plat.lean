@@ -238,7 +238,7 @@ theorem from682 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (h
         obtain rfl | rfl | rfl : m = 0 ∨ m = 1 ∨ m = 2 := by omega
         · exact hS0f i hi
         · exact absurd hi (Nat.not_lt_zero i)
-        · exact htls i hi)
+        · exact htls i (by simpa [hl_ln] using hi))
       (fun m hm => by
         obtain rfl | rfl | rfl : m = 0 ∨ m = 1 ∨ m = 2 := by omega
         · show S0.toNat + 6 ≤ 2 ^ 64
@@ -329,7 +329,7 @@ theorem from682 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (h
         · exact hS0f i hi
         · exact hS1f rfl i hi
         · exact absurd hi (Nat.not_lt_zero i)
-        · exact htls i hi)
+        · exact htls i (by simpa [hl_ln] using hi))
       (fun m hm => by
         have := hS1l rfl
         obtain rfl | rfl | rfl | rfl : m = 0 ∨ m = 1 ∨ m = 2 ∨ m = 3 := by omega
