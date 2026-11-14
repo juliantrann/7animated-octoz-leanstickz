@@ -109,6 +109,7 @@ theorem post (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (hin 
     (by rw [hgY, show cnt - 1 + 1 = cnt by omega]; try rfl) hT hS1 hS0
   -- 1522: the pointers
   intro Z t'' V'' a8 a9 hKZ hAZ hrZ hgZ hT2 hS1' hS0'
+  dsimp only at hS1' hS0' hT2
   have hrbp : Z.cpu.gpr.rbp = rbp := by rw [hgZ]
   have hE' : rdd(V'', Z.cpu.gpr.rbp + 18446744073709551476#64) = BitVec.ofNat 32 E := by
     rw [hrbp, hS1'.rd (n := 4) (by rw [off8c hfr']; omega) (by rw [off8c hfr']; omega)
@@ -123,10 +124,8 @@ theorem post (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (hin 
     (vc_1522 (n := cnt) (E := E) hn hE' hm' (by rw [hrbp]; exact hf8c) (by rw [hrbp]; exact hf78)) ?_
   rintro j' g fl V3 ⟨rfl, rfl, rfl⟩ U t3 hKU hAU hrU hgU -
   rw [hgZ] at hgU
-  exact half1 (g₃ := { rax := r14 + 32#64, rcx := BitVec.ofNat 64 (2 ^ (cnt - 1)),
-      rdx := BitVec.ofNat 64 (E - 2), rbx := rbx, rsp := rsp, rbp := rbp, rsi := r14 + 32#64, rdi := 1#64,
-      r8 := BitVec.ofNat 64 (E - 2), r9 := a9, r10 := BitVec.ofNat 64 E, r11 := r11,
-      r12 := BitVec.ofNat 64 cnt, r13 := r13, r14 := r14, r15 := r15 })
+  exact half1 (g₃ := ⟨r14 + 32#64, BitVec.ofNat 64 (2 ^ (cnt - 1)), BitVec.ofNat 64 (E - 2), rbx, rsp, rbp,
+      r14 + 32#64, 1#64, BitVec.ofNat 64 (E - 2), a9, BitVec.ofNat 64 E, r11, BitVec.ofNat 64 cnt, r13, r14, r15⟩)
     c hfs hin hHE rfl hPE hW
     (mid c hfs hin hHE rfl rfl rfl hPE hW hfr hfr' hq₀ hT₀ hfq hfT hQ₀ hsQ hfQ hf0 hf1 hf2 hf3 hf4 hf5
       (fun Y4 t4 W σF hK4 hA4 hr4 hg4 hT4 hσ hS4 hS4' =>
