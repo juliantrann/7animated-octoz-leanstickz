@@ -194,18 +194,20 @@ theorem vc_153 {g : Gprs} {f : Rflags} {V : Addr → Byte} {n q : Nat} (hq : n =
   dsimp only at hB hbx hn hr hr2 hBl hBh hAl hAh hWA hWB hWF ⊢
   have hr0 : 96 ≤ rbp.toNat := by omega
   have hB' : (rax == 0#64) = false := beq_eq_false_iff_ne.2 hB
-  have hn' : rdq(Vst V r14 (toBytesLE rax 8), rbp + 18446744073709551560#64) = BitVec.ofNat 64 n := by
-    rw [Tun.rd_Vst _ _ _ _ _ (by ifd) (by ifd) (by ifd)]; exact hn
   hwx [W_153, o4, hB']
   refine ⟨by ireg hWA, ?_⟩
   unfold W_168
-  refine wp_mono o5 ?_ (vc_168 (V := Vst V r14 (toBytesLE rax 8)) hq hbx hn' hr hr2 hBl hBh hWB hWF hW7a hWb)
-  intro g' f' V' h
-  refine ⟨fun hc => ?_, fun hc => ?_⟩
-  · have h281 : (281 : Nat) = 267 := (h.1 hc).1
-    omega
-  obtain ⟨-, h15, h14, h12, hbx', h13, hbp, hsp, h64, h72, hk⟩ := h.2 hc
-  exact ⟨rfl, h15, h14, h12, hbx', h13, hbp, hsp, h64, h72, fun a ha => (hk a ha).trans (by iout)⟩
+  -- the hypotheses of `vc_168` as goals, after its state is the one here
+  refine wp_mono o5 ?_ (vc_168 hq ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ hW7a hWb)
+  · intro g' f' V' h
+    refine ⟨fun hc => ?_, fun hc => ?_⟩
+    · have h281 : (281 : Nat) = 267 := (h.1 hc).1
+      omega
+    obtain ⟨-, h15, h14, h12, hbx', h13, hbp, hsp, h64, h72, hk⟩ := h.2 hc
+    exact ⟨rfl, h15, h14, h12, hbx', h13, hbp, hsp, h64, h72, fun a ha => (hk a ha).trans (by iout)⟩
+  · exact hbx
+  · (try dsimp only); rw [Tun.rd_Vst _ _ _ _ _ (by ifd) (by ifd) (by ifd)]; exact hn
+  all_goals ((try dsimp only) <;> assumption)
 
 /-- The arguments of `memset (r15 + 0x28, 0, r13)`. -/
 theorem vc_267 {g : Gprs} {f : Rflags} {V : Addr → Byte} :
@@ -316,7 +318,7 @@ theorem vc_384 {g : Gprs} {f : Rflags} {V : Addr → Byte}
 /-- The epilogue: `-1` to `__rtld_env_path_list.dirs` (`0x791eb0`), the registers the prologue pushed popped, to the
 `ret` (450). -/
 theorem vc_425 {g : Gprs} {f : Rflags} {V : Addr → Byte}
-    (hr : 96 ≤ g.rbp.toNat) (hr2 : g.rbp.toNat + 16 ≤ 2 ^ 64)
+    (hr : 7937720 + 40 ≤ g.rbp.toNat) (hr2 : g.rbp.toNat + 16 ≤ 2 ^ 64)
     (hWb : ∀ a : Addr, 7937712 ≤ a.toNat → a.toNat < 7937720 → Foot Wl a)
     (hFD : ∀ a : Addr, g.rbp.toNat - 40 ≤ a.toNat → a.toNat < g.rbp.toNat + 8 → Foot F.data a) :
     W_425 F Wl (fun j' g' _ V' => j' = 450 ∧ g'.rsp = g.rbp + 8#64 ∧
@@ -326,7 +328,7 @@ theorem vc_425 {g : Gprs} {f : Rflags} {V : Addr → Byte}
       (∀ a : Addr, (a.toNat < 7937712 ∨ 7937720 ≤ a.toNat) → V' a = V a)) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at hr hr2 hFD ⊢
-  have hr0 : 96 ≤ rbp.toNat := hr
+  have hr0 : 96 ≤ rbp.toNat := by omega
   hwx [W_425, o13, Op.stia, BitVec.add_zero]
   ipeel
   icl
