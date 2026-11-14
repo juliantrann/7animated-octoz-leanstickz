@@ -199,8 +199,11 @@ theorem vc_153 {g : Gprs} {f : Rflags} {V : Addr → Byte} {n q : Nat} (hq : n =
   hwx [W_153, o4, hB']
   refine ⟨by ireg hWA, ?_⟩
   unfold W_168
-  refine wp_mono o5 (fun g' f' V' h => ⟨fun hc => absurd (h.1 hc).1 (by decide), fun hc => ?_⟩)
-    (vc_168 (V := Vst V r14 (toBytesLE rax 8)) hq hbx hn' hr hr2 hBl hBh hWB hWF hW7a hWb)
+  refine wp_mono o5 ?_ (vc_168 (V := Vst V r14 (toBytesLE rax 8)) hq hbx hn' hr hr2 hBl hBh hWB hWF hW7a hWb)
+  intro g' f' V' h
+  refine ⟨fun hc => ?_, fun hc => ?_⟩
+  · have h281 : (281 : Nat) = 267 := (h.1 hc).1
+    omega
   obtain ⟨-, h15, h14, h12, hbx', h13, hbp, hsp, h64, h72, hk⟩ := h.2 hc
   exact ⟨rfl, h15, h14, h12, hbx', h13, hbp, hsp, h64, h72, fun a ha => (hk a ha).trans (by iout)⟩
 
@@ -330,6 +333,7 @@ theorem vc_425 {g : Gprs} {f : Rflags} {V : Addr → Byte}
   all_goals first
     | (ireg hWb) | (ireg hFD)
     | (intro a ha; iout)
+    | (ipeel; done)
     | skip
 
 end FV7z.Ipa
