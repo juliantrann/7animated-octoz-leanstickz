@@ -225,7 +225,7 @@ theorem inner (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (hin
       refine (c_1294 prof fb).run c hfs hin _ hK hA hr
         (vc_1294c (m := m + 1) (r := n) (j := if m = 0 then 1343 else 1294) hcc h13 h14 h12) ?_
       rintro j' g fl V' ⟨rfl, rfl, rfl⟩ Y t' hKY hAY hrY hgY -
-      exact ih (by omega) Y t' V hKY hAY hrY (by rw [hgY]; exact hsp) (by rw [hgY]; exact hbx)
+      exact ih (by omega) Y t' _ hKY hAY hrY (by rw [hgY]; exact hsp) (by rw [hgY]; exact hbx)
         (by rw [hgY]; exact hbp) (by rw [hgY]; exact h12) (by rw [hgY]; exact h13)
         (by simp only [hgY, Nat.add_sub_cancel]) (by rw [hgY]; exact h15) (by rw [hgY]; exact hp)
         (by rw [hgY]; exact hpe) (by rw [hgY]; exact hO)
@@ -278,27 +278,27 @@ theorem inner (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (hin
 
 /-! ## The combinations -/
 
-theorem o60 {r : Addr} (h : (r + 18446744073709551448#64).toNat + 176 ≤ 2 ^ 64) :
+theorem fo60 {r : Addr} (h : (r + 18446744073709551448#64).toNat + 176 ≤ 2 ^ 64) :
     (r + 18446744073709551520#64).toNat = (r + 18446744073709551448#64).toNat + 72 := by
   bv_omega
 
-theorem o58 {r : Addr} (h : (r + 18446744073709551448#64).toNat + 176 ≤ 2 ^ 64) :
+theorem fo58 {r : Addr} (h : (r + 18446744073709551448#64).toNat + 176 ≤ 2 ^ 64) :
     (r + 18446744073709551528#64).toNat = (r + 18446744073709551448#64).toNat + 80 := by
   bv_omega
 
-theorem o50 {r : Addr} (h : (r + 18446744073709551448#64).toNat + 176 ≤ 2 ^ 64) :
+theorem fo50 {r : Addr} (h : (r + 18446744073709551448#64).toNat + 176 ≤ 2 ^ 64) :
     (r + 18446744073709551536#64).toNat = (r + 18446744073709551448#64).toNat + 88 := by
   bv_omega
 
-theorem o48 {r : Addr} (h : (r + 18446744073709551448#64).toNat + 176 ≤ 2 ^ 64) :
+theorem fo48 {r : Addr} (h : (r + 18446744073709551448#64).toNat + 176 ≤ 2 ^ 64) :
     (r + 18446744073709551544#64).toNat = (r + 18446744073709551448#64).toNat + 96 := by
   bv_omega
 
-theorem oa0 {r : Addr} (h : (r + 18446744073709551448#64).toNat + 176 ≤ 2 ^ 64) :
+theorem foa0 {r : Addr} (h : (r + 18446744073709551448#64).toNat + 176 ≤ 2 ^ 64) :
     (r + 18446744073709551456#64).toNat = (r + 18446744073709551448#64).toNat + 8 := by
   bv_omega
 
-theorem o80 {r : Addr} (h : (r + 18446744073709551448#64).toNat + 176 ≤ 2 ^ 64) :
+theorem fo80 {r : Addr} (h : (r + 18446744073709551448#64).toNat + 176 ≤ 2 ^ 64) :
     (r + 18446744073709551488#64).toNat = (r + 18446744073709551448#64).toNat + 40 := by
   bv_omega
 
@@ -358,8 +358,8 @@ theorem loop (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (hin 
     -- `temp[cnt-1]`
     refine (c_1248 prof fb).run c hfs hin _ hK hA hrip
       (vc_1248 (r := 2 * i + 2) (L := ln (cnt - 1)) (S := st (cnt - 1)) h12 (by omega)
-        (by rw [hbp, rdF hO (by rw [o50 hfb]; omega) (by rw [o50 hfb]; omega)]; exact hL₀)
-        (by rw [hbp, rdF hO (by rw [o58 hfb]; omega) (by rw [o58 hfb]; omega)]; exact hS₀)
+        (by rw [hbp, rdF hO (by rw [fo50 hfb]; omega) (by rw [fo50 hfb]; omega)]; exact hL₀)
+        (by rw [hbp, rdF hO (by rw [fo58 hfb]; omega) (by rw [fo58 hfb]; omega)]; exact hS₀)
         (by rw [hbp]; exact hf50) (by rw [hbp]; exact hf58)) ?_
     rintro j' g fl V' ⟨rfl, rfl, rfl⟩ Y t' hKY hAY hrY hgY -
     have hdi : Y.cpu.gpr.rdi = X.cpu.gpr.rdi := by rw [hgY]
@@ -375,7 +375,7 @@ theorem loop (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (hin 
     -- `/`, `m = cnt - 2`
     refine (c_1265 prof fb).run c hfs hin _ hKZ hAZ hrZ
       (vc_1265 (q := BitVec.ofNat 64 (cnt - 2))
-        (by rw [hbpZ', rdF hOZ (by rw [o60 hfb]; omega) (by rw [o60 hfb]; omega)]; exact hq₀)
+        (by rw [hbpZ', rdF hOZ (by rw [fo60 hfb]; omega) (by rw [fo60 hfb]; omega)]; exact hq₀)
         (by rw [hbpZ']; exact hf60)
         (fun i hi => by
           obtain rfl : i = 0 := by omega
@@ -399,7 +399,7 @@ theorem loop (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (hin 
     intro Z₁ t₄ W₁ hK₁ hA₁ hr₁ hsp₁ hbx₁ hbp₁ h12₁ h13₁ h15₁ hdi₁ hO₁
     -- `temp[0]`
     refine (c_1343 prof fb).run c hfs hin _ hK₁ hA₁ hr₁
-      (vc_1343 (L := ln 0) (by rw [hbp₁, rdF hO₁ (by rw [o48 hfb]; omega) (by rw [o48 hfb]; omega)]; exact hl₀)
+      (vc_1343 (L := ln 0) (by rw [hbp₁, rdF hO₁ (by rw [fo48 hfb]; omega) (by rw [fo48 hfb]; omega)]; exact hl₀)
         (by rw [hbp₁]; exact hf48)) ?_
     rintro j' g fl V' ⟨rfl, rfl, rfl⟩ Y₂ t₅ hKY₂ hAY₂ hrY₂ hgY₂ -
     have hdi₂ : Y₂.cpu.gpr.rdi = Z₁.cpu.gpr.rdi := by rw [hgY₂]
@@ -424,9 +424,9 @@ theorem loop (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (hin 
     · -- `n = 0`: to 1392
       refine (c_1355 prof fb).run c hfs hin _ hKZ₂ hAZ₂ hrZ₂
         (vc_1355e (c := Cv) (P := Pv) (E := Ev) (h12₂.trans rfl)
-          (by rw [hbp₂, rdF hO₂ (by rw [oa0 hfb]; omega) (by rw [oa0 hfb]; omega)]; exact hC₀)
+          (by rw [hbp₂, rdF hO₂ (by rw [foa0 hfb]; omega) (by rw [foa0 hfb]; omega)]; exact hC₀)
           (by rw [hbp₂, rdF hO₂ (by omega) (by omega)]; exact hP₀)
-          (by rw [hbp₂, rdF hO₂ (by rw [o80 hfb]; omega) (by rw [o80 hfb]; omega)]; exact hE₀)
+          (by rw [hbp₂, rdF hO₂ (by rw [fo80 hfb]; omega) (by rw [fo80 hfb]; omega)]; exact hE₀)
           hs₂ (by rw [hbp₂]; exact hfa0) (by rw [hbp₂]; exact hfa8) (by rw [hbp₂]; exact hf80)) ?_
       rintro j' g fl V' ⟨rfl, rfl, rfl⟩ U₂ t₇ hKU₂ hAU₂ hrU₂ hgU₂ -
       have hpe' : X.cpu.gpr.rdi.toNat + (ln (cnt - 1)).toNat + 1 + bts ln (2 * 0) (cnt - 2) + (ln 0).toNat + 1 =
@@ -434,7 +434,7 @@ theorem loop (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (hin 
         have : rem cnt ln (2 * 0) = 0 := rfl
         omega
       refine k U₂ t₇ _ hKU₂ hAU₂ hrU₂ (by rw [hgU₂]) (by rw [hgU₂]) (by rw [hgU₂]) (by rw [hgU₂])
-        (by rw [hgU₂]; exact hspZ₂.trans (by rw [hgY₂]; exact hsp₁))
+        (by rw [hgU₂]; exact hspZ₂)
         (by rw [hgU₂]; exact hbxZ₂.trans (by rw [hgY₂]; exact hbx₁)) (by rw [hgU₂]; exact hbp₂)
         (by rw [hgU₂]; show (Z₂.cpu.gpr.rax + 1#64).toNat = pe; rw [add1 (by omega), hax₂]; exact hpe')
         (by rw [← hpe']; exact hO₂)
@@ -448,7 +448,7 @@ theorem loop (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (hin 
         show (Z₂.cpu.gpr.rax + 1#64).toNat = _
         rw [add1 (by omega), hax₂]
       refine ih i (by omega) (by omega) U₂ t₇ _ hKU₂ hAU₂ hrU₂
-        (by rw [hgU₂]; exact hspZ₂.trans (by rw [hgY₂]; exact hsp₁))
+        (by rw [hgU₂]; exact hspZ₂)
         (by rw [hgU₂]; exact hbxZ₂.trans (by rw [hgY₂]; exact hbx₁)) (by rw [hgU₂]; exact hbp₂)
         (by rw [hgU₂]; exact h12₂.trans (congrArg (BitVec.ofNat 64) (by omega)))
         (by rw [hgU₂]; exact h13Z₂.trans (by rw [hgY₂]; exact h13₁))
