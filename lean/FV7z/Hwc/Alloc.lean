@@ -198,7 +198,7 @@ theorem from1050 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (
       rw [hS1 (by fomega) (by fomega) (by fomega), hS1 (by fomega) (by fomega) (by fomega)]
       exact hT m hm)
     hsrc hs64 hsd (M5.rd60 V bp _ N cnt hfb hND hN64) (M5.rd68 V bp _ N cnt hfb hND hN64)
-    (by rw [M5.rd88 V bp _ N cnt hfb hND hN64, h2E])
+    (by rw [M5.rd88 V bp _ N cnt hfb, h2E])
     (by rw [hS1 (by fomega) (by fomega) (by fomega)]; exact hD8)
     (by rw [M5.rd8c V bp _ N cnt hfb hND hN64, h2E])
     (by rw [hS1 (by fomega) (by fomega) (by fomega)]; exact hL)
