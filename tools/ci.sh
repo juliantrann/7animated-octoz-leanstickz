@@ -34,8 +34,9 @@ step_pins() {
   (cd release/26.06 && sha256sum -c "$root/pins/release-26.06.sha256")
 }
 step_build() {
-  # the kernel check of Im5.L* recurses deep (a95): no limit on the main thread's stack
-  ulimit -s unlimited 2>/dev/null || true
+  # the kernel check of Im5.L* recurses deep (a95) on the main thread (Elab.async false): a finite 1 GB stack, since
+  # with `unlimited` lean takes its 8 MB default for the main thread (`--tstack` is for the other threads)
+  ulimit -s 1048576 2>/dev/null || ulimit -s unlimited 2>/dev/null || true
   (cd refs/zellic-x86 && lake build 2>&1 | grep -E 'error|warning: declaration uses .sorry.|Build completed'; exit "${PIPESTATUS[0]}") &&
   (cd lean && for h in $(grep -v '^\s*#' heavy-targets | xargs); do
      lake build "$h" 2>&1 | grep -E 'error|Build completed'; [ "${PIPESTATUS[0]}" = 0 ] || exit 1; done) &&

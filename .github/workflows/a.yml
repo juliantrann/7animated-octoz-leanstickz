@@ -43,7 +43,7 @@ jobs:
       - name: build
         run: |
           cd lean
-          ulimit -s unlimited || ulimit -s 1048576 || true
+          ulimit -s 1048576 || ulimit -s unlimited || true
           targets=$( [ -f wip-targets ] && grep -v '^\s*#' wip-targets | xargs || echo FV7z )
           echo "targets: $targets"
           set -o pipefail
@@ -132,7 +132,7 @@ jobs:
       - name: build
         run: |
           cd lean
-          ulimit -s unlimited || ulimit -s 1048576 || true
+          ulimit -s 1048576 || ulimit -s unlimited || true
           set -o pipefail
           echo "${{ matrix.module }}" | tee -a "$GITHUB_STEP_SUMMARY"
           /usr/bin/time -f 'split: %e s, %M KiB peak, exit %x' lake build "${{ matrix.module }}" 2>&1 |
@@ -183,7 +183,7 @@ jobs:
       - name: build
         run: |
           cd lean
-          ulimit -s unlimited || ulimit -s 1048576 || true
+          ulimit -s 1048576 || ulimit -s unlimited || true
           set -o pipefail
           targets=$( [ -f join-targets ] && grep -v '^\s*#' join-targets | xargs )
           echo "targets: $targets"
