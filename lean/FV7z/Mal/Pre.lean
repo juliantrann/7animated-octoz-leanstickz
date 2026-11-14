@@ -121,7 +121,7 @@ theorem far {b fsb pad sm nb S : Addr} {g : Gprs} {V Vd V₁ M : Addr → Byte}
     (hbs : (b + size pad 656#64).toNat + 4096 + 168 ≤ S.toNat)
     (hfs : 8029888 + 40 ≤ fsb.toNat) (hfb : fsb.toNat + 48 ≤ b.toNat)
     (hT0 : (b + corr b).toNat + 656 + nb.toNat + 16 ≤ S.toNat) (hT1 : (Tp b).toNat = (b + corr b).toNat + 656)
-    {a : Addr} (ha : S.toNat + 240 ≤ a.toNat) : M a = V a := by
+    (hbc : b.toNat ≤ (b + corr b).toNat) {a : Addr} (ha : S.toNat + 240 ≤ a.toNat) : M a = V a := by
   have hat := a.isLt
   obtain ⟨-, -, f40⟩ := fofs fsb (by omega) (by omega)
   have a200 : (S + 200#64).toNat = S.toNat + 200 := by bv_omega
@@ -183,9 +183,9 @@ theorem After.far {b fsb pad sm nb S : Addr} {g : Gprs} {V M : Addr → Byte} (h
     (hbs : (b + size pad 656#64).toNat + 4096 + 168 ≤ S.toNat)
     (hfs : 8029888 + 40 ≤ fsb.toNat) (hfb : fsb.toNat + 48 ≤ b.toNat)
     (hT0 : (b + corr b).toNat + 656 + nb.toNat + 16 ≤ S.toNat) (hT1 : (Tp b).toNat = (b + corr b).toNat + 656)
-    {a : Addr} (ha : S.toNat + 240 ≤ a.toNat) : M a = V a :=
+    (hbc : b.toNat ≤ (b + corr b).toNat) {a : Addr} (ha : S.toNat + 240 ≤ a.toNat) : M a = V a :=
   let ⟨_, _, hD, hO, hM⟩ := h
-  far hD hO hM hsp hS hsl hbs hfs hfb hT0 hT1 ha
+  Mal.far hD hO hM hsp hS hsl hbs hfs hfb hT0 hT1 hbc ha
 
 theorem After.near {b fsb pad sm nb S : Addr} {g : Gprs} {V M : Addr → Byte} (h : After fsb S b pad sm nb g V M)
     (hsp : g.rsp = S + 232#64) (hS : S.toNat + 512 < 2 ^ 64) (hsl : 8029888 + 168 ≤ S.toNat)
@@ -197,6 +197,6 @@ theorem After.near {b fsb pad sm nb S : Addr} {g : Gprs} {V M : Addr → Byte} (
     (h2 : ¬ (8013224 ≤ a.toNat ∧ a.toNat < 8013232)) (h3 : ¬ (8014904 ≤ a.toNat ∧ a.toNat < 8014912))
     (h4 : ¬ (fsb.toNat - 40 ≤ a.toNat ∧ a.toNat < fsb.toNat - 16)) : M a = V a :=
   let ⟨_, _, hD, hO, hM⟩ := h
-  near hD hO hM hsp hS hsl hbs hfs hfb hT0 hT1 hbc ha h1 h2 h3 h4
+  Mal.near hD hO hM hsp hS hsl hbs hfs hfb hT0 hT1 hbc ha h1 h2 h3 h4
 
 end FV7z.Mal

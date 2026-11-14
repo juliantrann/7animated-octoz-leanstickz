@@ -219,7 +219,7 @@ theorem gmal (c : Seg prof F Wl L s₀ o) (hin : CodeIn L gor_at gor)
       (Vst Vb (B - 8) (toBytesLE (gor_at.add (jc + 5)) 8)) M := ⟨Vd, V₁, hD, hO, hM⟩
   have MV : ∀ a : Addr, B.toNat ≤ a.toNat → M a = Vb a := fun a ha => by
     rw [hAf.far hspY (by rw [hS]; omega) (by rw [hS]; omega) (by rw [hS]; omega) mc.hfs mc.hfb (by rw [hS]; omega) hT1
-      (a := a) (by rw [hS]; omega), hVc a (.inr ha)]
+      hbc (a := a) (by rw [hS]; omega), hVc a (.inr ha)]
   have ML : ∀ a : Addr, Lo b fsb a → M a = Vb a := fun a ⟨ha, h1, h2, h3, h4⟩ => by
     rw [hAf.near hspY (by rw [hS]; omega) (by rw [hS]; omega) (by rw [hS]; omega) mc.hfs mc.hfb (by rw [hS]; omega) hT1
       hbc (a := a) ha h1 h2 h3 h4, hVc a (.inl (by omega))]
