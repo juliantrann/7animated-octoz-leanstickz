@@ -79,10 +79,11 @@ theorem vc_L{lo} (k : Nat) (hk1 : {lo} ≤ k) (hk2 : k ≤ {lo}) : P5 F Wl k := 
 def chain(ks: list, name: str, sub: str, lo: int, hi: int) -> str:
     """`by_cases` over the ranges `ks` (pairs `(a, b)`), each closed by `sub` at `a`."""
     cases = []
+    karg = "(k := k)" if sub == "vc_F" else "k"  # `vc_F*` (the chains) take `k` implicitly, `vc_L*` explicitly
     for a, b in ks[:-1]:
-        cases.append(f"  by_cases h{b} : k ≤ {b}\n  · exact {sub}{a} k (by omega) h{b}")
+        cases.append(f"  by_cases h{b} : k ≤ {b}\n  · exact {sub}{a} {karg} (by omega) h{b}")
     a, b = ks[-1]
-    cases.append(f"  exact {sub}{a} k (by omega) h2")
+    cases.append(f"  exact {sub}{a} {karg} (by omega) h2")
     return (f"theorem {name} {{k : Nat}} (h1 : {lo} ≤ k) (h2 : k ≤ {hi}) : P5 F Wl k := by\n"
             + "\n".join(cases) + "\n")
 

@@ -22,29 +22,29 @@ variable {F : Footprint} {Wl : List Rgn}
 
 theorem pall {k : Nat} (h1 : 64 ≤ k) (h2 : k ≤ 257) : P5 F Wl k := by
   by_cases h79 : k ≤ 79
-  · exact vc_F64 k (by omega) h79
+  · exact vc_F64 (k := k) (by omega) h79
   by_cases h95 : k ≤ 95
-  · exact vc_F80 k (by omega) h95
+  · exact vc_F80 (k := k) (by omega) h95
   by_cases h111 : k ≤ 111
-  · exact vc_F96 k (by omega) h111
+  · exact vc_F96 (k := k) (by omega) h111
   by_cases h127 : k ≤ 127
-  · exact vc_F112 k (by omega) h127
+  · exact vc_F112 (k := k) (by omega) h127
   by_cases h143 : k ≤ 143
-  · exact vc_F128 k (by omega) h143
+  · exact vc_F128 (k := k) (by omega) h143
   by_cases h159 : k ≤ 159
-  · exact vc_F144 k (by omega) h159
+  · exact vc_F144 (k := k) (by omega) h159
   by_cases h175 : k ≤ 175
-  · exact vc_F160 k (by omega) h175
+  · exact vc_F160 (k := k) (by omega) h175
   by_cases h191 : k ≤ 191
-  · exact vc_F176 k (by omega) h191
+  · exact vc_F176 (k := k) (by omega) h191
   by_cases h207 : k ≤ 207
-  · exact vc_F192 k (by omega) h207
+  · exact vc_F192 (k := k) (by omega) h207
   by_cases h223 : k ≤ 223
-  · exact vc_F208 k (by omega) h223
+  · exact vc_F208 (k := k) (by omega) h223
   by_cases h239 : k ≤ 239
-  · exact vc_F224 k (by omega) h239
+  · exact vc_F224 (k := k) (by omega) h239
   by_cases h255 : k ≤ 255
-  · exact vc_F240 k (by omega) h255
-  exact vc_F256 k (by omega) h2
+  · exact vc_F240 (k := k) (by omega) h255
+  exact vc_F256 (k := k) (by omega) h2
 
 end FV7z.Im5
