@@ -364,10 +364,10 @@ theorem mid (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (hin :
   rintro j' g fl V' ⟨rfl, rfl, rfl⟩ Y t' hKY hAY hrY hgY -
   rw [hrs] at hgY
   have hrbp : Y.cpu.gpr.rbp = g₃.rbp := by rw [hgY, hgx]
-  have hq : rdd(V, Y.cpu.gpr.rbp + 18446744073709551512#64) = BitVec.ofNat 32 H := by
-    rw [hrbp, hS1.rd (by rw [off68 hfr']; omega) (by rw [off68 hfr']; omega) (by rw [off68 hfr']; omega)]
+  have hq : rdd(V', Y.cpu.gpr.rbp + 18446744073709551512#64) = BitVec.ofNat 32 H := by
+    rw [hrbp, hS1.rd (n := 4) (by rw [off68 hfr']; omega) (by rw [off68 hfr']; omega) (by rw [off68 hfr']; omega)]
     exact hq₀
-  have hT' : rdq(V, Y.cpu.gpr.rbp + 18446744073709551536#64) = T := by
+  have hT' : rdq(V', Y.cpu.gpr.rbp + 18446744073709551536#64) = T := by
     rw [hrbp, hS1.rdq (by rw [off50 hfr']; omega) (by rw [off50 hfr']; omega) (by rw [off50 hfr']; omega)]
     exact hT₀
   refine (c_1612 prof fb).run c hfs hin _ hKY hAY hrY
@@ -375,6 +375,7 @@ theorem mid (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (hin :
   rintro j' g fl V' ⟨rfl, rfl, rfl⟩ Z t'' hKZ hAZ hrZ hgZ -
   rw [hgY, hgx] at hgZ
   refine half2 c hfs hin hHE hPE hW hfr hfr' hQ₀ hsQ hfQ hf0 hf1 hf2 hf3 hf4 hf5 k H (by omega) (Nat.le_refl _)
-    Z t'' _ _ σ' hKZ hAZ hrZ (hgZ.trans (by rw [← hrcx]; try rfl)) hT hD.half hS1 hS0
+    Z t'' _ _ σ' hKZ hAZ hrZ (hgZ.trans (by rw [← hrcx]; try rfl)) hT
+    (by rw [show E - H = H by omega]; exact hD.half) hS1 hS0
 
 end FV7z.Hwc
