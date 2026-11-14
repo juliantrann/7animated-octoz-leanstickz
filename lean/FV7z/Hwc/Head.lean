@@ -61,7 +61,10 @@ def At1681 (prof : Profile) (L : List (Addr × List Byte)) (o : Oracle) (gev : L
     Tab W P E (pt (fun _ => P + BitVec.ofNat 64 (16 * E)) (caps E (hl_ln cnt) cnt (fun _ => 0#64)) H
       (hl_ln cnt (cnt - 1))) (caps E (hl_ln cnt) cnt (fun _ => 0#64)) →
     SameO V W 0 7940480 N → SameO V W ((bp + 18446744073709551448#64).toNat + 104) (2 ^ 64) N →
-    rdq(W, N) = BitVec.ofNat 64 E → GoG prof L o gev gP gE Y t'
+    rdq(W, N) = BitVec.ofNat 64 E →
+    (∀ W' : Addr → Byte, (∀ a : Addr, 7940480 ≤ a.toNat → a.toNat < R.toNat - 8 →
+      (a.toNat < P.toNat ∨ P.toNat + s ≤ a.toNat) → W' a = W a) → Pa W') →
+    GoG prof L o gev gP gE Y t'
 
 /-! ## `h = 2`: `x86_64` -/
 
@@ -215,10 +218,10 @@ theorem from1778_3 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb)
     (rng hpg (by decide) (by decide) (by decide)) (by decide) (fun h => absurd h (by decide))
     (fun h => absurd h (by decide)) htls (by vpeel; exact hp) hp0 (by vpeel; exact hpl) hpd
     (by vpeel; exact hNv) hND hN64 hsN (by vpeel; exact hQ) hsQ hQ64 hQd ?_ Y₆ t₆ hK₆ hA₆ hr₆ ?_ ?_ ?_ ?_ ?_ ?_
-  · intro Y t' W P hKY hAY hrY haxY hlo hpe hWP hspY hbxY h12Y h13Y h14Y h15Y hbpY hTab hS0 hSs hNE
+  · intro Y t' W P hKY hAY hrY haxY hlo hpe hWP hspY hbxY h12Y h13Y h14Y h15Y hbpY hTab hS0 hSs hNE hPa'
     exact k Y t' W P hKY hAY hrY haxY hlo hpe hWP hspY (hbxY.trans (by vpeel)) (h12Y.trans (by vpeel))
       (h13Y.trans (by vpeel)) (h14Y.trans (by vpeel)) (h15Y.trans (by vpeel)) (hbpY.trans (by vpeel)) hTab
-      (SameO.trans (fun a _ h2 => by vout) hS0) (SameO.trans (fun a h1 h2 => by vout) hSs) hNE
+      (SameO.trans (fun a _ h2 => by vout) hS0) (SameO.trans (fun a h1 h2 => by vout) hSs) hNE hPa'
   · rw [hg₆]
     show R + (Z.cpu.gpr.r13 + 16#64) = _
     rw [r13₅]
@@ -465,10 +468,10 @@ theorem from1778_4 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb)
     (fun _ => by decide) htls (by vpeel; exact hp) hp0 (by vpeel; exact hpl) hpd
     (by vpeel; exact hNv) hND hN64 hsN (by vpeel; exact hQ) hsQ hQ64 hQd ?_ Y₁₀ t₁₀ hK₁₀ hA₁₀ hr₁₀
     ?_ ?_ ?_ ?_ ?_ ?_
-  · intro Y t' W P hKY hAY hrY haxY hlo hpe hWP hspY hbxY h12Y h13Y h14Y h15Y hbpY hTab hS0 hSs hNE
+  · intro Y t' W P hKY hAY hrY haxY hlo hpe hWP hspY hbxY h12Y h13Y h14Y h15Y hbpY hTab hS0 hSs hNE hPa'
     exact k Y t' W P hKY hAY hrY haxY hlo hpe hWP hspY (hbxY.trans (by vpeel)) (h12Y.trans (by vpeel))
       (h13Y.trans (by vpeel)) (h14Y.trans (by vpeel)) (h15Y.trans (by vpeel)) (hbpY.trans (by vpeel)) hTab
-      (SameO.trans (fun a _ h2 => by vout) hS0) (SameO.trans (fun a h1 h2 => by vout) hSs) hNE
+      (SameO.trans (fun a _ h2 => by vout) hS0) (SameO.trans (fun a h1 h2 => by vout) hSs) hNE hPa'
   · rw [hg₁₀]
     show R + (Z₂.cpu.gpr.r13 + 16#64) = _
     rw [r13₉]

@@ -17,8 +17,9 @@ namespace FV7z.Mal
 
 /-- What a `call` of `malloc` at `e` does (assumed; see the module doc): called with a return address in code, `Pm`
 and `rdi = n ≤ 1024`, the run gets back to the return address with `rsp + 8`, the registers a call keeps kept,
-`rax = p` with `0x792980 ≤ p`, `p + n ≤ rsp`, the `n` bytes at `p` in the footprint, and the bytes below `0x792980`
-and from the caller's `rsp` up as they were. -/
+`rax = p` with `0x792980 ≤ p`, `p + n ≤ rsp`, the `n` bytes at `p` in the footprint, the bytes below `0x792980`
+and from the caller's `rsp` up as they were, and `Pm` again for the bytes that keep the ones from `0x792980` to the
+slot of the return address apart from the block (the state of the heap for the next call). -/
 def At (prof : Profile) (L : List (Addr × List Byte)) (o : Oracle) (e : Addr) (Pm : (Addr → Byte) → Prop) : Prop :=
   ∀ {F : Footprint} {Wl : List Rgn} {s₀ : State} {gev : List Event} {gP : State → Nat → List Event → Prop}
     {gE : Outcome → List Event → Prop} {X : State} {t : Nat} {V : Addr → Byte} {e' : Addr} {code : List Byte}
@@ -32,6 +33,8 @@ def At (prof : Profile) (L : List (Addr × List Byte)) (o : Oracle) (e : Addr) (
       7940480 ≤ p.toNat → p.toNat + X.cpu.gpr.rdi.toNat ≤ X.cpu.gpr.rsp.toNat →
       (∀ a : Addr, p.toNat ≤ a.toNat → a.toNat < p.toNat + X.cpu.gpr.rdi.toNat → Foot Wl a ∧ Foot F.data a) →
       (∀ a : Addr, a.toNat < 7940480 ∨ X.cpu.gpr.rsp.toNat + 8 ≤ a.toNat → V₂ a = V a) →
+      (∀ W : Addr → Byte, (∀ a : Addr, 7940480 ≤ a.toNat → a.toNat < X.cpu.gpr.rsp.toNat →
+        (a.toNat < p.toNat ∨ p.toNat + X.cpu.gpr.rdi.toNat ≤ a.toNat) → W a = V₂ a) → Pm W) →
       GoG prof L o gev gP gE Z t') →
     GoG prof L o gev gP gE X t
 
@@ -97,7 +100,9 @@ theorem from1111 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (
       Tab W P E (pt (fun _ => P + BitVec.ofNat 64 (16 * E)) (caps E (tlen V R) cnt (fun _ => 0#64)) H (ln (cnt - 1)))
         (caps E (tlen V R) cnt (fun _ => 0#64)) →
       Same V W 0 7940480 → Same V W sp.toNat (bp + 18446744073709551448#64).toNat →
-      Same V W ((bp + 18446744073709551448#64).toNat + 88) (2 ^ 64) → GoG prof L o gev gP gE Y t') :
+      Same V W ((bp + 18446744073709551448#64).toNat + 88) (2 ^ 64) →
+      (∀ W' : Addr → Byte, (∀ a : Addr, 7940480 ≤ a.toNat → a.toNat < sp.toNat - 8 →
+        (a.toNat < P.toNat ∨ P.toNat + s ≤ a.toNat) → W' a = W a) → Pa W') → GoG prof L o gev gP gE Y t') :
     ∀ (X : State) (t : Nat), KeptW Wl s₀ X → Agree F X.proc.mm.mem V → X.cpu.rip = hwc_at.add 1111 →
       X.cpu.gpr.rdi = BitVec.ofNat 64 s → X.cpu.gpr.r12 = BitVec.ofNat 64 cnt →
       X.cpu.gpr.r13 = BitVec.ofNat 64 (16 * E) → X.cpu.gpr.rbx = R → X.cpu.gpr.rbp = bp → X.cpu.gpr.rsp = sp →
@@ -119,7 +124,8 @@ theorem from1111 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (
     try rfl
   · rw [hsp₁]
     exact c.hws _ (hst i hi)
-  intro Z t₂ V₂ p hK₂ hA₂ hr₂ hsp₂ hax₂ hbx₂ hbp₂ h12₂ h13₂ _ _ hlo hpe hWP hV₂
+  intro Z t₂ V₂ p hK₂ hA₂ hr₂ hsp₂ hax₂ hbx₂ hbp₂ h12₂ h13₂ _ _ hlo hpe hWP hV₂ hPa₂
+  rw [hdi₁, es, hsp₁, hb8] at hPa₂
   rw [hdi₁, es] at hpe hWP
   rw [hsp₁, hb8] at hpe
   rw [hsp₁, hb8] at hV₂
@@ -151,7 +157,7 @@ theorem from1111 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (
     have e2 : (R + BitVec.ofNat 64 (16 * m + 8)).toNat = R.toNat + (16 * m + 8) := addO (by omega)
     rw [hS.rdq (by omega) (by omega) (by omega), hS.rdq (by omega) (by omega) (by omega)]
     exact hT m hm
-  intro Y t' W hKY hAY hrY haxY hspY hbxY h12Y h13Y h14Y h15Y hbpY hTab hS0 hS1 hS2
+  intro Y t' W hKY hAY hrY haxY hspY hbxY h12Y h13Y h14Y h15Y hbpY hTab hS0 hS1 hS2 hS3
   rw [hcp] at hAY hTab
   rw [hS.rdq (by fomega) (by fomega) (by fomega)] at hbxY h12Y h13Y h14Y h15Y
   rw [hS.rdq (by fomega) (by fomega) (by fomega)] at hbpY
@@ -159,5 +165,7 @@ theorem from1111 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (
     (fun a h1 h2 => (hS0 a h1 (by omega)).trans (hV a (.inl h2)))
     (fun a h1 h2 => (hS1 a h1 h2).trans (hV a (.inr h1)))
     (fun a h1 h2 => (hS2 a h1 h2).trans (hV a (.inr (by omega))))
+    (fun W' hW' => hPa₂ W' fun a h1 h2 h3 => (hW' a h1 h2 h3).trans (h3.elim (fun h => hS0 a (Nat.zero_le _) h)
+      (fun h => hS3 a (by omega) h2)))
 
 end FV7z.Hwc

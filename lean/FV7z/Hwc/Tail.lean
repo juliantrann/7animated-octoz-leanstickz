@@ -10,7 +10,7 @@ from `P` below the stack (`sp - 8`, the slot of the return address of the `call`
 - `M16`: the memory after the stores of 1116; `M16.same` (the bytes it keeps), the loads of what it stored.
 - `caps_congr`, `pt_congr`: the lengths and the pointers only depend on `temp` and on `str[0]`, `str[1]`.
 - `from1116`: the result: the table (`Tab`), `*Q`, the callee-saved registers from the frame, the memory kept
-  below `P`, from `sp` to `Fb` and above `Fb + 88`.
+  below `P`, from the end of the strings to the slot `sp - 8`, from `sp` to `Fb` and above `Fb + 88`.
 -/
 open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn
 namespace FV7z.Hwc
@@ -249,7 +249,8 @@ theorem from1116 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (
       Tab W P E (pt (fun _ => P + BitVec.ofNat 64 (16 * E)) (caps E (tlen V R) cnt (fun _ => 0#64)) H (ln (cnt - 1)))
         (caps E (tlen V R) cnt (fun _ => 0#64)) →
       Same V W 0 P.toNat → Same V W sp.toNat (bp + 18446744073709551448#64).toNat →
-      Same V W ((bp + 18446744073709551448#64).toNat + 88) (2 ^ 64) → GoG prof L o gev gP gE Y t') :
+      Same V W ((bp + 18446744073709551448#64).toNat + 88) (2 ^ 64) →
+      Same V W (P.toNat + 16 * E + rem cnt ln H) (sp.toNat - 8) → GoG prof L o gev gP gE Y t') :
     ∀ (X : State) (t : Nat), KeptW Wl s₀ X → Agree F X.proc.mm.mem V → X.cpu.rip = hwc_at.add 1116 →
       X.cpu.gpr.rax = P → X.cpu.gpr.r12 = BitVec.ofNat 64 cnt → X.cpu.gpr.r13 = BitVec.ofNat 64 (16 * E) →
       X.cpu.gpr.rbx = R → X.cpu.gpr.rbp = bp → X.cpu.gpr.rsp = sp → GoG prof L o gev gP gE X t := by
@@ -423,12 +424,14 @@ theorem from1116 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (
     (by rw [hg4]; dsimp only; rw [hbpZ]; exact rdS _ _ (toBytesLE_length _ _) (by fomega) (by fomega))
     (by rw [hg4]; dsimp only; rw [hbpZ]; exact rdS _ _ (toBytesLE_length _ _) (by fomega) (by fomega))
     (hT4.congr (fun i hi => (hσ i hi).trans (pt_congr (σ := fun i => rdq(W, P + BitVec.ofNat 64 (16 * i)))
-      (σ' := fun _ => P + BitVec.ofNat 64 (16 * E)) h0 h1 i)) (fun _ _ => rfl)) ?_ ?_ ?_
+      (σ' := fun _ => P + BitVec.ofNat 64 (16 * E)) h0 h1 i)) (fun _ _ => rfl)) ?_ ?_ ?_ ?_
   · exact (msame (lo := 0) (hi := P.toNat) (by fomega)).trans
       ((hOZ.1.mono (Nat.le_refl _) (by fomega)).trans hS4')
   · exact (msame (lo := sp.toNat) (hi := (bp + 18446744073709551448#64).toNat)
       (by fomega)).trans ((hOZ.2.2.mono (Nat.le_refl _) (by fomega)).trans (hS4.mono (by fomega) (by fomega)))
   · exact (msame (lo := (bp + 18446744073709551448#64).toNat + 88) (hi := 2 ^ 64)
       (by fomega)).trans ((hOZ.2.2.mono (by fomega) (Nat.le_refl _)).trans (hS4.mono (by fomega) (Nat.le_refl _)))
+  · exact (msame (lo := P.toNat + 16 * E + rem cnt ln H) (hi := sp.toNat - 8) (by fomega)).trans
+      (hOZ.2.1.trans (hS4.mono (by fomega) (by fomega)))
 
 end FV7z.Hwc

@@ -124,7 +124,10 @@ def At0 (prof : Profile) (L : List (Addr × List Byte)) (o : Oracle) (gev : List
     Tab W P E (pt (fun _ => P + BitVec.ofNat 64 (16 * E)) (caps E (hl_ln cnt) cnt (fun _ => 0#64)) H
       (hl_ln cnt (cnt - 1))) (caps E (hl_ln cnt) cnt (fun _ => 0#64)) →
     SameO V W 0 7940480 N → SameO V W (bp.toNat + 8) (2 ^ 64) N →
-    rdq(W, N) = BitVec.ofNat 64 E → GoG prof L o gev gP gE Y t'
+    rdq(W, N) = BitVec.ofNat 64 E →
+    (∀ W' : Addr → Byte, (∀ a : Addr, 7940480 ≤ a.toNat → a.toNat < R.toNat - 8 →
+      (a.toNat < P.toNat ∨ P.toNat + s ≤ a.toNat) → W' a = W a) → Pa W') →
+    GoG prof L o gev gP gE Y t'
 
 set_option maxHeartbeats 16000000 in
 /-- `_dl_important_hwcaps (p, 0, N, Q)` from its entry (`rsp = bp + 8`) to its `ret`: `h = _dl_hwcap` 2 or 6,
@@ -301,11 +304,11 @@ theorem from0 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (hin
       htls (by vpeel; vself) hp0 (by vpeel; vself) hpd (by vpeel; vself) (by omega) hN64 hsN (by vpeel; vself)
       hsQ hQ64 (by omega) ?_ Y₈ t₉ hK₈ hA₈ hr₈ (by rw [hg₈]; exact r8₇) (by rw [hg₈]; exact r12₇)
       (by rw [hg₈]; exact b₇) (by rw [hg₈]; exact s₇)
-    intro Y t' W P hKY hAY hrY haxY hlo hpe hWP hspY hbxY h12Y h13Y h14Y h15Y hbpY hTab hS0 hSs hNE
+    intro Y t' W P hKY hAY hrY haxY hlo hpe hWP hspY hbxY h12Y h13Y h14Y h15Y hbpY hTab hS0 hSs hNE hPa'
     exact k Y t' W P hKY hAY hrY haxY hlo hpe hWP hspY (hbxY.trans (by vpeel; vself))
       (h12Y.trans (by vpeel; vself)) (h13Y.trans (by vpeel; vself)) (h14Y.trans (by vpeel; vself))
       (h15Y.trans (by vpeel; vself)) (hbpY.trans (by vpeel; vself)) hTab (SameO.trans (fun a _ h2 => by vout) hS0)
-      (SameO.trans (fun a h1 h2 => by vout) (hSs.mono (by omega) (Nat.le_refl _))) hNE
+      (SameO.trans (fun a h1 h2 => by vout) (hSs.mono (by omega) (Nat.le_refl _))) hNE hPa'
   · -- `h = 6`: 112 with bit 0 clear
     have e360 := f360 (bp := bp) (by omega) (by omega)
     refine (c_112 prof fb).run c hfs hin _ hK₃ hA₃ hr₃ vc_112 ?_
@@ -416,10 +419,10 @@ theorem from0 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (hin
       htls (by vpeel; vself) hp0 (by vpeel; vself) hpd (by vpeel; vself) (by omega) hN64 hsN (by vpeel; vself)
       hsQ hQ64 (by omega) ?_ Y₁₀ t₁₁ hK₁₀ hA₁₀ hr₁₀ (by rw [hg₁₀]; exact r8₉) (by rw [hg₁₀]; exact r12₉)
       (by rw [hg₁₀]; exact b₉) (by rw [hg₁₀]; exact s₉)
-    intro Y t' W P hKY hAY hrY haxY hlo hpe hWP hspY hbxY h12Y h13Y h14Y h15Y hbpY hTab hS0 hSs hNE
+    intro Y t' W P hKY hAY hrY haxY hlo hpe hWP hspY hbxY h12Y h13Y h14Y h15Y hbpY hTab hS0 hSs hNE hPa'
     exact k Y t' W P hKY hAY hrY haxY hlo hpe hWP hspY (hbxY.trans (by vpeel; vself))
       (h12Y.trans (by vpeel; vself)) (h13Y.trans (by vpeel; vself)) (h14Y.trans (by vpeel; vself))
       (h15Y.trans (by vpeel; vself)) (hbpY.trans (by vpeel; vself)) hTab (SameO.trans (fun a _ h2 => by vout) hS0)
-      (SameO.trans (fun a h1 h2 => by vout) (hSs.mono (by omega) (Nat.le_refl _))) hNE
+      (SameO.trans (fun a h1 h2 => by vout) (hSs.mono (by omega) (Nat.le_refl _))) hNE hPa'
 
 end FV7z.Hwc
