@@ -16,6 +16,11 @@ glibc 2.31's `_dl_get_origin` at `0x6aefa0`: `readlink ("/proc/self/exe", buf, 4
 open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn
 namespace FV7z.Gor
 
+/-- `bv_omega` on the goal only: `bv_omega` simplifies every hypothesis too (`simp … at *`), which hangs in the big
+contexts of these proofs (probes of 43634134673). Equalities of addresses by their `toNat`. -/
+macro "bvg" : tactic => `(tactic| ((try apply BitVec.eq_of_toNat_eq) <;>
+  (try simp only [bv_toNat, ZellicX86.Addr.add, FV7z.toBytesLE_length]) <;> omega))
+
 theorem upm (feat : Features) : 2 ^ 47 - 4096 ≤ userPtrMax feat := by
   unfold userPtrMax
   split <;> omega
@@ -60,29 +65,29 @@ theorem frV_rd (V : Addr → Byte) (g : Gprs) (B : Addr) (bs : List Byte) (h32 :
   have o : ∀ x : Addr, g.rsp.toNat - 32 ≤ x.toNat → x.toNat + 8 ≤ g.rsp.toNat →
       List.map (Vst (frV V g) (g.rsp - 4136#64) bs) (byteAddrs x 8) = List.map (frV V g) (byteAddrs x 8) :=
     fun x h1 h2 => map_eq x 8 fun i hi =>
-      Tun.Vst_out _ _ _ _ (by bv_omega) (.inr (by simp only [Addr.add]; bv_omega))
+      Tun.Vst_out _ _ _ _ (by bvg) (.inr (by simp only [Addr.add]; bvg))
   have l8 : ∀ v : BitVec 64, (toBytesLE v 8).length = 8 := fun v => toBytesLE_length _ _
-  have a1 : (g.rsp - 8).toNat = g.rsp.toNat - 8 := by bv_omega
-  have a2 : (g.rsp - 8 - 8).toNat = g.rsp.toNat - 16 := by bv_omega
-  have a3 : (g.rsp - 8 - 8 - 8).toNat = g.rsp.toNat - 24 := by bv_omega
-  have a4 : (g.rsp - 8 - 8 - 8 - 8).toNat = g.rsp.toNat - 32 := by bv_omega
+  have a1 : (g.rsp - 8).toNat = g.rsp.toNat - 8 := by bvg
+  have a2 : (g.rsp - 8 - 8).toNat = g.rsp.toNat - 16 := by bvg
+  have a3 : (g.rsp - 8 - 8 - 8).toNat = g.rsp.toNat - 24 := by bvg
+  have a4 : (g.rsp - 8 - 8 - 8 - 8).toNat = g.rsp.toNat - 32 := by bvg
   have m4 := fun W => map_out W (g.rsp - 8 - 8 - 8 - 8) (toBytesLE g.rbx 8)
   have m3 := fun W => map_out W (g.rsp - 8 - 8 - 8) (toBytesLE g.rbp 8)
   have m2 := fun W => map_out W (g.rsp - 8 - 8) (toBytesLE g.r12 8)
   refine ⟨?_, ?_, ?_, ?_⟩
-  · rw [o _ (by bv_omega) (by bv_omega), show g.rsp - 4136#64 + 4104#64 = g.rsp - 8 - 8 - 8 - 8 by bv_omega]
+  · rw [o _ (by bvg) (by bvg), show g.rsp - 4136#64 + 4104#64 = g.rsp - 8 - 8 - 8 - 8 by bvg]
     unfold frV
     rw [Tun.rd_Vst_self _ _ _ (l8 _) (by omega), ofBytesLE_toBytesLE (n := 8) rfl]
-  · rw [o _ (by bv_omega) (by bv_omega), show g.rsp - 4136#64 + 4104#64 + 8 = g.rsp - 8 - 8 - 8 by bv_omega]
+  · rw [o _ (by bvg) (by bvg), show g.rsp - 4136#64 + 4104#64 + 8 = g.rsp - 8 - 8 - 8 by bvg]
     unfold frV
     rw [m4 _ (g.rsp - 8 - 8 - 8) 8 (by rw [l8]; omega) (by omega) (.inr (by rw [l8]; omega)),
       Tun.rd_Vst_self _ _ _ (l8 _) (by omega), ofBytesLE_toBytesLE (n := 8) rfl]
-  · rw [o _ (by bv_omega) (by bv_omega), show g.rsp - 4136#64 + 4104#64 + 8 + 8 = g.rsp - 8 - 8 by bv_omega]
+  · rw [o _ (by bvg) (by bvg), show g.rsp - 4136#64 + 4104#64 + 8 + 8 = g.rsp - 8 - 8 by bvg]
     unfold frV
     rw [m4 _ (g.rsp - 8 - 8) 8 (by rw [l8]; omega) (by omega) (.inr (by rw [l8]; omega)),
       m3 _ (g.rsp - 8 - 8) 8 (by rw [l8]; omega) (by omega) (.inr (by rw [l8]; omega)),
       Tun.rd_Vst_self _ _ _ (l8 _) (by omega), ofBytesLE_toBytesLE (n := 8) rfl]
-  · rw [o _ (by bv_omega) (by bv_omega), show g.rsp - 4136#64 + 4104#64 + 8 + 8 + 8 = g.rsp - 8 by bv_omega]
+  · rw [o _ (by bvg) (by bvg), show g.rsp - 4136#64 + 4104#64 + 8 + 8 + 8 = g.rsp - 8 by bvg]
     unfold frV
     rw [m4 _ (g.rsp - 8) 8 (by rw [l8]; omega) (by omega) (.inr (by rw [l8]; omega)),
       m3 _ (g.rsp - 8) 8 (by rw [l8]; omega) (by omega) (.inr (by rw [l8]; omega)),
@@ -91,9 +96,15 @@ theorem frV_rd (V : Addr → Byte) (g : Gprs) (B : Addr) (bs : List Byte) (h32 :
 
 /-- An error number above `-4096` as `eax`. -/
 theorem err_hi {e : Nat} (h1 : 0 < e) (h2 : e < 4096) : 4294963200 < (BitVec.setWidth 32 (errRet e)).toNat := by
+  have he : e % 2 ^ 64 = e := Nat.mod_eq_of_lt (by omega)
+  have h0 : (0 : BitVec 64).toNat = 0 := rfl
   unfold errRet
-  simp only [BitVec.toNat_setWidth, BitVec.toNat_sub, BitVec.toNat_ofNat]
-  omega
+  first
+  | (rw [BitVec.toNat_setWidth, BitVec.toNat_sub, BitVec.toNat_ofNat, he, h0]; omega)
+  | (rw [BitVec.toNat_setWidth, BitVec.toNat_sub, BitVec.toNat_ofNat, he, h0]; simp; omega)
+  | (simp only [bv_toNat]; omega)
+  | (simp only [BitVec.toNat_setWidth, BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.ofNat_eq_ofNat, Nat.zero_mod,
+      Nat.add_zero, Nat.mod_eq_of_lt (show e < 2 ^ 64 by omega)]; omega)
 
 /-- The event of the `readlink` of `_dl_get_origin` called with registers `g`, the file system's answer `r`. -/
 abbrev gEv (g : Gprs) (r : LinkResult) : Event :=
@@ -125,7 +136,7 @@ theorem err_path (c : Seg prof F Wl L s₀ o) (hin : CodeIn L gor_at gor) {g : G
   rintro j' g₃ fl V' ⟨rfl, rfl, rfl⟩ Y₃ t₃ hK₃ hA₃ hr₃ hg₃ -
   have hsp₃ : Y₃.cpu.gpr.rsp = g.rsp - 4136#64 := by rw [hg₃, hg₂, hg₁]; exact hsp
   refine (c_255 prof).run c hin _ hK₃ hA₃ hr₃ (vc_255 fun i hi => ?_) ?_
-  · rw [hsp₃, show g.rsp - 4136#64 + 4104#64 = g.rsp - 32#64 by bv_omega]
+  · rw [hsp₃, show g.rsp - 4136#64 + 4104#64 = g.rsp - 32#64 by bvg]
     exact hfr i hi
   rintro j' g₄ fl V' ⟨rfl, hax₄, hsp₄, hbx₄, hbp₄, h12₄, h13₄, h14₄, h15₄, rfl⟩ Y₄ t₄ hK₄ hA₄ hr₄ hg₄ -
   subst hg₄
@@ -133,7 +144,7 @@ theorem err_path (c : Seg prof F Wl L s₀ o) (hin : CodeIn L gor_at gor) {g : G
   have v0 : Vst (frV V g) (g.rsp - 4136#64) [] = frV V g := rfl
   rw [v0] at r1 r2 r3 r4
   rw [hsp₃] at hsp₄ hbx₄ hbp₄ h12₄ h13₄
-  refine k Y₄ t₄ hK₄ hA₄ hr₄ (by rw [hax₄, hg₃]) (by rw [hsp₄]; bv_omega) (hbx₄.trans r1) (hbp₄.trans r2)
+  refine k Y₄ t₄ hK₄ hA₄ hr₄ (by rw [hax₄, hg₃]) (by rw [hsp₄]; bvg) (hbx₄.trans r1) (hbp₄.trans r2)
     (h12₄.trans r3) (h13₄.trans r4) ?_ ?_
   · rw [h14₄, hg₃, hg₂, hg₁]
     exact h14
@@ -180,17 +191,17 @@ theorem gor_head (c : Seg prof F Wl L s₀ o) (hin : CodeIn L gor_at gor) {X : S
     fun a h => frV_out V X.cpu.gpr a (by omega) (.inl h)
   -- the prologue
   refine (c_0 prof).run c hin _ hK hA (by rw [addr_add_zero]; exact hrip) (vc_0 fun i hi => ?_) ?_
-  · exact slot _ (4104 + i) (by omega) (by simp only [Addr.add]; bv_omega)
+  · exact slot _ (4104 + i) (by omega) (by simp only [Addr.add]; bvg)
   rintro j' g₁ fl V' ⟨rfl, rfl, rfl⟩ Y₁ t₁ hK₁ hA₁ hr₁ hg₁ -
   have hsp₁ : Y₁.cpu.gpr.rsp = X.cpu.gpr.rsp - 4128#64 := by
     rw [hg₁]
     show X.cpu.gpr.rsp - 8 - 8 - 8 - 8 - 4096#64 = _
-    bv_omega
+    bvg
   -- the stack probe
   refine c.s_or_mi64 hK₁ hA₁ hin (lt_len (by decide)) hr₁ (or_17 _) (fun i hi => ?_) ?_
   · show Foot Wl (Addr.add (Y₁.cpu.gpr.rsp + BitVec.ofNat 64 0) i)
     rw [hsp₁]
-    exact slot _ (8 + i) (by omega) (by simp only [Addr.add]; bv_omega)
+    exact slot _ (8 + i) (by omega) (by simp only [Addr.add]; bvg)
   rintro Y₂ t₂ hK₂ hA₂ ⟨hr₂, hg₂⟩
   rw [probe_same] at hA₂
   -- the arguments of `readlink`
@@ -198,11 +209,11 @@ theorem gor_head (c : Seg prof F Wl L s₀ o) (hin : CodeIn L gor_at gor) {X : S
   rintro j' g₃ fl V' ⟨rfl, rfl, rfl⟩ Y₃ t₃ hK₃ hA₃ hr₃ hg₃ -
   rw [hg₂] at hg₃
   have hsi₃ : Y₃.cpu.gpr.rsi = X.cpu.gpr.rsp - 4136#64 := by
-    rw [hg₃]; show Y₁.cpu.gpr.rsp - 8#64 = _; rw [hsp₁]; bv_omega
+    rw [hg₃]; show Y₁.cpu.gpr.rsp - 8#64 = _; rw [hsp₁]; bvg
   have hsp₃ : Y₃.cpu.gpr.rsp = X.cpu.gpr.rsp - 4136#64 := by
-    rw [hg₃]; show Y₁.cpu.gpr.rsp - 8#64 = _; rw [hsp₁]; bv_omega
+    rw [hg₃]; show Y₁.cpu.gpr.rsp - 8#64 = _; rw [hsp₁]; bvg
   have hbp₃ : Y₃.cpu.gpr.rbp = X.cpu.gpr.rsp - 4136#64 := by
-    rw [hg₃]; show Y₁.cpu.gpr.rsp - 8#64 = _; rw [hsp₁]; bv_omega
+    rw [hg₃]; show Y₁.cpu.gpr.rsp - 8#64 = _; rw [hsp₁]; bvg
   have hdi₃ : Y₃.cpu.gpr.rdi = 7366691#64 := by rw [hg₃]
   have hev : ∀ a bs, linkEv Y₃.cpu.gpr pse a bs = ⟨BitVec.setWidth 64 89#32, [7366691#64, X.cpu.gpr.rsp - 4136#64,
       BitVec.setWidth 64 4096#32, X.cpu.gpr.r10, X.cpu.gpr.r8, X.cpu.gpr.r9], a, pse, bs⟩ := by
@@ -211,16 +222,23 @@ theorem gor_head (c : Seg prof F Wl L s₀ o) (hin : CodeIn L gor_at gor) {X : S
     rw [hdi₃, hsi₃, hg₃, hg₁]
   -- `readlink`
   refine c.s_readlink hK₃ hA₃ hin (lt_len (by decide)) hr₃ (sys_49 _) (m := 14) (n := 4096) (p := pse)
-    (by rw [hg₃]; decide) (by decide) (by rw [hdi₃, BitVec.toNat_ofNat]; have := upm prof.feat; omega)
+    (by rw [hg₃]; first | rfl | (dsimp only; decide)) (by decide)
+    (by rw [hdi₃, BitVec.toNat_ofNat]; have := upm prof.feat; omega)
     (fun i hi => by rw [hdi₃]; exact hpf i (by omega))
     (fun i hi => by
-      rw [hdi₃, fout (Addr.add 7366691#64 i) (by simp only [Addr.add]; bv_omega)]
+      rw [hdi₃]
+      show frV V X.cpu.gpr (Addr.add 7366691#64 i) ≠ 0
+      rw [fout (Addr.add 7366691#64 i) (by simp only [Addr.add]; bvg)]
       exact hpn i hi)
-    (by rw [hdi₃, fout (Addr.add 7366691#64 14) (by simp only [Addr.add]; bv_omega)]; exact hpz)
     (by
-      rw [hdi₃, map_eq (7366691#64) 14 fun i hi => fout (Addr.add 7366691#64 i) (by simp only [Addr.add]; bv_omega)]
+      rw [hdi₃]
+      show frV V X.cpu.gpr (Addr.add 7366691#64 14) = 0
+      rw [fout (Addr.add 7366691#64 14) (by simp only [Addr.add]; bvg)]
+      exact hpz)
+    (by
+      rw [hdi₃, map_eq (7366691#64) 14 fun i hi => fout (Addr.add 7366691#64 i) (by simp only [Addr.add]; bvg)]
       exact hpp)
-    (by rw [hg₃]; decide) (by decide) (by rw [hsi₃]; bv_omega)
+    (by rw [hg₃]; first | rfl | (dsimp only; decide)) (by decide) (by rw [hsi₃]; bvg)
     (fun i hi => by rw [hsi₃]; exact slot _ i (by omega) rfl)
     (P := fun r => ∀ bs, r ≠ .target bs) (fun t' bs => hps t' none bs) ?_
   intro r hr Y₄ t₄ hK₄ hA₄ ⟨hr₄, hg₄⟩
@@ -238,9 +256,9 @@ theorem gor_head (c : Seg prof F Wl L s₀ o) (hin : CodeIn L gor_at gor) {X : S
     rw [hg₃, hg₁]
   have hax₄ : Y₄.cpu.gpr.rax = (linkRes 4096 r).1 := by rw [hg₄]; rfl
   have hfr : ∀ i < 32, Foot F.data (Addr.add (X.cpu.gpr.rsp - 32#64) i) :=
-    fun i hi => c.hws _ (slot _ (4104 + i) (by omega) (by simp only [Addr.add]; bv_omega))
+    fun i hi => c.hws _ (slot _ (4104 + i) (by omega) (by simp only [Addr.add]; bvg))
   have hoz' : rdq(frV V X.cpu.gpr, 8029440#64) = 0#64 := by
-    rw [map_eq (8029440#64) 8 fun i hi => fout (Addr.add 8029440#64 i) (by simp only [Addr.add]; bv_omega)]
+    rw [map_eq (8029440#64) 8 fun i hi => fout (Addr.add 8029440#64 i) (by simp only [Addr.add]; bvg)]
     exact hoz
   have kerr : ∀ e, 0 < e → e < 4096 → (linkRes 4096 r) = (errRet e, []) →
       GoG prof L o (gev ++ [gEv X.cpu.gpr r]) gP gE Y₄ t₄ := by
@@ -260,7 +278,7 @@ theorem gor_head (c : Seg prof F Wl L s₀ o) (hin : CodeIn L gor_at gor) {X : S
       have hx' : x.bytes.length < 4096 := hx
       rw [hl] at hA₄ hax₄
       try dsimp only at hA₄ hax₄
-      obtain ⟨rb, hrb⟩ := x.bytes_head
+      obtain ⟨rb, hrb⟩ := FV7z.ExePath.bytes_head x
       have hn1 : 1 ≤ x.bytes.length := by rw [hrb]; simp
       have hB : ∀ i < 4096, Foot F.data (Addr.add (X.cpu.gpr.rsp - 4136#64) i) :=
         fun i hi => c.hws _ (slot _ i (by omega) rfl)
@@ -272,7 +290,7 @@ theorem gor_head (c : Seg prof F Wl L s₀ o) (hin : CodeIn L gor_at gor) {X : S
         exact this
       · have hlr := congrArg List.length hrb
         simp only [List.length_cons] at hlr
-        rw [hsp₄, hrb, Vst_head _ _ _ _ (by bv_omega)]
+        rw [hsp₄, hrb, Vst_head _ _ _ _ (by bvg)]
       rintro j' g₅ fl V' ⟨rfl, hcx₅, hax₅, hkp₅, rfl⟩ Y₅ t₅ hK₅ hA₅ hr₅ hg₅ -
       subst hg₅
       refine loop c hin (g₀ := Y₄.cpu.gpr) hbp₄ hB ?_ ?_ x.bytes.length hn1 hx' rfl Y₅ t₅ hK₅ hA₅ hr₅ hcx₅
