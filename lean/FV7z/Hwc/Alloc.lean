@@ -79,6 +79,7 @@ theorem M5.rd8c : rdd(M5 V bp D N cnt, bp + 18446744073709551476#64) = BitVec.of
   vpeel
   rw [Tun.rd_Vst_self _ _ _ (toBytesLE_length _ _) (by fomega), ofBytesLE_toBytesLE (n := 4) rfl]
 
+omit hN hN64 in
 theorem M5.rd88 : rdq(M5 V bp D N cnt, bp + 18446744073709551480#64) = BitVec.ofNat 64 (2 ^ cnt) := by
   unfold M5
   rw [Tun.rd_Vst_self _ _ _ (toBytesLE_length _ _) (by fomega), ofBytesLE_toBytesLE (n := 8) rfl]
