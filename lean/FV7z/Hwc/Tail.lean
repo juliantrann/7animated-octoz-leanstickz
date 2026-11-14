@@ -74,8 +74,10 @@ macro "fomega" : tactic => `(tactic| ((try simp only [FV7z.toBytesLE_length, fo4
   foa0 hfb, fo80 hfb, fo68 hfb, fo70 hfb, fo78 hfb, fo88 hfb, fo8c hfb, fo98 hfb, fo28 hfb, fo20 hfb, fo18 hfb,
   fo10 hfb, fo08 hfb, fobp hfb]) <;> omega))
 
-/-- A load through the stores apart from it, down to the store it reads (or to the memory under them). -/
-macro "vpeel" : tactic => `(tactic| repeat rw [FV7z.Tun.rd_Vst _ _ _ _ _ (by fomega) (by fomega) (by fomega)])
+/-- A load through the stores apart from it, down to the store it reads (or to the memory under them); the side
+conditions as goals, so that a failing one stops the `repeat` (a `by` inside the `rw` only logs its error). -/
+macro "vpeel" : tactic => `(tactic| repeat (focus (rw [FV7z.Tun.rd_Vst _ _ _ _ _ ?_ ?_ ?_]; rotate_left; fomega;
+  fomega; fomega)))
 
 /-- `n` bytes from `x` inside a region. -/
 theorem rng {p : Addr → Prop} {lo hi : Nat} (hp : ∀ a : Addr, lo ≤ a.toNat → a.toNat < hi → p a) {x : Addr}
