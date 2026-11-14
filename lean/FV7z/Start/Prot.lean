@@ -47,7 +47,7 @@ theorem prot_none {p : PageNum} (hm : m.map p = none) : (protMem m P n prot).map
     rw [prot_out hi', hm]
 
 /-- `mprotect` keeps `Relro`: the pages stay mapped, their mappings as special as before. -/
-theorem Relro.prot (hr : Relro m) : Relro (protMem m P n prot) := by
+theorem Relro.mprot (hr : Relro m) : Relro (protMem m P n prot) := by
   intro i hi
   obtain ⟨mp, h1, h2⟩ := hr i hi
   have hl : 0x777 + i < 2 ^ 52 := by omega
@@ -402,7 +402,7 @@ theorem b_mprotect_ro (c : Seg prof F Wl L s₀ o) (hB : Base s₀ lim b fsb k) 
     rw [hK'.df]
     exact hB.df
   · show Relro (protMem X'.proc.mm.mem _ _ _)
-    exact Relro.prot (Relro.of_map hK'.mem_map hB.relro)
+    exact Relro.mprot (Relro.of_map hK'.mem_map hB.relro)
   · show X'.cpu.rip.add len = _
     rw [hcpu, hrip, addr_add_add]
   · show ((X'.cpu.gpr.set 1 (X'.cpu.rip.add len)).set 11 ({ X'.cpu.rflags with rf := false } : Rflags).toBits).set 0
