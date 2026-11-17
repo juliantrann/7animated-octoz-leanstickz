@@ -23,6 +23,14 @@ macro "bvg" : tactic => `(tactic| ((try apply BitVec.eq_of_toNat_eq) <;>
   (try simp only [ZellicX86.Addr.add, FV7z.toBytesLE_length]) <;>
   (try simp -implicitDefEqProofs only [bitvec_to_nat]) <;> omega))
 
+/-- `Vst` of no bytes, over variables: stated apart, since `rfl` on `Vst (frV V g) B [] = frV V g` unfolds `frV` first
+and compares the addresses by computing (a timeout, probes of 44086214316). -/
+theorem Vst_nil (V : Addr → Byte) (a : Addr) : Vst V a [] = V := rfl
+
+/-- `x.add ↑i` (`BitVec.add`, as the `syscall` lemmas state their bytes) is `Addr.add x i`; over variables, so the
+literal addresses are never unfolded (`Nat.rec` on `7366691`). -/
+theorem bva (x : BitVec 64) (i : Nat) : x.add (i : BitVec 64) = Addr.add x i := rfl
+
 theorem upm (feat : Features) : 2 ^ 47 - 4096 ≤ userPtrMax feat := by
   unfold userPtrMax
   split <;> omega
@@ -145,8 +153,7 @@ theorem err_path (c : Seg prof F Wl L s₀ o) (hin : CodeIn L gor_at gor) {g : G
   rintro j' g₄ fl V' ⟨rfl, hax₄, hsp₄, hbx₄, hbp₄, h12₄, h13₄, h14₄, h15₄, rfl⟩ Y₄ t₄ hK₄ hA₄ hr₄ hg₄ -
   subst hg₄
   obtain ⟨r1, r2, r3, r4⟩ := frV_rd V g (g.rsp - 4136#64) [] h32 rfl (Nat.zero_le _)
-  have v0 : Vst (frV V g) (g.rsp - 4136#64) [] = frV V g := rfl
-  rw [v0] at r1 r2 r3 r4
+  rw [Vst_nil] at r1 r2 r3 r4
   rw [hsp₃] at hsp₄ hbx₄ hbp₄ h12₄ h13₄
   refine k Y₄ t₄ hK₄ hA₄ hr₄ (by rw [hax₄, hg₃]) (by rw [hsp₄]; bvg) (hbx₄.trans r1) (hbp₄.trans r2)
     (h12₄.trans r3) (h13₄.trans r4) ?_ ?_
@@ -229,22 +236,18 @@ theorem gor_head (c : Seg prof F Wl L s₀ o) (hin : CodeIn L gor_at gor) {X : S
   refine c.s_readlink hK₃ hA₃ hin (lt_len (by decide)) hr₃ (sys_49 _) (m := 14) (n := 4096) (p := pse)
     (by rw [hg₃]; first | rfl | (dsimp only; decide)) (by decide)
     (by rw [hdi₃, BitVec.toNat_ofNat]; have := upm prof.feat; omega)
-    (fun i hi => by rw [hdi₃]; exact hpf i (by omega))
+    (fun i hi => by rw [hdi₃, bva]; exact hpf i (by omega))
     (fun i hi => by
-      rw [hdi₃]
-      show frV V X.cpu.gpr (Addr.add 7366691#64 i) ≠ 0
-      rw [fout (Addr.add 7366691#64 i) (by simp only [Addr.add]; bvg)]
+      rw [hdi₃, bva, fout (Addr.add 7366691#64 i) (by simp only [Addr.add]; bvg)]
       exact hpn i hi)
     (by
-      rw [hdi₃]
-      show frV V X.cpu.gpr (Addr.add 7366691#64 14) = 0
-      rw [fout (Addr.add 7366691#64 14) (by simp only [Addr.add]; bvg)]
+      rw [hdi₃, bva, fout (Addr.add 7366691#64 14) (by simp only [Addr.add]; bvg)]
       exact hpz)
     (by
       rw [hdi₃, map_eq (7366691#64) 14 fun i hi => fout (Addr.add 7366691#64 i) (by simp only [Addr.add]; bvg)]
       exact hpp)
     (by rw [hg₃]; first | rfl | (dsimp only; decide)) (by decide) (by rw [hsi₃]; bvg)
-    (fun i hi => by rw [hsi₃]; exact slot _ i (by omega) rfl)
+    (fun i hi => by rw [hsi₃, bva]; exact slot _ i (by omega) rfl)
     (P := fun r => ∀ bs, r ≠ .target bs) (fun t' bs => hps t' none bs) ?_
   intro r hr Y₄ t₄ hK₄ hA₄ ⟨hr₄, hg₄⟩
   rw [hsi₃] at hA₄
@@ -270,8 +273,7 @@ theorem gor_head (c : Seg prof F Wl L s₀ o) (hin : CodeIn L gor_at gor) {X : S
     intro e he1 he2 hl
     rw [hl] at hA₄ hax₄
     try dsimp only at hA₄ hax₄
-    have v0 : Vst (frV V X.cpu.gpr) (X.cpu.gpr.rsp - 4136#64) [] = frV V X.cpu.gpr := rfl
-    rw [v0] at hA₄
+    rw [Vst_nil] at hA₄
     exact err_path (g := X.cpu.gpr) (V := V) c hin he1 he2 (by omega) hfr hof hoz' hK₄ hA₄ hr₄ hax₄ hsp₄ h14₄ h15₄
       fun Z t' hKZ hAZ hrZ h0 h1 h2 h3 h4 h5 h6 h7 => ke r Z t' hKZ hAZ hrZ h0 h1 h2 h3 h4 h5 h6 h7
   cases r with

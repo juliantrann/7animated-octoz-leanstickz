@@ -57,6 +57,10 @@ jobs:
           set -o pipefail
           start=$(date +%s)
           : > ../lean-build.log
+          # why ZellicX86:shared is rebuilt every other run (and the 268 modules after it): its files and traces
+          { echo "== zellic shared lib before the build"; ls -l --full-time ../refs/zellic-x86/.lake/build/lib/ 2>&1 | head
+            for t in ../refs/zellic-x86/.lake/build/lib/*.trace; do echo "-- $t"; head -c 400 "$t"; echo; done
+          } 2>&1 | tee -a ../lean-build.log || true
           # lean/heavy-targets: modules built one at a time first (memory); a failure does not stop the others
           fail=0
           for h in $( [ -f heavy-targets ] && grep -v '^\s*#' heavy-targets | xargs ); do
