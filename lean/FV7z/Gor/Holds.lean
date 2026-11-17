@@ -116,9 +116,9 @@ abbrev gEv (g : Gprs) (r : LinkResult) : Event :=
 variable {prof : Profile} {F : Footprint} {Wl : List Rgn} {L : List (Addr × List Byte)} {s₀ : State} {o : Oracle}
   {gev : List Event} {gP : State → Nat → List Event → Prop} {gE : Outcome → List Event → Prop}
 
+set_option maxHeartbeats 1000000 in
 /-- From 51 with an error `e` returned, `rsp` the buffer `B` 4136 bytes below `g`'s, the four saved registers of `g` in
 the frame, `_dl_origin_path` null: the `ret` with `rax = -1`, `rsp` and the saved registers `g`'s. -/
-set_option maxHeartbeats 1000000 in
 theorem err_path (c : Seg prof F Wl L s₀ o) (hin : CodeIn L gor_at gor) {g : Gprs} {V : Addr → Byte} {e : Nat}
     (he1 : 0 < e) (he2 : e < 4096) (h32 : 4136 ≤ g.rsp.toNat)
     (hfr : ∀ i < 32, Foot F.data (Addr.add (g.rsp - 32#64) i))
@@ -155,11 +155,11 @@ theorem err_path (c : Seg prof F Wl L s₀ o) (hin : CodeIn L gor_at gor) {g : G
   · rw [h15₄, hg₃, hg₂, hg₁]
     exact h15
 
+set_option maxHeartbeats 1000000 in
 /-- `_dl_get_origin` from its entry: `readlink ("/proc/self/exe", B, 4096)`, `B` 4136 bytes below the stack pointer.
 An error, or an executable's path of `PATH_MAX` bytes or more: the `ret` with `-1` (`ke`). The path `x` of fewer
 bytes: at the `call` of `malloc` at 124 (`edi = 2`: no `/` after the first byte, `k1`) or at 278 (`edi = s + 2`,
 `ebx = s`, the last `/` at `s ≥ 1`, `k2`), the bytes of `x` at `B`, `rsp = rbp = B`. -/
-set_option maxHeartbeats 1000000 in
 theorem gor_head (c : Seg prof F Wl L s₀ o) (hin : CodeIn L gor_at gor) {X : State} {t : Nat} {V : Addr → Byte}
     (hK : KeptW Wl s₀ X) (hA : Agree F X.proc.mm.mem V) (hrip : X.cpu.rip = gor_at)
     (h32 : 8192 ≤ X.cpu.gpr.rsp.toNat) (htop : X.cpu.gpr.rsp.toNat ≤ userPtrMax prof.feat)
