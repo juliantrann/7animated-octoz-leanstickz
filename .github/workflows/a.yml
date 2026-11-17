@@ -61,7 +61,13 @@ jobs:
           # (the shared lib's trace without its log, and one digest of the .hash files of its inputs, before and after)
           zl() { echo "== zellic shared lib $1 the build"; ls -l --full-time ../refs/zellic-x86/.lake/build/lib/ | head
             python3 -c 'import json,sys
-          for f in sys.argv[1:]: d=json.load(open(f)); d.pop("log",0); print(f[-40:], json.dumps(d)[:600])' \
+          import hashlib
+          h=lambda x: hashlib.md5(json.dumps(x).encode()).hexdigest()[:12]
+          for f in sys.argv[1:]:
+            d=json.load(open(f)); d.pop("log",0); i=d.get("inputs",[])
+            print(f[-40:], d.get("outputs"), d.get("depHash"), "inputs", h(i), "sorted", h(sorted(map(str,i))),
+              [(k[0], len(k[1]) if isinstance(k[1],list) else k[1], h(k[1]), h(sorted(map(str,k[1])))
+                if isinstance(k[1],list) else "") for k in i]); print(json.dumps(i))' \
               ../refs/zellic-x86/.lake/build/lib/*.trace
             find ../refs/zellic-x86/.lake/build -name '*.hash' | sort | xargs cat | md5sum
             find ../refs/zellic-x86/.lake/build -name '*.hash' -newer ../refs/zellic-x86/lakefile.toml | wc -l; }
