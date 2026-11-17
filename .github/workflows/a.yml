@@ -58,9 +58,14 @@ jobs:
           start=$(date +%s)
           : > ../lean-build.log
           # why ZellicX86:shared is rebuilt every other run (and the 268 modules after it): its files and traces
-          { echo "== zellic shared lib before the build"; ls -l --full-time ../refs/zellic-x86/.lake/build/lib/ 2>&1 | head
-            for t in ../refs/zellic-x86/.lake/build/lib/*.trace; do echo "-- $t"; head -c 400 "$t"; echo; done
-          } 2>&1 | tee -a ../lean-build.log || true
+          # (the shared lib's trace without its log, and one digest of the .hash files of its inputs, before and after)
+          zl() { echo "== zellic shared lib $1 the build"; ls -l --full-time ../refs/zellic-x86/.lake/build/lib/ | head
+            python3 -c 'import json,sys
+          for f in sys.argv[1:]: d=json.load(open(f)); d.pop("log",0); print(f[-40:], json.dumps(d)[:600])' \
+              ../refs/zellic-x86/.lake/build/lib/*.trace
+            find ../refs/zellic-x86/.lake/build -name '*.hash' | sort | xargs cat | md5sum
+            find ../refs/zellic-x86/.lake/build -name '*.hash' -newer ../refs/zellic-x86/lakefile.toml | wc -l; }
+          zl before 2>&1 | tee -a ../lean-build.log || true
           # lean/heavy-targets: modules built one at a time first (memory); a failure does not stop the others
           fail=0
           for h in $( [ -f heavy-targets ] && grep -v '^\s*#' heavy-targets | xargs ); do
@@ -68,6 +73,7 @@ jobs:
           done
           lake build $targets 2>&1 | tee -a ../lean-build.log || fail=1
           echo "built in $(( $(date +%s) - start )) s" | tee -a ../lean-build.log
+          zl after 2>&1 | tee -a ../lean-build.log || true
           exit $fail
       - name: run
         # lean/wip-run: shell commands run in lean/ after the build (measurements for the proof in progress)
