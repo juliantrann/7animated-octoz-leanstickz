@@ -270,9 +270,10 @@ theorem g124 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L gor_at gor)
   intro Z₂ t₃ hK₂ hA₂ hr₂ hax₂ hsp₂ hbx₂ hbp₂ h12₂ h13₂ h14₂ h15₂
   have R : ∀ d < 4136, rdq(M, B + BitVec.ofNat 64 d) = rdq(Vb, B + BitVec.ofNat 64 d) := fun d hd =>
     rd_hi MV (by rw [off4 (by omega) hBt]; omega) (by rw [off4 (by omega) hBt]; omega)
-  refine k 2 1 s₁ Vc M _ evs Z₂ t₃ (X.cpu.gpr.set 4 (B - 8)) hc hB' hK₂ hA₂ (Nat.le_refl _) (by omega) (Nat.le_refl _)
-    (Nat.le_refl _) rfl hVc hAf MV ML ?_ (fun a h1 _ => Tun.Vst_out _ _ _ _ (by rw [toBytesLE_length]; omega)
-      (by rw [toBytesLE_length]; omega)) hr₂ hax₂ hsp₂ (hbx₂.trans (R 4104 (by omega)))
+  refine k 2 1 s₁ Vc M _ evs Z₂ t₃ (X.cpu.gpr.set 4 (B - 8)) hc hB' hK₂ hA₂ (Nat.le_refl _) (by omega)
+    (Nat.le_refl _) (Nat.le_refl _) rfl hVc hAf MV ML ?_
+    (fun a h1 _ => Tun.Vst_out _ _ _ _ (by rw [toBytesLE_length]; omega) (by rw [toBytesLE_length]; omega))
+    hr₂ hax₂ hsp₂ (hbx₂.trans (R 4104 (by omega)))
     (hbp₂.trans (R 4112 (by omega))) (h12₂.trans (R 4120 (by omega))) (h13₂.trans (R 4128 (by omega)))
     (h14₂.trans h14) (h15₂.trans h15) hev
   rw [CpuFeat.Vst_at _ _ _ (j := 1) (by rw [toBytesLE_length]; omega) (by rw [toBytesLE_length]; omega)]

@@ -24,7 +24,7 @@ def nV (W : Addr → Byte) (sp : Addr) (g : Gprs) : Addr → Byte :=
   Vst (fV W sp g) (sp - 8#64) (toBytesLE (ndi_at.add 21) 8)
 
 theorem m8 (sp : Addr) (h : 8 ≤ sp.toNat) : (sp - 8#64).toNat = sp.toNat - 8 := by bv_omega
-theorem p8 (sp : Addr) : sp - 8#64 + 8#64 = sp := by bv_omega
+theorem sub8_add8 (sp : Addr) : sp - 8#64 + 8#64 = sp := by bv_omega
 
 /-- Below the pushes, `fV` is the bytes it was given. -/
 theorem fV_lo {V : Addr → Byte} {sp : Addr} {g : Gprs} (hsn : sp.toNat + 128 ≤ 2 ^ 64) {a : Addr}
@@ -158,7 +158,7 @@ theorem ndi_ab {pl pc ip cpy : List Byte} {Pm : (Addr → Byte) → Prop} {E : E
       (by omega)]; exact h4)
     (by rw [rd_of (V := fV W sp X.cpu.gpr) (x := 7937248) (n := 4) (by omega) fun a a1 a2 =>
       LO a ⟨by omega, by omega, by omega, by omega, by omega⟩]; exact h5)
-    hK₂ hA₂ (fun _ _ => rfl) hr₂ (by rw [hsp₂, hz, p8]) ?_
+    hK₂ hA₂ (fun _ _ => rfl) hr₂ (by rw [hsp₂, hz, sub8_add8]) ?_
   intro Z' t'' W'' hK' hA' hM' hr' hsp' hdi' h15'
   rw [hax] at hM'
   exact k x n s s₁ Vc M W' evs g Z' t'' W'' hx c₁ hB₁ h2n hn4 h1s hs1 hg'
