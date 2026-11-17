@@ -256,7 +256,7 @@ theorem g124 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L gor_at gor)
   have hb47 : b.toNat < 2 ^ 47 := by omega
   obtain ⟨hn1, hnb⟩ := nbOf_bnd (n := 2) (by omega)
   obtain ⟨hbc, hc15, hT0, -, hpN⟩ := lay hb47 mc.hnb mc.hpd hnb
-  refine gmal c hin mc (n := 2) (call_124 _) (by omega) (by decide) hK hA hrip hdi (le_refl _) (by omega) hsp hpre
+  refine gmal c hin mc (n := 2) (call_124 _) (by omega) (by decide) hK hA hrip hdi (Nat.le_refl _) (by omega) hsp hpre
     hst hsl hBt hbs ?_
   intro s₁ Vc M evs Z t₂ hc hB' hK' hA' hVc hAf MV ML hr hax hsp' _ _ _ _ h14 h15 hev
   have hpt : (Tp b + 16#64).toNat + 2 ≤ 2 ^ 64 := by rw [hpN]; omega
@@ -270,8 +270,8 @@ theorem g124 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L gor_at gor)
   intro Z₂ t₃ hK₂ hA₂ hr₂ hax₂ hsp₂ hbx₂ hbp₂ h12₂ h13₂ h14₂ h15₂
   have R : ∀ d < 4136, rdq(M, B + BitVec.ofNat 64 d) = rdq(Vb, B + BitVec.ofNat 64 d) := fun d hd =>
     rd_hi MV (by rw [off4 (by omega) hBt]; omega) (by rw [off4 (by omega) hBt]; omega)
-  refine k 2 1 s₁ Vc M _ evs Z₂ t₃ (X.cpu.gpr.set 4 (B - 8)) hc hB' hK₂ hA₂ (le_refl _) (by omega) (le_refl _)
-    (le_refl _) rfl hVc hAf MV ML ?_ (fun a h1 _ => Tun.Vst_out _ _ _ _ (by rw [toBytesLE_length]; omega)
+  refine k 2 1 s₁ Vc M _ evs Z₂ t₃ (X.cpu.gpr.set 4 (B - 8)) hc hB' hK₂ hA₂ (Nat.le_refl _) (by omega) (Nat.le_refl _)
+    (Nat.le_refl _) rfl hVc hAf MV ML ?_ (fun a h1 _ => Tun.Vst_out _ _ _ _ (by rw [toBytesLE_length]; omega)
       (by rw [toBytesLE_length]; omega)) hr₂ hax₂ hsp₂ (hbx₂.trans (R 4104 (by omega)))
     (hbp₂.trans (R 4112 (by omega))) (h12₂.trans (R 4120 (by omega))) (h13₂.trans (R 4128 (by omega)))
     (h14₂.trans h14) (h15₂.trans h15) hev
