@@ -91,6 +91,11 @@ theorem t129 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L gor_at gor) {X : State
     (hbp₂.trans (hrd _ (by bv_omega) (by bv_omega))) (h12₂.trans (hrd _ (by bv_omega) (by bv_omega)))
     (h13₂.trans (hrd _ (by bv_omega) (by bv_omega))) (h14₂.trans hkp.2.2.1) (h15₂.trans hkp.2.2.2)
 
+/-- The one byte stored, read back (no bound: `Vst_head` asks one for the bytes after it). -/
+theorem Vst_one (V : Addr → Byte) (a : Addr) (b : Byte) : Vst V a [b] a = b := by
+  show upd1 V a b a = b
+  simp [upd1]
+
 /-- From 283, `malloc (s + 2)` returned `p ≠ 0`, apart from the frame and the slot of the return address of the `call`:
 `mempcpy (p, B, s)` (`PcpyAt` of the `mempcpy` at `0x4010c0`), the NUL at `p + s`, to the caller with `rax = p`: the
 bytes at `p` those at `B`, then a NUL, the others as they were but the slot below `B`. -/
@@ -183,7 +188,7 @@ theorem t283 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L gor_at gor) {X : State
       Tun.Vst_out _ _ _ _ (by rw [toBytesLE_length, hb8]; omega)
         (.inr (by rw [toBytesLE_length, hb8]; simp only [Addr.add]; bvg))]
   · show Vst V₆ (p + BitVec.ofNat 64 s) [0#8] (p + BitVec.ofNat 64 s) = 0#8
-    exact Vst_head _ _ _ _ (by simp only [List.length_nil]; rw [hps]; omega)
+    exact Vst_one _ _ _
   · rw [haxZ, hg₇, h12₆, hg₅]
     exact h12
   · rw [h14Z, hg₇, h14₆, hg₅]
