@@ -118,7 +118,7 @@ theorem t283 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L gor_at gor) {X : State
   have hs64 : (BitVec.ofNat 64 s).toNat = s := by rw [BitVec.toNat_ofNat]; omega
   have hb8 : (B - 8).toNat = B.toNat - 8 := by bv_omega
   refine (c_283 prof).run c hin _ hK hA hrip (vc_283 (k := s) (by omega) (by rw [hax]; exact hp) hbx) ?_
-  rintro j' g₁ fl V' ⟨rfl, hdi, h12, hsi, hdx, hkp, rfl⟩ Y₄ t₄ hK₄ hA₄ hr₄ hg -
+  rintro j' g₁ fl V ⟨rfl, hdi, h12, hsi, hdx, hkp, rfl⟩ Y₄ t₄ hK₄ hA₄ hr₄ hg -
   subst hg
   rw [hax] at hdi h12
   rw [hbp] at hsi
@@ -168,20 +168,20 @@ theorem t283 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L gor_at gor) {X : State
       Tun.Vst_out _ _ _ _ (by rw [toBytesLE_length, hb8]; omega) (by rw [toBytesLE_length, hb8]; omega)]
   have hrd : ∀ x : Addr, B.toNat + 4104 ≤ x.toNat → x.toNat + 8 ≤ B.toNat + 4144 →
       rdq(Vst V₆ (p + BitVec.ofNat 64 s) [0#8], x) = rdq(V, x) := fun x h1 h2 => by
-    rw [map_eq x 8 fun i hi => hout _ (by simp only [Addr.add]; bv_omega) (by simp only [Addr.add]; bv_omega)]
+    rw [map_eq (W := Vst V₆ (p + BitVec.ofNat 64 s) [0#8]) (V := V) x 8 fun i hi => hout (x.add i) (by bvg) (by bvg)]
   have hsp₇ : Y₇.cpu.gpr.rsp = B := by
     rw [hg₇, hsp₆, hsp₅]
-    bv_omega
-  refine epi c hin hK₇ hA₇ hr₇ hsp₇ hf hinr hj (by rw [hrd _ (by bv_omega) (by bv_omega)]; exact hra) ?_
+    bvg
+  refine epi c hin hK₇ hA₇ hr₇ hsp₇ hf hinr hj (by rw [hrd (B + 4136#64) (by bvg) (by bvg)]; exact hra) ?_
   intro Z t' hKZ hAZ hrZ haxZ hspZ hbxZ hbpZ h12Z h13Z h14Z h15Z
-  refine k Z t' _ hKZ hAZ (fun i hi => ?_) ?_ hout hrZ ?_ hspZ (hbxZ.trans (hrd _ (by bv_omega) (by bv_omega)))
-    (hbpZ.trans (hrd _ (by bv_omega) (by bv_omega))) (h12Z.trans (hrd _ (by bv_omega) (by bv_omega)))
-    (h13Z.trans (hrd _ (by bv_omega) (by bv_omega))) ?_ ?_
+  refine k Z t' _ hKZ hAZ (fun i hi => ?_) ?_ hout hrZ ?_ hspZ (hbxZ.trans (hrd (B + 4104#64) (by bvg) (by bvg)))
+    (hbpZ.trans (hrd (B + 4112#64) (by bvg) (by bvg))) (h12Z.trans (hrd (B + 4120#64) (by bvg) (by bvg)))
+    (h13Z.trans (hrd (B + 4128#64) (by bvg) (by bvg))) ?_ ?_
   · rw [Tun.Vst_out _ _ _ _ (by simp only [List.length_singleton]; rw [hps]; omega)
-        (.inl (by simp only [Addr.add]; rw [hps]; bv_omega)),
+        (.inl (by simp only [Addr.add]; rw [hps]; bvg)),
       hcp₆ i hi,
       Tun.Vst_out _ _ _ _ (by rw [toBytesLE_length, hb8]; omega)
-        (.inr (by rw [toBytesLE_length, hb8]; simp only [Addr.add]; bv_omega))]
+        (.inr (by rw [toBytesLE_length, hb8]; simp only [Addr.add]; bvg))]
   · show Vst V₆ (p + BitVec.ofNat 64 s) [0#8] (p + BitVec.ofNat 64 s) = 0#8
     exact Vst_head _ _ _ _ (by simp only [List.length_nil]; rw [hps]; omega)
   · rw [haxZ, hg₇, h12₆, hg₅]
