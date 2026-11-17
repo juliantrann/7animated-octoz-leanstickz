@@ -17,9 +17,11 @@ open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn
 namespace FV7z.Gor
 
 /-- `bv_omega` on the goal only: `bv_omega` simplifies every hypothesis too (`simp … at *`), which hangs in the big
-contexts of these proofs (probes of 43634134673). Equalities of addresses by their `toNat`. -/
+contexts of these proofs (probes of 43634134673). Equalities of addresses by their `toNat`; `bitvec_to_nat` is
+`bv_omega`'s simp set. -/
 macro "bvg" : tactic => `(tactic| ((try apply BitVec.eq_of_toNat_eq) <;>
-  (try simp only [bv_toNat, ZellicX86.Addr.add, FV7z.toBytesLE_length]) <;> omega))
+  (try simp only [ZellicX86.Addr.add, FV7z.toBytesLE_length]) <;>
+  (try simp -implicitDefEqProofs only [bitvec_to_nat]) <;> omega))
 
 theorem upm (feat : Features) : 2 ^ 47 - 4096 ≤ userPtrMax feat := by
   unfold userPtrMax
@@ -116,6 +118,7 @@ variable {prof : Profile} {F : Footprint} {Wl : List Rgn} {L : List (Addr × Lis
 
 /-- From 51 with an error `e` returned, `rsp` the buffer `B` 4136 bytes below `g`'s, the four saved registers of `g` in
 the frame, `_dl_origin_path` null: the `ret` with `rax = -1`, `rsp` and the saved registers `g`'s. -/
+set_option maxHeartbeats 1000000 in
 theorem err_path (c : Seg prof F Wl L s₀ o) (hin : CodeIn L gor_at gor) {g : Gprs} {V : Addr → Byte} {e : Nat}
     (he1 : 0 < e) (he2 : e < 4096) (h32 : 4136 ≤ g.rsp.toNat)
     (hfr : ∀ i < 32, Foot F.data (Addr.add (g.rsp - 32#64) i))
@@ -128,7 +131,8 @@ theorem err_path (c : Seg prof F Wl L s₀ o) (hin : CodeIn L gor_at gor) {g : G
       Z.cpu.gpr.rbp = g.rbp → Z.cpu.gpr.r12 = g.r12 → Z.cpu.gpr.r13 = g.r13 → Z.cpu.gpr.r14 = g.r14 →
       Z.cpu.gpr.r15 = g.r15 → GoG prof L o gev gP gE Z t') :
     GoG prof L o gev gP gE X t := by
-  refine (c_51 prof).run c hin _ hK hA hrip (vc_51e (by rw [hax]; exact err_hi he1 he2)) ?_
+  refine (c_51 prof).run c hin _ hK hA hrip
+    (vc_51e (g := X.cpu.gpr) (f := X.cpu.rflags) (V := frV V g) (by rw [hax]; exact err_hi he1 he2)) ?_
   rintro j' g₁ fl V' ⟨rfl, rfl, rfl⟩ Y₁ t₁ hK₁ hA₁ hr₁ hg₁ -
   refine (c_152 prof).run c hin _ hK₁ hA₁ hr₁ (vc_152 hof hoz) ?_
   rintro j' g₂ fl V' ⟨rfl, rfl, rfl⟩ Y₂ t₂ hK₂ hA₂ hr₂ hg₂ -
@@ -155,6 +159,7 @@ theorem err_path (c : Seg prof F Wl L s₀ o) (hin : CodeIn L gor_at gor) {g : G
 An error, or an executable's path of `PATH_MAX` bytes or more: the `ret` with `-1` (`ke`). The path `x` of fewer
 bytes: at the `call` of `malloc` at 124 (`edi = 2`: no `/` after the first byte, `k1`) or at 278 (`edi = s + 2`,
 `ebx = s`, the last `/` at `s ≥ 1`, `k2`), the bytes of `x` at `B`, `rsp = rbp = B`. -/
+set_option maxHeartbeats 1000000 in
 theorem gor_head (c : Seg prof F Wl L s₀ o) (hin : CodeIn L gor_at gor) {X : State} {t : Nat} {V : Addr → Byte}
     (hK : KeptW Wl s₀ X) (hA : Agree F X.proc.mm.mem V) (hrip : X.cpu.rip = gor_at)
     (h32 : 8192 ≤ X.cpu.gpr.rsp.toNat) (htop : X.cpu.gpr.rsp.toNat ≤ userPtrMax prof.feat)
@@ -265,7 +270,9 @@ theorem gor_head (c : Seg prof F Wl L s₀ o) (hin : CodeIn L gor_at gor) {X : S
     intro e he1 he2 hl
     rw [hl] at hA₄ hax₄
     try dsimp only at hA₄ hax₄
-    exact err_path c hin he1 he2 (by omega) hfr hof hoz' hK₄ hA₄ hr₄ hax₄ hsp₄ h14₄ h15₄
+    have v0 : Vst (frV V X.cpu.gpr) (X.cpu.gpr.rsp - 4136#64) [] = frV V X.cpu.gpr := rfl
+    rw [v0] at hA₄
+    exact err_path (g := X.cpu.gpr) (V := V) c hin he1 he2 (by omega) hfr hof hoz' hK₄ hA₄ hr₄ hax₄ hsp₄ h14₄ h15₄
       fun Z t' hKZ hAZ hrZ h0 h1 h2 h3 h4 h5 h6 h7 => ke r Z t' hKZ hAZ hrZ h0 h1 h2 h3 h4 h5 h6 h7
   cases r with
   | error e => exact kerr e.val e.2.1 e.2.2 rfl
