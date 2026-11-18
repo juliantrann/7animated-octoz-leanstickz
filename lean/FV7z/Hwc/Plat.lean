@@ -36,7 +36,8 @@ macro "vself" : tactic => `(tactic| (rw [Tun.rd_Vst_self _ _ _ (toBytesLE_length
 
 variable {prof : Profile} {F : Footprint} {Wl : List Rgn} {L : List (Addr × List Byte)} {s₀ : State} {o : Oracle}
   {gev : List Event} {gP : State → Nat → List Event → Prop} {gE : Outcome → List Event → Prop} {fb : Addr}
-  {cpy mlc : List Byte} {Pm Pa : (Addr → Byte) → Prop}
+  {cpy mlc : List Byte} {Pm : (Addr → Byte) → Prop}
+  {Pa : Nat → (Addr → Byte) → Prop} {hi ka : Nat}
 
 /-! ## From 1050 with the bytes of 682 -/
 
@@ -45,12 +46,12 @@ set_option maxHeartbeats 4000000 in
 (`rbp - 0x98`, `rbp - 0x50`, `rbp - 0x48`); what is left of the frame after the `ret`, from `rbp - 0x40`, as in `V`. -/
 theorem mid1050 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (hin : CodeIn L hwc_at hwc)
     (hinc : CodeIn L 4198592#64 cpy) (hc0 : 0 < cpy.length) (hcpy : Gor.PcpyAt prof L o 4198592#64 Pm)
-    (hinm : CodeIn L 6500704#64 mlc) (hm0 : 0 < mlc.length) (hmal : Mal.At prof L o 6500704#64 Pa)
+    (hinm : CodeIn L 6500704#64 mlc) (hm0 : 0 < mlc.length) (hmal : Mal.At prof F Wl L o fb hi 6500704#64 Pa)
     {V V₂ : Addr → Byte} {cnt E H t s : Nat} {R bp sp Q N : Addr} {ln st : Nat → Addr}
     (hPm : ∀ W : Addr → Byte, (∀ a : Addr, a.toNat < 7940480 → (a.toNat < N.toNat ∨ N.toNat + 8 ≤ a.toNat) →
       W a = V a) → Pm W)
     (hPa : ∀ W : Addr → Byte, (∀ a : Addr, a.toNat < sp.toNat - 8 → (a.toNat < N.toNat ∨ N.toNat + 8 ≤ a.toNat) →
-      W a = V a) → Pa W)
+      W a = V a) → Pa (ka + 1) W)
     (hn : cnt = 3 ∧ E = 8 ∧ H = 4 ∧ t = 23 ∧ s = 151 ∨ cnt = 4 ∧ E = 16 ∧ H = 8 ∧ t = 32 ∧ s = 320)
     (hlv : cnt = 3 ∧ (ln 0).toNat = 6 ∧ (ln 1).toNat = 0 ∧ (ln 2).toNat = 3 ∨
       cnt = 4 ∧ (ln 0).toNat = 6 ∧ (ln 1).toNat = 8 ∧ (ln 2).toNat = 0 ∧ (ln 3).toNat = 3)
@@ -58,6 +59,7 @@ theorem mid1050 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (h
     (hRs : sp.toNat ≤ R.toNat) (hRF : R.toNat + 16 * cnt ≤ (bp + 18446744073709551448#64).toNat)
     (hfb : (bp + 18446744073709551448#64).toNat + 176 ≤ 2 ^ 64)
     (hst : ∀ i < 8, Foot Wl (Addr.add (sp - 8) i))
+    (hwl : ∀ a : Addr, hi ≤ a.toNat → a.toNat < sp.toNat → Foot Wl a) (hhi : hi + 224 ≤ sp.toNat)
     (hFr : ∀ a : Addr, (bp + 18446744073709551448#64).toNat ≤ a.toNat →
       a.toNat < (bp + 18446744073709551448#64).toNat + 176 → Foot Wl a ∧ Foot F.data a)
     (hFT : ∀ a : Addr, R.toNat ≤ a.toNat → a.toNat < R.toNat + 16 * cnt → Foot F.data a)
@@ -93,7 +95,7 @@ theorem mid1050 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (h
       SameO V W 0 7940480 N → SameO V W ((bp + 18446744073709551448#64).toNat + 104) (2 ^ 64) N →
       rdq(W, N) = BitVec.ofNat 64 E →
       (∀ W' : Addr → Byte, (∀ a : Addr, 7940480 ≤ a.toNat → a.toNat < sp.toNat - 8 →
-        (a.toNat < P.toNat ∨ P.toNat + s ≤ a.toNat) → W' a = W a) → Pa W') →
+        (a.toNat < P.toNat ∨ P.toNat + s ≤ a.toNat) → W' a = W a) → Pa ka W') →
       (∀ a : Addr, Mal.Kn a → W a = V a) → GoG prof L o gev gP gE Y t') :
     ∀ (X : State) (t₀ : Nat), KeptW Wl s₀ X → Agree F X.proc.mm.mem V₂ → X.cpu.rip = hwc_at.add 1050 →
       X.cpu.gpr.rsi = BitVec.ofNat 64 cnt → X.cpu.gpr.rax = BitVec.ofNat 64 t →
@@ -115,7 +117,7 @@ theorem mid1050 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (h
   refine from1050 c hfs hin hinc hc0 hcpy hinm hm0 hmal (V := V₂)
     (fun W hW => hPm W fun a ha hn => (hW a ha hn).trans (hSV a (by fomega) (by fomega) (by fomega)))
     (fun W hW => hPa W fun a ha hn => (hW a ha hn).trans (hSV a (by fomega) (by fomega) (by fomega)))
-    hn hlv hspl hsK hRs hRF hfb hst hFr hFT hT hsrc hs64 hsd
+    hn hlv hspl hsK hRs hRF hfb hst hwl hhi hFr hFT hT hsrc hs64 hsd
     (by rw [hS1 (by fomega) (by fomega) (by fomega) (by fomega)]; exact hNv) hND hN64 hsN hD8 hL hl
     (by rw [hS1 (by fomega) (by fomega) (by fomega) (by fomega)]; exact hQ) hsQ hQ64 hQd ?_
     X t₀ hK hA hrip hsi hax hdx h12 hbx hbp hsp
@@ -139,17 +141,18 @@ to the last two entries, the total, on to the `ret` (1681). `S0` (`x86_64`, entr
 when `cnt = 4`) in `.rodata`; `p` below `0x792980` or in the stack. -/
 theorem from682 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (hin : CodeIn L hwc_at hwc)
     (hinc : CodeIn L 4198592#64 cpy) (hc0 : 0 < cpy.length) (hcpy : Gor.PcpyAt prof L o 4198592#64 Pm)
-    (hinm : CodeIn L 6500704#64 mlc) (hm0 : 0 < mlc.length) (hmal : Mal.At prof L o 6500704#64 Pa)
+    (hinm : CodeIn L 6500704#64 mlc) (hm0 : 0 < mlc.length) (hmal : Mal.At prof F Wl L o fb hi 6500704#64 Pa)
     {V : Addr → Byte} {cnt E H t s : Nat} {R bp sp Q N p S0 S1 : Addr}
     (hPm : ∀ W : Addr → Byte, (∀ a : Addr, a.toNat < 7940480 → (a.toNat < N.toNat ∨ N.toNat + 8 ≤ a.toNat) →
       W a = V a) → Pm W)
     (hPa : ∀ W : Addr → Byte, (∀ a : Addr, a.toNat < sp.toNat - 8 → (a.toNat < N.toNat ∨ N.toNat + 8 ≤ a.toNat) →
-      W a = V a) → Pa W)
+      W a = V a) → Pa (ka + 1) W)
     (hn : cnt = 3 ∧ E = 8 ∧ H = 4 ∧ t = 23 ∧ s = 151 ∨ cnt = 4 ∧ E = 16 ∧ H = 8 ∧ t = 32 ∧ s = 320)
     (hspl : 7940480 ≤ sp.toNat) (hsK : 8032256 + 8 ≤ sp.toNat)
     (hRs : sp.toNat ≤ R.toNat) (hRF : R.toNat + 16 * cnt ≤ (bp + 18446744073709551448#64).toNat)
     (hfb : (bp + 18446744073709551448#64).toNat + 176 ≤ 2 ^ 64)
     (hst : ∀ i < 8, Foot Wl (Addr.add (sp - 8) i))
+    (hwl : ∀ a : Addr, hi ≤ a.toNat → a.toNat < sp.toNat → Foot Wl a) (hhi : hi + 224 ≤ sp.toNat)
     (hFr : ∀ a : Addr, (bp + 18446744073709551448#64).toNat ≤ a.toNat →
       a.toNat < (bp + 18446744073709551448#64).toNat + 176 → Foot Wl a ∧ Foot F.data a)
     (hFT : ∀ a : Addr, R.toNat ≤ a.toNat → a.toNat < R.toNat + 16 * cnt → Foot F.data a)
@@ -181,7 +184,7 @@ theorem from682 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (h
       SameO V W 0 7940480 N → SameO V W ((bp + 18446744073709551448#64).toNat + 104) (2 ^ 64) N →
       rdq(W, N) = BitVec.ofNat 64 E →
       (∀ W' : Addr → Byte, (∀ a : Addr, 7940480 ≤ a.toNat → a.toNat < sp.toNat - 8 →
-        (a.toNat < P.toNat ∨ P.toNat + s ≤ a.toNat) → W' a = W a) → Pa W') →
+        (a.toNat < P.toNat ∨ P.toNat + s ≤ a.toNat) → W' a = W a) → Pa ka W') →
       (∀ a : Addr, Mal.Kn a → W a = V a) → GoG prof L o gev gP gE Y t') :
     ∀ (X : State) (t₀ : Nat), KeptW Wl s₀ X → Agree F X.proc.mm.mem V → X.cpu.rip = hwc_at.add 682 →
       X.cpu.gpr.rax = R + BitVec.ofNat 64 (16 * (cnt - 2)) → X.cpu.gpr.rcx = BitVec.ofNat 64 (cnt - 1) →
@@ -239,7 +242,8 @@ theorem from682 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (h
     rintro j' g fl V' ⟨rfl, rfl, rfl⟩ Z t₂ hKZ hAZ hrZ hgZ -
     rw [hbxY, hbpY] at hAZ
     refine mid1050 c hfs hin hinc hc0 hcpy hinm hm0 hmal (st := hl_st 3 S0 S1 p) (ln := hl_ln 3) hPm hPa
-      (.inl ⟨rfl, rfl, rfl, rfl, rfl⟩) (.inl ⟨rfl, by decide, by decide, by decide⟩) hspl hsK hRs hRF hfb hst hFr hFT
+      (.inl ⟨rfl, rfl, rfl, rfl, rfl⟩) (.inl ⟨rfl, by decide, by decide, by decide⟩) hspl hsK hRs hRF hfb hst hwl hhi
+      hFr hFT
       (fun a h1 h2 h3 => by repeat (focus (rw [Tun.Vst_out _ _ _ _ ?_ ?_]; rotate_left; iterate 2 fomega)))
       (fun m hm => by
         obtain rfl | rfl | rfl : m = 0 ∨ m = 1 ∨ m = 2 := by omega
@@ -328,7 +332,7 @@ theorem from682 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (h
     rintro j' g fl V' ⟨rfl, rfl, rfl⟩ U t₃ hKU hAU hrU hgU -
     refine mid1050 c hfs hin hinc hc0 hcpy hinm hm0 hmal (st := hl_st 4 S0 S1 p) (ln := hl_ln 4) hPm hPa
       (.inr ⟨rfl, rfl, rfl, rfl, rfl⟩) (.inr ⟨rfl, by decide, by decide, by decide, by decide⟩) hspl hsK hRs hRF hfb
-      hst hFr hFT
+      hst hwl hhi hFr hFT
       (fun a h1 h2 h3 => by repeat (focus (rw [Tun.Vst_out _ _ _ _ ?_ ?_]; rotate_left; iterate 2 fomega)))
       (fun m hm => by
         obtain rfl | rfl | rfl | rfl : m = 0 ∨ m = 1 ∨ m = 2 ∨ m = 3 := by omega

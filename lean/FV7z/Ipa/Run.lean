@@ -33,9 +33,10 @@ set_option maxHeartbeats 8000000 in
 /-- `_dl_init_paths (NULL)` from the entry to the return (see the module doc). -/
 theorem whole (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (hin : CodeIn L ipa_at ipa)
     (hinh : CodeIn L Hwc.hwc_at Hwc.hwc)
-    {cpy mlc sl ms : List Byte} {Pm Pa Pl Ps : (Addr → Byte) → Prop}
+    {cpy mlc sl ms : List Byte} {Pm Pl Ps : (Addr → Byte) → Prop}
+    {Pa : Nat → (Addr → Byte) → Prop} {hi ka : Nat}
     (hinc : CodeIn L 4198592#64 cpy) (hc0 : 0 < cpy.length) (hcpy : Gor.PcpyAt prof L o 4198592#64 Pm)
-    (hinm : CodeIn L 6500704#64 mlc) (hm0 : 0 < mlc.length) (hmal : Mal.At prof L o 6500704#64 Pa)
+    (hinm : CodeIn L 6500704#64 mlc) (hm0 : 0 < mlc.length) (hmal : Mal.At prof F Wl L o fb hi 6500704#64 Pa)
     (hinl : CodeIn L 4198664#64 sl) (hl0 : 0 < sl.length) (hlenA : Str.LenAt prof L o 4198664#64 Pl)
     (hinz : CodeIn L 4198528#64 ms) (hz0 : 0 < ms.length) (hset : SetAt prof L o 4198528#64 Ps)
     (hint : CodeIn L Tgv.tgv_at Tgv.tgv)
@@ -44,13 +45,14 @@ theorem whole (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (hin
     (hPm : ∀ W : Addr → Byte, (∀ a : Addr, a.toNat < 7940480 → (a.toNat < 7937664 ∨ 7937720 ≤ a.toNat) →
       W a = V a) → Pm W)
     (hPa : ∀ W : Addr → Byte, (∀ a : Addr, a.toNat < e.toNat - 400 → (a.toNat < 7937664 ∨ 7937720 ≤ a.toNat) →
-      W a = V a) → Pa W)
+      W a = V a) → Pa (ka + 3) W)
     (hPl : ∀ W : Addr → Byte, (∀ a : Addr, a.toNat < 7940480 → W a = V a) → Pl W)
     (hPs : ∀ W : Addr → Byte, (∀ a : Addr, a.toNat < 7940480 → (a.toNat < 7937664 ∨ 7937720 ≤ a.toNat) →
       W a = V a) → Ps W)
     (he : 8388872 + 400 ≤ e.toNat) (he2 : e.toNat + 16 ≤ 2 ^ 64)
     (hal : (e + 18446744073709551512#64) &&& 15#64 = 0#64)
     (hFs : ∀ a : Addr, e.toNat - 400 ≤ a.toNat → a.toNat < e.toNat + 8 → Foot Wl a ∧ Foot F.data a)
+    (hwl : ∀ a : Addr, hi ≤ a.toNat → a.toNat < e.toNat → Foot Wl a) (hhi : hi + 600 ≤ e.toNat)
     (hpg : ∀ x : Addr, 7286784 ≤ x.toNat → x.toNat < 7290880 → Foot F.data x)
     (hx1 : ∀ k < 6, V (Addr.add 7288953#64 k) ≠ 0) (hx1z : V (Addr.add 7288953#64 6) = 0)
     (hx2 : ∀ k < 8, V (Addr.add 7288962#64 k) ≠ 0) (hx2z : V (Addr.add 7288962#64 8) = 0)
@@ -92,15 +94,18 @@ theorem whole (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (hin
     · exact ⟨3, Or.inr ⟨rfl, rfl⟩⟩
   obtain ⟨i0bp, i0r15, i0r14, i0r13, i0r12, i0bx, i0di⟩ := iV0_rd V hsp hr0 (by omega)
   -- the entry to 58
-  refine to58 c hfs hin hinh hinc hc0 hcpy hinm hm0 hmal hinl hl0 hlenA hint hn hPm hPa hPl he he2 hal hFs hpg
+  refine to58 (ka := ka + 2) c hfs hin hinh hinc hc0 hcpy hinm hm0 hmal hinl hl0 hlenA hint hn hPm hPa hPl he he2
+    hal hFs hwl hhi hpg
     hx1 hx1z hx2 hx2z htls hU hm6 hhw hfh hsm hfm hpl hpl0 hf1 hf2 hp0 hpd hWb X t hK hA hrip hsp ?_
   intro Z₁ t₁ V₃ P hK₁ hA₁ hr₁ hs₁ hbp₁ _ hbx₁ h12₁ h13₁ h14₁ h15₁ _ _ _ hlo3 hN3 hfr3 hPa3 hKn3
   -- 58 to 75
-  refine to75 c hin hinm hm0 hmal he he2 hFs hWb hlo3 hN3 hfr3 hPa3 hKn3 Z₁ t₁ hK₁ hA₁ hr₁ hs₁ ?_
+  refine to75 (ka := ka + 1) c hfs hin hinm hm0 hmal he he2 hFs hwl hhi hWb hlo3 hN3 hfr3 hPa3 hKn3
+    Z₁ t₁ hK₁ hA₁ hr₁ hs₁ ?_
   intro Z₂ t₂ V₄ A hK₂ hA₂ hr₂ hs₂ hax₂ hbx₂ hbp₂ h12₂ h13₂ h14₂ h15₂ hA1 hA2 hAf hlo4 hN4 hfr4 hPa4 hKn4 hAk
   have hA2' : A.toNat + 40 ≤ (e + 18446744073709551608#64).toNat - 88 := by rw [hr8]; omega
   -- 75 to 267
-  refine to267 c hin hinm hm0 hmal hq (by rw [hr8]; omega) (by rw [hr8]; omega) hFr hWb hfN hW7a hA1 hAk hA2'
+  refine to267 (ka := ka) c hfs hin hinm hm0 hmal hq (by rw [hr8]; omega) (by rw [hr8]; omega) hFr
+    (fun a h1 h2 => hwl a h1 (by rw [hr8] at h2; omega)) (by rw [hr8]; omega) hWb hfN hW7a hA1 hAk hA2'
     (fun a h1 h2 => (hAf a h1 h2).1) hN4
     (fun W hW => hPa4 W fun a h1 h2 h3 => hW a h1 (by rw [hr8]; omega) h3) Z₂ t₂ hK₂ hA₂ hr₂
     (by rw [hs₂, w536]) hax₂ (by rw [hbp₂, hbp₁]) ?_

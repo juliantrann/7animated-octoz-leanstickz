@@ -131,7 +131,8 @@ theorem vc_132n {g : Gprs} {f : Rflags} {V : Addr → Byte} {c : Nat} (hc : c < 
 
 variable {prof : Profile} {L : List (Addr × List Byte)} {s₀ : State} {o : Oracle}
   {gev : List Event} {gP : State → Nat → List Event → Prop} {gE : Outcome → List Event → Prop}
-  {cpy mlc sl : List Byte} {Pm Pa Pl : (Addr → Byte) → Prop}
+  {cpy mlc sl : List Byte} {Pm Pl : (Addr → Byte) → Prop}
+  {Pa : Nat → (Addr → Byte) → Prop} {hi ka : Nat}
 
 /-- What the caller gets at the `ret` (1681): `rsp` on the return address, the registers a call keeps those of the
 entry (`g`), the table at `P` (`Tab`), `ncapstr` (`*N = E`), `max_capstrlen` (`*Q`), the bytes below the
@@ -160,7 +161,7 @@ set_option maxHeartbeats 16000000 in
 `glibc.cpu.hwcap_mask` not set (6), no vDSO; `cnt`, `E`, `H`, `s` and `temp` (`R`) as `h` gives them. -/
 theorem from0 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (hin : CodeIn L hwc_at hwc)
     (hinc : CodeIn L 4198592#64 cpy) (hc0 : 0 < cpy.length) (hcpy : Gor.PcpyAt prof L o 4198592#64 Pm)
-    (hinm : CodeIn L 6500704#64 mlc) (hm0 : 0 < mlc.length) (hmal : Mal.At prof L o 6500704#64 Pa)
+    (hinm : CodeIn L 6500704#64 mlc) (hm0 : 0 < mlc.length) (hmal : Mal.At prof F Wl L o fb hi 6500704#64 Pa)
     (hins : CodeIn L 4198664#64 sl) (hs0 : 0 < sl.length) (hlen : Str.LenAt prof L o 4198664#64 Pl)
     (hint : CodeIn L Tgv.tgv_at Tgv.tgv)
     {V : Addr → Byte} {h R bp Q N p : Addr} {cnt E H s : Nat}
@@ -169,9 +170,10 @@ theorem from0 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (hin
     (hPm : ∀ W : Addr → Byte, (∀ a : Addr, a.toNat < 7940480 → (a.toNat < N.toNat ∨ N.toNat + 8 ≤ a.toNat) →
       W a = V a) → Pm W)
     (hPa : ∀ W : Addr → Byte, (∀ a : Addr, a.toNat < R.toNat - 8 → (a.toNat < N.toNat ∨ N.toNat + 8 ≤ a.toNat) →
-      W a = V a) → Pa W)
+      W a = V a) → Pa (ka + 1) W)
     (hPl : ∀ W : Addr → Byte, (∀ a : Addr, a.toNat < 7940480 → W a = V a) → Pl W)
     (hbl : 8388872 ≤ bp.toNat) (hbh : bp.toNat + 16 ≤ 2 ^ 64) (hal : bp &&& 15#64 = 0#64)
+    (hwl : ∀ a : Addr, hi ≤ a.toNat → a.toNat < R.toNat → Foot Wl a) (hhi : hi + 224 ≤ R.toNat)
     (hFs : ∀ a : Addr, bp.toNat - 264 ≤ a.toNat → a.toNat < bp.toNat + 8 → Foot Wl a ∧ Foot F.data a)
     (hpg : ∀ x : Addr, 7286784 ≤ x.toNat → x.toNat < 7290880 → Foot F.data x)
     (hx1 : ∀ k < 6, V (Addr.add 7288953#64 k) ≠ 0) (hx1z : V (Addr.add 7288953#64 6) = 0)
@@ -187,7 +189,7 @@ theorem from0 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (hin
     (hQd : Q.toNat + 8 ≤ bp.toNat - 40 ∨ bp.toNat + 8 ≤ Q.toNat) :
     ∀ (X : State) (t₀ : Nat), KeptW Wl s₀ X → Agree F X.proc.mm.mem V → X.cpu.rip = hwc_at →
       X.cpu.gpr.rsp = bp + 8#64 → X.cpu.gpr.rdi = p → X.cpu.gpr.rsi = 0#64 → X.cpu.gpr.rdx = N →
-      X.cpu.gpr.rcx = Q → At0 prof L o gev gP gE F Wl s₀ V X.cpu.gpr bp R Q N cnt E H s Pa →
+      X.cpu.gpr.rcx = Q → At0 prof L o gev gP gE F Wl s₀ V X.cpu.gpr bp R Q N cnt E H s (Pa ka) →
       GoG prof L o gev gP gE X t₀ := by
   intro X t₀ hK hA hrip hsp hdi hsi hdx hcx k
   have eF := fbb (bp := bp) (by omega) (by omega)
@@ -318,7 +320,7 @@ theorem from0 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (hin
       (fun W hW => hPm W fun a ha hn => (hW a ha hn).trans (by vout))
       (fun W hW => hPa W fun a ha hn => (hW a ha hn).trans (by vout))
       (fun W hW => hPl W fun a ha => (hW a ha).trans (by vout))
-      (by omega) (by omega) (by omega) hfb (al3 hal) (fun a h1 h2 => hFs a (by omega) (by omega)) hpg
+      (by omega) (by omega) (by omega) hfb (al3 hal) hwl hhi (fun a h1 h2 => hFs a (by omega) (by omega)) hpg
       (fun q hq => by
         have := lit_add (c := 7288953) (n := 6) (k := q) (by omega) (by decide)
         vout
@@ -426,7 +428,7 @@ theorem from0 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (hin
       (fun W hW => hPm W fun a ha hn => (hW a ha hn).trans (by vout))
       (fun W hW => hPa W fun a ha hn => (hW a ha hn).trans (by vout))
       (fun W hW => hPl W fun a ha => (hW a ha).trans (by vout))
-      (by omega) (by omega) (by omega) hfb (al4 hal) (fun a h1 h2 => hFs a (by omega) (by omega)) hpg
+      (by omega) (by omega) (by omega) hfb (al4 hal) hwl hhi (fun a h1 h2 => hFs a (by omega) (by omega)) hpg
       (fun q hq => by
         have := lit_add (c := 7288953) (n := 6) (k := q) (by omega) (by decide)
         vout

@@ -43,7 +43,8 @@ macro "vout" : tactic =>
 
 variable {prof : Profile} {F : Footprint} {Wl : List Rgn} {L : List (Addr × List Byte)} {s₀ : State} {o : Oracle}
   {gev : List Event} {gP : State → Nat → List Event → Prop} {gE : Outcome → List Event → Prop} {fb : Addr}
-  {cpy mlc sl : List Byte} {Pm Pa Pl : (Addr → Byte) → Prop}
+  {cpy mlc sl : List Byte} {Pm Pl : (Addr → Byte) → Prop}
+  {Pa : Nat → (Addr → Byte) → Prop} {hi ka : Nat}
 
 /-- What `from682` gives at the `ret` (1681), with `V` the bytes before the loop over the bits and `R` the `rsp` of
 `temp`. -/
@@ -74,17 +75,18 @@ set_option maxHeartbeats 8000000 in
 and the `ret`. -/
 theorem from1778_3 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (hin : CodeIn L hwc_at hwc)
     (hinc : CodeIn L 4198592#64 cpy) (hc0 : 0 < cpy.length) (hcpy : Gor.PcpyAt prof L o 4198592#64 Pm)
-    (hinm : CodeIn L 6500704#64 mlc) (hm0 : 0 < mlc.length) (hmal : Mal.At prof L o 6500704#64 Pa)
+    (hinm : CodeIn L 6500704#64 mlc) (hm0 : 0 < mlc.length) (hmal : Mal.At prof F Wl L o fb hi 6500704#64 Pa)
     (hins : CodeIn L 4198664#64 sl) (hs0 : 0 < sl.length) (hlen : Str.LenAt prof L o 4198664#64 Pl)
     {V : Addr → Byte} {R bp Q N p : Addr}
     (hPm : ∀ W : Addr → Byte, (∀ a : Addr, a.toNat < 7940480 → (a.toNat < N.toNat ∨ N.toNat + 8 ≤ a.toNat) →
       W a = V a) → Pm W)
     (hPa : ∀ W : Addr → Byte, (∀ a : Addr, a.toNat < R.toNat - 8 → (a.toNat < N.toNat ∨ N.toNat + 8 ≤ a.toNat) →
-      W a = V a) → Pa W)
+      W a = V a) → Pa (ka + 1) W)
     (hPl : ∀ W : Addr → Byte, (∀ a : Addr, a.toNat < 7940480 → W a = V a) → Pl W)
     (hRl : 7940488 ≤ R.toNat) (hRK : 8032256 + 8 ≤ R.toNat) (hRF : R.toNat + 72 = (bp + 18446744073709551448#64).toNat)
     (hfb : (bp + 18446744073709551448#64).toNat + 176 ≤ 2 ^ 64)
     (hal : (R + 15#64) &&& 18446744073709551600#64 = R)
+    (hwl : ∀ a : Addr, hi ≤ a.toNat → a.toNat < R.toNat → Foot Wl a) (hhi : hi + 224 ≤ R.toNat)
     (hFs : ∀ a : Addr, R.toNat - 8 ≤ a.toNat → a.toNat < (bp + 18446744073709551448#64).toNat + 176 →
       Foot Wl a ∧ Foot F.data a)
     (hpg : ∀ x : Addr, 7286784 ≤ x.toNat → x.toNat < 7290880 → Foot F.data x)
@@ -99,7 +101,7 @@ theorem from1778_3 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb)
     (hQ64 : Q.toNat + 8 ≤ 2 ^ 64)
     (hQd : Q.toNat + 8 ≤ (bp + 18446744073709551448#64).toNat + 128 ∨
       (bp + 18446744073709551448#64).toNat + 176 ≤ Q.toNat)
-    (k : At1681 prof L o gev gP gE F Wl s₀ V bp R Q N 3 8 4 151 Pa) :
+    (k : At1681 prof L o gev gP gE F Wl s₀ V bp R Q N 3 8 4 151 (Pa ka)) :
     ∀ (X : State) (t₀ : Nat), KeptW Wl s₀ X → Agree F X.proc.mm.mem V → X.cpu.rip = hwc_at.add 1778 →
       X.cpu.gpr.r8 = 2#64 → X.cpu.gpr.r12 = BitVec.ofNat 64 3 → X.cpu.gpr.rbp = bp → X.cpu.gpr.rsp = R →
       GoG prof L o gev gP gE X t₀ := by
@@ -212,7 +214,7 @@ theorem from1778_3 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb)
     (fun W hW => hPm W fun a ha hn => (hW a ha hn).trans (by vout))
     (fun W hW => hPa W fun a ha hn => (hW a ha hn).trans (by vout))
     (.inl ⟨rfl, rfl, rfl, rfl, rfl⟩) (by omega) hRK (Nat.le_refl _) (by omega) hfb
-    (fun i hi => rng hFW (by fomega) (by fomega) (by fomega) i hi)
+    (fun i hi => rng hFW (by fomega) (by fomega) (by fomega) i hi) hwl hhi
     (fun a h1 h2 => hFs a (by omega) h2) (fun a h1 h2 => hFD a (by omega) (by omega))
     (fun a h1 h2 => hFW a (by omega) (by omega))
     (by vpeel; vself) (by vself) (fun h => absurd h (by decide))
@@ -247,17 +249,18 @@ set_option maxHeartbeats 16000000 in
 (length 8) to entry 1, on to 682 and the `ret`. -/
 theorem from1778_4 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (hin : CodeIn L hwc_at hwc)
     (hinc : CodeIn L 4198592#64 cpy) (hc0 : 0 < cpy.length) (hcpy : Gor.PcpyAt prof L o 4198592#64 Pm)
-    (hinm : CodeIn L 6500704#64 mlc) (hm0 : 0 < mlc.length) (hmal : Mal.At prof L o 6500704#64 Pa)
+    (hinm : CodeIn L 6500704#64 mlc) (hm0 : 0 < mlc.length) (hmal : Mal.At prof F Wl L o fb hi 6500704#64 Pa)
     (hins : CodeIn L 4198664#64 sl) (hs0 : 0 < sl.length) (hlen : Str.LenAt prof L o 4198664#64 Pl)
     {V : Addr → Byte} {R bp Q N p : Addr}
     (hPm : ∀ W : Addr → Byte, (∀ a : Addr, a.toNat < 7940480 → (a.toNat < N.toNat ∨ N.toNat + 8 ≤ a.toNat) →
       W a = V a) → Pm W)
     (hPa : ∀ W : Addr → Byte, (∀ a : Addr, a.toNat < R.toNat - 8 → (a.toNat < N.toNat ∨ N.toNat + 8 ≤ a.toNat) →
-      W a = V a) → Pa W)
+      W a = V a) → Pa (ka + 1) W)
     (hPl : ∀ W : Addr → Byte, (∀ a : Addr, a.toNat < 7940480 → W a = V a) → Pl W)
     (hRl : 7940488 ≤ R.toNat) (hRK : 8032256 + 8 ≤ R.toNat) (hRF : R.toNat + 88 = (bp + 18446744073709551448#64).toNat)
     (hfb : (bp + 18446744073709551448#64).toNat + 176 ≤ 2 ^ 64)
     (hal : (R + 15#64) &&& 18446744073709551600#64 = R)
+    (hwl : ∀ a : Addr, hi ≤ a.toNat → a.toNat < R.toNat → Foot Wl a) (hhi : hi + 224 ≤ R.toNat)
     (hFs : ∀ a : Addr, R.toNat - 8 ≤ a.toNat → a.toNat < (bp + 18446744073709551448#64).toNat + 176 →
       Foot Wl a ∧ Foot F.data a)
     (hpg : ∀ x : Addr, 7286784 ≤ x.toNat → x.toNat < 7290880 → Foot F.data x)
@@ -273,7 +276,7 @@ theorem from1778_4 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb)
     (hQ64 : Q.toNat + 8 ≤ 2 ^ 64)
     (hQd : Q.toNat + 8 ≤ (bp + 18446744073709551448#64).toNat + 128 ∨
       (bp + 18446744073709551448#64).toNat + 176 ≤ Q.toNat)
-    (k : At1681 prof L o gev gP gE F Wl s₀ V bp R Q N 4 16 8 320 Pa) :
+    (k : At1681 prof L o gev gP gE F Wl s₀ V bp R Q N 4 16 8 320 (Pa ka)) :
     ∀ (X : State) (t₀ : Nat), KeptW Wl s₀ X → Agree F X.proc.mm.mem V → X.cpu.rip = hwc_at.add 1778 →
       X.cpu.gpr.r8 = 6#64 → X.cpu.gpr.r12 = BitVec.ofNat 64 4 → X.cpu.gpr.rbp = bp → X.cpu.gpr.rsp = R →
       GoG prof L o gev gP gE X t₀ := by
@@ -465,7 +468,7 @@ theorem from1778_4 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb)
     (fun W hW => hPm W fun a ha hn => (hW a ha hn).trans (by vout))
     (fun W hW => hPa W fun a ha hn => (hW a ha hn).trans (by vout))
     (.inr ⟨rfl, rfl, rfl, rfl, rfl⟩) (by omega) hRK (Nat.le_refl _) (by omega) hfb
-    (fun i hi => rng hFW (by fomega) (by fomega) (by fomega) i hi)
+    (fun i hi => rng hFW (by fomega) (by fomega) (by fomega) i hi) hwl hhi
     (fun a h1 h2 => hFs a (by omega) h2) (fun a h1 h2 => hFD a (by omega) (by omega))
     (fun a h1 h2 => hFW a (by omega) (by omega))
     (by vpeel; vself) (by vpeel; vself) (fun _ => ⟨by vpeel; vself, by vself⟩)

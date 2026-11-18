@@ -19,12 +19,14 @@ theorem u88p (r : Addr) : r + 18446744073709551528#64 + 8 = r + 1844674407370955
 
 set_option maxHeartbeats 4000000 in
 /-- From 75 to 267, after `malloc (160 q)` (see the module doc). -/
-theorem to267 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L ipa_at ipa) {mlc : List Byte}
-    {Pa : (Addr → Byte) → Prop} (hinm : CodeIn L 6500704#64 mlc) (hm0 : 0 < mlc.length)
-    (hmal : Mal.At prof L o 6500704#64 Pa) {V₄ : Addr → Byte} {r A : Addr} {E q : Nat}
+theorem to267 {fb : Addr} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (hin : CodeIn L ipa_at ipa)
+    {mlc : List Byte} {Pa : Nat → (Addr → Byte) → Prop} {hi ka : Nat}
+    (hinm : CodeIn L 6500704#64 mlc) (hm0 : 0 < mlc.length)
+    (hmal : Mal.At prof F Wl L o fb hi 6500704#64 Pa) {V₄ : Addr → Byte} {r A : Addr} {E q : Nat}
     (hq : E = 8 ∧ q = 2 ∨ E = 16 ∧ q = 3)
     (hr : 8029560 + 88 ≤ r.toNat) (hr2 : r.toNat + 16 ≤ 2 ^ 64)
     (hFs : ∀ a : Addr, r.toNat - 88 ≤ a.toNat → a.toNat < r.toNat + 8 → Foot Wl a ∧ Foot F.data a)
+    (hwl : ∀ a : Addr, hi ≤ a.toNat → a.toNat < r.toNat → Foot Wl a) (hhi : hi + 304 ≤ r.toNat)
     (hWb : ∀ x : Addr, 7937664 ≤ x.toNat → x.toNat < 7937720 → Foot Wl x)
     (hfN : ∀ x : Addr, 7937688 ≤ x.toNat → x.toNat < 7937696 → Foot F.data x)
     (hW7a : ∀ a : Addr, 8029552 ≤ a.toNat → a.toNat < 8029560 → Foot Wl a)
@@ -32,7 +34,7 @@ theorem to267 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L ipa_at ipa) {mlc : Li
     (hAW : ∀ a : Addr, A.toNat ≤ a.toNat → a.toNat < A.toNat + 40 → Foot Wl a)
     (hN4 : rdq(V₄, 7937688#64) = BitVec.ofNat 64 E)
     (hPa4 : ∀ W : Addr → Byte, (∀ a : Addr, 7940480 ≤ a.toNat → a.toNat < r.toNat - 88 →
-      (a.toNat < A.toNat ∨ A.toNat + 40 ≤ a.toNat) → W a = V₄ a) → Pa W)
+      (a.toNat < A.toNat ∨ A.toNat + 40 ≤ a.toNat) → W a = V₄ a) → Pa (ka + 1) W)
     (Z : State) (t : Nat) (hK : KeptW Wl s₀ Z) (hA : Agree F Z.proc.mm.mem V₄) (hrip : Z.cpu.rip = ipa_at.add 75)
     (hsp : Z.cpu.gpr.rsp = r + 18446744073709551536#64) (hax : Z.cpu.gpr.rax = A) (hbp : Z.cpu.gpr.rbp = r)
     (k : ∀ Z' t' (V₅ : Addr → Byte) (B : Addr), KeptW Wl s₀ Z' → Agree F Z'.proc.mm.mem V₅ →
@@ -73,7 +75,9 @@ theorem to267 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L ipa_at ipa) {mlc : Li
   rw [hsp', hsp, u88] at hA₂
   have s₂ : Y₂.cpu.gpr.rsp = r + 18446744073709551528#64 := by rw [hg₂, set4_rsp, hsp', hsp, u88]
   have hdi₂ : Y₂.cpu.gpr.rdi = BitVec.ofNat 64 (160 * q) := by rw [hg₂, set4_rdi, hdi]
-  refine hmal c hK₂ hA₂ hr₂ (hPa4 _ fun a h1 h2 h3 => ?_) (by rw [hdi₂, hq160]; omega) hin
+  refine hmal c hK₂ hA₂ hr₂ (hPa4 _ fun a h1 h2 h3 => ?_) (by rw [hdi₂, hq160]; omega) hfs
+    (by rw [s₂, f88 hr0]; omega) (by rw [s₂, f88 hr0]; omega)
+    (fun a h1 h2 => hwl a h1 (by rw [s₂, f88 hr0] at h2; omega)) hin
     (lt_len (j := 153) (by omega)) ?_ (by rw [s₂]; ireg hFD) ?_
   · rw [Tun.Vst_out _ _ _ _ (by ifd) (by ifd), Tun.Vst_out _ _ _ _ (by ifd) (by ifd),
       Tun.Vst_out _ _ _ _ (by ipd) (by ipd)]

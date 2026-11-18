@@ -16,17 +16,19 @@ variable {prof : Profile} {F : Footprint} {Wl : List Rgn} {L : List (Addr × Lis
 
 set_option maxHeartbeats 4000000 in
 /-- From 58 to 75, after `malloc (40)` (see the module doc). -/
-theorem to75 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L ipa_at ipa) {mlc : List Byte}
-    {Pa : (Addr → Byte) → Prop} (hinm : CodeIn L 6500704#64 mlc) (hm0 : 0 < mlc.length)
-    (hmal : Mal.At prof L o 6500704#64 Pa) {V V₃ : Addr → Byte} {g : Gprs} {e P : Addr} {s E : Nat}
+theorem to75 {fb : Addr} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (hin : CodeIn L ipa_at ipa)
+    {mlc : List Byte} {Pa : Nat → (Addr → Byte) → Prop} {hi ka : Nat}
+    (hinm : CodeIn L 6500704#64 mlc) (hm0 : 0 < mlc.length)
+    (hmal : Mal.At prof F Wl L o fb hi 6500704#64 Pa) {V V₃ : Addr → Byte} {g : Gprs} {e P : Addr} {s E : Nat}
     (he : 8388872 + 400 ≤ e.toNat) (he2 : e.toNat + 16 ≤ 2 ^ 64)
     (hFs : ∀ a : Addr, e.toNat - 400 ≤ a.toNat → a.toNat < e.toNat + 8 → Foot Wl a ∧ Foot F.data a)
+    (hwl : ∀ a : Addr, hi ≤ a.toNat → a.toNat < e.toNat → Foot Wl a) (hhi : hi + 600 ≤ e.toNat)
     (hWb : ∀ x : Addr, 7937664 ≤ x.toNat → x.toNat < 7937720 → Foot Wl x)
     (hlo3 : ∀ a : Addr, a.toNat < 7940480 → (a.toNat < 7937680 ∨ 7937696 ≤ a.toNat) → V₃ a = V a)
     (hN3 : rdq(V₃, 7937688#64) = BitVec.ofNat 64 E)
     (hfr3 : ∀ a : Addr, e.toNat - 88 ≤ a.toNat → V₃ a = iV0 V g a)
     (hPa3 : ∀ W : Addr → Byte, (∀ a : Addr, 7940480 ≤ a.toNat → a.toNat < e.toNat - 96 →
-      (a.toNat < P.toNat ∨ P.toNat + s ≤ a.toNat) → W a = V₃ a) → Pa W)
+      (a.toNat < P.toNat ∨ P.toNat + s ≤ a.toNat) → W a = V₃ a) → Pa (ka + 1) W)
     (hKn3 : ∀ a : Addr, Mal.Kn a → V₃ a = V a)
     (Z : State) (t : Nat) (hK : KeptW Wl s₀ Z) (hA : Agree F Z.proc.mm.mem V₃) (hrip : Z.cpu.rip = ipa_at.add 58)
     (hsp : Z.cpu.gpr.rsp = e + 18446744073709551528#64)
@@ -40,7 +42,7 @@ theorem to75 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L ipa_at ipa) {mlc : Lis
       rdq(V₄, 7937688#64) = BitVec.ofNat 64 E →
       (∀ a : Addr, e.toNat - 88 ≤ a.toNat → V₄ a = iV0 V g a) →
       (∀ W : Addr → Byte, (∀ a : Addr, 7940480 ≤ a.toNat → a.toNat < e.toNat - 96 →
-        (a.toNat < A.toNat ∨ A.toNat + 40 ≤ a.toNat) → W a = V₄ a) → Pa W) →
+        (a.toNat < A.toNat ∨ A.toNat + 40 ≤ a.toNat) → W a = V₄ a) → Pa ka W) →
       (∀ a : Addr, Mal.Kn a → V₄ a = V a) → 8032256 ≤ A.toNat →
       GoG prof L o gev gP gE Z' t') :
     GoG prof L o gev gP gE Z t := by
@@ -61,7 +63,9 @@ theorem to75 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L ipa_at ipa) {mlc : Lis
   rw [s₁, t96] at hA₂
   have s₂ : Y₂.cpu.gpr.rsp = e + 18446744073709551520#64 := by rw [hg₂, set4_rsp, s₁, t96]
   have hdi : Y₂.cpu.gpr.rdi = 40#64 := by rw [hg₂, set4_rdi, hg₁]
-  refine hmal c hK₂ hA₂ hr₂ (hPa3 _ fun a h1 h2 h3 => ?_) (by rw [hdi]; ipd) hin (lt_len (j := 75) (by omega))
+  refine hmal c hK₂ hA₂ hr₂ (hPa3 _ fun a h1 h2 h3 => ?_) (by rw [hdi]; ipd) hfs (by rw [s₂, f96 hr0]; omega)
+    (by rw [s₂, f96 hr0]; omega) (fun a h1 h2 => hwl a h1 (by rw [s₂, f96 hr0] at h2; omega)) hin
+    (lt_len (j := 75) (by omega))
     ?_ (by rw [s₂]; ireg hFD) ?_
   · rw [Tun.Vst_out _ _ _ _ (by ifd) (by ifd), Tun.Vst_out _ _ _ _ (by ipd) (by ipd)]
   · rw [s₂, Tun.rd_Vst_self _ _ _ (toBytesLE_length _ _) (by ifd), ofBytesLE_toBytesLE (n := 8) rfl]

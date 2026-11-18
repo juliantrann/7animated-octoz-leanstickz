@@ -30,6 +30,17 @@ theorem rq_of {V V' : Addr → Byte} {x : Addr} (hx : x.toNat + 8 ≤ 2 ^ 64)
 theorem sA_lt {k : Nat} (hk : k < 3) : Ipa.sA k < 7364131 := by
   rcases (by omega : k = 0 ∨ k = 1 ∨ k = 2) with rfl | rfl | rfl <;> decide
 
+/-- The bytes of `n` from `x` in `R` as a range. -/
+theorem of_add {R : List Rgn} {x : Addr} {n : Nat} (h : ∀ i < n, Foot R (Addr.add x i)) (hx : x.toNat + n ≤ 2 ^ 64) :
+    ∀ a : Addr, x.toNat ≤ a.toNat → a.toNat < x.toNat + n → Foot R a := fun a h1 h2 => by
+  have := a.isLt
+  have e : Addr.add x (a.toNat - x.toNat) = a := by
+    apply BitVec.eq_of_toNat_eq
+    simp only [Addr.add]
+    rw [BitVec.toNat_add, BitVec.toNat_ofNat]
+    omega
+  exact e ▸ h _ (by omega)
+theorem s4144 {sp : Addr} (h : 4144 ≤ sp.toNat) : (sp - 8#64 - 4136#64).toNat = sp.toNat - 4144 := by bv_omega
 theorem ent6 : (Tgv.ent 11#64 + 32#64).toNat = 7936232 := by rw [Hwc.eent]; decide
 
 variable {F : Footprint} {Wl N : List Rgn}
@@ -73,9 +84,11 @@ theorem ndi_all {pl pc ip cpy : List Byte} {Pm : (Addr → Byte) → Prop} {E : 
       GoG prof L o (gev ++ [gEv { X.cpu.gpr with rsp := sp - 8#64 } r]) gP gE Z t')
     -- `ndi_pc`, of the bytes at the entry
     (hin : CodeIn L Ipa.ipa_at Ipa.ipa) (hinh : CodeIn L Hwc.hwc_at Hwc.hwc)
-    {mlc sl ms : List Byte} {Pq Pa Pk Ps : (Addr → Byte) → Prop}
+    {mlc sl ms : List Byte} {Pq Pk Ps : (Addr → Byte) → Prop}
+    {Pa : Nat → (Addr → Byte) → Prop} {ka : Nat}
     (hcpq : Gor.PcpyAt prof L o 4198592#64 Pq)
-    (hinm : CodeIn L 6500704#64 mlc) (hm0 : 0 < mlc.length) (hmal : Mal.At prof L o 6500704#64 Pa)
+    (hinm : CodeIn L 6500704#64 mlc) (hm0 : 0 < mlc.length)
+    (hmal : Mal.At prof (withNew F N) (N ++ Wl) L o fsb (sp.toNat - 4144) 6500704#64 Pa)
     (hinl : CodeIn L 4198664#64 sl) (hl0 : 0 < sl.length) (hlenA : Str.LenAt prof L o 4198664#64 Pk)
     (hinz : CodeIn L 4198528#64 ms) (hz0 : 0 < ms.length) (hset : Ipa.SetAt prof L o 4198528#64 Ps)
     (hint : CodeIn L Tgv.tgv_at Tgv.tgv)
@@ -91,7 +104,7 @@ theorem ndi_all {pl pc ip cpy : List Byte} {Pm : (Addr → Byte) → Prop} {E : 
       ∀ W₁ : Addr → Byte, (∀ a : Addr, a.toNat < sp.toNat - 408 →
         (a.toNat < (Tp b + 16#64).toNat ∨ (Tp b + 16#64).toNat + s + 1 ≤ a.toNat) →
         (a.toNat < sp.toNat - 8 - 4144 ∨ sp.toNat - 8 - 4136 ≤ a.toNat) →
-        (a.toNat < 7937664 ∨ 7937720 ≤ a.toNat) → ¬ Hv a → W₁ a = M a) → Pa W₁)
+        (a.toNat < 7937664 ∨ 7937720 ≤ a.toNat) → ¬ Hv a → W₁ a = M a) → Pa (ka + 3) W₁)
     (hPk : ∀ W₁ : Addr → Byte, (∀ a : Addr, a.toNat < 7940480 → ¬ Hv a → W₁ a = fV W sp X.cpu.gpr a) → Pk W₁)
     (hPs : ∀ W₁ : Addr → Byte, (∀ a : Addr, a.toNat < 7940480 → (a.toNat < 7937664 ∨ 7937720 ≤ a.toNat) → ¬ Hv a →
       W₁ a = fV W sp X.cpu.gpr a) → Ps W₁)
@@ -172,6 +185,12 @@ theorem ndi_all {pl pc ip cpy : List Byte} {Pm : (Addr → Byte) → Prop} {E : 
   have hU' : Tgv.UnsetW (withNew F N) W' 11#64 :=
     Tgv.UnsetW.out (lo := 7937208) (hi := 2 ^ 64) (unset_foot hU fun _ => fwn hown)
       (by rw [Hwc.eent]; decide) (by omega) fun a ha => LB a (by have := a.isLt; omega)
+  -- the stack from `sp - 0x1030` (`hst`, `hFs`): for the frames of `malloc`
+  have WS : ∀ a : Addr, sp.toNat - 4144 ≤ a.toNat → a.toNat < sp.toNat → Foot Wl a := fun a a1 a2 => by
+    by_cases hl : a.toNat < sp.toNat - 408
+    · have e := s4144 (sp := sp) (by omega)
+      exact of_add hst (by rw [e]; omega) a (by rw [e]; omega) (by rw [e]; omega)
+    · exact (hFs a (by omega) a2).1
   exact ndi_pc (V := W') (org := Tp b + 16#64) c₁ (Cx.mv cx hown SM) hB₁.fsb
     (by rw [rd_of (V := fV W sp X.cpu.gpr) (x := 8029568) (n := 8) (by omega) fun a a1 a2 => LZ a (by omega)
       (by omega)]; exact h2)
@@ -188,6 +207,7 @@ theorem ndi_all {pl pc ip cpy : List Byte} {Pm : (Addr → Byte) → Prop} {E : 
     (fun W₁ hW => hPk W₁ fun a a1 a2 => (hW a a1 a2).trans (LB a a1))
     (fun W₁ hW => hPs W₁ fun a a1 a2 a3 => (hW a a1 a2 a3).trans (LB a a1))
     he hal (fun a a1 a2 => ⟨foot_append_iff.2 (.inr (hFs a a1 a2).1), fwn hown (hFs a a1 a2).2⟩)
+    (fun a a1 a2 => foot_append_iff.2 (.inr (WS a a1 a2))) (by omega)
     (fun x a1 a2 => fwn hown (hpg x a1 a2))
     (fun k hk => by rw [LB _ (ad_lt (x := 7288953) (k := k) (by omega) (by omega))]; exact hx1 k hk)
     (by rw [LB _ (ad_lt (x := 7288953) (k := 6) (by omega) (by omega))]; exact hx1z)

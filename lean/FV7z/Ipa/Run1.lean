@@ -55,9 +55,10 @@ set_option maxHeartbeats 8000000 in
 /-- From the entry to 58, after `_dl_important_hwcaps` (see the module doc). -/
 theorem to58 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (hin : CodeIn L ipa_at ipa)
     (hinh : CodeIn L Hwc.hwc_at Hwc.hwc)
-    {cpy mlc sl : List Byte} {Pm Pa Pl : (Addr → Byte) → Prop}
+    {cpy mlc sl : List Byte} {Pm Pl : (Addr → Byte) → Prop}
+    {Pa : Nat → (Addr → Byte) → Prop} {hi ka : Nat}
     (hinc : CodeIn L 4198592#64 cpy) (hc0 : 0 < cpy.length) (hcpy : Gor.PcpyAt prof L o 4198592#64 Pm)
-    (hinm : CodeIn L 6500704#64 mlc) (hm0 : 0 < mlc.length) (hmal : Mal.At prof L o 6500704#64 Pa)
+    (hinm : CodeIn L 6500704#64 mlc) (hm0 : 0 < mlc.length) (hmal : Mal.At prof F Wl L o fb hi 6500704#64 Pa)
     (hins : CodeIn L 4198664#64 sl) (hs0 : 0 < sl.length) (hlen : Str.LenAt prof L o 4198664#64 Pl)
     (hint : CodeIn L Tgv.tgv_at Tgv.tgv)
     {V : Addr → Byte} {h e p : Addr} {cnt E H s : Nat}
@@ -65,11 +66,12 @@ theorem to58 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (hin 
     (hPm : ∀ W : Addr → Byte, (∀ a : Addr, a.toNat < 7940480 → (a.toNat < 7937664 ∨ 7937720 ≤ a.toNat) →
       W a = V a) → Pm W)
     (hPa : ∀ W : Addr → Byte, (∀ a : Addr, a.toNat < e.toNat - 400 → (a.toNat < 7937664 ∨ 7937720 ≤ a.toNat) →
-      W a = V a) → Pa W)
+      W a = V a) → Pa (ka + 1) W)
     (hPl : ∀ W : Addr → Byte, (∀ a : Addr, a.toNat < 7940480 → W a = V a) → Pl W)
     (he : 8388872 + 400 ≤ e.toNat) (he2 : e.toNat + 16 ≤ 2 ^ 64)
     (hal : (e + 18446744073709551512#64) &&& 15#64 = 0#64)
     (hFs : ∀ a : Addr, e.toNat - 400 ≤ a.toNat → a.toNat < e.toNat + 8 → Foot Wl a ∧ Foot F.data a)
+    (hwl : ∀ a : Addr, hi ≤ a.toNat → a.toNat < e.toNat → Foot Wl a) (hhi : hi + 600 ≤ e.toNat)
     (hpg : ∀ x : Addr, 7286784 ≤ x.toNat → x.toNat < 7290880 → Foot F.data x)
     (hx1 : ∀ k < 6, V (Addr.add 7288953#64 k) ≠ 0) (hx1z : V (Addr.add 7288953#64 6) = 0)
     (hx2 : ∀ k < 8, V (Addr.add 7288962#64 k) ≠ 0) (hx2z : V (Addr.add 7288962#64 8) = 0)
@@ -94,7 +96,7 @@ theorem to58 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (hin 
       rdq(V₃, 7937688#64) = BitVec.ofNat 64 E →
       (∀ a : Addr, e.toNat - 88 ≤ a.toNat → V₃ a = iV0 V X.cpu.gpr a) →
       (∀ W : Addr → Byte, (∀ a : Addr, 7940480 ≤ a.toNat → a.toNat < e.toNat - 96 →
-        (a.toNat < P.toNat ∨ P.toNat + s ≤ a.toNat) → W a = V₃ a) → Pa W) →
+        (a.toNat < P.toNat ∨ P.toNat + s ≤ a.toNat) → W a = V₃ a) → Pa ka W) →
       (∀ a : Addr, Mal.Kn a → V₃ a = V a) →
       GoG prof L o gev gP gE Z t') :
     GoG prof L o gev gP gE X t := by
@@ -149,7 +151,8 @@ theorem to58 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (hin 
     (fun W hW => hPm W fun a h1 h2 => by rw [hW a h1 (by ipd), v2l a (by omega)])
     (fun W hW => hPa W fun a h1 h2 => by rw [hW a (by omega) (by ipd), v2l a (by omega)])
     (fun W hW => hPl W fun a h1 => by rw [hW a h1, v2l a (by omega)])
-    (by rw [hb]; omega) (by rw [hb]; omega) hal (fun a h1 h2 => hFs a (by omega) (by omega)) hpg
+    (by rw [hb]; omega) (by rw [hb]; omega) hal (fun a h1 h2 => hwl a h1 (by omega)) (by omega)
+    (fun a h1 h2 => hFs a (by omega) (by omega)) hpg
     (fun i hi => by
       rw [v2l (Addr.add 7288953#64 i) (by rw [toNat_add_of_fits (n := 6) hi (by ipd)]; ipd)]; exact hx1 i hi)
     (by rw [v2l (Addr.add 7288953#64 6) (by rw [toNat_add_of_fits (n := 7) (by decide) (by ipd)]; ipd)]; exact hx1z)

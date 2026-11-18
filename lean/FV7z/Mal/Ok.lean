@@ -1,5 +1,6 @@
 import FV7z.Mal.Heap
 import FV7z.Hwc.Vc
+import FV7z.Hwc.Call
 /-!
 # `malloc` after the first call as a contract that holds (PLAN.md G3, `malloc`)
 
@@ -12,6 +13,7 @@ the top can be in it. `AtH` is the form that holds:
   `[p, p + n)` below `hi`, the bytes outside the heap's words and the frame as at the call, and `Pm k` for every byte
   map that agrees with the one at the return from `0x792980` to `hi` but for `[p, p + n)`.
 - `Hp.mv`: `Hp` (a top of at least 16 bytes) for bytes that agree from `0x792980` to `hi`.
+- `at_of`: `AtH` gives `Mal.At` (the form the callers in `Hwc`, `Ipa`, `Ndi` use); `at_ok`: `Mal.At` of `malloc`.
 - `at_hp`: `AtH` of `malloc` (`0x633160`) with `Pm k = Hp … (1072 k + 16)` (`mal_hp`; the 16 keep the top's
   size word below `hi`).
 -/
@@ -79,5 +81,31 @@ theorem kn_kept {V V₂ : Addr → Byte} {p : Addr} (hp : 8032256 + 16 ≤ p.toN
     ∀ a : Addr, Kn a → V₂ a = V a := fun a ha => by
   have := ha.lt
   exact h a (.inr ⟨by omega, by omega⟩)
+
+/-- `AtH` gives `Mal.At`: the frame from the stack from `hi`, the bytes from the caller's `rsp` up and those below
+`0x792980` as they were, `Pm k` for the bytes that agree up to the caller's `rsp`, `Kn` (`kn_kept`). -/
+theorem at_of {prof : Profile} {F : Footprint} {Wl : List Rgn} {L : List (Addr × List Byte)} {o : Oracle}
+    {fb e : Addr} {hi : Nat} {Pm : Nat → (Addr → Byte) → Prop} (h : AtH prof F Wl L o fb hi e Pm) :
+    At prof F Wl L o fb hi e Pm := by
+  intro s₀ gev gP gE X t V e' code j k c hK hA hrip hP hn hfs hhi hR hwl hin₂ hj hra _ kc
+  have hsw : ∀ i < 224, Foot Wl (Addr.add (X.cpu.gpr.rsp - 216#64) i) := fun i hi' => by
+    have e : (Addr.add (X.cpu.gpr.rsp - 216#64) i).toNat = X.cpu.gpr.rsp.toNat - 216 + i := by
+      simp only [Addr.add]
+      rw [BitVec.toNat_add, BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
+      omega
+    exact hwl _ (by rw [e]; omega) (by rw [e]; omega)
+  refine h c hfs hK hA hrip hP hn hhi hR hsw hin₂ hj hra
+    fun Z t' V₂ p hKZ hAZ hrZ hsZ haZ hbx hbp h12 h13 h14 h15 hp hpe hWP hV hPm => ?_
+  exact kc Z t' V₂ p hKZ hAZ hrZ hsZ haZ hbx hbp h12 h13 h14 h15 (by omega) (by omega) hWP
+    (fun a ha => hV a (ha.elim (fun _ => .inl (by omega)) fun _ => .inr (.inr ⟨by omega, .inr (by omega)⟩)))
+    (fun W hW => hPm W fun a h1 h2 h3 => hW a h1 (by omega) h3)
+    (kn_kept hp fun a ha => hV a (ha.elim (fun h => .inl h) fun h => .inr (.inl h))) (by omega)
+
+/-- `malloc` after the first call (`0x633160`) as `Mal.At`, with `Pm k` the heap with a top of at least
+`1072 k + 16` bytes. -/
+theorem at_ok {prof : Profile} {F : Footprint} {Wl : List Rgn} {L : List (Addr × List Byte)} {o : Oracle}
+    {fb : Addr} {hi : Nat} (hin : CodeIn L mnx_at mnx) (hinI : CodeIn L imm_at imm) :
+    At prof F Wl L o fb hi mnx_at fun k W => Hp F Wl fb hi (1072 * k + 16) W :=
+  at_of (at_hp hin hinI)
 
 end FV7z.Mal

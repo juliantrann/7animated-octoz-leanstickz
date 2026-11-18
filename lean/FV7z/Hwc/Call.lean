@@ -15,17 +15,21 @@ open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn
 
 namespace FV7z.Mal
 
-/-- What a `call` of `malloc` at `e` does (assumed; see the module doc): called with a return address in code, `Pm`
-and `rdi = n ≤ 1024`, the run gets back to the return address with `rsp + 8`, the registers a call keeps kept,
-`rax = p` with `0x792980 ≤ p`, `p + n ≤ rsp`, the `n` bytes at `p` in the footprint, the bytes below `0x792980`
-and from the caller's `rsp` up as they were, and `Pm` again for the bytes that keep the ones from `0x792980` to the
-slot of the return address apart from the block (the state of the heap for the next call), the bytes `Kn` as they
-were and the block in the heap (`0x7a9000 ≤ p`). -/
-def At (prof : Profile) (L : List (Addr × List Byte)) (o : Oracle) (e : Addr) (Pm : (Addr → Byte) → Prop) : Prop :=
-  ∀ {F : Footprint} {Wl : List Rgn} {s₀ : State} {gev : List Event} {gP : State → Nat → List Event → Prop}
-    {gE : Outcome → List Event → Prop} {X : State} {t : Nat} {V : Addr → Byte} {e' : Addr} {code : List Byte}
-    {j : Nat}, Seg prof F Wl L s₀ o → KeptW Wl s₀ X → Agree F X.proc.mm.mem V → X.cpu.rip = e → Pm V →
-    X.cpu.gpr.rdi.toNat ≤ 1024 → CodeIn L e' code → j < code.length → rdq(V, X.cpu.gpr.rsp) = e'.add j →
+/-- What a `call` of `malloc` at `e` does (assumed here; `Mal.Ok.at_ok` for `malloc`), for the footprint `F`, `Wl`
+and the TLS block `fb`: called with a return address in code, `Pm (k + 1)` and `rdi = n ≤ 1024`, the stack from
+`hi` to the slot of the return address in `Wl` and `hi + 216 ≤ rsp`, the run gets back to the return address with
+`rsp + 8`, the registers a call keeps kept, `rax = p` with `0x792980 ≤ p`, `p + n ≤ rsp`, the `n` bytes at `p` in
+the footprint, the bytes below `0x792980` and from the caller's `rsp` up as they were, and `Pm k` for the bytes that
+keep the ones from `0x792980` to the slot of the return address apart from the block (the state of the heap for
+the next call), the bytes `Kn` as they were and the block in the heap (`0x7a9000 ≤ p`). -/
+def At (prof : Profile) (F : Footprint) (Wl : List Rgn) (L : List (Addr × List Byte)) (o : Oracle) (fb : Addr)
+    (hi : Nat) (e : Addr) (Pm : Nat → (Addr → Byte) → Prop) : Prop :=
+  ∀ {s₀ : State} {gev : List Event} {gP : State → Nat → List Event → Prop} {gE : Outcome → List Event → Prop}
+    {X : State} {t : Nat} {V : Addr → Byte} {e' : Addr} {code : List Byte} {j k : Nat},
+    Seg prof F Wl L s₀ o → KeptW Wl s₀ X → Agree F X.proc.mm.mem V → X.cpu.rip = e → Pm (k + 1) V →
+    X.cpu.gpr.rdi.toNat ≤ 1024 → s₀.cpu.seg.fsBase = fb → hi + 216 ≤ X.cpu.gpr.rsp.toNat →
+    X.cpu.gpr.rsp.toNat + 40 < 2 ^ 64 → (∀ a : Addr, hi ≤ a.toNat → a.toNat < X.cpu.gpr.rsp.toNat + 8 → Foot Wl a) →
+    CodeIn L e' code → j < code.length → rdq(V, X.cpu.gpr.rsp) = e'.add j →
     (∀ i < 8, Foot F.data (Addr.add X.cpu.gpr.rsp i)) →
     (∀ Z t' V₂ (p : Addr), KeptW Wl s₀ Z → Agree F Z.proc.mm.mem V₂ → Z.cpu.rip = e'.add j →
       Z.cpu.gpr.rsp = X.cpu.gpr.rsp + 8 → Z.cpu.gpr.rax = p →
@@ -35,7 +39,7 @@ def At (prof : Profile) (L : List (Addr × List Byte)) (o : Oracle) (e : Addr) (
       (∀ a : Addr, p.toNat ≤ a.toNat → a.toNat < p.toNat + X.cpu.gpr.rdi.toNat → Foot Wl a ∧ Foot F.data a) →
       (∀ a : Addr, a.toNat < 7940480 ∨ X.cpu.gpr.rsp.toNat + 8 ≤ a.toNat → V₂ a = V a) →
       (∀ W : Addr → Byte, (∀ a : Addr, 7940480 ≤ a.toNat → a.toNat < X.cpu.gpr.rsp.toNat →
-        (a.toNat < p.toNat ∨ p.toNat + X.cpu.gpr.rdi.toNat ≤ a.toNat) → W a = V₂ a) → Pm W) →
+        (a.toNat < p.toNat ∨ p.toNat + X.cpu.gpr.rdi.toNat ≤ a.toNat) → W a = V₂ a) → Pm k W) →
       (∀ a : Addr, Kn a → V₂ a = V a) → 8032256 ≤ p.toNat →
       GoG prof L o gev gP gE Z t') →
     GoG prof L o gev gP gE X t
@@ -56,7 +60,8 @@ theorem tgt_1111 : hwc_at.add (1111 + 5) + BitVec.ofNat 64 18446744073709050820 
 
 variable {prof : Profile} {F : Footprint} {Wl : List Rgn} {L : List (Addr × List Byte)} {s₀ : State} {o : Oracle}
   {gev : List Event} {gP : State → Nat → List Event → Prop} {gE : Outcome → List Event → Prop} {fb : Addr}
-  {cpy mlc : List Byte} {Pm Pa : (Addr → Byte) → Prop}
+  {cpy mlc : List Byte} {Pm : (Addr → Byte) → Prop}
+  {Pa : Nat → (Addr → Byte) → Prop} {hi ka : Nat}
 
 set_option maxHeartbeats 4000000 in
 /-- The `call` of `malloc (s)` at 1111 (`s` at least the table and the strings: `16 E + rem`), then `from1116`: to the
@@ -64,15 +69,16 @@ set_option maxHeartbeats 4000000 in
 up), out of the reach of `malloc`. -/
 theorem from1111 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (hin : CodeIn L hwc_at hwc)
     (hinc : CodeIn L 4198592#64 cpy) (hc0 : 0 < cpy.length) (hcpy : Gor.PcpyAt prof L o 4198592#64 Pm)
-    (hinm : CodeIn L 6500704#64 mlc) (hm0 : 0 < mlc.length) (hmal : Mal.At prof L o 6500704#64 Pa)
+    (hinm : CodeIn L 6500704#64 mlc) (hm0 : 0 < mlc.length) (hmal : Mal.At prof F Wl L o fb hi 6500704#64 Pa)
     {V : Addr → Byte} {cnt E H s : Nat} {R bp sp Q : Addr} {ln st : Nat → Addr}
     (hPm : ∀ W : Addr → Byte, (∀ a : Addr, a.toNat < 7940480 → W a = V a) → Pm W)
-    (hPa : ∀ W : Addr → Byte, (∀ a : Addr, a.toNat < sp.toNat - 8 → W a = V a) → Pa W)
+    (hPa : ∀ W : Addr → Byte, (∀ a : Addr, a.toNat < sp.toNat - 8 → W a = V a) → Pa (ka + 1) W)
     (hn : cnt = 3 ∧ E = 8 ∧ H = 4 ∨ cnt = 4 ∧ E = 16 ∧ H = 8)
     (hsz : 16 * E + rem cnt ln H ≤ s) (hs : s ≤ 1024) (hsp8 : 8 ≤ sp.toNat)
     (hRs : sp.toNat ≤ R.toNat) (hRF : R.toNat + 16 * cnt ≤ (bp + 18446744073709551448#64).toNat)
     (hfb : (bp + 18446744073709551448#64).toNat + 176 ≤ 2 ^ 64) (hsK : 8032256 + 8 ≤ sp.toNat)
     (hst : ∀ i < 8, Foot Wl (Addr.add (sp - 8) i))
+    (hwl : ∀ a : Addr, hi ≤ a.toNat → a.toNat < sp.toNat → Foot Wl a) (hhi : hi + 224 ≤ sp.toNat)
     (hFr : ∀ a : Addr, (bp + 18446744073709551448#64).toNat ≤ a.toNat →
       a.toNat < (bp + 18446744073709551448#64).toNat + 176 → Foot Wl a ∧ Foot F.data a)
     (hFT : ∀ a : Addr, R.toNat ≤ a.toNat → a.toNat < R.toNat + 16 * cnt → Foot F.data a)
@@ -104,7 +110,7 @@ theorem from1111 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (
       Same V W 0 7940480 → Same V W sp.toNat (bp + 18446744073709551448#64).toNat →
       Same V W ((bp + 18446744073709551448#64).toNat + 88) (2 ^ 64) →
       (∀ W' : Addr → Byte, (∀ a : Addr, 7940480 ≤ a.toNat → a.toNat < sp.toNat - 8 →
-        (a.toNat < P.toNat ∨ P.toNat + s ≤ a.toNat) → W' a = W a) → Pa W') →
+        (a.toNat < P.toNat ∨ P.toNat + s ≤ a.toNat) → W' a = W a) → Pa ka W') →
       (∀ a : Addr, Mal.Kn a → W a = V a) → GoG prof L o gev gP gE Y t') :
     ∀ (X : State) (t : Nat), KeptW Wl s₀ X → Agree F X.proc.mm.mem V → X.cpu.rip = hwc_at.add 1111 →
       X.cpu.gpr.rdi = BitVec.ofNat 64 s → X.cpu.gpr.r12 = BitVec.ofNat 64 cnt →
@@ -120,7 +126,8 @@ theorem from1111 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (
   rw [hsp] at hA₁ hg₁
   have hdi₁ : Y.cpu.gpr.rdi = BitVec.ofNat 64 s := by rw [hg₁]; exact hdi
   have hsp₁ : Y.cpu.gpr.rsp = sp - 8 := by rw [hg₁]; rfl
-  refine hmal c hK₁ hA₁ hr₁ (hPa _ fun a ha => ?_) (by rw [hdi₁, es]; exact hs) hin (j := 1116)
+  refine hmal c hK₁ hA₁ hr₁ (hPa _ fun a ha => ?_) (by rw [hdi₁, es]; exact hs) hfs (by rw [hsp₁, hb8]; omega)
+    (by rw [hsp₁, hb8]; omega) (fun a h1 h2 => hwl a h1 (by rw [hsp₁, hb8] at h2; omega)) hin (j := 1116)
     (lt_len (by omega)) ?_ (fun i hi => ?_) ?_
   · exact Tun.Vst_out _ _ _ _ (by rw [toBytesLE_length, hb8]; omega) (.inl (by rw [hb8]; omega))
   · rw [hsp₁, Tun.rd_Vst_self _ _ _ (toBytesLE_length _ _) (by rw [hb8]; omega), ofBytesLE_toBytesLE (n := 8) rfl]

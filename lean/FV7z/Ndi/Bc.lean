@@ -112,9 +112,10 @@ theorem ndi_pc {pl pc : List Byte} {Pm : (Addr → Byte) → Prop} {E : Ev} {V W
     (h4 : rdq(V, 8029424#64) = 0#64) (h5 : rdd(V, 7937248#64) = 0#32)
     -- `Ipa.whole`
     (hin : CodeIn L Ipa.ipa_at Ipa.ipa) (hinh : CodeIn L Hwc.hwc_at Hwc.hwc)
-    {cpy mlc sl ms : List Byte} {Pq Pa Pk Ps : (Addr → Byte) → Prop}
+    {cpy mlc sl ms : List Byte} {Pq Pk Ps : (Addr → Byte) → Prop}
+    {Pa : Nat → (Addr → Byte) → Prop} {hi ka : Nat}
     (hinc : CodeIn L 4198592#64 cpy) (hc0 : 0 < cpy.length) (hcpy : Gor.PcpyAt prof L o 4198592#64 Pq)
-    (hinm : CodeIn L 6500704#64 mlc) (hm0 : 0 < mlc.length) (hmal : Mal.At prof L o 6500704#64 Pa)
+    (hinm : CodeIn L 6500704#64 mlc) (hm0 : 0 < mlc.length) (hmal : Mal.At prof F Wl L o fb hi 6500704#64 Pa)
     (hinl : CodeIn L 4198664#64 sl) (hl0 : 0 < sl.length) (hlenA : Str.LenAt prof L o 4198664#64 Pk)
     (hinz : CodeIn L 4198528#64 ms) (hz0 : 0 < ms.length) (hset : Ipa.SetAt prof L o 4198528#64 Ps)
     (hint : CodeIn L Tgv.tgv_at Tgv.tgv)
@@ -123,12 +124,13 @@ theorem ndi_pc {pl pc : List Byte} {Pm : (Addr → Byte) → Prop} {E : Ev} {V W
     (hPq : ∀ W : Addr → Byte, (∀ a : Addr, a.toNat < 7940480 → (a.toNat < 7937664 ∨ 7937720 ≤ a.toNat) → ¬ Hv a →
       W a = V a) → Pq W)
     (hPa : ∀ W : Addr → Byte, (∀ a : Addr, a.toNat < sp.toNat - 408 → (a.toNat < 7937664 ∨ 7937720 ≤ a.toNat) →
-      ¬ Hv a → W a = V a) → Pa W)
+      ¬ Hv a → W a = V a) → Pa (ka + 3) W)
     (hPk : ∀ W : Addr → Byte, (∀ a : Addr, a.toNat < 7940480 → ¬ Hv a → W a = V a) → Pk W)
     (hPs : ∀ W : Addr → Byte, (∀ a : Addr, a.toNat < 7940480 → (a.toNat < 7937664 ∨ 7937720 ≤ a.toNat) → ¬ Hv a →
       W a = V a) → Ps W)
     (he : 8388872 + 408 ≤ sp.toNat) (hal : (sp + 18446744073709551504#64) &&& 15#64 = 0#64)
     (hFs : ∀ a : Addr, sp.toNat - 408 ≤ a.toNat → a.toNat < sp.toNat → Foot Wl a ∧ Foot F.data a)
+    (hwl : ∀ a : Addr, hi ≤ a.toNat → a.toNat < sp.toNat → Foot Wl a) (hhi : hi + 608 ≤ sp.toNat)
     (hpg : ∀ x : Addr, 7286784 ≤ x.toNat → x.toNat < 7290880 → Foot F.data x)
     (hx1 : ∀ k < 6, V (Addr.add 7288953#64 k) ≠ 0) (hx1z : V (Addr.add 7288953#64 6) = 0)
     (hx2 : ∀ k < 8, V (Addr.add 7288962#64 k) ≠ 0) (hx2z : V (Addr.add 7288962#64 8) = 0)
@@ -199,7 +201,8 @@ theorem ndi_pc {pl pc : List Byte} {Pm : (Addr → Byte) → Prop} {E : Ev} {V W
     (fun W hW => hPk W fun a h1 h2 => (hW a h1).trans (vi a (.inl (by omega)) h2))
     (fun W hW => hPs W fun a h1 h2 h3 => (hW a h1 h2).trans (vi a (.inl (by omega)) h3))
     (by rw [hs8]; omega) (by rw [hs8]; omega) (by rw [bc_a112]; exact hal)
-    (fun a h1 h2 => hFs a (bc_ge h8 h1) (bc_lt8 h8 h2)) hpg
+    (fun a h1 h2 => hFs a (bc_ge h8 h1) (bc_lt8 h8 h2)) (fun a h1 h2 => hwl a h1 (by rw [hs8] at h2; omega))
+    (by rw [hs8]; omega) hpg
     (fun i hi => by
       rw [vlo (Addr.add 7288953#64 i) (by rw [toNat_add_of_fits (n := 6) hi (by ipd)]; ipd)]; exact hx1 i hi)
     (by rw [vlo (Addr.add 7288953#64 6) (by rw [toNat_add_of_fits (n := 7) (by decide) (by ipd)]; ipd)]; exact hx1z)
@@ -299,9 +302,10 @@ theorem ndi_bc {pl pc : List Byte} {Pm : (Addr → Byte) → Prop} {E : Ev} {V W
     (h4 : rdq(V, 8029424#64) = 0#64) (h5 : rdd(V, 7937248#64) = 0#32)
     -- `Ipa.whole`
     (hin : CodeIn L Ipa.ipa_at Ipa.ipa) (hinh : CodeIn L Hwc.hwc_at Hwc.hwc)
-    {cpy mlc sl ms : List Byte} {Pq Pa Pk Ps : (Addr → Byte) → Prop}
+    {cpy mlc sl ms : List Byte} {Pq Pk Ps : (Addr → Byte) → Prop}
+    {Pa : Nat → (Addr → Byte) → Prop} {hi ka : Nat}
     (hinc : CodeIn L 4198592#64 cpy) (hc0 : 0 < cpy.length) (hcpy : Gor.PcpyAt prof L o 4198592#64 Pq)
-    (hinm : CodeIn L 6500704#64 mlc) (hm0 : 0 < mlc.length) (hmal : Mal.At prof L o 6500704#64 Pa)
+    (hinm : CodeIn L 6500704#64 mlc) (hm0 : 0 < mlc.length) (hmal : Mal.At prof F Wl L o fb hi 6500704#64 Pa)
     (hinl : CodeIn L 4198664#64 sl) (hl0 : 0 < sl.length) (hlenA : Str.LenAt prof L o 4198664#64 Pk)
     (hinz : CodeIn L 4198528#64 ms) (hz0 : 0 < ms.length) (hset : Ipa.SetAt prof L o 4198528#64 Ps)
     (hint : CodeIn L Tgv.tgv_at Tgv.tgv)
@@ -310,12 +314,13 @@ theorem ndi_bc {pl pc : List Byte} {Pm : (Addr → Byte) → Prop} {E : Ev} {V W
     (hPq : ∀ W : Addr → Byte, (∀ a : Addr, a.toNat < 7940480 → (a.toNat < 7937664 ∨ 7937720 ≤ a.toNat) → ¬ Hv a →
       W a = V a) → Pq W)
     (hPa : ∀ W : Addr → Byte, (∀ a : Addr, a.toNat < sp.toNat - 408 → (a.toNat < 7937664 ∨ 7937720 ≤ a.toNat) →
-      ¬ Hv a → W a = V a) → Pa W)
+      ¬ Hv a → W a = V a) → Pa (ka + 3) W)
     (hPk : ∀ W : Addr → Byte, (∀ a : Addr, a.toNat < 7940480 → ¬ Hv a → W a = V a) → Pk W)
     (hPs : ∀ W : Addr → Byte, (∀ a : Addr, a.toNat < 7940480 → (a.toNat < 7937664 ∨ 7937720 ≤ a.toNat) → ¬ Hv a →
       W a = V a) → Ps W)
     (he : 8388872 + 408 ≤ sp.toNat) (hal : (sp + 18446744073709551504#64) &&& 15#64 = 0#64)
     (hFs : ∀ a : Addr, sp.toNat - 408 ≤ a.toNat → a.toNat < sp.toNat → Foot Wl a ∧ Foot F.data a)
+    (hwl : ∀ a : Addr, hi ≤ a.toNat → a.toNat < sp.toNat → Foot Wl a) (hhi : hi + 608 ≤ sp.toNat)
     (hpg : ∀ x : Addr, 7286784 ≤ x.toNat → x.toNat < 7290880 → Foot F.data x)
     (hx1 : ∀ k < 6, V (Addr.add 7288953#64 k) ≠ 0) (hx1z : V (Addr.add 7288953#64 6) = 0)
     (hx2 : ∀ k < 8, V (Addr.add 7288962#64 k) ≠ 0) (hx2z : V (Addr.add 7288962#64 8) = 0)
@@ -363,7 +368,8 @@ theorem ndi_bc {pl pc : List Byte} {Pm : (Addr → Byte) → Prop} {E : Ev} {V W
     hM hrip hsp ?_
   intro Z t₁ W' hKZ hAZ hMZ hrZ hspZ hdiZ h15Z
   exact ndi_pc c cx hfs hd1 hd2 h4 h5 hin hinh hinc hc0 hcpy hinm hm0 hmal hinl hl0 hlenA hinz hz0 hset hint hn hPq
-    hPa hPk hPs he hal hFs hpg hx1 hx1z hx2 hx2z htls hU hm6 hhw hfh hfm hpl0 hf1 hf2 hWb hfN hW7a hW7b hFR hlenV hslV
+    hPa hPk hPs he hal hFs hwl hhi
+    hpg hx1 hx1z hx2 hx2z htls hU hm6 hhw hfh hfm hpl0 hf1 hf2 hWb hfN hW7a hW7b hFR hlenV hslV
     hB hpl hid him hfp hph hsn hps hla hmg hGo hGc hfit hGw hGr hcode hww hlG hl hin₂ h₂ hret hKZ hAZ hMZ hrZ hspZ
     hdiZ
     (fun U s₁ Z₃ t₃ W₃ uv c₁ hB₁ hK₃ hA₃ hM₃ hr₃ hs₃ hbx hbp h12 h13 h14 h15 =>
