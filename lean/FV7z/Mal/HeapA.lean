@@ -90,13 +90,13 @@ theorem After.gl {F F' : Footprint} {Wl : List Rgn} {fsb S b pad sm mx nb : Addr
         Vst_out _ _ _ _ (by simp only [toBytesLE_length, a200]; omega) (by simp only [toBytesLE_length, a200]; omega),
         DV a (by omega) (by unfold Pmi.Wr; omega) (by omega)]
       exact hpre.z a a1 (by omega)
-  have Rd : ∀ (x n : Nat), 7940480 ≤ x → x + n ≤ b.toNat → x + n ≤ 7940584 ∨ 7940592 ≤ x →
+  have Rd : ∀ (x n : Nat), 7940480 ≤ x → x + n ≤ 8029888 → x + n ≤ 7940584 ∨ 7940592 ≤ x →
       x + n ≤ 7940768 ∨ 7940776 ≤ x → x + n ≤ 7942856 ∨ 7942872 ≤ x → x + n ≤ 0x7a4c38 ∨ 0x7a4c40 ≤ x →
       List.map M (byteAddrs (BitVec.ofNat 64 x) n) = List.map Vd (byteAddrs (BitVec.ofNat 64 x) n) :=
     fun x n h0 h1 h2 h3 h4 h5 => rd_eq (by rw [BitVec.toNat_ofNat]; omega) fun a a1 a2 => by
       rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)] at a1 a2
       exact MD a (by omega) (by omega) (by omega) (by omega) (by omega) (by omega)
-  have Rv : ∀ (x n : Nat), 7940480 ≤ x → x + n ≤ b.toNat → x + n ≤ 7940584 ∨ 7940592 ≤ x →
+  have Rv : ∀ (x n : Nat), 7940480 ≤ x → x + n ≤ 8029888 → x + n ≤ 7940584 ∨ 7940592 ≤ x →
       x + n ≤ 7940768 ∨ 7940776 ≤ x → x + n ≤ 7942856 ∨ 7942872 ≤ x → x + n ≤ 0x7a4c38 ∨ 0x7a4c40 ≤ x →
       (∀ y, x ≤ y → y < x + n → ¬ Pmi.Wr fsb y) → x + n ≤ 7940656 ∨ 7940664 ≤ x →
       List.map M (byteAddrs (BitVec.ofNat 64 x) n) = List.map V (byteAddrs (BitVec.ofNat 64 x) n) :=
@@ -214,7 +214,7 @@ theorem After.top {fsb S b pad sm nb : Addr} {g : Gprs} {V M : Addr → Byte}
         (Vst V₁ (fsb + 18446744073709551576#64) (toBytesLE (b + corr b + 16#64) 8)))
         (x := 7942856#64) (n := 8) (by rw [es]; omega) fun a a1 a2 => hM a (.inl (by rw [es] at a2; omega))),
       Im2.VspN_rd _ (by omega) (by rw [es]; omega) (.inr (by rw [es]; omega)) (.inl (by rw [es]; omega)) hn8,
-      rd_Vst _ _ _ _ _ (by rw [l8, f40]; omega) (by rw [es]; omega) (.inr (by rw [l8, f40, es]; omega))]
+      rd_Vst _ _ _ _ _ (by rw [l8, f40]; omega) (by rw [es]; omega) (.inr (by rw [f40, es]; omega))]
     exact hO.sys
 
 end FV7z.Mal
