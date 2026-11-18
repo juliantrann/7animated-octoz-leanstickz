@@ -319,6 +319,7 @@ import FV7z.Mal.Run
 import FV7z.Mal.RunN
 import FV7z.Mnx.Run
 import FV7z.Mal.Pre
+import FV7z.Mal.Heap
 import FV7z.Gor.Run
 import FV7z.Gor.Ok
 import FV7z.Ipa.Run
