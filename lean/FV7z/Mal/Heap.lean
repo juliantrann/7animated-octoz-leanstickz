@@ -7,10 +7,11 @@ import FV7z.Gor.Run
 - `Gl F Wl fb C V`: what `Mnx.mal_next` reads apart from the top and the stack: `__malloc_hook` null, the tcache `C`
   (`fs:-0x28`) with its 64 counts 0, one thread (`fs:0x18`), `global_max_fast`, the fastbins, the small and large
   bins and the unsorted bin empty, the binmap 0, `perturb_byte` 0; with the footprint those reads need.
-- `Gl.mv`: the same for bytes that agree from `0x792980` up to `E` (the TLS words and the tcache below `E`) but for
-  the word `main_arena.top`.
+- `Gl.mvR`: the same for bytes that agree on what `Gl` reads below `E` (`GlR E`: `main_arena`, `mp_`,
+  `perturb_byte`, `global_max_fast`, the TLS words and the tcache) but for the word `main_arena.top`; `Gl.mv`: for those
+  that agree on `[0x792980, E)`.
 - `Hp F Wl fb hi k V`: `Gl` and the top `T` (`main_arena.top`) with its size at least `k`, not above `system_mem`,
-  `[T, T + size)` in the footprint and below `hi`.
+  `[T, T + k)` in the footprint and below `hi` (the budget, not the whole top).
 - `nb_le`: the chunk size of `malloc (n)`, `n ≤ 1024`: `n + 8 ≤ nb ≤ 1040`, a multiple of 16.
 - `mal_hp`: `malloc (n)`, `n ≤ 1024`, from `Hp … (k + 1072)` (the stack from `hi + 216` below `rsp`): the chunk
   `p = T + 16` split off the top, the bytes as before but for the top word, the two size words (below `p` and in
@@ -54,53 +55,65 @@ structure Gl (F : Footprint) (Wl : List Rgn) (fb C : Addr) (V : Addr → Byte) :
   tf : ∀ i < 8, Foot F.data (Addr.add (fb + 18446744073709551576#64) i)
   pb : ∀ i < 4, Foot F.data (Addr.add (8013220#64) i)
 
+/-- The bytes `Gl` reads below `E`: `main_arena` and `mp_`, `perturb_byte` and `global_max_fast`, from `0x7a86c0`
+(the TLS words, the tcache) up to `E`. -/
+abbrev GlR (E : Nat) (a : Addr) : Prop :=
+  7940480 ≤ a.toNat ∧ a.toNat < 7943136 ∨ 8013220 ≤ a.toNat ∧ a.toNat < 8013232 ∨ 8029888 ≤ a.toNat ∧ a.toNat < E
+
+/-- `Gl` for bytes that agree on `GlR E` but for the word `main_arena.top`. -/
+theorem Gl.mvR {F : Footprint} {Wl : List Rgn} {fb C : Addr} {E : Nat} {V W : Addr → Byte} (h : Gl F Wl fb C V)
+    (hf1 : 8029928 ≤ fb.toNat) (hf2 : fb.toNat + 48 ≤ E) (hc1 : 8029888 ≤ C.toNat) (hc2 : C.toNat + 128 ≤ E)
+    (hE : E < 2 ^ 64) (hW : ∀ a : Addr, GlR E a → ¬ (7940768 ≤ a.toNat ∧ a.toNat < 7940776) → W a = V a) :
+    Gl F Wl fb C W := by
+  obtain ⟨f24, -, f40⟩ := fofs fb (by omega) (by omega)
+  have R : ∀ (x : Addr) (n : Nat), (7940480 ≤ x.toNat ∧ x.toNat + n ≤ 7943136 ∨
+      8013220 ≤ x.toNat ∧ x.toNat + n ≤ 8013232 ∨ 8029888 ≤ x.toNat ∧ x.toNat + n ≤ E) →
+      x.toNat + n ≤ 7940768 ∨ 7940776 ≤ x.toNat →
+      List.map W (byteAddrs x n) = List.map V (byteAddrs x n) :=
+    fun x n h1 h3 => rd_eq (by omega) fun a a1 a2 => hW a (by unfold GlR; omega) (by omega)
+  have Rc : ∀ (x n : Nat), (7940480 ≤ x ∧ x + n ≤ 7943136 ∨ 8013220 ≤ x ∧ x + n ≤ 8013232) →
+      x + n ≤ 7940768 ∨ 7940776 ≤ x →
+      List.map W (byteAddrs (BitVec.ofNat 64 x) n) = List.map V (byteAddrs (BitVec.ofNat 64 x) n) :=
+    fun x n h1 h3 => R _ n (by rw [BitVec.toNat_ofNat]; omega) (by rw [BitVec.toNat_ofNat]; omega)
+  exact
+    { h with
+      hk := by rw [Rc 7940656 8 (by omega) (by omega)]; exact h.hk
+      tc := by rw [R _ 8 (by rw [f40]; omega) (by rw [f40]; omega)]; exact h.tc
+      cn := fun i hi => by
+        have e : (C + BitVec.ofNat 64 (2 * i)).toNat = C.toNat + 2 * i := by
+          rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega
+        rw [R _ 2 (by rw [e]; omega) (by rw [e]; omega)]
+        exact h.cn i hi
+      t1 := by rw [R _ 4 (by rw [f24]; omega) (by rw [f24]; omega)]; exact h.t1
+      gm := by rw [Rc 8013224 8 (by omega) (by omega)]; exact h.gm
+      fc := by rw [Rc 7940680 4 (by omega) (by omega)]; exact h.fc
+      fz := fun k hk => by rw [Rc (7940688 + 8 * k) 8 (by omega) (by omega)]; exact h.fz k hk
+      bk := fun i i1 i2 => by rw [Rc (7940776 + 16 * i) 8 (by omega) (by omega)]; exact h.bk i i1 i2
+      lb := fun i i1 i2 => by rw [Rc (7940768 + 16 * i) 8 (by omega) (by omega)]; exact h.lb i i1 i2
+      tb := by rw [Rc 7940592 8 (by omega) (by omega)]; exact h.tb
+      un := by rw [Rc 7940792 8 (by omega) (by omega)]; exact h.un
+      m0 := by rw [Rc 7942816 4 (by omega) (by omega)]; exact h.m0
+      m1 := by rw [Rc 7942820 4 (by omega) (by omega)]; exact h.m1
+      m2 := by rw [Rc 7942824 4 (by omega) (by omega)]; exact h.m2
+      m3 := by rw [Rc 7942828 4 (by omega) (by omega)]; exact h.m3
+      p0 := by rw [Rc 8013220 4 (by omega) (by omega)]; exact h.p0 }
+
 /-- `Gl` for bytes that agree from `0x792980` up to `E` but for the word `main_arena.top`. -/
 theorem Gl.mv {F : Footprint} {Wl : List Rgn} {fb C : Addr} {E : Nat} {V W : Addr → Byte} (h : Gl F Wl fb C V)
     (hf1 : 8029928 ≤ fb.toNat) (hf2 : fb.toNat + 48 ≤ E) (hc1 : 8029888 ≤ C.toNat) (hc2 : C.toNat + 128 ≤ E)
     (hE : E < 2 ^ 64)
     (hW : ∀ a : Addr, 7940480 ≤ a.toNat → a.toNat < E → ¬ (7940768 ≤ a.toNat ∧ a.toNat < 7940776) → W a = V a) :
-    Gl F Wl fb C W := by
-  obtain ⟨f24, -, f40⟩ := fofs fb (by omega) (by omega)
-  have R : ∀ (x : Addr) (n : Nat), 7940480 ≤ x.toNat → x.toNat + n ≤ E →
-      x.toNat + n ≤ 7940768 ∨ 7940776 ≤ x.toNat →
-      List.map W (byteAddrs x n) = List.map V (byteAddrs x n) :=
-    fun x n h1 h2 h3 => rd_eq (by omega) fun a a1 a2 => hW a (by omega) (by omega) (by omega)
-  have Rc : ∀ (x n : Nat), 7940480 ≤ x → x + n ≤ E → x + n ≤ 7940768 ∨ 7940776 ≤ x →
-      List.map W (byteAddrs (BitVec.ofNat 64 x) n) = List.map V (byteAddrs (BitVec.ofNat 64 x) n) :=
-    fun x n h1 h2 h3 => R _ n (by rw [BitVec.toNat_ofNat]; omega) (by rw [BitVec.toNat_ofNat]; omega)
-      (by rw [BitVec.toNat_ofNat]; omega)
-  exact
-    { h with
-      hk := by rw [Rc 7940656 8 (by omega) (by omega) (by omega)]; exact h.hk
-      tc := by rw [R _ 8 (by rw [f40]; omega) (by rw [f40]; omega) (by rw [f40]; omega)]; exact h.tc
-      cn := fun i hi => by
-        have e : (C + BitVec.ofNat 64 (2 * i)).toNat = C.toNat + 2 * i := by
-          rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega
-        rw [R _ 2 (by rw [e]; omega) (by rw [e]; omega) (by rw [e]; omega)]
-        exact h.cn i hi
-      t1 := by rw [R _ 4 (by rw [f24]; omega) (by rw [f24]; omega) (by rw [f24]; omega)]; exact h.t1
-      gm := by rw [Rc 8013224 8 (by omega) (by omega) (by omega)]; exact h.gm
-      fc := by rw [Rc 7940680 4 (by omega) (by omega) (by omega)]; exact h.fc
-      fz := fun k hk => by rw [Rc (7940688 + 8 * k) 8 (by omega) (by omega) (by omega)]; exact h.fz k hk
-      bk := fun i i1 i2 => by rw [Rc (7940776 + 16 * i) 8 (by omega) (by omega) (by omega)]; exact h.bk i i1 i2
-      lb := fun i i1 i2 => by rw [Rc (7940768 + 16 * i) 8 (by omega) (by omega) (by omega)]; exact h.lb i i1 i2
-      tb := by rw [Rc 7940592 8 (by omega) (by omega) (by omega)]; exact h.tb
-      un := by rw [Rc 7940792 8 (by omega) (by omega) (by omega)]; exact h.un
-      m0 := by rw [Rc 7942816 4 (by omega) (by omega) (by omega)]; exact h.m0
-      m1 := by rw [Rc 7942820 4 (by omega) (by omega) (by omega)]; exact h.m1
-      m2 := by rw [Rc 7942824 4 (by omega) (by omega) (by omega)]; exact h.m2
-      m3 := by rw [Rc 7942828 4 (by omega) (by omega) (by omega)]; exact h.m3
-      p0 := by rw [Rc 8013220 4 (by omega) (by omega) (by omega)]; exact h.p0 }
+    Gl F Wl fb C W :=
+  h.mvR hf1 hf2 hc1 hc2 hE fun a ha ht => hW a (by unfold GlR at ha; omega) (by unfold GlR at ha; omega) ht
 
 /-- The heap for the next `malloc`: `Gl`, the tcache `C` and the TLS words below the top `T`, the top's size (without
-the in-use bit) at least `k` and not above `system_mem`, `[T, T + size)` in the footprint and below `hi`. -/
+the in-use bit) at least `k` and not above `system_mem`, `[T, T + k)` in the footprint and below `hi`. -/
 def Hp (F : Footprint) (Wl : List Rgn) (fb : Addr) (hi k : Nat) (V : Addr → Byte) : Prop :=
   ∃ C T szw sm : Addr, Gl F Wl fb C V ∧ 8029928 ≤ fb.toNat ∧ fb.toNat + 48 ≤ T.toNat ∧ 8029888 ≤ C.toNat ∧
-    C.toNat + 128 ≤ T.toNat ∧ 8032256 ≤ T.toNat ∧ T.toNat + (szw &&& 18446744073709551608#64).toNat ≤ hi ∧
+    C.toNat + 128 ≤ T.toNat ∧ 8032256 ≤ T.toNat ∧ T.toNat + k ≤ hi ∧
     hi < 2 ^ 64 ∧ rdq(V, 7940768#64) = T ∧ rdq(V, T + 8#64) = szw ∧ rdq(V, 7942856#64) = sm ∧
     (szw &&& 18446744073709551608#64).toNat ≤ sm.toNat ∧ k ≤ (szw &&& 18446744073709551608#64).toNat ∧
-    ∀ a : Addr, T.toNat ≤ a.toNat → a.toNat < T.toNat + (szw &&& 18446744073709551608#64).toNat →
-      Foot Wl a ∧ Foot F.data a
+    ∀ a : Addr, T.toNat ≤ a.toNat → a.toNat < T.toNat + k → Foot Wl a ∧ Foot F.data a
 
 /-- The chunk size of `malloc (n)`, `n ≤ 1024`. -/
 theorem nb_le {n : Nat} (h : n ≤ 1024) :
@@ -233,7 +246,7 @@ theorem mal_hp {fb : Addr} {hi m : Nat} (c : Seg prof F Wl L s₀ o) (hfs : s₀
     rw [Mhi.or1_m8, hx]; omega
   refine ⟨C, T + nb, (szw &&& 18446744073709551608#64) - nb ||| 1#64, sm,
     G.mv (E := T.toNat) hf1 hf2 hc1 hc2 (by omega) WV, hf1, by rw [eTn]; omega, hc1, by rw [eTn]; omega,
-    by rw [eTn]; omega, by rw [eTn, hs']; omega, hhi', ?_, ?_, ?_, by rw [hs']; omega, by rw [hs']; omega, ?_⟩
+    by rw [eTn]; omega, by rw [eTn]; omega, hhi', ?_, ?_, ?_, by rw [hs']; omega, by rw [hs']; omega, ?_⟩
   · -- the top word
     have et : (7940768#64 : Addr).toNat = 7940768 := rfl
     rw [congrArg (ofBytesLE 64) (rd_eq (V := VspN T szw nb V) (x := 7940768#64) (n := 8) (by rw [et]; omega)
@@ -254,7 +267,7 @@ theorem mal_hp {fb : Addr} {hi m : Nat} (c : Seg prof F Wl L s₀ o) (hfs : s₀
     exact hsm
   · intro a a1 a2
     rw [eTn] at a1
-    rw [eTn, hs'] at a2
+    rw [eTn] at a2
     exact hTF a (by omega) (by omega)
 
 end FV7z.Mal

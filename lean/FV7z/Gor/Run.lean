@@ -69,8 +69,13 @@ theorem foot_wn {F : Footprint} {N : List Rgn} (hown : F.own = []) {a : Addr} (h
   · exact foot_append_iff.2 (.inl (foot_append_iff.2 (.inr h)))
   · exact foot_append_iff.2 (.inr h)
 
+theorem foot_wnN {F : Footprint} {N : List Rgn} {a : Addr} (h : Foot N a) : Foot (withNew F N).data a := by
+  simp only [Footprint.data]
+  exact foot_append_iff.2 (.inl (foot_append_iff.2 (.inl h)))
+
 /-- What `mal_firstn` needs besides the bytes below the break and the stack: the code, the root `Base`, the footprints
-of the globals and of the new pages `N`, the bounds; `mp_.top_pad` at least 4112. -/
+of the globals and of the new pages `N`, the bounds; `mp_.top_pad` at least 4112; the break at least `0x7a9000` (the
+first page after the program's) and the bytes from the first chunk to the end of the first `MORECORE` in `N ++ Wl`. -/
 structure MCx (prof : Profile) (F : Footprint) (Wl N : List Rgn) (L : List (Addr × List Byte)) (s₀ : State)
     (o : Oracle) (lim : Nat) (b fsb : Addr) (ks : Kst) (pad sm mx : BitVec 64) : Prop where
   hB : Base s₀ lim b fsb ks
@@ -108,6 +113,8 @@ structure MCx (prof : Profile) (F : Footprint) (Wl N : List Rgn) (L : List (Addr
   hh : ∀ a : Addr, (b + corr b).toNat ≤ a.toNat → a.toNat < (b + corr b).toNat + 656 + 4112 + 16 →
     Foot (N ++ Wl) a
   hown : F.own = []
+  hbk : 8032256 ≤ b.toNat
+  hH : ∀ a : Addr, (b + corr b).toNat ≤ a.toNat → a.toNat < (b + size pad 656#64).toNat → Foot (N ++ Wl) a
 
 variable {prof : Profile} {F : Footprint} {Wl N : List Rgn} {L : List (Addr × List Byte)} {s₀ : State} {o : Oracle}
   {gev : List Event} {gP : State → Nat → List Event → Prop} {gE : Outcome → List Event → Prop}

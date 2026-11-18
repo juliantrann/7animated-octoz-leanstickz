@@ -49,6 +49,25 @@ theorem sz_okn {b pad sm : Addr} (hb : b.toNat < 2 ^ 47) (hnb : 656 + pad.toNat 
   rw [or1_m8, sub656 _ _ hy (by omega), hs]
   omega
 
+/-- The top's size after the first `_int_malloc` is at least the first `MORECORE`'s less the first chunk and the
+alignment (`sz_ok`'s form). -/
+theorem sz_big {b pad : Addr} (hb : b.toNat < 2 ^ 47) (hnb : 656 + pad.toNat + 4127 < 2 ^ 47) :
+    (size pad 656#64).toNat ≤ (Sz b pad &&& 18446744073709551608#64).toNat + 678 := by
+  have hR : (size pad 656#64).toNat = (4127 + pad.toNat + 656) / 4096 * 4096 :=
+    Smm.size_toNat (pad := pad) (nb := 656#64) (by show 656 + pad.toNat + 4127 < 2 ^ 47; omega)
+  have hc := Smm.corr_toNat b
+  have h2 := Smm.corr2_toNat b (corr b) (size pad 656#64) (by omega)
+  show (size pad 656#64).toNat ≤ ((((b + size pad 656#64 - (b + corr b) + corr2 b (corr b) (size pad 656#64) |||
+      1#64) &&& 18446744073709551608#64) - 656#64 ||| 1#64) &&& 18446744073709551608#64).toNat + 678
+  generalize corr2 b (corr b) (size pad 656#64) = C at *
+  generalize size pad 656#64 = R at *
+  generalize corr b = c at *
+  have hv : (b + R - (b + c) + C).toNat = R.toNat + C.toNat - c.toNat := by bv_omega
+  have hy : ((b + R - (b + c) + C ||| 1#64) &&& 18446744073709551608#64).toNat =
+      (R.toNat + C.toNat - c.toNat) / 8 * 8 := by rw [or1_m8, hv]
+  rw [or1_m8, sub656 _ _ hy (by omega)]
+  omega
+
 /-- The tcache counts of the 64 bins. -/
 theorem cXn {b : Addr} (hb : b.toNat < 2 ^ 47) (i : Nat) (hi : i < 64) :
     (b + corr b + 16#64 + BitVec.ofNat 64 (2 * i)).toNat = b.toNat + (corr b).toNat + 16 + 2 * i := by

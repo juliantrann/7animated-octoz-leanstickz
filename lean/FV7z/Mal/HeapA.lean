@@ -10,6 +10,8 @@ import FV7z.Mal.Heap
   (`MPre`).
 - `After.top`: `main_arena.top = Tp b + nb`, its size word `(Sz b pad & -8) - nb | 1`, `system_mem` grown by the two
   `MORECORE`s.
+- `After.hp`: `Hp` (a budget `m` of the top) for the bytes that agree with `After`'s on what it reads but for the
+  first block.
 -/
 open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn FV7z.Start
 open FV7z.Tun (rd_Vst rd_Vst_self Vst_out)
@@ -216,5 +218,62 @@ theorem After.top {fsb S b pad sm nb : Addr} {g : Gprs} {V M : Addr → Byte}
       Im2.VspN_rd _ (by omega) (by rw [es]; omega) (.inr (by rw [es]; omega)) (.inl (by rw [es]; omega)) hn8,
       rd_Vst _ _ _ _ _ (by rw [l8, f40]; omega) (by rw [es]; omega) (.inr (by rw [f40, es]; omega))]
     exact hO.sys
+
+/-- `Hp` after the first `malloc` (`After`; the tcache at `b + corr b + 16`, the top at `Tp b + nb`) for bytes `W`
+that agree with `M` on what `Hp` reads (`GlR` up to the top's size word) but for `[Tp b + 16, Tp b + 16 + s)` (in
+the first block): a budget `m`
+of the rest of the top in the footprint and below `hi`, the brk above `0x7a9000` (`Kn`). -/
+theorem After.hp {F F' : Footprint} {Wl : List Rgn} {fsb S b pad sm mx nb : Addr} {g : Gprs} {V M W : Addr → Byte}
+    {hi m s : Nat} (h : After fsb S b pad sm nb g V M) (hL : Lay fsb S b pad nb g) (hpre : MPre F' V b fsb pad sm mx)
+    (fh : ∀ i < 8, Foot F.data (Addr.add (7940656#64) i))
+    (fn : ∀ i < 64, ∀ j < 2, Foot F.data (Addr.add (b + corr b + 16#64 + BitVec.ofNat 64 (2 * i)) j))
+    (f1 : ∀ i < 4, Foot F.data (Addr.add (fsb + 24#64) i))
+    (fW : ∀ a : Addr, 7940480 ≤ a.toNat → a.toNat < 7943136 → Foot Wl a)
+    (gf : ∀ i < 8, Foot F.data (Addr.add (8013224#64) i))
+    (tf : ∀ i < 8, Foot F.data (Addr.add (fsb + 18446744073709551576#64) i))
+    (pb : ∀ i < 4, Foot F.data (Addr.add (8013220#64) i))
+    (hbk : 8032256 ≤ b.toNat) (hs : s + 8 ≤ nb.toNat) (hn8 : nb.toNat % 8 = 0)
+    (hnb : nb.toNat ≤ (Sz b pad &&& 18446744073709551608#64).toNat)
+    (hm : m ≤ (Sz b pad &&& 18446744073709551608#64).toNat - nb.toNat) (hm16 : 16 ≤ m)
+    (hsm : (Sz b pad &&& 18446744073709551608#64).toNat - nb.toNat ≤ (sm + size pad 656#64 + C2 b pad).toNat)
+    (hhi : (Tp b).toNat + nb.toNat + m ≤ hi) (hhi2 : hi < 2 ^ 64)
+    (hTF : ∀ a : Addr, (Tp b).toNat + nb.toNat ≤ a.toNat → a.toNat < (Tp b).toNat + nb.toNat + m →
+      Foot Wl a ∧ Foot F.data a)
+    (hW : ∀ a : Addr, GlR ((Tp b).toNat + nb.toNat + 16) a →
+      (a.toNat < (Tp b).toNat + 16 ∨ (Tp b).toNat + 16 + s ≤ a.toNat) → W a = M a) :
+    Hp F Wl fsb hi m W := by
+  have G := After.gl h hL hpre fh fn f1 fW gf tf pb
+  obtain ⟨t1, t2, t3⟩ := After.top h hL
+  obtain ⟨-, -, -, -, -, hfs, hfb, hT0, hT1, hbc, -, -⟩ := hL
+  have ha8 := Smm.and_m8 (Sz b pad)
+  have eC : (b + corr b + 16#64).toNat = (b + corr b).toNat + 16 := by
+    rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega
+  have eT : (Tp b + nb).toNat = (Tp b).toNat + nb.toNat := by rw [BitVec.toNat_add]; omega
+  have e8 : (Tp b + nb + 8#64).toNat = (Tp b).toNat + nb.toNat + 8 := by
+    rw [BitVec.toNat_add, BitVec.toNat_add, BitVec.toNat_ofNat]; omega
+  have hx : ((Sz b pad &&& 18446744073709551608#64) - nb).toNat =
+      (Sz b pad &&& 18446744073709551608#64).toNat - nb.toNat := by
+    rw [BitVec.toNat_sub]; omega
+  have hs' : (((Sz b pad &&& 18446744073709551608#64) - nb ||| 1#64) &&& 18446744073709551608#64).toNat =
+      (Sz b pad &&& 18446744073709551608#64).toNat - nb.toNat := by
+    rw [Mhi.or1_m8, hx]; omega
+  have et : (7940768#64 : Addr).toNat = 7940768 := rfl
+  have es : (7942856#64 : Addr).toNat = 7942856 := rfl
+  refine ⟨b + corr b + 16#64, Tp b + nb, (Sz b pad &&& 18446744073709551608#64) - nb ||| 1#64,
+    sm + size pad 656#64 + C2 b pad,
+    G.mvR (E := (Tp b).toNat + 16) (by omega) (by omega) (by rw [eC]; omega) (by rw [eC]; omega) (by omega)
+      fun a ha _ => hW a (by unfold GlR at ha ⊢; omega) (.inl (by unfold GlR at ha; omega)),
+    by omega, by rw [eT]; omega, by rw [eC]; omega, by rw [eC, eT]; omega, by rw [eT]; omega, by rw [eT]; omega,
+    hhi2, ?_, ?_, ?_, by rw [hs']; exact hsm, by rw [hs']; exact hm,
+    fun a a1 a2 => hTF a (by rw [eT] at a1; omega) (by rw [eT] at a2; omega)⟩
+  · rw [rd_eq (V := M) (x := 7940768#64) (n := 8) (by rw [et]; omega) fun a a1 a2 =>
+      hW a (by unfold GlR; rw [et] at a1 a2; omega) (.inl (by rw [et] at a2; omega))]
+    exact t1
+  · rw [rd_eq (V := M) (x := Tp b + nb + 8#64) (n := 8) (by rw [e8]; omega) fun a a1 a2 =>
+      hW a (by unfold GlR; rw [e8] at a1 a2; omega) (.inr (by rw [e8] at a1; omega))]
+    exact t2
+  · rw [rd_eq (V := M) (x := 7942856#64) (n := 8) (by rw [es]; omega) fun a a1 a2 =>
+      hW a (by unfold GlR; rw [es] at a1 a2; omega) (.inl (by rw [es] at a2; omega))]
+    exact t3
 
 end FV7z.Mal
