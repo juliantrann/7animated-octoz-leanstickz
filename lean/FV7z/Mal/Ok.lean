@@ -11,8 +11,9 @@ the top can be in it. `AtH` is the form that holds:
   `hi + 216` below `rsp` (224 bytes of it in `Wl`), `Pm (k + 1)` at the call: the return with `p` in `rax`,
   `[p, p + n)` below `hi`, the bytes outside the heap's words and the frame as at the call, and `Pm k` for every byte
   map that agrees with the one at the return from `0x792980` to `hi` but for `[p, p + n)`.
-- `Hp.mv`: `Hp` for bytes that agree from `0x792980` to `hi`.
-- `at_hp`: `AtH` of `malloc` (`0x633160`) with `Pm k = Hp … (1072 k)` (`mal_hp`).
+- `Hp.mv`: `Hp` (a top of at least 16 bytes) for bytes that agree from `0x792980` to `hi`.
+- `at_hp`: `AtH` of `malloc` (`0x633160`) with `Pm k = Hp … (1072 k + 16)` (`mal_hp`; the 16 keep the top's
+  size word below `hi`).
 -/
 open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn FV7z.Start
 open FV7z.Sbrk (rd_eq)
@@ -45,7 +46,8 @@ def AtH (prof : Profile) (F : Footprint) (Wl : List Rgn) (L : List (Addr × List
 
 /-- `Hp` for bytes that agree from `0x792980` to `hi`. -/
 theorem Hp.mv {F : Footprint} {Wl : List Rgn} {fb : Addr} {hi m : Nat} {V W : Addr → Byte}
-    (h : Hp F Wl fb hi m V) (hW : ∀ a : Addr, 7940480 ≤ a.toNat → a.toNat < hi → W a = V a) : Hp F Wl fb hi m W := by
+    (h : Hp F Wl fb hi m V) (hm : 16 ≤ m) (hW : ∀ a : Addr, 7940480 ≤ a.toNat → a.toNat < hi → W a = V a) :
+    Hp F Wl fb hi m W := by
   obtain ⟨C, T, szw, sm, G, hf1, hf2, hc1, hc2, hT, hTh, hhi, htop, hsz, hsm, hle, hge, hTF⟩ := h
   have e8 : (T + 8#64).toNat = T.toNat + 8 := by rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega
   have et : (7940768#64 : Addr).toNat = 7940768 := rfl
@@ -62,12 +64,12 @@ theorem Hp.mv {F : Footprint} {Wl : List Rgn} {fb : Addr} {hi m : Nat} {V W : Ad
       hW a (by rw [es] at a1; omega) (by rw [es] at a2; omega)]
     exact hsm
 
-/-- `malloc` after the first call: `AtH` with `Pm k` the heap with a top of at least `1072 k` bytes. -/
+/-- `malloc` after the first call: `AtH` with `Pm k` the heap with a top of at least `1072 k + 16` bytes. -/
 theorem at_hp {prof : Profile} {F : Footprint} {Wl : List Rgn} {L : List (Addr × List Byte)} {o : Oracle}
     {fb : Addr} {hi : Nat} (hin : CodeIn L mnx_at mnx) (hinI : CodeIn L imm_at imm) :
-    AtH prof F Wl L o fb hi mnx_at fun k W => Hp F Wl fb hi (1072 * k) W := by
+    AtH prof F Wl L o fb hi mnx_at fun k W => Hp F Wl fb hi (1072 * k + 16) W := by
   intro s₀ gev gP gE X t V e' code j k c hfs hK hA hrip hH hn hhi hR hsw hin₂ hj hra kc
-  have e : 1072 * (k + 1) = 1072 * k + 1072 := by rw [Nat.mul_succ]
+  have e : 1072 * (k + 1) + 16 = 1072 * k + 16 + 1072 := by rw [Nat.mul_succ]; omega
   rw [e] at hH
   exact mal_hp c hfs hin hinI hK hA hrip hH hn hhi hR hsw hin₂ hj hra kc
 
