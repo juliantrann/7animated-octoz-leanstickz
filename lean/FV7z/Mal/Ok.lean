@@ -69,7 +69,7 @@ theorem at_hp {prof : Profile} {F : Footprint} {Wl : List Rgn} {L : List (Addr �
     {fb : Addr} {hi : Nat} (hin : CodeIn L mnx_at mnx) (hinI : CodeIn L imm_at imm) :
     AtH prof F Wl L o fb hi mnx_at fun k W => Hp F Wl fb hi (1072 * k + 16) W := by
   intro s₀ gev gP gE X t V e' code j k c hfs hK hA hrip hH hn hhi hR hsw hin₂ hj hra kc
-  have e : 1072 * (k + 1) + 16 = 1072 * k + 16 + 1072 := by rw [Nat.mul_succ]; omega
+  have e : 1072 * (k + 1) + 16 = 1072 * k + 16 + 1072 := by omega
   rw [e] at hH
   exact mal_hp c hfs hin hinI hK hA hrip hH hn hhi hR hsw hin₂ hj hra kc
 
