@@ -56,7 +56,7 @@ structure Gl (F : Footprint) (Wl : List Rgn) (fb C : Addr) (V : Addr → Byte) :
 
 /-- `Gl` for bytes that agree from `0x792980` up to `E` but for the word `main_arena.top`. -/
 theorem Gl.mv {F : Footprint} {Wl : List Rgn} {fb C : Addr} {E : Nat} {V W : Addr → Byte} (h : Gl F Wl fb C V)
-    (hf1 : 8029928 ≤ fb.toNat) (hf2 : fb.toNat + 48 ≤ E) (hc1 : 7940480 ≤ C.toNat) (hc2 : C.toNat + 128 ≤ E)
+    (hf1 : 8029928 ≤ fb.toNat) (hf2 : fb.toNat + 48 ≤ E) (hc1 : 8029888 ≤ C.toNat) (hc2 : C.toNat + 128 ≤ E)
     (hE : E < 2 ^ 64)
     (hW : ∀ a : Addr, 7940480 ≤ a.toNat → a.toNat < E → ¬ (7940768 ≤ a.toNat ∧ a.toNat < 7940776) → W a = V a) :
     Gl F Wl fb C W := by
@@ -95,7 +95,7 @@ theorem Gl.mv {F : Footprint} {Wl : List Rgn} {fb C : Addr} {E : Nat} {V W : Add
 /-- The heap for the next `malloc`: `Gl`, the tcache `C` and the TLS words below the top `T`, the top's size (without
 the in-use bit) at least `k` and not above `system_mem`, `[T, T + size)` in the footprint and below `hi`. -/
 def Hp (F : Footprint) (Wl : List Rgn) (fb : Addr) (hi k : Nat) (V : Addr → Byte) : Prop :=
-  ∃ C T szw sm : Addr, Gl F Wl fb C V ∧ 8029928 ≤ fb.toNat ∧ fb.toNat + 48 ≤ T.toNat ∧ 7940480 ≤ C.toNat ∧
+  ∃ C T szw sm : Addr, Gl F Wl fb C V ∧ 8029928 ≤ fb.toNat ∧ fb.toNat + 48 ≤ T.toNat ∧ 8029888 ≤ C.toNat ∧
     C.toNat + 128 ≤ T.toNat ∧ 8032256 ≤ T.toNat ∧ T.toNat + (szw &&& 18446744073709551608#64).toNat ≤ hi ∧
     hi < 2 ^ 64 ∧ rdq(V, 7940768#64) = T ∧ rdq(V, T + 8#64) = szw ∧ rdq(V, 7942856#64) = sm ∧
     (szw &&& 18446744073709551608#64).toNat ≤ sm.toNat ∧ k ≤ (szw &&& 18446744073709551608#64).toNat ∧
