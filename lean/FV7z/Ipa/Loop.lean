@@ -241,8 +241,8 @@ theorem step (c : Seg prof F Wl L s₀ o) (hin : CodeIn L ipa_at ipa)
   have r15Z : Z.cpu.gpr.r15 = b := by rw [h15₃, hg₂, set4_r15, hg₁]; exact h15
   have rbxZ : Z.cpu.gpr.rbx = BitVec.ofNat 64 (sA i) := by rw [hbx₃, hg₂, set4_rbx, hg₁]; exact hbx
   have hk₂ : ∀ x, Kp fb r x → V₂ x = V₁ x := fun x hx => by
-    have hx' : x.toNat < 7940480 ∨ 7943128 ≤ x.toNat ∧ (x.toNat < 8032256 ∨ x.toNat + 40 ≤ fb.toNat) ∨
-        r.toNat - 80 ≤ x.toNat := by
+    have hx' : x.toNat < 7940480 ∨ 7943128 ≤ x.toNat ∧ (x.toNat < 8032256 ∨ x.toNat + 40 ≤ fb.toNat ∨
+        fb.toNat ≤ x.toNat ∧ x.toNat < fb.toNat + 56) ∨ r.toNat - 80 ≤ x.toNat := by
       rcases hx with h | h | h
       · exact Or.inl h
       · exact Or.inr (Or.inl (Mal.Kf.lt h))

@@ -15,6 +15,7 @@ the end of the bss (`0x7a9000`). Here:
 
 - `ndi_tls`: a byte of the brk below the TLS block but its last 40 bytes is the entry's (for `__libc_init_first`'s
   `__ctype_init`, which reads the TLS word at `fs - 112`).
+- `ndi_tcb`: a byte of the first 56 of the TCB (`multiple_threads`, `pointer_guard`) is the entry's.
 - `ndi_stk`: a byte from `sp + 120` up (the caller's frame) is the entry's.
 -/
 open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn
@@ -77,7 +78,20 @@ theorem ndi_tls {W W' U W₂ : Addr → Byte} {sp b fsb r x : Addr} {m : Nat} {g
       Mal.Kf fsb a) → U a = hV W' r 4194368#64 8#64 a)
     (hL : ∀ a : Addr, Lo b fsb a → W' a = fV W sp g a) (hb : fsb.toNat ≤ b.toNat) (hsp : fsb.toNat + 72 ≤ sp.toNat)
     (hs : sp.toNat + 120 ≤ 2 ^ 64) (h1 : 8032256 ≤ x.toNat) (h2 : x.toNat + 40 < fsb.toNat) : W₂ x = W x := by
-  rw [hE x (by unfold Scr; omega), lbV_hb h1, hU x (.inr (.inr (.inr (.inr ⟨h1, Nat.le_of_lt h2⟩)))), hV_hb h1,
+  rw [hE x (by unfold Scr; omega), lbV_hb h1, hU x (.inr (.inr (.inr (.inr (.inl ⟨h1, Nat.le_of_lt h2⟩))))), hV_hb h1,
+    hL x ⟨by omega, by omega, by omega, by omega, by omega⟩, fV_out hs (.inl (by omega))]
+
+/-- A byte of the first 56 of the TCB at `fsb` (`multiple_threads`, `pointer_guard`) at the return of
+`_dl_non_dynamic_init` is the one at its entry. -/
+theorem ndi_tcb {W W' U W₂ : Addr → Byte} {sp b fsb r x : Addr} {m : Nat} {g : Gprs}
+    (hE : Eqo sp W₂ (lV (bV U m)))
+    (hU : ∀ a : Addr, (a.toNat < 7937664 ∨ 7937720 ≤ a.toNat ∧ a.toNat < 7940480 ∨ sp.toNat ≤ a.toNat ∨
+      Mal.Kf fsb a) → U a = hV W' r 4194368#64 8#64 a)
+    (hL : ∀ a : Addr, Lo b fsb a → W' a = fV W sp g a) (hf : 8032256 ≤ fsb.toNat) (hb : fsb.toNat + 56 ≤ b.toNat)
+    (hsp : fsb.toNat + 56 + 72 ≤ sp.toNat) (hs : sp.toNat + 120 ≤ 2 ^ 64) (h1 : fsb.toNat ≤ x.toNat)
+    (h2 : x.toNat < fsb.toNat + 56) : W₂ x = W x := by
+  rw [hE x (by unfold Scr; omega), lbV_hb (by omega),
+    hU x (.inr (.inr (.inr (.inr (.inr ⟨by omega, h1, h2⟩))))), hV_hb (by omega),
     hL x ⟨by omega, by omega, by omega, by omega, by omega⟩, fV_out hs (.inl (by omega))]
 
 /-- A byte from `sp + 120` up at the return of `_dl_non_dynamic_init` is the one at its entry. -/
