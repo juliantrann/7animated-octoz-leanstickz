@@ -1,8 +1,8 @@
 import ZellicX86.Spec.Statement.Linux
 /-!
 Probe (Zellic R2): `may_expand_vm` with `RLIMIT_AS` and `RLIMIT_DATA` unlimited lets every growth by fewer than
-`2 ^ 51` pages through, given `LayoutOk` and a vsyscall page that is not writable. R2 names this
-(`mayExpand_unlimited`, Statement/Linux.lean) without proving it; `sysBrk`'s growth needs it.
+`2 ^ 51` pages through, given `LayoutOk`. R2 names this (`mayExpand_unlimited`, Statement/Linux.lean) without
+proving it; `sysBrk`'s growth needs it.
 -/
 namespace FV7z.Acct
 open ZellicX86
@@ -19,13 +19,13 @@ theorem nextMapped_some (mem : Memory) :
       exact hm
     · exact nextMapped_some mem h
 
-/-- The pages after `p` that `countMapped` counts are mapped, satisfy `P`, and so lie below `B`: at most
-`B - p - 1` of them. -/
-theorem countMapped_le (mem : Memory) (P : Nat → Mapping → Bool) (B : Nat)
-    (hB : ∀ q m, mem.mapAt q = some m → P q m = true → q < B) :
-    ∀ n p, mem.countMapped P p n ≤ B - p - 1 := by
+/-- The pages after `p` that `countMapped` counts are mapped and satisfy `P`, so lie below `B` or are page `v`
+(`B ≤ v`): at most `B - p - 1`, and `v` if after `p`. -/
+theorem countMapped_le (mem : Memory) (P : Nat → Mapping → Bool) (B v : Nat) (hv : B ≤ v)
+    (hB : ∀ q m, mem.mapAt q = some m → P q m = true → q < B ∨ q = v) :
+    ∀ n p, mem.countMapped P p n ≤ B - p - 1 + (if p < v then 1 else 0) := by
   intro n
-  induction n using Nat.strong_induction_on with
+  induction n using Nat.strongRecOn with
   | _ n ih =>
     intro p
     rw [Memory.countMapped]
@@ -38,24 +38,24 @@ theorem countMapped_le (mem : Memory) (P : Nat → Mapping → Bool) (B : Nat)
       by_cases hp : P q m = true
       · have := hB q m hm hp
         simp only [hp, ↓reduceIte]
-        omega
+        split at hi <;> split <;> omega
       · simp only [hp, Bool.false_eq_true, ↓reduceIte]
-        omega
+        split at hi <;> split <;> omega
 
-/-- The mapped pages that satisfy `P`, all below `B`: at most `B`. -/
-theorem pagesWhere_le (mem : Memory) (P : Nat → Mapping → Bool) (B : Nat)
-    (hB : ∀ q m, mem.mapAt q = some m → P q m = true → q < B) : mem.pagesWhere P ≤ B := by
-  have hc := countMapped_le mem P B hB (2 ^ 52 - 1) 0
+/-- The mapped pages that satisfy `P`, all below `B` but page `v` (`B ≤ v`): at most `B + 1`. -/
+theorem pagesWhere_le (mem : Memory) (P : Nat → Mapping → Bool) (B v : Nat) (hv : B ≤ v)
+    (hB : ∀ q m, mem.mapAt q = some m → P q m = true → q < B ∨ q = v) : mem.pagesWhere P ≤ B + 1 := by
+  have hc := countMapped_le mem P B v hv hB (2 ^ 52 - 1) 0
   unfold Memory.pagesWhere
   split
   · next m hm =>
     by_cases hp : P 0 m = true
     · have := hB 0 m hm hp
       simp only [hp, ↓reduceIte]
-      omega
+      split at hc <;> omega
     · simp only [hp, Bool.false_eq_true, ↓reduceIte]
-      omega
-  · omega
+      split at hc <;> omega
+  · split at hc <;> omega
 
 /-- A mapped page lies below the end of the user address space, or is the vsyscall page (`LayoutOk.user`). -/
 theorem mapAt_user {feat : Features} {s : State} (hl : LayoutOk feat s) {q : Nat} {m : Mapping}
@@ -77,55 +77,38 @@ theorem taskSize_le (feat : Features) : taskSize feat ≤ 2 ^ 56 := by
   unfold taskSize userPtrMax
   split <;> decide
 
-/-- The pages of the process's mappings (`Memory.totalVm`): at most `2 ^ 44`. -/
-theorem totalVm_le {feat : Features} {s : State} (hl : LayoutOk feat s) : s.proc.mm.mem.totalVm ≤ 2 ^ 44 := by
-  have ht := taskSize_le feat
-  unfold Memory.totalVm
-  refine pagesWhere_le _ _ _ fun q m hm hp => ?_
-  rcases mapAt_user hl hm with h | ⟨h1, h2⟩
-  · omega
-  · simp [h1, h2] at hp
+theorem vsyscallPage_toNat : vsyscallPage.toNat = 0xffffffffff600 := rfl
 
-/-- The pages of the process's private writable mappings (`Memory.dataVm`): at most `2 ^ 44`, the vsyscall page
-not being writable. -/
-theorem dataVm_le {feat : Features} {s : State} (hl : LayoutOk feat s)
-    (hvs : ∀ m, s.proc.mm.mem.map vsyscallPage = some m → m.prot.write = false) :
-    s.proc.mm.mem.dataVm ≤ 2 ^ 44 := by
+/-- The mapped pages that satisfy `P`: at most `2 ^ 44 + 1`, given `LayoutOk`. -/
+theorem pagesWhere_user {feat : Features} {s : State} (hl : LayoutOk feat s) (P : Nat → Mapping → Bool) :
+    s.proc.mm.mem.pagesWhere P ≤ 2 ^ 44 + 1 := by
   have ht := taskSize_le feat
-  unfold Memory.dataVm
-  refine pagesWhere_le _ _ _ fun q m hm hp => ?_
-  rcases mapAt_user hl hm with h | ⟨h1, -⟩
-  · omega
-  · have hq : q < 2 ^ 52 := by
-      unfold Memory.mapAt at hm
-      split at hm
-      · assumption
-      · cases hm
-    have e : BitVec.ofNat 52 q = vsyscallPage := by
-      apply BitVec.eq_of_toNat_eq
-      rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt hq, h1]
-    have hw := hvs m (by unfold Memory.mapAt at hm; rw [if_pos hq, e] at hm; exact hm)
-    simp [hw] at hp
+  have h := pagesWhere_le s.proc.mm.mem P (taskSize feat / 4096) vsyscallPage.toNat
+    (by rw [vsyscallPage_toNat]; omega) fun q m hm _ => by
+      rcases mapAt_user hl hm with h | ⟨h, -⟩
+      · left; omega
+      · right; exact h
+  omega
 
 theorem pages_inf {r : Rlimit} (h : r.cur = RLIM_INFINITY) : r.pages = 2 ^ 52 - 1 := by
   unfold Rlimit.pages
   rw [h]
   decide
 
-/-- `mayExpand_unlimited`: with `RLIMIT_AS` and `RLIMIT_DATA` at `RLIM_INFINITY`, `LayoutOk` and the vsyscall page
-not writable, `may_expand_vm` lets `n < 2 ^ 51` pages through, data or not, without the kernel ignoring a limit. -/
+/-- `mayExpand_unlimited`: with `RLIMIT_AS` and `RLIMIT_DATA` at `RLIM_INFINITY` and `LayoutOk`, `may_expand_vm` lets
+`n < 2 ^ 51` pages through, data or not, without the kernel ignoring a limit. -/
 theorem mayExpand_unlimited {feat : Features} {s : State} (hl : LayoutOk feat s)
-    (hvs : ∀ m, s.proc.mm.mem.map vsyscallPage = some m → m.prot.write = false)
     (has : (s.proc.signal.rlimits RLIMIT_AS).cur = RLIM_INFINITY)
     (hds : (s.proc.signal.rlimits RLIMIT_DATA).cur = RLIM_INFINITY) {n : Nat} (hn : n < 2 ^ 51) (data : Bool) :
     mayExpand (s.proc.signal.rlimits RLIMIT_AS) (s.proc.signal.rlimits RLIMIT_DATA) false s.proc.mm.mem.totalVm
       s.proc.mm.mem.dataVm n data = true := by
-  have h1 := totalVm_le hl
-  have h2 := dataVm_le hl hvs
+  have h1 := pagesWhere_user hl fun p m => !(m.special && p == vsyscallPage.toNat)
+  have h2 := pagesWhere_user hl fun _ m =>
+    m.prot.write && !m.growsDown && !(s.proc.mm.mem.backings m.backing).isFile
   unfold mayExpand
   rw [pages_inf has, pages_inf hds]
-  have e1 : s.proc.mm.mem.totalVm + n ≤ 2 ^ 52 - 1 := by omega
-  have e2 : s.proc.mm.mem.dataVm + n ≤ 2 ^ 52 - 1 := by omega
+  have e1 : s.proc.mm.mem.totalVm + n ≤ 2 ^ 52 - 1 := by unfold Memory.totalVm; omega
+  have e2 : s.proc.mm.mem.dataVm + n ≤ 2 ^ 52 - 1 := by unfold Memory.dataVm; omega
   simp [e1, e2]
 
 end FV7z.Acct
