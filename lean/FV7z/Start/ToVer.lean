@@ -72,7 +72,8 @@ theorem launch_to_ver {l : Launch} {n : Nat} {o : Oracle} {L : List (Addr × Lis
           (withNew (zzsFoot ((stackLayout l.args l.prof.linux c).sp - n) c.stackTop L) [⟨l.s₀.proc.mm.brk, 8192⟩])
           Z.proc.mm.mem W →
         Z.cpu.rip = 0x6133f0 → Rg (ctxOf l.prof l.s₀ l.args c) Z.cpu.gpr →
-        CpuOk l.prof Z.proc.mm.mem → V2606.GotOk l.prof Z.proc.mm.mem → MB (ctxOf l.prof l.s₀ l.args c) V' →
+        CpuOk l.prof Z.proc.mm.mem → V2606.GotOk l.prof Z.proc.mm.mem → CpuFeat.HwW Z.proc.mm.mem.readByte →
+        MB (ctxOf l.prof l.s₀ l.args c) V' →
         UtsnameOk u → KernelNew u →
         (∀ a : Addr, Foot (zzsFoot ((stackLayout l.args l.prof.linux c).sp - n) c.stackTop L).data a ∨
             (l.s₀.proc.mm.brk.toNat ≤ a.toNat ∧ a.toNat < l.s₀.proc.mm.brk.toNat + 8192) →
@@ -88,7 +89,7 @@ theorem launch_to_ver {l : Launch} {n : Nat} {o : Oracle} {L : List (Addr × Lis
   obtain ⟨c, hv, hst, hK, hI0, hB0, hto⟩ := launch_to_osv (gev := gev) (gP := gP) (gE := gE) (t := t) h hroom
     (by omega) hs hq noG noA hpc hch ho hL hC hT hM hmg hcpy
   refine ⟨c, hv, hst, hK, hI0, hB0, fun hfin => hto ?_⟩
-  intro s₂ Z t₂ W V' g x1 x2 x3 d r10 r8 r9 hax hdi c₂ hB₂ hK₂ hA₂ hr₂ hRg hcpu hgot hMB hW hT3
+  intro s₂ Z t₂ W V' g x1 x2 x3 d r10 r8 r9 hax hdi c₂ hB₂ hK₂ hA₂ hr₂ hRg hcpu hgot hhw hMB hW hT3
   obtain ⟨h16, hn', hst', hpg, hlt, hlo, htop⟩ :=
     stack_room (lb := l.prof.linux) hv.stackTop hv.stackAlign (ExecStart.limits h.2.1) hroom
   have htm : c.stackTop ≤ 2 ^ 47 - 4096 := hv.stackTop.2.2
@@ -163,7 +164,8 @@ theorem launch_to_ver {l : Launch} {n : Nat} {o : Oracle} {L : List (Addr × Lis
   refine hfin s₂ Y t' _ V' g x1 x2 x3 d r10 r8 r9 u _ _ _ _ _ hax hdi c₂ hB₂ hKY hAY (hrY.trans (by decide))
     ⟨s1.trans hRg.1, s3.trans hRg.2.1, s4.trans hRg.2.2.1, s5.trans hRg.2.2.2⟩
     ((CInv.of_cpuOk hcpu).mem fun j hj => ?_)
-    (GotOkB.to_mem ((GotOkB.of_mem hgot).congr fun a h1 h2 => hYZ a (by omega) (by omega) (by omega))) hMB hu hnew
+    (GotOkB.to_mem ((GotOkB.of_mem hgot).congr fun a h1 h2 => hYZ a (by omega) (by omega) (by omega)))
+    (hhw.congr fun a h1 h2 => hYZ a (by omega) (by omega) (by omega)) hMB hu hnew
     (fun a ha hj => ?_) hT3
   · have e : (cpuRgn.base.add j).toNat = 0x7a4ae0 + j := tg (b := 0x7a4ae0) hj (by decide)
     exact hYZ _ (by omega) (by omega) (by omega)

@@ -85,6 +85,20 @@ theorem HwW.st {V : Addr → Byte} (h : HwW V) {g : Addr} {bs : List Byte} (hf :
   rw [rd8_st V g bs _ hf (by rw [tac8]; omega) (by rw [tac8]; omega)]
   exact h
 
+/-- `HwW` is about the 8 bytes at `0x7a4ac8` only. -/
+theorem HwW.congr {V V' : Addr → Byte} (h : HwW V)
+    (e : ∀ a : Addr, 0x7a4ac8 ≤ a.toNat → a.toNat < 0x7a4ad0 → V' a = V a) : HwW V' := by
+  have m : List.map V' (byteAddrs 0x7a4ac8 8) = List.map V (byteAddrs 0x7a4ac8 8) := by
+    apply List.map_congr_left
+    intro y hy
+    obtain ⟨i, hi, rfl⟩ := mem_byteAddrs.1 hy
+    have ei := toNat_add_of_fits (a := (0x7a4ac8 : Addr)) hi (by decide)
+    rw [tac8] at ei
+    exact e _ (by omega) (by omega)
+  unfold HwW at h ⊢
+  rw [m]
+  exact h
+
 /-- The store of 2 or 6 into `0x7a4ac8`. -/
 theorem hw_st (V : Addr → Byte) {n : Nat} (hn : n = 2 ∨ n = 6) :
     HwW (Vst V 0x7a4ac8 (toBytesLE (BitVec.ofNat 64 n) 8)) := by

@@ -72,7 +72,7 @@ theorem launch_to_cpu {l : Launch} {n : Nat} {o : Oracle} {L : List (Addr × Lis
         ∀ (Y : State) (t' : Nat),
         g.rax = BitVec.ofNat 64 158 → g.rdi = BitVec.ofNat 64 0x3001 →
         KeptW (zzsFoot ((stackLayout l.args l.prof.linux c).sp - n) c.stackTop L).writes l.s₀ Y →
-        CpuOk l.prof Y.proc.mm.mem → V2606.GotOk l.prof Y.proc.mm.mem →
+        CpuOk l.prof Y.proc.mm.mem → V2606.GotOk l.prof Y.proc.mm.mem → CpuFeat.HwW Y.proc.mm.mem.readByte →
         (∀ y, Foot (zzsFoot ((stackLayout l.args l.prof.linux c).sp - n) c.stackTop L).data y →
           ¬ Foot (cpuW ((ctxOf l.prof l.s₀ l.args c).bp + 104#64)) y → Y.proc.mm.mem.readByte y = V' y) →
         Y.cpu.rip = 0x6133bb → TKi g' Y.cpu.gpr → GoG l.prof L o (gev ++ [Seg.cetEv g]) gP gE Y t') →
@@ -127,7 +127,7 @@ theorem launch_to_cpu {l : Launch} {n : Nat} {o : Oracle} {L : List (Addr × Lis
   · intro a h1 h2
     exact zzsFoot_stack htop (by omega) (by omega)
   · refine ⟨hC.icf, hC.icfk, hC.tgv, hC.gci, hC.icfa, hC.icfh, hC.icfi, fun y hy => foot_append_iff.2 (.inl hy),
-      by omega, .inl (by omega), by omega, by omega, ?_⟩
+      by omega, by omega, .inl (by omega), by omega, by omega, ?_⟩
     intro m hm
     obtain ⟨t1, t2⟩ := tun_bd m hm
     obtain ⟨b1, b2⟩ := tgvInit_bd m hm
