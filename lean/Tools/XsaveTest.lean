@@ -66,11 +66,17 @@ def wrBytes (s : St) (a : Addr) (bs : List (Option Byte)) : St :=
       | some b => m.set! ((a.toNat + i) - base) b.toNat.toUInt8
       | none => m) s.mem }
 
+/-- The flags `getCpu` answers (`XSAVE`, `XSAVEC` and `XRSTOR` neither read nor write them). -/
+def flags0 : Rflags :=
+  { cf := false, pf := false, af := false, zf := false, sf := false, tf := false, if_ := true, df := false
+    of := false, iopl := 0, nt := false, rf := false, vm := false, ac := false, vif := false, vip := false
+    id := false }
+
 /-- `s` as the model's CPU state (`Op.getCpu`), with `RIP`, the flags and the segments fixed. -/
 def toCpu (s : St) : Cpu :=
   let g (i : Nat) : BitVec 64 := s.gpr[i]!
   { gpr := ⟨g 0, g 1, g 2, g 3, g 4, g 5, g 6, g 7, g 8, g 9, g 10, g 11, g 12, g 13, g 14, g 15⟩
-    rip := 0x401000, rflags := default, seg := ⟨0, 0, 0, 0, 0, 0, 0, 0⟩, x87 := s.x87
+    rip := 0x401000, rflags := flags0, seg := ⟨0, 0, 0, 0, 0, 0, 0, 0⟩, x87 := s.x87
     vec := ⟨fun j => s.zmm[j.val]!, fun j => s.k[j.val]!, s.mxcsr⟩, pkru := s.pkru }
 
 /-- `s` with the registers of `c` (`Op.setCpu`). -/
