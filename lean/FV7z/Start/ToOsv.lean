@@ -131,7 +131,7 @@ theorem launch_to_osv {l : Launch} {n : Nat} {o : Oracle} {L : List (Addr × Lis
           Z.proc.mm.mem W →
         Z.cpu.rip = 0x61363e → Rg (ctxOf l.prof l.s₀ l.args c) Z.cpu.gpr →
         CpuOk l.prof Z.proc.mm.mem → V2606.GotOk l.prof Z.proc.mm.mem → CpuFeat.HwW Z.proc.mm.mem.readByte →
-        MB (ctxOf l.prof l.s₀ l.args c) V' →
+        CpuFeat.PlW V' Z.proc.mm.mem.readByte → MB (ctxOf l.prof l.s₀ l.args c) V' →
         (∀ a : Addr, Foot (zzsFoot ((stackLayout l.args l.prof.linux c).sp - n) c.stackTop L).data a ∨
             (l.s₀.proc.mm.brk.toNat ≤ a.toNat ∧ a.toNat < l.s₀.proc.mm.brk.toNat + 8192) →
           ¬ Junk (ctxOf l.prof l.s₀ l.args c) a →
@@ -159,7 +159,7 @@ theorem launch_to_osv {l : Launch} {n : Nat} {o : Oracle} {L : List (Addr × Lis
   have hK : (ctxOf l.prof l.s₀ l.args c).Ok := Ctx.ok (hst.lch (by omega) hs noG noA) hI0 kq kz kln
   clear kbp kmain kargc kargv kinit kfini krtld kV0 kq kz kln himg
   refine ⟨c, hv, hst, hK, hI0, hB0, fun hfin => hto ?_⟩
-  intro s₂ Z t₂ W V' g x1 x2 x3 d r10 r8 r9 hax hdi c₂ hB₂ hK₂ hA₂ hr₂ hRg hcpu hgot hhw hMB hW
+  intro s₂ Z t₂ W V' g x1 x2 x3 d r10 r8 r9 hax hdi c₂ hB₂ hK₂ hA₂ hr₂ hRg hcpu hgot hhw hpl hMB hW
   obtain ⟨hb0, hb1, hb2⟩ := launch_brk h
   obtain ⟨h12, h23, h3⟩ := runs_apart (prof := l.prof) (hdr := ElfHeader.read V2606.zzs.blob.bytes)
     (phs := zzsPhdrs) hst.top.1 hst.align hst.limits
@@ -259,7 +259,8 @@ theorem launch_to_osv {l : Launch} {n : Nat} {o : Oracle} {L : List (Addr × Lis
       by rw [hgY]; exact hRg.2.2.2⟩)
     ((CInv.of_cpuOk hcpu).mem fun j hj => ?_)
     (GotOkB.to_mem ((GotOkB.of_mem hgot).congr fun a h1 h2 => hYZ a (by omega) (by omega)))
-    (hhw.congr fun a h1 h2 => hYZ a (by omega) (by omega)) hMB
+    (hhw.congr fun a h1 h2 => hYZ a (by omega) (by omega))
+    (hpl.congr fun a h1 h2 => hYZ a (by omega) (by omega)) hMB
     (fun a ha hj => ?_) hT3
   · have e : (cpuRgn.base.add j).toNat = 0x7a4ae0 + j := tg (b := 0x7a4ae0) hj (by decide)
     exact hYZ _ (by omega) (by omega)

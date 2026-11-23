@@ -99,6 +99,20 @@ theorem HwW.congr {V V' : Addr → Byte} (h : HwW V)
   rw [m]
   exact h
 
+/-- `PlW` is about the 8 bytes at `0x7a8548` only. -/
+theorem PlW.congr {V₀ V V' : Addr → Byte} (h : PlW V₀ V)
+    (e : ∀ a : Addr, 0x7a8548 ≤ a.toNat → a.toNat < 0x7a8550 → V' a = V a) : PlW V₀ V' := by
+  have m : List.map V' (byteAddrs 0x7a8548 8) = List.map V (byteAddrs 0x7a8548 8) := by
+    apply List.map_congr_left
+    intro y hy
+    obtain ⟨i, hi, rfl⟩ := mem_byteAddrs.1 hy
+    have ei := toNat_add_of_fits (a := (0x7a8548 : Addr)) hi (by decide)
+    rw [t548] at ei
+    exact e _ (by omega) (by omega)
+  unfold PlW at h ⊢
+  rw [m]
+  exact h
+
 /-- The store of 2 or 6 into `0x7a4ac8`. -/
 theorem hw_st (V : Addr → Byte) {n : Nat} (hn : n = 2 ∨ n = 6) :
     HwW (Vst V 0x7a4ac8 (toBytesLE (BitVec.ofNat 64 n) 8)) := by

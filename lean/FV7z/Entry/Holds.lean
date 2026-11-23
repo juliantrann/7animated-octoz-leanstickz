@@ -180,7 +180,7 @@ theorem entry_cpu (c : Seg prof F Wl L s₀ o) (he : CodeIn L ent_at ent) (hl : 
     (hpc : prof.Consistent) (hch : Chain prof) (hdf : s₀.cpu.rflags.df = false) (hx87 : s₀.cpu.x87.full = 0)
     (hfin : ∀ (g g' : Gprs) (V' : Addr → Byte), Start.FinP K g' V' → ∀ (Y : State) (t' : Nat),
       g.rax = BitVec.ofNat 64 158 → g.rdi = BitVec.ofNat 64 0x3001 → KeptW Wl s₀ Y → CpuOk prof Y.proc.mm.mem →
-      V2606.GotOk prof Y.proc.mm.mem → CpuFeat.HwW Y.proc.mm.mem.readByte →
+      V2606.GotOk prof Y.proc.mm.mem → CpuFeat.HwW Y.proc.mm.mem.readByte → CpuFeat.PlW V' Y.proc.mm.mem.readByte →
       (∀ y, Foot F.data y → ¬ Foot (cpuW (K.bp + 104#64)) y → Y.proc.mm.mem.readByte y = V' y) →
       Y.cpu.rip = 0x6133bb → TKi g' Y.cpu.gpr → GoG prof L o (gev ++ [Seg.cetEv g]) gP gE Y t') :
     GoG prof L o gev gP gE X t := by

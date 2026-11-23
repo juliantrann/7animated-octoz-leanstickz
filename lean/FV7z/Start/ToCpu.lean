@@ -73,6 +73,7 @@ theorem launch_to_cpu {l : Launch} {n : Nat} {o : Oracle} {L : List (Addr × Lis
         g.rax = BitVec.ofNat 64 158 → g.rdi = BitVec.ofNat 64 0x3001 →
         KeptW (zzsFoot ((stackLayout l.args l.prof.linux c).sp - n) c.stackTop L).writes l.s₀ Y →
         CpuOk l.prof Y.proc.mm.mem → V2606.GotOk l.prof Y.proc.mm.mem → CpuFeat.HwW Y.proc.mm.mem.readByte →
+        CpuFeat.PlW V' Y.proc.mm.mem.readByte →
         (∀ y, Foot (zzsFoot ((stackLayout l.args l.prof.linux c).sp - n) c.stackTop L).data y →
           ¬ Foot (cpuW ((ctxOf l.prof l.s₀ l.args c).bp + 104#64)) y → Y.proc.mm.mem.readByte y = V' y) →
         Y.cpu.rip = 0x6133bb → TKi g' Y.cpu.gpr → GoG l.prof L o (gev ++ [Seg.cetEv g]) gP gE Y t') →

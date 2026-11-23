@@ -434,17 +434,20 @@ theorem applyIrel (c : Seg prof F Wl L s₀ o) (hE : RE F Wl L q) (hpc : prof.Co
   exact irAll c hE hpc hch hdf hx87 htab hsp k 31 0 rfl Y2 t2 _ hK2 hA2 hV0 hr2
     (by rw [hg2, hg1, Nat.mul_zero, addr_add_zero]; rfl) (by rw [hg2, hg1]; exact ⟨rfl, rfl, rfl, rfl, rfl⟩)
 
-/-- `apply_irel` keeps `_dl_hwcap`: its bytes are the footprint's and apart from what the run stores into. -/
-theorem hw_irel (c : Seg prof F Wl L s₀ o) {V₀ : Addr → Byte} {q : Addr} (hE : IE F Wl L V₀ q) {V V' : Addr → Byte}
-    (h : HwW V) (hoff : ∀ y, Foot F.data y → ¬ Foot (irelW q) y → V' y = V y) : HwW V' := by
+/-- `apply_irel` keeps `_dl_hwcap` and `_dl_platform`: their bytes are the footprint's and apart from what the run
+stores into. -/
+theorem irel_keep (c : Seg prof F Wl L s₀ o) {V₀ : Addr → Byte} {q : Addr} (hE : IE F Wl L V₀ q)
+    {V V' : Addr → Byte} (hoff : ∀ y, Foot F.data y → ¬ Foot (irelW q) y → V' y = V y) {lo : Nat}
+    (hl : lo = 0x7a4ac8 ∨ lo = 0x7a8548) (a : Addr) (h1 : lo ≤ a.toNat) (h2 : a.toNat < lo + 8) : V' a = V a := by
   have hu := hE.up
-  refine h.congr fun a h1 h2 => hoff _ (c.hws _ (hE.w _ ⟨⟨0x7a4ac8, 8⟩, by simp [icfW], ?_⟩)) ?_
-  · simp only [Rgn.Mem, tac8]; omega
+  refine hoff _ (c.hws _ (hE.w _ ?_)) ?_
+  · rcases hl with rfl | rfl
+    · exact ⟨⟨0x7a4ac8, 8⟩, by simp [icfW], by simp only [Rgn.Mem, tac8]; omega⟩
+    · exact ⟨⟨0x7a8548, 8⟩, by simp [icfW], by simp only [Rgn.Mem, t548]; omega⟩
   · rintro ⟨r, hr, hm⟩
     simp only [irelW, List.mem_cons, List.mem_nil_iff, or_false] at hr
-    rcases hr with rfl | rfl
-    · simp only [Rgn.Mem] at hm; omega
-    · simp only [Rgn.Mem, got_toNat] at hm; omega
+    rcases hl with rfl | rfl <;> rcases hr with rfl | rfl
+    all_goals first | (simp only [Rgn.Mem] at hm; omega) | (simp only [Rgn.Mem, got_toNat] at hm; omega)
 
 /-- `init_cpu_features` then `apply_irel`: from `0x613113` to `0x6133bb`, for every vendor and every answer of `cpuid`
 the profile allows, one system call (`arch_prctl (ARCH_CET_STATUS, …)`), and then `CpuOk` and `GotOk`: the words
@@ -459,13 +462,15 @@ theorem initCpuFeatures_applyIrel (c : Seg prof F Wl L s₀ o) (hE : IE F Wl L V
     (hr : X.cpu.rip = 0x613113) (hsp : X.cpu.gpr.rsp = q.add 8)
     (post : ∀ (g : Gprs) (Y : State) (t' : Nat), g.rax = BitVec.ofNat 64 158 → g.rdi = BitVec.ofNat 64 0x3001 →
       KeptW Wl s₀ Y → CpuOk prof Y.proc.mm.mem → V2606.GotOk prof Y.proc.mm.mem → HwW Y.proc.mm.mem.readByte →
-      (∀ y, Foot F.data y → ¬ Foot Wl y → Y.proc.mm.mem.readByte y = V₀ y) →
+      PlW V₀ Y.proc.mm.mem.readByte → (∀ y, Foot F.data y → ¬ Foot Wl y → Y.proc.mm.mem.readByte y = V₀ y) →
       Y.cpu.rip = 0x6133bb → TKi X.cpu.gpr Y.cpu.gpr → GoG prof L o (gev ++ [Seg.cetEv g]) gP gE Y t') :
     GoG prof L o gev gP gE X t :=
-  initCpuFeatures c hE hJ hpc hdf hx87 hK hA hok hr hsp fun g _ _ hax hdi hKY hcpu hoff hHY _ hrY hTY =>
+  initCpuFeatures c hE hJ hpc hdf hx87 hK hA hok hr hsp fun g _ _ hax hdi hKY hcpu hoff hHY hPY hrY hTY =>
     applyIrel c hR hpc hch hdf hx87 hKY hcpu
       (fun j hj => (hoff _ (hR.tab j hj) (hT j hj).1).trans (hT j hj).2) hrY (hTY.sp.trans hsp)
-      fun Z t'' hKZ hcpuZ hgot hoffZ hrZ hTZ => post g Z t'' hax hdi hKZ hcpuZ hgot (hw_irel c hE hHY hoffZ)
+      fun Z t'' hKZ hcpuZ hgot hoffZ hrZ hTZ => post g Z t'' hax hdi hKZ hcpuZ hgot
+        (hHY.congr (irel_keep c hE hoffZ (.inl rfl)))
+        (hPY.congr (irel_keep c hE hoffZ (.inr rfl)))
         (fun y hy hn => (hoffZ y hy fun h => hn (hR.w y h)).trans (hoff y hy hn)) hrZ
         ⟨hTZ.sp.trans hTY.sp, hTZ.rbp.trans hTY.rbp, hTZ.r12.trans hTY.r12, hTZ.r13.trans hTY.r13,
           hTZ.r15.trans hTY.r15⟩

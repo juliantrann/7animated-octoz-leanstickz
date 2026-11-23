@@ -54,13 +54,13 @@ theorem initCpuFeatures_applyIrel_in (c : Seg prof F Wl L s₀ o) (hw : ∀ y, F
     (hr : X.cpu.rip = 0x613113) (hsp : X.cpu.gpr.rsp = q.add 8)
     (post : ∀ (g : Gprs) (Y : State) (t' : Nat), g.rax = BitVec.ofNat 64 158 → g.rdi = BitVec.ofNat 64 0x3001 →
       KeptW Wl s₀ Y → CpuOk prof Y.proc.mm.mem → V2606.GotOk prof Y.proc.mm.mem → HwW Y.proc.mm.mem.readByte →
-      (∀ y, Foot F.data y → ¬ Foot (cpuW q) y → Y.proc.mm.mem.readByte y = V₀ y) →
+      PlW V₀ Y.proc.mm.mem.readByte → (∀ y, Foot F.data y → ¬ Foot (cpuW q) y → Y.proc.mm.mem.readByte y = V₀ y) →
       Y.cpu.rip = 0x6133bb → TKi X.cpu.gpr Y.cpu.gpr → GoG prof L o (gev ++ [Seg.cetEv g]) gP gE Y t') :
     GoG prof L o gev gP gE X t :=
   initCpuFeatures_applyIrel (c.rebase hK hw) hE hJ hR hT hpc hch (by rw [hK.df]; exact hdf)
     (by rw [hK.x87]; exact hx87) (KeptW.refl _ X) hA hok hr hsp
-    fun g Y t' hax hdi hKY hc hg hh hoff hrY hTY =>
-      post g Y t' hax hdi (hK.trans hKY hw) hc hg hh hoff hrY hTY
+    fun g Y t' hax hdi hKY hc hg hh hp hoff hrY hTY =>
+      post g Y t' hax hdi (hK.trans hKY hw) hc hg hh hp hoff hrY hTY
 
 end FV7z.CpuFeat
 
@@ -129,7 +129,7 @@ theorem start_cpu (c : Seg prof F Wl L s₀ o) (hl : CodeIn L lsm_at lsm) (hp : 
     (hx87 : s₀.cpu.x87.full = 0)
     (hfin : ∀ (g g' : Gprs) (V' : Addr → Byte), FinP K g' V' → ∀ (Y : State) (t' : Nat),
       g.rax = BitVec.ofNat 64 158 → g.rdi = BitVec.ofNat 64 0x3001 → KeptW Wl s₀ Y → CpuOk prof Y.proc.mm.mem →
-      V2606.GotOk prof Y.proc.mm.mem → CpuFeat.HwW Y.proc.mm.mem.readByte →
+      V2606.GotOk prof Y.proc.mm.mem → CpuFeat.HwW Y.proc.mm.mem.readByte → CpuFeat.PlW V' Y.proc.mm.mem.readByte →
       (∀ y, Foot F.data y → ¬ Foot (cpuW (K.bp + 104#64)) y → Y.proc.mm.mem.readByte y = V' y) →
       Y.cpu.rip = 0x6133bb → TKi g' Y.cpu.gpr → GoG prof L o (gev ++ [Seg.cetEv g]) gP gE Y t')
     {X : State} {t : Nat} (hX : KeptW Wl s₀ X) (hA : Agree F X.proc.mm.mem V)
@@ -165,7 +165,7 @@ theorem start_cpu (c : Seg prof F Wl L s₀ o) (hl : CodeIn L lsm_at lsm) (hp : 
   have hsp : Y.cpu.gpr.rsp = (K.bp + 104#64).add 8 := by
     rw [hF.1.1]; simp only [Addr.add]; bv_omega
   exact CpuFeat.initCpuFeatures_applyIrel_in c hw hIE' hJ' hR hT' hpc hch hdf hx87 hKY hAY hok' (by rw [hrY]; rfl)
-    hsp fun g Y' t'' hax hdi hKY' hc hg hh hoff hrY' hTY =>
-      hfin g Y.cpu.gpr V' hF Y' t'' hax hdi hKY' hc hg hh hoff hrY' hTY
+    hsp fun g Y' t'' hax hdi hKY' hc hg hh hp hoff hrY' hTY =>
+      hfin g Y.cpu.gpr V' hF Y' t'' hax hdi hKY' hc hg hh hp hoff hrY' hTY
 
 end FV7z.Start

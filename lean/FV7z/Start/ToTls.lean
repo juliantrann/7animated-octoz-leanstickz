@@ -207,7 +207,7 @@ theorem launch_to_tls {l : Launch} {n : Nat}
           Z.proc.mm.mem W →
         Z.cpu.rip = 0x6133c0 → Rg (ctxOf l.prof l.s₀ l.args c) Z.cpu.gpr →
         CpuOk l.prof Z.proc.mm.mem → V2606.GotOk l.prof Z.proc.mm.mem → CpuFeat.HwW Z.proc.mm.mem.readByte →
-        MB (ctxOf l.prof l.s₀ l.args c) V' →
+        CpuFeat.PlW V' Z.proc.mm.mem.readByte → MB (ctxOf l.prof l.s₀ l.args c) V' →
         (∀ a : Addr, Foot (zzsFoot ((stackLayout l.args l.prof.linux c).sp - n) c.stackTop L).data a ∨
             (l.s₀.proc.mm.brk.toNat ≤ a.toNat ∧ a.toNat < l.s₀.proc.mm.brk.toNat + 8192) →
           ¬ Junk (ctxOf l.prof l.s₀ l.args c) a → W a = TlsMem V' l.s₀.proc.mm.brk a) →
@@ -243,7 +243,7 @@ theorem launch_to_tls {l : Launch} {n : Nat}
   obtain ⟨hb0, hb1, hb2⟩ := launch_brk h
   obtain ⟨hph, hpn⟩ := ctxOf_ph l.prof l.s₀ l.args c
   clear kbp kmain kargc kargv kinit kfini krtld kV0 kq kz kln hto himg
-  intro g g' V' hF Y t' hax hdi hKY hcpu hgot hhw hmem hripY hTK
+  intro g g' V' hF Y t' hax hdi hKY hcpu hgot hhw hpl hmem hripY hTK
   obtain ⟨⟨r_sp, r_bp, r_12, r_13⟩, -, hMB⟩ := hF
   have hspY : Y.cpu.gpr.rsp.toNat = (stackLayout l.args l.prof.linux c).sp - 288 := by rw [hTK.sp, r_sp, hq2]
   have hcj : ∀ a, Foot (cpuW ((ctxOf l.prof l.s₀ l.args c).bp + 104#64)) a → Junk (ctxOf l.prof l.s₀ l.args c) a := by
@@ -285,7 +285,8 @@ theorem launch_to_tls {l : Launch} {n : Nat}
     ((CInv.of_cpuOk hcpu).mem fun j hj => ?_)
     (GotOkB.to_mem ((GotOkB.of_mem hgot).congr fun a h1 h2 =>
       hZ a (by omega) (by omega) (by unfold TlsVar; omega)))
-    (hhw.congr fun a h1 h2 => hZ a (by omega) (by omega) (by unfold TlsVar; omega)) hMB fun a ha hj => ?_
+    (hhw.congr fun a h1 h2 => hZ a (by omega) (by omega) (by unfold TlsVar; omega))
+    (hpl.congr fun a h1 h2 => hZ a (by omega) (by omega) (by unfold TlsVar; omega)) hMB fun a ha hj => ?_
   · have e : (cpuRgn.base.add j).toNat = 0x7a4ae0 + j := tg (b := 0x7a4ae0) hj (by decide)
     exact hZ _ (by omega) (by omega) (by unfold TlsVar; omega)
   · rw [hW a fun hh => hj (.inl (by omega))]
