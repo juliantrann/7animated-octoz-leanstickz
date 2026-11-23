@@ -47,8 +47,8 @@ theorem ptr_keep {K : Ctx} {W V : Addr → Byte} {b : Addr} {ver : BitVec 32} {D
     · omega
     · exact hc h
 
-/-- A byte below the stack (more than 32 bytes under `g.rsp`), below the pushes of `_dl_non_dynamic_init` and away from the
-globals `__libc_init_first` stores to is, in `lif_ok`'s bytes, that at the call of `__libc_init_first`. -/
+/-- A byte more than 32 bytes below `g.rsp`, below the pushes of `_dl_non_dynamic_init` and away from the globals
+`__libc_init_first` stores to is, in `lif_ok`'s bytes, that at the call of `__libc_init_first`. -/
 theorem ent_keep {W : Addr → Byte} {g gY : Gprs} {ra ra₀ : BitVec 64} {sp a : Addr}
     (hr : a.toNat + 32 < g.rsp.toNat) (hr' : g.rsp.toNat + 8 ≤ 2 ^ 64) (hsp : a.toNat < sp.toNat + 80)
     (hsn : sp.toNat + 120 ≤ 2 ^ 64)
