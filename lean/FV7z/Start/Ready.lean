@@ -144,6 +144,7 @@ theorem launch_ready {l : Launch} {n : Nat} (h : Launch.Of V2606.zzs.blob.bytes 
   refine ⟨⟨by rw [hc]; rfl, by rw [hc]; rfl, hsh, hcf⟩, by simp only [RseqQuiet, hrs], ?_⟩
   refine rm_layout hm ⟨stackRegion l.prof hdr zzsPhdrs l.args c, ?_, ?_⟩
     (fun r hr => (zzsRegions_layout hv (by omega) hr).1) (fun r hr => (zzsRegions_layout hv (by omega) hr).2) ?_ ?_
+    ?_
   · simp only [zzsRegions, List.mem_append, List.mem_cons, true_or, or_true]
   · rw [has_iff, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
     show (stackLayout l.args l.prof.linux c).start / 4096 ≤ (stackLayout l.args l.prof.linux c).start / 4096 ∧
@@ -167,6 +168,10 @@ theorem launch_ready {l : Launch} {n : Nat} (h : Launch.Of V2606.zzs.blob.bytes 
       omega
     · rw [Nat.mod_eq_of_lt (by omega)]
       exact Nat.le_refl _
+  · rw [hbk, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := c.brk) (by omega)]
+    have := taskSize_ge l.prof.feat
+    unfold pageUp
+    omega
 
 /-- What a C library's startup assumes of `PKRU`, the `rseq` area, the break and the thread's id. -/
 theorem launch_misc {l : Launch} (h : Launch.Of V2606.zzs.blob.bytes V2606.zzs.blob.size l) :

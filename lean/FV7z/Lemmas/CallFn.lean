@@ -171,6 +171,11 @@ theorem _root_.ZellicX86.Footprint.Ok.keptW (hok : F.Ok feat s₀) (hrq : RseqQu
         | kernel f => exact hnk.1 f hb
         | freed f => exact hnk.2 f hb
         | file f => exact hns f hb
+        | hugeEmpty =>
+          obtain ⟨r, hr, hra⟩ := ha'
+          have hc := (hok.writable r hr a hra).2
+          rw [check_eq, hm] at hc
+          simp [hb, blocked, Backing.filePage, Backing.noSource, Backing.unpopulated] at hc
     have := hK.calm.own _ hown
     rw [e] at this
     exact this
@@ -226,10 +231,13 @@ theorem _root_.ZellicX86.Ready.keptW (hR : Ready feat s₀) (hok : F.Ok feat s�
   · refine RseqQuiet.of_quiet (fun r hr => ?_) (hK.quiet hok hrq hws (quiet_of_rseqQuiet hrq hok.noAlias))
     rw [hK.thread] at hr
     exact RseqQuiet.fits hrq r hr
-  · obtain ⟨l1, l2, l3, l4, l5, l6⟩ := hl
-    unfold LayoutOk
-    rw [hK.calm.map, hK.calm.growsDown, hK.calm.fresh, hK.brk, hK.brkMin]
-    exact ⟨l1, l2, l3, l4, l5, l6⟩
+  · obtain ⟨l1, l2, l3, l4, l5, l6, l7, l8⟩ := hl
+    have e1 := hK.calm.map
+    have e2 := hK.calm.growsDown
+    have e3 := hK.calm.fresh
+    exact ⟨by rw [e2, e1]; exact l1, by rw [e1, e3]; exact l2, by rw [hK.brkMin]; exact l3,
+      by rw [hK.brkMin, hK.brk]; exact l4, by rw [e1]; exact l5, by rw [e1]; exact l6, by rw [hK.brk]; exact l7,
+      by rw [e1, e3]; exact l8⟩
 
 end
 
@@ -278,6 +286,15 @@ caller's run needs to go on past the call. -/
 def fnK (k : Nat) (W R : State → List Rgn) (pre : State → Prop) (post : State → State → Prop) : Contract :=
   fn k W R pre fun s₀ s => post s₀ s ∧ KeptW (ws k W s₀) s₀ s
 
+/-- `fnK`'s frame apart from what it writes and reads (`CallOf.frameApart`), from `W` and `R`. -/
+theorem fnK_apart {k : Nat} {W R : State → List Rgn} {pre : State → Prop} {post : State → State → Prop} {s : State}
+    (h : Apart [frame s k] (W s ++ R s)) :
+    Apart [frame s ((fnK k W R pre post).stack s)]
+      ((fnK k W R pre post).writes s ++ ((fnK k W R pre post).layout s).owned ++ (fnK k W R pre post).reads s) := by
+  show Apart [frame s k] (W s ++ [] ++ R s)
+  rw [List.append_nil]
+  exact h
+
 variable {prof : Profile} {L : List (Addr × List Byte)} {s₀ : State} {o : Oracle} {F : Footprint} {Wl : List Rgn}
   {gev : List Event} {gP : State → Nat → List Event → Prop} {gE : Outcome → List Event → Prop} {X : State} {t j : Nat}
   {e' : Addr} {code : List Byte} {V : Addr → Byte}
@@ -310,7 +327,7 @@ theorem s_callK (c : Seg prof F Wl L s₀ o) (hK : KeptW Wl s₀ X) (hA : Agree 
       Agree F Y.proc.mm.mem (Vst V (X.cpu.gpr.rsp - 8) (toBytesLE (e'.add (j + len)) 8)) →
       Y.cpu.rip = e₂ → Y.cpu.gpr = X.cpu.gpr.set 4 (X.cpu.gpr.rsp - 8) →
       Sub F ((fnK k W R pre post).footprint L Y) ∧ (∀ y, Foot (ws k W Y) y → Foot Wl y) ∧ pre Y ∧
-        ∀ i < 8, ¬ Foot (W Y) (Addr.add Y.cpu.gpr.rsp i))
+        (∀ i < 8, ¬ Foot (W Y) (Addr.add Y.cpu.gpr.rsp i)) ∧ Apart [frame Y k] (W Y ++ R Y))
     (k' : ∀ Y Z t', KeptW Wl s₀ Y → Y.cpu.gpr = X.cpu.gpr.set 4 (X.cpu.gpr.rsp - 8) → KeptW Wl s₀ Z →
       (∀ y, Foot F.data y → ¬ Foot (ws k W Y) y →
         Z.proc.mm.mem.readByte y = Vst V (X.cpu.gpr.rsp - 8) (toBytesLE (e'.add (j + len)) 8) y) →
@@ -318,7 +335,7 @@ theorem s_callK (c : Seg prof F Wl L s₀ o) (hK : KeptW Wl s₀ X) (hA : Agree 
     GoG prof L o gev gP gE X t := by
   refine c.s_call hK hA hin hj hrip hd hin₂ h₂ htgt hst ?_
   rintro Y t₁ hKY hAY ⟨hrY, hgY⟩
-  obtain ⟨hsub, hwsW, hpre, -⟩ := hY Y hKY hAY hrY hgY
+  obtain ⟨hsub, hwsW, hpre, -, hfa⟩ := hY Y hKY hAY hrY hgY
   have hrsp : Y.cpu.gpr.rsp = X.cpu.gpr.rsp - 8 := by rw [hgY]; rfl
   have hokY : F.Ok prof.feat Y := c.foot.keptW c.ready.rseq c.hws hKY c.sub_self
   have hRY : Ready prof.feat Y := c.ready.keptW c.foot c.hws hKY
@@ -334,7 +351,7 @@ theorem s_callK (c : Seg prof F Wl L s₀ o) (hK : KeptW Wl s₀ X) (hA : Agree 
     refine ⟨?_, by rw [hKY.df]; exact hdf, by rw [hKY.x87]; exact hx87⟩
     rw [hrsp, BitVec.sub_add_cancel]; exact hal
   have hcall : CallOf prof e₂ L (fnK k W R pre post) Y (e'.add (j + len)) :=
-    ⟨⟨hrY, hword, hcan, hent⟩, hRY, hGok, hpre⟩
+    ⟨⟨hrY, hword, hcan, hent⟩, hRY, hGok, fnK_apart hfa, hpre⟩
   refine RunsFrom.bind (runsFrom_of_reach (himp Y _ hcall) c.env t₁ (gE := gE) fun _ _ h => h.elim) ?_
   rintro Z T _ ⟨evs, rfl, hret, -, ⟨hpost, hKZ⟩, hev⟩
   have hev' : evs = [] := hev

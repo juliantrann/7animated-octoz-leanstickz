@@ -8,6 +8,7 @@ Facts about Zellic's `regionsMemory` (`Spec/Linux/Exec.lean`), the address space
 - `rm_map`: a mapped page's mapping is that of the last region that has the page; its backing's index is the page's
   number, its key 0.
 - `rm_noAlias`: where no region has a shared file page, no two pages alias (`NoAliasOver`, of every list of regions).
+- `rm_area`: each page is an area of its own.
 - `rm_layout`: the layout is one a process can have (`LayoutOk`), where the page that grows down is in a region,
   every region's maximum protection allows reading and every region ends at or below the end of the user address
   space, or is the vsyscall page's.
@@ -31,6 +32,17 @@ theorem rm_map {rs : List Region} {fs : Files} {gd : List PageNum} {p : PageNum}
     · simp only [regionsMemory, hf]
 
 /-- A page some region has is mapped. -/
+/-- Each page of `regionsMemory` is an area of its own: its page number. -/
+theorem rm_area {rs : List Region} {fs : Files} {gd : List PageNum} {p : PageNum} {m : Mapping}
+    (h : (regionsMemory rs fs gd).map p = some m) : m.area = p.toNat := by
+  simp only [regionsMemory] at h
+  cases hf : rs.reverse.find? (·.has p.toNat) with
+  | none => simp [hf] at h
+  | some r =>
+    rw [hf, Option.map_some] at h
+    cases h
+    rfl
+
 theorem rm_mapped {rs : List Region} {fs : Files} {gd : List PageNum} {p : PageNum} {r : Region} (hr : r ∈ rs)
     (hh : r.has p.toNat = true) : (regionsMemory rs fs gd).map p ≠ none := by
   simp only [regionsMemory]
@@ -62,8 +74,9 @@ theorem rm_layout {feat : Features} {s : State} {rs : List Region} {fs : Files} 
     (hmax : ∀ r ∈ rs, r.maxProt.read = true)
     (htop : ∀ r ∈ rs, (r.first + r.count) * 4096 ≤ taskSize feat ∨
       (r.first = vsyscallPage.toNat ∧ r.count = 1 ∧ r.special = true))
-    (hb0 : 0 < s.proc.mm.brkMin.toNat) (hb1 : s.proc.mm.brkMin.toNat ≤ s.proc.mm.brk.toNat) : LayoutOk feat s := by
-  refine ⟨?_, ?_, hb0, hb1, ?_, ?_⟩
+    (hb0 : 0 < s.proc.mm.brkMin.toNat) (hb1 : s.proc.mm.brkMin.toNat ≤ s.proc.mm.brk.toNat)
+    (hbp : pageUp s.proc.mm.brk.toNat ≤ taskSize feat + 2 ^ 30) : LayoutOk feat s := by
+  refine ⟨?_, ?_, hb0, hb1, ?_, ?_, hbp, ?_⟩
   · intro g' hg'
     rw [hm] at hg' ⊢
     obtain rfl : g' = g := by simpa [regionsMemory] using hg'
@@ -88,5 +101,9 @@ theorem rm_layout {feat : Features} {s : State} {rs : List Region} {fs : Files} 
       exact Nat.le_trans (Nat.mul_le_mul_right _ (by omega)) ht
     · right
       exact ⟨BitVec.eq_of_toNat_eq (by omega), es.trans h3⟩
+  · intro p m hp
+    rw [hm] at hp ⊢
+    rw [rm_area hp]
+    exact p.isLt
 
 end FV7z.Start

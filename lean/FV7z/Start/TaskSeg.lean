@@ -64,10 +64,7 @@ theorem reroot (c : Seg prof F Wl L s₀ o) {X' Y : State} (hK' : KeptW Wl s₀ 
   have hrsX : X'.thread.rseq = none := by rw [hK'.thread]; exact hrs
   exact
     { foot := footOk_congr hokX (congrArg (·.mem) hmm) hp hrq
-      ready := ⟨⟨htf, hac, hsh.trans h3, hcf.trans h4⟩, by simp only [RseqQuiet, hrq, hrsX], by
-        unfold LayoutOk at hl ⊢
-        rw [hmm]
-        exact hl⟩
+      ready := ⟨⟨htf, hac, hsh.trans h3, hcf.trans h4⟩, by simp only [RseqQuiet, hrq, hrsX], layoutOk_of_mm hmm hl⟩
       env := c.env
       code := c.code
       own := c.own

@@ -134,6 +134,7 @@ theorem enterK (c : Seg prof F Wl L s₀ o) {Y : State} {t₁ : Nat} {V' : Addr 
     (hdf : s₀.cpu.rflags.df = false) (hx87 : s₀.cpu.x87.full = 0)
     (hcan : ra.canonical prof.feat.la57 = true) (hal : (Y.cpu.gpr.rsp + 8).toNat % 16 = 0)
     (hsub : Sub F ((fnK k W R pre post).footprint L Y)) (hwsW : ∀ y, Foot (ws k W Y) y → Foot Wl y) (hpre : pre Y)
+    (hfa : Apart [frame Y k] (W Y ++ R Y))
     (k' : ∀ Z t', KeptW Wl s₀ Z →
       (∀ y, Foot F.data y → ¬ Foot (ws k W Y) y → Z.proc.mm.mem.readByte y = V' y) →
       Returns sysv Y ra Z → post Y Z → GoG prof L o gev gP gE Z t') :
@@ -146,7 +147,8 @@ theorem enterK (c : Seg prof F Wl L s₀ o) {Y : State} {t₁ : Nat} {V' : Addr 
     rw [hAY.read (fun i hi => c.hws _ (hsl i hi))]
     exact hword
   have hent : sysv.entry Y := ⟨hal, by rw [hKY.df]; exact hdf, by rw [hKY.x87]; exact hx87⟩
-  have hcall : CallOf prof e₂ L (fnK k W R pre post) Y ra := ⟨⟨hrY, hword', hcan, hent⟩, hRY, hGok, hpre⟩
+  have hcall : CallOf prof e₂ L (fnK k W R pre post) Y ra :=
+    ⟨⟨hrY, hword', hcan, hent⟩, hRY, hGok, fnK_apart hfa, hpre⟩
   refine RunsFrom.bind (runsFrom_of_reach (himp Y _ hcall) c.env t₁ (gE := gE) fun _ _ h => h.elim) ?_
   rintro Z T _ ⟨evs, rfl, hret, -, ⟨hpost, hKZ⟩, hev⟩
   have hev' : evs = [] := hev

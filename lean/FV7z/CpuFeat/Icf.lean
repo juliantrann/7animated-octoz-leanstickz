@@ -454,7 +454,7 @@ theorem callG (c : Seg prof F Wl L s₀ o) {V₀ : Addr → Byte} {q : Addr} (hE
     have hpY : Y.cpu.gpr.rdi ≠ 0 → PI q Y.cpu.gpr.rdi ∧ PI q Y.cpu.gpr.rsi ∧ PI q Y.cpu.gpr.rdx ∧
         PI q Y.cpu.gpr.rcx := by rw [hgY]; exact hptr
     refine ⟨⟨?_, ?_, fun _ h => by simp [Contract.footprint, fnK, fn, gR, Foot] at h, c.code.symm ▸ rfl, rfl, c.own⟩,
-      fun y hy => hws Y hgY y hy, ⟨?_, ?_, fun h => ?_⟩, ?_⟩
+      fun y hy => hws Y hgY y hy, ⟨?_, ?_, fun h => ?_⟩, ?_, ?_⟩
     · intro r hr
       simp only [Contract.footprint, fnK, fn, gR, List.append_nil, List.mem_cons] at hr
       rcases hr with rfl | hr
@@ -486,6 +486,14 @@ theorem callG (c : Seg prof F Wl L s₀ o) {V₀ : Addr → Byte} {q : Addr} (hE
       rcases hgw Y hgY _ hm with hm | ⟨m, h1, h2, h3, h4⟩
       · simp only [Rgn.Mem, hE.tn (n := i) (by omega), base_toNat] at hm; omega
       · rw [hE.tn (n := i) (by omega)] at h3; omega
+    · intro r hr r' hr' a ha hb
+      rw [List.mem_singleton] at hr
+      subst hr
+      simp only [gR, List.append_nil] at hr'
+      simp only [frame, hYs, Rgn.Mem, hqs] at ha
+      rcases gW_mem hpY hr' with rfl | ⟨m, h1, h2, rfl⟩
+      · simp only [cfR, Rgn.Mem] at hb; omega
+      · simp only [Rgn.Mem, hE.tn (n := m) (by omega)] at hb; omega
   · intro Y Z' t' hKY hgY hKZ hmem hret hpost
     have hYs : Y.cpu.gpr.rsp = q := by rw [hgY]; exact hq
     rw [hq] at hmem

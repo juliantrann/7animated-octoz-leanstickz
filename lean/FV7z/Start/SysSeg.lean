@@ -1,5 +1,5 @@
 import FV7z.Start.Grow
-import FV7z.Lemmas.SysMm
+import FV7z.Lemmas.TrialObl
 /-!
 # `brk` and `arch_prctl (ARCH_SET_FS, …)`, steps of a run (PLAN.md G3, startup)
 
@@ -53,6 +53,13 @@ theorem footOk_congr {feat : Features} {X Y : State} {F : Footprint} (hok : F.Ok
   · rw [hra]
     exact hok.rseqApart
 
+/-- `LayoutOk` of a state with the same memory and break as one that has it. -/
+theorem layoutOk_of_mm {feat : Features} {X Y : State} (h : Y.proc.mm = X.proc.mm) (hl : LayoutOk feat X) :
+    LayoutOk feat Y := by
+  obtain ⟨l1, l2, l3, l4, l5, l6, l7, l8⟩ := hl
+  exact ⟨by rw [h]; exact l1, by rw [h]; exact l2, by rw [h]; exact l3, by rw [h]; exact l4, by rw [h]; exact l5,
+    by rw [h]; exact l6, by rw [h]; exact l7, by rw [h]; exact l8⟩
+
 /-- `Ready` of a state with the same process and thread, `TF` and `AC` clear, without an `rseq` area. -/
 theorem ready_cpu {feat : Features} {X Y : State} (hR : Ready feat X) (hproc : Y.proc = X.proc)
     (hth : Y.thread = X.thread) (htf : Y.cpu.rflags.tf = false) (hac : Y.cpu.rflags.ac = false)
@@ -60,9 +67,7 @@ theorem ready_cpu {feat : Features} {X Y : State} (hR : Ready feat X) (hproc : Y
   obtain ⟨⟨-, -, h3, h4⟩, -, hl⟩ := hR
   refine ⟨⟨htf, hac, by rw [hth]; exact h3, by rw [hth]; exact h4⟩, ?_, ?_⟩
   · simp only [RseqQuiet, hth, hrs]
-  · unfold LayoutOk at hl ⊢
-    rw [hproc]
-    exact hl
+  · exact layoutOk_of_mm (by rw [hproc]) hl
 
 theorem free_le {m : Memory} {P n n' : Nat} (h : m.free P n' = true) (hle : n ≤ n') : m.free P n = true := by
   simp only [Memory.free, List.all_eq_true, List.mem_range] at h ⊢
@@ -137,7 +142,7 @@ theorem s_brk_grow (c : Seg prof F Wl L s₀ o) (hK : KeptW Wl s₀ X) (hA : Agr
   have htsz := taskSize_ge prof.feat
   have htop' : 4096 * (pageUp X.cpu.gpr.rdi.toNat / 4096) ≤ taskSize prof.feat := by omega
   refine ⟨_, _, _, syscall_brk_grow (s := X.withMem M) htf (c.dec hK' hin hrip hd) hnr hlow (hmg _ _) hgt
-    htop' hfree', k' (X.withMem M) _ _ hK' rfl rfl ?_ ?_⟩
+    htop' hfree' (trial_data_unlimited _) (trial_mayExpand _ _), k' (X.withMem M) _ _ hK' rfl rfl ?_ ?_⟩
   · exact
       { foot := footOk_grow hokX hRX.layout hfreeN rfl rfl hpkX hrsX hrsX c.own hN' (by rw [hsum]; omega)
         ready := ready_grow hRX hfreeN rfl rfl hlow htf hac rfl hrsX (by rw [hsum]; omega)

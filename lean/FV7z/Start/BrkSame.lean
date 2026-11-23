@@ -6,7 +6,7 @@ The kernel's `brk (b)` when `b` ends in the page the break ends in: no page is m
 This is `__sbrk`'s call when the bytes asked for fit below the next page's start (`sysmalloc`'s second `MORECORE`,
 the `correction` that aligns the end of the heap to a page).
 
-- `syscall_brk_same`: the instruction, on Zellic's model; one answer of the stream is used (`Request.memFail`).
+- `syscall_brk_same`: the instruction, on Zellic's model, `RLIMIT_DATA` unlimited; no answer of the stream is used.
 - `ready_brk`: `Ready` of a state with the same memory and thread and a break not below the lowest.
 - `Seg.s_brk_same`: the step of a run; the run goes on from the state after as a new start, with the same footprint.
 - `Seg.b_brk_same`: from a start with `Base`, to a `Base` with the new break.
@@ -19,33 +19,31 @@ variable {prof : Profile} {o : Oracle} {t : Nat} {s : State}
 /-- `s` with the break at `b`, the pages as they were. -/
 abbrev brkSt0 (s : State) (b : Addr) : State := s.withLayout s.proc.mm.mem b
 
-/-- `brk (b)` with `b` in the break's page, when the kernel does not refuse memory: the break is `b`. -/
+/-- `brk (b)` with `b` in the break's page, `RLIMIT_DATA` unlimited: the break is `b`, no answer of the stream used. -/
 theorem syscall_brk_same {len : Nat} (htf : s.cpu.rflags.tf = false)
     (hdec : Decode.decode prof.feat (fetchByte prof.feat s) = .ok (mk .syscall 32 [] len))
     (hnr : s.cpu.gpr.rax.toNat % 2 ^ 32 = 12) (hlow : s.proc.mm.brkMin.toNat ≤ s.cpu.gpr.rdi.toNat)
-    (hmf : o t (.memFail 0) = none)
+    (hdat : (s.proc.signal.rlimits RLIMIT_DATA).cur = RLIM_INFINITY)
     (heq : pageUp s.cpu.gpr.rdi.toNat / 4096 = pageUp s.proc.mm.brk.toNat / 4096) :
     (instruction prof s).runStream o t =
-      (.running (sysSt (brkSt0 s s.cpu.gpr.rdi) len s.cpu.gpr.rdi) (some (sysEv s s.cpu.gpr.rdi)), t + 1) := by
+      (.running (sysSt (brkSt0 s s.cpu.gpr.rdi) len s.cpu.gpr.rdi) (some (sysEv s s.cpu.gpr.rdi)), t) := by
   rw [instruction_syscall htf hdec]
   have hrax : (nx s len (sysGpr s len) (rf0 s)).cpu.gpr.rax = s.cpu.gpr.rax := rfl
   have hrdi : (nx s len (sysGpr s len) (rf0 s)).cpu.gpr.rdi = s.cpu.gpr.rdi := rfl
   have hbm : (nx s len (sysGpr s len) (rf0 s)).proc.mm.brkMin = s.proc.mm.brkMin := rfl
   have hbk : (nx s len (sysGpr s len) (rf0 s)).proc.mm.brk = s.proc.mm.brk := rfl
   have hme : (nx s len (sysGpr s len) (rf0 s)).proc.mm.mem = s.proc.mm.mem := rfl
+  have hmm : (nx s len (sysGpr s len) (rf0 s)).proc.mm = s.proc.mm := rfl
+  have hsg : (nx s len (sysGpr s len) (rf0 s)).proc.signal = s.proc.signal := rfl
+  have hfit : s.proc.mm.dataFits (s.proc.signal.rlimits RLIMIT_DATA).cur s.cpu.gpr.rdi = true := by
+    simp only [Mm.dataFits, hdat, beq_self_eq_true, Bool.true_or]
   unfold syscall
   simp only [hrax, hnr]
   simp only [show ¬ (12 ≥ 2 ^ 31) by decide, show ¬ (12 ≥ x32Bit) by decide, show ¬ (12 ≥ nrSyscalls) by decide,
     show niSyscall 12 = false by decide, ↓reduceIte, Bool.false_eq_true]
   unfold sysBrk
-  simp only [hrdi, hbm, hbk, hme, Nat.not_lt.2 hlow, ↓reduceIte]
-  show (Req.bind (Req.request (.memFail 0)) _).runStream o t = _
-  rw [Req.runStream_bind]
-  show (match o t (.memFail 0) with
-    | some _ => _
-    | none => _ : Req StepResult).runStream o (t + 1) = _
-  rw [hmf]
-  simp only [heq, ↓reduceIte]
+  simp only [hrdi, hbm, hbk, hme, hmm, hsg, hfit, heq, Nat.not_lt.2 hlow, ↓reduceIte, Bool.not_true,
+    Bool.false_eq_true]
   rfl
 
 end FV7z
@@ -103,7 +101,8 @@ theorem s_brk_same (c : Seg prof F Wl L s₀ o) (hK : KeptW Wl s₀ X) (hA : Agr
   have hokX := c.foot.keptW c.ready.rseq c.hws hK' c.sub_self
   have hRX := c.ready.keptW c.foot c.hws hK'
   have hrsX : (X.withMem M).thread.rseq = none := by rw [hK'.thread]; exact hrs
-  refine ⟨_, _, _, syscall_brk_same (s := X.withMem M) htf (c.dec hK' hin hrip hd) hnr hlow (hmg _ _) heq,
+  refine ⟨_, _, _, syscall_brk_same (s := X.withMem M) htf (c.dec hK' hin hrip hd) hnr hlow (trial_data_unlimited _)
+    heq,
     k' (X.withMem M) _ _ hK' rfl rfl ?_ (c.agreeK hK hA hM)⟩
   exact
     { foot := footOk_congr hokX rfl rfl rfl

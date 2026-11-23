@@ -337,7 +337,7 @@ theorem irHead (c : Seg prof F Wl L s₀ o) (hE : RE F Wl L q) (hpc : prof.Consi
   refine c.enterK (k := 0) (W := fun _ => []) (R := fun _ => [cpuRgn]) (pre := fun s => CpuOk prof s.proc.mm.mem)
     (post := fun _ Z => Glibc.Returns prof r.2.2 Z.cpu.gpr.rax) (ra := (0x613278 : Addr).add (9 + 3))
     hK6 hA6 hr6 (fun m hm => by rw [hs6]; exact hE.fr hm) ?_ (fnK_of_leafK (hholds L prof hpc hch hcr)) hdf hx87
-    (by cases prof.feat.la57 <;> decide) ?_ ?_ (fun y hy => absurd hy (hno y)) hcpu6 ?_
+    (by cases prof.feat.la57 <;> decide) ?_ ?_ (fun y hy => absurd hy (hno y)) hcpu6 ?_ ?_
   · rw [hs6]
     have := Vst_self (toBytesLE ((0x613278 : Addr).add (9 + 3)) 8) V q (by rw [toBytesLE_length]; exact hfit)
     rw [toBytesLE_length] at this
@@ -364,6 +364,14 @@ theorem irHead (c : Seg prof F Wl L s₀ o) (hE : RE F Wl L q) (hpc : prof.Consi
       unfold Footprint.data at this
       rw [c.own, List.append_nil] at this
       exact foot_append_iff.1 this
+  · intro r hr r' hr' a ha hb
+    rw [List.mem_singleton] at hr
+    subst hr
+    simp only [List.nil_append, List.mem_singleton] at hr'
+    subst hr'
+    simp only [frame, hs6, Rgn.Mem, BitVec.sub_zero, cpuRgn] at ha hb
+    have := hE.apart
+    omega
   intro Z t' hKZ hmem hret hpost
   have hAZ : Agree F Z.proc.mm.mem (Vst V q (toBytesLE ((0x613278 : Addr).add (9 + 3)) 8)) :=
     fun y hy => hmem y hy (hno y)

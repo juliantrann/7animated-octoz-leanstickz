@@ -7,7 +7,8 @@ What the instruction `syscall` leaves, on Zellic's model, for the calls glibc's 
 - `instruction_syscall`: a `syscall` instruction is the kernel's `syscall` from the state with `rcx` and `r11` set.
 - `syscall_brk_keep`: `brk (b)` with `b` below the lowest break (`brk (0)`, how `__sbrk` asks where the break is):
   no change, the break in `rax`.
-- `syscall_brk_grow`: `brk (b)` with `b`'s page above the break's, when the kernel does not refuse memory (the answer
+- `syscall_brk_grow`: `brk (b)` with `b`'s page above the break's, `RLIMIT_DATA` unlimited and `may_expand_vm`
+  letting the pages through (`mayExpand`), when the kernel does not refuse memory (the answer
   to `Request.memFail` is `none`, `Heap.MemGranted`), the pages up to `b`'s and the one after are free and below the
   end of the user address space: the pages are mapped to new zero pages, readable and writable, the break is `b`,
   `rax` is `b`. One answer of the stream is used.
@@ -71,7 +72,11 @@ theorem syscall_brk_grow {len : Nat} (htf : s.cpu.rflags.tf = false)
     (hgt : pageUp s.proc.mm.brk.toNat / 4096 < pageUp s.cpu.gpr.rdi.toNat / 4096)
     (htop : 4096 * (pageUp s.cpu.gpr.rdi.toNat / 4096) ≤ taskSize prof.feat)
     (hfree : s.proc.mm.mem.free (pageUp s.proc.mm.brk.toNat / 4096)
-      (pageUp s.cpu.gpr.rdi.toNat / 4096 - pageUp s.proc.mm.brk.toNat / 4096 + 1) = true) :
+      (pageUp s.cpu.gpr.rdi.toNat / 4096 - pageUp s.proc.mm.brk.toNat / 4096 + 1) = true)
+    (hdat : (s.proc.signal.rlimits RLIMIT_DATA).cur = RLIM_INFINITY)
+    (hexp : mayExpand (s.proc.signal.rlimits RLIMIT_AS) (s.proc.signal.rlimits RLIMIT_DATA) false
+      s.proc.mm.mem.totalVm s.proc.mm.mem.dataVm
+      (pageUp s.cpu.gpr.rdi.toNat / 4096 - pageUp s.proc.mm.brk.toNat / 4096) true = true) :
     (instruction prof s).runStream o t =
       (.running (sysSt (brkSt s s.cpu.gpr.rdi) len s.cpu.gpr.rdi) (some (sysEv s s.cpu.gpr.rdi)), t + 1) := by
   rw [instruction_syscall htf hdec]
@@ -80,22 +85,28 @@ theorem syscall_brk_grow {len : Nat} (htf : s.cpu.rflags.tf = false)
   have hbm : (nx s len (sysGpr s len) (rf0 s)).proc.mm.brkMin = s.proc.mm.brkMin := rfl
   have hbk : (nx s len (sysGpr s len) (rf0 s)).proc.mm.brk = s.proc.mm.brk := rfl
   have hme : (nx s len (sysGpr s len) (rf0 s)).proc.mm.mem = s.proc.mm.mem := rfl
+  have hmm : (nx s len (sysGpr s len) (rf0 s)).proc.mm = s.proc.mm := rfl
+  have hsg : (nx s len (sysGpr s len) (rf0 s)).proc.signal = s.proc.signal := rfl
+  have hfit : s.proc.mm.dataFits (s.proc.signal.rlimits RLIMIT_DATA).cur s.cpu.gpr.rdi = true := by
+    simp only [Mm.dataFits, hdat, beq_self_eq_true, Bool.true_or]
+  have h1 : ¬ (pageUp s.cpu.gpr.rdi.toNat / 4096 = pageUp s.proc.mm.brk.toNat / 4096) := by omega
   unfold syscall
   simp only [hrax, hnr]
   simp only [show ¬ (12 ≥ 2 ^ 31) by decide, show ¬ (12 ≥ x32Bit) by decide, show ¬ (12 ≥ nrSyscalls) by decide,
     show niSyscall 12 = false by decide, ↓reduceIte, Bool.false_eq_true]
   unfold sysBrk
-  simp only [hrdi, hbm, hbk, hme, Nat.not_lt.2 hlow, ↓reduceIte]
+  simp only [hrdi, hbm, hbk, hme, hmm, hsg, hfit, h1, Nat.not_lt.2 hlow, ↓reduceIte, Bool.not_true,
+    Bool.false_eq_true]
   show (Req.bind (Req.request (.memFail 0)) _).runStream o t = _
   rw [Req.runStream_bind]
   show (match o t (.memFail 0) with
     | some _ => _
     | none => _ : Req StepResult).runStream o (t + 1) = _
   rw [hmf]
-  have h1 : ¬ (pageUp s.cpu.gpr.rdi.toNat / 4096 = pageUp s.proc.mm.brk.toNat / 4096) := by omega
   have h2 : ¬ (pageUp s.cpu.gpr.rdi.toNat / 4096 < pageUp s.proc.mm.brk.toNat / 4096) := by omega
   have h3 : ¬ (4096 * (pageUp s.cpu.gpr.rdi.toNat / 4096) > taskSize prof.feat) := by omega
-  simp only [h1, h2, h3, hfree, ↓reduceIte, decide_false, Bool.not_true, Bool.or_self, Bool.false_eq_true]
+  simp only [h2, h3, hfree, ↓reduceIte, decide_false, Bool.not_true, Bool.or_self, Bool.false_eq_true,
+    mayExpandVm, hsg, hme, hexp]
   rfl
 
 /-- `s` with the `fs` base at `a` and the selector 0. -/
