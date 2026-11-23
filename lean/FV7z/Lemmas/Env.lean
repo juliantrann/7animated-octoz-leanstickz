@@ -394,7 +394,7 @@ theorem envEvent_quiet {feat : Features} {s : State} {e : EnvEvent}
     split
     · next g hb =>
       refine ⟨_, rfl, setBacking_calm _ _ (by simp [hb, Backing.Refines]) (by simp [hb, BStable]) (by simp [hb, BOwn]) (by simp [hb, blocked,
-        Backing.filePage, Backing.noSource]) ?_⟩
+        Backing.filePage, Backing.noSource, Backing.unpopulated]) ?_⟩
       intro x mx hmx he hx _
       have := hx mx hmx; rw [he, hb] at this; exact this.elim
     · exact ⟨_, rfl, Calm.refl _ _⟩
@@ -403,7 +403,7 @@ theorem envEvent_quiet {feat : Features} {s : State} {e : EnvEvent}
     split
     · next g hb =>
       refine ⟨_, rfl, setBacking_calm _ _ (by simp [hb, Backing.Refines]) (by simp [hb, BStable]) (by simp [hb, BOwn]) (by simp [hb, blocked,
-        Backing.filePage, Backing.noSource]) ?_⟩
+        Backing.filePage, Backing.noSource, Backing.unpopulated]) ?_⟩
       intro x mx hmx he hx _
       have := hx mx hmx; rw [he, hb] at this; exact this.elim
     · exact ⟨_, rfl, Calm.refl _ _⟩
