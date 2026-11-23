@@ -181,7 +181,8 @@ theorem lif_ok {pl pc ip cpy : List Byte} {Pm : (Addr → Byte) → Prop} {E : E
     rw [hR, s152]
   have hg : Y.cpu.gpr = gY := hgY'.trans hgY.symm
   subst hg
-  refine ndi_ok (X := Y) (W := W) (sp := sp) (e₂ := Lif.lif_at) (code₂ := Lif.lif) (j₂ := 70) c mc cx hgo hsn htop
+  refine ndi_ok (ip := ip) (X := Y) (W := W) (sp := sp) (e₂ := Lif.lif_at) (code₂ := Lif.lif) (j₂ := 70) c mc cx hgo
+    hsn htop
     hpw hst hsm hlo hbs hbuf hfr hpf hpn hpz hpp hof hoz hps hpre hinc hc0 hcpy h1 h2 h3 h4 h5 hKY hAY
     (by rw [addr_add_zero]; exact hrY) hYs ke hin hinh hcpq hinm hm0 hinX hinI hinl hl0 hlenA hinz hz0 hset hint hn
     hPq hPk hPs he hal hFs hpg hx1 hx1z hx2 hx2z htls hU hm6 hhw hfh hfm hpl0 hf1 hf2 hWb hfN hW7a hW7b hFR hlenV
