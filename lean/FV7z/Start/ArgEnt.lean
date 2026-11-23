@@ -32,8 +32,8 @@ theorem lif_rdq_hi {K : Ctx} {W V : Addr → Byte} {b : Addr} {ver : BitVec 32} 
     (htl : b.toNat + 8192 ≤ y.toNat) (hr : g.rsp.toNat + 8 ≤ y.toNat) (hr0 : 32 ≤ g.rsp.toNat)
     (hD : ∀ i < 8, D (Addr.add y i)) :
     rdq(Vst (Lif.LifMem (Vst W g.rsp (toBytesLE ra₀ 8)) g) (g.rsp - 32#64) (toBytesLE ra 8), y) = rdq(K.V0, y) :=
-  rd_ext _ 8 fun i hi => by
+  congrArg (ofBytesLE 64) (rd_ext _ 8 fun i hi => by
     have t : (Addr.add y i).toNat = y.toNat + i := toNat_add_of_fits (n := 8) hi (by omega)
-    exact lif_hi hM hb hb' hW (by omega) (by omega) (by omega) hr0 (hD i hi)
+    exact lif_hi hM hb hb' hW (by omega) (by omega) (by omega) hr0 (hD i hi))
 
 end FV7z.Start
