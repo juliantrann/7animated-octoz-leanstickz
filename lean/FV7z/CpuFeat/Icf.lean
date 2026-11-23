@@ -285,7 +285,7 @@ def AtK (prof : Profile) (F : Footprint) (Wl : List Rgn) (L : List (Addr × List
     X.cpu.rip = e.add j → TK g₀ X.cpu.gpr → GoG prof L o gev gP gE X t
 
 /-- `AtK` after the store of `HWCAP_X86_64` into `_dl_hwcap` (`263`): with `HwW`. -/
-def AtH (prof : Profile) (F : Footprint) (Wl : List Rgn) (L : List (Addr × List Byte)) (s₀ : State) (o : Oracle)
+def AtW (prof : Profile) (F : Footprint) (Wl : List Rgn) (L : List (Addr × List Byte)) (s₀ : State) (o : Oracle)
     (gev : List Event) (gP : State → Nat → List Event → Prop) (gE : Outcome → List Event → Prop)
     (V₀ : Addr → Byte) (g₀ : Gprs) (e : Addr) (j : Nat) : Prop :=
   ∀ (X : State) (t : Nat) (V : Addr → Byte), KeptW Wl s₀ X → Agree F X.proc.mm.mem V → IV prof Wl V₀ V → HwW V →
@@ -510,7 +510,7 @@ variable (c : Seg prof F Wl L s₀ o) {V₀ : Addr → Byte} {q : Addr} (hE : IE
   (hsp0 : g₀.rsp = q.add 8) (k : IK prof F Wl L s₀ o gev gP gE V₀ g₀)
 include c hE hsp0 k
 
-theorem iT2' : AtH prof F Wl L s₀ o gev gP gE V₀ g₀ 0x613113 287 :=
+theorem iT2' : AtW prof F Wl L s₀ o gev gP gE V₀ g₀ 0x613113 287 :=
   fun _ _ _ hK hA hV hh hr hT => iT2 c hE hsp0 k hK hA hV hh hr hT
 
 /-- Intel's kind, from `mov [rip], rax` (`0x6135bf`): the `memcpy` choice, back to `287`. -/
@@ -529,7 +529,7 @@ theorem iK45 : ∀ (X : State) (t : Nat) (V : Addr → Byte), KeptW Wl s₀ X �
     (hh.st (by rw [toBytesLE_length, t548]; omega) (.inr (by rw [t548]; omega))) hr2 (by rw [hg2, hg1]; exact hT)
 
 /-- Intel's kind, from `and edx, 0x20002` (`0x6135ea`): `Prefer_No_AVX512` or not. -/
-theorem iK88 : AtH prof F Wl L s₀ o gev gP gE V₀ g₀ 0x613592 88 := by
+theorem iK88 : AtW prof F Wl L s₀ o gev gP gE V₀ g₀ 0x613592 88 := by
   intro X t V hK hA hV hh hr hT
   have hl : icfk.length = 172 := icfk_length
   have hl' : icf.length = 357 := icf_length
@@ -582,7 +582,7 @@ theorem iK88 : AtH prof F Wl L s₀ o gev gP gE V₀ g₀ 0x613592 88 := by
     (by rw [hg15, hg14, hg13, hg12]; exact hT11.set (by omega) _)
 
 /-- Intel's kind, from `0x613592`: the TSX choice (`RTM`), then `iK88`. -/
-theorem iK0 : AtH prof F Wl L s₀ o gev gP gE V₀ g₀ 0x613592 0 := by
+theorem iK0 : AtW prof F Wl L s₀ o gev gP gE V₀ g₀ 0x613592 0 := by
   intro X t V hK hA hV hh hr hT
   have hl : icfk.length = 172 := icfk_length
   have k88 := iK88 c hE hsp0 k
