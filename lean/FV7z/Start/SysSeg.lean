@@ -1,5 +1,5 @@
 import FV7z.Start.Grow
-import FV7z.Lemmas.TrialObl
+import FV7z.Lemmas.Acct
 /-!
 # `brk` and `arch_prctl (ARCH_SET_FS, …)`, steps of a run (PLAN.md G3, startup)
 
@@ -9,6 +9,7 @@ state as a new start: the rest of the run is given `Fn.Seg` there (`Start/Grow.l
 in (`X'`, which `KeptW` relates to the old start), with what the state after is in its terms.
 
 - `footOk_congr`, `ready_cpu`: `Footprint.Ok` and `Ready` of a state with the same memory, key rights and thread.
+- `limits_keptW`: `KeptW` keeps `LimitsUnlimited` (the process's signal state).
 - `free_le`, `free_congr`: fewer pages of free ones are free; `Memory.free` is of the page map.
 - `Seg.s_brk_keep`: `brk (b)` with `b` below the lowest break; the run goes on from the same start.
 - `Seg.s_brk_grow`: `brk (b)` that grows the break, the kernel not refusing memory: the run goes on with the new
@@ -52,6 +53,13 @@ theorem footOk_congr {feat : Features} {X Y : State} {F : Footprint} (hok : F.Ok
     exact hok.notFixed a ha
   · rw [hra]
     exact hok.rseqApart
+
+/-- `KeptW` keeps `LimitsUnlimited`: the process's signal state, with its limits, is the start's. -/
+theorem limits_keptW {ws : List Rgn} {s₀ s : State} (h : KeptW ws s₀ s) (hl : LimitsUnlimited s₀) :
+    LimitsUnlimited s := by
+  unfold LimitsUnlimited
+  rw [h.proc]
+  exact hl
 
 /-- `LayoutOk` of a state with the same memory and break as one that has it. -/
 theorem layoutOk_of_mm {feat : Features} {X Y : State} (h : Y.proc.mm = X.proc.mm) (hl : LayoutOk feat X) :
@@ -110,7 +118,7 @@ theorem s_brk_grow (c : Seg prof F Wl L s₀ o) (hK : KeptW Wl s₀ X) (hA : Agr
     (htop : 4096 * (pageUp X.cpu.gpr.rdi.toNat / 4096) ≤ 2 ^ 47 - 4096)
     (hfree : X.proc.mm.mem.free (pageUp X.proc.mm.brk.toNat / 4096)
       (pageUp X.cpu.gpr.rdi.toNat / 4096 - pageUp X.proc.mm.brk.toNat / 4096 + 1) = true)
-    (hrs : s₀.thread.rseq = none) (hp0 : s₀.cpu.pkru &&& 3 = 0)
+    (hrs : s₀.thread.rseq = none) (hp0 : s₀.cpu.pkru &&& 3 = 0) (hlu : LimitsUnlimited s₀)
     {N : List Rgn} (hN : ∀ r ∈ N, r.In (pageUp X.proc.mm.brk.toNat / 4096 * 4096)
       (pageUp X.cpu.gpr.rdi.toNat / 4096 * 4096))
     {V' : Addr → Byte} (h0 : ∀ a, Foot N a → V' a = 0) (hV : ∀ a, Foot F.data a → ¬ Foot N a → V' a = V a)
@@ -141,8 +149,12 @@ theorem s_brk_grow (c : Seg prof F Wl L s₀ o) (hK : KeptW Wl s₀ X) (hA : Agr
     exact hN
   have htsz := taskSize_ge prof.feat
   have htop' : 4096 * (pageUp X.cpu.gpr.rdi.toNat / 4096) ≤ taskSize prof.feat := by omega
+  have hluX := limits_keptW hK' hlu
+  have hn : pageUp (X.withMem M).cpu.gpr.rdi.toNat / 4096 - pageUp (X.withMem M).proc.mm.brk.toNat / 4096 < 2 ^ 51 := by
+    show pageUp X.cpu.gpr.rdi.toNat / 4096 - pageUp X.proc.mm.brk.toNat / 4096 < 2 ^ 51
+    omega
   refine ⟨_, _, _, syscall_brk_grow (s := X.withMem M) htf (c.dec hK' hin hrip hd) hnr hlow (hmg _ _) hgt
-    htop' hfree' (trial_data_unlimited _) (trial_mayExpand _ _), k' (X.withMem M) _ _ hK' rfl rfl ?_ ?_⟩
+    htop' hfree' hluX.2 (mayExpand_unlimited hRX.layout hluX.1 hluX.2 hn true), k' (X.withMem M) _ _ hK' rfl rfl ?_ ?_⟩
   · exact
       { foot := footOk_grow hokX hRX.layout hfreeN rfl rfl hpkX hrsX hrsX c.own hN' (by rw [hsum]; omega)
         ready := ready_grow hRX hfreeN rfl rfl hlow htf hac rfl hrsX (by rw [hsum]; omega)

@@ -7,8 +7,9 @@ import FV7z.Start.Quiet
 After a system call that changes the process the run goes on from the state the call leaves as a new start
 (`Start/SysSeg.lean`). `Base s lim b fsb k` is what the calls to come need of a start `s`, and what each of them
 leaves of the next: no `rseq` area, the default protection key open, the break `b`, the `fs` base `fsb`, the pages
-from the break's up to the `lim`-th unmapped, below the end of the user address space, the thread's id `k.tid`, and no
-signal waiting (`Start/Quiet.lean`).
+from the break's up to the `lim`-th unmapped, below the end of the user address space, the thread's id `k.tid`, no
+signal waiting (`Start/Quiet.lean`), the RELRO pages mapped, and `RLIMIT_AS` and `RLIMIT_DATA` unlimited
+(`LimitsUnlimited`).
 
 - `free_of_map`: pages not mapped are free.
 - `mapAnon_out`: `Memory.mapAnon` leaves the pages outside its range as they are.
@@ -19,8 +20,8 @@ signal waiting (`Start/Quiet.lean`).
 - `Seg.b_brk_grow`: `Seg.s_brk_grow` from a `Base`, to a `Base` with the new break: the run goes on from the state
   after the call, which is its own start, with zeros in the new pages.
 - `Seg.b_set_fs`: `Seg.s_set_fs` likewise, to a `Base` with the new `fs` base.
-- `Base.of_room`: a state with room above its break (`BreakRoom`), no `rseq` area and the default key open has
-  `Base`; `launch_base`: `7zzs` at its first instruction has it, with `2 ^ 41` bytes above the break.
+- `Base.of_room`: a state with room above its break (`BreakRoom`), no `rseq` area, the default key open and the
+  limits unlimited has `Base`; `launch_base`: `7zzs` at its first instruction has it, with `2 ^ 41` bytes above the break.
 -/
 namespace FV7z.Start
 open ZellicX86
@@ -43,6 +44,7 @@ structure Base (s : State) (lim : Nat) (b fsb : Addr) (k : Kst) : Prop where
   ppend : s.proc.signal.pending = []
   df : s.cpu.rflags.df = false
   relro : Relro s.proc.mm.mem
+  lims : LimitsUnlimited s
 
 theorem free_of_map {m : Memory} {P n : Nat} (h : ∀ p : PageNum, P ≤ p.toNat → p.toNat < P + n → m.map p = none) :
     m.free P n = true := by
@@ -121,27 +123,28 @@ theorem Base.brk_lt {s : State} {lim : Nat} {b fsb : Addr} {k : Kst} (h : Base s
 /-- A state with room above its break has `Base`, up to the page of the break and the room. -/
 theorem Base.of_room {s : State} {n : Nat} (hr : s.thread.rseq = none) (hp : s.cpu.pkru &&& 3 = 0)
     (h : BreakRoom s n) (hq : s.thread.pending = [] ∧ s.proc.signal.pending = []) (hdf : s.cpu.rflags.df = false)
-    (hrel : Relro s.proc.mm.mem) :
+    (hrel : Relro s.proc.mm.mem) (hlu : LimitsUnlimited s) :
     Base s (pageUp (s.proc.mm.brk.toNat + n) / 4096) s.proc.mm.brk s.cpu.seg.fsBase ⟨s.thread.tid⟩ := by
   obtain ⟨h1, h2⟩ := h
   simp only [stackTopMax] at h1
-  refine ⟨hr, hp, rfl, rfl, ?_, ?_, fun p q1 q2 => free_page h2 q1 ?_, rfl, hq.1, hq.2, hdf, hrel⟩
+  refine ⟨hr, hp, rfl, rfl, ?_, ?_, fun p q1 q2 => free_page h2 q1 ?_, rfl, hq.1, hq.2, hdf, hrel, hlu⟩
   · simp only [pageUp]
     omega
   · omega
   · simp only [pageUp] at q2 ⊢
     omega
 
-/-- `7zzs` at its first instruction, on a kernel `LinuxBoot.Modest`, started with no signal waiting: `Base`, with
-`2 ^ 41` bytes above the break. -/
+/-- `7zzs` at its first instruction, on a kernel `LinuxBoot.Modest`, started with no signal waiting and its
+address-space and data limits unlimited (`LimitsUnlimited`, as Zellic's statements assume): `Base`, with `2 ^ 41` bytes
+above the break. -/
 theorem launch_base {l : Launch} {m : Nat} (h : Launch.Of V2606.zzs.blob.bytes V2606.zzs.blob.size l)
     (hroom : StackRoom l.args m) (hM : l.prof.linux.Modest)
-    (hq : l.args.threadPending = [] ∧ l.args.signal.pending = []) :
+    (hq : l.args.threadPending = [] ∧ l.args.signal.pending = []) (hlu : LimitsUnlimited l.s₀) :
     Base l.s₀ (pageUp (l.s₀.proc.mm.brk.toNat + 2 ^ 41) / 4096) l.s₀.proc.mm.brk l.s₀.cpu.seg.fsBase
       ⟨l.s₀.thread.tid⟩ :=
   Base.of_room (launch_misc h).2.1 (launch_misc h).1 (launch_breakRoom h hroom hM (Nat.le_refl _))
     (launch_quiet h hq.1 hq.2) (by obtain ⟨_, _, _, _, _, _, _, _, hdf⟩ := launch_regs h; exact hdf)
-    (launch_relro h)
+    (launch_relro h) hlu
 
 end FV7z.Start
 
@@ -196,11 +199,11 @@ theorem b_brk_grow (c : Seg prof F Wl L s₀ o) (hB : Base s₀ lim b fsb k) (hK
       Vz V (pageUp b.toNat / 4096 * 4096) (pageUp X.cpu.gpr.rdi.toNat / 4096 * 4096) a = V a :=
     fun a ha _ => Vz_out fun h => c.foot_below hB (foot_data ha) ⟨h.1, by omega⟩
   subst hbk
-  refine c.s_brk_grow hK hA hin hj hrip hd hnr hmg hlow hgt (by omega) ?_ hB.rseq hB.pkru hN h0 hV ?_
+  refine c.s_brk_grow hK hA hin hj hrip hd hnr hmg hlow hgt (by omega) ?_ hB.rseq hB.pkru hB.lims hN h0 hV ?_
   · rw [free_congr hK.mem_map]
     exact free_of_map fun p h1 h2 => hB.free p h1 (by omega)
   · rintro X' Y t' hK' hcpu rfl c' hA'
-    refine k' _ t' c' ⟨?_, ?_, rfl, ?_, hlim, hB.top, ?_, ?_, ?_, ?_, ?_, ?_⟩ hA' ?_ ?_
+    refine k' _ t' c' ⟨?_, ?_, rfl, ?_, hlim, hB.top, ?_, ?_, ?_, ?_, ?_, ?_, limits_keptW hK' hB.lims⟩ hA' ?_ ?_
     · show X'.thread.rseq = none
       rw [hK'.thread]
       exact hB.rseq
@@ -250,7 +253,7 @@ theorem b_set_fs (c : Seg prof F Wl L s₀ o) (hB : Base s₀ lim b fsb k) (hK :
     GoG prof L o gev gP gE X t := by
   refine c.s_set_fs hK hA hin hj hrip hd hnr hopt ha hB.rseq ?_
   rintro X' Y t' hK' hcpu rfl c' hA'
-  refine k' _ t' c' ⟨?_, ?_, ?_, rfl, hB.le, hB.top, ?_, ?_, ?_, ?_, ?_, ?_⟩ hA' ?_ ?_
+  refine k' _ t' c' ⟨?_, ?_, ?_, rfl, hB.le, hB.top, ?_, ?_, ?_, ?_, ?_, ?_, limits_keptW hK' hB.lims⟩ hA' ?_ ?_
   · show X'.thread.rseq = none
     rw [hK'.thread]
     exact hB.rseq

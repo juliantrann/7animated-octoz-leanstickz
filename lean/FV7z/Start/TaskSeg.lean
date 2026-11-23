@@ -24,7 +24,7 @@ theorem Base.next {Wl : List Rgn} {s₀ X' Y : State} {lim : Nat} {b fsb : Addr}
     (htid : Y.thread.tid = X'.thread.tid) (hpd : Y.thread.pending = X'.thread.pending)
     (hdf : Y.cpu.rflags.df = X'.cpu.rflags.df) : Base Y lim b fsb k := by
   refine ⟨hrq.trans ?_, ?_, ?_, ?_, hB.le, hB.top, fun p h1 h2 => ?_, htid.trans ?_, hpd.trans ?_, ?_, hdf.trans ?_,
-    Relro.of_map (by rw [hmm, hK'.mem_map]) hB.relro⟩
+    Relro.of_map (by rw [hmm, hK'.mem_map]) hB.relro, ?_⟩
   · rw [hK'.thread]
     exact hB.rseq
   · rw [hp, hK'.pkru]
@@ -43,6 +43,9 @@ theorem Base.next {Wl : List Rgn} {s₀ X' Y : State} {lim : Nat} {b fsb : Addr}
     exact hB.ppend
   · rw [hK'.df]
     exact hB.df
+  · unfold LimitsUnlimited
+    rw [hsg]
+    exact limits_keptW hK' hB.lims
 
 end FV7z.Start
 

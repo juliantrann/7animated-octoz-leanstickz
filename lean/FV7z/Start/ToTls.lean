@@ -12,8 +12,8 @@ function from its entry to its `ret`. Here the two are joined: the `call`, the f
 - `Junk K`: the bytes nothing is said of at `0x6133c0`: stack that `init_cpu_features`, `apply_irel` and
   `__libc_setup_tls` used, and the variables the first two store to (`CpuVar`; of them `CpuOk` and `GotOk` say
   what is needed).
-- `launch_to_tls`: for a launch as in `launch_to_cpu`, on a kernel `Modest` that does not refuse memory, the
-  `memcpy` of the PLT with its contract (`Tls.CpyAt`): the run from the first instruction goes on as the run from
+- `launch_to_tls`: for a launch as in `launch_to_cpu`, on a kernel `Modest` that does not refuse memory, with the
+  limits unlimited (`LimitsUnlimited`), the `memcpy` of the PLT with its contract (`Tls.CpyAt`): the run from the first instruction goes on as the run from
   `0x6133c0` does, from a new start with the two pages at the first break in its footprint, the break 4544 bytes
   further and the `fs` base at the thread control block; there the registers are as after the prologue (`Rg`),
   `CpuOk` and `GotOk` hold, and the bytes outside `Junk` are `TlsMem V' brk` for bytes `V'` with `MB`. Four system
@@ -180,6 +180,7 @@ theorem zzs_new {lo top : Nat} {N : List Rgn} {a : Addr} (h : Foot (zzsFoot lo t
 theorem launch_to_tls {l : Launch} {n : Nat}
     (h : Launch.Of V2606.zzs.blob.bytes V2606.zzs.blob.size l) (hroom : StackRoom l.args n) (hn : 656 ≤ n)
     (hs : l.args.secure = false) (hnp : l.args.threadPending = [] ∧ l.args.signal.pending = [])
+    (hlu : LimitsUnlimited l.s₀)
     (noG : ∀ i < l.args.envp.length, (∀ k < 14, (l.args.envp.getD i [] ++ [0]).getD k 0 = gz k) →
       (l.args.envp.getD i [] ++ [0]).getD 14 0 ≠ 61)
     (noA : ∀ i < l.args.envp.length, ∀ t < 26, aqI t ≠ 0 →
@@ -260,7 +261,7 @@ theorem launch_to_tls {l : Launch} {n : Nat}
     rcases cpuW_fine (by omega) (by omega) hf with h2 | h2
     · omega
     · exact hc h2
-  refine lsm_tls hsg (launch_base h hroom hM hnp) hC.lsm hT hcpy hKY (V := fun a => Y.proc.mm.mem.readByte a)
+  refine lsm_tls hsg (launch_base h hroom hM hnp hlu) hC.lsm hT hcpy hKY (V := fun a => Y.proc.mm.mem.readByte a)
     (fun _ _ => rfl) (hripY.trans (by decide)) (fun V₁ hV₁ => ?_) (GotOkB.of_mem hgot) (fun i hi => ?_)
     (fun a h1 h2 => zzsFoot_var h1 h2) (fun a h1 h2 => foot_reads (zzsFoot_hdr h1 h2)) hb1 hb0 (by omega) hmg
     (by unfold pageUp; omega) ?_

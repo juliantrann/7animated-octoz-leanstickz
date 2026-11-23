@@ -386,7 +386,8 @@ theorem b_mprotect_ro (c : Seg prof F Wl L s₀ o) (hB : Base s₀ lim b fsb k) 
   refine c.s_mprotect_ro hK hA hin hj hrip hd hnr hprot hal hlen hwrap hmg hmap hB.rseq hGo hGc hfit hGw hGr hcode
     hww ?_
   rintro X' Y t' hK' hcpu rfl c' hA'
-  refine k' _ t' c' ⟨?_, ?_, ?_, ?_, hB.le, hB.top, ?_, ?_, ?_, ?_, ?_, ?_⟩ hA' ?_ ?_
+  refine k' _ t' c' ⟨?_, ?_, ?_, ?_, hB.le, hB.top, ?_, ?_, ?_, ?_, ?_, ?_, limits_keptW hK' hB.lims⟩ hA' ?_
+    ?_
   · show X'.thread.rseq = none
     rw [hK'.thread]
     exact hB.rseq

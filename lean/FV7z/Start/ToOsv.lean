@@ -103,6 +103,7 @@ theorem launch_to_osv {l : Launch} {n : Nat} {o : Oracle} {L : List (Addr × Lis
     {gP : State → Nat → List Event → Prop} {gE : Outcome → List Event → Prop} {t : Nat}
     (h : Launch.Of V2606.zzs.blob.bytes V2606.zzs.blob.size l) (hroom : StackRoom l.args n) (hn : 656 ≤ n)
     (hs : l.args.secure = false) (hq : l.args.threadPending = [] ∧ l.args.signal.pending = [])
+    (hlu : LimitsUnlimited l.s₀)
     (noG : ∀ i < l.args.envp.length, (∀ k < 14, (l.args.envp.getD i [] ++ [0]).getD k 0 = gz k) →
       (l.args.envp.getD i [] ++ [0]).getD 14 0 ≠ 61)
     (noA : ∀ i < l.args.envp.length, ∀ t < 26, aqI t ≠ 0 →
@@ -142,7 +143,7 @@ theorem launch_to_osv {l : Launch} {n : Nat} {o : Oracle} {L : List (Addr × Lis
           ⟨12, [l.s₀.proc.mm.brk + 4544#64, x1, 63#64, x2, 7829360#64, x3], l.s₀.proc.mm.brk + 4544#64, [], []⟩,
           ⟨158#64, [4098#64, l.s₀.proc.mm.brk + 2176#64, d, r10, r8, r9], 0, [], []⟩]) gP gE Z t') →
       GoG l.prof L o gev gP gE l.s₀ t) := by
-  obtain ⟨c, hv, hst, hto⟩ := launch_to_tls (gev := gev) (gP := gP) (gE := gE) (t := t) h hroom hn hs hq noG noA hpc
+  obtain ⟨c, hv, hst, hto⟩ := launch_to_tls (gev := gev) (gP := gP) (gE := gE) (t := t) h hroom hn hs hq hlu noG noA hpc
     hch ho hL hC hT hM hmg hcpy
   obtain ⟨h16, hn', hst', hpg, hlt, hlo, htop⟩ :=
     stack_room (lb := l.prof.linux) hv.stackTop hv.stackAlign (ExecStart.limits h.2.1) hroom

@@ -33,6 +33,7 @@ theorem launch_to_lif {l : Launch} {n : Nat} {o : Oracle} {L : List (Addr × Lis
     -- the launch, as in `launch_to_ptr`
     (h : Launch.Of V2606.zzs.blob.bytes V2606.zzs.blob.size l) (hroom : StackRoom l.args n) (hn : 5000 ≤ n)
     (hs : l.args.secure = false) (hq : l.args.threadPending = [] ∧ l.args.signal.pending = [])
+    (hlu : LimitsUnlimited l.s₀)
     (noG : ∀ i < l.args.envp.length, (∀ k < 14, (l.args.envp.getD i [] ++ [0]).getD k 0 = Tun.gz k) →
       (l.args.envp.getD i [] ++ [0]).getD 14 0 ≠ 61)
     (noA : ∀ i < l.args.envp.length, ∀ t < 26, aqI t ≠ 0 →
@@ -105,7 +106,7 @@ theorem launch_to_lif {l : Launch} {n : Nat} {o : Oracle} {L : List (Addr × Lis
             [gEv { lifY W Z with rsp := lifSp Z - 8#64 } (.procExe x)] ++ evs ++ [Ndi.ndiEv]) gP gE Z' t')) →
       GoG l.prof L o gev gP gE l.s₀ t) := by
   obtain ⟨c, hv, hst, hK, hI0, hB0, hto⟩ := launch_to_ptr (gev := gev) (gP := gP) (gE := gE) (t := t) h hroom
-    (by omega) hs hq noG noA hpc hch ho hL hC hT hO hP hM hmg hcpy hun
+    (by omega) hs hq hlu noG noA hpc hch ho hL hC hT hO hP hM hmg hcpy hun
   refine ⟨c, hv, hst, hK, hI0, hB0, fun hfin => hto ?_⟩
   intro s₂ Z t₂ W V' g x1 x2 x3 d r10 r8 r9 u y1 y2 y3 y4 y5 q1 q2 q3 hax hdi c₂ hB₂ hK₂ hA₂ hr₂ hRg hdx hsi hdi'
     hcpu hgot hhw hpl hMB hu hnew hW hT3

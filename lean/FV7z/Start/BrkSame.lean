@@ -91,7 +91,7 @@ theorem s_brk_same (c : Seg prof F Wl L s₀ o) (hK : KeptW Wl s₀ X) (hA : Agr
     (hmg : ∀ t p, o t (.memFail p) = none)
     (hlow : X.proc.mm.brkMin.toNat ≤ X.cpu.gpr.rdi.toNat)
     (heq : pageUp X.cpu.gpr.rdi.toNat / 4096 = pageUp X.proc.mm.brk.toNat / 4096)
-    (hrs : s₀.thread.rseq = none)
+    (hrs : s₀.thread.rseq = none) (hlu : LimitsUnlimited s₀)
     (k' : ∀ X' Y t', KeptW Wl s₀ X' → X'.cpu = X.cpu →
       Y = sysSt (brkSt0 X' X.cpu.gpr.rdi) len X.cpu.gpr.rdi →
       Seg prof F Wl L Y o → Agree F Y.proc.mm.mem V →
@@ -101,8 +101,8 @@ theorem s_brk_same (c : Seg prof F Wl L s₀ o) (hK : KeptW Wl s₀ X) (hA : Agr
   have hokX := c.foot.keptW c.ready.rseq c.hws hK' c.sub_self
   have hRX := c.ready.keptW c.foot c.hws hK'
   have hrsX : (X.withMem M).thread.rseq = none := by rw [hK'.thread]; exact hrs
-  refine ⟨_, _, _, syscall_brk_same (s := X.withMem M) htf (c.dec hK' hin hrip hd) hnr hlow (trial_data_unlimited _)
-    heq,
+  refine ⟨_, _, _, syscall_brk_same (s := X.withMem M) htf (c.dec hK' hin hrip hd) hnr hlow
+    (limits_keptW hK' hlu).2 heq,
     k' (X.withMem M) _ _ hK' rfl rfl ?_ (c.agreeK hK hA hM)⟩
   exact
     { foot := footOk_congr hokX rfl rfl rfl
@@ -132,9 +132,10 @@ theorem b_brk_same (c : Seg prof F Wl L s₀ o) (hB : Base s₀ lim b fsb k) (hK
     rw [hB.brk] at hlo
     omega
   subst hbk
-  refine c.s_brk_same hK hA hin hj hrip hd hnr hmg hlow heq hB.rseq ?_
+  refine c.s_brk_same hK hA hin hj hrip hd hnr hmg hlow heq hB.rseq hB.lims ?_
   rintro X' Y t' hK' hcpu rfl c' hA'
-  refine k' _ t' c' ⟨?_, ?_, rfl, ?_, by rw [heq]; exact hB.le, hB.top, ?_, ?_, ?_, ?_, ?_, ?_⟩ hA' ?_ ?_
+  refine k' _ t' c' ⟨?_, ?_, rfl, ?_, by rw [heq]; exact hB.le, hB.top, ?_, ?_, ?_, ?_, ?_, ?_,
+    limits_keptW hK' hB.lims⟩ hA' ?_ ?_
   · show X'.thread.rseq = none
     rw [hK'.thread]
     exact hB.rseq
