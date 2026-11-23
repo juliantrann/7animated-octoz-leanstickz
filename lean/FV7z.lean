@@ -253,6 +253,7 @@ import FV7z.Start.GFoot
 import FV7z.Start.Argv0
 import FV7z.Start.ArgEnt
 import FV7z.Start.PlCase
+import FV7z.Start.Arg0Ent
 import FV7z.Lemmas.BlkOps7
 import FV7z.Gts.Holds
 import FV7z.Grl.Holds
