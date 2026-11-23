@@ -106,6 +106,6 @@ theorem at_of {prof : Profile} {F : Footprint} {Wl : List Rgn} {L : List (Addr Ã
 theorem at_ok {prof : Profile} {F : Footprint} {Wl : List Rgn} {L : List (Addr Ã— List Byte)} {o : Oracle}
     {fb : Addr} {hi : Nat} (hin : CodeIn L mnx_at mnx) (hinI : CodeIn L imm_at imm) :
     At prof F Wl L o fb hi mnx_at fun k W => Hp F Wl fb hi (1072 * k + 16) W :=
-  at_of (at_hp hin hinI)
+  at_of (Pm := fun k W => Hp F Wl fb hi (1072 * k + 16) W) (at_hp hin hinI)
 
 end FV7z.Mal

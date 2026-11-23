@@ -93,7 +93,7 @@ theorem hpa (c : Seg prof F Wl L s₀ o) (mc : MCx prof F Wl N L s₀ o lim b fs
   obtain ⟨hz1, -⟩ := Mhi.sz_ok (sm := sm) hb47 hnp mc.hsu
   have hz2 := Mhi.sz_big (b := b) (pad := pad) hb47 hnp
   have hA : ∀ i < 8, (Addr.add (7940656#64) i).toNat = 7940656 + i := fun i hi => by
-    rw [adn (y := 7940656#64) (j := i) (by rw [BitVec.toNat_ofNat]; omega), BitVec.toNat_ofNat]; omega
+    rw [adn (y := 7940656#64) (j := i) (by rw [BitVec.toNat_ofNat]; omega), BitVec.toNat_ofNat] <;> omega
   have hC : ∀ i < 64, ∀ j < 2,
       (Addr.add (b + corr b + 16#64 + BitVec.ofNat 64 (2 * i)) j).toNat = b.toNat + (corr b).toNat + 16 + 2 * i + j :=
     fun i hi j hj => by
