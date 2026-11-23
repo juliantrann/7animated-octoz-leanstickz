@@ -153,14 +153,13 @@ def main():
     native = run([exe], [c for _, c in cases])
     model = run(["lake", "exe", "xsavetest", *words], [hint(c, n) for (_, c), n in zip(cases, native)],
                 cwd=os.path.join(ROOT, "lean"))
-    stats, bad = {}, 0
+    stats, bad, why = {}, 0, {}
     dump = open(a.dump, "w") if a.dump else None
     if dump: print("info " + " ".join(words), file=dump)
     for (op, c), m, n in zip(cases, model, native):
         s = stats.setdefault(op, {"ok": 0, "exc": 0, "undef": 0, "nm": 0, "diff": 0})
         if m.startswith("nm"):
-            s["nm"] += 1
-            if s["nm"] == 1: print(f"NM {op}: {m}")
+            s["nm"] += 1; why[(op, m)] = why.get((op, m), 0) + 1
             continue
         if agrees(m, n):
             s["undef" if m.startswith("undef") else "exc" if m.startswith("exc") else "ok"] += 1
@@ -170,6 +169,7 @@ def main():
             if s["diff"] <= 2:
                 f = c.split()
                 print(f"DIFF {op} rax={f[1]} rdx={f[2]} off={f[3]}\n  model  {m[:300]}\n  native {n[:300]}")
+    for (op, m), k in sorted(why.items()): print(f"NM {op} x{k}: {m}")
     print(f"{'op':<10} {'ok':>5} {'exc':>5} {'undef':>5} {'nm':>5} {'diff':>5}")
     for op in OPS:
         s = stats[op]; print(f"{op:<10} {s['ok']:>5} {s['exc']:>5} {s['undef']:>5} {s['nm']:>5} {s['diff']:>5}")

@@ -44,6 +44,8 @@ structure St where
   k : Array (BitVec 64)
   mxcsr : BitVec 32
   pkru : BitVec 32 := 0
+  /-- `RFLAGS`, once the instruction set them (`Op.setFlags`, `Op.setCpu`); `flags0` before. -/
+  flags : Option Rflags := none
   mem : ByteArray
   /-- The choices (`choose` and `pick`) made so far; choice `j` is all ones (`pick`: its last alternative) if bit `j`
   of `pat` is set, all zeros (its first) otherwise, but the first 64-bit `choose` is `hint` when that is given. -/
@@ -73,11 +75,11 @@ def flags0 : Rflags :=
     of := false, iopl := 0, nt := false, rf := false, vm := false, ac := false, vif := false, vip := false
     id := false }
 
-/-- `s` as the model's CPU state (`Op.getCpu`), with `RIP`, the flags and the segments fixed. -/
+/-- `s` as the model's CPU state (`Op.getCpu`), with `RIP` and the segments fixed. -/
 def toCpu (s : St) : Cpu :=
   let g (i : Nat) : BitVec 64 := s.gpr[i]!
   { gpr := ⟨g 0, g 1, g 2, g 3, g 4, g 5, g 6, g 7, g 8, g 9, g 10, g 11, g 12, g 13, g 14, g 15⟩
-    rip := 0x401000, rflags := flags0, seg := ⟨0, 0, 0, 0, 0, 0, 0, 0⟩, x87 := s.x87
+    rip := 0x401000, rflags := s.flags.getD flags0, seg := ⟨0, 0, 0, 0, 0, 0, 0, 0⟩, x87 := s.x87
     vec := ⟨fun j => s.zmm[j.val]!, fun j => s.k[j.val]!, s.mxcsr⟩, pkru := s.pkru }
 
 /-- `s` with the registers of `c` (`Op.setCpu`). -/
@@ -88,7 +90,8 @@ def ofCpu (s : St) (c : Cpu) : St :=
     zmm := (Array.range 32).map fun i => c.vec.zmm (Fin.ofNat 32 i)
     k := (Array.range 8).map fun i => c.vec.k (Fin.ofNat 8 i)
     mxcsr := c.vec.mxcsr
-    pkru := c.pkru }
+    pkru := c.pkru
+    flags := some c.rflags }
 
 /-- A result; `exc` with the number of choices made before it. -/
 inductive Res | ok (s : St) | exc (e : Exception) (n : Nat) | nm (w : NotModelled) | fuel
@@ -103,8 +106,8 @@ def interp {α : Type} : Nat → Prog α → St → Res
     | .setReg r v, k => interp f (k ()) { s with gpr := s.gpr.set! r.val v }
     | .getRip, k => interp f (k (0x401000 : Addr)) s
     | .setRip _, k => interp f (k ()) s
-    | .getFlags, _ => .nm (.feature "xsavetest: flags")
-    | .setFlags _, _ => .nm (.feature "xsavetest: flags")
+    | .getFlags, k => interp f (k (s.flags.getD flags0)) s
+    | .setFlags v, k => interp f (k ()) { s with flags := some v }
     | .getSegBase _, k => interp f (k (0 : Addr)) s
     | .getThread, _ => .nm (.feature "xsavetest: thread state")
     | .getZmm n, k => interp f (k (s.zmm[n.val]! : BitVec 512)) s
