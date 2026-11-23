@@ -13,7 +13,7 @@ import FV7z.Ndi.Exit
 - `lifW_away`: `lif_a` stores on the stack and to four variables.
 - `exit_ret`: the three joined with `Ndi.ndi_exit`; `glob_ret`: with `Ndi.ndi_glob`, for `[0x791eb8, 0x792980)`
   (`__exit_funcs` at `0x7923b0`).
-- `ptr_exit`: at `0x613434` they are 0, as in the image (the bss).
+- `ptr_exit`: at `0x613434` they are 0, as in the image (the bss); `ptr_ef`: `__exit_funcs` is `&initial`.
 - `ct_tcb`, `lifW_tcb`, `tcb_ret`: the same for the first 56 bytes of the TCB (`multiple_threads` at `fs + 24`,
   `pointer_guard` at `fs + 48`), with `Ndi.ndi_tcb`.
 - `lif_r12`: `r12` at `0x613439` (`fini`) is the one at `0x613434`, through the slot `__libc_init_first` saves it
@@ -148,5 +148,19 @@ theorem lif_r12 {W : Addr → Byte} {Z : State} (h : 8029656 + 16 ≤ (entG Z).r
     rd_Vst _ _ _ _ _ ?_ ?_ ?_, rd_Vst _ _ _ _ _ ?_ ?_ ?_, rd_Vst_self _ _ _ (toBytesLE_length _ _) ?_,
     ofBytesLE_toBytesLE (n := 8) rfl, hr]
   all_goals first | (simp only [toBytesLE_length]; bv_omega) | bv_omega
+
+/-- `__exit_funcs` (`0x7923b0`) in the file: `&initial` (`0x7a3aa0`). -/
+theorem ef_pin : Exe.bytesAt V2606.zzs.blob 0x7923b0 8 = some [160, 58, 122, 0, 0, 0, 0, 0] := by
+  decide +kernel
+
+/-- At `0x613434`, `__exit_funcs` points to `initial` (`0x7a3aa0`): none of the layers before stores to it. -/
+theorem ptr_ef {K : Ctx} {W V : Addr → Byte} {b : Addr} {ver : BitVec 32} {D : Addr → Prop} (hK : K.Ok)
+    (hI : Img K.V0) (hM : MB K V) (hb : 0x7a9000 ≤ b.toNat) (hb' : b.toNat + 8192 ≤ 2 ^ 63)
+    (hW : PtrW K W V b ver D) (hD : ∀ i < 8, D (Addr.add 7938992#64 i)) : rdq(W, 7938992#64) = 8010400#64 := by
+  have t0 : (7938992#64 : Addr).toNat = 7938992 := rfl
+  rw [ptr_img hK hM hb hb' hW (.inr ⟨by rw [t0]; omega, by rw [t0]; omega⟩) hD]
+  show ofBytesLE 64 (List.map K.V0 (byteAddrs (BitVec.ofNat 64 (0x7923b0 + 0)) 8)) = _
+  rw [hI.map ef_pin rfl (by decide) (by decide) (off := 0) (m := 8) (by decide)]
+  rfl
 
 end FV7z.Start
