@@ -32,7 +32,7 @@ theorem launch_seg' {l : Launch} (h : Launch.Of V2606.zzs.blob.bytes V2606.zzs.b
   have hfind := find_segs (vs := vsyscallRegions l.prof.linux.vsyscall) (stack := stack)
     (post_apart hv hpost hph hty hlo hhi) (zzs_find _ _ hmem hhas)
   refine ⟨⟨r.prot, (pageOf x).toNat, 0, r.special, r.origin ((pageOf x).toNat - r.first), (pageOf x).toNat,
-    r.maxProt, r.growsDown⟩, ?_, rfl, rfl, ?_, ?_, rfl, rfl⟩
+    r.maxProt, r.growsDown, none⟩, ?_, rfl, rfl, ?_, ?_, rfl, rfl⟩
   · rw [hm]
     simp only [regionsMemory, hfind, Option.map_some]
   · rw [hm]

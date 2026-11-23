@@ -31,7 +31,6 @@ theorem rm_map {rs : List Region} {fs : Files} {gd : List PageNum} {p : PageNum}
     · simpa using List.find?_some hf
     · simp only [regionsMemory, hf]
 
-/-- A page some region has is mapped. -/
 /-- Each page of `regionsMemory` is an area of its own: its page number. -/
 theorem rm_area {rs : List Region} {fs : Files} {gd : List PageNum} {p : PageNum} {m : Mapping}
     (h : (regionsMemory rs fs gd).map p = some m) : m.area = p.toNat := by
@@ -43,6 +42,7 @@ theorem rm_area {rs : List Region} {fs : Files} {gd : List PageNum} {p : PageNum
     cases h
     rfl
 
+/-- A page some region has is mapped. -/
 theorem rm_mapped {rs : List Region} {fs : Files} {gd : List PageNum} {p : PageNum} {r : Region} (hr : r ∈ rs)
     (hh : r.has p.toNat = true) : (regionsMemory rs fs gd).map p ≠ none := by
   simp only [regionsMemory]

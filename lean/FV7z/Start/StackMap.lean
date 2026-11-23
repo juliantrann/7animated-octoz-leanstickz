@@ -71,7 +71,7 @@ theorem launch_stack {l : Launch} {n : Nat} (h : Launch.Of V2606.zzs.blob.bytes 
       rcases hq with rfl | rfl | rfl | rfl | rfl <;> omega)
     (by rw [has_iff, hs1, hs2]; omega)
   refine ⟨⟨stack.prot, (pageOf x).toNat, 0, stack.special, stack.origin ((pageOf x).toNat - stack.first),
-    (pageOf x).toNat, stack.maxProt, stack.growsDown⟩, ?_, hs3, hs4, rfl, ?_⟩
+    (pageOf x).toNat, stack.maxProt, stack.growsDown, none⟩, ?_, hs3, hs4, rfl, ?_⟩
   · rw [hm]
     simp only [regionsMemory, hfind, Option.map_some]
   · rw [hm]
@@ -145,7 +145,7 @@ theorem launch_stack_at {l : Launch} {n : Nat} (h : Launch.Of V2606.zzs.blob.byt
   · intro x hx1 hx2
     have hfx := hfind x hx1 hx2
     refine ⟨⟨stack.prot, (pageOf x).toNat, 0, stack.special, stack.origin ((pageOf x).toNat - stack.first),
-      (pageOf x).toNat, stack.maxProt, stack.growsDown⟩, ?_, hs3, hs4, rfl, ?_⟩
+      (pageOf x).toNat, stack.maxProt, stack.growsDown, none⟩, ?_, hs3, hs4, rfl, ?_⟩
     · rw [hm]
       simp only [regionsMemory, hfx, Option.map_some]
     · rw [hm]
@@ -195,15 +195,13 @@ theorem check_priv {feat : Features} {pkru : BitVec 32} {mem : Memory} {x : Addr
     (mp.prot.read = true → mem.check feat pkru .read x = none) ∧
       (mp.prot.write = true → mem.check feat pkru .write x = none) := by
   obtain ⟨p0, p1⟩ := pkru_low hp
+  have q0 : pkru[0] = false := by rw [← BitVec.getLsbD_eq_getElem]; exact p0
+  have q1 : pkru[1] = false := by rw [← BitVec.getLsbD_eq_getElem]; exact p1
   constructor <;> intro hpr
   · simp [Memory.check, Memory.check.rest, hm, hb, Backing.filePage, Backing.noSource, hk, pkeyDenies,
-      Mapping.allows, hpr]
-    intro _
-    simpa using p0
+      Mapping.allows, hpr, Backing.unpopulated, q0]
   · simp [Memory.check, Memory.check.rest, hm, hb, Backing.filePage, Backing.noSource, hk, pkeyDenies,
-      Mapping.allows, hpr]
-    intro _
-    exact ⟨by simpa using p0, by simpa using p1⟩
+      Mapping.allows, hpr, Backing.unpopulated, q0, q1]
 
 /-- At the first instruction of `7zzs`, launched with room for `n` bytes of stack: the addresses from `rsp - n` to
 the stack's end are canonical and can be read and written (Zellic's `Accessible`, byte by byte). -/
