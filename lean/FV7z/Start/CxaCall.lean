@@ -92,8 +92,8 @@ theorem lsb_cxa {fb sp l p : Addr} {n : Nat} (c : Seg prof F Wl L s₀ o)
     (by rw [Cxa.cxa_length]; decide) (by decide) (fun i hi => by rw [hYs]; exact e8 i hi) ?_
   rintro Z₁ u₁ hKZ hAZ ⟨hrZ, hgZ⟩
   rw [hYs] at hAZ hgZ
-  refine Cxa.cxa_ok (sp := sp) (l := l) (n := n) (fn := X.cpu.gpr.r12) (arg := 0) (dso := 0) c hfs hin hinn hKZ
-    hAZ hrZ (by rw [hgZ]; rfl) (by rw [hgZ, hgY]; rfl) (by rw [hgZ, hgY]; rfl) (by rw [hgZ, hgY]; rfl)
+  refine Cxa.cxa_ok (sp := sp) (l := l) (n := n) (fn := X.cpu.gpr.r12) (arg := 0) (dso := 0) (j₂ := 1034) c hfs hin
+    hinn hKZ hAZ hrZ (by rw [hgZ]; rfl) (by rw [hgZ, hgY]; rfl) (by rw [hgZ, hgY]; rfl) (by rw [hgZ, hgY]; rfl)
     (fun i hi => hst i (by omega)) (fun i hi => c.hws _ (e8 i hi)) hl (by rw [lsm_length]; decide)
     (by rw [rd_Vst_self _ _ _ hb8 (by omega), ofBytesLE_toBytesLE (n := 8) rfl]) (by omega) h12 hft hfn
     (by omega) hfld hfcd ?_ hfl ?_ hp ?_ hl0 hn rfl hlw hld hkw hcd hlc ?_ ?_ ?_ ?_ ?_
