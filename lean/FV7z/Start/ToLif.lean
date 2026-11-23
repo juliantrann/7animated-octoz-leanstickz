@@ -212,7 +212,7 @@ theorem ptr_lif {prof : Profile} {L : List (Addr × List Byte)} {o : Oracle} {ge
     (wl_stk (x := Z.cpu.gpr.rsp - 8) htop' (by omega) (by omega)) ?_
   intro Y t' hKY hAY hrY hgY
   have hYr : Y.cpu.gpr.rsp = (entG Z).rsp := congrArg Gprs.rsp hgY
-  exact Ndi.lif_ok (X := Y) (t := t') (W := lifW W Z) (V := entV W Z) (sp := lifSp Z) (gY := lifY W Z)
+  exact Ndi.lif_ok (ip := []) (X := Y) (t := t') (W := lifW W Z) (V := entV W Z) (sp := lifSp Z) (gY := lifY W Z)
     (G := lifG lo top B L) (Wl' := (lifG lo top B L).writes) (N := brkN B) (b := B + 4544#64)
     (fsb := B + 2176#64) (pad := 0x20000#64) (sm := 0#64) (mx := 0#64) (lp := 7938752#64) (ct := 7866080#64)
     (a0 := a0) (ca := 7299392#64) (cb := 7296832#64) (cc := 7295296#64) (n := n) (e₃ := lsm_at)
