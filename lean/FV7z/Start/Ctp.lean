@@ -28,8 +28,8 @@ theorem ptr_img {K : Ctx} {W V : Addr → Byte} {b : Addr} {ver : BitVec 32} {D 
     (hD : ∀ i < 8, D (y.add i)) : rdq(W, y) = rdq(K.V0, y) := by
   have hf : (b + 2176#64).toNat = b.toNat + 2176 := by bv_omega
   have hi0 := hK.himg
-  congr 1
-  refine rd_ext y 8 fun i hi => ?_
+  suffices h : ∀ i < 8, W (y.add i) = K.V0 (y.add i) by rw [rd_ext (W' := W) (W := K.V0) y 8 h]
+  intro i hi
   have hx : (y.add i).toNat = y.toNat + i := toNat_add_of_fits hi (by omega)
   have hDa := hD i hi
   generalize y.add i = a at hx hDa ⊢
