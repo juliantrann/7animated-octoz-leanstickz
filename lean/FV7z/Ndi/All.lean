@@ -48,6 +48,7 @@ variable {prof : Profile} {L : List (Addr × List Byte)} {s₀ : State} {o : Ora
   {gev : List Event} {gP : State → Nat → List Event → Prop} {gE : Outcome → List Event → Prop} {X : State} {t : Nat}
   {lim : Nat} {b fsb : Addr} {ks : Kst} {pad sm mx : BitVec 64}
 
+set_option maxRecDepth 8192 in
 set_option maxHeartbeats 4000000 in
 /-- `_dl_non_dynamic_init` from its entry (bytes `W`, `rsp = sp + 120`) to its caller: `ndi_ab` then `ndi_pc`. The
 caller's continuation gets what `ndi_ab` gives of the bytes `W'` after `_dl_get_origin` (the path `x`, the `malloc (n)`

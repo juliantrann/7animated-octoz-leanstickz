@@ -20,6 +20,8 @@ open FV7z.Mal (MPre After Hp GlR)
 open FV7z.Gor (MCx Vg Vg_lo Lo nbOf nbOf_bnd lay foot_wn foot_wnN gEv gor_at gor)
 namespace FV7z.Ndi
 
+set_option maxRecDepth 8192
+
 theorem s4384 {sp : Addr} (h : 4384 ≤ sp.toNat) : (sp - 8#64 - 4136#64 - 240#64).toNat = sp.toNat - 4384 := by
   bv_omega
 theorem e232 (sp : Addr) : sp - 8#64 - 4136#64 - 8 = sp - 8#64 - 4136#64 - 240#64 + 232#64 := by bv_omega

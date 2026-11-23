@@ -21,6 +21,8 @@ open FV7z.Mhi (Tp C2 Sz Vh mhi_at)
 open FV7z.Im2 (VspN)
 namespace FV7z.Mal
 
+set_option maxRecDepth 8192
+
 /-- The layout of the first `malloc`'s frame (`S`), the break `b` and the TLS block `fsb`. -/
 structure Lay (fsb S b pad nb : Addr) (g : Gprs) : Prop where
   sp : g.rsp = S + 232#64

@@ -167,6 +167,7 @@ variable {F : Footprint} {Wl : List Rgn} {prof : Profile} {L : List (Addr × Lis
   {t : Nat} {gev : List Event} {gP : State → Nat → List Event → Prop} {gE : Outcome → List Event → Prop}
   {V : Addr → Byte}
 
+set_option maxRecDepth 8192 in
 set_option maxHeartbeats 4000000 in
 /-- `malloc (n)`, `n ≤ 1024`, after the first call (`Hp` with a top of at least `n`'s chunk and 32 bytes more): from
 the entry to the return address with `p = T + 16` in `rax`; `Hp` again, for a top smaller by at most 1040. -/
