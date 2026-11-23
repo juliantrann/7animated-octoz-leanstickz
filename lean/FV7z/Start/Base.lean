@@ -205,7 +205,7 @@ theorem b_brk_grow (c : Seg prof F Wl L s₀ o) (hB : Base s₀ lim b fsb k) (hK
     exact free_of_map fun p h1 h2 => hB.free p h1 (by omega)
   · rintro X' Y t' hK' hcpu rfl c' hA'
     refine k' _ t' c' ⟨?_, ?_, rfl, ?_, hlim, hB.top, ?_, ?_, ?_, ?_, ?_, ?_,
-      limits_of_signal rfl (limits_keptW hK' hB.lims)⟩ hA' ?_ ?_
+      limits_of_signal (X := X') rfl (limits_keptW hK' hB.lims)⟩ hA' ?_ ?_
     · show X'.thread.rseq = none
       rw [hK'.thread]
       exact hB.rseq
@@ -256,7 +256,7 @@ theorem b_set_fs (c : Seg prof F Wl L s₀ o) (hB : Base s₀ lim b fsb k) (hK :
   refine c.s_set_fs hK hA hin hj hrip hd hnr hopt ha hB.rseq ?_
   rintro X' Y t' hK' hcpu rfl c' hA'
   refine k' _ t' c' ⟨?_, ?_, ?_, rfl, hB.le, hB.top, ?_, ?_, ?_, ?_, ?_, ?_,
-    limits_of_signal rfl (limits_keptW hK' hB.lims)⟩ hA' ?_ ?_
+    limits_of_signal (X := X') rfl (limits_keptW hK' hB.lims)⟩ hA' ?_ ?_
   · show X'.thread.rseq = none
     rw [hK'.thread]
     exact hB.rseq

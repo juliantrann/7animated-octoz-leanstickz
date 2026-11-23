@@ -424,7 +424,7 @@ theorem b_mprotect_ro (c : Seg prof F Wl L s₀ o) (hB : Base s₀ lim b fsb k) 
     hww ?_
   rintro X' Y t' hK' hcpu rfl c' hA'
   refine k' _ t' c' ⟨?_, ?_, ?_, ?_, hB.le, hB.top, ?_, ?_, ?_, ?_, ?_, ?_,
-    limits_of_signal rfl (limits_keptW hK' hB.lims)⟩ hA' ?_
+    limits_of_signal (X := X') rfl (limits_keptW hK' hB.lims)⟩ hA' ?_
     ?_
   · show X'.thread.rseq = none
     rw [hK'.thread]
