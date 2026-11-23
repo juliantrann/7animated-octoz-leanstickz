@@ -10,7 +10,7 @@
 # Usage: tools/zellic_patch.sh save|apply|check|reapply
 set -euo pipefail
 root=$(cd "$(dirname "$0")/.." && pwd); Z="$root/refs/zellic-x86"; P="$root/patches/zellic-x86.patch"
-PIN=059a6a9dc31a974b01b6aeebfa5c88f9dc37c3ac
+PIN=5f8ed375bc60d7d140415061bad01d491e497f0e
 diff_() { git -C "$Z" add --intent-to-add --all; git -C "$Z" diff --binary "$PIN"; }
 case "${1:-}" in
   save) diff_ > "$P"; echo "saved $(grep -c '^diff --git' "$P") files' changes to $P" ;;
@@ -23,6 +23,7 @@ case "${1:-}" in
     if diff_ | cmp -s - "$P"; then echo "ok: refs/zellic-x86 = $PIN + patches/zellic-x86.patch"
     else echo "FAIL: refs/zellic-x86 differs from $PIN + the patch (after changing the model: tools/zellic_patch.sh save)" >&2; exit 1; fi ;;
   reapply)
+    git -C "$Z" cat-file -e "$PIN^{commit}" 2>/dev/null || git -C "$Z" fetch -q origin
     git -C "$Z" reset -q --hard "$PIN"; git -C "$Z" clean -qfd; git -C "$Z" apply "$P"; echo "reapplied $P" ;;
   *) echo "usage: $0 save|apply|check|reapply" >&2; exit 2 ;;
 esac

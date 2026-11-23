@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Checks the theorems of checks/ID (PLAN.md §8, G0 CI) the way Zellic's checks/*/verify-source.sh does:
 #   1. Lean 4.34.0 builds the challenge (the theorems stated by `sorry`) and the solution (the same theorems proved);
-#   2. lean4export (refs/lean4export, tag v4.34.0) exports each, with the constants `lake comparator` requires;
+#   2. lean4export (refs/lean4export, tag v4.35.0) exports each, with the constants `lake comparator` requires;
 #   3. Lean 4.35.0's `lake comparator`, configured by checks/ID/comparator.json, checks that the solution proves the
 #      challenge's theorems over the same constants, with no axiom but the permitted ones, and replays the solution in
 #      Lean's kernel and in the independent kernels the toolchain ships (con-leche, con-ron, nanoda).
@@ -21,12 +21,12 @@ base="Nat.add Nat.sub Nat.mul Nat.pow Nat.gcd Nat.div Nat.mod Nat.beq Nat.ble Na
   outParam propext Quot.sound Classical.choice"
 cd "$root/lean"
 echo "== 1. building $chal (its warnings \"declaration uses \`sorry\`\" are expected) and $sol"
-elan run leanprover/lean4:v4.34.0 lake build "$chal" "$sol" 2>&1 | grep -v '^✔' || true
+elan run leanprover/lean4:v4.35.0 lake build "$chal" "$sol" 2>&1 | grep -v '^✔' || true
 echo "== 2. exporting"
 # shellcheck disable=SC2086
-elan run leanprover/lean4:v4.34.0 lake env "$exporter" "$chal" -- $thms $base > "$work/challenge.ndjson"
+elan run leanprover/lean4:v4.35.0 lake env "$exporter" "$chal" -- $thms $base > "$work/challenge.ndjson"
 # shellcheck disable=SC2086
-elan run leanprover/lean4:v4.34.0 lake env "$exporter" "$sol" -- $thms $base > "$work/solution.ndjson"
+elan run leanprover/lean4:v4.35.0 lake env "$exporter" "$sol" -- $thms $base > "$work/solution.ndjson"
 ls -la "$work"/*.ndjson | awk '{print "   ", $5, $NF}'
 echo "== 3. lake comparator"
 cd "$here"

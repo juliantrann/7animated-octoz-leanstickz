@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # Sets up everything the project builds on, from a checkout of this repository, each piece pinned (PLAN.md §7, G0):
-#   Lean            leanprover/lean4:v4.34.0 (Zellic's statements, this project) and v4.35.0 (`lake comparator`,
+#   Lean            leanprover/lean4:v4.35.0 (Zellic's statements, this project, `lake comparator`,
 #                   with the kernels con-leche, con-ron, nanoda), through elan
-#   refs/zellic-x86 Zellic's model at commit 059a6a9 with patches/zellic-x86.patch (tools/zellic_patch.sh)
-#   refs/lean4export at commit 076e8e5 (tag v4.34.0), built
+#   refs/zellic-x86 Zellic's model at commit 5f8ed37 (Release 2) with patches/zellic-x86.patch (tools/zellic_patch.sh)
+#   refs/lean4export at commit 5a9a355 (tag v4.35.0), built
 #   upstream/7zip   7-Zip's sources at commit d3296e3 (tag 26.06), for the G0 rebuild that names functions
 #   release/26.06   the author's release tarball and its 7zz, 7zzs, with the SHA-256 of pins/release-26.06.sha256
 #                   (tools/fetch_release.sh)
@@ -20,9 +20,8 @@ for t in git curl elan gcc objdump c++filt python3 dpkg-deb xz strace bwrap; do
 done
 
 echo "== Lean toolchains"
-elan toolchain install leanprover/lean4:v4.34.0 >/dev/null 2>&1 || true
 elan toolchain install leanprover/lean4:v4.35.0 >/dev/null 2>&1 || true
-elan toolchain list | grep -q 'v4.34.0' && elan toolchain list | grep -q 'v4.35.0'
+elan toolchain list | grep -q 'v4.35.0'
 
 # clone URL DIR COMMIT: DIR at COMMIT (cloned if absent; an existing DIR at another commit, as a cache made for an
 # earlier pin holds, is moved to COMMIT if its work tree is clean, and is an error otherwise)
@@ -39,14 +38,14 @@ echo "== sources"
 mkdir -p refs upstream
 fresh=0; [ -d refs/zellic-x86/.git ] || fresh=1
 clone https://github.com/Zellic/x86-formal-verification-research.git refs/zellic-x86 \
-  059a6a9dc31a974b01b6aeebfa5c88f9dc37c3ac
+  5f8ed375bc60d7d140415061bad01d491e497f0e
 if [ $fresh = 1 ]; then git -C refs/zellic-x86 checkout -q -b fv7z-g1; tools/zellic_patch.sh apply; fi
 # in CI the copy may come from a cache made with an older patch: apply the current one afresh (never locally, where
 # that would discard model changes not yet saved to the patch)
 if [ "${CI:-}" = true ] && ! tools/zellic_patch.sh check 2>/dev/null; then tools/zellic_patch.sh reapply; fi
 tools/zellic_patch.sh check
-clone https://github.com/leanprover/lean4export refs/lean4export 076e8e57707e813375e8f9da8bf989799ace9680
-[ -x refs/lean4export/.lake/build/bin/lean4export ] || (cd refs/lean4export && lake build >/dev/null)
+clone https://github.com/leanprover/lean4export refs/lean4export 5a9a355dc6c5fd82b69058d433e2ae2e8dfbf8fe
+(cd refs/lean4export && lake build >/dev/null)  # incremental: rebuilds after a new pin
 clone https://github.com/ip7z/7zip.git upstream/7zip d3296e39e1f1f92c7b41c0c3848e65640428d42d
 
 echo "== release 26.06"

@@ -38,7 +38,7 @@ jobs:
           if [ ! -d refs/zellic-x86/.git ]; then
             mkdir -p refs
             git clone -q https://github.com/Zellic/x86-formal-verification-research.git refs/zellic-x86
-            git -C refs/zellic-x86 checkout -q 059a6a9dc31a974b01b6aeebfa5c88f9dc37c3ac
+            git -C refs/zellic-x86 checkout -q 5f8ed375bc60d7d140415061bad01d491e497f0e
             git -C refs/zellic-x86 checkout -q -b fv7z-g1
           fi
           tools/zellic_patch.sh check 2>/dev/null || tools/zellic_patch.sh reapply

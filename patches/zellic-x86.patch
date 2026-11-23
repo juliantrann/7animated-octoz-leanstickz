@@ -1,5 +1,5 @@
 diff --git a/ZellicX86/Spec/Decode/Maps.lean b/ZellicX86/Spec/Decode/Maps.lean
-index 286594e..0a4c810 100644
+index a2e769d..f99c66c 100644
 --- a/ZellicX86/Spec/Decode/Maps.lean
 +++ b/ZellicX86/Spec/Decode/Maps.lean
 @@ -232,8 +232,12 @@ def oneByte : Nat → Entry
@@ -42,19 +42,7 @@ index 286594e..0a4c810 100644
    | 0x1E => .byPfx (op .nop [E v]) (op .nop [E v])
                     (.byModRM 0xFA (op .endbr64 [])
                       (.byMod (op .nop [E v])
-@@ -463,8 +475,10 @@ def twoByte : Nat → Entry
-   -- `FXRSTOR64`, operand size 64), `LDMXCSR`, `STMXCSR`; with a register operand: the fences, and in the
-   -- `F3` column `/5`, `INCSSPD`/`INCSSPQ` on a processor with CET shadow stacks (without them no manual
-   -- specifies it: not modelled)
-+  -- `/4` `XSAVE` and `/5` `XRSTOR` with a memory operand (FV_7zip G1; SDM Vol. 2, "XSAVE", "XRSTOR"; the area's size
-+  -- is the instruction's, `Sem.xsave`, so the operand is a bare address)
-   | 0xAE => .byPfx (.byMod (.grp (op (.x87 .fxsave) [Mb 512]) (op (.x87 .fxrstor) [Mb 512]) (fp .ldmxcsr [E d])
--                                  (fp .stmxcsr [E d]) .nm .nm .nm .nm)
-+                                  (fp .stmxcsr [E d]) (op (.x87 .xsave) [M]) (op (.x87 .xrstor) [M]) .nm .nm)
-                             (.grp .nm .nm .nm .nm .nm (op .lfence []) (op .mfence []) (op .sfence [])))
-                    .nm (.byMod .nm (.grp .nm .nm .nm .nm .nm (.byFeat .cetSs (op .incssp [E y]) .nm) .nm .nm)) .nm
-   | 0xAF => op .imul [G v, E v]
-@@ -477,6 +491,8 @@ def twoByte : Nat → Entry
+@@ -481,6 +493,8 @@ def twoByte : Nat → Entry
    | 0xBA => .grp .nm .nm .nm .nm (bit .bt [E v, I b]) (bit .bts [E v, I b] {lock := true})
                   (bit .btr [E v, I b] {lock := true}) (bit .btc [E v, I b] {lock := true})
    | 0xBB => bit .btc [E v, G v] {lock := true}
@@ -63,31 +51,20 @@ index 286594e..0a4c810 100644
    | 0xBC => .byPfx (bit .bsf [G v, E v]) (bit .bsf [G v, E v])
                     (.byFeat .bmi1 (bit .tzcnt [G v, E v]) (bit .bsf [G v, E v]))
                     (bit .bsf [G v, E v])
-@@ -492,6 +508,8 @@ def twoByte : Nat → Entry
-   | 0xC4 => .byPfx .nm (sse .pinsrw [V, ER d w, I b]) .nm .nm
-   | 0xC5 => .byPfx .nm (.byMod .nm (sse .pextrw [G d, U, I b])) .nm .nm
-   | 0xC6 => .byPfx (sse .shufps [V, W dq, I b]) (sse .shufpd [V, W dq, I b]) .nm .nm
-+  -- Group 9 (Table A-6) `/4` with a memory operand: `XSAVEC` (FV_7zip G1; SDM Vol. 2, "XSAVEC")
-+  | 0xC7 => .byPfx (.byMod (.grp .nm .nm .nm .nm (op (.x87 .xsavec) [M]) .nm .nm .nm) .nm) .nm .nm .nm
-   | 0xC8 | 0xC9 | 0xCA | 0xCB | 0xCC | 0xCD | 0xCE | 0xCF => op .bswap [Z v]   -- 16-bit form: result undefined (`Sem.bswap`)
-   | 0xD0 => .byPfx .nm (needs .sse3 (fp (.addsub .pd) [V, W dq])) .nm (needs .sse3 (fp (.addsub .ps) [V, W dq]))
-   -- shifts by the low 64 bits of an `XMM` register or 16 bytes of memory (the `NP` column, on `MMX`
-@@ -541,6 +559,8 @@ def twoByte : Nat → Entry
-   | 0xE0 => .byPfx .nm (sse .pavgb [V, W dq]) .nm .nm
-   | 0xE3 => .byPfx .nm (sse .pavgw [V, W dq]) .nm .nm
+@@ -547,6 +561,8 @@ def twoByte : Nat → Entry
    | 0xF6 => .byPfx .nm (sse .psadbw [V, W dq]) .nm .nm
+   | 0xEA => .byPfx .nm (sse (.pmins 16) [V, W dq]) .nm .nm
+   | 0xEE => .byPfx .nm (sse (.pmaxs 16) [V, W dq]) .nm .nm
 +  -- F2 0F F0 /r, xmm1, m128 (SDM LDDQU, encoding RM): memory only; a register operand is #UD.
 +  | 0xF0 => .byPfx .nm .nm .nm (needs .sse3 (.byMod (sse .lddqu [V, W dq]) (.ud [])))
    | _ => .nm
  
  /-- The three-byte map `0F 38 xx`, SDM Table A-4. -/
-@@ -549,9 +569,22 @@ def map0F38 : Nat → Entry
-   | 0x2B => .byPfx .nm (needs .sse41 (sse .packusdw [V, W dq])) .nm .nm
-   -- 66 0F 38 3B /r, xmm, xmm/m128 (SDM PMINUD, encoding A).
-   | 0x3B => .byPfx .nm (needs .sse41 (sse .pminud [V, W dq])) .nm .nm
-+  -- 66 0F 38 3F /r, xmm, xmm/m128 (SDM PMAXUD/PMAXUQ, encoding A).
-+  | 0x3F => .byPfx .nm (needs .sse41 (sse .pmaxud [V, W dq])) .nm .nm
-+  -- 66 0F 38 17 /r, xmm1, xmm2/m128 (SDM PTEST, encoding RM).
+@@ -575,9 +591,20 @@ def map0F38 : Nat → Entry
+   | 0x3D => .byPfx .nm (needs .sse41 (sse (.pmaxs 32) [V, W dq])) .nm .nm
+   | 0x3E => .byPfx .nm (needs .sse41 (sse (.pmaxu 16) [V, W dq])) .nm .nm
+   | 0x3F => .byPfx .nm (needs .sse41 (sse (.pmaxu 32) [V, W dq])) .nm .nm
++  -- 66 0F 38 17 /r, xmm1, xmm2/m128 (SDM PTEST, encoding RM) (FV_7zip G1).
 +  | 0x17 => .byPfx .nm (needs .sse41 (sse .ptest [V, W dq])) .nm .nm
    | 0xCB => .byPfx (needs .sha (sse .sha256rnds2 [V, W dq, XMM0])) .nm .nm .nm
    | 0xCC => .byPfx (needs .sha (sse .sha256msg1 [V, W dq])) .nm .nm .nm
@@ -104,7 +81,7 @@ index 286594e..0a4c810 100644
    -- `MOVBE` (memory operand only); the `F2` column (also with `66`, which then selects a 16-bit
    -- source for `F1`) is `CRC32` (SDM Vol. 2, "CRC32"; Table A-4: "66 & F2")
    | 0xF0 => .byPfx (needs .movbe (.byMod (op .movbe [G v, E v]) (.ud [])))
-@@ -581,6 +614,8 @@ def map0F3A : Nat → Entry
+@@ -607,6 +634,8 @@ def map0F3A : Nat → Entry
                                                         (sse .pinsrq [V, E q, I b]))) .nm .nm
    | 0x62 => .byPfx .nm (needs .sse42 (sse .pcmpistrm [V, W dq, I b])) .nm .nm
    | 0x63 => .byPfx .nm (needs .sse42 (sse .pcmpistri [V, W dq, I b])) .nm .nm
@@ -113,7 +90,7 @@ index 286594e..0a4c810 100644
    | _ => .nm
  
  /-! ## VEX maps -/
-@@ -705,6 +740,9 @@ def vex0F : Nat → Entry
+@@ -734,6 +763,9 @@ def vex0F : Nat → Entry
    | 0x5D => vexFp4 .min
    | 0x5E => vexFp4 .div
    | 0x5F => vexFp4 .max
@@ -123,33 +100,20 @@ index 286594e..0a4c810 100644
    | 0x63 => .byPfx .nm (vex3 .vpacksswb) .nm .nm
    | 0x64 => .byPfx .nm (vex3 (.vpcmpgt 8)) .nm .nm
    | 0x65 => .byPfx .nm (vex3 (.vpcmpgt 16)) .nm .nm
-@@ -721,8 +759,11 @@ def vex0F : Nat → Entry
-                         (vexShiftImm (.vpsra 16)) .nm (vexShiftImm (.vpsll 16)) .nm) .nm .nm
-   | 0x72 => .byPfx .nm (.grp .nm .nm (vexShiftImm (.vpsrl 32)) .nm
-                         (vexShiftImm (.vpsra 32)) .nm (vexShiftImm (.vpsll 32)) .nm) .nm .nm
--  | 0x73 => .byPfx .nm (.grp .nm .nm (vexShiftImm (.vpsrl 64)) .nm
--                        .nm .nm (vexShiftImm (.vpsll 64)) .nm) .nm .nm
-+  -- FV_7zip G1: VEX.128/256.66.0F.WIG 70 /r ib (SDM PSHUFD)
-+  | 0x70 => .byPfx .nm (vexL .avx .avx2 (avx .vpshufd [vecR x, vecM x, I b])) .nm .nm
-+  -- `/3` and `/7` (FV_7zip G1): VEX.128/256.66.0F.WIG 73 /3 ib, /7 ib (SDM PSRLDQ, PSLLDQ)
-+  | 0x73 => .byPfx .nm (.grp .nm .nm (vexShiftImm (.vpsrl 64)) (vexShiftImm .vpsrldq)
-+                        .nm .nm (vexShiftImm (.vpsll 64)) (vexShiftImm .vpslldq)) .nm .nm
-   | 0x74 => .byPfx .nm (vex3 (.vpcmpeq 8)) .nm .nm
-   | 0x75 => .byPfx .nm (vex3 (.vpcmpeq 16)) .nm .nm
-   | 0x76 => .byPfx .nm (vex3 (.vpcmpeq 32)) .nm .nm
-@@ -841,11 +882,29 @@ def vexFma (order : FmaOrder) (np sa scalar : Bool) : Entry :=
-   .byPfx .nm (.byW (one (if scalar then .ss else .ps) (if scalar then d else x))
-                         (one (if scalar then .sd else .pd) (if scalar then q else x))) .nm .nm
- 
+@@ -906,6 +938,11 @@ def gatherEntry (m : AvxMn) (ib data : Nat) (evex : Bool) : Entry :=
+                (if ib = 32 && data = 64 then qq else x)
+   if evex then evexL [] (.byL a b c (.invalid c))
+   else vexL .avx2 .avx2 (.byL a b (.invalid a) (.invalid a))
 +/-- A VEX AES round (FV_7zip G1): on `XMM` registers with AES and AVX, on `YMM` registers with VAES (SDM Vol. 2,
 +"AESENC", ..., the CPUID Feature Flag column). -/
 +def vexAes (m : AvxMn) : Entry :=
 +  let e := avx m [vecR x, vecV x, vecM x]
 +  .byL (needs .aes (needs .avx e)) (needs .vaes e) (.invalid e) (.invalid e)
-+
+ 
  /-- The VEX map `0F 38` (`VEX.mmmmm = 2`): vector instructions, and BMI1 and BMI2 on general
  registers (`VEX.LZ`). -/
- def vex0F38 : Nat → Entry
+@@ -944,6 +981,18 @@ def vex0F38 : Nat → Entry
+   | 0x35 => vexPmov .vpmovzxdq q dq
    | 0x00 => .byPfx .nm (vexL .avx .avx2 (avx .vpshufb [vecR x, vecV x, vecM x])) .nm .nm
    | 0x18 => vexBcst .vbroadcastss d .avx
 +  -- FV_7zip G1: VEX.128/256.66.0F38.WIG 17 /r (SDM PTEST: `VPTEST` on `YMM` registers needs AVX alone)
@@ -167,21 +131,10 @@ index 286594e..0a4c810 100644
    | 0x29 => .byPfx .nm (vex3 (.vpcmpeq 64)) .nm .nm
    | 0x2B => .byPfx .nm (vex3 .vpackusdw) .nm .nm
    | 0x37 => .byPfx .nm (vex3 (.vpcmpgt 64)) .nm .nm
-@@ -913,6 +972,8 @@ def vex0F3A : Nat → Entry
-   | 0x14 => .byPfx .nm (l0 (needs .avx (avx (.vpextr 8) [ER d b, vecR dq, I b]))) .nm .nm
-   | 0x16 => .byPfx .nm (l0 (needs .avx (.byW (avx (.vpextr 32) [E d, vecR dq, I b])
-                                            (avx (.vpextr 64) [E q, vecR dq, I b])))) .nm .nm
-+  -- FV_7zip G1: VEX.128/256.66.0F3A.WIG 0F /r ib (SDM PALIGNR)
-+  | 0x0F => .byPfx .nm (vexL .avx .avx2 (avx .vpalignr [vecR x, vecV x, vecM x, I b])) .nm .nm
-   | 0x18 => .byPfx .nm (vexHalf .avx .vinsertf128 [vecR x, vecV x, vecM dq, I b]) .nm .nm
-   | 0x19 => .byPfx .nm (vexHalf .avx .vextractf128 [vecM dq, vecR x, I b]) .nm .nm
-   | 0x20 => .byPfx .nm (l0 (needs .avx (avx (.vpinsr 8) [vecR dq, vecV dq, ER d b, I b]))) .nm .nm
-@@ -920,6 +981,11 @@ def vex0F3A : Nat → Entry
+@@ -1038,6 +1087,9 @@ def vex0F3A : Nat → Entry
                                             (avx (.vpinsr 64) [vecR dq, vecV dq, E q, I b])))) .nm .nm
    | 0x38 => .byPfx .nm (vexHalf .avx2 .vinserti128 [vecR x, vecV x, vecM dq, I b]) .nm .nm
    | 0x39 => .byPfx .nm (vexHalf .avx2 .vextracti128 [vecM dq, vecR x, I b]) .nm .nm
-+  -- FV_7zip G1: VEX.256.66.0F3A.W0 46 /r ib (SDM VPERM2I128)
-+  | 0x46 => .byPfx .nm (vexHalf .avx2 .vperm2i128 [vecR x, vecV x, vecM x, I b]) .nm .nm
 +  -- FV_7zip G1: VEX.128.66.0F3A.WIG 63 /r ib (SDM PCMPISTRI): `#UD` with `VEX.L = 1`; the semantics is the legacy
 +  -- form's, which writes `ECX` and the flags and no vector register
 +  | 0x63 => .byPfx .nm (l0 (needs .avx (sse .pcmpistri [vecR dq, vecM dq, I b]))) .nm .nm
@@ -189,30 +142,21 @@ index 286594e..0a4c810 100644
    | _ => .nm
  
 diff --git a/ZellicX86/Spec/Decode/Types.lean b/ZellicX86/Spec/Decode/Types.lean
-index 67b7166..dfc59b0 100644
+index ea3fad1..0f63ca7 100644
 --- a/ZellicX86/Spec/Decode/Types.lean
 +++ b/ZellicX86/Spec/Decode/Types.lean
-@@ -110,6 +110,10 @@ inductive SseMn
+@@ -117,6 +117,10 @@ inductive SseMn
    | pmuludq | psubusb | psubusw | packuswb | packsswb | packssdw | packusdw
    | paddsb | paddsw | paddusb | paddusw | psubsb | psubsw
    | pcmpistri | pcmpistrm
-+  -- FV_7zip G1 (7zzs 26.05: glibc's memcmp/memcpy, 7-Zip's LzFind): SSE3 LDDQU, SSE4.1 PMAXUD and PTEST
-+  | lddqu | pmaxud | ptest
++  -- FV_7zip G1 (7zzs 26.05: glibc's memcmp/memcpy, 7-Zip's LzFind): SSE3 LDDQU, SSE4.1 PTEST
++  | lddqu | ptest
 +  -- FV_7zip G1 (7zzs 26.05: 7-Zip's AesOpt and Sha1Opt): AES-NI and the SHA-1 instructions
 +  | aesenc | aesenclast | aesdec | aesdeclast | sha1rnds4 | sha1nexte | sha1msg1 | sha1msg2
    -- typed floating point, but no arithmetic: moves, bitwise operations, shuffles
    | movupd | movapd | movss | movsd | movlpd | movhpd
    | movddup | movshdup | movsldup
-@@ -170,6 +174,8 @@ inductive X87Mn
-   | fsincos | frndint | fscale | fsin | fcos | fnop | ffree
-   | fnstsw | fnstcw | fldcw | fnstenv | fldenv | fnsave | frstor | fnclex | fninit | fwait
-   | fxsave | fxrstor
-+  -- FV_7zip G1 (7zzs 26.05: glibc's `_dl_runtime_resolve_xsave`, `_dl_runtime_resolve_xsavec`)
-+  | xsave | xsavec | xrstor
-   deriving Repr
- 
- /-- Mnemonics of the bit-scan, bit-test and double-shift instructions. -/
-@@ -177,6 +183,8 @@ inductive BitMn
+@@ -187,6 +191,8 @@ inductive BitMn
    | bsf | bsr | tzcnt | lzcnt | bt | bts | btr | btc | shld | shrd
    -- BMI1 and BMI2 (VEX-encoded, general registers)
    | andn | bextr | blsi | blsmsk | blsr | bzhi | sarx | shlx | shrx | rorx | pdep | pext | mulx
@@ -221,17 +165,17 @@ index 67b7166..dfc59b0 100644
    deriving Repr
  
  /-- Mnemonics of the VEX- and EVEX-encoded vector instructions and of the opmask
-@@ -211,6 +219,9 @@ inductive AvxMn
-   | kmov (e : Nat) | kortest (e : Nat) | ktest (e : Nat)
-   | kand (e : Nat) | kandn (e : Nat) | kor (e : Nat) | kxnor (e : Nat) | kxor (e : Nat)
-   | knot (e : Nat)
+@@ -235,6 +241,9 @@ inductive AvxMn
+   | vshufi32x4 | vshufi64x2 | vshuff32x4 | vshuff64x2
+   | vpgatherdd | vpgatherdq | vpgatherqd | vpgatherqq
+   | vgatherdps | vgatherdpd | vgatherqps | vgatherqpd
 +  -- FV_7zip G1 (7zzs 26.05: 7-Zip's AesOpt and Blake2s, glibc's string functions)
-+  | vpunpckldq | vpunpckhdq | vpshufd | vpalignr | vpsrldq | vpslldq | vperm2i128 | vbroadcasti128 | vptest
++  | vpunpckldq | vpunpckhdq | vbroadcasti128 | vptest
 +  | vaesenc | vaesenclast | vaesdec | vaesdeclast
    deriving Repr
  
  /-- Mnemonics of the string instructions and of `CLD`/`STD`, which set their direction. -/
-@@ -238,6 +249,8 @@ inductive Mn
+@@ -262,6 +271,8 @@ inductive Mn
    | nop | pause | endbr64 | rdssp | incssp | hlt | int3 | ud2 | syscall | cpuid | xgetbv | rdtsc
    | cmpxchg | xadd
    | movbe | rdtscp | crc32 | xtest
@@ -240,42 +184,25 @@ index 67b7166..dfc59b0 100644
    /-- `PREFETCHNTA` (`h = 0`), `PREFETCHT0`, `PREFETCHT1`, `PREFETCHT2` (`h` = 1, 2, 3). -/
    | prefetch (h : Nat)
    | lfence | sfence | mfence
-@@ -288,6 +301,8 @@ structure Attr where
+@@ -320,6 +331,8 @@ structure Attr where
  inductive Feat
    | ssse3 | sse41 | sse42 | sha | bmi1 | bmi2 | lzcnt | avx | avx2 | avx512f | avx512bw
-   | avx512dq | avx512vl | movbe | rdtscp | sse3 | fma | cetSs | rtm | hle
+   | avx512dq | avx512vl | movbe | rdtscp | sse3 | fma | cetSs | rtm | hle | xsavec | avx512vbmi
 +  -- FV_7zip G1
 +  | aes | vaes | popcnt | mpx
  
  /-- Whether the CPU has feature `f`. -/
  def Feat.holds (f : Feat) (p : Features) : Bool :=
-@@ -296,7 +311,8 @@ def Feat.holds (f : Feat) (p : Features) : Bool :=
-   | .bmi2 => p.bmi2 | .lzcnt => p.lzcnt | .avx => p.avx | .avx2 => p.avx2
+@@ -329,6 +342,7 @@ def Feat.holds (f : Feat) (p : Features) : Bool :=
    | .avx512f => p.avx512f | .avx512bw => p.avx512bw | .avx512dq => p.avx512dq
    | .avx512vl => p.avx512vl | .movbe => p.movbe | .rdtscp => p.rdtscp | .sse3 => p.sse3 | .fma => p.fma
--  | .cetSs => p.cetSs | .rtm => p.rtm | .hle => p.hle
-+  | .cetSs => p.cetSs | .rtm => p.rtm | .hle => p.hle | .aes => p.aes | .vaes => p.vaes | .popcnt => p.popcnt
-+  | .mpx => p.mpx
+   | .cetSs => p.cetSs | .rtm => p.rtm | .hle => p.hle | .xsavec => p.xsavec | .avx512vbmi => p.avx512vbmi
++  | .aes => p.aes | .vaes => p.vaes | .popcnt => p.popcnt | .mpx => p.mpx
  
  /-- An opcode-map cell. -/
  inductive Entry
-diff --git a/ZellicX86/Spec/Linux/Boot.lean b/ZellicX86/Spec/Linux/Boot.lean
-index 8e9408e..4d1c957 100644
---- a/ZellicX86/Spec/Linux/Boot.lean
-+++ b/ZellicX86/Spec/Linux/Boot.lean
-@@ -106,5 +106,10 @@ structure LinuxBoot where
-   without randomization, `brk` then accepts breaks down to the end of the data segment
-   (`mm/mmap.c` `brk`, `min_brk`). -/
-   compatBrk : Bool
-+  /-- FV_7zip G1: the kernel is built with transparent huge pages (`CONFIG_TRANSPARENT_HUGEPAGE`, `mm/Kconfig`,
-+  which has no default): `madvise` then knows `MADV_HUGEPAGE` and `MADV_NOHUGEPAGE` (`madvise_behavior_valid`,
-+  `mm/madvise.c`), which only set or clear a VMA flag (`hugepage_madvise`, `mm/khugepaged.c`) that changes which
-+  pages back the memory, not what it holds (`sysMadvise`). -/
-+  thp : Bool := false
- 
- end ZellicX86
 diff --git a/ZellicX86/Spec/Linux/Exec.lean b/ZellicX86/Spec/Linux/Exec.lean
-index 6d5234b..fd18271 100644
+index e338ab5..ed1d318 100644
 --- a/ZellicX86/Spec/Linux/Exec.lean
 +++ b/ZellicX86/Spec/Linux/Exec.lean
 @@ -127,6 +127,9 @@ structure ExecArgs where
@@ -288,7 +215,7 @@ index 6d5234b..fd18271 100644
    /-- The positions and status flags of the open file descriptions (`OpenTable.pos`): they belong to
    the descriptions, which outlive `execve`. -/
    filePos : OpenFile → FilePos
-@@ -801,6 +804,7 @@ def execve (prof : Profile) (files : Files) (exe : FileId) (a : ExecArgs) (k : K
+@@ -796,6 +799,7 @@ def execve (prof : Profile) (files : Files) (exe : FileId) (a : ExecArgs) (k : K
                        | some ⟨f, false⟩ => some ⟨f, false⟩
                        | _ => none
                      fdMax := a.fdMax
@@ -297,10 +224,10 @@ index 6d5234b..fd18271 100644
                      sighand := fun sig => match a.sighand sig with
                        | .ignore => { SigAction.dfl with disp := .ignore }
 diff --git a/ZellicX86/Spec/Linux/Syscall.lean b/ZellicX86/Spec/Linux/Syscall.lean
-index e94ee07..107d65b 100644
+index 53d9976..b560c5a 100644
 --- a/ZellicX86/Spec/Linux/Syscall.lean
 +++ b/ZellicX86/Spec/Linux/Syscall.lean
-@@ -8,6 +8,7 @@ import ZellicX86.Spec.Linux.Syscall.Random
+@@ -9,6 +9,7 @@ import ZellicX86.Spec.Linux.Syscall.Random
  import ZellicX86.Spec.Linux.Syscall.Signal
  import ZellicX86.Spec.Linux.Syscall.Time
  import ZellicX86.Spec.Linux.Syscall.Futex
@@ -308,21 +235,15 @@ index e94ee07..107d65b 100644
  /-!
  # Linux system calls: the dispatcher
  
-@@ -58,6 +59,7 @@ def syscall (prof : Profile) (s : State) : Req StepResult :=
+@@ -59,6 +60,7 @@ def syscall (prof : Profile) (s : State) : Req StepResult :=
      | 0 => sysRead prof s
      | 1 => sysWrite prof s
      | 3 => sysClose s
 +    | 4 => sysStat prof s -- FV_7zip G1
      | 5 => sysFstat prof s
      | 8 => sysLseek s
-     | 9 => sysMmap feat s
-@@ -72,14 +74,19 @@ def syscall (prof : Profile) (s : State) : Req StepResult :=
-     | 18 => sysPwrite64 prof s
-     | 20 => sysWritev prof s
-     | 25 => sysMremap feat s
--    | 28 => sysMadvise feat s
-+    | 28 => sysMadvise feat prof.linux.thp s  -- FV_7zip G1: `thp`
-     | 32 => sysDup s
+     | 9 => sysMmap prof s
+@@ -78,9 +80,14 @@ def syscall (prof : Profile) (s : State) : Req StepResult :=
      | 33 => sysDup2 s
      | 39 => sysGetpid s
      | 62 => sysKill prof s
@@ -336,8 +257,8 @@ index e94ee07..107d65b 100644
 +    | 99 => sysSysinfo prof s -- FV_7zip G1
      | 127 => sysRtSigpending prof s
      | 131 => sysSigaltstack prof s
-     | 158 => sysArchPrctl prof s
-@@ -88,6 +95,7 @@ def syscall (prof : Profile) (s : State) : Req StepResult :=
+     | 157 => sysPrctl prof s
+@@ -90,6 +97,7 @@ def syscall (prof : Profile) (s : State) : Req StepResult :=
      | 200 => sysTgkill prof s none (argInt s.cpu.gpr.rdi) (argInt s.cpu.gpr.rsi)
      | 201 => sysTime prof s
      | 202 => sysFutex prof s
@@ -346,10 +267,10 @@ index e94ee07..107d65b 100644
      | 228 => sysClockGettime prof s
      | 234 => sysTgkill prof s (some (argInt s.cpu.gpr.rdi)) (argInt s.cpu.gpr.rsi) (argInt s.cpu.gpr.rdx)
 diff --git a/ZellicX86/Spec/Linux/Syscall/Files.lean b/ZellicX86/Spec/Linux/Syscall/Files.lean
-index 7544e1e..ae64c7f 100644
+index 7544e1e..97e2aac 100644
 --- a/ZellicX86/Spec/Linux/Syscall/Files.lean
 +++ b/ZellicX86/Spec/Linux/Syscall/Files.lean
-@@ -2,9 +2,10 @@ import ZellicX86.Spec.Linux.Syscall.Common
+@@ -2,9 +2,11 @@ import ZellicX86.Spec.Linux.Syscall.Common
  /-!
  # Linux system calls: opening and asking about files
  
@@ -358,20 +279,22 @@ index 7544e1e..ae64c7f 100644
 +`ioctl(TCGETS)`. The model has no file system: what a path
  resolves to, a file's status and a terminal's settings are the environment's answers
 -(`Request.openAt`, `Request.readlink`, `Request.stat`, `Request.ioctlGet`), which may also be any error.
-+(`Request.openAt`, `Request.readlink`, `Request.stat`, `Request.statPath`, `Request.dirents`, `Request.ioctlGet`), which may also be any error.
++(`Request.openAt`, `Request.readlink`, `Request.stat`, `Request.statPath`, `Request.dirents`,
++`Request.ioctlGet`), which may also be any error.
  What the kernel computes itself is modelled: the flags' checks, the descriptor lookup and allocation,
  reading the path name, the size limits, and copying the answer to the process's memory.
  
-@@ -14,7 +15,7 @@ its entry (`FdEntry.cloexec`), which `execve` and `fcntl(F_GETFD)` read (`Spec/L
+@@ -14,7 +16,8 @@ its entry (`FdEntry.cloexec`), which `execve` and `fcntl(F_GETFD)` read (`Spec/L
  
  Sources: Linux v6.18 `fs/open.c` (`do_sys_openat2`, `build_open_how`, `build_open_flags`), `fs/file.c`
  (`alloc_fd`), `fs/stat.c` (`do_readlinkat`, `vfs_readlink`, `newfstat`, `cp_new_stat`),
 -`fs/namei.c` (`getname_flags`, `path_init`), `fs/ioctl.c` (`ioctl`, `do_vfs_ioctl`),
-+`fs/namei.c` (`getname_flags`, `path_init`), `fs/readdir.c` (`getdents64`, `filldir64`, `iterate_dir`), `fs/ioctl.c` (`ioctl`, `do_vfs_ioctl`),
++`fs/namei.c` (`getname_flags`, `path_init`), `fs/readdir.c` (`getdents64`, `filldir64`, `iterate_dir`),
++`fs/ioctl.c` (`ioctl`, `do_vfs_ioctl`),
  `drivers/tty/tty_ioctl.c` (`tty_mode_ioctl`), `arch/x86/include/uapi/asm/stat.h`,
  `include/uapi/asm-generic/ioctls.h`, `include/uapi/asm-generic/termbits.h`, `include/uapi/linux/fcntl.h`,
  `include/uapi/asm-generic/fcntl.h`, `include/linux/fcntl.h`, `open(2)`, `readlink(2)`, `fstat(2)`,
-@@ -196,7 +197,7 @@ def ExePath.bytes (p : ExePath) : List Byte :=
+@@ -196,7 +199,7 @@ def ExePath.bytes (p : ExePath) : List Byte :=
    (if p.names = [] then [0x2f] else p.names.flatMap (0x2f :: ·)) ++
      (if p.deleted then " (deleted)".toUTF8.toList.map UInt8.toBitVec else [])
  
@@ -380,7 +303,7 @@ index 7544e1e..ae64c7f 100644
  `int`s. A `bufsiz` of 0 or less is `EINVAL`. The path is read from the process's memory
  (`userPath`: `EFAULT`, `ENAMETOOLONG`); unless it is absolute, it is looked up from `dirfd`, the
  working directory for `AT_FDCWD` and otherwise an open descriptor (`EBADF`). The file system answers
-@@ -205,12 +206,9 @@ contents of an `exe` link are the executable's path (`ExePath.bytes`), which `d_
+@@ -205,12 +208,9 @@ contents of an `exe` link are the executable's path (`ExePath.bytes`), which `d_
  buffer of `PATH_MAX` bytes with its NUL: a longer path is `ENAMETOOLONG` (`do_proc_readlink`,
  `fs/proc/base.c`). The first `bufsiz` bytes of the contents, without a NUL, are copied to `buf`
  (`EFAULT`), and their number is the result. -/
@@ -395,7 +318,7 @@ index 7544e1e..ae64c7f 100644
    let fail (e : Nat) (path : List Byte) : Req StepResult := Pure.pure (sysReturn s (errRet e) path [])
    match path with
    | .error e => fail e []
-@@ -232,6 +230,15 @@ def sysReadlinkat (prof : Profile) (s : State) : Req StepResult := do
+@@ -232,6 +232,15 @@ def sysReadlinkat (prof : Profile) (s : State) : Req StepResult := do
        | .target t => copy t
        | .procExe x => if x.bytes.length < pathMax then copy x.bytes else fail ENAMETOOLONG p
  
@@ -411,7 +334,7 @@ index 7544e1e..ae64c7f 100644
  /-- `struct stat` as the kernel writes it (`cp_new_stat`, `arch/x86/include/uapi/asm/stat.h`):
  144 bytes, the fields little-endian at offsets 0 (`st_dev`), 8 (`st_ino`), 16 (`st_nlink`), 24
  (`st_mode`), 28 (`st_uid`), 32 (`st_gid`), 40 (`st_rdev`), 48 (`st_size`), 56 (`st_blksize`), 64
-@@ -280,21 +287,94 @@ def sysFstat (prof : Profile) (s : State) : Req StepResult := do
+@@ -280,21 +289,94 @@ def sysFstat (prof : Profile) (s : State) : Req StepResult := do
        let (s', k, all) ← copyOut prof s buf bs
        Pure.pure (sysReturn s' (if all then 0 else errRet EFAULT) [] (bs.take k))
  
@@ -588,64 +511,14 @@ index 0000000..da1ead1
 +      Pure.pure (sysReturn s' (if all then BitVec.ofNat 64 bs.length else errRet EFAULT) [] (bs.take k))
 +
 +end ZellicX86
-diff --git a/ZellicX86/Spec/Linux/Syscall/Mm.lean b/ZellicX86/Spec/Linux/Syscall/Mm.lean
-index b1a256c..9611d19 100644
---- a/ZellicX86/Spec/Linux/Syscall/Mm.lean
-+++ b/ZellicX86/Spec/Linux/Syscall/Mm.lean
-@@ -589,7 +589,10 @@ kernel's order:
- - `advice` must be one the kernel knows (`madvise_behavior_valid`; `EINVAL`); those the kernel
-   knows only with `CONFIG_KSM`, `CONFIG_TRANSPARENT_HUGEPAGE` or `CONFIG_MEMORY_FAILURE`
-   (`MADV_MERGEABLE`, `MADV_UNMERGEABLE`, `MADV_HUGEPAGE`, `MADV_NOHUGEPAGE`, `MADV_COLLAPSE`,
--  `MADV_HWPOISON`, `MADV_SOFT_OFFLINE`) are not modelled;
-+  `MADV_HWPOISON`, `MADV_SOFT_OFFLINE`) are not modelled, but for `MADV_HUGEPAGE` and `MADV_NOHUGEPAGE`
-+  (FV_7zip G1): without transparent huge pages (`thp`, `LinuxBoot.thp`) the kernel does not know them
-+  (`EINVAL`), with them they are advice that changes VMA flags (`VM_HUGEPAGE`, `VM_NOHUGEPAGE`;
-+  `hugepage_madvise` refuses nothing on x86), as below;
- - `start` must be page-aligned, and `len`, rounded up to pages, must neither wrap to 0 nor make
-   the range wrap (`EINVAL`); an empty range returns 0;
- - the advice applies to the mapped pages of the range; if some page of it is unmapped, the call
-@@ -598,7 +601,7 @@ kernel's order:
- page of anonymous memory reads zeros afterwards, a page of a private file mapping its file page
- (`Mapping.origin`), a page of a shared one is unchanged. `MADV_NORMAL`, `MADV_RANDOM`,
- `MADV_SEQUENTIAL`, `MADV_WILLNEED`, `MADV_DONTDUMP`, `MADV_DODUMP`, `MADV_COLD`, `MADV_PAGEOUT`,
--`MADV_DONTFORK`, `MADV_DOFORK` and `MADV_KEEPONFORK` change nothing the model has but VMA boundaries
-+`MADV_DONTFORK`, `MADV_DOFORK`, `MADV_KEEPONFORK`, and with `thp` `MADV_HUGEPAGE` and `MADV_NOHUGEPAGE`, change nothing the model has but VMA boundaries
- (read-ahead, the core dump, reclaim, what `fork` copies, which the model does not have): those that
- change VMA flags (all but `MADV_WILLNEED`, `MADV_COLD`, `MADV_PAGEOUT`) give the range's pages new
- areas, as the kernel may split VMAs at its ends (`madvise_update_vma`; also when the call then
-@@ -620,7 +623,7 @@ first that refuses it, with the pages before it done:
- `MADV_POPULATE_WRITE` makes the copies of private file pages and keeps lazily freed pages
- (`Memory.populate`); a failure the model does not track (lack of memory) stops after a first part.
- Not modelled: `MADV_GUARD_INSTALL` and `MADV_GUARD_REMOVE`, and ranges over the vDSO. -/
--def sysMadvise (feat : Features) (s : State) : Req StepResult := do
-+def sysMadvise (feat : Features) (thp : Bool) (s : State) : Req StepResult := do
-   let start := s.cpu.gpr.rdi.toNat
-   let lenIn := s.cpu.gpr.rsi.toNat
-   let advice := argInt s.cpu.gpr.rdx
-@@ -632,10 +635,12 @@ def sysMadvise (feat : Features) (s : State) : Req StepResult := do
-     MADV_REMOVE, MADV_DONTFORK, MADV_DOFORK, MADV_DONTDUMP, MADV_DODUMP, MADV_WIPEONFORK,
-     MADV_KEEPONFORK, MADV_COLD, MADV_PAGEOUT, MADV_POPULATE_READ, MADV_POPULATE_WRITE,
-     MADV_DONTNEED_LOCKED, MADV_GUARD_INSTALL, MADV_GUARD_REMOVE]
--  let byConfig := [MADV_MERGEABLE, MADV_UNMERGEABLE, MADV_HUGEPAGE, MADV_NOHUGEPAGE, MADV_COLLAPSE,
--    MADV_HWPOISON, MADV_SOFT_OFFLINE]
-+  -- FV_7zip G1: `MADV_HUGEPAGE` and `MADV_NOHUGEPAGE` by `thp`
-+  let huge := [MADV_HUGEPAGE, MADV_NOHUGEPAGE]
-+  let known := if thp then known ++ huge else known
-+  let byConfig := [MADV_MERGEABLE, MADV_UNMERGEABLE, MADV_COLLAPSE, MADV_HWPOISON, MADV_SOFT_OFFLINE]
-   let flagAdvice := [MADV_NORMAL, MADV_RANDOM, MADV_SEQUENTIAL, MADV_DONTDUMP, MADV_DODUMP, MADV_DOFORK,
--    MADV_KEEPONFORK]
-+    MADV_KEEPONFORK] ++ huge
-   let hints := [MADV_WILLNEED, MADV_COLD, MADV_PAGEOUT]
-   if advice ∈ byConfig then stop "madvise advice that depends on the kernel's configuration"
-   else if advice ∉ known then fail EINVAL
 diff --git a/ZellicX86/Spec/Profile.lean b/ZellicX86/Spec/Profile.lean
-index 64f89de..57c8058 100644
+index 47c9953..aa3365e 100644
 --- a/ZellicX86/Spec/Profile.lean
 +++ b/ZellicX86/Spec/Profile.lean
-@@ -91,6 +91,19 @@ structure Features where
-   lists, which may then run a critical section as a transaction, and `XTEST` (SDM Vol. 1, 17.3.1.1,
-   17.3.1.3). Without HLE those prefixes are ignored. Clear flags leave it open as for `rtm`. -/
-   hle : Bool
+@@ -98,6 +98,19 @@ structure Features where
+   /-- AVX-512 byte permutations usable: CPUID.(EAX=07H,ECX=0):ECX[1] and
+   enabled AVX-512 state (SDM Vol. 2A CPUID; APM Vol. 3 Appendix E). -/
+   avx512vbmi : Bool := false
 +  /-- `CPUID.01H:ECX.AES[bit 25]` (FV_7zip G1): `AESENC`, `AESENCLAST`, `AESDEC`, `AESDECLAST` and, with `avx`, their
 +  `VEX.128` forms (SDM Vol. 2, "AESENC", ..., the CPUID Feature Flag column). -/
 +  aes : Bool
@@ -662,7 +535,7 @@ index 64f89de..57c8058 100644
    deriving Repr, Inhabited
  
  /-- What Linux tells a new process about the processor in its auxiliary vector
-@@ -163,6 +176,14 @@ structure Profile where
+@@ -170,6 +183,14 @@ structure Profile where
    ("RstrFpErrPtrs") reports it (`Consistent`). Not read on an Intel processor, whose save and restore
    always keep them. -/
    amdErrPtrs : Bool
@@ -677,10 +550,10 @@ index 64f89de..57c8058 100644
    /-- The booted Linux kernel's settings that the model reads (`LinuxBoot`), Linux's part of the
    machine: what the processor's instructions read is in the fields above, as the kernel configured
    it. -/
-@@ -266,6 +287,14 @@ structure Profile.Consistent (prof : Profile) : Prop where
-   rtm : prof.reports 7 0 (·.ebx) 11 → prof.feat.rtm = true
-   /-- `CPUID.(EAX=07H,ECX=0):EBX.HLE[4]`. -/
+@@ -277,6 +298,14 @@ structure Profile.Consistent (prof : Profile) : Prop where
    hle : prof.reports 7 0 (·.ebx) 4 → prof.feat.hle = true
+   /-- CPUID.(EAX=0DH,ECX=1):EAX[1], with OSXSAVE enabled. -/
+   xsavec : prof.reports 0xD 1 (·.eax) 1 → prof.xcr0.isSome = true → prof.feat.xsavec = true
 +  /-- `CPUID.01H:ECX.AES[25]` (FV_7zip G1). -/
 +  aes : prof.reports 1 0 (·.ecx) 25 → prof.feat.aes = true
 +  /-- `CPUID.(EAX=07H,ECX=0):ECX.VAES[9]`, with AVX's state enabled (FV_7zip G1; as `avx2`). -/
@@ -693,7 +566,7 @@ index 64f89de..57c8058 100644
    apx : prof.reports 7 1 (·.edx) 21 → prof.enabled xcr0Apx → prof.feat.apx = true
    /-- `CPUID.80000001H:ECX.LZCNT[5]` (AMD: ABM). -/
 diff --git a/ZellicX86/Spec/Request.lean b/ZellicX86/Spec/Request.lean
-index 1049cc1..0c6efc3 100644
+index f2a7dfa..be9fc79 100644
 --- a/ZellicX86/Spec/Request.lean
 +++ b/ZellicX86/Spec/Request.lean
 @@ -210,6 +210,65 @@ structure Timespec where
@@ -762,7 +635,7 @@ index 1049cc1..0c6efc3 100644
  /-- A request. -/
  inductive Request
    /-- A `w`-bit value the processor manuals leave undefined. -/
-@@ -292,6 +351,19 @@ inductive Request
+@@ -311,6 +370,19 @@ inductive Request
    /-- The status of the open file with identity `file`: `fstat(2)`. For a regular file with pages the
    model replaces its size and type by the file's (`statOf`). -/
    | stat (file : Nat)
@@ -782,7 +655,7 @@ index 1049cc1..0c6efc3 100644
    /-- What opening `path` with the flags `flags` (`open(2)`) gives, looked up from the working
    directory (`dir = none`; also for an absolute path) or from the directory open as the file with
    identity `dir`: how the path resolves is the file system's, which the model does not have. -/
-@@ -391,6 +463,11 @@ def Request.Answer : Request → Type
+@@ -412,6 +484,11 @@ def Request.Answer : Request → Type
    | .randomBytes k => { bs : List Byte // bs.length = k }
    | .readlink .. => LinkResult
    | .stat _ => StatResult
@@ -795,35 +668,32 @@ index 1049cc1..0c6efc3 100644
    | .seekPast .. => Bool
    | .seek .. => Except Errno (Fin (2 ^ 63))
 diff --git a/ZellicX86/Spec/Semantics.lean b/ZellicX86/Spec/Semantics.lean
-index 7b40833..4b31f91 100644
+index 768e78b..7e05b06 100644
 --- a/ZellicX86/Spec/Semantics.lean
 +++ b/ZellicX86/Spec/Semantics.lean
-@@ -61,6 +61,8 @@ def exec (prof : Profile) (i : Inst) : Prog Ctl :=
-   | .movbe => Sem.movbe i | .prefetch _ => Sem.prefetch i | .crc32 => Sem.crc32 i
+@@ -63,6 +63,8 @@ def exec (prof : Profile) (i : Inst) : Prog Ctl :=
    | .lfence => Sem.lfence i | .sfence => Sem.sfence i | .mfence => Sem.mfence i
    | .rdssp => Sem.rdssp i | .incssp => Sem.incssp i | .xtest => Sem.xtest i
+   | .xsave => Sem.xsave false prof i | .xsavec => Sem.xsave true prof i | .xrstor => Sem.xrstor prof i
 -  | .rcl | .rcr | .pause => unmodelled (.form (reprStr i.mn))
 +  | .xbegin => Sem.xbegin i | .xend => Sem.xend i | .xabort => Sem.xabort i  -- FV_7zip G1
-+  | .pause => Sem.pause i
++  | .pause => Sem.pause i  -- FV_7zip G1
 +  | .rcl | .rcr => unmodelled (.form (reprStr i.mn))
  
  end ZellicX86
 diff --git a/ZellicX86/Spec/Semantics/Avx.lean b/ZellicX86/Spec/Semantics/Avx.lean
-index d7493b1..d424944 100644
+index 94abd7b..d4c9a6f 100644
 --- a/ZellicX86/Spec/Semantics/Avx.lean
 +++ b/ZellicX86/Spec/Semantics/Avx.lean
-@@ -791,6 +791,123 @@ def Sem.knot (e : Nat) (i : Inst) : Prog Ctl :=
+@@ -1085,6 +1085,68 @@ def Sem.knot (e : Nat) (i : Inst) : Prog Ctl :=
      done
    | _ => formNotModelled i
  
-+/-! ## FV_7zip G1: VEX forms 7zzs 26.05 executes
++/-! ## FV_7zip G1: VEX forms 7zzs executes that the model lacks
 +
 +All of exception type 4 or 6 (SDM Vol. 2, 2.5.1): a memory operand at any alignment. A 256-bit form works on each
-+128-bit lane as the 128-bit form does, except `VPERM2I128` and `VBROADCASTI128`, which move whole lanes. -/
++128-bit lane as the 128-bit form does, except `VBROADCASTI128`, which moves whole lanes. -/
 +
-+/-- The 128-bit lanes of `a` (and `b`) each mapped by `f`. -/
-+def perLane {w : Nat} (f : BitVec 128 → BitVec 128 → BitVec 128) (a b : BitVec w) : BitVec w :=
-+  ofElems w 128 fun l => f (elem 128 a l) (elem 128 b l)
 +
 +/-- Interleave the low (`hi = false`) or high `e`-bit elements of the two sources in each 128-bit lane (VEX
 +`VPUNPCKLDQ`, `VPUNPCKHDQ`: SDM Vol. 2B, "PUNPCKLBW/PUNPCKLWD/PUNPCKLDQ/PUNPCKLQDQ",
@@ -844,58 +714,6 @@ index d7493b1..d424944 100644
 +def Sem.vpunpckldq (i : Inst) : Prog Ctl := vunpack 32 false i
 +/-- VEX `VPUNPCKHDQ` (`vunpack`). -/
 +def Sem.vpunpckhdq (i : Inst) : Prog Ctl := vunpack 32 true i
-+
-+/-- VEX `VPSHUFD`: doubleword `j` of each lane is the source lane's doubleword the immediate's 2-bit field `j`
-+chooses (SDM Vol. 2B, "PSHUFD", VEX.256 Operation). -/
-+def Sem.vpshufd (i : Inst) : Prog Ctl :=
-+  match i.ops with
-+  | [d, s, .imm _ k] => do
-+    let w := d.width
-+    let b ← readOp w s
-+    writeOp d (ofElems w 32 fun j => elem 32 b (j / 4 * 4 + k / 4 ^ (j % 4) % 4))
-+    done
-+  | _ => formNotModelled i
-+
-+/-- VEX `VPALIGNR`: in each lane, the low 128 bits of `src1:src2` shifted right by `imm8` bytes (SDM Vol. 2B,
-+"PALIGNR", VEX.256 Operation). -/
-+def Sem.vpalignr (i : Inst) : Prog Ctl :=
-+  match i.ops with
-+  | [d, s₁, s₂, .imm _ k] => do
-+    let w := d.width
-+    let a ← readOp w s₁
-+    let b ← readOp w s₂
-+    writeOp d (perLane (fun x y => ((x ++ y) >>> (8 * k)).setWidth 128) a b)
-+    done
-+  | _ => formNotModelled i
-+
-+/-- VEX `VPSRLDQ` (`left = false`) and `VPSLLDQ`: each lane shifted by `imm8` bytes, 0 from 16 on (SDM Vol. 2B,
-+"PSRLDQ", "PSLLDQ", VEX.256 Operation). -/
-+def vbyteShift (left : Bool) (i : Inst) : Prog Ctl :=
-+  match i.ops with
-+  | [d, s, .imm _ k] => do
-+    let w := d.width
-+    let a ← readOp w s
-+    writeOp d (perLane (fun x _ => if left then x <<< (8 * k) else x >>> (8 * k)) a a)
-+    done
-+  | _ => formNotModelled i
-+
-+/-- VEX `VPSRLDQ` (`vbyteShift`). -/
-+def Sem.vpsrldq (i : Inst) : Prog Ctl := vbyteShift false i
-+/-- VEX `VPSLLDQ` (`vbyteShift`). -/
-+def Sem.vpslldq (i : Inst) : Prog Ctl := vbyteShift true i
-+
-+/-- `VPERM2I128`: each half of the destination the half of `src1:src2` that `imm8[1:0]` (low) or `imm8[5:4]` (high)
-+chooses, or 0 if `imm8[3]` (low) or `imm8[7]` (high) is set (SDM Vol. 2C, "VPERM2I128", Operation). -/
-+def Sem.vperm2i128 (i : Inst) : Prog Ctl :=
-+  match i.ops with
-+  | [d, s₁, s₂, .imm _ k] => do
-+    let a ← readOp 256 s₁
-+    let b ← readOp 256 s₂
-+    let sel (c : Nat) : BitVec 128 := elem 128 (if c % 4 < 2 then a else b) (c % 2)
-+    writeOp d (ofElems 256 128 fun j =>
-+      if j = 0 then (if k.testBit 3 then 0 else sel k) else (if k.testBit 7 then 0 else sel (k / 16)))
-+    done
-+  | _ => formNotModelled i
 +
 +/-- `VBROADCASTI128 ymm, m128`: the 16 bytes in both halves (SDM Vol. 2C, "VBROADCAST", Operation:
 +`VBROADCASTI128`; exception type 6). -/
@@ -929,29 +747,28 @@ index d7493b1..d424944 100644
 +    let w := d.width
 +    let a ← readOp w s₁
 +    let b ← readOp w s₂
-+    writeOp d (perLane f a b)
++    writeOp d (perLane128 (fun _ => f) a b)
 +    done
 +  | _ => formNotModelled i
 +
- /-- Execute VEX or EVEX instruction `i` of mnemonic `m`, with `rip` already advanced past it. -/
- def execAvx (prof : Profile) (m : AvxMn) (i : Inst) : Prog Ctl :=
-   match m with
-@@ -850,5 +967,10 @@ def execAvx (prof : Profile) (m : AvxMn) (i : Inst) : Prog Ctl :=
+ /-- The address of gather element `j`: signed dword/qword vector index, SIB scale,
+ base and displacement, truncated at the address size before adding FS/GS (SDM Vol. 2C,
+ gathers, Operation; APM Vol. 4 §1.3 "VSIB Addressing"). -/
+@@ -1232,5 +1294,9 @@ def execAvx (prof : Profile) (m : AvxMn) (i : Inst) : Prog Ctl :=
    | .kmov e => Sem.kmov e i | .kortest e => Sem.kortest e i | .ktest e => Sem.ktest e i
    | .kand e => Sem.kand e i | .kandn e => Sem.kandn e i | .kor e => Sem.kor e i
    | .kxnor e => Sem.kxnor e i | .kxor e => Sem.kxor e i | .knot e => Sem.knot e i
-+  | .vpunpckldq => Sem.vpunpckldq i | .vpunpckhdq => Sem.vpunpckhdq i | .vpshufd => Sem.vpshufd i
-+  | .vpalignr => Sem.vpalignr i | .vpsrldq => Sem.vpsrldq i | .vpslldq => Sem.vpslldq i
-+  | .vperm2i128 => Sem.vperm2i128 i | .vbroadcasti128 => Sem.vbroadcasti128 i | .vptest => Sem.vptest i
++  | .vpunpckldq => Sem.vpunpckldq i | .vpunpckhdq => Sem.vpunpckhdq i
++  | .vbroadcasti128 => Sem.vbroadcasti128 i | .vptest => Sem.vptest i
 +  | .vaesenc => vaesRound aesEnc i | .vaesenclast => vaesRound aesEncLast i
 +  | .vaesdec => vaesRound aesDec i | .vaesdeclast => vaesRound aesDecLast i
  
  end ZellicX86
 diff --git a/ZellicX86/Spec/Semantics/Basic.lean b/ZellicX86/Spec/Semantics/Basic.lean
-index eb8440c..ce41b79 100644
+index d7768db..8e9a804 100644
 --- a/ZellicX86/Spec/Semantics/Basic.lean
 +++ b/ZellicX86/Spec/Semantics/Basic.lean
-@@ -245,6 +245,22 @@ def logicOp {w : Nat} (g : BitVec w → BitVec w → BitVec w) (x y : BitVec w)
+@@ -246,6 +246,22 @@ def logicOp {w : Nat} (g : BitVec w → BitVec w → BitVec w) (x y : BitVec w)
  def bswap {w : Nat} (x : BitVec w) : BitVec w :=
    ofBytesLE w (toBytesLE x (w / 8)).reverse
  
@@ -974,7 +791,7 @@ index eb8440c..ce41b79 100644
  /-- The shifts and rotates `shiftRot` implements. -/
  inductive ShiftOp | rol | ror | shl | shr | sar
  
-@@ -261,15 +277,14 @@ so the sequence of choices does not depend on the vendor; on AMD it is not used.
+@@ -262,15 +278,14 @@ so the sequence of choices does not depend on the vendor; on AMD it is not used.
  With a masked count of 0 no flags change and the value is unchanged. A register destination
  is still written, so a 32-bit one is zero-extended: the general rule for 32-bit results (SDM
  Vol. 1, 3.4.1.1; AMD APM Vol. 1, 3.1.2.3), observed on an Intel Raptor Lake core. Whether a
@@ -1044,7 +861,7 @@ index 90db79f..b45a5b2 100644
  
  end ZellicX86
 diff --git a/ZellicX86/Spec/Semantics/Control.lean b/ZellicX86/Spec/Semantics/Control.lean
-index fdce471..8ea519b 100644
+index fe7fcc8..78e72ce 100644
 --- a/ZellicX86/Spec/Semantics/Control.lean
 +++ b/ZellicX86/Spec/Semantics/Control.lean
 @@ -136,6 +136,12 @@ def Sem.ret (feat : Features) (i : Inst) : Prog Ctl := do
@@ -1060,7 +877,7 @@ index fdce471..8ea519b 100644
  /-- `PREFETCHNTA`, `PREFETCHT0`, `PREFETCHT1`, `PREFETCHT2`: a hint to move the line at the memory
  operand closer to the processor, with no architectural effect: it neither faults nor accesses
  memory as a load does (SDM Vol. 2, "PREFETCHh": "does not affect program behavior", "does not
-@@ -179,6 +185,22 @@ def Sem.xtest (_ : Inst) : Prog Ctl := do
+@@ -181,6 +187,22 @@ def Sem.xtest (_ : Inst) : Prog Ctl := do
    writeFlags { f with zf := true, cf := false, of := false, sf := false, pf := false, af := false }
    done
  
@@ -1084,10 +901,10 @@ index fdce471..8ea519b 100644
  "SYSCALL"); the kernel does the rest (`Spec/Linux/Syscall.lean`). -/
  def Sem.syscall (_ : Inst) : Prog Ctl := do
 diff --git a/ZellicX86/Spec/Semantics/Sse.lean b/ZellicX86/Spec/Semantics/Sse.lean
-index 5264535..500d34a 100644
+index 73e557b..094ea49 100644
 --- a/ZellicX86/Spec/Semantics/Sse.lean
 +++ b/ZellicX86/Spec/Semantics/Sse.lean
-@@ -83,6 +83,111 @@ def sha256Msg2 (src1 src2 : BitVec 128) : BitVec 128 :=
+@@ -83,6 +83,112 @@ def sha256Msg2 (src1 src2 : BitVec 128) : BitVec 128 :=
    let w19 := lane 32 src1 3 + sha256s1 w17
    w19 ++ w18 ++ w17 ++ w16
  
@@ -1181,7 +998,8 @@ index 5264535..500d34a 100644
 +def aesMix (m₀ m₁ m₂ m₃ : BitVec 8) (s : BitVec 128) : BitVec 128 :=
 +  ofBytes fun i =>
 +    let (r, c) := (i % 4, i / 4)
-+    gmul m₀ (aesAt s r c) ^^^ gmul m₁ (aesAt s (r + 1) c) ^^^ gmul m₂ (aesAt s (r + 2) c) ^^^ gmul m₃ (aesAt s (r + 3) c)
++    gmul m₀ (aesAt s r c) ^^^ gmul m₁ (aesAt s (r + 1) c) ^^^ gmul m₂ (aesAt s (r + 2) c) ^^^
++      gmul m₃ (aesAt s (r + 3) c)
 +/-- `MixColumns` (FIPS 197, 5.1.3). -/
 +def aesMixColumns (s : BitVec 128) : BitVec 128 := aesMix 2 3 1 1 s
 +/-- `InvMixColumns` (FIPS 197, 5.3.3). -/
@@ -1199,15 +1017,10 @@ index 5264535..500d34a 100644
  /-- A packed operation `dest := f dest src` on 128-bit operands of exception type 4 (a memory
  source must be 16-byte aligned, SDM Vol. 2, 2.5.4, Table 2-21, unless `MXCSR.MM`). -/
  def packed (prof : Profile) (d s : Opd) (f : BitVec 128 → BitVec 128 → BitVec 128) : Prog Ctl := do
-@@ -187,6 +292,32 @@ AMD APM Vol. 4, PMINUD/VPMINUD, pp. 553–555. -/
- def Sem.pminud (prof : Profile) (i : Inst) : Prog Ctl := packedOp prof i fun a b =>
-   ofDwords fun j => if (lane 32 a j).toNat < (lane 32 b j).toNat then lane 32 a j else lane 32 b j
+@@ -177,6 +283,27 @@ Type1.SSE2 (Table 2-18); AMD APM Vol. 4, MOVNTDQ/VMOVNTDQ, pp. 318–320.
+ The non-temporal hint's ordering across threads is not modelled (`Sem.movntps`). -/
+ def Sem.movntdq (i : Inst) : Prog Ctl := moveAligned i
  
-+/-- Legacy `PMAXUD` (FV_7zip G1): the greater unsigned doubleword of each source pair, preserving the destination's
-+bits above 127 and all flags; exception type 4 as `PMINUD`. SDM Vol. 2B, PMAXUD/PMAXUQ, Operation and Table 2-21. -/
-+def Sem.pmaxud (prof : Profile) (i : Inst) : Prog Ctl := packedOp prof i fun a b =>
-+  ofDwords fun j => if (lane 32 a j).toNat < (lane 32 b j).toNat then lane 32 b j else lane 32 a j
-+
 +/-- Legacy `PTEST xmm1, xmm2/m128` (FV_7zip G1): `ZF := (xmm1 AND src) = 0`, `CF := (NOT xmm1 AND src) = 0`, and `AF`,
 +`OF`, `PF`, `SF` cleared; no register is written. Exception type 4: a memory operand is aligned as for `packed`.
 +SDM Vol. 2B, PTEST, Operation and "Flags Affected". -/
@@ -1232,7 +1045,7 @@ index 5264535..500d34a 100644
  /-- `MOVD`: 32 bits between an `XMM` register and a general register or memory (SDM Vol. 2,
  "MOVD/MOVQ"). -/
  def Sem.movd (i : Inst) : Prog Ctl := moveBits 32 i
-@@ -600,6 +731,34 @@ def Sem.sha256msg1 (prof : Profile) (i : Inst) : Prog Ctl := shaMsg prof i sha25
+@@ -618,6 +745,34 @@ def Sem.sha256msg1 (prof : Profile) (i : Inst) : Prog Ctl := shaMsg prof i sha25
  /-- `SHA256MSG2` (`sha256Msg2`, SDM Vol. 2, "SHA256MSG2"). -/
  def Sem.sha256msg2 (prof : Profile) (i : Inst) : Prog Ctl := shaMsg prof i sha256Msg2
  
@@ -1267,7 +1080,7 @@ index 5264535..500d34a 100644
  /-- `PSRLW` by an immediate or a count (`shiftBy`): each word shifted right, 0 for a count of 16 or
  more (SDM Vol. 2, "PSRLW/PSRLD/PSRLQ"; AMD APM Vol. 4, "PSRLW, VPSRLW", p. 669). -/
  def Sem.psrlw (prof : Profile) (i : Inst) : Prog Ctl :=
-@@ -973,7 +1132,12 @@ def execSse (prof : Profile) (m : SseMn) (i : Inst) : Prog Ctl :=
+@@ -1024,7 +1179,12 @@ def execSse (prof : Profile) (m : SseMn) (i : Inst) : Prog Ctl :=
    | .pshufb => Sem.pshufb prof i | .palignr => Sem.palignr prof i | .pblendw => Sem.pblendw prof i
    | .sha256rnds2 => Sem.sha256rnds2 prof i | .sha256msg1 => Sem.sha256msg1 prof i
    | .sha256msg2 => Sem.sha256msg2 prof i
@@ -1276,163 +1089,15 @@ index 5264535..500d34a 100644
 +  | .aesenc => Sem.aesenc prof i | .aesenclast => Sem.aesenclast prof i
 +  | .aesdec => Sem.aesdec prof i | .aesdeclast => Sem.aesdeclast prof i
    | .pcmpistri => Sem.pcmpistri i | .pcmpistrm => Sem.pcmpistrm i
-+  | .lddqu => Sem.lddqu i | .pmaxud => Sem.pmaxud prof i | .ptest => Sem.ptest prof i
++  | .lddqu => Sem.lddqu i | .ptest => Sem.ptest prof i
    | .movupd => Sem.movupd i | .movapd => Sem.movapd i | .movss => Sem.movss i | .movsd => Sem.movsd i
    | .movddup => Sem.dup prof.misalignSse true false i
    | .movshdup => Sem.dup prof.misalignSse false true i
-diff --git a/ZellicX86/Spec/Semantics/X87.lean b/ZellicX86/Spec/Semantics/X87.lean
-index 83847ec..9ceb08c 100644
---- a/ZellicX86/Spec/Semantics/X87.lean
-+++ b/ZellicX86/Spec/Semantics/X87.lean
-@@ -506,6 +506,133 @@ def Sem.fxrstor (prof : Profile) (i : Inst) : Prog Ctl :=
-       done
-   | _ => formNotModelled i
- 
-+/-! ## `XSAVE`, `XSAVEC`, `XRSTOR` (FV_7zip G1) -/
-+
-+/-- The requested-feature bitmap `XCR0 AND EDX:EAX` (SDM Vol. 2, "XSAVE": "the upper 32 bits of RDX and RAX are
-+ignored"). -/
-+def xRfbm (prof : Profile) : Prog (BitVec 64) := do
-+  let a ← readReg 0
-+  let d ← readReg 2
-+  Pure.pure (prof.xcr0.getD 0 &&& (d.setWidth 32 ++ a.setWidth 32))
-+
-+/-- The register state an `XSAVE` or `XRSTOR` reads: the x87 state and the vector state (`ZMM0`–`ZMM31`, `k0`–`k7`,
-+`MXCSR`). -/
-+def readXRegs : Prog (X87 × VecRegs) := do
-+  let x ← readX87
-+  let mx ← readMxcsr
-+  let zs ← (List.range 32).mapM fun j => readZmm (Fin.ofNat 32 j)
-+  let ks ← (List.range 8).mapM fun j => readK (Fin.ofNat 8 j)
-+  Pure.pure (x, ⟨fun j => zs.getD j.val 0, fun j => ks.getD j.val 0, mx⟩)
-+
-+/-- `#UD` unless the OS enabled `XSAVE` (`CR4.OSXSAVE`; the profile's `XCR0`), and with `compacted` unless the
-+executing CPU supports `XSAVEC` (`CPUID.(EAX=0DH,ECX=1):EAX[1]`) (SDM Vol. 2, "XSAVE", "XSAVEC", Exceptions). -/
-+def xEnabled (prof : Profile) (compacted : Bool) : Prog Unit := do
-+  if prof.xcr0.isNone then throw .ud
-+  if compacted then
-+    let cpu ← choice (prof.cpus - 1)
-+    if !(prof.cpuid cpu.val 0xD 1).eax.getLsbD 1 then throw .ud
-+
-+/-- `XSAVE mem` and, with `compacted`, `XSAVEC mem` (`REX.W`: `XSAVE64`, `XSAVEC64`) (SDM Vol. 2, "XSAVE",
-+"XSAVEC", Operation; Vol. 1, 13.7, 13.10): `#UD` as `xEnabled`, `#GP(0)` unless the area is 64-byte aligned (not
-+ordered with a fault of the access, `Op.checkAligned`); a requested-feature bitmap (`xRfbm`) with a component
-+outside `xInsnHeld` is not modelled, nor `XSAVEC` with an aligned component (`Profile.xCompAligned`). `XINUSE` is
-+left open within the manuals' bounds (`xInuseOf`).
-+
-+`XSAVE` reads `XSTATE_BV` and saves each component of `RFBM`, `MXCSR` and `MXCSR_MASK` with SSE or AVX, in the
-+standard format (`xsaveRuns`), then writes `XSTATE_BV` as `(OLD_BV AND NOT RFBM) OR (XINUSE AND RFBM)`. `XSAVEC`
-+saves the components of `TO_BE_SAVED`, `RFBM AND XINUSE` with SSE whenever `MXCSR` is not `1F80H`, (`MXCSR` with
-+SSE only) in the compacted format of `RFBM` (`xCompact`), writes `XSTATE_BV` as `TO_BE_SAVED` and `XCOMP_BV` as
-+`RFBM` with bit 63 set. Neither writes another header byte nor bytes 464–511; the bytes the formats leave reserved
-+within a saved component are undefined. The stores are one masked store of the bytes written, after a check of the
-+bytes `Profile.xTouched` gives (of the components saved, or of every component of `RFBM`): a fault leaves the area unwritten (the
-+manuals do not say which bytes a faulting `XSAVE` writes). -/
-+def Sem.xsave (prof : Profile) (compacted : Bool) (i : Inst) : Prog Ctl :=
-+  match i.ops with
-+  | [.mem mo] => do
-+    xEnabled prof compacted
-+    let m ← memRef mo
-+    alignedTo m 64 .write 576 false
-+    let rfbm ← xRfbm prof
-+    if rfbm &&& ~~~xInsnHeld ≠ 0 then unmodelled (.feature "XSAVE of a state component outside xInsnHeld") else do
-+    if compacted && prof.xCompAligned rfbm then unmodelled (.feature "XSAVEC: an aligned component") else do
-+    let (x, v) ← readXRegs
-+    let u ← undefined 64
-+    let inuse := xInuseOf x v rfbm u
-+    let save := if compacted then inuse ||| (if v.mxcsr ≠ 0x1F80 then rfbm &&& 2 else 0) else rfbm
-+    let hdr : List (Nat × List Byte) ←
-+      if compacted then
-+        Pure.pure [(512, toBytesLE save 8), (520, toBytesLE (rfbm ||| ((1 : BitVec 64) <<< 63)) 8)]
-+      else do
-+        let old : BitVec 64 ← read ⟨m.addr.add 512, m.stack⟩ 64
-+        Pure.pure [(512, toBytesLE ((old &&& ~~~rfbm) ||| inuse) 8)]
-+    let rsv : BitVec 23296 ← undefined 23296
-+    let runs := xsaveRuns prof x v 0 save rsv (i.opsz = 64)
-+    -- `XSAVEC` saves `MXCSR` with SSE state only (its Operation: "store SSE state ... saves the XMM registers,
-+    -- MXCSR, and MXCSR_MASK")
-+    let runs := if compacted && !save.getLsbD 1 then runs.filter (fun (o, _) => o != 24 && o != 28) else runs
-+    let runs := hdr ++ (if compacted then xCompact prof rfbm runs else runs)
-+    let n := xRunsEnd runs
-+    let (sel, val) := xRunsSel runs n
-+    -- the bytes of the components requested but not saved are checked or not (`Profile.xTouched`)
-+    let all ← choice 1
-+    checkAccesses ((prof.xTouched compacted rfbm (if all.val = 1 then rfbm else save)).map
-+      fun (o, k) => (⟨m.addr.add o, m.stack⟩, .write, k))
-+    writeSel m n sel val
-+    done
-+  | _ => formNotModelled i
-+
-+/-- `XRSTOR mem` (`REX.W`: `XRSTOR64`) (SDM Vol. 2, "XRSTOR", Operation; Vol. 1, 13.8): `#UD` as `xEnabled`,
-+`#GP(0)` unless the area is 64-byte aligned; a requested-feature bitmap (`xRfbm`) with a component outside
-+`xInsnHeld` is not modelled. It reads the header (bytes 512–575), then the bytes its plan loads (`XPlan.reads`), and
-+loads the state as `xrstorRegs` says (`#GP(0)` where that does), the compacted form only on a CPU that supports it;
-+a fault on the bytes `Profile.xTouched` gives (of the components loaded, or of every component requested) comes before
-+the `#GP` or after it.
-+`XINUSE` and `XRSTOR_INFO` are not state of the model (`xInuseOf`, `XSAVEOPT` and `XSAVES` are not modelled). -/
-+def Sem.xrstor (prof : Profile) (i : Inst) : Prog Ctl :=
-+  match i.ops with
-+  | [.mem mo] => do
-+    xEnabled prof false
-+    let m ← memRef mo
-+    alignedTo m 64 .read 576 false
-+    let rfbm ← xRfbm prof
-+    if rfbm &&& ~~~xInsnHeld ≠ 0 then unmodelled (.feature "XRSTOR of a state component outside xInsnHeld") else do
-+    let hdr : BitVec 512 ← read ⟨m.addr.add 512, m.stack⟩ 512
-+    let comp := hdr.extractLsb' 64 64
-+    let p := xPlan (hdr.setWidth 64) comp rfbm
-+    let cpu ← choice (prof.cpus - 1)
-+    let xsavec := (prof.cpuid cpu.val 0xD 1).eax.getLsbD 1
-+    let n := p.size prof
-+    -- the bytes of the components requested but not loaded are checked or not (`Profile.xTouched`)
-+    let all ← choice 1
-+    let touched := (prof.xTouched p.compact p.fmt
-+      (if all.val = 0 then p.restore else if p.compact then rfbm &&& p.fmt else rfbm)).map
-+      fun (o, k) => (⟨m.addr.add o, m.stack⟩, Access.read, k)
-+    let (x, v) ← readXRegs
-+    -- whether a fault on the bytes `touched` comes before a `#GP` of the header or `MXCSR`: the manuals leave the
-+    -- priority open (as `Prog.run`'s `checkAligned`); an Intel Core i7-14650HX raises the fault, an AMD EPYC 9V45
-+    -- the `#GP` (measured). The `#GP` depends on the legacy region and the header only.
-+    let first ← choice 1
-+    if first.val = 1 then checkAccesses touched
-+    let leg : BitVec 4096 ← read m 4096
-+    let rdLow (o : Nat) : Byte :=
-+      if o < 512 then leg.extractLsb' (8 * o) 8 else if o < 576 then hdr.extractLsb' (8 * (o - 512)) 8 else 0
-+    if let .gp := xrstorRegs prof x v rdLow rfbm (i.opsz = 64) xsavec then throw (.gp 0)
-+    let img ← readSel m n (ofBits n fun o => p.reads prof o)
-+    let rd (o : Nat) : Byte := if 512 ≤ o && o < 576 then hdr.extractLsb' (8 * (o - 512)) 8 else img.extractLsb' (8 * o) 8
-+    match xrstorRegs prof x v rd rfbm (i.opsz = 64) xsavec with
-+    | .gp => throw (.gp 0)
-+    | .notModelled w => unmodelled (.feature w)
-+    | .ok (x', v') => do
-+      checkAccesses touched
-+      writeX87 x'
-+      writeMxcsr v'.mxcsr
-+      for j in List.range 32 do
-+        writeZmm (Fin.ofNat 32 j) (v'.zmm (Fin.ofNat 32 j))
-+      for j in List.range 8 do
-+        writeK (Fin.ofNat 8 j) (v'.k (Fin.ofNat 8 j))
-+      done
-+  | _ => formNotModelled i
-+
- /-! ## Loads, stores and moves between registers -/
- 
- /-- Push `v` with the stack-overflow check (`FLD`, `FILD`, the constants): if `ST(7)` is not empty,
-@@ -1253,6 +1380,9 @@ def execX87 (prof : Profile) (m : X87Mn) (i : Inst) : Prog Ctl :=
-   | .fldenv => if i.opsz = 16 then formNotModelled i else Sem.fldenv prof i
-   | .fxsave => Sem.fxsave prof i
-   | .fxrstor => Sem.fxrstor prof i
-+  | .xsave => Sem.xsave prof false i   -- FV_7zip G1
-+  | .xsavec => Sem.xsave prof true i
-+  | .xrstor => Sem.xrstor prof i
-   | .fld => Sem.fld prof i
-   | .fild => Sem.fild prof i
-   | .fldz => Sem.fldConst prof 0 i
 diff --git a/ZellicX86/Spec/State.lean b/ZellicX86/Spec/State.lean
-index 4950741..955fa9d 100644
+index b7d332a..34ee9cb 100644
 --- a/ZellicX86/Spec/State.lean
 +++ b/ZellicX86/Spec/State.lean
-@@ -437,6 +437,10 @@ structure Proc where
+@@ -447,6 +447,10 @@ structure Proc where
    open descriptor, and it only grows (`fs/file.c` `expand_files`; a copy for `fork` or `execve`'s
    `unshare_files` sizes a new table to its open descriptors, `dup_fd`). -/
    fdMax : Nat
@@ -1444,10 +1109,10 @@ index 4950741..955fa9d 100644
  /-- The state of a single-threaded process. -/
  structure State where
 diff --git a/ZellicX86/Spec/Xsave.lean b/ZellicX86/Spec/Xsave.lean
-index f776828..64b9311 100644
+index 3dd255b..580d702 100644
 --- a/ZellicX86/Spec/Xsave.lean
 +++ b/ZellicX86/Spec/Xsave.lean
-@@ -232,15 +232,18 @@ def x87Fcw (v : BitVec 16) : BitVec 16 := (v &&& 0x1F3F) ||| 0x40
+@@ -251,15 +251,18 @@ def x87Fcw (v : BitVec 16) : BitVec 16 := (v &&& 0x1F3F) ||| 0x40
  
  /-- Whether the model knows the control word a load of `v` gives on processor `prof`: on an AMD
  processor always (`x87Fcw`); on an Intel processor, whose manual does not say what it keeps of the
@@ -1470,168 +1135,3 @@ index f776828..64b9311 100644
  
  /-- The x87 state `XRSTOR` or `FXRSTOR` loads from the legacy region `rd` (SDM Vol. 1, 13.5.1;
  `FXRSTOR`): `FCW`, `FSW` with `ES` and `B` computed from the loaded words (`x87Summary`), `FOP`,
-@@ -327,4 +330,164 @@ def fxrstor (prof : Profile) (x : X87) (v : VecRegs) (rd : Nat → Byte) (w64 :
-   else if !x87FcwKnown prof (ofBytesLE 16 [rd 0, rd 1]) then .notModelled "FXRSTOR: reserved FCW bits on Intel"
-   else .ok (fxLoad prof x v rd w64)
- 
-+/-! ## The instructions `XSAVE`, `XSAVEC` and `XRSTOR` (FV_7zip G1)
-+
-+What the instructions themselves do, after the SDM's Operation sections (Vol. 2, "XSAVE", "XSAVEC", "XRSTOR") and
-+Vol. 1, ch. 13. The kernel's own saves and restores of a signal frame are above (`xsaveRuns`, `xrstor`); these
-+functions take the register state as `X87` and `VecRegs`, which is what an instruction program reads. -/
-+
-+/-- The state components the model's `XSAVE`, `XSAVEC` and `XRSTOR` handle: those it holds (`xHeld`) but `PKRU`,
-+which no instruction program reads or writes: x87, SSE, AVX, opmask, `ZMM_Hi256` and `Hi16_ZMM` (0, 1, 2, 5, 6,
-+7). A requested-feature bitmap with another component is not modelled. -/
-+def xInsnHeld : BitVec 64 := 0xE7
-+
-+/-- `Cpu.xInit` of the x87 state `x` and the vector state `v`, for the components in `xInsnHeld`. -/
-+def xInitOf (x : X87) (v : VecRegs) (i : Nat) : Bool :=
-+  let zs (lo hi : Nat) (f : BitVec 512 → Bool) := (List.range (hi - lo)).all fun n => f (v.zmm (Fin.ofNat 32 (lo + n)))
-+  match i with
-+  | 0 => x.fcw == 0x37F && x.fsw == 0 && x.full == 0 && (List.range 8).all fun j => x.st (Fin.ofNat 8 j) == 0
-+  | 1 => zs 0 16 fun v => v.setWidth 128 == 0
-+  | 2 => zs 0 16 fun v => v.extractLsb' 128 128 == 0
-+  | 5 => (List.range 8).all fun j => v.k (Fin.ofNat 8 j) == 0
-+  | 6 => zs 0 16 fun v => v.extractLsb' 256 256 == 0
-+  | 7 => zs 16 32 fun v => v == 0
-+  | _ => true
-+
-+/-- `XINUSE AND rfbm`, given `u` for the bits the manuals leave open: a component not in its initial configuration
-+is in use (`xInitOf`); one in it may be either (SDM Vol. 1, 13.6). Unlike `Cpu.xInuseRequired`, `MXCSR` does not
-+force SSE: "XINUSE[1] may be 0 even if MXCSR does not have its initial value of 1F80H" (SDM Vol. 2, "XSAVEC",
-+footnote 1). -/
-+def xInuseOf (x : X87) (v : VecRegs) (rfbm u : BitVec 64) : BitVec 64 :=
-+  rfbm &&& (u ||| ofBitsLE 64 fun i => !xInitOf x v i)
-+where
-+  ofBitsLE (n : Nat) (f : Nat → Bool) : BitVec n :=
-+    (List.range n).foldl (fun acc i => if f i then acc ||| ((1 : BitVec n) <<< i) else acc) 0
-+
-+/-- The extended components of the compacted format (SDM Vol. 1, 13.4.3) the model places: AVX, opmask, `ZMM_Hi256`,
-+`Hi16_ZMM`. -/
-+def xExtComps : List Nat := [2, 5, 6, 7]
-+
-+/-- The offset of component `i` in the compacted format of components `fmt`: from 576, each component `j` of `fmt`
-+with `2 ≤ j < i` taking `CPUID.(EAX=0DH,ECX=j):EAX` bytes (SDM Vol. 2, "XSAVEC", "XRSTOR", Operation,
-+`NEXT_FEATURE_OFFSET`). A component that `CPUID.(EAX=0DH,ECX=j):ECX[1]` says is 64-byte aligned in the compacted
-+format (SDM Vol. 1, 13.4.3) is not modelled (`Profile.xCompAligned`). -/
-+def Profile.xCompOffset (prof : Profile) (fmt : BitVec 64) (i : Nat) : Nat :=
-+  ((List.range i).filter fun j => 2 ≤ j && fmt.getLsbD j).foldl (fun n j => n + prof.xSize j) 576
-+
-+/-- Whether a component of `fmt` is 64-byte aligned in the compacted format (`CPUID.(EAX=0DH,ECX=i):ECX[1]`, on
-+CPU 0). -/
-+def Profile.xCompAligned (prof : Profile) (fmt : BitVec 64) : Bool :=
-+  (List.range 63).any fun j => 2 ≤ j && fmt.getLsbD j && (prof.cpuid 0 0xD (BitVec.ofNat 32 j)).ecx.getLsbD 1
-+
-+/-- The parts of the area (offset, length) an `XSAVE`, `XSAVEC` or `XRSTOR` accesses for the components `comps`: the
-+legacy region and the header, and each extended component of `comps`, at its offset in the standard format or
-+(`compact`) in the compacted format of `fmt`. The manuals say only which components are saved or loaded; whether a
-+processor also checks the bytes of those requested but not saved or loaded (`comps` the requested-feature bitmap,
-+for a compacted `XRSTOR` within the format `fmt`) is a choice of the instructions' programs, as measured (FV_7zip G1,
-+`tools/xsavetest`): an Intel Core i7-14650HX raises `#PF` for an `XRSTOR` whose `XSTATE_BV` initializes AVX, or an
-+`XSAVEC` with AVX in its initial configuration, whose AVX bytes run into an unmapped page; an AMD EPYC 9V45 does not
-+for a compacted `XRSTOR`'s initialized components. -/
-+def Profile.xTouched (prof : Profile) (compact : Bool) (fmt comps : BitVec 64) : List (Nat × Nat) :=
-+  (0, 576) :: (xExtComps.filter (comps.getLsbD ·)).map fun i =>
-+    (if compact then prof.xCompOffset fmt i else prof.xOffset i, prof.xSize i)
-+
-+/-- The runs `xsaveRuns` gives (in the standard format) moved to the compacted format of components `fmt`: a run in
-+the extended region lies within one component, which moves from `Profile.xOffset` to `Profile.xCompOffset`. -/
-+def xCompact (prof : Profile) (fmt : BitVec 64) (runs : List (Nat × List Byte)) : List (Nat × List Byte) :=
-+  runs.map fun (o, bs) =>
-+    if o < 576 then (o, bs) else
-+    match xExtComps.find? (fun i => prof.xOffset i ≤ o && o < prof.xOffset i + prof.xSize i) with
-+    | some i => (o - prof.xOffset i + prof.xCompOffset fmt i, bs)
-+    | none => (o, bs)
-+
-+/-- The `n` bytes from the area's start that runs `runs` write, as the selection of a masked store and its value:
-+each byte of a run is selected, the first run with it giving its value. -/
-+def xRunsSel (runs : List (Nat × List Byte)) (n : Nat) : BitVec n × BitVec (8 * n) :=
-+  let byteAt (o : Nat) : Option Byte := runs.findSome? fun (p, bs) => if p ≤ o then bs[o - p]? else none
-+  ((List.range n).foldl (fun acc o => if (byteAt o).isSome then acc ||| ((1 : BitVec n) <<< o) else acc) 0,
-+   ofBytesLE (8 * n) ((List.range n).map fun o => (byteAt o).getD 0))
-+
-+/-- The end of the runs `runs`: one past their last byte, at least 576 (the legacy region and the header). -/
-+def xRunsEnd (runs : List (Nat × List Byte)) : Nat :=
-+  runs.foldl (fun n (o, bs) => max n (o + bs.length)) 576
-+
-+/-- What an `XRSTOR` does with the area whose header has `XSTATE_BV` `bv` and `XCOMP_BV` `comp`, for the
-+requested-feature bitmap `rfbm` (SDM Vol. 2, "XRSTOR", Operation): the form (compacted if `XCOMP_BV[63]`), the
-+compacted format's components (`fmt`), the components it loads (`restore`) and those it initializes (`init`), and
-+whether it loads `MXCSR` (the standard form whenever `rfbm` has SSE or AVX; the compacted form with SSE's load). -/
-+structure XPlan where
-+  compact : Bool
-+  fmt : BitVec 64
-+  restore : BitVec 64
-+  init : BitVec 64
-+  loadsMx : Bool
-+
-+def xPlan (bv comp rfbm : BitVec 64) : XPlan :=
-+  let compact := comp.getLsbD 63
-+  let fmt := comp &&& ~~~((1 : BitVec 64) <<< 63)
-+  if compact then
-+    let restore := rfbm &&& fmt &&& bv
-+    { compact, fmt, restore, init := (rfbm &&& ~~~bv) ||| (rfbm &&& ~~~fmt), loadsMx := restore.getLsbD 1 }
-+  else
-+    { compact, fmt, restore := rfbm &&& bv, init := rfbm &&& ~~~bv, loadsMx := rfbm.getLsbD 1 || rfbm.getLsbD 2 }
-+
-+/-- The offset of extended component `i` in the area of plan `p`. -/
-+def XPlan.off (p : XPlan) (prof : Profile) (i : Nat) : Nat :=
-+  if p.compact then prof.xCompOffset p.fmt i else prof.xOffset i
-+
-+/-- Whether plan `p` reads byte `o` of the area besides the header: the x87 state of the legacy region (bytes
-+0–23, but `MXCSR` and `MXCSR_MASK`, and 32–159) with x87's load, `MXCSR` (24–27) when it is loaded, `XMM0`–`XMM15`
-+(160–415) with SSE's load, and each extended component loaded. -/
-+def XPlan.reads (p : XPlan) (prof : Profile) (o : Nat) : Bool :=
-+  (p.restore.getLsbD 0 && (o < 24 || (32 ≤ o && o < 160))) || (p.loadsMx && 24 ≤ o && o < 28) ||
-+  (p.restore.getLsbD 1 && 160 ≤ o && o < 416) ||
-+  xExtComps.any fun i => p.restore.getLsbD i && p.off prof i ≤ o && o < p.off prof i + prof.xSize i
-+
-+/-- One past the last byte plan `p` reads, at least 576. -/
-+def XPlan.size (p : XPlan) (prof : Profile) : Nat :=
-+  xExtComps.foldl (fun n i => if p.restore.getLsbD i then max n (p.off prof i + prof.xSize i) else n) 576
-+
-+/-- `XRSTOR` (`w64`: `XRSTOR64`) of the area `rd` (offset to byte) for the requested-feature bitmap `rfbm` (within
-+`xInsnHeld`) on the x87 state `x` and vector state `v`; `xsavec`: the executing processor supports the compacted
-+form (`CPUID.(EAX=0DH,ECX=1):EAX[1]`). `#GP` (SDM Vol. 2, "XRSTOR", Protected Mode Exceptions): the standard form
-+with header bytes 8–23 not zero or an `XSTATE_BV` bit not in `XCR0`; the compacted form without `xsavec`, with an
-+`XCOMP_BV` bit not in `XCR0`, an `XSTATE_BV` bit not in `XCOMP_BV`, or header bytes 16–63 not zero; a loaded
-+`MXCSR` with a bit the processor does not support. Not modelled: a compacted format with an aligned component
-+(`Profile.xCompAligned`) and, on an Intel processor without `Profile.x87LoadsKnown`, the x87 loads `x87FcwKnown` and
-+`x87SummaryKnown` leave open. Otherwise each component in `restore` is loaded (the x87 state as `x87Load`) and each
-+in `init` put in its initial configuration; the compacted form's initialization of SSE sets `MXCSR` to `1F80H`. -/
-+def xrstorRegs (prof : Profile) (x : X87) (v : VecRegs) (rd : Nat → Byte) (rfbm : BitVec 64) (w64 xsavec : Bool) :
-+    XLoad (X87 × VecRegs) :=
-+  let w (o n : Nat) (m : Nat) : BitVec m := ofBytesLE m ((List.range n).map fun k => rd (o + k))
-+  let bv : BitVec 64 := w 512 8 64
-+  let comp : BitVec 64 := w 520 8 64
-+  let p := xPlan bv comp rfbm
-+  let xcr0 := prof.xcr0.getD 0
-+  let mxcsr : BitVec 32 := w 24 4 32
-+  let gp :=
-+    if p.compact then !xsavec || p.fmt &&& ~~~xcr0 != 0 || bv &&& ~~~p.fmt != 0 ||
-+      (List.range 48).any fun k => rd (528 + k) != 0
-+    else comp != 0 || (w 528 8 64 : BitVec 64) != 0 || bv &&& ~~~xcr0 != 0
-+  if gp then .gp
-+  else if p.loadsMx && !prof.mxcsrOk mxcsr then .gp
-+  else if p.compact && prof.xCompAligned p.fmt then .notModelled "XRSTOR: a compacted area with an aligned component"
-+  else if p.restore.getLsbD 0 && !x87SummaryKnown prof rd then .notModelled "XRSTOR: FSW.ES/B on Intel"
-+  else if p.restore.getLsbD 0 && !x87FcwKnown prof (w 0 2 16) then .notModelled "XRSTOR: reserved FCW bits on Intel"
-+  else
-+    let r (i : Nat) := p.restore.getLsbD i
-+    let z (i : Nat) := p.init.getLsbD i
-+    let field (lo n : Nat) : BitVec 512 := (BitVec.allOnes 512 >>> (512 - n)) <<< lo
-+    let part (lo n o : Nat) (u : BitVec 512) : BitVec 512 := (u &&& ~~~field lo n) ||| ((w o (n / 8) 512) <<< lo)
-+    let upd (i lo n o : Nat) (u : BitVec 512) : BitVec 512 :=
-+      if r i then part lo n o u else if z i then u &&& ~~~field lo n else u
-+    let zmm' : Fin 32 → BitVec 512 := fun j =>
-+      if j.val < 16 then
-+        v.zmm j |> upd 1 0 128 (160 + 16 * j.val) |> upd 2 128 128 (p.off prof 2 + 16 * j.val)
-+          |> upd 6 256 256 (p.off prof 6 + 32 * j.val)
-+      else upd 7 0 512 (p.off prof 7 + 64 * (j.val - 16)) (v.zmm j)
-+    .ok (if r 0 then x87Load prof x rd w64 else if z 0 then X87.init else x,
-+         { zmm := zmm'
-+           k := fun j => if r 5 then w (p.off prof 5 + 8 * j.val) 8 64 else if z 5 then 0 else v.k j
-+           mxcsr := if p.loadsMx then mxcsr else if p.compact && z 1 then 0x1F80 else v.mxcsr })
-+
- end ZellicX86

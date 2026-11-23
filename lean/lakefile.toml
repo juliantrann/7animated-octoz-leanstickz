@@ -1,5 +1,5 @@
 # FV_7zip: Lean 4 binary-level verification of 7-Zip 26.06 `7zzs` (linux-x64), see ../PLAN.md.
-# Built on Zellic's x86-64 Linux model (../refs/zellic-x86, pinned commit 059a6a9).
+# Built on Zellic's x86-64 Linux model (../refs/zellic-x86, pinned commit 5f8ed37, Release 2).
 name = "fv7z"
 version = "0.1.0"
 defaultTargets = ["FV7z"]
