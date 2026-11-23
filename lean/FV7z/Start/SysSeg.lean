@@ -10,7 +10,8 @@ state as a new start: the rest of the run is given `Fn.Seg` there (`Start/Grow.l
 in (`X'`, which `KeptW` relates to the old start), with what the state after is in its terms.
 
 - `footOk_congr`, `ready_cpu`: `Footprint.Ok` and `Ready` of a state with the same memory, key rights and thread.
-- `limits_keptW`: `KeptW` keeps `LimitsUnlimited` (the process's signal state).
+- `limits_keptW`, `limits_of_signal`: `KeptW` and a step that keeps the process's signal state keep
+  `LimitsUnlimited`.
 - `free_le`, `free_congr`: fewer pages of free ones are free; `Memory.free` is of the page map.
 - `Seg.s_brk_keep`: `brk (b)` with `b` below the lowest break; the run goes on from the same start.
 - `Seg.s_brk_grow`: `brk (b)` that grows the break, the kernel not refusing memory: the run goes on with the new
@@ -60,6 +61,14 @@ theorem limits_keptW {ws : List Rgn} {s₀ s : State} (h : KeptW ws s₀ s) (hl 
     LimitsUnlimited s := by
   unfold LimitsUnlimited
   rw [h.proc]
+  exact hl
+
+/-- `LimitsUnlimited` of a state with the same signal state as one that has it: after a system call that changes the
+layout, the break or the `fs` base. -/
+theorem limits_of_signal {X Y : State} (h : Y.proc.signal = X.proc.signal) (hl : LimitsUnlimited X) :
+    LimitsUnlimited Y := by
+  unfold LimitsUnlimited
+  rw [h]
   exact hl
 
 /-- `LayoutOk` of a state with the same memory and break as one that has it. -/

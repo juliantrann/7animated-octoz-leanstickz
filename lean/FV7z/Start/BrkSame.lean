@@ -142,7 +142,7 @@ theorem b_brk_same (c : Seg prof F Wl L s₀ o) (hB : Base s₀ lim b fsb k) (hK
   refine c.s_brk_same hK hA hin hj hrip hd hnr hmg hlow heq hB.rseq hB.lims ?_
   rintro X' Y t' hK' hcpu rfl c' hA'
   refine k' _ t' c' ⟨?_, ?_, rfl, ?_, by rw [heq]; exact hB.le, hB.top, ?_, ?_, ?_, ?_, ?_, ?_,
-    limits_keptW hK' hB.lims⟩ hA' ?_ ?_
+    limits_of_signal rfl (limits_keptW hK' hB.lims)⟩ hA' ?_ ?_
   · show X'.thread.rseq = none
     rw [hK'.thread]
     exact hB.rseq
