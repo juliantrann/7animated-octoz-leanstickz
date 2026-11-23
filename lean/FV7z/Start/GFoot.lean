@@ -63,7 +63,7 @@ theorem lifG_ok (hlo : 0x7a9000 ≤ lo) (hlt : lo ≤ top) (htop : top ≤ 2 ^ 4
   · intro r hr a ha
     simp only [G, lifG, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl <;> obtain ⟨h1, h2⟩ := ha <;> rgn_red
-    · exact .inr (zzsFoot_hdr (by omega) (by omega))
+    · exact .inr (zzsFoot_hdr (lo := lo) (top := top) (L := L) (by omega) (by omega))
     · exact .inr ⟨⟨0x6d8000#64, 0x9e000⟩, List.mem_cons_of_mem _ List.mem_cons_self,
         show _ ∧ _ from ⟨by rgn_red; omega, by rgn_red; omega⟩⟩
     · exact .inl (foot_append_iff.2 (.inr (lw_var (by omega) (by omega))))
