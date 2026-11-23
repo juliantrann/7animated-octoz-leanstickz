@@ -21,7 +21,7 @@ and the TLS block `fb`: called with a return address in code, `Pm (k + 1)` and `
 `rsp + 8`, the registers a call keeps kept, `rax = p` with `0x792980 ≤ p`, `p + n ≤ rsp`, the `n` bytes at `p` in
 the footprint, the bytes below `0x792980` and from the caller's `rsp` up as they were, and `Pm k` for the bytes that
 keep the ones from `0x792980` to the slot of the return address apart from the block (the state of the heap for
-the next call), the bytes `Kn` as they were and the block in the heap (`0x7a9000 ≤ p`). -/
+the next call), the bytes `Kf fb` as they were and the block in the heap (`0x7a9000 ≤ p`, `fb + 64 ≤ p`). -/
 def At (prof : Profile) (F : Footprint) (Wl : List Rgn) (L : List (Addr × List Byte)) (o : Oracle) (fb : Addr)
     (hi : Nat) (e : Addr) (Pm : Nat → (Addr → Byte) → Prop) : Prop :=
   ∀ {s₀ : State} {gev : List Event} {gP : State → Nat → List Event → Prop} {gE : Outcome → List Event → Prop}
@@ -40,7 +40,7 @@ def At (prof : Profile) (F : Footprint) (Wl : List Rgn) (L : List (Addr × List 
       (∀ a : Addr, a.toNat < 7940480 ∨ X.cpu.gpr.rsp.toNat + 8 ≤ a.toNat → V₂ a = V a) →
       (∀ W : Addr → Byte, (∀ a : Addr, 7940480 ≤ a.toNat → a.toNat < X.cpu.gpr.rsp.toNat →
         (a.toNat < p.toNat ∨ p.toNat + X.cpu.gpr.rdi.toNat ≤ a.toNat) → W a = V₂ a) → Pm k W) →
-      (∀ a : Addr, Kn a → V₂ a = V a) → 8032256 ≤ p.toNat →
+      (∀ a : Addr, Kf fb a → V₂ a = V a) → 8032256 ≤ p.toNat → fb.toNat + 64 ≤ p.toNat →
       GoG prof L o gev gP gE Z t') →
     GoG prof L o gev gP gE X t
 
@@ -111,7 +111,7 @@ theorem from1111 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (
       Same V W ((bp + 18446744073709551448#64).toNat + 88) (2 ^ 64) →
       (∀ W' : Addr → Byte, (∀ a : Addr, 7940480 ≤ a.toNat → a.toNat < sp.toNat - 8 →
         (a.toNat < P.toNat ∨ P.toNat + s ≤ a.toNat) → W' a = W a) → Pa ka W') →
-      (∀ a : Addr, Mal.Kn a → W a = V a) → GoG prof L o gev gP gE Y t') :
+      (∀ a : Addr, Mal.Kf fb a → W a = V a) → fb.toNat + 64 ≤ P.toNat → GoG prof L o gev gP gE Y t') :
     ∀ (X : State) (t : Nat), KeptW Wl s₀ X → Agree F X.proc.mm.mem V → X.cpu.rip = hwc_at.add 1111 →
       X.cpu.gpr.rdi = BitVec.ofNat 64 s → X.cpu.gpr.r12 = BitVec.ofNat 64 cnt →
       X.cpu.gpr.r13 = BitVec.ofNat 64 (16 * E) → X.cpu.gpr.rbx = R → X.cpu.gpr.rbp = bp → X.cpu.gpr.rsp = sp →
@@ -134,7 +134,7 @@ theorem from1111 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (
     try rfl
   · rw [hsp₁]
     exact c.hws _ (hst i hi)
-  intro Z t₂ V₂ p hK₂ hA₂ hr₂ hsp₂ hax₂ hbx₂ hbp₂ h12₂ h13₂ _ _ hlo hpe hWP hV₂ hPa₂ hKn₂ hph₂
+  intro Z t₂ V₂ p hK₂ hA₂ hr₂ hsp₂ hax₂ hbx₂ hbp₂ h12₂ h13₂ _ _ hlo hpe hWP hV₂ hPa₂ hKn₂ hph₂ hpf₂
   rw [hdi₁, es, hsp₁, hb8] at hPa₂
   rw [hdi₁, es] at hpe hWP
   rw [hsp₁, hb8] at hpe
@@ -178,8 +178,9 @@ theorem from1111 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (
     (fun W' hW' => hPa₂ W' fun a h1 h2 h3 => (hW' a h1 h2 h3).trans (h3.elim (fun h => hS0 a (Nat.zero_le _) h)
       (fun h => hS3 a (by omega) h2)))
     (fun a ha => by
-      have := Mal.Kn.lt ha
+      have := Mal.Kf.lt ha
       rw [hS0 a (Nat.zero_le _) (by omega), hKn₂ a ha]
       exact Tun.Vst_out _ _ _ _ (by rw [toBytesLE_length, hb8]; omega) (by rw [toBytesLE_length, hb8]; omega))
+    hpf₂
 
 end FV7z.Hwc

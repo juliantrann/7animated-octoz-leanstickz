@@ -200,7 +200,8 @@ theorem ndi_ok {pl pc ip cpy : List Byte} {Pm : (Addr → Byte) → Prop} {E : E
       (∀ a : Addr, Lo b fsb a → W' a = fV W sp X.cpu.gpr a) → Same sp (fV W sp X.cpu.gpr) W' →
       (∃ g₁ g₂ : Gprs, g₁.rdi = 656#64 ∧ g₂.rax = b ∧ g₂.r14 = size pad 656#64 ∧
         (evs = [smEv g₁ pad b] ∨ evs = [smEv g₁ pad b, smEv2 g₂])) →
-      (∀ a : Addr, (a.toNat < 7937664 ∨ 7937720 ≤ a.toNat ∧ a.toNat < 7940480 ∨ sp.toNat ≤ a.toNat ∨ Mal.Kn a) →
+      (∀ a : Addr, (a.toNat < 7937664 ∨ 7937720 ≤ a.toNat ∧ a.toNat < 7940480 ∨ sp.toNat ≤ a.toNat ∨
+        Mal.Kf fsb a) →
         U a = hV W' (Tp b + 16#64) 4194368#64 8#64 a) →
       Seg prof G Wl' L s₂ o → Base s₂ lim (b + size pad 656#64 + C2 b pad) fsb ks → KeptW Wl' s₂ Z →
       Agree G Z.proc.mm.mem W₂ → Eqo sp W₂ (lV (bV U m)) → Z.cpu.rip = e₂.add j₂ → Z.cpu.gpr.rsp = sp + 128#64 →

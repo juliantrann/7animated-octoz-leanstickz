@@ -50,7 +50,7 @@ variable {prof : Profile} {F : Footprint} {Wl : List Rgn} {L : List (Addr × Lis
 `temp`. -/
 def At1681 (prof : Profile) (L : List (Addr × List Byte)) (o : Oracle) (gev : List Event)
     (gP : State → Nat → List Event → Prop) (gE : Outcome → List Event → Prop) (F : Footprint) (Wl : List Rgn)
-    (s₀ : State) (V : Addr → Byte) (bp R Q N : Addr) (cnt E H s : Nat)
+    (s₀ : State) (fb : Addr) (V : Addr → Byte) (bp R Q N : Addr) (cnt E H s : Nat)
     (Pa : (Addr → Byte) → Prop) : Prop :=
   ∀ Y t' (W : Addr → Byte) (P : Addr), KeptW Wl s₀ Y →
     Agree F Y.proc.mm.mem (Vst W Q (toBytesLE (caps E (hl_ln cnt) cnt (fun _ => 0#64) 0) 8)) →
@@ -66,7 +66,7 @@ def At1681 (prof : Profile) (L : List (Addr × List Byte)) (o : Oracle) (gev : L
     rdq(W, N) = BitVec.ofNat 64 E →
     (∀ W' : Addr → Byte, (∀ a : Addr, 7940480 ≤ a.toNat → a.toNat < R.toNat - 8 →
       (a.toNat < P.toNat ∨ P.toNat + s ≤ a.toNat) → W' a = W a) → Pa W') →
-    (∀ a : Addr, Mal.Kn a → W a = V a) → GoG prof L o gev gP gE Y t'
+    (∀ a : Addr, Mal.Kf fb a → W a = V a) → fb.toNat + 64 ≤ P.toNat → GoG prof L o gev gP gE Y t'
 
 /-! ## `h = 2`: `x86_64` -/
 
@@ -101,7 +101,7 @@ theorem from1778_3 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb)
     (hQ64 : Q.toNat + 8 ≤ 2 ^ 64)
     (hQd : Q.toNat + 8 ≤ (bp + 18446744073709551448#64).toNat + 128 ∨
       (bp + 18446744073709551448#64).toNat + 176 ≤ Q.toNat)
-    (k : At1681 prof L o gev gP gE F Wl s₀ V bp R Q N 3 8 4 151 (Pa ka)) :
+    (k : At1681 prof L o gev gP gE F Wl s₀ fb V bp R Q N 3 8 4 151 (Pa ka)) :
     ∀ (X : State) (t₀ : Nat), KeptW Wl s₀ X → Agree F X.proc.mm.mem V → X.cpu.rip = hwc_at.add 1778 →
       X.cpu.gpr.r8 = 2#64 → X.cpu.gpr.r12 = BitVec.ofNat 64 3 → X.cpu.gpr.rbp = bp → X.cpu.gpr.rsp = R →
       GoG prof L o gev gP gE X t₀ := by
@@ -221,14 +221,15 @@ theorem from1778_3 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb)
     (rng hpg (by decide) (by decide) (by decide)) (by decide) (fun h => absurd h (by decide))
     (fun h => absurd h (by decide)) htls (by vpeel; exact hp) hp0 (by vpeel; exact hpl) hpd
     (by vpeel; exact hNv) hND hN64 hsN (by vpeel; exact hQ) hsQ hQ64 hQd ?_ Y₆ t₆ hK₆ hA₆ hr₆ ?_ ?_ ?_ ?_ ?_ ?_
-  · intro Y t' W P hKY hAY hrY haxY hlo hpe hWP hspY hbxY h12Y h13Y h14Y h15Y hbpY hTab hS0 hSs hNE hPa' hKnY
+  · intro Y t' W P hKY hAY hrY haxY hlo hpe hWP hspY hbxY h12Y h13Y h14Y h15Y hbpY hTab hS0 hSs hNE hPa' hKnY hpfY
     exact k Y t' W P hKY hAY hrY haxY hlo hpe hWP hspY (hbxY.trans (by vpeel)) (h12Y.trans (by vpeel))
       (h13Y.trans (by vpeel)) (h14Y.trans (by vpeel)) (h15Y.trans (by vpeel)) (hbpY.trans (by vpeel)) hTab
       (SameO.trans (fun a _ h2 => by vout) hS0) (SameO.trans (fun a h1 h2 => by vout) hSs) hNE hPa'
       (fun a ha => by
-        have := Mal.Kn.lt ha
+        have := Mal.Kf.lt ha
         rw [hKnY a ha]
         vout)
+      hpfY
   · rw [hg₆]
     show R + (Z.cpu.gpr.r13 + 16#64) = _
     rw [r13₅]
@@ -276,7 +277,7 @@ theorem from1778_4 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb)
     (hQ64 : Q.toNat + 8 ≤ 2 ^ 64)
     (hQd : Q.toNat + 8 ≤ (bp + 18446744073709551448#64).toNat + 128 ∨
       (bp + 18446744073709551448#64).toNat + 176 ≤ Q.toNat)
-    (k : At1681 prof L o gev gP gE F Wl s₀ V bp R Q N 4 16 8 320 (Pa ka)) :
+    (k : At1681 prof L o gev gP gE F Wl s₀ fb V bp R Q N 4 16 8 320 (Pa ka)) :
     ∀ (X : State) (t₀ : Nat), KeptW Wl s₀ X → Agree F X.proc.mm.mem V → X.cpu.rip = hwc_at.add 1778 →
       X.cpu.gpr.r8 = 6#64 → X.cpu.gpr.r12 = BitVec.ofNat 64 4 → X.cpu.gpr.rbp = bp → X.cpu.gpr.rsp = R →
       GoG prof L o gev gP gE X t₀ := by
@@ -476,14 +477,15 @@ theorem from1778_4 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb)
     (fun _ => by decide) htls (by vpeel; exact hp) hp0 (by vpeel; exact hpl) hpd
     (by vpeel; exact hNv) hND hN64 hsN (by vpeel; exact hQ) hsQ hQ64 hQd ?_ Y₁₀ t₁₀ hK₁₀ hA₁₀ hr₁₀
     ?_ ?_ ?_ ?_ ?_ ?_
-  · intro Y t' W P hKY hAY hrY haxY hlo hpe hWP hspY hbxY h12Y h13Y h14Y h15Y hbpY hTab hS0 hSs hNE hPa' hKnY
+  · intro Y t' W P hKY hAY hrY haxY hlo hpe hWP hspY hbxY h12Y h13Y h14Y h15Y hbpY hTab hS0 hSs hNE hPa' hKnY hpfY
     exact k Y t' W P hKY hAY hrY haxY hlo hpe hWP hspY (hbxY.trans (by vpeel)) (h12Y.trans (by vpeel))
       (h13Y.trans (by vpeel)) (h14Y.trans (by vpeel)) (h15Y.trans (by vpeel)) (hbpY.trans (by vpeel)) hTab
       (SameO.trans (fun a _ h2 => by vout) hS0) (SameO.trans (fun a h1 h2 => by vout) hSs) hNE hPa'
       (fun a ha => by
-        have := Mal.Kn.lt ha
+        have := Mal.Kf.lt ha
         rw [hKnY a ha]
         vout)
+      hpfY
   · rw [hg₁₀]
     show R + (Z₂.cpu.gpr.r13 + 16#64) = _
     rw [r13₉]

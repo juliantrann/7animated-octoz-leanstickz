@@ -30,7 +30,8 @@ theorem to267 {fb : Addr} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBas
     (hWb : ∀ x : Addr, 7937664 ≤ x.toNat → x.toNat < 7937720 → Foot Wl x)
     (hfN : ∀ x : Addr, 7937688 ≤ x.toNat → x.toNat < 7937696 → Foot F.data x)
     (hW7a : ∀ a : Addr, 8029552 ≤ a.toNat → a.toNat < 8029560 → Foot Wl a)
-    (hA1 : 7940480 ≤ A.toNat) (hAk : 8032256 ≤ A.toNat) (hA2 : A.toNat + 40 ≤ r.toNat - 88)
+    (hA1 : 7940480 ≤ A.toNat) (hAk : 8032256 ≤ A.toNat) (hAfb : fb.toNat + 64 ≤ A.toNat)
+    (hA2 : A.toNat + 40 ≤ r.toNat - 88)
     (hAW : ∀ a : Addr, A.toNat ≤ a.toNat → a.toNat < A.toNat + 40 → Foot Wl a)
     (hN4 : rdq(V₄, 7937688#64) = BitVec.ofNat 64 E)
     (hPa4 : ∀ W : Addr → Byte, (∀ a : Addr, 7940480 ≤ a.toNat → a.toNat < r.toNat - 88 →
@@ -48,7 +49,7 @@ theorem to267 {fb : Addr} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBas
       rdq(V₅, r + 18446744073709551560#64) = BitVec.ofNat 64 E →
       (∀ a : Addr, (a.toNat < 7937664 ∨ 7937720 ≤ a.toNat ∧ a.toNat < 7940480 ∨
         r.toNat - 80 ≤ a.toNat ∧ a.toNat < r.toNat - 72 ∨ r.toNat - 48 ≤ a.toNat) → V₅ a = V₄ a) →
-      (∀ a : Addr, Mal.Kn a → V₅ a = V₄ a) → 8032256 ≤ B.toNat →
+      (∀ a : Addr, Mal.Kf fb a → V₅ a = V₄ a) → 8032256 ≤ B.toNat → fb.toNat + 64 ≤ B.toNat →
       GoG prof L o gev gP gE Z' t') :
     GoG prof L o gev gP gE Z t := by
   have hr0 : 96 ≤ r.toNat := by omega
@@ -84,7 +85,7 @@ theorem to267 {fb : Addr} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBas
   · rw [s₂, Tun.rd_Vst_self _ _ _ (toBytesLE_length _ _) (by ifd), ofBytesLE_toBytesLE (n := 8) rfl]
     try rfl
   -- 153: back from `malloc`
-  intro Z₂ t₃ V₅ B hK₃ hA₃ hr₃ hs₃ hax₃ hbx₃ hbp₃ h12₃ h13₃ h14₃ h15₃ hB1 hB2 hBf hkeep _ hKnB hBk
+  intro Z₂ t₃ V₅ B hK₃ hA₃ hr₃ hs₃ hax₃ hbx₃ hbp₃ h12₃ h13₃ h14₃ h15₃ hB1 hB2 hBf hkeep _ hKnB hBk hBfb
   simp only [hdi₂, s₂, hq160, f88 hr0] at hB2 hBf hkeep
   have hbp₂ : Z₂.cpu.gpr.rbp = r := by rw [hbp₃, hg₂, set4_rbp, hbp', hbp]
   have h14₂ : Z₂.cpu.gpr.r14 = A := by rw [h14₃, hg₂, set4_r14, h14, hax]
@@ -102,13 +103,14 @@ theorem to267 {fb : Addr} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBas
       (by rw [hax₃, hbp₂]; omega) (by rw [h14₂]; exact hA1) (by rw [h14₂]; exact hAk)
       (by rw [h14₂, hbp₂]; omega) (by rw [h14₂]; exact hAW)
       (by rw [hax₃]; exact fun a h1 h2 => (hBf a h1 h2).1)
-      (by rw [hbp₂]; exact fun a h1 h2 => hFs a (by omega) h2) hW7a hWb) ?_
+      (by rw [hbp₂]; exact fun a h1 h2 => hFs a (by omega) h2) hW7a hWb (by rw [hax₃]; exact hBfb)
+      (by rw [h14₂]; exact hAfb)) ?_
   rintro j' g' fl V' ⟨rfl, h15', h14', h12', hbx', h13', hbp', hsp', h64', h72', hk', hkn'⟩ Y₃ t₄ hK₄ hA₄ hr₄ hg₄ -
   subst hg₄
   rw [hbp₂] at h64' h72' hk'
   refine k Y₃ t₄ V' B hK₄ hA₄ hr₄ (by rw [hsp', hs₃, s₂, u88p]) (by rw [hbp', hbp₂]) (by rw [h15', hax₃])
     (by rw [h14', h14₂]) h12' hbx' (by rw [h13', h13₃, hg₂, set4_r13, h13]) hB1 hB2
-    (fun a h1 h2 => (hBf a h1 h2).1) h64' h72' ?_ ?_ ?_ hBk
+    (fun a h1 h2 => (hBf a h1 h2).1) h64' h72' ?_ ?_ ?_ hBk hBfb
   · rw [rdk hk' (lo := r.toNat - 56) (hi := 2 ^ 64) (fun a h1 _ => Or.inr (Or.inr (Or.inr h1))) (by ifd)
       (by ifd) (by ifd)]
     exact hn5
@@ -116,7 +118,7 @@ theorem to267 {fb : Addr} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBas
     rw [hk' a (by omega), hkeep a (by omega), Tun.Vst_out _ _ _ _ (by ifd) (by ifd),
       Tun.Vst_out _ _ _ _ (by ifd) (by ifd), Tun.Vst_out _ _ _ _ (by ipd) (by ipd)]
   · intro a ha
-    have := Mal.Kn.lt ha
+    have := Mal.Kf.lt ha
     rw [hkn' a ha, hKnB a ha, Tun.Vst_out _ _ _ _ (by ifd) (by ifd), Tun.Vst_out _ _ _ _ (by ifd) (by ifd),
       Tun.Vst_out _ _ _ _ (by ipd) (by ipd)]
 
