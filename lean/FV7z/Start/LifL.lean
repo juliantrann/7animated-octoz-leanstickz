@@ -33,7 +33,7 @@ abbrev loOf (l : Launch) (n : Nat) (c : ExecChoice) : Nat := (stackLayout l.args
 abbrev limOf (l : Launch) : Nat := pageUp (l.s₀.proc.mm.brk.toNat + 2 ^ 41) / 4096
 
 /-- The events of the run from the launch to `0x613434`, after those of the caller (`launch_to_ptr`). -/
-abbrev ptrEvs (l : Launch) (c : ExecChoice) (s₂ : State) (g : Gprs) (x1 x2 x3 d r10 r8 r9 : BitVec 64)
+noncomputable abbrev ptrEvs (l : Launch) (c : ExecChoice) (s₂ : State) (g : Gprs) (x1 x2 x3 d r10 r8 r9 : BitVec 64)
     (u : List Byte) (y1 y2 y3 y4 y5 q1 q2 q3 : BitVec 64) : List Event :=
   [Seg.cetEv g,
     ⟨12, [0, x1, 63#64, x2, 7829360#64, x3], l.s₀.proc.mm.brk, [], []⟩,
