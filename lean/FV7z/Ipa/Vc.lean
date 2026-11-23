@@ -205,7 +205,7 @@ theorem vc_153 {g : Gprs} {f : Rflags} {V : Addr → Byte} {n q : Nat} (hq : n =
   unfold W_168
   intro af
   -- the hypotheses of `vc_168` as goals, after its state is the one here
-  refine wp_mono o5 ?_ (vc_168 hq ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ hW7a hWb ?_)
+  refine wp_mono o5 ?_ (vc_168 (fb := fb) hq ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ hW7a hWb ?_)
   · intro g' f' V' h
     refine ⟨fun hc => ?_, fun hc => ?_⟩
     · have h281 : (281 : Nat) = 267 := (h.1 hc).1

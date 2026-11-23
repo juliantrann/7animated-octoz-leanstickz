@@ -98,7 +98,7 @@ theorem to267 {fb : Addr} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBas
   have hB0 : Z₂.cpu.gpr.rax ≠ 0#64 := by
     rw [hax₃]; intro h; subst h; simp at hB1
   refine (c_153 prof).run c hin _ hK₃ hA₃ hr₃
-    (vc_153 hq hB0 (by rw [hbx₃, hg₂, set4_rbx, hbx]) (by rw [hbp₂]; exact hn5) (by rw [hbp₂]; exact hr)
+    (vc_153 (fb := fb) hq hB0 (by rw [hbx₃, hg₂, set4_rbx, hbx]) (by rw [hbp₂]; exact hn5) (by rw [hbp₂]; exact hr)
       (by rw [hbp₂]; exact hr2) (by rw [hax₃]; exact hB1) (by rw [hax₃]; exact hBk)
       (by rw [hax₃, hbp₂]; omega) (by rw [h14₂]; exact hA1) (by rw [h14₂]; exact hAk)
       (by rw [h14₂, hbp₂]; omega) (by rw [h14₂]; exact hAW)
