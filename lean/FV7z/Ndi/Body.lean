@@ -13,11 +13,11 @@ open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn
 open FV7z.Sga (vo vr vs)
 namespace FV7z.Ndi
 
-/-- The platform string (`AT_PLATFORM`): `_dl_platform` (`0x7a8548`) is `p`, above `sp`, `n ≥ 1` characters and a 0,
-its pages read. -/
+/-- The platform string: `_dl_platform` (`0x7a8548`) is `p`, `n ≥ 1` characters and a 0, its pages read; above `sp`
+(`AT_PLATFORM`) or in the image below `0x777000` (`"haswell"`, `"xeon_phi"`, set by `init_cpu_features`). -/
 structure Pl (V : Addr → Byte) (F : Footprint) (sp p : Addr) (n : Nat) : Prop where
   hp : rdq(V, 8029512#64) = p
-  hi : sp.toNat ≤ p.toNat
+  hi : sp.toNat ≤ p.toNat ∨ (0x400000 ≤ p.toNat ∧ p.toNat + n < 7827456)
   fit : p.toNat + n < 2 ^ 64
   n1 : 1 ≤ n
   nnz : ∀ k < n, V (Addr.add p k) ≠ 0
@@ -93,18 +93,18 @@ theorem body_a {pl pc : List Byte} {Pm : (Addr → Byte) → Prop} {E : Ev} {V W
   have e15₄ : Z₄.cpu.gpr.r15 = X.cpu.gpr.r15 := by rw [h15Z₄, hg₄]; exact e15₃
   clear hg₄ h15Z₄ hA₄ hK₄ hr₄ M₄ hMZ₃ hAZ₃ hKZ₃ hrZ₃ hax₃ hspZ₃ e15₃ G₃
   -- `_dl_profile_output`, the platform string not empty
-  have up : ∀ x : Addr, sp.toNat ≤ x.toNat → W₄ x = V x := fun x hx =>
+  have up : ∀ x : Addr, sp.toNat ≤ x.toNat ∨ x.toNat < 7827456 → W₄ x = V x := fun x hx =>
     (hMZ₄ x (by unfold Scr; omega)).trans (G₄ x (Bool.eq_false_iff.2 fun h => by have := nv_data h; omega))
   have hp₄ : rdq(W₄, 8029512#64) = p := by
     rw [hMZ₄.rdi h72 _ 8 (by decide), G₄.rd _ 8 (by decide) (by decide)]
     exact hpl.hp
   have hfp : Foot F.data p := hpl.pg p (Nat.le_refl _) (Nat.div_le_div_right (by omega))
   have hp0 : W₄ p ≠ 0 := by
-    rw [up p hpl.hi]
+    rw [up p (by have := hpl.hi; omega)]
     have := hpl.nnz 0 hpl.n1
     rwa [addr_add_zero] at this
   refine (c_2194 prof).run c cx.hin _ hKZ₄ hAZ₄ hrZ₄ (vc_2194 cx.hr cx.hw hax₄ ?_ hp₄
-    (.inr ⟨hfp, .inr (by have := hpl.hi; omega), ?_⟩)) ?_
+    (.inr ⟨hfp, (by have := hpl.hi; omega), ?_⟩)) ?_
   · rw [hMZ₄.rdi h72 _ 4 (by decide), G₄.rd _ 4 (by decide) (by decide)]
     exact hsec
   · rw [rdb1]
@@ -143,7 +143,7 @@ theorem body_a {pl pc : List Byte} {Pm : (Addr → Byte) → Prop} {E : Ev} {V W
   replace hA₈ : Agree F Y₈.proc.mm.mem (Vst V₇ (sp - 8#64) (toBytesLE (ndi_at.add (2563 + 5)) 8)) := hA₈
   have M₈ : Eqo sp (Vst V₇ (sp - 8#64) (toBytesLE (ndi_at.add (2563 + 5)) 8)) _ :=
     hMZ₆.push (by rw [e8]; omega) (by rw [e8, toBytesLE_length]; omega)
-  have up : ∀ x : Addr, sp.toNat ≤ x.toNat →
+  have up : ∀ x : Addr, sp.toNat ≤ x.toNat ∨ x.toNat < 7827456 →
       Vst V₇ (sp - 8#64) (toBytesLE (ndi_at.add (2563 + 5)) 8) x = V x := fun x hx =>
     (M₈ x (by unfold Scr; omega)).trans (G₅ x (Bool.eq_false_iff.2 fun h => by have := nv_data h; omega))
   have hdi₈ : Y₈.cpu.gpr.rdi = p := by rw [hg₈, hg₇]; rfl

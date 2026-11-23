@@ -240,7 +240,8 @@ theorem ndi_all {pl pc ip cpy : List Byte} {Pm : (Addr → Byte) → Prop} {E : 
       have := sA_lt hk
       rw [rd_of (V := fV W sp X.cpu.gpr) (x := Ipa.sA k) (n := 1) (by omega) fun a a1 a2 => LB a (by omega)]
       exact hslV k hk)
-    hB₁ (pl_foot (Pl.mv hpl HI fun a a1 a2 => LZ a (by omega) (by omega)) fun _ => fwn hown) hid him
+    hB₁ (pl_foot (Pl.mv hpl (fun a ha => ha.elim (HI a) fun h => LB a (by omega))
+      fun a a1 a2 => LZ a (by omega) (by omega)) fun _ => fwn hown) hid him
     (fun x a1 a2 => fwn hown (hfp x a1 a2)) (Ph.mv hph fun a ha => LB a (by omega)) hsn
     (by rw [rd_of (V := fV W sp X.cpu.gpr) (x := 7943128) (n := 8) (by omega) fun a a1 a2 => LM a (by omega)
       (by omega)]; exact hpgs)

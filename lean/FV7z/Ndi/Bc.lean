@@ -57,9 +57,9 @@ theorem Ph.mv {V V' : Addr → Byte} (h : Ph V) (hs : ∀ a : Addr, a.toNat < 78
       a7 := by rw [R 4194776 8 (by omega)]; exact h.a7
       m7 := by rw [R 4194800 8 (by omega)]; exact h.m7 }
 
-/-- `Pl` on bytes that agree from `sp` on and at `_dl_platform` (`0x7a8548`). -/
+/-- `Pl` on bytes that agree from `sp` on, below `0x777000` and at `_dl_platform` (`0x7a8548`). -/
 theorem Pl.mv {V V' : Addr → Byte} {F : Footprint} {sp p : Addr} {n : Nat} (h : Pl V F sp p n)
-    (hs : ∀ a : Addr, sp.toNat ≤ a.toNat → V' a = V a)
+    (hs : ∀ a : Addr, sp.toNat ≤ a.toNat ∨ a.toNat < 7827456 → V' a = V a)
     (hp : ∀ a : Addr, 8029512 ≤ a.toNat → a.toNat < 8029520 → V' a = V a) : Pl V' F sp p n := by
   have hi := h.hi
   have fit := h.fit
@@ -275,7 +275,8 @@ theorem ndi_pc {pl pc : List Byte} {Pm : (Addr → Byte) → Prop} {E : Ev} {V W
       (by rw [tp sp j (by omega)]; omega) (by rw [tp sp j (by omega)]; omega)
   -- `ndi_c` on `U`
   refine ndi_c c hB (cx.mvg (fun _ h => h) (fun _ h => h) SU)
-    (hpl.mv uS fun a h1 h2 => uK a (by unfold Mal.Kn; omega) (by unfold Hv; omega))
+    (hpl.mv (fun a ha => ha.elim (uS a) fun h => uV a (.inl (by omega)) (by unfold Hv; omega))
+      fun a h1 h2 => uK a (by unfold Mal.Kn; omega) (by unfold Hv; omega))
     (by
       rw [rd_of (by omega) fun a a1 a2 => uV a (.inl (by omega)) (by unfold Hv; omega)]
       exact h5)
