@@ -205,6 +205,7 @@ import FV7z.Lemmas.BlkOps10
 import FV7z.Startup.StrAt
 import FV7z.Genv.Holds
 import FV7z.Ims.Holds
+import FV7z.Lif.Bc
 import FV7z.Ndi.Vc1
 import FV7z.Ndi.Vc2
 import FV7z.Ndi.Vc3
