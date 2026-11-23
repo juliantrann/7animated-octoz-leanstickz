@@ -10,6 +10,7 @@ begins with `LD_`, so an environment with no string beginning with `LD_` has non
 - `ent_nms`: the bytes in `lif_ok`'s bytes.
 - `nm_ok`: `NmOk` of a name, for bytes that are the file's there and an environment with no string beginning
   with `LD_`.
+- `no_ld`: that hypothesis, from the launch's environment.
 -/
 namespace FV7z.Start
 open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn
@@ -82,5 +83,29 @@ theorem nm_ok {E : Ndi.Ev} {M : Addr → Byte} {F : Footprint} {o n : Nat} (hon 
       exact hD
     · rw [he 2 (by omega), aa 2 (by omega), hM (o + 2) (by omega)]
       exact hU
+
+/-- An environment of the launch with no string beginning with `LD_`, in bytes `M` that have its strings: `hLD` of
+`nm_ok`. A string shorter than 3 has its 0 among the first three bytes. -/
+theorem no_ld {K : Ctx} {E : Ndi.Ev} {M : Addr → Byte} (hK : K.Ok) (hN : E.N = K.N)
+    (hp : ∀ i < K.N, E.ptr i = K.ptr i)
+    (hS : ∀ i < K.N, ∀ k ≤ K.len i, M ((K.ptr i).add k) = K.V0 ((K.ptr i).add k))
+    (noLD : ∀ i < K.N, ¬ (K.ez i 0 = 0x4c ∧ K.ez i 1 = 0x44 ∧ K.ez i 2 = 0x5f)) :
+    ∀ i < E.N, ¬ (M (Addr.add (E.ptr i) 0) = 0x4c ∧ M (Addr.add (E.ptr i) 1) = 0x44 ∧
+      M (Addr.add (E.ptr i) 2) = 0x5f) := by
+  intro i hi ⟨h0, h1, h2⟩
+  rw [hN] at hi
+  rw [hp i hi] at h0 h1 h2
+  have e : ∀ k ≤ K.len i, M (Addr.add (K.ptr i) k) = K.ez i k := fun k hk =>
+    (hS i hi k hk).trans (hK.hstr i hi k hk)
+  by_cases hl : 2 ≤ K.len i
+  · exact noLD i hi ⟨(e 0 (by omega)).symm.trans h0, (e 1 (by omega)).symm.trans h1, (e 2 hl).symm.trans h2⟩
+  · have hz := hK.hz i hi
+    rcases (by omega : K.len i = 0 ∨ K.len i = 1) with h | h
+    · rw [h] at hz
+      rw [e 0 (by omega), hz] at h0
+      exact absurd h0 (by decide)
+    · rw [h] at hz
+      rw [e 1 (by omega), hz] at h1
+      exact absurd h1 (by decide)
 
 end FV7z.Start
