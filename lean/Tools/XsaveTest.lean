@@ -28,7 +28,8 @@ store (its reserved bytes zero), `Z` `ZMM0`–`ZMM31` (32 × 64 bytes), `K` `k0`
 `undef R0 | R1 | ...` (`Rj` the result of pattern `j`).
 
 Usage: `lake exe xsavetest KEY=VALUE...`, the processor's profile as `native info` prints it (`xcr0`, `mxcsrmask`,
-`amd`, `amderr`, `fcsdep`, `fdpexc`, and `dI=EAX,EBX,ECX` for `CPUID.(EAX=0DH,ECX=I)`).
+`amd`, `amderr`, `fcsdep`, `fdpexc`, `dI=EAX,EBX,ECX` for `CPUID.(EAX=0DH,ECX=I)`, and `pkru`, the PKRU each case starts
+with).
 -/
 open ZellicX86 ZellicX86.Decode
 
@@ -211,7 +212,7 @@ def line (p : Profile) (s : St) : String :=
   s!"{String.join ((List.range 32).map fun j => hexBytes (toBytesLE s.zmm[j]! 64))} " ++
   s!"{String.join ((List.range 8).map fun j => hexBytes (toBytesLE s.k[j]! 8))}"
 
-def runCase (p : Profile) (l : String) : String :=
+def runCase (p : Profile) (pkru : BitVec 32) (l : String) : String :=
   match l.splitOn " " with
   | op :: rax :: rdx :: off :: legH :: ymmhH :: zmmhH :: zhiH :: kH :: memH :: rest =>
     match opBytes op with
@@ -231,7 +232,7 @@ def runCase (p : Profile) (l : String) : String :=
         |>.set! 2 (BitVec.ofNat 64 (ofHex rdx)) |>.set! 7 (BitVec.ofNat 64 (base + ofHex off))
       let s : St := { gpr, x87 := x, zmm, k := (Array.range 8).map fun j => w ks (8 * j) 8 64,
                       mxcsr := w leg 24 4 32, mem := ⟨(bytesOfHex memH).map (·.toNat.toUInt8)⟩,
-                      hint := rest.head?.map fun h => BitVec.ofNat 64 (ofHex h) }
+                      hint := rest.head?.map fun h => BitVec.ofNat 64 (ofHex h), pkru }
       let res (r : Res) : String := match r with
         | .ok s' => line p s'
         | .exc e _ => s!"exc {excName e}"
@@ -278,4 +279,4 @@ def main (args : List String) : IO Unit := do
   repeat
     let l ← stdin.getLine
     if l.isEmpty then break
-    stdout.putStrLn (XsaveTest.runCase p l.trimAsciiEnd.toString)
+    stdout.putStrLn (XsaveTest.runCase p (BitVec.ofNat 32 (kv "pkru")) l.trimAsciiEnd.toString)
