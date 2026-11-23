@@ -25,10 +25,10 @@ theorem ptr_lp {K : Ctx} {W V : Addr → Byte} {b : Addr} {ver : BitVec 32} {D :
       W a = PtrMem (VerMem (GuardMem (TlsMem V b) (b + 2176#64)) ver) (b + 2176#64) a) :
     rdq(W, b + 2064#64) = rdq(V, 7829376#64) := by
   have hf : (b + 2176#64).toNat = b.toNat + 2176 := by bv_omega
-  have h : ∀ i < 8, W ((b + 2064#64).add i) = TlsMem V b ((b + 2064#64).add i) := by
+  have h : ∀ i < 8, W (Addr.add (b + 2064#64) i) = TlsMem V b (Addr.add (b + 2064#64) i) := by
     intro i hi
-    have hx : ((b + 2064#64).add i).toNat = b.toNat + 2064 + i := by simp only [Addr.add]; bv_omega
-    generalize (b + 2064#64).add i = x at hx ⊢
+    have hx : (Addr.add (b + 2064#64) i).toNat = b.toNat + 2064 + i := by simp only [Addr.add]; bv_omega
+    generalize Addr.add (b + 2064#64) i = x at hx ⊢
     rw [hW x (Or.inr ⟨by omega, by omega⟩) ?_ ?_]
     · unfold PtrMem VerMem GuardMem
       rw [Vst_out, Vst_out, Vst_out, Vst_out]

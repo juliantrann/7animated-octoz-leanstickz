@@ -80,7 +80,6 @@ theorem auxv_ps (prof : Profile) (hdr : ElfHeader) (pa : Nat) (a : ExecArgs) (c 
       rfl⟩
   · intro n hn h
     rw [h6 _ (hin n hn) (hof _ 6 (hnz _ (hin n hn)).2 (by omega) h)]
-    rfl
 
 /-- After `_dl_aux_init`, in the context of a state `execve` starts 7zzs in, `_dl_pagesize` is 4096. -/
 theorem ctxOf_ps (prof : Profile) (s : State) (a : ExecArgs) (c : ExecChoice) :

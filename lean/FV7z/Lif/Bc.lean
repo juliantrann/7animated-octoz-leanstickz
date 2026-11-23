@@ -65,6 +65,16 @@ variable {F : Footprint} {Wl : List Rgn} {prof : Profile} {L : List (Addr × Lis
   {gev : List Event} {gP : State → Nat → List Event → Prop} {gE : Outcome → List Event → Prop} {X : State} {t : Nat}
   {V : Addr → Byte}
 
+theorem ctG_set_rbx (g : Gprs) (V : Addr → Byte) (a b c v : BitVec 64) :
+    ((Cti.ctG (lifC g V) a b c).set 4 v).rbx = g.rbx := by cases g; rfl
+theorem ctG_set_r14 (g : Gprs) (V : Addr → Byte) (a b c v : BitVec 64) :
+    ((Cti.ctG (lifC g V) a b c).set 4 v).r14 = g.r14 := by cases g; rfl
+theorem ctG_set_r15 (g : Gprs) (V : Addr → Byte) (a b c v : BitVec 64) :
+    ((Cti.ctG (lifC g V) a b c).set 4 v).r15 = g.r15 := by cases g; rfl
+theorem lifB_set_rbx (g : Gprs) (v : BitVec 64) : ((lifB g).set 4 v).rbx = g.rbx := by cases g; rfl
+theorem lifB_set_r14 (g : Gprs) (v : BitVec 64) : ((lifB g).set 4 v).r14 = g.r14 := by cases g; rfl
+theorem lifB_set_r15 (g : Gprs) (v : BitVec 64) : ((lifB g).set 4 v).r15 = g.r15 := by cases g; rfl
+
 set_option maxHeartbeats 1600000 in
 /-- From the return of `_dl_non_dynamic_init` in `__libc_init_first` to the function's return address: `__init_misc`
 with `argv[0]` a string of `n` characters (`strrchr` by its contract), then `__ctype_init`. -/
@@ -165,10 +175,7 @@ theorem lif_bc {fb lp ct a0 : Addr} {a b cc : BitVec 64} {n : Nat} {pr : List By
   refine k Z₂ t₂ s hK₂ hA₂ (short_congr (fun j hj => v1o _ (nout j hj)) hS) hr₂ ?_ ?_ ?_ ?_ ?_ ?_ ?_
   · rw [hg₂, eZ]
     rfl
-  · rw [hg₂]
-    show Z.cpu.gpr.rbx = _
-    rw [b2, hgY]
-    rfl
+  · rw [hg₂, ctG_set_rbx, b2, hgY, lifB_set_rbx]
   · rw [hg₂]
     show rdq(bcV V X.cpu.gpr a0 s, Z.cpu.gpr.rsp) = _
     rw [eZ, bc_rd hsp q0]
@@ -178,13 +185,7 @@ theorem lif_bc {fb lp ct a0 : Addr} {a b cc : BitVec 64} {n : Nat} {pr : List By
   · rw [hg₂]
     show rdq(bcV V X.cpu.gpr a0 s, Z.cpu.gpr.rsp + 16#64) = _
     rw [eZ, bc_rd hsp q16]
-  · rw [hg₂]
-    show Z.cpu.gpr.r14 = _
-    rw [b6, hgY]
-    rfl
-  · rw [hg₂]
-    show Z.cpu.gpr.r15 = _
-    rw [b7, hgY]
-    rfl
+  · rw [hg₂, ctG_set_r14, b6, hgY, lifB_set_r14]
+  · rw [hg₂, ctG_set_r15, b7, hgY, lifB_set_r15]
 
 end FV7z.Lif

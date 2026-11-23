@@ -44,7 +44,8 @@ theorem ent_ct {K : Ctx} {W V' : Addr → Byte} {b : Addr} {ver : BitVec 32} {D 
     have hyl : y.toNat + 8 ≤ 0x7933cc := by omega
     rw [Lif.ent_rd (y := y) hr hr' (.inl (by omega)) (by omega) (.inl (by omega))]
     exact ptr_img hK hM hb hb' hW hy fun i hi =>
-      hD _ (by rw [toNat_add_of_fits hi (by omega)]; omega) (by rw [toNat_add_of_fits hi (by omega)]; omega)
+      hD _ (by rw [toNat_add_of_fits (a := y) (n := 8) hi (by omega)]; omega)
+        (by rw [toNat_add_of_fits (a := y) (n := 8) hi (by omega)]; omega)
   have hbn : (b + 2064#64).toNat = b.toNat + 2064 := by bv_omega
   have e1 : b + 2176#64 - 112#64 = b + 2064#64 := by bv_omega
   have t1 : (7938752#64 : Addr).toNat = 7938752 := rfl

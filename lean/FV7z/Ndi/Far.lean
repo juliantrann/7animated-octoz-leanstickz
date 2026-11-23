@@ -76,8 +76,8 @@ theorem ndi_tls {W W' U W₂ : Addr → Byte} {sp b fsb r x : Addr} {m : Nat} {g
     (hU : ∀ a : Addr, (a.toNat < 7937664 ∨ 7937720 ≤ a.toNat ∧ a.toNat < 7940480 ∨ sp.toNat ≤ a.toNat ∨
       Mal.Kf fsb a) → U a = hV W' r 4194368#64 8#64 a)
     (hL : ∀ a : Addr, Lo b fsb a → W' a = fV W sp g a) (hb : fsb.toNat ≤ b.toNat) (hsp : fsb.toNat + 72 ≤ sp.toNat)
-    (hs : sp.toNat + 120 ≤ 2 ^ 64) (h1 : 8032256 ≤ x.toNat) (h2 : x.toNat + 40 ≤ fsb.toNat) : W₂ x = W x := by
-  rw [hE x (by unfold Scr; omega), lbV_hb h1, hU x (.inr (.inr (.inr (.inr ⟨h1, h2⟩)))), hV_hb h1,
+    (hs : sp.toNat + 120 ≤ 2 ^ 64) (h1 : 8032256 ≤ x.toNat) (h2 : x.toNat + 40 < fsb.toNat) : W₂ x = W x := by
+  rw [hE x (by unfold Scr; omega), lbV_hb h1, hU x (.inr (.inr (.inr (.inr ⟨h1, Nat.le_of_lt h2⟩)))), hV_hb h1,
     hL x ⟨by omega, by omega, by omega, by omega, by omega⟩, fV_out hs (.inl (by omega))]
 
 /-- A byte from `sp + 120` up at the return of `_dl_non_dynamic_init` is the one at its entry. -/
@@ -92,9 +92,9 @@ theorem ndi_stk {W W' U W₂ : Addr → Byte} {sp fsb r x : Addr} {m : Nat} {g :
 
 /-- A byte apart from a store at a literal address. -/
 theorem vlt {V : Addr → Byte} {a : Nat} {x : Addr} {bs : List Byte} {n : Nat} (hn : bs.length = n)
-    (ha : a + n ≤ 2 ^ 64) (h : x.toNat < a ∨ a + n ≤ x.toNat) : Vst V (BitVec.ofNat 64 a) bs x = V x := by
+    (ha : a + n < 2 ^ 64) (h : x.toNat < a ∨ a + n ≤ x.toNat) : Vst V (BitVec.ofNat 64 a) bs x = V x := by
   have e : (BitVec.ofNat 64 a).toNat = a := by rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by omega)
-  exact vap hn (by rw [e]; exact ha) (by rw [e]; exact h)
+  exact vap hn (by rw [e]; exact Nat.le_of_lt ha) (by rw [e]; exact h)
 
 /-- `lV (bV U m)` is `U` below `0x7933c8`. -/
 theorem lbV_gb {U : Addr → Byte} {m : Nat} {x : Addr} (hx : x.toNat < 7943112) : lV (bV U m) x = U x := by
