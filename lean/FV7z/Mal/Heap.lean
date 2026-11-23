@@ -182,7 +182,8 @@ theorem mal_hp {fb : Addr} {hi m : Nat} (c : Seg prof F Wl L s₀ o) (hfs : s₀
       Z.cpu.gpr.rsp = X.cpu.gpr.rsp + 8 → Z.cpu.gpr.rax = p →
       Z.cpu.gpr.rbx = X.cpu.gpr.rbx → Z.cpu.gpr.rbp = X.cpu.gpr.rbp → Z.cpu.gpr.r12 = X.cpu.gpr.r12 →
       Z.cpu.gpr.r13 = X.cpu.gpr.r13 → Z.cpu.gpr.r14 = X.cpu.gpr.r14 → Z.cpu.gpr.r15 = X.cpu.gpr.r15 →
-      8032256 + 16 ≤ p.toNat → p.toNat + X.cpu.gpr.rdi.toNat ≤ hi →
+      8032256 + 16 ≤ p.toNat → fb.toNat + 64 ≤ p.toNat →
+      p.toNat + X.cpu.gpr.rdi.toNat ≤ hi →
       (∀ a : Addr, p.toNat ≤ a.toNat → a.toNat < p.toNat + X.cpu.gpr.rdi.toNat → Foot Wl a ∧ Foot F.data a) →
       (∀ a : Addr, a.toNat < 7940768 ∨ 7940776 ≤ a.toNat ∧ a.toNat + 8 < p.toNat ∨
         hi ≤ a.toNat ∧ (a.toNat + 208 < X.cpu.gpr.rsp.toNat ∨ X.cpu.gpr.rsp.toNat ≤ a.toNat) → V₂ a = V a) →
@@ -233,7 +234,8 @@ theorem mal_hp {fb : Addr} {hi m : Nat} (c : Seg prof F Wl L s₀ o) (hfs : s₀
   have MS : ∀ a : Addr, a.toNat < X.cpu.gpr.rsp.toNat - 208 → M a = VspN T szw nb V a :=
     fun a h0 => hMV a (by rw [eS]; omega)
   refine kc Z t' M (T + 16#64) hKZ hAZ hrZ (by rw [hspZ, eS8]) hax hbx hbp h12 h13 h14 h15 (by rw [e16]; omega)
-    (by rw [e16]; omega) (fun a a1 a2 => hTF a (by rw [e16] at a1; omega) (by rw [e16] at a2; omega))
+    (by rw [e16]; omega) (by rw [e16]; omega)
+    (fun a a1 a2 => hTF a (by rw [e16] at a1; omega) (by rw [e16] at a2; omega))
     (fun a ha => MV a (by omega) (by omega) (by rw [e16] at ha; omega) (by rw [e16] at ha; omega)) ?_
   intro W hW
   -- below the top, `W` is `V` but for the top word

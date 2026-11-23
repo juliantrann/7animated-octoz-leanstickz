@@ -163,7 +163,7 @@ theorem from1050 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (
       SameO V W ((bp + 18446744073709551448#64).toNat + 88) (2 ^ 64) N → rdq(W, N) = BitVec.ofNat 64 E →
       (∀ W' : Addr → Byte, (∀ a : Addr, 7940480 ≤ a.toNat → a.toNat < sp.toNat - 8 →
         (a.toNat < P.toNat ∨ P.toNat + s ≤ a.toNat) → W' a = W a) → Pa ka W') →
-      (∀ a : Addr, Mal.Kn a → W a = V a) → GoG prof L o gev gP gE Y t') :
+      (∀ a : Addr, Mal.Kf fb a → W a = V a) → fb.toNat + 64 ≤ P.toNat → GoG prof L o gev gP gE Y t') :
     ∀ (X : State) (t₀ : Nat), KeptW Wl s₀ X → Agree F X.proc.mm.mem V → X.cpu.rip = hwc_at.add 1050 →
       X.cpu.gpr.rsi = BitVec.ofNat 64 cnt → X.cpu.gpr.rax = BitVec.ofNat 64 t →
       X.cpu.gpr.rdx = R + BitVec.ofNat 64 (16 * (cnt - 1)) → X.cpu.gpr.r12 = BitVec.ofNat 64 cnt →
@@ -231,7 +231,7 @@ theorem from1050 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (
     (by rw [hS1 (by fomega) (by fomega) (by fomega)]; exact hQ) hsQ hQ64 hQd ?_ Y t' hKY hAY' hrY
     (by rw [hgY]) (by rw [hgY]; exact h12) (by rw [hgY]) (by rw [hgY]; exact hbx) (by rw [hgY]; exact hbp)
     (by rw [hgY]; exact hsp)
-  intro Z t₂ W P hKZ hAZ hrZ haxZ hlo hpe hWP hspZ hbxZ h12Z h13Z h14Z h15Z hbpZ hTab hS0 hSs hSh hPa' hKnZ
+  intro Z t₂ W P hKZ hAZ hrZ haxZ hlo hpe hWP hspZ hbxZ h12Z h13Z h14Z h15Z hbpZ hTab hS0 hSs hSh hPa' hKnZ hpfZ
   have htl : ∀ j < cnt, tlen (M5 V bp (R + BitVec.ofNat 64 (16 * (cnt - 1))) N cnt) R j = tlen V R j :=
     fun j hj => by
       have e : (R + BitVec.ofNat 64 (16 * j + 8)).toNat = R.toNat + (16 * j + 8) := addO (by fomega)
@@ -253,8 +253,9 @@ theorem from1050 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (
     (fun a h1 h2 hn => (hSh a (by omega) h2).trans (hSm (lo := a.toNat) (hi := a.toNat + 1) (by fomega)
       (by fomega) a (Nat.le_refl _) (by omega)))
     hWN hPa' (fun a ha => by
-      have := Mal.Kn.lt ha
+      have := Mal.Kf.lt ha
       exact (hKnZ a ha).trans (hSm (lo := a.toNat) (hi := a.toNat + 1) (by fomega) (by fomega) a (Nat.le_refl _)
         (by omega)))
+    hpfZ
 
 end FV7z.Hwc
