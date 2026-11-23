@@ -49,14 +49,24 @@ theorem lf_brk {lo top : Nat} {L : List (Addr × List Byte)} {B a : Addr} (h1 : 
     (h2 : a.toNat < B.toNat + 8192) : Foot (withNew (zzsFoot lo top L) [⟨B, 8192⟩]).data a :=
   Gor.foot_wnN (foot_one h1 h2)
 
+theorem toNat_add_lit {B : Addr} {c : Nat} (h : B.toNat + c < 2 ^ 64) :
+    (B + BitVec.ofNat 64 c).toNat = B.toNat + c := by
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := c) (by omega)]
+  exact Nat.mod_eq_of_lt h
+
+/-- A byte of the new pages `brkN B`. -/
+theorem foot_brkN {B a : Addr} (hB : B.toNat + 8192 < 2 ^ 64) (h1 : B.toNat + 8192 ≤ a.toNat)
+    (h2 : a.toNat < B.toNat + 8192 + 0x21000) : Foot (brkN B) a := by
+  have t : (B + BitVec.ofNat 64 8192).toNat = B.toNat + 8192 := toNat_add_lit hB
+  exact foot_one (by rw [t]; exact h1) (by rw [t]; exact h2)
+
 /-- A byte from the break `B + 4544` to the end of the first `MORECORE` is in the new pages or stored into. -/
 theorem lw_heap {lo top : Nat} {L : List (Addr × List Byte)} {B a : Addr} (h1 : B.toNat + 4544 ≤ a.toNat)
     (h2 : a.toNat < B.toNat + 0x23000) (hB : B.toNat + 0x23000 < 2 ^ 64) :
     Foot (brkN B ++ ([⟨B, 8192⟩] ++ (zzsFoot lo top L).writes)) a := by
   by_cases h : a.toNat < B.toNat + 8192
-  · exact foot_append_iff.2 (.inr (lw_brk (by omega) h))
-  · have t : (B + 8192#64).toNat = B.toNat + 8192 := by bv_omega
-    exact foot_append_iff.2 (.inl (foot_one (by rw [t]; omega) (by rw [t]; omega)))
+  · exact foot_append_iff.2 (.inr (lw_brk (Nat.le_trans (Nat.le_add_right _ _) h1) h))
+  · exact foot_append_iff.2 (.inl (foot_brkN (by omega) (by omega) (by omega)))
 
 /-- `MCx` at the call of `__libc_init_first`, for the footprint `launch_to_ptr` hands on: the break `B + 4544`,
 the thread pointer `B + 2176`, `mp_.top_pad = 0x20000`, `mp_.sbrk_base` and `mp_.max_sbrked_mem` 0, the new pages
