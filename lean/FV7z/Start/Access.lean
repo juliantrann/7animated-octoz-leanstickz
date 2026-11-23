@@ -29,9 +29,10 @@ theorem check_ok {feat : Features} {pkru : BitVec 32} {mem : Memory} {x : Addr} 
     · simpa [pkeyDenies] using And.intro p0 p1
     · rfl
   rcases hb with ⟨f, hf⟩ | ⟨fp, hf, he⟩
-  · simp [Memory.check, Memory.check.rest, hm, hf, Backing.filePage, Backing.noSource, Backing.unpopulated, hk, ha,
-      hd]
-  · simp [Memory.check, Memory.check.rest, hm, hf, Backing.filePage, he, hk, ha, hd]
+  · simp [Memory.check, Memory.check.rest, hm, hf, Backing.filePage, Backing.noSource, Backing.unpopulated, hk, ha]
+    exact fun _ => hd
+  · simp [Memory.check, Memory.check.rest, hm, hf, Backing.filePage, he, hk, ha]
+    exact fun _ => hd
 
 theorem ite_priv {c : Prop} [Decidable c] {g : Frame} {b : Backing} :
     (∃ f, (if c then Backing.priv g else b) = .priv f) ∨ (if c then Backing.priv g else b) = b := by
