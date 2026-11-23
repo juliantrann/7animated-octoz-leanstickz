@@ -69,7 +69,9 @@ theorem lif_foot :
   ⟨lf_varN (by omega) (by omega), lf_varN (by omega) (by omega), lw_varN (by omega) (by omega),
     lw_varN (by omega) (by omega), lw_varN (by omega) (by omega), lw_varN (by omega) (by omega),
     lf_roN (by omega) (by omega), lf_varN (by omega) (by omega), fun _ h1 h2 => lf_ro (by omega) (by omega),
-    lf_roN (by omega) (by omega), lf_varN (by omega) (by omega), lf_varN (by omega) (by omega),
+    fun _ hi => lf_ro (by first | bv_omega | (simp only [BitVec.add_eq]; bv_omega))
+      (by first | bv_omega | (simp only [BitVec.add_eq]; bv_omega)),
+    lf_varN (by omega) (by omega), lf_varN (by omega) (by omega),
     lf_varN (by omega) (by omega), lf_varN (by omega) (by omega), fun _ h1 h2 => lw_var (by omega) (by omega),
     fun _ h1 h2 => lf_var (by omega) (by omega), fun _ h1 h2 => lw_var (by omega) (by omega),
     fun _ h1 h2 => lw_var (by omega) (by omega), fun _ h1 h2 => lf_ro (by omega) (by omega),
