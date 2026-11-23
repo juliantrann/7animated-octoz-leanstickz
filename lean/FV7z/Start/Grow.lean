@@ -42,7 +42,7 @@ theorem mapAnon_old (hf : m.free P n = true) {p : PageNum} {mp : Mapping} (h : m
 
 theorem mapAnon_new {p : PageNum} (h1 : P ≤ p.toNat) (h2 : p.toNat < P + n) :
     (m.mapAnon P n prot).map p =
-      some ⟨prot, m.fresh + (p.toNat - P), 0, false, none, m.fresh, ⟨true, true, true⟩, false⟩ := by
+      some ⟨prot, m.fresh + (p.toNat - P), 0, false, none, m.fresh, ⟨true, true, true⟩, false, none⟩ := by
   have hin : inPages P n p = true := by simp [inPages, h1, h2]
   simp only [Memory.mapAnon, hin, ↓reduceIte]
 
@@ -50,7 +50,7 @@ theorem mapAnon_new {p : PageNum} (h1 : P ≤ p.toNat) (h2 : p.toNat < P + n) :
 theorem mapAnon_cases (hf : m.free P n = true) {p : PageNum} {mp : Mapping}
     (h : (m.mapAnon P n prot).map p = some mp) :
     m.map p = some mp ∨ (m.map p = none ∧ P ≤ p.toNat ∧ p.toNat < P + n ∧
-      mp = ⟨prot, m.fresh + (p.toNat - P), 0, false, none, m.fresh, ⟨true, true, true⟩, false⟩) := by
+      mp = ⟨prot, m.fresh + (p.toNat - P), 0, false, none, m.fresh, ⟨true, true, true⟩, false, none⟩) := by
   by_cases hin : P ≤ p.toNat ∧ p.toNat < P + n
   · rw [mapAnon_new hin.1 hin.2] at h
     cases h
