@@ -46,15 +46,29 @@ theorem prot_none {p : PageNum} (hm : m.map p = none) : (protMem m P n prot).map
   · have hi' : inPages P n p = false := by simpa using hi
     rw [prot_out hi', hm]
 
+/-- `mprotect` keeps whether a page is of a mapping of huge pages (`Mapping.huge`). -/
+theorem prot_huge {p : PageNum} {m0 : Mapping} (hm : m.map p = some m0) :
+    ∃ mp, (protMem m P n prot).map p = some mp ∧ mp.huge = m0.huge := by
+  by_cases hi : inPages P n p = true
+  · have e : ∃ ar, (protMem m P n prot).map p = some { m0 with prot := prot, area := ar } :=
+      ⟨_, by simp only [Memory.renumber, Memory.protect, hi, ↓reduceIte, hm, Option.map_some]; rfl⟩
+    obtain ⟨ar, e⟩ := e
+    exact ⟨_, e, rfl⟩
+  · have hi' : inPages P n p = false := by simpa using hi
+    exact ⟨m0, by rw [prot_out hi', hm], rfl⟩
+
 /-- `mprotect` keeps `Relro`: the pages stay mapped, their mappings as special as before. -/
 theorem Relro.mprot (hr : Relro m) : Relro (protMem m P n prot) := by
   intro i hi
-  obtain ⟨mp, h1, h2⟩ := hr i hi
+  obtain ⟨mp, h1, h2, h3⟩ := hr i hi
   have hl : 0x777 + i < 2 ^ 52 := by omega
   unfold Memory.mapAt at h1 ⊢
   rw [if_pos hl] at h1 ⊢
   obtain ⟨mp', e, -, -, hs, -⟩ := prot_some (P := P) (n := n) (prot := prot) h1
-  exact ⟨mp', e, hs.trans h2⟩
+  obtain ⟨mp'', e', hh⟩ := prot_huge (P := P) (n := n) (prot := prot) h1
+  rw [e] at e'
+  cases e'
+  exact ⟨mp', e, hs.trans h2, hh.trans h3⟩
 
 /-- A page mapped after was mapped before. -/
 theorem prot_cases {p : PageNum} {mp : Mapping} (h : (protMem m P n prot).map p = some mp) :
@@ -299,7 +313,7 @@ theorem s_mprotect_ro (c : Seg prof F Wl L s₀ o) (hK : KeptW Wl s₀ X) (hA : 
     (hwrap : X.cpu.gpr.rdi.toNat + pageUp X.cpu.gpr.rsi.toNat < 2 ^ 64)
     (hmg : ∀ t p, o t (.memFail p) = none)
     (hmap : ∀ i < pageUp X.cpu.gpr.rsi.toNat / 4096, ∃ m,
-      X.proc.mm.mem.mapAt (X.cpu.gpr.rdi.toNat / 4096 + i) = some m ∧ m.special = false)
+      X.proc.mm.mem.mapAt (X.cpu.gpr.rdi.toNat / 4096 + i) = some m ∧ m.special = false ∧ m.huge = none)
     (hrs : s₀.thread.rseq = none) {G : Footprint} {Wl' : List Rgn} (hGo : G.own = []) (hGc : G.code = F.code)
     (hfit : ∀ r ∈ G.writes ++ G.reads, r.Fits)
     (hGw : ∀ r ∈ G.writes, ∀ a, r.Mem a → Foot F.writes a ∧
@@ -319,16 +333,16 @@ theorem s_mprotect_ro (c : Seg prof F Wl L s₀ o) (hK : KeptW Wl s₀ X) (hA : 
   have hrsX : (X.withMem M).thread.rseq = none := by rw [hK'.thread]; exact hrs
   have hmap' : ∀ i < pageUp (X.withMem M).cpu.gpr.rsi.toNat / 4096, ∃ m,
       (X.withMem M).proc.mm.mem.mapAt ((X.withMem M).cpu.gpr.rdi.toNat / 4096 + i) = some m ∧ m.special = false ∧
-        m.maxProt.read = true := by
+        m.huge = none ∧ m.maxProt.read = true := by
     intro i hi
-    obtain ⟨m, hm, hs⟩ := hmap i hi
+    obtain ⟨m, hm, hs, hh⟩ := hmap i hi
     have hm' : M.mapAt (X.cpu.gpr.rdi.toNat / 4096 + i) = some m := by
       simp only [Memory.mapAt, hmapM] at hm ⊢
       exact hm
-    refine ⟨m, hm', hs, ?_⟩
+    refine ⟨m, hm', hs, hh, ?_⟩
     unfold Memory.mapAt at hm'
     split at hm'
-    · exact hRX.layout.2.2.2.2.1 _ m hm'
+    · exact hRX.layout.maxRead _ m hm'
     · cases hm'
   have hsub : ∀ a, Foot G.data a → Foot F.data a := by
     intro a ha
@@ -356,7 +370,7 @@ theorem b_mprotect_ro (c : Seg prof F Wl L s₀ o) (hB : Base s₀ lim b fsb k) 
     (hwrap : X.cpu.gpr.rdi.toNat + pageUp X.cpu.gpr.rsi.toNat < 2 ^ 64)
     (hmg : ∀ t p, o t (.memFail p) = none)
     (hmap : ∀ i < pageUp X.cpu.gpr.rsi.toNat / 4096, ∃ m,
-      X.proc.mm.mem.mapAt (X.cpu.gpr.rdi.toNat / 4096 + i) = some m ∧ m.special = false)
+      X.proc.mm.mem.mapAt (X.cpu.gpr.rdi.toNat / 4096 + i) = some m ∧ m.special = false ∧ m.huge = none)
     {G : Footprint} {Wl' : List Rgn} (hGo : G.own = []) (hGc : G.code = F.code)
     (hfit : ∀ r ∈ G.writes ++ G.reads, r.Fits)
     (hGw : ∀ r ∈ G.writes, ∀ a, r.Mem a → Foot F.writes a ∧

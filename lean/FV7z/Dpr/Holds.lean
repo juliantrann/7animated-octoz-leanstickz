@@ -121,7 +121,7 @@ theorem dpr_ok {lim : Nat} {b fsb : Addr} {ks : Kst} {G : Footprint} {Wl' : List
     (hps : rdq(V, 7943128#64) = 4096#64) (hla : rdq(V, 7943392#64) = 0#64)
     (hra : rdq(V, 7944520#64) = 7829360#64) (hrs : rdq(V, 7944528#64) = 108688#64)
     (hmg : ∀ t p, o t (.memFail p) = none)
-    (hmap : ∀ i < 27, ∃ m, s₀.proc.mm.mem.mapAt (0x777 + i) = some m ∧ m.special = false)
+    (hmap : ∀ i < 27, ∃ m, s₀.proc.mm.mem.mapAt (0x777 + i) = some m ∧ m.special = false ∧ m.huge = none)
     (hGo : G.own = []) (hGc : G.code = F.code) (hfit : ∀ r ∈ G.writes ++ G.reads, r.Fits)
     (hGw : ∀ r ∈ G.writes, ∀ a, r.Mem a → Foot F.writes a ∧ inPages 0x777 27 (pageOf a) = false)
     (hGr : ∀ r ∈ G.reads, ∀ a, r.Mem a → Foot F.writes a ∨ Foot F.reads a)

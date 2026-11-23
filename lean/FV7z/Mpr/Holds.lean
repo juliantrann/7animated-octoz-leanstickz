@@ -68,7 +68,8 @@ theorem mprotect_ro {lim : Nat} {b fsb : Addr} {ks : Kst} (c : Seg prof F Wl L s
     (hwrap : X.cpu.gpr.rdi.toNat + pageUp X.cpu.gpr.rsi.toNat < 2 ^ 64)
     (hmg : ∀ t p, o t (.memFail p) = none)
     (hmap : ∀ i < pageUp X.cpu.gpr.rsi.toNat / 4096, ∃ m,
-      s₀.proc.mm.mem.mapAt (X.cpu.gpr.rdi.toNat / 4096 + i) = some m ∧ m.special = false)
+      s₀.proc.mm.mem.mapAt (X.cpu.gpr.rdi.toNat / 4096 + i) = some m ∧ m.special = false ∧
+      m.huge = none)
     {G : Footprint} {Wl' : List Rgn} (hGo : G.own = []) (hGc : G.code = F.code)
     (hfit : ∀ r ∈ G.writes ++ G.reads, r.Fits)
     (hGw : ∀ r ∈ G.writes, ∀ a, r.Mem a → Foot F.writes a ∧
@@ -92,7 +93,8 @@ theorem mprotect_ro {lim : Nat} {b fsb : Addr} {ks : Kst} (c : Seg prof F Wl L s
     simp only [sysEv, hgY]
     rfl
   have hmap' : ∀ i < pageUp X.cpu.gpr.rsi.toNat / 4096, ∃ m,
-      Y.proc.mm.mem.mapAt (X.cpu.gpr.rdi.toNat / 4096 + i) = some m ∧ m.special = false := by
+      Y.proc.mm.mem.mapAt (X.cpu.gpr.rdi.toNat / 4096 + i) = some m ∧ m.special = false ∧
+        m.huge = none := by
     intro i hi
     obtain ⟨m, hm, hs⟩ := hmap i hi
     refine ⟨m, ?_, hs⟩

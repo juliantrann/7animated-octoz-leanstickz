@@ -30,14 +30,12 @@ theorem growFor_ok {acc : Access} {a : Addr} {n : Nat}
     (h : ∀ x ∈ byteAddrs a n,
       x.canonical prof.feat.la57 = true ∧ s.proc.mm.mem.check prof.feat s.cpu.pkru acc x = none) :
     growFor prof s acc a n = Pure.pure s := by
-  have hg : growthFault prof.feat s.proc.mm.mem (userAccessible prof.feat s acc) a n = none := by
-    unfold growthFault
-    rw [firstRejected_none 0 fun i _ hi => ?_]
-    · rfl
-    · obtain ⟨h1, h2⟩ := h (a.add i) (mem_byteAddrs.2 ⟨i, by omega, rfl⟩)
+  have hfr : firstRejected (fun i => userAccessible prof.feat s acc (a.add i)) 0 n = none :=
+    firstRejected_none 0 fun i _ hi => by
+      obtain ⟨h1, h2⟩ := h (a.add i) (mem_byteAddrs.2 ⟨i, by omega, rfl⟩)
       simp only [userAccessible, h1, h2, Option.isNone_none, Bool.and_self]
   unfold growFor growFor.go
-  simp only [hg]
+  simp only [hfr, Option.map_none]
 
 /-- `copy_to_user` to a range that passes `access_ok` and is all writable, in the process's own memory. -/
 theorem copyOut_ok {a : Addr} {bs : List Byte} (hacc : accessOk prof.feat a bs.length = true)

@@ -8,9 +8,9 @@ segment (`_dl_protect_relro`, from `_dl_non_dynamic_init`).
 - `takeWhile_all`: `List.takeWhile` of a list whose elements all pass.
 - `roSt`: a state with pages made read-only, as `mprotect` leaves them (the protection, and new areas).
 - `syscall_mprotect_ro`: `mprotect (a, len, PROT_READ)` with `a` a page's address, `len` not 0, every page of the
-  range mapped, not special, and such that it may be made readable (`Mapping.maxProt`), when the kernel does not
-  refuse (the answer to `Request.memFail` is `none`): the pages are read-only, `rax` is 0. One answer of the stream is
-  used.
+  range mapped, not special, not of huge pages (`Mapping.huge`), and such that it may be made readable
+  (`Mapping.maxProt`), when the kernel does not refuse (the answer to `Request.memFail` is `none`): the pages are
+  read-only, `rax` is 0. One answer of the stream is used.
 -/
 namespace FV7z
 open ZellicX86 Decode
@@ -36,7 +36,8 @@ theorem syscall_mprotect_ro {len : Nat} (htf : s.cpu.rflags.tf = false)
     (hwrap : s.cpu.gpr.rdi.toNat + pageUp s.cpu.gpr.rsi.toNat < 2 ^ 64)
     (hmf : o t (.memFail (pageUp s.cpu.gpr.rsi.toNat / 4096)) = none)
     (hmap : ∀ i < pageUp s.cpu.gpr.rsi.toNat / 4096, ∃ m,
-      s.proc.mm.mem.mapAt (s.cpu.gpr.rdi.toNat / 4096 + i) = some m ∧ m.special = false ∧ m.maxProt.read = true) :
+      s.proc.mm.mem.mapAt (s.cpu.gpr.rdi.toNat / 4096 + i) = some m ∧ m.special = false ∧ m.huge = none ∧
+        m.maxProt.read = true) :
     (instruction prof s).runStream o t =
       (.running (sysSt (roSt s (s.cpu.gpr.rdi.toNat / 4096) (pageUp s.cpu.gpr.rsi.toNat / 4096)) len 0)
         (some (sysEv s 0)), t + 1) := by
@@ -69,10 +70,23 @@ theorem syscall_mprotect_ro {len : Nat} (htf : s.cpu.rflags.tf = false)
         (protOf 1).within m.maxProt).length = pageUp s.cpu.gpr.rsi.toNat / 4096 := by
     rw [takeWhile_all, List.length_range]
     intro i hi
-    obtain ⟨m, hm, -, h2⟩ := hmap i (List.mem_range.1 hi)
+    obtain ⟨m, hm, -, -, h2⟩ := hmap i (List.mem_range.1 hi)
     rw [hm]
     simp only [Option.all_some, Prot.within, h2, show (protOf 1) = ⟨true, false, false⟩ by decide, Bool.not_true,
       Bool.not_false, Bool.or_true, Bool.true_or, Bool.and_self]
+  have hcut : ∀ i < pageUp s.cpu.gpr.rsi.toNat / 4096, ∀ p,
+      s.proc.mm.mem.hugeCut (s.cpu.gpr.rdi.toNat / 4096 + i) p = false := by
+    intro i hi p
+    obtain ⟨m, hm, -, hh, -⟩ := hmap i hi
+    simp only [Memory.hugeCut, hm, Option.bind_some, hh, Option.any_none]
+  have hcut1 : s.proc.mm.mem.hugeCut (s.cpu.gpr.rdi.toNat / 4096) (s.cpu.gpr.rdi.toNat / 4096) = false := by
+    have := hcut 0 (by omega) (s.cpu.gpr.rdi.toNat / 4096)
+    rwa [Nat.add_zero] at this
+  have hcut2 : s.proc.mm.mem.hugeCut (s.cpu.gpr.rdi.toNat / 4096 + pageUp s.cpu.gpr.rsi.toNat / 4096 - 1)
+      (s.cpu.gpr.rdi.toNat / 4096 + pageUp s.cpu.gpr.rsi.toNat / 4096) = false := by
+    rw [show s.cpu.gpr.rdi.toNat / 4096 + pageUp s.cpu.gpr.rsi.toNat / 4096 - 1 =
+      s.cpu.gpr.rdi.toNat / 4096 + (pageUp s.cpu.gpr.rsi.toNat / 4096 - 1) by omega]
+    exact hcut _ (by omega) _
   unfold syscall
   simp only [hrax, hnr]
   simp only [show ¬ (10 ≥ 2 ^ 31) by decide, show ¬ (10 ≥ x32Bit) by decide, show ¬ (10 ≥ nrSyscalls) by decide,
@@ -89,7 +103,7 @@ theorem syscall_mprotect_ro {len : Nat} (htf : s.cpu.rflags.tf = false)
     rw [hmf]
     rfl
   rw [hrq]
-  simp only [Nat.lt_irrefl, ↓reduceIte]
+  simp only [Nat.lt_irrefl, ↓reduceIte, hcut1, hcut2, Bool.and_false, Bool.false_and, Bool.false_eq_true]
   rfl
 
 end FV7z

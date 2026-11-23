@@ -492,7 +492,8 @@ theorem callG (c : Seg prof F Wl L s₀ o) {V₀ : Addr → Byte} {q : Addr} (hE
       simp only [gR, List.append_nil] at hr'
       simp only [frame, hYs, Rgn.Mem, hqs] at ha
       rcases gW_mem hpY hr' with rfl | ⟨m, h1, h2, rfl⟩
-      · simp only [cfR, Rgn.Mem] at hb; omega
+      · have e : (0x7a4ae0 : Addr).toNat = 0x7a4ae0 := rfl
+        simp only [cfR, Rgn.Mem, e] at hb; omega
       · simp only [Rgn.Mem, hE.tn (n := m) (by omega)] at hb; omega
   · intro Y Z' t' hKY hgY hKZ hmem hret hpost
     have hYs : Y.cpu.gpr.rsp = q := by rw [hgY]; exact hq
