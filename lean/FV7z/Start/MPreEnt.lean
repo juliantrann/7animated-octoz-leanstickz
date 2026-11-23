@@ -306,10 +306,24 @@ theorem ent_ml {W : Addr → Byte} {g gY : Gprs} {ra ra₀ : BitVec 64} {sp : Ad
   · exact ofBytesLE_toBytesLE (n := 4) rfl _
   all_goals first | (simp only [toBytesLE_length]; bv_omega) | bv_omega
 
-/-- A byte of a tunable's entry is in the variables. -/
-macro "tun_omega" : tactic =>
-  `(tactic| (unfold Tgv.ent; first | (simp only [Addr.add]; bv_omega) | bv_omega |
-    (simp only [BitVec.add_eq]; bv_omega)))
+theorem lo32 : ∀ d ∈ Pmi.t32, 7935584 ≤ (Tgv.ent d).toNat := fun d hd => by
+  simp only [Pmi.t32, List.mem_cons, List.not_mem_nil, or_false] at hd
+  rcases hd with rfl | rfl | rfl <;> decide
+
+theorem lo64 : ∀ d ∈ Pmi.t64, 7935584 ≤ (Tgv.ent d).toNat := fun d hd => by
+  simp only [Pmi.t64, List.mem_cons, List.not_mem_nil, or_false] at hd
+  rcases hd with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
+
+/-- A byte of a tunable's entry is among the variables, so data. -/
+theorem tun_foot {F : Footprint} {d : Addr} {c i : Nat}
+    (hFv : ∀ a : Addr, 0x777000 ≤ a.toNat → a.toNat < 0x7a9000 → Foot F.data a)
+    (hl : 7935584 ≤ (Tgv.ent d).toNat) (hu : (Tgv.ent d).toNat + 48 ≤ 7940484) (hc : c + i < 48) :
+    Foot F.data ((Tgv.ent d + BitVec.ofNat 64 c).add i) := by
+  generalize Tgv.ent d = e at *
+  have t : ((e + BitVec.ofNat 64 c).add i).toNat = e.toNat + c + i := by
+    simp only [Addr.add]
+    bv_omega
+  exact hFv _ (by omega) (by omega)
 
 set_option maxHeartbeats 1600000 in
 /-- `MPre` of `lif_ok`'s bytes, the break `b + 4544` and `fs` at `b + 2176`; `M_PAD` `0x20000`, no `sbrk` or
@@ -330,8 +344,6 @@ theorem ent_mpre {K : Ctx} {W V : Addr → Byte} {b : Addr} {ver : BitVec 32} {D
   have hsp' : b.toNat + 8192 ≤ sp.toNat + 80 := by omega
   obtain ⟨T32, T64⟩ := ent_tun (ra := ra) (ra₀ := ra₀) (gY := gY) hK hI hM hb hb' hW
     (fun a h1 h2 => hD a h1 (by omega)) (by omega) hr' (by omega) hsn
-  have m32 : ∀ d ∈ Pmi.t32, d.toNat < 64 := by decide
-  have m64 : ∀ d ∈ Pmi.t64, d.toNat < 64 := by decide
   refine
     { hook := ?_, mi := ?_, u32 := fun d hd => ?_, u64 := fun d hd => ?_, sd := ?_, mt := ?_, lk := ?_,
       tc := ?_, fz := fun k hk => ?_, tb := ?_, m0 := ?_, m1 := ?_, m2 := ?_, m3 := ?_, ps := ?_, thr := ?_,
@@ -341,12 +353,14 @@ theorem ent_mpre {K : Ctx} {W V : Addr → Byte} {b : Addr} {ver : BitVec 32} {D
     first | rfl | decide
   · rw [ent_mv hK hI hM hb hb' hW hD hr1 hr' hs1 hsn (x := 7940484) (n := 4) (by unfold MAt; omega) p_mi rfl]
     first | rfl | decide
-  · have h64 := m32 d hd
-    exact ⟨fun i hi => hFv _ (by tun_omega) (by tun_omega), fun i hi => hFv _ (by tun_omega) (by tun_omega),
-      fun i hi => hFv _ (by tun_omega) (by tun_omega), (T32 d hd).1, (T32 d hd).2⟩
-  · have h64 := m64 d hd
-    exact ⟨fun i hi => hFv _ (by tun_omega) (by tun_omega), fun i hi => hFv _ (by tun_omega) (by tun_omega),
-      fun i hi => hFv _ (by tun_omega) (by tun_omega), fun h => absurd ((T64 d hd).1.symm.trans h) (by decide),
+  · have l := lo32 d hd
+    have u := Mal.g32 d hd
+    exact ⟨fun i hi => tun_foot hFv l u (by omega), fun i hi => tun_foot hFv l u (by omega),
+      fun i hi => tun_foot hFv l u (by omega), (T32 d hd).1, (T32 d hd).2⟩
+  · have l := lo64 d hd
+    have u := Mal.g64 d hd
+    exact ⟨fun i hi => tun_foot hFv l u (by omega), fun i hi => tun_foot hFv l u (by omega),
+      fun i hi => tun_foot hFv l u (by omega), fun h => absurd ((T64 d hd).1.symm.trans h) (by decide),
       (T64 d hd).2⟩
   · rw [ent_tzr (x := b + 2176#64 + 18446744073709551584#64) (n := 1) (c := b.toNat + 2144) hb hb' hbp hW
       (by bv_omega) (by omega) (fun j h1 h2 => by unfold TZ; omega) hr hr' hsp' hsn]
@@ -424,7 +438,8 @@ theorem ent_mpreN {K : Ctx} {W V : Addr → Byte} {b : Addr} {ver : BitVec 32} {
       (b + 4544#64) (b + 2176#64) 0x20000#64 0#64 0#64 := by
   have e45 : (b + 4544#64).toNat = b.toNat + 4544 := by bv_omega
   have e21 : (b + 2176#64).toNat = b.toNat + 2176 := by bv_omega
-  refine (ent_mpre hK hI hB hM hps hb hb' hal hbp hW hD hFv hr hr' (by omega) (by omega)).lo
+  refine (ent_mpre (F := F) (g := g) (gY := gY) (ra := ra) (ra₀ := ra₀) (sp := sp) hK hI hB hM hps hb hb' hal
+    hbp hW hD hFv hr hr' (by omega) (by omega)).lo
     (by rw [e21]; omega) (by rw [e21, e45]; omega) fun a ha => ?_
   rw [e45] at ha
   exact Ndi.nV_fV (by omega) hsn (.inl (by omega))
