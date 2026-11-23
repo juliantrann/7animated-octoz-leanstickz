@@ -255,7 +255,7 @@ theorem ownAt_of {s : State} {rs : List Rgn} {x : Addr} {feat : Features} {pkru 
     | exact (h1.1 _ hb).elim
     | exact (h1.2 _ hb).elim
     | exact (h2 _ hb).elim
-    | (rw [check_eq, hmp, hb] at hc; simp [blocked, Backing.filePage, Backing.noSource, Backing.unpopulated] at hc)
+    | (rw [check_eq, hmp] at hc; simp [hb, blocked, Backing.filePage, Backing.noSource, Backing.unpopulated] at hc)
 
 /-- A quiet `rseq` registration, with an area without aliases, is quiet in the sense of `AreaQuiet`. -/
 theorem quiet_of_rseqQuiet {feat : Features} {s : State} {rs : List Rgn} (h : RseqQuiet feat s)
