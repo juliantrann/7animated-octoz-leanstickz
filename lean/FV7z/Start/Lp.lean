@@ -8,6 +8,8 @@ b + 2176`, outside `Junk3` and `Pim.PimVar`. None of those stores touches `fs - 
 
 - `ptr_lp`: there the slot holds byte 16 of the TLS image (`Tls.TlsMem_lp`), which `Tls.lp_pin` gives as
   `0x7922c0` in the file.
+- `mb_lp`: in the bytes `MB` describes (after `_dl_aux_init`) those 8 bytes are still the file's; `ptr_lpv`: so the
+  slot holds `0x7922c0` at `0x613434`.
 -/
 namespace FV7z.Start
 open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn
@@ -39,5 +41,23 @@ theorem ptr_lp {K : Ctx} {W V : Addr → Byte} {b : Addr} {ver : BitVec 32} {D :
     · unfold Pim.PimVar
       omega
   rw [← TlsMem_lp V hb hb', rd_ext (W' := W) (W := TlsMem V b) (b + 2064#64) 8 h]
+
+/-- Byte 16 of the TLS initialisation image, in the bytes after `_dl_aux_init`: `0x7922c0`. -/
+theorem mb_lp {K : Ctx} {V : Addr → Byte} (hK : K.Ok) (hI : Img K.V0) (hM : MB K V) :
+    rdq(V, 7829376#64) = 0x7922c0#64 := by
+  show ofBytesLE 64 (List.map V (byteAddrs (BitVec.ofNat 64 0x777780) 8)) = _
+  rw [rd_fin hK hM.same (fun _ _ _ => rfl) 0x777780 8 (.inr ⟨by decide, by decide⟩) (by decide) (.inl (by decide)),
+    hI.rd Tls.lp_pin rfl (by decide) (by decide)]
+  rfl
+
+/-- At the call of `__libc_init_first`, the slot `fs - 112` holds `0x7922c0`. -/
+theorem ptr_lpv {K : Ctx} {W V : Addr → Byte} {b : Addr} {ver : BitVec 32} {D : Addr → Prop} (hK : K.Ok)
+    (hI : Img K.V0) (hM : MB K V) (hb : 0x7a9000 ≤ b.toNat) (hb' : b.toNat + 8192 ≤ 2 ^ 63)
+    (hbp : b.toNat + 2072 + 448 < K.bp.toNat)
+    (hW : ∀ a : Addr, D a ∨ (b.toNat ≤ a.toNat ∧ a.toNat < b.toNat + 8192) → ¬ Junk3 K a →
+      ¬ Pim.PimVar (b + 2176#64) a →
+      W a = PtrMem (VerMem (GuardMem (TlsMem V b) (b + 2176#64)) ver) (b + 2176#64) a) :
+    rdq(W, b + 2064#64) = 0x7922c0#64 :=
+  (ptr_lp hb hb' hbp hW).trans (mb_lp hK hI hM)
 
 end FV7z.Start
