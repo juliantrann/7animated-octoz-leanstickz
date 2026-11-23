@@ -7,8 +7,9 @@ import FV7z.Start.Keep
 `Ndi.lif_ok` asks for `rdq(·, 0x7a8580) = 0x400040` (`h2`, `_dl_phdr`) and `rdq(·, 0x7a8598) = 8` (`h3`,
 `_dl_phnum`). `_dl_aux_init` sets them from `AT_PHDR` and `AT_PHNUM`; no later store of the start code touches them.
 
-- `GlAt`, `ptr_gl`, `ent_gl`, `ent_v`: bytes of `.data` below the GOT or of the variables above `0x7a8418` (but
-  `_dl_osversion` and the CPU variables) are, at `0x613434` and in `lif_ok`'s bytes, those of `MB`.
+- `GlAt`, `ptr_gl`: some bytes of `.data` and of the variables above `0x7a8418` are, at `0x613434`, those of `MB`.
+- `KpAt`, `ent_gl`: bytes away from `__libc_init_first`'s globals are, in `lif_ok`'s bytes, those at `0x613434`.
+- `ent_v`: both.
 - `bss_rdq`: a word of `.bss` is 0 in the launch bytes.
 - `ent_phd`: `h2` and `h3` of `lif_ok`, with `ctxOf_ph` (`TlsIn.lean`).
 -/
@@ -18,12 +19,22 @@ open FV7z.Tun (Vst_out)
 open FV7z.Tls (TlsMem TlsVar TlsMem_out rd_ext)
 open FV7z.StartB (GuardMem PtrMem)
 
-/-- Bytes `[x, x + n)` that no store of the start code after `_dl_aux_init` reaches, nor `__libc_init_first`: in
-`.data` below the GOT, or among the variables above `0x7a8418` but `_dl_osversion` (`0x7a8520`), `_dl_platform` and
-`Lif.LifMem`'s globals (from `0x7a85c8`). -/
+/-- Bytes `[x, x + n)` that no store of the start code after `_dl_aux_init` reaches: in `.data` (below the GOT,
+`_dl_fpu_control`, `_dl_pagesize`, `__fpu_control`), or among the variables above `0x7a8418` but `_dl_osversion`
+(`0x7a8520`), `_dl_platform` and `Lif.LifMem`'s globals (from `0x7a85c8`). -/
 def GlAt (x n : Nat) : Prop :=
-  0x791ca0 ≤ x ∧ x + n ≤ 0x792018 ∨ 0x7a8418 ≤ x ∧ x + n ≤ 0x7a8520 ∨
+  0x791ca0 ≤ x ∧ x + n ≤ 0x792018 ∨ 0x7933c8 ≤ x ∧ x + n ≤ 0x793400 ∨
+    0x793c80 ≤ x ∧ x + n ≤ 0x793c88 ∨ 0x7a8418 ≤ x ∧ x + n ≤ 0x7a8520 ∨
     0x7a8580 ≤ x ∧ x + n ≤ 8029640
+
+/-- Bytes `[x, x + n)` away from the globals `__libc_init_first` stores to (`ent_keep`). -/
+def KpAt (x n : Nat) : Prop :=
+  x + n ≤ 7944640 ∨ 7944644 ≤ x ∧ x + n ≤ 8013720 ∨ 8013728 ≤ x ∧ x + n ≤ 8029640
+
+theorem GlAt.kp {x n : Nat} (h : GlAt x n) : KpAt x n := by
+  unfold GlAt at h
+  unfold KpAt
+  omega
 
 /-- Such bytes are, at the call of `__libc_init_first`, those `MB` describes. -/
 theorem ptr_gl {K : Ctx} {W V : Addr → Byte} {b : Addr} {ver : BitVec 32} {D : Addr → Prop} {x n : Nat}
@@ -53,13 +64,13 @@ theorem ptr_gl {K : Ctx} {W V : Addr → Byte} {b : Addr} {ver : BitVec 32} {D :
   · unfold Pim.PimVar
     omega
 
-/-- The same bytes in `lif_ok`'s bytes. -/
-theorem ent_gl {W : Addr → Byte} {g gY : Gprs} {ra ra₀ : BitVec 64} {sp : Addr} {x n : Nat} (hx : GlAt x n)
+/-- Bytes away from `__libc_init_first`'s globals, below `lif_ok`'s stack: in `lif_ok`'s bytes as before. -/
+theorem ent_gl {W : Addr → Byte} {g gY : Gprs} {ra ra₀ : BitVec 64} {sp : Addr} {x n : Nat} (hx : KpAt x n)
     (hr : x + n + 32 ≤ g.rsp.toNat) (hr' : g.rsp.toNat + 8 ≤ 2 ^ 64) (hsp : x + n ≤ sp.toNat + 80)
     (hsn : sp.toNat + 120 ≤ 2 ^ 64) :
     List.map (Ndi.fV (Vst (Lif.LifMem (Vst W g.rsp (toBytesLE ra₀ 8)) g) (g.rsp - 32#64) (toBytesLE ra 8)) sp gY)
         (byteAddrs (BitVec.ofNat 64 x) n) = List.map W (byteAddrs (BitVec.ofNat 64 x) n) := by
-  unfold GlAt at hx
+  unfold KpAt at hx
   refine rd_ext _ n fun i hi => ?_
   have hx' : (Addr.add (BitVec.ofNat 64 x) i).toNat = x + i := tg hi (by omega)
   exact ent_keep (by omega) hr' (by omega) hsn ⟨by omega, by omega, by omega⟩
@@ -72,7 +83,7 @@ theorem ent_v {K : Ctx} {W V : Addr → Byte} {b : Addr} {ver : BitVec 32} {D : 
     (hr' : g.rsp.toNat + 8 ≤ 2 ^ 64) (hsp : x + n ≤ sp.toNat + 80) (hsn : sp.toNat + 120 ≤ 2 ^ 64) :
     List.map (Ndi.fV (Vst (Lif.LifMem (Vst W g.rsp (toBytesLE ra₀ 8)) g) (g.rsp - 32#64) (toBytesLE ra 8)) sp gY)
         (byteAddrs (BitVec.ofNat 64 x) n) = List.map V (byteAddrs (BitVec.ofNat 64 x) n) :=
-  (ent_gl hx hr hr' hsp hsn).trans (ptr_gl hb hb' hbp hW hD hx)
+  (ent_gl hx.kp hr hr' hsp hsn).trans (ptr_gl hb hb' hbp hW hD hx)
 
 /-- A word of `.bss` is 0 in the launch bytes. -/
 theorem bss_rdq {V : Addr → Byte} (hB : Bss V) {x : Nat} (hx : 0x7945d0 ≤ x ∧ x + 8 ≤ 0x7a86c0) :
