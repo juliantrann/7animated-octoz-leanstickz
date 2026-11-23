@@ -153,7 +153,9 @@ theorem lif_bc {fb lp ct a0 : Addr} {a b cc : BitVec 64} {n : Nat} {pr : List By
   have c64 : (ct + 64#64).toNat = ct.toNat + 64 := by bv_omega
   have c72 : (ct + 72#64).toNat = ct.toNat + 72 := by bv_omega
   have c88 : (ct + 88#64).toNat = ct.toNat + 88 := by bv_omega
-  refine lif_c c hfs hin hci hKZ hAZ' hrZ (by rw [bc_rd hsp p1]; exact hlp) (by rw [bc_rd hsp p2]; exact hct)
+  refine lif_c (lp := lp) (ct := ct) (a := a) (b := b) (cc := cc) c hfs hin hci hKZ hAZ' hrZ
+    (by rw [bc_rd hsp p1]; exact hlp)
+    (by rw [bc_rd hsp p2]; exact hct)
     (by rw [bc_rd (x := ct + 64#64) (m := 8) hsp (p3.mono (by omega) (by omega))]; exact ha)
     (by rw [bc_rd (x := ct + 72#64) (m := 8) hsp (p3.mono (by omega) (by omega))]; exact hb)
     (by rw [bc_rd (x := ct + 88#64) (m := 8) hsp (p3.mono (by omega) (by omega))]; exact hc) f1 f2 f3 fw hfb hcn hap
