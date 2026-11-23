@@ -157,7 +157,7 @@ theorem ptr_lif {prof : Profile} {L : List (Addr × List Byte)} {o : Oracle} {ge
     exact pz
   have hpp' : (byteAddrs 7366691#64 14).map (Ndi.nV (lifW W Z) (lifSp Z) (lifY W Z)) = Gor.pse := by
     have e := nv_map (W := lifW W Z) (g := lifY W Z) (x := 7366691) (n := 14) h8 hsn (by omega)
-    rw [e]
+    rw [e, Gor.pse_eq]
     exact pp
   have hoz' : rdq(Ndi.nV (lifW W Z) (lifSp Z) (lifY W Z), 8029440#64) = 0#64 := by
     have e := nv_map (W := lifW W Z) (g := lifY W Z) (x := 8029440) (n := 8) h8 hsn (by omega)
