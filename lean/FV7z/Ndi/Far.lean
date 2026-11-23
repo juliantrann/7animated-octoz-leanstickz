@@ -90,4 +90,55 @@ theorem ndi_stk {W W' U W₂ : Addr → Byte} {sp fsb r x : Addr} {m : Nat} {g :
   rw [hE x (by unfold Scr; omega), lbV_hb (by omega), hU x (.inr (.inr (.inl (by omega)))), hV_hb (by omega),
     hS x (.inl (by omega)), fV_out hs (.inr hx)]
 
+/-- A byte apart from a store at a literal address. -/
+theorem vlt {V : Addr → Byte} {a : Nat} {x : Addr} {bs : List Byte} {n : Nat} (hn : bs.length = n)
+    (ha : a + n ≤ 2 ^ 64) (h : x.toNat < a ∨ a + n ≤ x.toNat) : Vst V (BitVec.ofNat 64 a) bs x = V x := by
+  have e : (BitVec.ofNat 64 a).toNat = a := by rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by omega)
+  exact vap hn (by rw [e]; exact ha) (by rw [e]; exact h)
+
+/-- `lV (bV U m)` is `U` below `0x7933c8`. -/
+theorem lbV_gb {U : Addr → Byte} {m : Nat} {x : Addr} (hx : x.toNat < 7943112) : lV (bV U m) x = U x := by
+  unfold lV bV
+  rw [vlt (a := 7944528) (n := 8) (x := x) (toBytesLE_length _ _) (by omega) (by omega),
+    vlt (a := 7944520) (n := 8) (x := x) (toBytesLE_length _ _) (by omega) (by omega),
+    vlt (a := 7943112) (n := 4) (x := x) (toBytesLE_length _ _) (by omega) (by omega),
+    vlt (a := 8029520) (n := 8) (x := x) (toBytesLE_length _ _) (by omega) (by omega),
+    vlt (a := 8029600) (n := 8) (x := x) (toBytesLE_length _ _) (by omega) (by omega),
+    vlt (a := 8029600) (n := 8) (x := x) (toBytesLE_length _ _) (by omega) (by omega),
+    vlt (a := 8029536) (n := 4) (x := x) (toBytesLE_length _ _) (by omega) (by omega),
+    vlt (a := 8029608) (n := 4) (x := x) (toBytesLE_length _ _) (by omega) (by omega),
+    vlt (a := 8029584) (n := 4) (x := x) (toBytesLE_length _ _) (by omega) (by omega),
+    vlt (a := 8029616) (n := 8) (x := x) (toBytesLE_length _ _) (by omega) (by omega)]
+
+/-- `hV V' …` is `V'` below `0x791cb8` and in `[0x791ce0, 0x793788)`. -/
+theorem hV_gb {V' : Addr → Byte} {r ph pn : BitVec 64} {x : Addr}
+    (hx : x.toNat < 7937208 ∨ 7937248 ≤ x.toNat ∧ x.toNat < 7944072) : hV V' r ph pn x = V' x := by
+  unfold hV aV
+  rw [vlt (a := 8029532) (n := 4) (x := x) (toBytesLE_length _ _) (by omega) (by omega),
+    vlt (a := 7937208) (n := 8) (x := x) (toBytesLE_length _ _) (by omega) (by omega),
+    vlt (a := 7937216) (n := 8) (x := x) (toBytesLE_length _ _) (by omega) (by omega),
+    vlt (a := 7937224) (n := 8) (x := x) (toBytesLE_length _ _) (by omega) (by omega),
+    vlt (a := 7937232) (n := 8) (x := x) (toBytesLE_length _ _) (by omega) (by omega),
+    vlt (a := 7937240) (n := 8) (x := x) (toBytesLE_length _ _) (by omega) (by omega),
+    vlt (a := 7944088) (n := 2) (x := x) (toBytesLE_length _ _) (by omega) (by omega),
+    vlt (a := 7944072) (n := 8) (x := x) (toBytesLE_length _ _) (by omega) (by omega),
+    vlt (a := 7944232) (n := 8) (x := x) (toBytesLE_length _ _) (by omega) (by omega)]
+
+/-- A byte of the image below `_dl_get_origin`'s variables, or of the GOT page but `main_arena`, at the return of
+`_dl_non_dynamic_init` is the one at its entry (`__ctype_init`'s locale words and tables). -/
+theorem ndi_glob {W W' U W₂ : Addr → Byte} {sp b fsb r x : Addr} {m : Nat} {g : Gprs}
+    (hE : Eqo sp W₂ (lV (bV U m)))
+    (hU : ∀ a : Addr, (a.toNat < 7937664 ∨ 7937720 ≤ a.toNat ∧ a.toNat < 7940480 ∨ sp.toNat ≤ a.toNat ∨
+      Mal.Kf fsb a) → U a = hV W' r 4194368#64 8#64 a)
+    (hL : ∀ a : Addr, Lo b fsb a → W' a = fV W sp g a) (hb : 7940480 ≤ b.toNat) (hf : 7940480 + 40 ≤ fsb.toNat)
+    (hsp : 7940480 + 72 ≤ sp.toNat) (hs : sp.toNat + 120 ≤ 2 ^ 64)
+    (hx : x.toNat < 7937208 ∨ 7937720 ≤ x.toNat ∧ x.toNat < 7940480) : W₂ x = W x := by
+  have hu : x.toNat < 7937664 ∨ 7937720 ≤ x.toNat ∧ x.toNat < 7940480 ∨ sp.toNat ≤ x.toNat ∨ Mal.Kf fsb x :=
+    hx.elim (fun h => .inl (by omega)) (fun h => .inr (.inl h))
+  have hl : Lo b fsb x := ⟨by omega, by omega, by omega, by omega, by omega⟩
+  have hn : ¬ Scr sp x := by unfold Scr; omega
+  rw [hE x hn, lbV_gb (U := U) (m := m) (x := x) (by omega), hU x hu,
+    hV_gb (V' := W') (r := r) (ph := 4194368#64) (pn := 8#64) (x := x) (by omega), hL x hl,
+    fV_out (W := W) (g := g) (x := x) hs (.inl (by omega))]
+
 end FV7z.Ndi

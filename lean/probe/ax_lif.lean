@@ -1,6 +1,7 @@
 import FV7z.Lif.Bc
 import FV7z.Ndi.Far
 import FV7z.Ndi.Hpa
+import FV7z.Lif.Nb
 /-! Probe: the axioms of the `__libc_init_first` and `_dl_non_dynamic_init` pieces (expected: `propext`,
 `Classical.choice`, `Quot.sound`). -/
 #print axioms FV7z.Lif.lif_bc
@@ -9,3 +10,5 @@ import FV7z.Ndi.Hpa
 #print axioms FV7z.Ndi.ndi_ok
 #print axioms FV7z.Ndi.hpa
 #print axioms FV7z.Mal.at_ok
+#print axioms FV7z.Ndi.ndi_glob
+#print axioms FV7z.Lif.lif_nb
