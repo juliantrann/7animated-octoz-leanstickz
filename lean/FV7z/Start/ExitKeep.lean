@@ -34,7 +34,7 @@ theorem ct_exit {W₂ : Addr → Byte} {g : Gprs} {a0 s fb x : Addr} {a1 a2 a3 :
 /-- `lif_ok`'s bytes on `ExitB` are those at `0x613434` (`g`: the registers at the entry of
 `__libc_init_first`). -/
 theorem lifW_exit {W : Addr → Byte} {g : Gprs} {ra ra₀ : BitVec 64} {x : Addr} (hx : ExitB x)
-    (hr : 7944640 + 32 ≤ g.rsp.toNat) (hr' : g.rsp.toNat + 8 ≤ 2 ^ 64) :
+    (hr : 8029200 + 32 ≤ g.rsp.toNat) (hr' : g.rsp.toNat + 8 ≤ 2 ^ 64) :
     Vst (Lif.LifMem (Vst W g.rsp (toBytesLE ra₀ 8)) g) (g.rsp - 32#64) (toBytesLE ra 8) x = W x := by
   unfold ExitB at hx
   unfold Lif.LifMem Lif.LifStk
@@ -49,7 +49,7 @@ theorem lifW_exit {W : Addr → Byte} {g : Gprs} {ra ra₀ : BitVec 64} {x : Add
 theorem exit_ret {W W₂ : Addr → Byte} {Z : State} {b fsb fb a0 s x : Addr} {g : Gprs} {a1 a2 a3 : BitVec 64}
     (hx : ExitB x) (hN : Ndi.NdiRet (lifW W Z) (lifSp Z) (lifY W Z) b fsb W₂)
     (hb : 8032256 ≤ b.toNat) (hf : 8032256 ≤ fsb.toNat) (hsp : 8032256 + 72 ≤ (lifSp Z).toNat)
-    (hs : (lifSp Z).toNat + 120 ≤ 2 ^ 64) (he : 7944640 + 32 ≤ (entG Z).rsp.toNat)
+    (hs : (lifSp Z).toNat + 120 ≤ 2 ^ 64) (he : 8029200 + 32 ≤ (entG Z).rsp.toNat)
     (he' : (entG Z).rsp.toNat + 8 ≤ 2 ^ 64) (hg : 0x7a9000 + 40 ≤ g.rsp.toNat) (hfb : 0x7a9000 + 64 ≤ fb.toNat)
     (hfb' : fb.toNat ≤ 2 ^ 63) :
     Cti.CtMem (Lif.bcV W₂ g a0 s) fb a1 a2 a3 x = W x := by
