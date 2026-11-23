@@ -37,7 +37,10 @@ step_build() {
   # the kernel check of Im5.L* recurses deep (a95) on the main thread (Elab.async false): a finite 1 GB stack, since
   # with `unlimited` lean takes its 8 MB default for the main thread (`--tstack` is for the other threads)
   ulimit -s 1048576 2>/dev/null || ulimit -s unlimited 2>/dev/null || true
-  (cd refs/zellic-x86 && lake build 2>&1 | grep -E 'error|warning: declaration uses .sorry.|Build completed'; exit "${PIPESTATUS[0]}") &&
+  # the model and its examples; Release 2's other default targets are its glibc 2.43 statements, which read a libc.a
+  # that its get-libc.sh downloads, and which this project does not build on
+  (cd refs/zellic-x86 && lake build ZellicX86 Examples 2>&1 |
+     grep -E 'error|warning: declaration uses .sorry.|Build completed'; exit "${PIPESTATUS[0]}") &&
   (cd lean && for h in $(grep -v '^\s*#' heavy-targets | xargs); do
      lake build "$h" 2>&1 | grep --line-buffered -E 'error|Build completed'; [ "${PIPESTATUS[0]}" = 0 ] || exit 1; done) &&
   # the whole lake output goes to $log/build.full (tools/live.sh shows its tail while the job runs)
