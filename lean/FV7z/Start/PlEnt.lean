@@ -8,6 +8,7 @@ import FV7z.Start.LoadedAt
 The platform string `execve` puts on the stack lies above `__libc_start_main`'s frame and above the TLS block, so no
 store of the start code lands on it: in `lif_ok`'s bytes it is the launch's (`ent_keep_hi`, `ptr_hi`).
 
+- `ent_hi`: a byte of the stack above the frame, the TLS block and `lif_ok`'s stack is there the launch byte.
 - `ent_pstr`: each byte of the string in `lif_ok`'s bytes, from the launch bytes.
 - `pl_at`: `Pl` for it, when `_dl_platform` points to it.
 -/
@@ -17,6 +18,16 @@ open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn
 theorem pstr_nz : ∀ k < 6, platformString.getD k 0 ≠ 0 := by decide
 theorem pstr_z : platformString.getD 6 0 = 0 := rfl
 theorem pstr_len : platformString.length = 7 := rfl
+
+/-- A byte of the stack above `__libc_start_main`'s frame, the TLS block and `lif_ok`'s stack is, in `lif_ok`'s
+bytes, the launch byte: the strings `execve` puts there. -/
+theorem ent_hi {K : Ctx} {W V : Addr → Byte} {b : Addr} {ver : BitVec 32} {D : Addr → Prop} {g gY : Gprs}
+    {ra ra₀ : BitVec 64} {sp : Addr} (hM : MB K V) (hb : 0x7a9000 ≤ b.toNat) (hb' : b.toNat + 8192 ≤ 2 ^ 63)
+    (hW : PtrW K W V b ver D) {a : Addr} (hbp : K.bp.toNat + 376 ≤ a.toNat) (htl : b.toNat + 8192 ≤ a.toNat)
+    (hr : g.rsp.toNat + 8 ≤ a.toNat) (hr0 : 32 ≤ g.rsp.toNat) (hsp : sp.toNat + 120 ≤ a.toNat) (hDa : D a) :
+    Ndi.fV (Vst (Lif.LifMem (Vst W g.rsp (toBytesLE ra₀ 8)) g) (g.rsp - 32#64) (toBytesLE ra 8)) sp gY a =
+      K.V0 a :=
+  (ent_keep_hi hr hr0 hsp (by omega)).trans (ptr_hi hM hb hb' hW hbp htl hDa)
 
 /-- The platform string in `lif_ok`'s bytes. -/
 theorem ent_pstr {K : Ctx} {W V : Addr → Byte} {b : Addr} {ver : BitVec 32} {D : Addr → Prop} {g gY : Gprs}
@@ -31,10 +42,10 @@ theorem ent_pstr {K : Ctx} {W V : Addr → Byte} {b : Addr} {ver : BitVec 32} {D
   have ht : (BitVec.ofNat 64 (P + k)).toNat = P + k := by
     rw [BitVec.toNat_ofNat]
     exact Nat.mod_eq_of_lt (by omega)
-  have e1 := ent_keep_hi (W := W) (g := g) (gY := gY) (ra := ra) (ra₀ := ra₀) (sp := sp)
-    (a := BitVec.ofNat 64 (P + k)) (by rw [ht]; omega) hr0 (by rw [ht]; omega) (by rw [ht]; omega)
-  have e2 := ptr_hi hM hb hb' hW (a := BitVec.ofNat 64 (P + k)) (by rw [ht]; omega) (by rw [ht]; omega) (hD k hk)
-  rw [e1, e2, hV0 k (by rw [pstr_len]; exact hk)]
+  have e := ent_hi (g := g) (gY := gY) (ra := ra) (ra₀ := ra₀) (sp := sp) hM hb hb' hW
+    (a := BitVec.ofNat 64 (P + k)) (by rw [ht]; omega) (by rw [ht]; omega) (by rw [ht]; omega) hr0
+    (by rw [ht]; omega) (hD k hk)
+  rw [e, hV0 k (by rw [pstr_len]; exact hk)]
 
 /-- `Pl` for the platform string: `_dl_platform` points to it, it is above `sp`, and its pages are in the data
 footprint. -/
