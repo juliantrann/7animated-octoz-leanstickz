@@ -10,6 +10,7 @@ import FV7z.Start.Ro
 - `ptr_keep`: a byte of the image away from the stores of the start code is, there, the launch byte.
 - `ent_keep`: a byte below the stack and away from `Lif.LifMem`'s globals is, in `lif_ok`'s bytes, the same.
 - `ptr_pl`, `ent_pl`: the word at `0x7a8550` (`.bss`) is 0 (`hpl0` of `Ndi.lif_ok`).
+- `ent_hw`: `_dl_hwcap` is 2 or 6 (`hhw` and the choice in `hn` of `Ndi.lif_ok`), from `CpuFeat.HwW` at `0x613434`.
 -/
 namespace FV7z.Start
 open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn
@@ -99,5 +100,25 @@ theorem ent_pl {K : Ctx} {W V : Addr → Byte} {b : Addr} {ver : BitVec 32} {D :
     exact ent_keep (by omega) hr' (by omega) hsn ⟨by omega, by omega, by omega⟩
   rw [rd_ext 8029520#64 8 h]
   exact ptr_pl hK hB hM hb hb' hW hD
+
+/-- `hhw` of `Ndi.lif_ok`, and which case of `hn`: `_dl_hwcap` (`0x7a4ac8`) is 2 or 6 in the bytes at the `call`
+of `_dl_non_dynamic_init` after its pushes, as it is at the call of `__libc_init_first` (`CpuFeat.HwW`). -/
+theorem ent_hw {W : Addr → Byte} {g gY : Gprs} {ra ra₀ : BitVec 64} {sp : Addr} (h : CpuFeat.HwW W)
+    (hr : 0x7a4ad0 + 32 ≤ g.rsp.toNat) (hr' : g.rsp.toNat + 8 ≤ 2 ^ 64) (hsp : 0x7a4ad0 ≤ sp.toNat + 80)
+    (hsn : sp.toNat + 120 ≤ 2 ^ 64) :
+    rdq(Ndi.fV (Vst (Lif.LifMem (Vst W g.rsp (toBytesLE ra₀ 8)) g) (g.rsp - 32#64) (toBytesLE ra 8)) sp gY,
+        8014536#64) = 2#64 ∨
+      rdq(Ndi.fV (Vst (Lif.LifMem (Vst W g.rsp (toBytesLE ra₀ 8)) g) (g.rsp - 32#64) (toBytesLE ra 8)) sp gY,
+        8014536#64) = 6#64 := by
+  have t0 : (8014536#64 : Addr).toNat = 8014536 := rfl
+  have e : ∀ i < 8, Ndi.fV (Vst (Lif.LifMem (Vst W g.rsp (toBytesLE ra₀ 8)) g) (g.rsp - 32#64)
+      (toBytesLE ra 8)) sp gY (Addr.add 8014536#64 i) = W (Addr.add 8014536#64 i) := by
+    intro i hi
+    have hx : (Addr.add 8014536#64 i).toNat = 8014536 + i := by
+      rw [toNat_add_of_fits (a := 8014536#64) (n := 8) hi (by omega), t0]
+    exact ent_keep (by omega) hr' (by omega) hsn ⟨by omega, by omega, by omega⟩
+  rw [rd_ext 8014536#64 8 e]
+  unfold CpuFeat.HwW at h
+  exact h
 
 end FV7z.Start
