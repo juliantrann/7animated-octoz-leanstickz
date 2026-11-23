@@ -450,7 +450,7 @@ theorem initCpuFeatures_applyIrel (c : Seg prof F Wl L s₀ o) (hE : IE F Wl L V
       (∀ y, Foot F.data y → ¬ Foot Wl y → Y.proc.mm.mem.readByte y = V₀ y) →
       Y.cpu.rip = 0x6133bb → TKi X.cpu.gpr Y.cpu.gpr → GoG prof L o (gev ++ [Seg.cetEv g]) gP gE Y t') :
     GoG prof L o gev gP gE X t :=
-  initCpuFeatures c hE hJ hpc hdf hx87 hK hA hok hr hsp fun g _ _ hax hdi hKY hcpu hoff hrY hTY =>
+  initCpuFeatures c hE hJ hpc hdf hx87 hK hA hok hr hsp fun g _ _ hax hdi hKY hcpu hoff _ _ hrY hTY =>
     applyIrel c hR hpc hch hdf hx87 hKY hcpu
       (fun j hj => (hoff _ (hR.tab j hj) (hT j hj).1).trans (hT j hj).2) hrY (hTY.sp.trans hsp)
       fun Z t'' hKZ hcpuZ hgot hoffZ hrZ hTZ => post g Z t'' hax hdi hKZ hcpuZ hgot

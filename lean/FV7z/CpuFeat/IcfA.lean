@@ -42,7 +42,8 @@ theorem IV.stw {V₀ V : Addr → Byte} {q : Addr} (hE : IE F Wl L V₀ q) (hV :
     (ha : a + 4 ≤ 0xa8) (hw : ∀ b, Watched b → b + 4 ≤ a ∨ a + 4 ≤ b) (v : BitVec 32) :
     IV prof Wl V₀ (Vst V ((0x7a4ae0 : Addr).add a) (toBytesLE v 4)) := by
   have e : ((0x7a4ae0 : Addr).add a).toNat = 0x7a4ae0 + a := CpuFeat.tn (by rw [base_toNat]; omega)
-  refine hV.st (fun i hi => hE.cf (by simp at hi; omega))
+  refine hV.st (fun i hi => hE.cf (by simp at hi; omega)) (by rw [toBytesLE_length, e]; omega)
+    (.inl (by rw [toBytesLE_length, e]; omega))
     (hV.inv.st_apart _ _ (by rw [toBytesLE_length, e]; omega) fun b hb => ?_)
   rw [toBytesLE_length, e]
   rcases hw b hb with h | h <;> omega
@@ -135,7 +136,7 @@ theorem iH45 : AtK prof F Wl L s₀ o gev gP gE V₀ g₀ 0x613803 45 := by
     exact nb8 _
   refine c.s_jmp_x hK8 hA8 hE.codeh (by omega) hr8 (icfh_79 _) hE.codea (tgt := 229) (by rw [icfa_length]; omega) (by decide) ?_
   rintro Y9 t9 hK9 hA9 ⟨hr9, hg9⟩
-  exact a229 Y9 t9 _ hK9 hA9 (hV.st (fun i hi => hE.cf (by simp at hi; omega)) (hV.inv.f1_nb8 _ hb)) hr9
+  exact a229 Y9 t9 _ hK9 hA9 (hV.stc hE (by simp) (hV.inv.f1_nb8 _ hb)) hr9
     (by rw [hg9, hg8]; exact hT7)
 
 /-- `0x613369`: `feature[0] |= 1 << 18` if bit 0 of it and bit 16 of `0x80000001`'s `ecx` are set; family `0x15`
@@ -191,7 +192,7 @@ theorem iA188 : AtK prof F Wl L s₀ o gev gP gE V₀ g₀ 0x6132ad 188 := by
     (fun i hi => hE.cf (by omega)) ?_
   rintro Y7 t7 hK7 hA7 ⟨hr7, hg7⟩
   rw [hv6] at hA7
-  exact a218 Y7 t7 _ hK7 hA7 (hV.st (fun i hi => hE.cf (by simp at hi; omega)) hV.inv.or_f0_18) hr7
+  exact a218 Y7 t7 _ hK7 hA7 (hV.stc hE (by simp) hV.inv.or_f0_18) hr7
     (by rw [hg7]; exact hT6)
 
 end K

@@ -100,7 +100,7 @@ theorem iI159 : AtK prof F Wl L s₀ o gev gP gE V₀ g₀ 0x613676 159 := by
     refine c.s_jmp_x hK2 hA2 hE.codei (by omega) hr2 (icfi_195 _) hE.code (tgt := 88) (by rw [icf_length]; omega)
       (by decide) ?_
     rintro Y3 t3 hK3 hA3 ⟨hr3, hg3⟩
-    exact iT1 c hE hsp0 k Y3 t3 _ hK3 hA3 (hV.st (fun i hi => hE.cf (by simp at hi; omega)) (hV.inv.f1_eq8 _ hb))
+    exact iT1 c hE hsp0 k Y3 t3 _ hK3 hA3 (hV.stc hE (by simp) (hV.inv.f1_eq8 _ hb))
       hr3 (by rw [hg3, hg2, hg1]; exact hT0.set (by omega) _)
   refine c.s_mov_r32_rip hK hA hE.codei (by omega) hr (icfi_159 _) (g := (0x7a4ae0 : Addr).add 100) (by decide)
     (hE.cfd c (by omega)) ?_
@@ -141,7 +141,7 @@ theorem iI296 : AtK prof F Wl L s₀ o gev gP gE V₀ g₀ 0x613676 296 := by
   rintro Y1 t1 hK1 hA1 ⟨hr1, hg1⟩
   refine c.s_jmp_x hK1 hA1 hE.codei (by omega) hr1 (icfi_306 _) hE.codei (tgt := 159) (by omega) (by decide) ?_
   rintro Y2 t2 hK2 hA2 ⟨hr2, hg2⟩
-  exact iI159 c hE hsp0 k Y2 t2 _ hK2 hA2 (hV.st (fun i hi => hE.cf (by simp at hi; omega)) (hV.inv.and20 _)) hr2
+  exact iI159 c hE hsp0 k Y2 t2 _ hK2 hA2 (hV.stc hE (by simp) (hV.inv.and20 _)) hr2
     (by rw [hg2, hg1]; exact hT)
 
 /-- `0x61378e`: by the model in `eax`, `0x3c`, `0x45`, `0x46`, or `0x3f` with stepping at most 3, to `296`; else to
@@ -610,13 +610,25 @@ theorem initCpuFeatures (c : Seg prof F Wl L s₀ o) {V₀ : Addr → Byte} {q :
     (post : ∀ (g : Gprs) (Y : State) (t' : Nat), g.rax = BitVec.ofNat 64 158 → g.rdi = BitVec.ofNat 64 0x3001 →
       KeptW Wl s₀ Y → CpuOk prof Y.proc.mm.mem →
       (∀ y, Foot F.data y → ¬ Foot Wl y → Y.proc.mm.mem.readByte y = V₀ y) →
+      HwW Y.proc.mm.mem.readByte → PlW V₀ Y.proc.mm.mem.readByte →
       Y.cpu.rip = 0x613278 → TKr X.cpu.gpr Y.cpu.gpr → GoG prof L o (gev ++ [Seg.cetEv g]) gP gE Y t') :
     GoG prof L o gev gP gE X t := by
-  have kr : KR prof F Wl L s₀ o gev gP gE V₀ X.cpu.gpr := fun g hg g' V Y t' hax hdi hKY hAY hVY hrY hTY =>
+  have hd : ∀ {a : Addr}, (a = 0x7a4ac8 ∨ a = 0x7a8548) → ∀ (Y : State) (V : Addr → Byte),
+      Agree F Y.proc.mm.mem V → List.map Y.proc.mm.mem.readByte (byteAddrs a 8) = List.map V (byteAddrs a 8) := by
+    intro a ha Y V hAY
+    apply List.map_congr_left
+    intro y hy
+    obtain ⟨i, hi, rfl⟩ := mem_byteAddrs.1 hy
+    exact hAY _ (c.hws _ (hE.w _ ⟨⟨a, 8⟩, by rcases ha with rfl | rfl <;> simp [icfW],
+      mem_add_of_fits hi (by rcases ha with rfl | rfl <;> decide)⟩))
+  have kr : KR prof F Wl L s₀ o gev gP gE V₀ X.cpu.gpr := fun g hg g' V Y t' hax hdi hKY hAY hVY hHY hrY hTY =>
     post g' Y t' hax hdi hKY
       (hVY.inv.mem fun j hj => hAY _ (by
         have h := hE.cf (a := 0) (i := j) (by omega); rw [addr_add_zero] at h; exact c.hws _ h))
-      (fun y hy hw => (hAY y hy).trans (hVY.off y hw)) (by rw [hrY]; decide) (hg.tk hTY)
-  exact iC0 c hE hsp kr hpc hdf hx87 hJ X t V₀ hK hA ⟨hok, fun _ _ => rfl⟩ (by rw [hr]; decide) (TK.refl _).r
+      (fun y hy hw => (hAY y hy).trans (hVY.off y hw))
+      (by unfold HwW; rw [hd (.inl rfl) Y V hAY]; exact hHY)
+      (by unfold PlW; rw [hd (.inr rfl) Y V hAY]; exact hVY.pl) (by rw [hrY]; decide) (hg.tk hTY)
+  exact iC0 c hE hsp kr hpc hdf hx87 hJ X t V₀ hK hA ⟨hok, fun _ _ => rfl, .inl rfl⟩ (by rw [hr]; decide)
+    (TK.refl _).r
 
 end FV7z.CpuFeat

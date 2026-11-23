@@ -46,20 +46,75 @@ structure IE (F : Footprint) (Wl : List Rgn) (L : List (Addr × List Byte)) (V�
   codei : CodeIn L 0x613676 icfi
   w : ∀ y, Foot (icfW q) y → Foot Wl y
   fit : q.toNat + 0x80 ≤ 2 ^ 64
+  up : 0x7a9100 ≤ q.toNat
   apart : 0x7a4c70 ≤ q.toNat ∨ q.toNat + 0x80 ≤ 0x7a4ae0
   lo : 256 ≤ q.toNat
   al : (q.toNat + 8) % 16 = 0
   tun : ∀ n ∈ [16, 9, 20, 3, 15, 10], TunOk F Wl V₀ (BitVec.ofNat 64 n)
 
-/-- The footprint's bytes: `CInv`, and off what the run may store into, as at the start. -/
+/-- `_dl_platform` (`0x7a8548`): as at the start, or `"xeon_phi"` (`0x6ee608`) or `"haswell"` (`0x6ee611`). -/
+def PlW (V₀ V : Addr → Byte) : Prop :=
+  ofBytesLE 64 (List.map V (byteAddrs 0x7a8548 8)) = ofBytesLE 64 (List.map V₀ (byteAddrs 0x7a8548 8)) ∨
+    ofBytesLE 64 (List.map V (byteAddrs 0x7a8548 8)) = 0x6ee608 ∨
+    ofBytesLE 64 (List.map V (byteAddrs 0x7a8548 8)) = 0x6ee611
+
+/-- `_dl_hwcap` (`0x7a4ac8`): `HWCAP_X86_64` (2), or with `HWCAP_X86_AVX512_1` (6). -/
+def HwW (V : Addr → Byte) : Prop :=
+  ofBytesLE 64 (List.map V (byteAddrs 0x7a4ac8 8)) = 2 ∨ ofBytesLE 64 (List.map V (byteAddrs 0x7a4ac8 8)) = 6
+
+/-- 8 bytes apart from a store. -/
+theorem rd8_st (V : Addr → Byte) (g : Addr) (bs : List Byte) (x : Addr) (hg : g.toNat + bs.length ≤ 2 ^ 64)
+    (hx : x.toNat + 8 ≤ 2 ^ 64) (h : g.toNat + bs.length ≤ x.toNat ∨ x.toNat + 8 ≤ g.toNat) :
+    List.map (Vst V g bs) (byteAddrs x 8) = List.map V (byteAddrs x 8) := by
+  apply List.map_congr_left
+  intro y hy
+  obtain ⟨j, hj, rfl⟩ := mem_byteAddrs.1 hy
+  apply Vst_apart
+  intro i hi e
+  have := congrArg BitVec.toNat e
+  rw [toNat_add_of_fits hj hx, toNat_add_of_fits hi hg] at this
+  omega
+
+theorem t548 : (0x7a8548 : Addr).toNat = 0x7a8548 := rfl
+theorem tac8 : (0x7a4ac8 : Addr).toNat = 0x7a4ac8 := rfl
+
+/-- A store apart from `0x7a4ac8` keeps `HwW`. -/
+theorem HwW.st {V : Addr → Byte} (h : HwW V) {g : Addr} {bs : List Byte} (hf : g.toNat + bs.length ≤ 2 ^ 64)
+    (hp : g.toNat + bs.length ≤ 0x7a4ac8 ∨ 0x7a4ad0 ≤ g.toNat) : HwW (Vst V g bs) := by
+  unfold HwW at h ⊢
+  rw [rd8_st V g bs _ hf (by rw [tac8]; omega) (by rw [tac8]; omega)]
+  exact h
+
+/-- The store of 2 or 6 into `0x7a4ac8`. -/
+theorem hw_st (V : Addr → Byte) {n : Nat} (hn : n = 2 ∨ n = 6) :
+    HwW (Vst V 0x7a4ac8 (toBytesLE (BitVec.ofNat 64 n) 8)) := by
+  have h := Vst_self (toBytesLE (BitVec.ofNat 64 n) 8) V 0x7a4ac8 (by rw [toBytesLE_length, tac8]; omega)
+  rw [toBytesLE_length] at h
+  unfold HwW
+  rw [h, ofBytesLE_toBytesLE (w := 64) (n := 8) rfl]
+  rcases hn with rfl | rfl
+  · exact .inl rfl
+  · exact .inr rfl
+
+/-- The footprint's bytes: `CInv`, off what the run may store into as at the start, and `_dl_platform`. -/
 structure IV (prof : Profile) (Wl : List Rgn) (V₀ V : Addr → Byte) : Prop where
   inv : CInv prof V
   off : ∀ y, ¬ Foot Wl y → V y = V₀ y
+  pl : PlW V₀ V
+
+theorem IV.st' {prof : Profile} {Wl : List Rgn} {V₀ V : Addr → Byte} (h : IV prof Wl V₀ V) {g : Addr}
+    {bs : List Byte} (hw : ∀ i < bs.length, Foot Wl (g.add i)) (hc : CInv prof (Vst V g bs))
+    (hp : PlW V₀ (Vst V g bs)) : IV prof Wl V₀ (Vst V g bs) :=
+  ⟨hc, fun y hy => by rw [Vst_apart bs V g y fun i hi he => hy (he ▸ hw i hi)]; exact h.off y hy, hp⟩
 
 theorem IV.st {prof : Profile} {Wl : List Rgn} {V₀ V : Addr → Byte} (h : IV prof Wl V₀ V) {g : Addr}
-    {bs : List Byte} (hw : ∀ i < bs.length, Foot Wl (g.add i)) (hc : CInv prof (Vst V g bs)) :
+    {bs : List Byte} (hw : ∀ i < bs.length, Foot Wl (g.add i)) (hf : g.toNat + bs.length ≤ 2 ^ 64)
+    (hp : g.toNat + bs.length ≤ 0x7a8548 ∨ 0x7a8550 ≤ g.toNat) (hc : CInv prof (Vst V g bs)) :
     IV prof Wl V₀ (Vst V g bs) :=
-  ⟨hc, fun y hy => by rw [Vst_apart bs V g y fun i hi he => hy (he ▸ hw i hi)]; exact h.off y hy⟩
+  h.st' hw hc (by
+    unfold PlW
+    rw [rd8_st V g bs _ hf (by rw [t548]; omega) (by rw [t548]; omega)]
+    exact h.pl)
 
 theorem TK.trans {a b c : Gprs} (h : TK a b) (k : TK b c) : TK a c :=
   ⟨k.sp.trans h.sp, k.rbx.trans h.rbx, k.rbp.trans h.rbp, k.r12.trans h.r12, k.r13.trans h.r13, k.r14.trans h.r14,
@@ -108,7 +163,8 @@ theorem IV.fr {V₀ V : Addr → Byte} {q : Addr} (hE : IE F Wl L V₀ q) (hV : 
   have e := hE.tn (n := n) (by omega)
   have hf := hE.fit
   have ha := hE.apart
-  refine hV.st (fun i hi => by rw [addr_add_add]; exact hE.fr (by omega))
+  have hu := hE.up
+  refine hV.st (fun i hi => by rw [addr_add_add]; exact hE.fr (by omega)) (by rw [e]; omega) (.inr (by rw [e]; omega))
     (hV.inv.st_apart _ _ (by rw [e]; omega) fun a hw => ?_)
   rw [e]
   rcases hw with rfl | rfl | rfl | rfl | rfl | rfl <;> omega
@@ -120,7 +176,7 @@ theorem callT (c : Seg prof F Wl L s₀ o) {V₀ : Addr → Byte} {q : Addr} (hE
     (hjl : j + 5 < 357) (htgt : (0x613113 : Addr).add (j + 5) + BitVec.ofNat 64 rel = 0x66f3a0)
     (hsp : Z.cpu.gpr.rsp = q.add 8) {m : Nat} (hm : 52 ≤ m) (hm2 : m + 8 ≤ 0x80) (hsi : Z.cpu.gpr.rsi = q.add m)
     {n : Nat} (hn : n ∈ [16, 9, 20, 3, 15, 10]) (hdi : (rv Z 32 7).setWidth 64 = BitVec.ofNat 64 n)
-    (k' : ∀ V', IV prof Wl V₀ V' →
+    (k' : ∀ V', IV prof Wl V₀ V' → (HwW V → HwW V') →
       ContG prof F Wl L s₀ o gev gP gE V' fun Y => Y.cpu.rip = (0x613113 : Addr).add (j + 5) ∧ TK Z.cpu.gpr Y.cpu.gpr) :
     GoG prof L o gev gP gE Z t := by
   have hl : icf.length = 357 := icf_length
@@ -139,20 +195,24 @@ theorem callT (c : Seg prof F Wl L s₀ o) {V₀ : Addr → Byte} {q : Addr} (hE
   have h1 := hV.fr hE (n := 0) (bs := toBytesLE ((0x613113 : Addr).add (j + 5)) 8) (by rw [toBytesLE_length]; omega)
     (by rw [toBytesLE_length]; omega)
   rw [addr_add_zero] at h1
-  exact k' _ (h1.fr hE (by omega) (by omega))
+  have hu := hE.up
+  have tm : (q.add m).toNat = q.toNat + m := hE.tn (by omega)
+  have tb : bs.length ≤ 8 := by omega
+  exact k' _ (h1.fr hE (by omega) (by omega)) fun hh =>
+    (hh.st (by rw [toBytesLE_length]; omega) (.inr (by omega))).st (by rw [tm]; omega) (.inr (by rw [tm]; omega))
 
 /-- The rest of the run from `0x613278`, after `arch_prctl` with the registers `g`. -/
 abbrev IK (prof : Profile) (F : Footprint) (Wl : List Rgn) (L : List (Addr × List Byte)) (s₀ : State) (o : Oracle)
     (gev : List Event) (gP : State → Nat → List Event → Prop) (gE : Outcome → List Event → Prop)
     (V₀ : Addr → Byte) (g₀ : Gprs) : Prop :=
   ∀ (g : Gprs) (V : Addr → Byte) (Y : State) (t : Nat), g.rax = BitVec.ofNat 64 158 →
-    g.rdi = BitVec.ofNat 64 0x3001 → KeptW Wl s₀ Y → Agree F Y.proc.mm.mem V → IV prof Wl V₀ V →
+    g.rdi = BitVec.ofNat 64 0x3001 → KeptW Wl s₀ Y → Agree F Y.proc.mm.mem V → IV prof Wl V₀ V → HwW V →
     Y.cpu.rip = (0x613113 : Addr).add 357 → TK g₀ Y.cpu.gpr → GoG prof L o (gev ++ [Seg.cetEv g]) gP gE Y t
 
 /-- From `lea rsi, [rsp + 0x70]` (`331`): `arch_prctl (ARCH_CET_STATUS, …)`, `EINVAL`, to `0x613278`. -/
 theorem iSys (c : Seg prof F Wl L s₀ o) {V₀ : Addr → Byte} {q : Addr} (hE : IE F Wl L V₀ q) {g₀ : Gprs}
     (k : IK prof F Wl L s₀ o gev gP gE V₀ g₀) {X : State} {t : Nat} {V : Addr → Byte}
-    (hK : KeptW Wl s₀ X) (hA : Agree F X.proc.mm.mem V) (hV : IV prof Wl V₀ V)
+    (hK : KeptW Wl s₀ X) (hA : Agree F X.proc.mm.mem V) (hV : IV prof Wl V₀ V) (hh : HwW V)
     (hr : X.cpu.rip = (0x613113 : Addr).add 331) (hT : TK g₀ X.cpu.gpr) : GoG prof L o gev gP gE X t := by
   have hl : icf.length = 357 := icf_length
   refine c.s_lea_bd hK hA hE.code (by omega) hr (icf_331 _) ?_
@@ -175,7 +235,7 @@ theorem iSys (c : Seg prof F Wl L s₀ o) {V₀ : Addr → Byte} {q : Addr} (hE 
     rw [Rflags.cond, hz5]; simp only [rv, hg4]
     rw [show ((sysGpr Y3 2).set 0 (errRet EINVAL)).get (regOf 0) = errRet EINVAL from rfl]; decide) ?_
   rintro Y6 t6 hK6 hA6 ⟨hr6, hg6⟩
-  exact k _ _ Y6 t6 hax hdi hK6 hA6 hV hr6 (by rw [hg6, hg5]; exact hT4)
+  exact k _ _ Y6 t6 hax hdi hK6 hA6 hV hh hr6 (by rw [hg6, hg5]; exact hT4)
 
 theorem eaD_sp {Y : State} {q : Addr} (h : Y.cpu.gpr.rsp = q.add 8) (d : Nat) : eaD Y 4 d = q.add (8 + d) := by
   simp only [eaD, get_regOf_4, h]; exact add_addn q 8 d
@@ -187,7 +247,7 @@ theorem rv_mov {Y : State} {g : Gprs} {v : BitVec 64} (h : Y.cpu.gpr = g.set (re
 /-- From `lea rsi, [rsp + 0x60]` (`287`, where Intel's kind's part joins): tunables 15 and 10, then `iSys`. -/
 theorem iT2 (c : Seg prof F Wl L s₀ o) {V₀ : Addr → Byte} {q : Addr} (hE : IE F Wl L V₀ q) {g₀ : Gprs}
     (hsp0 : g₀.rsp = q.add 8) (k : IK prof F Wl L s₀ o gev gP gE V₀ g₀) {X : State} {t : Nat} {V : Addr → Byte}
-    (hK : KeptW Wl s₀ X) (hA : Agree F X.proc.mm.mem V) (hV : IV prof Wl V₀ V)
+    (hK : KeptW Wl s₀ X) (hA : Agree F X.proc.mm.mem V) (hV : IV prof Wl V₀ V) (hh : HwW V)
     (hr : X.cpu.rip = (0x613113 : Addr).add 287) (hT : TK g₀ X.cpu.gpr) : GoG prof L o gev gP gE X t := by
   have hl : icf.length = 357 := icf_length
   refine c.s_lea_bd hK hA hE.code (by omega) hr (icf_287 _) ?_
@@ -200,7 +260,7 @@ theorem iT2 (c : Seg prof F Wl L s₀ o) {V₀ : Addr → Byte} {q : Addr} (hE :
     rw [hg3, hg2, hg1]; exact ((hT.set (by omega) _).set (by omega) _).set (by omega) _
   refine callT c hE hK3 hA3 hV hr3 (icf_304 _) (by omega) (by decide) (hT3.sp.trans hsp0) (m := 104) (by omega)
     (by omega) (by rw [hg3, hg2, hg1]; exact eaD_sp (hT.sp.trans hsp0) 96) (n := 15) (by simp)
-    (by rw [rv_mov hg3]; rfl) fun V4 hV4 => ?_
+    (by rw [rv_mov hg3]; rfl) fun V4 hV4 hh4 => ?_
   rintro Y4 t4 hK4 hA4 ⟨hr4, hT4'⟩
   have hT4 := hT3.trans hT4'
   refine c.s_lea_bd hK4 hA4 hE.code (by omega) hr4 (icf_309 _) ?_
@@ -213,15 +273,22 @@ theorem iT2 (c : Seg prof F Wl L s₀ o) {V₀ : Addr → Byte} {q : Addr} (hE :
     rw [hg7, hg6, hg5]; exact ((hT4.set (by omega) _).set (by omega) _).set (by omega) _
   refine callT c hE hK7 hA7 hV4 hr7 (icf_326 _) (by omega) (by decide) (hT7.sp.trans hsp0) (m := 112) (by omega)
     (by omega) (by rw [hg7, hg6, hg5]; exact eaD_sp (hT4.sp.trans hsp0) 104) (n := 10) (by simp)
-    (by simp only [rv, hg7, hg6]; rfl) fun V8 hV8 => ?_
+    (by simp only [rv, hg7, hg6]; rfl) fun V8 hV8 hh8 => ?_
   rintro Y8 t8 hK8 hA8 ⟨hr8, hT8'⟩
-  exact iSys c hE k hK8 hA8 hV8 hr8 (hT7.trans hT8')
+  exact iSys c hE k hK8 hA8 hV8 (hh8 (hh4 hh)) hr8 (hT7.trans hT8')
 
 /-- From the `j`-th byte of the code at `e`, the run goes on (with `TK g₀`, `IV`) to the goal. -/
 def AtK (prof : Profile) (F : Footprint) (Wl : List Rgn) (L : List (Addr × List Byte)) (s₀ : State) (o : Oracle)
     (gev : List Event) (gP : State → Nat → List Event → Prop) (gE : Outcome → List Event → Prop)
     (V₀ : Addr → Byte) (g₀ : Gprs) (e : Addr) (j : Nat) : Prop :=
   ∀ (X : State) (t : Nat) (V : Addr → Byte), KeptW Wl s₀ X → Agree F X.proc.mm.mem V → IV prof Wl V₀ V →
+    X.cpu.rip = e.add j → TK g₀ X.cpu.gpr → GoG prof L o gev gP gE X t
+
+/-- `AtK` after the store of `HWCAP_X86_64` into `_dl_hwcap` (`263`): with `HwW`. -/
+def AtH (prof : Profile) (F : Footprint) (Wl : List Rgn) (L : List (Addr × List Byte)) (s₀ : State) (o : Oracle)
+    (gev : List Event) (gP : State → Nat → List Event → Prop) (gE : Outcome → List Event → Prop)
+    (V₀ : Addr → Byte) (g₀ : Gprs) (e : Addr) (j : Nat) : Prop :=
+  ∀ (X : State) (t : Nat) (V : Addr → Byte), KeptW Wl s₀ X → Agree F X.proc.mm.mem V → IV prof Wl V₀ V → HwW V →
     X.cpu.rip = e.add j → TK g₀ X.cpu.gpr → GoG prof L o gev gP gE X t
 
 /-- `_dl_x86_cpu_features`' bytes are the run's to store into. -/
@@ -238,20 +305,35 @@ theorem IE.cfd (c : Seg prof F Wl L s₀ o) {V₀ : Addr → Byte} {q : Addr} (h
 /-- A store apart from the watched words keeps `IV`. -/
 theorem IV.stx {V₀ V : Addr → Byte} (hV : IV prof Wl V₀ V) {g : Addr} {bs : List Byte}
     (hw : ∀ i < bs.length, Foot Wl (g.add i)) (hf : g.toNat + bs.length ≤ 2 ^ 64)
-    (hap : 0x7a4b48 ≤ g.toNat ∨ g.toNat + bs.length ≤ 0x7a4ae0) : IV prof Wl V₀ (Vst V g bs) :=
-  hV.st hw (hV.inv.st_apart _ _ hf fun a ha => by rcases ha with rfl | rfl | rfl | rfl | rfl | rfl <;> omega)
+    (hap : 0x7a4b48 ≤ g.toNat ∨ g.toNat + bs.length ≤ 0x7a4ae0)
+    (hp : g.toNat + bs.length ≤ 0x7a8548 ∨ 0x7a8550 ≤ g.toNat) : IV prof Wl V₀ (Vst V g bs) :=
+  hV.st hw hf hp (hV.inv.st_apart _ _ hf fun a ha => by rcases ha with rfl | rfl | rfl | rfl | rfl | rfl <;> omega)
 
-/-- Into `0x7a8548` (8 bytes). -/
-theorem IV.st548 {V₀ V : Addr → Byte} {q : Addr} (hE : IE F Wl L V₀ q) (hV : IV prof Wl V₀ V) (v : BitVec 64) :
-    IV prof Wl V₀ (Vst V 0x7a8548 (toBytesLE v 8)) :=
-  hV.stx (fun i hi => hE.w _ ⟨_, by simp [icfW], mem_add_of_fits (n := 8) (by simpa using hi) (by decide)⟩)
-    (by simp) (by simp)
+/-- A store into `_dl_x86_cpu_features`. -/
+theorem IV.stc {V₀ V : Addr → Byte} {q : Addr} (hE : IE F Wl L V₀ q) (hV : IV prof Wl V₀ V) {a : Nat}
+    {bs : List Byte} (hb : a + bs.length ≤ 0xa8) (hc : CInv prof (Vst V (cpuRgn.base.add a) bs)) :
+    IV prof Wl V₀ (Vst V (cpuRgn.base.add a) bs) := by
+  have e : (cpuRgn.base.add a).toNat = 0x7a4ae0 + a := CpuFeat.tn (a := (0x7a4ae0 : Addr)) (by rw [base_toNat]; omega)
+  exact hV.st (fun i hi => hE.cf (by omega)) (by rw [e]; omega) (.inl (by rw [e]; omega)) hc
+
+/-- Into `0x7a8548` (8 bytes): `"xeon_phi"` or `"haswell"`. -/
+theorem IV.st548 {V₀ V : Addr → Byte} {q : Addr} (hE : IE F Wl L V₀ q) (hV : IV prof Wl V₀ V) {v : BitVec 64}
+    (hv : v = 0x6ee608 ∨ v = 0x6ee611) : IV prof Wl V₀ (Vst V 0x7a8548 (toBytesLE v 8)) := by
+  have h := Vst_self (toBytesLE v 8) V 0x7a8548 (by rw [toBytesLE_length, t548]; omega)
+  rw [toBytesLE_length] at h
+  refine hV.st' (fun i hi => hE.w _ ⟨_, by simp [icfW], mem_add_of_fits (n := 8) (by simpa using hi) (by decide)⟩)
+    (hV.inv.st_apart _ _ (by rw [toBytesLE_length, t548]; omega) fun a ha => ?_) ?_
+  · rw [toBytesLE_length, t548]
+    rcases ha with rfl | rfl | rfl | rfl | rfl | rfl <;> omega
+  · unfold PlW
+    rw [h, ofBytesLE_toBytesLE (w := 64) (n := 8) rfl]
+    exact .inr hv
 
 /-- Into `0x7a4ac8` (8 bytes). -/
 theorem IV.stac8 {V₀ V : Addr → Byte} {q : Addr} (hE : IE F Wl L V₀ q) (hV : IV prof Wl V₀ V) (v : BitVec 64) :
     IV prof Wl V₀ (Vst V 0x7a4ac8 (toBytesLE v 8)) :=
   hV.stx (fun i hi => hE.w _ ⟨_, by simp [icfW], mem_add_of_fits (n := 8) (by simpa using hi) (by decide)⟩)
-    (by simp) (by simp)
+    (by simp) (by simp) (.inl (by rw [toBytesLE_length, tac8]; omega))
 
 /-- `or [feature[1]], imm` without bit 8 (`AVX_Fast_Unaligned_Load`), the one `CpuOk` watches. -/
 theorem CInv.or_f1 {V : Addr → Byte} (h : CInv prof V) (imm : Nat) (h8 : (BitVec.ofNat 32 imm).getLsbD 8 = false) :
@@ -264,14 +346,14 @@ theorem CInv.or_f1 {V : Addr → Byte} (h : CInv prof V) (imm : Nat) (h8 : (BitV
 theorem IV.or_f1 {V₀ V : Addr → Byte} {q : Addr} (hE : IE F Wl L V₀ q) (hV : IV prof Wl V₀ V) (imm : Nat)
     (h8 : (BitVec.ofNat 32 imm).getLsbD 8 = false) :
     IV prof Wl V₀ (Vst V (cpuRgn.base.add 100) (toBytesLE (rdw V 100 ||| BitVec.ofNat 32 imm) 4)) :=
-  hV.st (fun i hi => hE.cf (by simp at hi; omega)) (hV.inv.or_f1 imm h8)
+  hV.stc hE (by simp) (hV.inv.or_f1 imm h8)
 
 /-- A store into `_dl_x86_cpu_features` past the watched words. -/
 theorem IV.stcf {V₀ V : Addr → Byte} {q : Addr} (hE : IE F Wl L V₀ q) (hV : IV prof Wl V₀ V) {a : Nat}
     (ha : 104 ≤ a) {bs : List Byte} (hb : a + bs.length ≤ 0xa8) (hb' : a < 0xa8) :
     IV prof Wl V₀ (Vst V ((0x7a4ae0 : Addr).add a) bs) := by
   have e : ((0x7a4ae0 : Addr).add a).toNat = 0x7a4ae0 + a := CpuFeat.tn (by rw [base_toNat]; omega)
-  exact hV.stx (fun i hi => hE.cf (by omega)) (by rw [e]; omega) (Or.inl (by rw [e]; omega))
+  exact hV.stx (fun i hi => hE.cf (by omega)) (by rw [e]; omega) (Or.inl (by rw [e]; omega)) (.inl (by rw [e]; omega))
 
 /-- A pointer `get_common_indices` stores into: 4 bytes of the frame's locals, from `q + 52`. -/
 def PI (q p : Addr) : Prop := ∃ m, 52 ≤ m ∧ m + 4 ≤ 0x80 ∧ p = q.add m
@@ -386,7 +468,7 @@ theorem callG (c : Seg prof F Wl L s₀ o) {V₀ : Addr → Byte} {q : Addr} (hE
       · show _ = ite _ _ _; rw [if_pos h]
       · show _ = ite _ _ _; rw [if_neg h]; exact hmem y hy h
     have hVZ : IV prof Wl V₀ V' := by
-      refine ⟨(CInv.of_cpuOk hpost).congr fun a i ha hi => ?_, fun y hy => ?_⟩
+      refine ⟨(CInv.of_cpuOk hpost).congr fun a i ha hi => ?_, fun y hy => ?_, ?_⟩
       · unfold bitV
         have hm : Foot (ws 256 gW Y) (cpuRgn.base.add (a + i / 8)) := ⟨cfR, by simp [ws, gW],
           show Rgn.Mem ⟨0x7a4ae0, 0x90⟩ ((0x7a4ae0 : Addr).add _) from
@@ -395,6 +477,32 @@ theorem callG (c : Seg prof F Wl L s₀ o) {V₀ : Addr → Byte} {q : Addr} (hE
       · show ite _ _ _ = _
         rw [if_neg fun h => hy (hws Y hgY y h)]
         exact (h1 _).off y hy
+      · -- `_dl_platform` is apart from the stack and `_dl_x86_cpu_features`
+        have hpl := (h1 (e.add (j + 5))).pl
+        have hu := hE.up
+        unfold PlW at hpl ⊢
+        have hm : List.map V' (byteAddrs 0x7a8548 8) =
+            List.map (Vst V q (toBytesLE (e.add (j + 5)) 8)) (byteAddrs 0x7a8548 8) := by
+          apply List.map_congr_left
+          intro y hy
+          obtain ⟨i, hi, rfl⟩ := mem_byteAddrs.1 hy
+          have hyn : ((0x7a8548 : Addr).add i).toNat = 0x7a8548 + i := toNat_add_of_fits hi (by rw [t548]; omega)
+          show ite _ _ _ = _
+          rw [if_neg]
+          rintro ⟨r, hr, hm⟩
+          rcases List.mem_cons.1 hr with rfl | hr
+          · simp only [below, hYs, Rgn.Mem, hqs] at hm
+            rw [hyn] at hm
+            omega
+          · rcases hgw Y hgY _ ⟨r, hr, hm⟩ with hm | ⟨m, -, h2, h3, -⟩
+            · simp only [Rgn.Mem] at hm
+              rw [hyn] at hm
+              have : (0x7a4ae0 : Addr).toNat = 0x7a4ae0 := rfl
+              omega
+            · rw [hyn] at h3
+              omega
+        rw [hm]
+        exact hpl
     exact k' V' hVZ Z' t' hKZ hAZ hret.1 (TK.ret hgY hret)
 
 section K
@@ -402,12 +510,14 @@ variable (c : Seg prof F Wl L s₀ o) {V₀ : Addr → Byte} {q : Addr} (hE : IE
   (hsp0 : g₀.rsp = q.add 8) (k : IK prof F Wl L s₀ o gev gP gE V₀ g₀)
 include c hE hsp0 k
 
-theorem iT2' : AtK prof F Wl L s₀ o gev gP gE V₀ g₀ 0x613113 287 :=
-  fun _ _ _ hK hA hV hr hT => iT2 c hE hsp0 k hK hA hV hr hT
+theorem iT2' : AtH prof F Wl L s₀ o gev gP gE V₀ g₀ 0x613113 287 :=
+  fun _ _ _ hK hA hV hh hr hT => iT2 c hE hsp0 k hK hA hV hh hr hT
 
 /-- Intel's kind, from `mov [rip], rax` (`0x6135bf`): the `memcpy` choice, back to `287`. -/
-theorem iK45 : AtK prof F Wl L s₀ o gev gP gE V₀ g₀ 0x613592 45 := by
-  intro X t V hK hA hV hr hT
+theorem iK45 : ∀ (X : State) (t : Nat) (V : Addr → Byte), KeptW Wl s₀ X → Agree F X.proc.mm.mem V →
+    IV prof Wl V₀ V → HwW V → (X.cpu.gpr.get (regOf 0) = 0x6ee608 ∨ X.cpu.gpr.get (regOf 0) = 0x6ee611) →
+    X.cpu.rip = (0x613592 : Addr).add 45 → TK g₀ X.cpu.gpr → GoG prof L o gev gP gE X t := by
+  intro X t V hK hA hV hh hax hr hT
   have hl : icfk.length = 172 := icfk_length
   refine c.s_mov_rip_r64 hK hA hE.codek (by omega) hr (icfk_45 _) (g := 0x7a8548) (by decide)
     (fun i hi => hE.w _ ⟨_, by simp [icfW], mem_add_of_fits hi (by decide)⟩) ?_
@@ -415,11 +525,12 @@ theorem iK45 : AtK prof F Wl L s₀ o gev gP gE V₀ g₀ 0x613592 45 := by
   refine c.s_jmp_x hK1 hA1 hE.codek (by omega) hr1 (icfk_52 _) hE.code (tgt := 287) (by rw [icf_length]; omega)
     (by decide) ?_
   rintro Y2 t2 hK2 hA2 ⟨hr2, hg2⟩
-  exact iT2' c hE hsp0 k Y2 t2 _ hK2 hA2 (hV.st548 hE _) hr2 (by rw [hg2, hg1]; exact hT)
+  exact iT2' c hE hsp0 k Y2 t2 _ hK2 hA2 (hV.st548 hE hax)
+    (hh.st (by rw [toBytesLE_length, t548]; omega) (.inr (by rw [t548]; omega))) hr2 (by rw [hg2, hg1]; exact hT)
 
 /-- Intel's kind, from `and edx, 0x20002` (`0x6135ea`): `Prefer_No_AVX512` or not. -/
-theorem iK88 : AtK prof F Wl L s₀ o gev gP gE V₀ g₀ 0x613592 88 := by
-  intro X t V hK hA hV hr hT
+theorem iK88 : AtH prof F Wl L s₀ o gev gP gE V₀ g₀ 0x613592 88 := by
+  intro X t V hK hA hV hh hr hT
   have hl : icfk.length = 172 := icfk_length
   have hl' : icf.length = 357 := icf_length
   refine c.s_and_ri32 hK hA hE.codek (by omega) hr (icfk_88 _) ?_
@@ -428,7 +539,7 @@ theorem iK88 : AtK prof F Wl L s₀ o gev gP gE V₀ g₀ 0x613592 88 := by
   refine c.s_cmp_ri32 hK1 hA1 hE.codek (by omega) hr1 (icfk_94 _) ?_
   rintro Y2 t2 hK2 hA2 ⟨hr2, hg2, -⟩
   refine c.s_jcc_x hK2 hA2 hE.codek (by omega) hr2 (icfk_100 _) hE.code (tgt := 287) (by omega) (by decide)
-    (fun _ Y t' hKY hAY ⟨hrY, hgY⟩ => iT2' c hE hsp0 k Y t' _ hKY hAY hV hrY (by rw [hgY, hg2]; exact hT1))
+    (fun _ Y t' hKY hAY ⟨hrY, hgY⟩ => iT2' c hE hsp0 k Y t' _ hKY hAY hV hh hrY (by rw [hgY, hg2]; exact hT1))
     fun _ => ?_
   rintro Y3 t3 hK3 hA3 ⟨hr3, hg3⟩
   refine c.s_mov_r32_rip hK3 hA3 hE.codek (by omega) hr3 (icfk_106 _) (g := (0x7a4ae0 : Addr).add 20) (by decide)
@@ -440,7 +551,7 @@ theorem iK88 : AtK prof F Wl L s₀ o gev gP gE V₀ g₀ 0x613592 88 := by
   refine c.s_cmp_ri32 hK5 hA5 hE.codek (by omega) hr5 (icfk_117 _) ?_
   rintro Y6 t6 hK6 hA6 ⟨hr6, hg6, -⟩
   refine c.s_jcc_x hK6 hA6 hE.codek (by omega) hr6 (icfk_122 _) hE.code (tgt := 287) (by omega) (by decide)
-    (fun _ Y t' hKY hAY ⟨hrY, hgY⟩ => iT2' c hE hsp0 k Y t' _ hKY hAY hV hrY (by rw [hgY, hg6]; exact hT5))
+    (fun _ Y t' hKY hAY ⟨hrY, hgY⟩ => iT2' c hE hsp0 k Y t' _ hKY hAY hV hh hrY (by rw [hgY, hg6]; exact hT5))
     fun _ => ?_
   rintro Y7 t7 hK7 hA7 ⟨hr7, hg7⟩
   refine c.s_test_m8i_rip hK7 hA7 hE.codek (by omega) hr7 (icfk_128 _) (g := ((0x7a4ae0 : Addr).add 40).add 0)
@@ -448,7 +559,7 @@ theorem iK88 : AtK prof F Wl L s₀ o gev gP gE V₀ g₀ 0x613592 88 := by
   rintro Y8 t8 hK8 hA8 ⟨hr8, hg8, -⟩
   have hT8 : TK g₀ Y8.cpu.gpr := by rw [hg8, hg7, hg6]; exact hT5
   refine c.s_jcc_x hK8 hA8 hE.codek (by omega) hr8 (icfk_135 _) hE.code (tgt := 287) (by omega) (by decide)
-    (fun _ Y t' hKY hAY ⟨hrY, hgY⟩ => iT2' c hE hsp0 k Y t' _ hKY hAY hV hrY (by rw [hgY]; exact hT8))
+    (fun _ Y t' hKY hAY ⟨hrY, hgY⟩ => iT2' c hE hsp0 k Y t' _ hKY hAY hV hh hrY (by rw [hgY]; exact hT8))
     fun _ => ?_
   rintro Y9 t9 hK9 hA9 ⟨hr9, hg9⟩
   refine c.s_mov_r32_rip hK9 hA9 hE.codek (by omega) hr9 (icfk_141 _) (g := (0x7a4ae0 : Addr).add 8) (by decide)
@@ -460,19 +571,19 @@ theorem iK88 : AtK prof F Wl L s₀ o gev gP gE V₀ g₀ 0x613592 88 := by
   refine c.s_cmp_ri32 hK11 hA11 hE.codek (by omega) hr11 (icfk_152 _) ?_
   rintro Y12 t12 hK12 hA12 ⟨hr12, hg12, -⟩
   refine c.s_jcc_x hK12 hA12 hE.codek (by omega) hr12 (icfk_157 _) hE.code (tgt := 287) (by omega) (by decide)
-    (fun _ Y t' hKY hAY ⟨hrY, hgY⟩ => iT2' c hE hsp0 k Y t' _ hKY hAY hV hrY (by rw [hgY, hg12]; exact hT11))
+    (fun _ Y t' hKY hAY ⟨hrY, hgY⟩ => iT2' c hE hsp0 k Y t' _ hKY hAY hV hh hrY (by rw [hgY, hg12]; exact hT11))
     fun _ => ?_
   rintro Y13 t13 hK13 hA13 ⟨hr13, hg13⟩
   refine c.s_lea_rip hK13 hA13 hE.codek (by omega) hr13 (icfk_163 _) (v := 0x6ee611) (by decide) ?_
   rintro Y14 t14 hK14 hA14 ⟨hr14, hg14, -⟩
   refine c.s_jmp hK14 hA14 hE.codek (by omega) hr14 (icfk_170 _) (tgt := 45) (by decide) (by omega) ?_
   rintro Y15 t15 hK15 hA15 ⟨hr15, hg15⟩
-  exact iK45 c hE hsp0 k Y15 t15 _ hK15 hA15 hV hr15
+  exact iK45 c hE hsp0 k Y15 t15 _ hK15 hA15 hV hh (.inr (by rw [hg15, hg14]; rfl)) hr15
     (by rw [hg15, hg14, hg13, hg12]; exact hT11.set (by omega) _)
 
 /-- Intel's kind, from `0x613592`: the TSX choice (`RTM`), then `iK88`. -/
-theorem iK0 : AtK prof F Wl L s₀ o gev gP gE V₀ g₀ 0x613592 0 := by
-  intro X t V hK hA hV hr hT
+theorem iK0 : AtH prof F Wl L s₀ o gev gP gE V₀ g₀ 0x613592 0 := by
+  intro X t V hK hA hV hh hr hT
   have hl : icfk.length = 172 := icfk_length
   have k88 := iK88 c hE hsp0 k
   refine c.s_mov_r32_rip hK hA hE.codek (by omega) hr (icfk_0 _) (g := (0x7a4ae0 : Addr).add 96) (by decide)
@@ -484,7 +595,7 @@ theorem iK0 : AtK prof F Wl L s₀ o gev gP gE V₀ g₀ 0x613592 0 := by
   replace hr2 : Y2.cpu.rip = (0x613592 : Addr).add 9 := hr2
   rw [← hg2] at hT1
   refine c.s_jcc hK2 hA2 hE.codek (by omega) hr2 (icfk_9 _) (tgt := 88) (by decide) (by omega)
-    (fun _ Y t' hKY hAY ⟨hrY, hgY⟩ => k88 Y t' _ hKY hAY hV hrY (by rw [hgY]; exact hT1)) fun _ => ?_
+    (fun _ Y t' hKY hAY ⟨hrY, hgY⟩ => k88 Y t' _ hKY hAY hV hh hrY (by rw [hgY]; exact hT1)) fun _ => ?_
   rintro Y3 t3 hK3 hA3 ⟨hr3, hg3⟩
   rw [← hg3] at hT1
   refine c.s_mov_r32_rip hK3 hA3 hE.codek (by omega) hr3 (icfk_11 _) (g := (0x7a4ae0 : Addr).add 20) (by decide)
@@ -496,7 +607,7 @@ theorem iK0 : AtK prof F Wl L s₀ o gev gP gE V₀ g₀ 0x613592 0 := by
   replace hr5 : Y5.cpu.rip = (0x613592 : Addr).add 22 := hr5
   rw [← hg5] at hT4
   refine c.s_jcc hK5 hA5 hE.codek (by omega) hr5 (icfk_22 _) (tgt := 88) (by decide) (by omega)
-    (fun _ Y t' hKY hAY ⟨hrY, hgY⟩ => k88 Y t' _ hKY hAY hV hrY (by rw [hgY]; exact hT4)) fun _ => ?_
+    (fun _ Y t' hKY hAY ⟨hrY, hgY⟩ => k88 Y t' _ hKY hAY hV hh hrY (by rw [hgY]; exact hT4)) fun _ => ?_
   rintro Y6 t6 hK6 hA6 ⟨hr6, hg6⟩
   rw [← hg6] at hT4
   refine c.s_fl hK6 hA6 hE.codek (by omega) hr6 fl_test_ri32 (icfk_24 _) ?_
@@ -517,7 +628,7 @@ theorem iK0 : AtK prof F Wl L s₀ o gev gP gE V₀ g₀ 0x613592 0 := by
     rintro Y11 t11 hK11 hA11 ⟨hr11, hg11, -⟩
     rw [← hg11] at hT10
     refine c.s_jcc hK11 hA11 hE.codek (by omega) hr11 (icfk_71 _) (tgt := 88) (by decide) (by omega)
-      (fun _ Y t' hKY hAY ⟨hrY, hgY⟩ => k88 Y t' _ hKY hAY hV hrY (by rw [hgY]; exact hT10)) fun _ => ?_
+      (fun _ Y t' hKY hAY ⟨hrY, hgY⟩ => k88 Y t' _ hKY hAY hV hh hrY (by rw [hgY]; exact hT10)) fun _ => ?_
     rintro Y12 t12 hK12 hA12 ⟨hr12, hg12⟩
     rw [← hg12] at hT10
     refine c.s_fl hK12 hA12 hE.codek (by omega) hr12 fl_test_rr32 (icfk_73 _) ?_
@@ -525,13 +636,13 @@ theorem iK0 : AtK prof F Wl L s₀ o gev gP gE V₀ g₀ 0x613592 0 := by
     replace hr13 : Y13.cpu.rip = (0x613592 : Addr).add 75 := hr13
     rw [← hg13] at hT10
     refine c.s_jcc hK13 hA13 hE.codek (by omega) hr13 (icfk_75 _) (tgt := 88) (by decide) (by omega)
-      (fun _ Y t' hKY hAY ⟨hrY, hgY⟩ => k88 Y t' _ hKY hAY hV hrY (by rw [hgY]; exact hT10)) fun _ => ?_
+      (fun _ Y t' hKY hAY ⟨hrY, hgY⟩ => k88 Y t' _ hKY hAY hV hh hrY (by rw [hgY]; exact hT10)) fun _ => ?_
     rintro Y14 t14 hK14 hA14 ⟨hr14, hg14⟩
     rw [← hg14] at hT10
     refine c.s_mov_rip_i64 hK14 hA14 hE.codek (by omega) hr14 (icfk_77 _) (g := 0x7a4ac8) (by decide)
       (fun i hi => hE.w _ ⟨_, by simp [icfW], mem_add_of_fits hi (by decide)⟩) ?_
     rintro Y15 t15 hK15 hA15 ⟨hr15, hg15⟩
-    exact k88 Y15 t15 _ hK15 hA15 (hV.stac8 hE _) hr15 (by rw [hg15]; exact hT10)
+    exact k88 Y15 t15 _ hK15 hA15 (hV.stac8 hE _) (hw_st _ (.inr rfl)) hr15 (by rw [hg15]; exact hT10)
   rintro Y8 t8 hK8 hA8 ⟨hr8, hg8⟩
   rw [← hg8] at hT4
   refine c.s_fl hK8 hA8 hE.codek (by omega) hr8 fl_test_ri32 (icfk_31 _) ?_
@@ -539,12 +650,13 @@ theorem iK0 : AtK prof F Wl L s₀ o gev gP gE V₀ g₀ 0x613592 0 := by
   replace hr9 : Y9.cpu.rip = (0x613592 : Addr).add 36 := hr9
   rw [← hg9] at hT4
   refine c.s_jcc hK9 hA9 hE.codek (by omega) hr9 (icfk_36 _) (tgt := 88) (by decide) (by omega)
-    (fun _ Y t' hKY hAY ⟨hrY, hgY⟩ => k88 Y t' _ hKY hAY hV hrY (by rw [hgY]; exact hT4)) fun _ => ?_
+    (fun _ Y t' hKY hAY ⟨hrY, hgY⟩ => k88 Y t' _ hKY hAY hV hh hrY (by rw [hgY]; exact hT4)) fun _ => ?_
   rintro Y10 t10 hK10 hA10 ⟨hr10, hg10⟩
   rw [← hg10] at hT4
   refine c.s_lea_rip hK10 hA10 hE.codek (by omega) hr10 (icfk_38 _) (v := 0x6ee608) (by decide) ?_
   rintro Y11 t11 hK11 hA11 ⟨hr11, hg11, -⟩
-  exact iK45 c hE hsp0 k Y11 t11 _ hK11 hA11 hV hr11 (by rw [hg11]; exact hT4.set (by omega) _)
+  exact iK45 c hE hsp0 k Y11 t11 _ hK11 hA11 hV hh (.inl (by rw [hg11]; rfl)) hr11
+    (by rw [hg11]; exact hT4.set (by omega) _)
 
 /-- From `mov edx, [cpuid[1].edx]` (`0x61316b`, where every vendor's part joins), to `iK0` or `iT2`. -/
 theorem iT1 : AtK prof F Wl L s₀ o gev gP gE V₀ g₀ 0x613113 88 := by
@@ -599,7 +711,7 @@ theorem iT1 : AtK prof F Wl L s₀ o gev gP gE V₀ g₀ 0x613113 88 := by
     refine callT c hE hK10 hA10 hV10 hr10 (icf_171 _) (by omega) (by decide) (hT10.sp.trans hsp0) (m := 72)
       (by omega) (by omega)
       (by simp only [hg10, hg9, hg8, hg7, hg6, hg5, hg4, hg3, set_rax, set_rdi, set_rdx, set_rsi]; exact eaD_sp hs2 64)
-      (n := 16) (by simp) (by simp only [rv, hg10, hg9, hg8, hg7, hg6, hg5]; rfl) fun W1 hW1 => ?_
+      (n := 16) (by simp) (by simp only [rv, hg10, hg9, hg8, hg7, hg6, hg5]; rfl) fun W1 hW1 _ => ?_
     rintro Z1 u1 hL1 hB1 ⟨hq1, hU1⟩
     have hT11 := hT10.trans hU1
     refine c.s_xor_rr32 hL1 hB1 hE.code (by omega) hq1 (icf_176 _) ?_
@@ -613,7 +725,7 @@ theorem iT1 : AtK prof F Wl L s₀ o gev gP gE V₀ g₀ 0x613113 88 := by
     refine callT c hE hL4 hB4 hW1 hq4 (icf_188 _) (by omega) (by decide) (hU4.sp.trans hsp0) (m := 80)
       (by omega) (by omega)
       (by simp only [hh4, hh3, set_rdi, set_rsi]; exact eaD_sp (by rw [hh2]; exact hT11.sp.trans hsp0) 72)
-      (n := 9) (by simp) (by simp only [rv, hh4]; rfl) fun W2 hW2 => ?_
+      (n := 9) (by simp) (by simp only [rv, hh4]; rfl) fun W2 hW2 _ => ?_
     rintro Z5 u5 hL5 hB5 ⟨hq5, hU5⟩
     have hT12 := hU4.trans hU5
     have hs12 : Z5.cpu.gpr.rsp = q.add 8 := hT12.sp.trans hsp0
@@ -636,7 +748,7 @@ theorem iT1 : AtK prof F Wl L s₀ o gev gP gE V₀ g₀ 0x613113 88 := by
     refine callT c hE hL10 hB10 hW3 hq10 (icf_217 _) (by omega) (by decide) (hU10.sp.trans hsp0) (m := 88)
       (by omega) (by omega)
       (by simp only [hh10, hh9, hh8, set_rdi, set_rsi]; exact eaD_sp (by rw [hh7, hh6]; exact hs12) 80)
-      (n := 20) (by simp) (by simp only [rv, hh10, hh9]; rfl) fun W4 hW4 => ?_
+      (n := 20) (by simp) (by simp only [rv, hh10, hh9]; rfl) fun W4 hW4 _ => ?_
     rintro Z11 u11 hL11 hB11 ⟨hq11, hU11⟩
     have hT13 := hU10.trans hU11
     have hs13 : Z11.cpu.gpr.rsp = q.add 8 := hT13.sp.trans hsp0
@@ -659,7 +771,7 @@ theorem iT1 : AtK prof F Wl L s₀ o gev gP gE V₀ g₀ 0x613113 88 := by
     refine callT c hE hL16 hB16 hW5 hq16 (icf_246 _) (by omega) (by decide) (hU16.sp.trans hsp0) (m := 96)
       (by omega) (by omega)
       (by simp only [hh16, hh15, hh14, set_rdi, set_rsi]; exact eaD_sp (by rw [hh13, hh12]; exact hs13) 88)
-      (n := 3) (by simp) (by simp only [rv, hh16, hh15]; rfl) fun W6 hW6 => ?_
+      (n := 3) (by simp) (by simp only [rv, hh16, hh15]; rfl) fun W6 hW6 _ => ?_
     rintro Z17 u17 hL17 hB17 ⟨hq17, hU17⟩
     have hT14 := hU16.trans hU17
     have hs14 : Z17.cpu.gpr.rsp = q.add 8 := hT14.sp.trans hsp0
@@ -677,12 +789,16 @@ theorem iT1 : AtK prof F Wl L s₀ o gev gP gE V₀ g₀ 0x613113 88 := by
     rintro Z21 u21 hL21 hB21 ⟨hq21, hh21⟩
     have hW7 := (hW6.stac8 hE (BitVec.ofNat 64 2)).stcf hE (a := 152) (by omega) (bs := toBytesLE (Z20.cpu.gpr.get (regOf 0)) 8)
       (by simp) (by omega)
+    have e152 : ((0x7a4ae0 : Addr).add 152).toNat = 0x7a4ae0 + 152 := CpuFeat.tn (by rw [base_toNat]; omega)
+    have hh7 := (hw_st W6 (n := 2) (.inl rfl)).st (g := (0x7a4ae0 : Addr).add 152)
+      (bs := toBytesLE (Z20.cpu.gpr.get (regOf 0)) 8) (by rw [toBytesLE_length, e152]; omega)
+      (.inr (by rw [e152]; omega))
     have hU21 : TK g₀ Z21.cpu.gpr := by
       rw [hh21, hh20, hh19, hh18]; exact hT14.set (by omega) _
     refine c.s_jcc_x hL21 hB21 hE.code (by omega) hq21 (icf_281 _) hE.codek (tgt := 0) (by rw [icfk_length]; omega)
       (by decide)
-      (fun _ Y t' hKY hAY ⟨hrY, hgY⟩ => iK0 c hE hsp0 k Y t' _ hKY hAY hW7 hrY (by rw [hgY]; exact hU21))
-      fun _ Y t' hKY hAY ⟨hrY, hgY⟩ => iT2' c hE hsp0 k Y t' _ hKY hAY hW7 hrY (by rw [hgY]; exact hU21)
+      (fun _ Y t' hKY hAY ⟨hrY, hgY⟩ => iK0 c hE hsp0 k Y t' _ hKY hAY hW7 hh7 hrY (by rw [hgY]; exact hU21))
+      fun _ Y t' hKY hAY ⟨hrY, hgY⟩ => iT2' c hE hsp0 k Y t' _ hKY hAY hW7 hh7 hrY (by rw [hgY]; exact hU21)
   -- `0x61317d`: `ERMS`'s bit of `edx`, `Fast_Rep_String`? (`feature[1]` bit 1)
   have a106 : ∀ (Y : State) (t' : Nat) (V : Addr → Byte), KeptW Wl s₀ Y → Agree F Y.proc.mm.mem V →
       IV prof Wl V₀ V → Y.cpu.rip = (0x613113 : Addr).add 106 → TK g₀ Y.cpu.gpr →

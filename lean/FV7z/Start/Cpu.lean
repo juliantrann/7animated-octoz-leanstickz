@@ -140,8 +140,9 @@ theorem start_cpu (c : Seg prof F Wl L s₀ o) (hl : CodeIn L lsm_at lsm) (hp : 
   have hbp := hK.hbp
   -- what `init_cpu_features` reads of the image is as at the entry
   have hIE' : IE F (cpuW (K.bp + 104#64)) L V' (K.bp + 104#64) :=
-    ⟨hIE.code, hIE.codek, hIE.codet, hIE.codeg, hIE.codea, hIE.codeh, hIE.codei, hIE.w, hIE.fit, hIE.apart, hIE.lo,
-      hIE.al, fun n hn => ⟨(hIE.tun n hn).ty, (hIE.tun n hn).val, (hIE.tun n hn).init, (hIE.tun n hn).nw, by
+    ⟨hIE.code, hIE.codek, hIE.codet, hIE.codeg, hIE.codea, hIE.codeh, hIE.codei, hIE.w, hIE.fit, hIE.up, hIE.apart,
+      hIE.lo, hIE.al, fun n hn => ⟨(hIE.tun n hn).ty, (hIE.tun n hn).val, (hIE.tun n hn).init,
+        (hIE.tun n hn).nw, by
         have hb := tgvInit_bd n hn
         rw [hS.img hK (by omega) (by omega)]; exact (hIE.tun n hn).z⟩⟩
   have hJ' : JT F (cpuW (K.bp + 104#64)) V' := ⟨hJ.data, hJ.nw, fun i hi => by
