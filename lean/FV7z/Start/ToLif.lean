@@ -44,7 +44,8 @@ theorem ptr_lif {prof : Profile} {L : List (Addr × List Byte)} {o : Oracle} {ge
     (hPk : ∀ W₁ : Addr → Byte, (∀ a : Addr, a.toNat < 7940480 → ¬ Ndi.Hv a → W₁ a = lifM W Z a) → Pk W₁)
     (hPs : ∀ W₁ : Addr → Byte, (∀ a : Addr, a.toNat < 7940480 → (a.toNat < 7937664 ∨ 7937720 ≤ a.toNat) →
       ¬ Ndi.Hv a → W₁ a = lifM W Z a) → Ps W₁)
-    (hPr : ∀ W₁ : Addr → Byte, (∀ a : Addr, a.toNat < 7937208 → W₁ a = lifW W Z a) → Pr W₁)
+    (hPr : ∀ W₁ : Addr → Byte, (∀ a : Addr, (a.toNat < 7937208 ∨ 7937720 ≤ a.toNat ∧ a.toNat < 7940480) →
+      W₁ a = lifW W Z a) → Pr W₁)
     (hmg : ∀ t p, o t (.memFail p) = none) (hpse : ProcSelfExe o)
     -- the run to `0x613434`
     (hc : Seg prof (withNew (zzsFoot lo top L) [⟨B, 8192⟩]) ([⟨B, 8192⟩] ++ (zzsFoot lo top L).writes) L s₂ o)

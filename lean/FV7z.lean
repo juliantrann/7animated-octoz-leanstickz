@@ -262,6 +262,8 @@ import FV7z.Start.AgreeW
 import FV7z.Start.PtrAll
 import FV7z.Start.LifNums
 import FV7z.Start.ToLif
+import FV7z.Start.LifL
+import FV7z.Start.ToLifL
 import FV7z.Lemmas.BlkOps7
 import FV7z.Gts.Holds
 import FV7z.Grl.Holds

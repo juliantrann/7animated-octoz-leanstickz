@@ -48,7 +48,8 @@ theorem lif_nb {fb lp ct a0 : Addr} {a b cc : BitVec 64} {n : Nat} {pr : List By
     (nfit : a0.toNat + n < 2 ^ 64) (nnz : ∀ k < n, W (Addr.add a0 k) ≠ 0) (nz : W (Addr.add a0 n) = 0)
     (hns : sp.toNat + 128 ≤ a0.toNat)
     (npg : ∀ x : Addr, a0.toNat / 4096 ≤ x.toNat / 4096 → x.toNat / 4096 ≤ (a0.toNat + n) / 4096 → Foot F.data x)
-    (hPm : ∀ W₁ : Addr → Byte, (∀ a : Addr, a.toNat < 7937208 → W₁ a = W a) → Pm W₁)
+    (hPm : ∀ W₁ : Addr → Byte, (∀ a : Addr, (a.toNat < 7937208 ∨ 7937720 ≤ a.toNat ∧ a.toNat < 7940480) →
+      W₁ a = W a) → Pm W₁)
     -- `__ctype_init`
     (hlp : rdq(W, fb - 112#64) = lp) (hct : rdq(W, lp) = ct) (ha : rdq(W, ct + 64#64) = a)
     (hb : rdq(W, ct + 72#64) = b) (hc : rdq(W, ct + 88#64) = cc)
@@ -121,7 +122,7 @@ theorem lif_nb {fb lp ct a0 : Addr} {a b cc : BitVec 64} {n : Nat} {pr : List By
     omega
   · rw [hW x (.inl (by omega)), Ndi.vap (a := X.cpu.gpr.rsp - 8) (x := x) (n := 8) (toBytesLE_length _ _)
       (by omega) (.inl (by omega))]
-    exact hgb x (.inl hx)
+    exact hgb x hx
   intro Z t' s hKZ hAZ hSh hrZ hsZ hbx hbp h12 h13 h14 h15
   refine k Z t' s hKZ hAZ (short_congr (fun j hj => ?_) hSh) hrZ (by rw [hsZ, r32]) hbx
     (by rw [hbp, hR, q0]) (by rw [h12, r8, q8]) (by rw [h13, r16, q16]) h14 h15

@@ -150,7 +150,8 @@ theorem lif_ok {pl pc ip cpy : List Byte} {Pm : (Addr → Byte) → Prop} {E : E
     (nfit : a0.toNat + n < 2 ^ 64) (nnz : ∀ k < n, W (Addr.add a0 k) ≠ 0) (nz : W (Addr.add a0 n) = 0)
     (hns : sp.toNat + 128 ≤ a0.toNat)
     (npg : ∀ x : Addr, a0.toNat / 4096 ≤ x.toNat / 4096 → x.toNat / 4096 ≤ (a0.toNat + n) / 4096 → Foot G.data x)
-    (hPr : ∀ W₁ : Addr → Byte, (∀ a : Addr, a.toNat < 7937208 → W₁ a = W a) → Pr W₁)
+    (hPr : ∀ W₁ : Addr → Byte, (∀ a : Addr, (a.toNat < 7937208 ∨ 7937720 ≤ a.toNat ∧ a.toNat < 7940480) →
+      W₁ a = W a) → Pr W₁)
     (hlp : rdq(W, fsb - 112#64) = lp) (hct : rdq(W, lp) = ct) (ha : rdq(W, ct + 64#64) = ca)
     (hb : rdq(W, ct + 72#64) = cb) (hc : rdq(W, ct + 88#64) = cc)
     (hlg : 7937720 ≤ lp.toNat ∧ lp.toNat + 8 ≤ 7940480) (hcg : ct.toNat + 96 ≤ 7937208)
