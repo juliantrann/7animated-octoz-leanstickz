@@ -1,0 +1,2 @@
+# tools trial (Lean v4.35.0 + Zellic R2): the model's semantics against this runner's processor
+cd .. && mkdir -p build && CI_LOG_DIR=$PWD/build/cilog bash tools/ci.sh difftest x87 xsave
