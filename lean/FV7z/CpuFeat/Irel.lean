@@ -369,7 +369,8 @@ theorem irHead (c : Seg prof F Wl L s₀ o) (hE : RE F Wl L q) (hpc : prof.Consi
     subst hr
     simp only [List.nil_append, List.mem_singleton] at hr'
     subst hr'
-    simp only [frame, hs6, Rgn.Mem, BitVec.sub_zero, cpuRgn] at ha hb
+    have e : (0x7a4ae0 : Addr).toNat = 0x7a4ae0 := rfl
+    simp only [frame, hs6, Rgn.Mem, BitVec.sub_zero, cpuRgn, e] at ha hb
     have := hE.apart
     omega
   intro Z t' hKZ hmem hret hpost
