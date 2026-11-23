@@ -87,7 +87,7 @@ theorem fin3 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L ipa_at ipa) {V₁ V₂
     GoG prof L o gev gP gE Y₄ t₄ := by
   have hr0 : 96 ≤ r.toNat := by omega
   refine (c_384 prof).run c hin _ hK₄ hA₄ hr₄
-    (vc_384 (by rw [bp₄, kfr hk₂ (by ifd) (by ifd)]; exact h80) (by rw [bp₄]; omega) (by rw [bp₄]; omega)
+    (vc_384 (fb := fb) (by rw [bp₄, kfr hk₂ (by ifd) (by ifd)]; exact h80) (by rw [bp₄]; omega) (by rw [bp₄]; omega)
       (by rw [r15₄]; exact hb1) (by rw [r15₄]; exact hbk) (by rw [r15₄, bp₄]; omega) (by rw [r14₄]; exact ha1)
       (by rw [r14₄]; exact hak) (by rw [r14₄, bp₄]; omega) (by rw [bp₄]; omega) (by rw [r14₄]; exact hWA)
       (by rw [r15₄]; exact hWB) hW7a
@@ -147,7 +147,7 @@ theorem nxt (c : Seg prof F Wl L s₀ o) (hin : CodeIn L ipa_at ipa) {V₁ V₂ 
     (rbx₄ : Y₄.cpu.gpr.rbx = BitVec.ofNat 64 (sA i)) : GoG prof L o gev gP gE Y₄ t₄ := by
   have hr0 : 96 ≤ r.toNat := by omega
   refine (c_293 prof).run c hin _ hK₄ hA₄ hr₄
-    (vc_293 hq hi3 r12₄ rbx₄ (by rw [bp₄, kfr hk₂ (by ifd) (by ifd)]; exact h72)
+    (vc_293 (fb := fb) hq hi3 r12₄ rbx₄ (by rw [bp₄, kfr hk₂ (by ifd) (by ifd)]; exact h72)
       (by rw [bp₄, kfr hk₂ (by ifd) (by ifd)]; exact h64) (by rw [bp₄, kfr hk₂ (by ifd) (by ifd)]; exact h56)
       (by rw [klo (x := BitVec.ofNat 64 (7364040 + 8 * i)) (n := 8) hk₂ (by ifd)]; exact hlen i hi3)
       (by rw [klo (x := BitVec.ofNat 64 (sA i)) (n := 1) hk₂ (by have := sA_le i; ifd)]; exact hsl i hi3)
