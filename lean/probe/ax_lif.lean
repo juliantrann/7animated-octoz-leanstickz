@@ -11,6 +11,7 @@ import FV7z.Start.Ent
 import FV7z.Start.Psz
 import FV7z.Start.Pgs
 import FV7z.Start.La
+import FV7z.Start.Ro
 /-! Probe: the axioms of the `__libc_init_first` and `_dl_non_dynamic_init` pieces (expected: `propext`,
 `Classical.choice`, `Quot.sound`). -/
 #print axioms FV7z.Lif.lif_bc
@@ -38,3 +39,6 @@ import FV7z.Start.La
 #print axioms FV7z.Start.ptr_ps
 #print axioms FV7z.Start.ptr_img_mid
 #print axioms FV7z.Start.ptr_la
+#print axioms FV7z.Start.ptr_ro
+#print axioms FV7z.Start.ent_ro
+#print axioms FV7z.Start.ent_x
