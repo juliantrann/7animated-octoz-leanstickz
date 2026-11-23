@@ -21,7 +21,8 @@ call, `pre` at the call and `post` of the call's state and the return's. -/
 def fn (k : Nat) (W R : State → List Rgn) (pre : State → Prop) (post : State → State → Prop) : Contract where
   conv := sysv
   reads := R
-  writes s := frame s k :: W s
+  stack _ := k
+  writes s := W s
   pre := pre
   post := post
   events _ _ evs := evs = []

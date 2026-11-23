@@ -18,7 +18,8 @@ open ZellicX86
 def contract : Contract where
   conv := sysv
   reads _ := []
-  writes s := [frame s 0]
+  stack _ := 0
+  writes _ := []
   pre _ := True
   post _ _ := True
   events _ _ evs := evs = []

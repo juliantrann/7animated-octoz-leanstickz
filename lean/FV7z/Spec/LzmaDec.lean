@@ -131,7 +131,8 @@ structure Post (s X : State) : Prop where
 def contract : Contract where
   conv := sysv
   reads := reads
-  writes s := frame s 303 :: writes s
+  stack _ := 303
+  writes s := writes s
   pre := Pre
   post := Post
   events _ _ evs := evs = []

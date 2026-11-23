@@ -30,7 +30,8 @@ call. -/
 def leafK (reads : State → List Rgn) (pre : State → Prop) (post : State → BitVec 64 → Prop) : Contract where
   conv := sysv
   reads := reads
-  writes s := [frame s 0]
+  stack _ := 0
+  writes _ := []
   pre := pre
   post s X := post s X.cpu.gpr.rax ∧ Kept s X
   events _ _ evs := evs = []

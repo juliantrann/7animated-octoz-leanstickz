@@ -74,7 +74,8 @@ the tunables: System V, a stack frame of 104 bytes, no system call. -/
 def contract (A E : List (Addr × List Byte)) : Contract where
   conv := sysv
   reads := reads A E
-  writes s := [frame s 104]
+  stack _ := 104
+  writes _ := []
   pre := Pre A E
   post _ _ := True
   events _ _ evs := evs = []

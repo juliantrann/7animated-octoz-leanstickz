@@ -111,11 +111,11 @@ end Calm
 /-! ## Changing one backing -/
 
 /-- Whether every access to a page of backing `b` faults as not present: a file page wholly beyond the end of its file,
-or a kernel page without a source (`Memory.check`). -/
+a kernel page without a source, or a huge page's page not yet allocated (`Memory.check`). -/
 def blocked (fs : Files) (b : Backing) : Bool :=
   match b.filePage with
   | some fp => fs.beyondEof fp
-  | none => b.noSource
+  | none => b.noSource || b.unpopulated
 
 theorem check_eq (feat : Features) (pkru : BitVec 32) (m : Memory) (acc : Access) (x : Addr) :
     m.check feat pkru acc x =

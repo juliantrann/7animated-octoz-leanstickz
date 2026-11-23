@@ -133,7 +133,8 @@ system call. -/
 def contract (X : List (BitVec 64 × BitVec 64)) : Contract where
   conv := sysv
   reads := reads X
-  writes s := frame s 104 :: globals
+  stack _ := 104
+  writes _ := globals
   pre := Pre X
   post := Post X
   events _ _ evs := evs = []

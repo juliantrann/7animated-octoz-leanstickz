@@ -31,7 +31,8 @@ call. -/
 def contract : Contract where
   conv := sysv
   reads := reads
-  writes s := [frame s 0]
+  stack _ := 0
+  writes _ := []
   pre := Pre
   post _ _ := True
   events _ _ evs := evs = []
