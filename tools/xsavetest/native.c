@@ -73,9 +73,16 @@ static void parse(const char *s, uint8_t *out, size_t n) { for (size_t i = 0; i 
 static void put(const uint8_t *b, size_t n) { for (size_t i = 0; i < n; i++) printf("%02x", b[i]); }
 static uint64_t xgetbv0(void) { uint32_t a, d; __asm__ volatile("xgetbv" : "=a"(a), "=d"(d) : "c"(0)); return (uint64_t)d << 32 | a; }
 
+// PKRU (RDPKRU, WRPKRU; only with the PKRU component enabled in XCR0)
+static uint32_t rdpkru(void) {
+  uint32_t a, d; __asm__ volatile(".byte 0x0f,0x01,0xee" : "=a"(a), "=d"(d) : "c"(0)); return a;
+}
+static void wrpkru(uint32_t v) { __asm__ volatile(".byte 0x0f,0x01,0xef" : : "a"(v), "c"(0), "d"(0) : "memory"); }
+
 int main(int argc, char **argv) {
   unsigned a = 0, b = 0, c = 0, d = 0;
   uint64_t xcr0 = xgetbv0();
+  int pk = xcr0 >> 9 & 1; uint32_t pkru0 = pk ? rdpkru() : 0;
   int wide = (xcr0 & 0xE0) == 0xE0 && __get_cpuid_count(7, 0, &a, &b, &c, &d) && (b >> 30 & 1);   // AVX-512 with BW
   if (argc > 1 && !strcmp(argv[1], "info")) {
     static struct st t; __asm__ volatile("fxsave64 %0" : "=m"(t.leg));
@@ -86,6 +93,7 @@ int main(int argc, char **argv) {
     printf("xcr0=%llx mxcsrmask=%x amd=%d amderr=%d fcsdep=%d fdpexc=%d wide=%d", (unsigned long long)xcr0, mask, amd,
            amderr, fcsdep, fdpexc, wide);
     for (int i = 0; i < 20; i++) { __cpuid_count(0xD, i, a, b, c, d); printf(" d%d=%x,%x,%x", i, a, b, c); }
+    printf(" pkru=%x", pkru0);
     putchar('\n'); return 0;
   }
   uint8_t *region = mmap(0, 2 * 4096, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
@@ -113,6 +121,7 @@ int main(int argc, char **argv) {
     }
     parse(f[9], region, 4096);
     sig = 0;
+    if (pk) wrpkru(pkru0);   // every case from the PKRU `info` reported (an XRSTOR of the component changes it)
     if (sigsetjmp(jb, 1) == 0) OPS[k].f[wide](&t, region + off, (uint32_t)rax, (uint32_t)rdx);
     if (sig == SIGSEGV) { printf("exc %s\n", scode == SI_KERNEL ? "gp" : "pf"); continue; }
     if (sig == SIGILL) { puts("exc ud"); continue; }
