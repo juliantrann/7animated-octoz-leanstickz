@@ -8,9 +8,11 @@ import FV7z.Ndi.Exit
 `__exit_funcs_done`, `initial`, `__exit_funcs_lock`) none of the layers stores, so they are the bytes `W` at
 `0x613434`.
 
-- `ct_exit`: `__init_misc` and `__ctype_init` store on the stack, to `__init_misc`'s two variables and below `fb`.
-- `lifW_exit`: `lif_a` stores on the stack and to four variables, none of them `ExitB`.
-- `exit_ret`: the three joined with `Ndi.ndi_exit`.
+- `Away`: the bytes of the image (below `0x7a9000`) apart from the variables `__init_misc` and `lif_a` store to.
+- `ct_away`: `__init_misc` and `__ctype_init` store on the stack, to `__init_misc`'s two variables and below `fb`.
+- `lifW_away`: `lif_a` stores on the stack and to four variables.
+- `exit_ret`: the three joined with `Ndi.ndi_exit`; `glob_ret`: with `Ndi.ndi_glob`, for `[0x791eb8, 0x792980)`
+  (`__exit_funcs` at `0x7923b0`).
 - `ptr_exit`: at `0x613434` they are 0, as in the image (the bss).
 - `ct_tcb`, `lifW_tcb`, `tcb_ret`: the same for the first 56 bytes of the TCB (`multiple_threads` at `fs + 24`,
   `pointer_guard` at `fs + 48`), with `Ndi.ndi_tcb`.
@@ -22,23 +24,31 @@ open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn
 open FV7z.Tun (Vst_out rd_Vst rd_Vst_self)
 open FV7z.Ndi (ExitB)
 
-/-- After `_dl_non_dynamic_init` returns, the stores of `__init_misc` and `__ctype_init` miss `ExitB`. -/
-theorem ct_exit {W₂ : Addr → Byte} {g : Gprs} {a0 s fb x : Addr} {a1 a2 a3 : BitVec 64} (hx : ExitB x)
+/-- A byte of the image apart from `__init_misc`'s two variables (`[0x793338, 0x793348)`) and the four `lif_a` stores
+to (`__libc_multiple_libcs`, `__environ`, `__libc_argc`, `__libc_argv`). -/
+def Away (x : Addr) : Prop :=
+  x.toNat < 7942968 ∨ 7942984 ≤ x.toNat ∧ x.toNat < 7944640 ∨ 7944644 ≤ x.toNat ∧ x.toNat < 8013720 ∨
+    8013728 ≤ x.toNat ∧ x.toNat < 8029640 ∨ 8029656 ≤ x.toNat ∧ x.toNat < 0x7a9000
+
+theorem exit_away {x : Addr} (hx : ExitB x) : Away x := by
+  unfold ExitB at hx; unfold Away; omega
+
+/-- After `_dl_non_dynamic_init` returns, the stores of `__init_misc` and `__ctype_init` miss `Away`. -/
+theorem ct_away {W₂ : Addr → Byte} {g : Gprs} {a0 s fb x : Addr} {a1 a2 a3 : BitVec 64} (hx : Away x)
     (hg : 0x7a9000 + 40 ≤ g.rsp.toNat) (hf : 0x7a9000 + 64 ≤ fb.toNat) (hf' : fb.toNat ≤ 2 ^ 63) :
     Cti.CtMem (Lif.bcV W₂ g a0 s) fb a1 a2 a3 x = W₂ x := by
-  unfold ExitB at hx
+  unfold Away at hx
   unfold Cti.CtMem
   rw [Vst_out _ _ _ _ (by simp only [toBytesLE_length]; bv_omega) (by simp only [toBytesLE_length]; bv_omega),
     Vst_out _ _ _ _ (by simp only [toBytesLE_length]; bv_omega) (by simp only [toBytesLE_length]; bv_omega),
     Vst_out _ _ _ _ (by simp only [toBytesLE_length]; bv_omega) (by simp only [toBytesLE_length]; bv_omega)]
   exact Lif.bcV_out (by omega) (by omega) (by omega)
 
-/-- `lif_ok`'s bytes on `ExitB` are those at `0x613434` (`g`: the registers at the entry of
-`__libc_init_first`). -/
-theorem lifW_exit {W : Addr → Byte} {g : Gprs} {ra ra₀ : BitVec 64} {x : Addr} (hx : ExitB x)
-    (hr : 8029200 + 32 ≤ g.rsp.toNat) (hr' : g.rsp.toNat + 8 ≤ 2 ^ 64) :
+/-- `lif_ok`'s bytes on `Away` are those at `0x613434` (`g`: the registers at the entry of `__libc_init_first`). -/
+theorem lifW_away {W : Addr → Byte} {g : Gprs} {ra ra₀ : BitVec 64} {x : Addr} (hx : Away x)
+    (hr : 0x7a9000 + 32 ≤ g.rsp.toNat) (hr' : g.rsp.toNat + 8 ≤ 2 ^ 64) :
     Vst (Lif.LifMem (Vst W g.rsp (toBytesLE ra₀ 8)) g) (g.rsp - 32#64) (toBytesLE ra 8) x = W x := by
-  unfold ExitB at hx
+  unfold Away at hx
   unfold Lif.LifMem Lif.LifStk
   rw [Ndi.vap (toBytesLE_length _ _) ?_ ?_, Ndi.vap (toBytesLE_length _ _) ?_ ?_,
     Ndi.vap (toBytesLE_length _ _) ?_ ?_, Ndi.vap (toBytesLE_length _ _) ?_ ?_,
@@ -51,13 +61,27 @@ theorem lifW_exit {W : Addr → Byte} {g : Gprs} {ra ra₀ : BitVec 64} {x : Add
 theorem exit_ret {W W₂ : Addr → Byte} {Z : State} {b fsb fb a0 s x : Addr} {g : Gprs} {a1 a2 a3 : BitVec 64}
     (hx : ExitB x) (hN : Ndi.NdiRet (lifW W Z) (lifSp Z) (lifY W Z) b fsb W₂)
     (hb : 8032256 ≤ b.toNat) (hf : 8032256 ≤ fsb.toNat) (hsp : 8032256 + 72 ≤ (lifSp Z).toNat)
-    (hs : (lifSp Z).toNat + 120 ≤ 2 ^ 64) (he : 8029200 + 32 ≤ (entG Z).rsp.toNat)
+    (hs : (lifSp Z).toNat + 120 ≤ 2 ^ 64) (he : 0x7a9000 + 32 ≤ (entG Z).rsp.toNat)
     (he' : (entG Z).rsp.toNat + 8 ≤ 2 ^ 64) (hg : 0x7a9000 + 40 ≤ g.rsp.toNat) (hfb : 0x7a9000 + 64 ≤ fb.toNat)
     (hfb' : fb.toNat ≤ 2 ^ 63) :
     Cti.CtMem (Lif.bcV W₂ g a0 s) fb a1 a2 a3 x = W x := by
   obtain ⟨W', U, m, r, hE, hU, hL, -⟩ := hN
-  rw [ct_exit hx hg hfb hfb', Ndi.ndi_exit hE hU hL hb hf hsp hs hx]
-  exact lifW_exit hx he he'
+  rw [ct_away (exit_away hx) hg hfb hfb', Ndi.ndi_exit hE hU hL hb hf hsp hs hx]
+  exact lifW_away (exit_away hx) he he'
+
+/-- At the return of `__libc_init_first` to `0x613439`, a byte of `[0x791eb8, 0x792980)` (with `__exit_funcs` at
+`0x7923b0`) is the byte `W` at `0x613434`. -/
+theorem glob_ret {W W₂ : Addr → Byte} {Z : State} {b fsb fb a0 s x : Addr} {g : Gprs} {a1 a2 a3 : BitVec 64}
+    (h1 : 7937720 ≤ x.toNat) (h2 : x.toNat < 7940480) (hN : Ndi.NdiRet (lifW W Z) (lifSp Z) (lifY W Z) b fsb W₂)
+    (hb : 8032256 ≤ b.toNat) (hf : 8032256 ≤ fsb.toNat) (hsp : 8032256 + 72 ≤ (lifSp Z).toNat)
+    (hs : (lifSp Z).toNat + 120 ≤ 2 ^ 64) (he : 0x7a9000 + 32 ≤ (entG Z).rsp.toNat)
+    (he' : (entG Z).rsp.toNat + 8 ≤ 2 ^ 64) (hg : 0x7a9000 + 40 ≤ g.rsp.toNat) (hfb : 0x7a9000 + 64 ≤ fb.toNat)
+    (hfb' : fb.toNat ≤ 2 ^ 63) :
+    Cti.CtMem (Lif.bcV W₂ g a0 s) fb a1 a2 a3 x = W x := by
+  obtain ⟨W', U, m, r, hE, hU, hL, -⟩ := hN
+  have ha : Away x := by unfold Away; omega
+  rw [ct_away ha hg hfb hfb', Ndi.ndi_glob hE hU hL (by omega) (by omega) (by omega) hs (.inr ⟨h1, h2⟩)]
+  exact lifW_away ha he he'
 
 /-- At `0x613434` (`ptr_keep`'s bytes), a byte of `ExitB` is 0: none of the layers before stores to it. -/
 theorem ptr_exit {K : Ctx} {W V : Addr → Byte} {b : Addr} {ver : BitVec 32} {D : Addr → Prop} (hK : K.Ok)
