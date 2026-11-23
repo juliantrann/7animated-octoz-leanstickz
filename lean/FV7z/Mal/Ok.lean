@@ -37,7 +37,7 @@ def AtH (prof : Profile) (F : Footprint) (Wl : List Rgn) (L : List (Addr × List
       Z.cpu.gpr.rsp = X.cpu.gpr.rsp + 8 → Z.cpu.gpr.rax = p →
       Z.cpu.gpr.rbx = X.cpu.gpr.rbx → Z.cpu.gpr.rbp = X.cpu.gpr.rbp → Z.cpu.gpr.r12 = X.cpu.gpr.r12 →
       Z.cpu.gpr.r13 = X.cpu.gpr.r13 → Z.cpu.gpr.r14 = X.cpu.gpr.r14 → Z.cpu.gpr.r15 = X.cpu.gpr.r15 →
-      8032256 + 16 ≤ p.toNat → p.toNat + X.cpu.gpr.rdi.toNat ≤ hi →
+      8032256 + 16 ≤ p.toNat → fb.toNat + 64 ≤ p.toNat → p.toNat + X.cpu.gpr.rdi.toNat ≤ hi →
       (∀ a : Addr, p.toNat ≤ a.toNat → a.toNat < p.toNat + X.cpu.gpr.rdi.toNat → Foot Wl a ∧ Foot F.data a) →
       (∀ a : Addr, a.toNat < 7940768 ∨ 7940776 ≤ a.toNat ∧ a.toNat + 8 < p.toNat ∨
         hi ≤ a.toNat ∧ (a.toNat + 208 < X.cpu.gpr.rsp.toNat ∨ X.cpu.gpr.rsp.toNat ≤ a.toNat) → V₂ a = V a) →
@@ -75,15 +75,16 @@ theorem at_hp {prof : Profile} {F : Footprint} {Wl : List Rgn} {L : List (Addr �
   rw [e] at hH
   exact mal_hp c hfs hin hinI hK hA hrip hH hn hhi hR hsw hin₂ hj hra kc
 
-/-- The bytes of `Kn` are kept by `malloc` (`AtH`'s frame: below the chunk, apart from `main_arena.top`). -/
-theorem kn_kept {V V₂ : Addr → Byte} {p : Addr} (hp : 8032256 + 16 ≤ p.toNat)
+/-- The bytes of `Kf fb` are kept by `malloc` (`AtH`'s frame: below the chunk, apart from `main_arena.top`). -/
+theorem kn_kept {fb : Addr} {V V₂ : Addr → Byte} {p : Addr} (hp : 8032256 + 16 ≤ p.toNat)
+    (hpf : fb.toNat + 64 ≤ p.toNat)
     (h : ∀ a : Addr, a.toNat < 7940768 ∨ 7940776 ≤ a.toNat ∧ a.toNat + 8 < p.toNat → V₂ a = V a) :
-    ∀ a : Addr, Kn a → V₂ a = V a := fun a ha => by
+    ∀ a : Addr, Kf fb a → V₂ a = V a := fun a ha => by
   have := ha.lt
   exact h a (.inr ⟨by omega, by omega⟩)
 
 /-- `AtH` gives `Mal.At`: the frame from the stack from `hi`, the bytes from the caller's `rsp` up and those below
-`0x792980` as they were, `Pm k` for the bytes that agree up to the caller's `rsp`, `Kn` (`kn_kept`). -/
+`0x792980` as they were, `Pm k` for the bytes that agree up to the caller's `rsp`, `Kf fb` (`kn_kept`). -/
 theorem at_of {prof : Profile} {F : Footprint} {Wl : List Rgn} {L : List (Addr × List Byte)} {o : Oracle}
     {fb e : Addr} {hi : Nat} {Pm : Nat → (Addr → Byte) → Prop} (h : AtH prof F Wl L o fb hi e Pm) :
     At prof F Wl L o fb hi e Pm := by
@@ -95,11 +96,11 @@ theorem at_of {prof : Profile} {F : Footprint} {Wl : List Rgn} {L : List (Addr �
       omega
     exact hwl _ (by rw [e]; omega) (by rw [e]; omega)
   refine h c hfs hK hA hrip hP hn hhi hR hsw hin₂ hj hra
-    fun Z t' V₂ p hKZ hAZ hrZ hsZ haZ hbx hbp h12 h13 h14 h15 hp hpe hWP hV hPm => ?_
+    fun Z t' V₂ p hKZ hAZ hrZ hsZ haZ hbx hbp h12 h13 h14 h15 hp hpf hpe hWP hV hPm => ?_
   exact kc Z t' V₂ p hKZ hAZ hrZ hsZ haZ hbx hbp h12 h13 h14 h15 (by omega) (by omega) hWP
     (fun a ha => hV a (ha.elim (fun _ => .inl (by omega)) fun _ => .inr (.inr ⟨by omega, .inr (by omega)⟩)))
     (fun W hW => hPm W fun a h1 h2 h3 => hW a h1 (by omega) h3)
-    (kn_kept hp fun a ha => hV a (ha.elim (fun h => .inl h) fun h => .inr (.inl h))) (by omega)
+    (kn_kept hp hpf fun a ha => hV a (ha.elim (fun h => .inl h) fun h => .inr (.inl h))) (by omega) hpf
 
 /-- `malloc` after the first call (`0x633160`) as `Mal.At`, with `Pm k` the heap with a top of at least
 `1072 k + 16` bytes. -/

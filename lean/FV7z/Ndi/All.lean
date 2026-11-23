@@ -154,7 +154,8 @@ theorem ndi_all {pl pc ip cpy : List Byte} {Pm : (Addr → Byte) → Prop} {E : 
       (∀ a : Addr, Lo b fsb a → W' a = fV W sp X.cpu.gpr a) → Same sp (fV W sp X.cpu.gpr) W' →
       (∃ g₁ g₂ : Gprs, g₁.rdi = 656#64 ∧ g₂.rax = b ∧ g₂.r14 = size pad 656#64 ∧
         (evs = [smEv g₁ pad b] ∨ evs = [smEv g₁ pad b, smEv2 g₂])) →
-      (∀ a : Addr, (a.toNat < 7937664 ∨ 7937720 ≤ a.toNat ∧ a.toNat < 7940480 ∨ sp.toNat ≤ a.toNat ∨ Mal.Kn a) →
+      (∀ a : Addr, (a.toNat < 7937664 ∨ 7937720 ≤ a.toNat ∧ a.toNat < 7940480 ∨ sp.toNat ≤ a.toNat ∨
+        Mal.Kf fsb a) →
         U a = hV W' (Tp b + 16#64) 4194368#64 8#64 a) →
       Seg prof G Wl' L s₂ o → Base s₂ lim (b + size pad 656#64 + C2 b pad) fsb ks → KeptW Wl' s₂ Z →
       Agree G Z.proc.mm.mem W₂ → Eqo sp W₂ (lV (bV U m)) → Z.cpu.rip = e₂.add j₂ → Z.cpu.gpr.rsp = sp + 128#64 →
@@ -192,6 +193,13 @@ theorem ndi_all {pl pc ip cpy : List Byte} {Pm : (Addr → Byte) → Prop} {E : 
     · have e := s4144 (sp := sp) (by omega)
       exact of_add hst (by rw [e]; omega) a (by rw [e]; omega) (by rw [e]; omega)
     · exact (hFs a (by omega) a2).1
+  have hfsp : fsb.toNat + 72 ≤ sp.toNat := by
+    have hbt := mc.hB.brk_lt
+    have hbl := mc.hbl
+    have hsl := sp.isLt
+    have hb47 : b.toNat < 2 ^ 47 := by omega
+    obtain ⟨hbc, -, hT0, -, -⟩ := Gor.lay (nb := 32#64) hb47 mc.hnb mc.hpd (by decide)
+    omega
   exact ndi_pc (V := W') (org := Tp b + 16#64) c₁ (Cx.mv cx hown SM) hB₁.fsb
     (by rw [rd_of (V := fV W sp X.cpu.gpr) (x := 8029568) (n := 8) (by omega) fun a a1 a2 => LZ a (by omega)
       (by omega)]; exact h2)
@@ -208,7 +216,7 @@ theorem ndi_all {pl pc ip cpy : List Byte} {Pm : (Addr → Byte) → Prop} {E : 
     (fun W₁ hW => hPk W₁ fun a a1 a2 => (hW a a1 a2).trans (LB a a1))
     (fun W₁ hW => hPs W₁ fun a a1 a2 a3 => (hW a a1 a2 a3).trans (LB a a1))
     he hal (fun a a1 a2 => ⟨foot_append_iff.2 (.inr (hFs a a1 a2).1), fwn hown (hFs a a1 a2).2⟩)
-    (fun a a1 a2 => foot_append_iff.2 (.inr (WS a a1 a2))) (by omega)
+    (fun a a1 a2 => foot_append_iff.2 (.inr (WS a a1 a2))) (by omega) hfsp
     (fun x a1 a2 => fwn hown (hpg x a1 a2))
     (fun k hk => by rw [LB _ (ad_lt (x := 7288953) (k := k) (by omega) (by omega))]; exact hx1 k hk)
     (by rw [LB _ (ad_lt (x := 7288953) (k := 6) (by omega) (by omega))]; exact hx1z)

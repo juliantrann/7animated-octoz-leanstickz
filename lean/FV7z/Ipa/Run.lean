@@ -79,7 +79,7 @@ theorem whole (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (hin
       Z.cpu.gpr.r12 = X.cpu.gpr.r12 → Z.cpu.gpr.r13 = X.cpu.gpr.r13 → Z.cpu.gpr.r14 = X.cpu.gpr.r14 →
       Z.cpu.gpr.r15 = X.cpu.gpr.r15 →
       (∀ a : Addr, (a.toNat < 7937664 ∨ 7937720 ≤ a.toNat ∧ a.toNat < 7940480 ∨ e.toNat ≤ a.toNat) → V' a = V a) →
-      (∀ a : Addr, Mal.Kn a → V' a = V a) → GoG prof L o gev gP gE Z t') :
+      (∀ a : Addr, Mal.Kf fb a → V' a = V a) → GoG prof L o gev gP gE Z t') :
     GoG prof L o gev gP gE X t := by
   have hr0 : 96 ≤ e.toNat := by omega
   have hr8 : (e + 18446744073709551608#64).toNat = e.toNat - 8 := f8 hr0
@@ -97,19 +97,19 @@ theorem whole (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (hin
   refine to58 (ka := ka + 2) c hfs hin hinh hinc hc0 hcpy hinm hm0 hmal hinl hl0 hlenA hint hn hPm hPa hPl he he2
     hal hFs hwl hhi hpg
     hx1 hx1z hx2 hx2z htls hU hm6 hhw hfh hsm hfm hpl hpl0 hf1 hf2 hp0 hpd hWb X t hK hA hrip hsp ?_
-  intro Z₁ t₁ V₃ P hK₁ hA₁ hr₁ hs₁ hbp₁ _ hbx₁ h12₁ h13₁ h14₁ h15₁ _ _ _ hlo3 hN3 hfr3 hPa3 hKn3
+  intro Z₁ t₁ V₃ P hK₁ hA₁ hr₁ hs₁ hbp₁ _ hbx₁ h12₁ h13₁ h14₁ h15₁ _ _ _ hlo3 hN3 hfr3 hPa3 hKn3 _
   -- 58 to 75
   refine to75 (ka := ka + 1) c hfs hin hinm hm0 hmal he he2 hFs hwl hhi hWb hlo3 hN3 hfr3 hPa3 hKn3
     Z₁ t₁ hK₁ hA₁ hr₁ hs₁ ?_
-  intro Z₂ t₂ V₄ A hK₂ hA₂ hr₂ hs₂ hax₂ hbx₂ hbp₂ h12₂ h13₂ h14₂ h15₂ hA1 hA2 hAf hlo4 hN4 hfr4 hPa4 hKn4 hAk
+  intro Z₂ t₂ V₄ A hK₂ hA₂ hr₂ hs₂ hax₂ hbx₂ hbp₂ h12₂ h13₂ h14₂ h15₂ hA1 hA2 hAf hlo4 hN4 hfr4 hPa4 hKn4 hAk hAfb4
   have hA2' : A.toNat + 40 ≤ (e + 18446744073709551608#64).toNat - 88 := by rw [hr8]; omega
   -- 75 to 267
   refine to267 (ka := ka) c hfs hin hinm hm0 hmal hq (by rw [hr8]; omega) (by rw [hr8]; omega) hFr
-    (fun a h1 h2 => hwl a h1 (by rw [hr8] at h2; omega)) (by rw [hr8]; omega) hWb hfN hW7a hA1 hAk hA2'
+    (fun a h1 h2 => hwl a h1 (by rw [hr8] at h2; omega)) (by rw [hr8]; omega) hWb hfN hW7a hA1 hAk hAfb4 hA2'
     (fun a h1 h2 => (hAf a h1 h2).1) hN4
     (fun W hW => hPa4 W fun a h1 h2 h3 => hW a h1 (by rw [hr8]; omega) h3) Z₂ t₂ hK₂ hA₂ hr₂
     (by rw [hs₂, w536]) hax₂ (by rw [hbp₂, hbp₁]) ?_
-  intro Z₃ t₃ V₅ B hK₃ hA₃ hr₃ hs₃ hbp₃ h15₃ h14₃ h12₃ hbx₃ h13₃ hB1 hB2 hBW h64 h72 h56 hk5 hKn5 hBk
+  intro Z₃ t₃ V₅ B hK₃ hA₃ hr₃ hs₃ hbp₃ h15₃ h14₃ h12₃ hbx₃ h13₃ hB1 hB2 hBW h64 h72 h56 hk5 hKn5 hBk hBfb5
   -- the bytes at 267
   have hlo5 : ∀ a : Addr, (a.toNat < 7937664 ∨ 7937720 ≤ a.toNat ∧ a.toNat < 7940480) → V₅ a = V a :=
     fun a ha => (hk5 a (by omega)).trans (hlo4 a (by omega) (by omega))
@@ -135,7 +135,7 @@ theorem whole (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (hin
   refine loop c hin hinz hz0 hset hq (r := e + 18446744073709551608#64)
     (fun W hW => hPs W fun x h1 h2 => (hW x h1).trans (hlo5 x (by omega))) (by rw [hr8]; omega)
     (by rw [hr8]; omega) (fun x h1 h2 => hFr x h1 h2) hFR hW7b (fun x h1 h2 => hWb x (by omega) h2)
-    h72 h64 h56 h80 hlen hsl hB1 hBk hB2 hBW hA1 hAk hA2' (fun a h1 h2 => (hAf a h1 h2).1) ?_
+    h72 h64 h56 h80 hlen hsl hB1 hBk hB2 hBW hA1 hAk hA2' (fun a h1 h2 => (hAf a h1 h2).1) hBfb5 hAfb4 ?_
     0 (Nat.zero_le _) Z₃ t₃ V₅ B (A + 8#64) hK₃ hA₃ hr₃ hs₃ hbp₃ h15₃ (by omega) h14₃ (by ipd)
     (by rw [h12₃]; try rfl) (by rw [hbx₃]; try rfl) h13₃ (fun _ _ => rfl)
   -- 450: `ret`

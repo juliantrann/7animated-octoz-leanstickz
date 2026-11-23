@@ -30,6 +30,16 @@ def Kn (a : Addr) : Prop :=
 theorem Kn.lt {a : Addr} (h : Kn a) : 7943128 ≤ a.toNat ∧ a.toNat < 8032256 := by
   unfold Kn at h; omega
 
+/-- `Kn` and the bytes of the `brk` area below the TLS block `fb` but for its last 40 (the first `malloc`'s `tcache`
+and arena slots): the TLS image (`__libc_tsd_LOCALE` at `fb - 112`). No `malloc` after the first stores to them, nor
+do its callers: their blocks are from `fb + 64` up, their frames higher. -/
+def Kf (fb a : Addr) : Prop := Kn a ∨ 8032256 ≤ a.toNat ∧ a.toNat + 40 ≤ fb.toNat
+
+theorem Kf.lt {fb a : Addr} (h : Kf fb a) : 7943128 ≤ a.toNat ∧ (a.toNat < 8032256 ∨ a.toNat + 40 ≤ fb.toNat) := by
+  rcases h with h | h
+  · have := h.lt; omega
+  · omega
+
 end FV7z.Mal
 
 namespace FV7z.Hwc
