@@ -55,7 +55,7 @@ no region of its own to store into). -/
 theorem fnK_of_leafK {e : Addr} {Q : State → BitVec 64 → Prop} (h : ImplementsCall prof e L (leafK R pre Q)) :
     ImplementsCall prof e L (fnK 0 (fun _ => []) R pre fun s Z => Q s Z.cpu.gpr.rax) := by
   intro s₀ ra hc o ho t
-  obtain ⟨n, st, evs, t', hrun, hI, hP⟩ := h s₀ ra ⟨hc.shape, hc.ready, hc.foot, hc.pre⟩ o ho t
+  obtain ⟨n, st, evs, t', hrun, hI, hP⟩ := h s₀ ra ⟨hc.shape, hc.ready, hc.foot, hc.frameApart, hc.pre⟩ o ho t
   refine ⟨n, st, evs, t', hrun, hI, ?_⟩
   cases st with
   | running s => exact ⟨hP.1, hP.2.1, ⟨hP.2.2.1.1, KeptW.of_kept hP.2.2.1.2⟩, hP.2.2.2⟩

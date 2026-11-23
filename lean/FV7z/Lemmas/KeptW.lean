@@ -114,6 +114,9 @@ theorem keepsProc (h : KeptW ws s₀ s) : KeepsProc [] s₀ s where
   next := by rw [h.proc]
   sighand := by rw [h.proc]
   signal := by rw [h.proc]
+  startBrk := by rw [h.proc]
+  startData := by rw [h.proc]
+  endData := by rw [h.proc]
 
 theorem keepsFiles (h : KeptW ws s₀ s) : KeepsFilesBut [] s₀ s :=
   fun _ _ => ⟨by rw [h.files], fun _ => by rw [h.files]⟩

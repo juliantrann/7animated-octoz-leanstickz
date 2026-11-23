@@ -173,7 +173,7 @@ end Call
 /-- A function that implements `leafK` implements `leaf`. -/
 theorem leaf_of_leafK (h : ImplementsCall prof e L (leafK R P Q)) : ImplementsCall prof e L (leaf R P Q) := by
   intro s₀ ra hc o ho t
-  obtain ⟨n, st, evs, t', hrun, hI, hP⟩ := h s₀ ra ⟨hc.shape, hc.ready, hc.foot, hc.pre⟩ o ho t
+  obtain ⟨n, st, evs, t', hrun, hI, hP⟩ := h s₀ ra ⟨hc.shape, hc.ready, hc.foot, hc.frameApart, hc.pre⟩ o ho t
   refine ⟨n, st, evs, t', hrun, hI, ?_⟩
   cases st with
   | running s => exact ⟨hP.1, hP.2.1, hP.2.2.1.1, hP.2.2.2⟩
@@ -184,7 +184,7 @@ postcondition. -/
 theorem leafK_mono {Q' : State → BitVec 64 → Prop} (hQ : ∀ s r, Q s r → Q' s r)
     (h : ImplementsCall prof e L (leafK R P Q)) : ImplementsCall prof e L (leafK R P Q') := by
   intro s₀ ra hc o ho t
-  obtain ⟨n, st, evs, t', hrun, hI, hP⟩ := h s₀ ra ⟨hc.shape, hc.ready, hc.foot, hc.pre⟩ o ho t
+  obtain ⟨n, st, evs, t', hrun, hI, hP⟩ := h s₀ ra ⟨hc.shape, hc.ready, hc.foot, hc.frameApart, hc.pre⟩ o ho t
   refine ⟨n, st, evs, t', hrun, hI, ?_⟩
   cases st with
   | running s => exact ⟨hP.1, hP.2.1, ⟨hQ _ _ hP.2.2.1.1, hP.2.2.1.2⟩, hP.2.2.2⟩
