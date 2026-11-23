@@ -33,7 +33,7 @@ def drops : List (String × Features) :=
    ("avx512dq", { f with avx512dq := false }), ("avx512vl", { f with avx512vl := false }),
    ("bmi1", { f with bmi1 := false }), ("bmi2", { f with bmi2 := false }), ("lzcnt", { f with lzcnt := false }),
    ("rdtscp", { f with rdtscp := false }), ("rtm", { f with rtm := false }), ("hle", { f with hle := false }),
-   ("pku", { f with pku := false })]
+   ("pku", { f with pku := false }), ("xsavec", { f with xsavec := false })]
 
 def hex (n : Nat) : String := String.ofList (Nat.toDigits 16 n)
 

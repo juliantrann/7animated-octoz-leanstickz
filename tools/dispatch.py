@@ -56,6 +56,7 @@ OTHER = {
     **_o('glibc __memset_avx2_erms, __memset_avx512_erms: no reference in code or data', 0x65c800, 0x65c990),
     **_o('glibc _dl_runtime_profile_avx512, _avx: lazy binding with LD_AUDIT (elf_machine_runtime_setup)',
          0x6b16e0, 0x6b1b60),
+    **_o('glibc _dl_runtime_resolve_xsavec: lazy binding, XSAVEC usable (elf_machine_runtime_setup)', 0x6b2330),
 }
 
 def implied(vals):
