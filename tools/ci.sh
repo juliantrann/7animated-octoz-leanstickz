@@ -29,7 +29,7 @@ echo "machine: $(nproc) CPUs, $(awk '/MemTotal/ {printf "%.1f", $2/1048576}' /pr
 
 step_pins() {
   tools/zellic_patch.sh check &&
-  [ "$(git -C refs/lean4export rev-parse HEAD)" = 5a9a355dc6c5fd82b69058d433e2ae2e8dfbf8fe ] &&
+  [ "$(git -C refs/lean4export rev-parse HEAD)" = df81913eee5519d5a88ae5b0fd701b5298cc29ab ] &&
   [ "$(git -C upstream/7zip rev-parse HEAD)" = d3296e39e1f1f92c7b41c0c3848e65640428d42d ] &&
   (cd release/26.06 && sha256sum -c "$root/pins/release-26.06.sha256")
 }
