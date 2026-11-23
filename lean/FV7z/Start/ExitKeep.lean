@@ -14,10 +14,12 @@ import FV7z.Ndi.Exit
 - `ptr_exit`: at `0x613434` they are 0, as in the image (the bss).
 - `ct_tcb`, `lifW_tcb`, `tcb_ret`: the same for the first 56 bytes of the TCB (`multiple_threads` at `fs + 24`,
   `pointer_guard` at `fs + 48`), with `Ndi.ndi_tcb`.
+- `lif_r12`: `r12` at `0x613439` (`fini`) is the one at `0x613434`, through the slot `__libc_init_first` saves it
+  to.
 -/
 namespace FV7z.Start
 open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn
-open FV7z.Tun (Vst_out)
+open FV7z.Tun (Vst_out rd_Vst rd_Vst_self)
 open FV7z.Ndi (ExitB)
 
 /-- After `_dl_non_dynamic_init` returns, the stores of `__init_misc` and `__ctype_init` miss `ExitB`. -/
@@ -108,5 +110,19 @@ theorem tcb_ret {W W₂ : Addr → Byte} {Z : State} {b fb a0 s x : Addr} {g : G
   obtain ⟨W', U, m, r, hE, hU, hL, -⟩ := hN
   rw [ct_tcb h1 h2 hg hfb hfb', Ndi.ndi_tcb hE hU hL (by omega) hb hsp hs h1 h2]
   exact lifW_tcb h1 h2 (by omega) he he'
+
+/-- `r12` at the return of `__libc_init_first` (`rdq(lifW W Z, lifSp Z + 136)`, `launch_to_lif`) is `r12` at
+`0x613434`: `lif_a` pushes it to `rsp - 16` and pops it back. -/
+theorem lif_r12 {W : Addr → Byte} {Z : State} (h : 8029656 + 16 ≤ (entG Z).rsp.toNat) :
+    rdq(lifW W Z, lifSp Z + 136#64) = Z.cpu.gpr.r12 := by
+  have e : lifSp Z + 136#64 = (entG Z).rsp - 16#64 := by simp only [lifSp]; bv_omega
+  have := (entG Z).rsp.isLt
+  have hr : (entG Z).r12 = Z.cpu.gpr.r12 := rfl
+  rw [e]
+  unfold lifW Lif.LifMem Lif.LifStk
+  rw [rd_Vst _ _ _ _ _ ?_ ?_ ?_, rd_Vst _ _ _ _ _ ?_ ?_ ?_, rd_Vst _ _ _ _ _ ?_ ?_ ?_, rd_Vst _ _ _ _ _ ?_ ?_ ?_,
+    rd_Vst _ _ _ _ _ ?_ ?_ ?_, rd_Vst _ _ _ _ _ ?_ ?_ ?_, rd_Vst_self _ _ _ (toBytesLE_length _ _) ?_,
+    ofBytesLE_toBytesLE (n := 8) rfl, hr]
+  all_goals first | (simp only [toBytesLE_length]; bv_omega) | bv_omega
 
 end FV7z.Start
