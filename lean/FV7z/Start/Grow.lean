@@ -135,7 +135,7 @@ theorem footOk_grow {feat : Features} {X Y : State} {F : Footprint} {N : List Rg
     (hrs : X.thread.rseq = none) (hrs' : Y.thread.rseq = none) (hown : F.own = [])
     (hN : ∀ r ∈ N, r.In (P * 4096) ((P + n) * 4096)) (htop : (P + n) * 4096 ≤ 2 ^ 47) :
     (withNew F N).Ok feat Y := by
-  have hfr := hl.2.1
+  have hfr := hl.below
   have hmp : ∀ a, Foot (F.data ++ F.codeRgns) a → X.proc.mm.mem.map (pageOf a) ≠ none :=
     fun a ha => foot_mapped hok hown ha
   have hnp : ∀ a, Foot N a → P ≤ (pageOf a).toNat ∧ (pageOf a).toNat < P + n := by
@@ -352,6 +352,6 @@ theorem agree_grow {feat : Features} {X Y : State} {F : Footprint} {N : List Rgn
         · exact absurd ha hn
         · exact foot_append_iff.2 (.inl ha)
       · exact foot_append_iff.2 (.inr ha)
-    rw [mapAnon_readByte hfree hl.2.1 (foot_mapped hok hown (foot_data ha')), hA a ha', hV a ha' hn]
+    rw [mapAnon_readByte hfree hl.below (foot_mapped hok hown (foot_data ha')), hA a ha', hV a ha' hn]
 
 end FV7z.Start

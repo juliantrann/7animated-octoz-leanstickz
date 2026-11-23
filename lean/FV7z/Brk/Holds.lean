@@ -92,7 +92,7 @@ theorem brk_keep (c : Seg prof F Wl L s₀ o) (hin : CodeIn L brk_at brk) (hK : 
   refine (c_0 prof).run c hin (fun j' g' _ V' => j' = 9 ∧ g' = X.cpu.gpr.set 0 12 ∧ V' = V) hK hA
     (by rw [addr_add_zero]; exact hrip) vc_0 ?_
   rintro j' g fl V' ⟨rfl, rfl, rfl⟩ Y t₁ hKY hAY hrY hgY -
-  have hlo := c.ready.layout.2.2.2.1
+  have hlo := c.ready.layout.brkMinLe
   have hev : sysEv Y Y.proc.mm.brk = brkEv X s₀.proc.mm.brk := by
     simp only [sysEv, hgY, hKY.brk]
     rfl
