@@ -239,6 +239,7 @@ import FV7z.Start.Tg
 import FV7z.Start.Plat
 import FV7z.Start.PlStr
 import FV7z.Start.PlAt
+import FV7z.Start.PlEnt
 import FV7z.Lemmas.BlkOps7
 import FV7z.Gts.Holds
 import FV7z.Grl.Holds
