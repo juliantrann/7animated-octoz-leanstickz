@@ -30,7 +30,7 @@ theorem ptr_img_mid {K : Ctx} {W V : Addr → Byte} {b : Addr} {ver : BitVec 32}
   have hx : (y.add i).toNat = y.toNat + i := toNat_add_of_fits hi (by omega)
   have hDa := hD i hi
   generalize y.add i = a at hx hDa ⊢
-  have hd : ¬ Foot (d3 ++ globals) a :=
+  have hd : ¬ Foot (d3 ++ AuxInit.globals) a :=
     not_dg (lo := 0x793408) (hi := 0x793908) (by decide) (by omega) (by omega)
   rw [hW a (.inl hDa) ?_ ?_]
   · unfold PtrMem

@@ -33,7 +33,7 @@ theorem ptr_img {K : Ctx} {W V : Addr → Byte} {b : Addr} {ver : BitVec 32} {D 
   have hx : (y.add i).toNat = y.toNat + i := toNat_add_of_fits hi (by omega)
   have hDa := hD i hi
   generalize y.add i = a at hx hDa ⊢
-  have hd : ¬ Foot (d3 ++ globals) a := by
+  have hd : ¬ Foot (d3 ++ AuxInit.globals) a := by
     rcases hy with h | h
     · exact not_dg (lo := 0x780000) (hi := 0x791ca0) (by decide) (by omega) (by omega)
     · exact not_dg (lo := 0x7922b8) (hi := 0x7933cc) (by decide) (by omega) (by omega)
