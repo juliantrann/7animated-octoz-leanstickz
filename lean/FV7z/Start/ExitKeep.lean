@@ -11,6 +11,7 @@ import FV7z.Ndi.Exit
 - `ct_exit`: `__init_misc` and `__ctype_init` store on the stack, to `__init_misc`'s two variables and below `fb`.
 - `lifW_exit`: `lif_a` stores on the stack and to four variables, none of them `ExitB`.
 - `exit_ret`: the three joined with `Ndi.ndi_exit`.
+- `ptr_exit`: at `0x613434` they are 0, as in the image (the bss).
 -/
 namespace FV7z.Start
 open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn
@@ -53,5 +54,19 @@ theorem exit_ret {W W₂ : Addr → Byte} {Z : State} {b fsb fb a0 s x : Addr} {
   obtain ⟨W', U, m, r, hE, hU, hL, -⟩ := hN
   rw [ct_exit hx hg hfb hfb', Ndi.ndi_exit hE hU hL hb hf hsp hs hx]
   exact lifW_exit hx he he'
+
+/-- At `0x613434` (`ptr_keep`'s bytes), a byte of `ExitB` is 0: none of the layers before stores to it. -/
+theorem ptr_exit {K : Ctx} {W V : Addr → Byte} {b : Addr} {ver : BitVec 32} {D : Addr → Prop} (hK : K.Ok)
+    (hB : Bss K.V0) (hM : MB K V) (hb : 0x7a9000 ≤ b.toNat) (hb' : b.toNat + 8192 ≤ 2 ^ 63)
+    (hW : PtrW K W V b ver D) {a : Addr} (hx : ExitB a) (hDa : D a) : W a = 0 := by
+  have hf : (b + 2176#64).toNat = b.toNat + 2176 := by bv_omega
+  unfold ExitB at hx
+  have hd : ¬ Foot (d3 ++ AuxInit.globals) a := by
+    rcases hx with h | h
+    · exact not_dg (lo := 8010388) (hi := 8011440) (by decide) h.1 h.2
+    · exact not_dg (lo := 8029184) (hi := 8029200) (by decide) h.1 h.2
+  rw [ptr_keep hK hM hb hb' hW (by omega) (by omega) hDa (by unfold TlsVar; omega) (by omega) hd
+    (by unfold CpuVar; omega) (by unfold Pim.PimVar; omega)]
+  exact hB a (by omega) (by omega)
 
 end FV7z.Start
