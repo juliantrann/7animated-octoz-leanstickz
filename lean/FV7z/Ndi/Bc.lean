@@ -104,7 +104,7 @@ variable {prof : Profile} {L : List (Addr × List Byte)} {s₀ : State} {o : Ora
 set_option maxHeartbeats 4000000 in
 /-- From the entry of `_dl_init_paths` (bytes `Vst W' (sp - 8) ret`, `W'` the bytes `hV V org` of `ndi_b` but for the
 72 below `sp`) to the caller of `_dl_non_dynamic_init`: `_dl_init_paths (NULL)` with `_dl_hwcap` 2 or 6 (`hn`), then
-`ndi_c`. `U`, the bytes after `_dl_init_paths`, are `hV V org` where it keeps them and on `Mal.Kn`. -/
+`ndi_c`. `U`, the bytes after `_dl_init_paths`, are `hV V org` where it keeps them and on `Mal.Kf fb`. -/
 theorem ndi_pc {pl pc : List Byte} {Pm : (Addr → Byte) → Prop} {E : Ev} {V W' : Addr → Byte} {sp : Addr}
     {org : BitVec 64} {Y : State} {t₁ : Nat}
     (c : Seg prof F Wl L s₀ o) (cx : Cx prof F Wl L o pl pc Pm E V sp) (hfs : s₀.cpu.seg.fsBase = fb)
@@ -131,6 +131,7 @@ theorem ndi_pc {pl pc : List Byte} {Pm : (Addr → Byte) → Prop} {E : Ev} {V W
     (he : 8388872 + 408 ≤ sp.toNat) (hal : (sp + 18446744073709551504#64) &&& 15#64 = 0#64)
     (hFs : ∀ a : Addr, sp.toNat - 408 ≤ a.toNat → a.toNat < sp.toNat → Foot Wl a ∧ Foot F.data a)
     (hwl : ∀ a : Addr, hi ≤ a.toNat → a.toNat < sp.toNat → Foot Wl a) (hhi : hi + 608 ≤ sp.toNat)
+    (hfsp : fb.toNat + 72 ≤ sp.toNat)
     (hpg : ∀ x : Addr, 7286784 ≤ x.toNat → x.toNat < 7290880 → Foot F.data x)
     (hx1 : ∀ k < 6, V (Addr.add 7288953#64 k) ≠ 0) (hx1z : V (Addr.add 7288953#64 6) = 0)
     (hx2 : ∀ k < 8, V (Addr.add 7288962#64 k) ≠ 0) (hx2z : V (Addr.add 7288962#64 8) = 0)
@@ -165,7 +166,8 @@ theorem ndi_pc {pl pc : List Byte} {Pm : (Addr → Byte) → Prop} {E : Ev} {V W
     (hMZ : Eqo sp W' (hV V org 4194368#64 8#64)) (hrZ : Y.cpu.rip = 6981872#64) (hspZ : Y.cpu.gpr.rsp = sp - 8#64)
     (hdiZ : Y.cpu.gpr.rdi = 0#64)
     (k : ∀ (U : Addr → Byte) s₁ Z t' W',
-      (∀ a : Addr, (a.toNat < 7937664 ∨ 7937720 ≤ a.toNat ∧ a.toNat < 7940480 ∨ sp.toNat ≤ a.toNat ∨ Mal.Kn a) →
+      (∀ a : Addr, (a.toNat < 7937664 ∨ 7937720 ≤ a.toNat ∧ a.toNat < 7940480 ∨ sp.toNat ≤ a.toNat ∨
+        Mal.Kf fb a) →
         U a = hV V org 4194368#64 8#64 a) →
       Seg prof G Wl' L s₁ o → Base s₁ lim b fsb ks → KeptW Wl' s₁ Z →
       Agree G Z.proc.mm.mem W' → Eqo sp W' (lV (bV U n)) → Z.cpu.rip = e₂.add j₂ → Z.cpu.gpr.rsp = sp + 128#64 →
@@ -241,13 +243,13 @@ theorem ndi_pc {pl pc : List Byte} {Pm : (Addr → Byte) → Prop} {E : Ev} {V W
   intro Z₂ t₂ U hK₂ hA₂ hr₂ hs₂ hbx₂ hbp₂ h12₂ h13₂ h14₂ h15₂ hkp hkn
   -- the bytes after it
   have uv : ∀ a : Addr, (a.toNat < 7937664 ∨ 7937720 ≤ a.toNat ∧ a.toNat < 7940480 ∨ sp.toNat ≤ a.toNat ∨
-      Mal.Kn a) → U a = hV V org 4194368#64 8#64 a := fun a ha => by
+      Mal.Kf fb a) → U a = hV V org 4194368#64 8#64 a := fun a ha => by
     have hb : a.toNat < sp.toNat - 72 ∨ sp.toNat ≤ a.toNat := by
       rcases ha with ha | ha | ha | ha
       · omega
       · omega
       · omega
-      · have := Mal.Kn.lt ha; omega
+      · have := Mal.Kf.lt ha; omega
     rw [← vh a hb]
     rcases ha with ha | ha | ha | ha
     · exact hkp a (.inl ha)
@@ -255,8 +257,8 @@ theorem ndi_pc {pl pc : List Byte} {Pm : (Addr → Byte) → Prop} {E : Ev} {V W
     · exact hkp a (.inr (.inr (by rw [hs8]; omega)))
     · exact hkn a ha
   have uV : ∀ a : Addr, (a.toNat < 7937664 ∨ 7937720 ≤ a.toNat ∧ a.toNat < 7940480 ∨ sp.toNat ≤ a.toNat ∨
-      Mal.Kn a) → ¬ Hv a → U a = V a := fun a ha hv => (uv a ha).trans (hV_out _ _ _ _ hv)
-  have uK : ∀ a : Addr, Mal.Kn a → ¬ Hv a → U a = V a := fun a ha hv => uV a (.inr (.inr (.inr ha))) hv
+      Mal.Kf fb a) → ¬ Hv a → U a = V a := fun a ha hv => (uv a ha).trans (hV_out _ _ _ _ hv)
+  have uK : ∀ a : Addr, Mal.Kn a → ¬ Hv a → U a = V a := fun a ha hv => uV a (.inr (.inr (.inr (.inl ha)))) hv
   have uS : ∀ a : Addr, sp.toNat ≤ a.toNat → U a = V a :=
     fun a ha => uV a (.inr (.inr (.inl ha))) (by unfold Hv; omega)
   have SU : Same sp V U := fun a ha => by
@@ -294,7 +296,7 @@ theorem ndi_pc {pl pc : List Byte} {Pm : (Addr → Byte) → Prop} {E : Ev} {V W
 
 /-- From after `_dl_get_origin` (21, bytes `V` but for the 72 below `sp`) to the caller of `_dl_non_dynamic_init`:
 `_dl_phdr` `0x400040` and `_dl_phnum` 8 (`hd1`, `hd2`), `_dl_init_paths (NULL)` with `_dl_hwcap` 2 or 6 (`hn`).
-`U`, the bytes after `_dl_init_paths`, are `hV V` where it keeps them and on `Mal.Kn`. -/
+`U`, the bytes after `_dl_init_paths`, are `hV V` where it keeps them and on `Mal.Kf fb`. -/
 theorem ndi_bc {pl pc : List Byte} {Pm : (Addr → Byte) → Prop} {E : Ev} {V W : Addr → Byte} {sp : Addr}
     (c : Seg prof F Wl L s₀ o) (cx : Cx prof F Wl L o pl pc Pm E V sp) (hfs : s₀.cpu.seg.fsBase = fb)
     -- `ndi_b`
@@ -321,6 +323,7 @@ theorem ndi_bc {pl pc : List Byte} {Pm : (Addr → Byte) → Prop} {E : Ev} {V W
     (he : 8388872 + 408 ≤ sp.toNat) (hal : (sp + 18446744073709551504#64) &&& 15#64 = 0#64)
     (hFs : ∀ a : Addr, sp.toNat - 408 ≤ a.toNat → a.toNat < sp.toNat → Foot Wl a ∧ Foot F.data a)
     (hwl : ∀ a : Addr, hi ≤ a.toNat → a.toNat < sp.toNat → Foot Wl a) (hhi : hi + 608 ≤ sp.toNat)
+    (hfsp : fb.toNat + 72 ≤ sp.toNat)
     (hpg : ∀ x : Addr, 7286784 ≤ x.toNat → x.toNat < 7290880 → Foot F.data x)
     (hx1 : ∀ k < 6, V (Addr.add 7288953#64 k) ≠ 0) (hx1z : V (Addr.add 7288953#64 6) = 0)
     (hx2 : ∀ k < 8, V (Addr.add 7288962#64 k) ≠ 0) (hx2z : V (Addr.add 7288962#64 8) = 0)
@@ -354,7 +357,8 @@ theorem ndi_bc {pl pc : List Byte} {Pm : (Addr → Byte) → Prop} {E : Ev} {V W
     (hK : KeptW Wl s₀ X) (hA : Agree F X.proc.mm.mem W) (hM : Eqo sp W V)
     (hrip : X.cpu.rip = ndi_at.add 21) (hsp : X.cpu.gpr.rsp = sp)
     (k : ∀ (U : Addr → Byte) s₁ Z t' W',
-      (∀ a : Addr, (a.toNat < 7937664 ∨ 7937720 ≤ a.toNat ∧ a.toNat < 7940480 ∨ sp.toNat ≤ a.toNat ∨ Mal.Kn a) →
+      (∀ a : Addr, (a.toNat < 7937664 ∨ 7937720 ≤ a.toNat ∧ a.toNat < 7940480 ∨ sp.toNat ≤ a.toNat ∨
+        Mal.Kf fb a) →
         U a = hV V X.cpu.gpr.rax 4194368#64 8#64 a) →
       Seg prof G Wl' L s₁ o → Base s₁ lim b fsb ks → KeptW Wl' s₁ Z →
       Agree G Z.proc.mm.mem W' → Eqo sp W' (lV (bV U n)) → Z.cpu.rip = e₂.add j₂ → Z.cpu.gpr.rsp = sp + 128#64 →
@@ -368,7 +372,7 @@ theorem ndi_bc {pl pc : List Byte} {Pm : (Addr → Byte) → Prop} {E : Ev} {V W
     hM hrip hsp ?_
   intro Z t₁ W' hKZ hAZ hMZ hrZ hspZ hdiZ h15Z
   exact ndi_pc c cx hfs hd1 hd2 h4 h5 hin hinh hinc hc0 hcpy hinm hm0 hmal hinl hl0 hlenA hinz hz0 hset hint hn hPq
-    hPa hPk hPs he hal hFs hwl hhi
+    hPa hPk hPs he hal hFs hwl hhi hfsp
     hpg hx1 hx1z hx2 hx2z htls hU hm6 hhw hfh hfm hpl0 hf1 hf2 hWb hfN hW7a hW7b hFR hlenV hslV
     hB hpl hid him hfp hph hsn hps hla hmg hGo hGc hfit hGw hGr hcode hww hlG hl hin₂ h₂ hret hKZ hAZ hMZ hrZ hspZ
     hdiZ
