@@ -25,18 +25,26 @@ def featFull : Features where
   ssse3 := true; sse41 := true; sha := true; bmi1 := true; lzcnt := true; avx := true; avx512f := true
   apx := false; pku := true; nx := true; la57 := false; sse42 := true; bmi2 := true; avx2 := true
   avx512bw := true; avx512dq := true; avx512vl := true; movbe := true; rdtscp := true; sse3 := true; fma := true
-  cetSs := false; rtm := true; hle := true; aes := true; vaes := true; popcnt := true; mpx := false
+  cetSs := false; rtm := true; hle := true; aes := true; vaes := true; popcnt := true; mpx := false; xsavec := true
 
 def featMin : Features where
   ssse3 := false; sse41 := false; sha := false; bmi1 := false; lzcnt := false; avx := false; avx512f := false
   apx := false; pku := false; nx := true; la57 := false; sse42 := false; bmi2 := false; avx2 := false
   avx512bw := false; avx512dq := false; avx512vl := false; movbe := false; rdtscp := false; sse3 := false
   fma := false; cetSs := false; rtm := false; hle := false; aes := false; vaes := false; popcnt := false; mpx := false
+  xsavec := false
 
 /-- The thread on the explored path: the initial thread of a process after `execve`. -/
 def thread0 : ThreadK where
   tid := 1; sigmask := 0; pending := []; altStack := AltStack.disabled; rseq := none; clearChildTid := 0
   robustList := 0; cpuidFaults := false; tscFaults := false; shstk := none; uid := 1000
+
+/-- The CPU state on the path where values are `z`. -/
+def cpuZ (z : Nat) : Cpu :=
+  let v := BitVec.ofNat 64 z
+  { gpr := ⟨v, v, v, v, v, v, v, v, v, v, v, v, v, v, v, v⟩, rip := v, rflags := default
+    seg := ⟨0, 0, 0, 0, 0, 0, v, v⟩, x87 := default, vec := ⟨fun _ => BitVec.ofNat 512 z, fun _ => v, 0x1f80⟩
+    pkru := 0 }
 
 /-- The answer to `o` on the path where values are `z`; `none` where the step stops the program. -/
 def answer (z : Nat) : (o : Op) → Option o.Ret
@@ -46,9 +54,10 @@ def answer (z : Nat) : (o : Op) → Option o.Ret
   | .getX87 => some (default : X87) | .load _ w _ => some (BitVec.ofNat w z) | .loadSel _ n _ _ => some (BitVec.ofNat (8 * n) z)
   | .rmw _ w _ => some (BitVec.ofNat w z) | .choose w => some (BitVec.ofNat w z) | .pick n => some (0 : Fin (n + 1))
   | .tsc => some (BitVec.ofNat 64 z) | .xinuse _ => some (BitVec.ofNat 64 z)
+  | .gatherLoad _ w => some (BitVec.ofNat w z) | .getCpu => some (cpuZ z)
   | .raise _ | .notModelled _ => none
   | .setReg .. | .setRip _ | .setFlags _ | .setZmm .. | .setK .. | .setMxcsr _ | .setX87 _ | .store ..
-  | .storeSel .. | .checkAligned .. | .checkAll _ | .fence _ => some (() : Unit)
+  | .storeSel .. | .checkAligned .. | .checkAll .. | .setCpu _ | .fence _ => some (() : Unit)
 
 /-- The `notModelled` the program reaches on the path where values are `z`, within `fuel` steps. -/
 def firstNm {α : Type} (z : Nat) : Nat → Prog α → Option NotModelled

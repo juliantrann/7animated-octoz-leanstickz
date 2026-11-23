@@ -15,13 +15,14 @@ def featFull : Features where
   ssse3 := true; sse41 := true; sha := true; bmi1 := true; lzcnt := true; avx := true; avx512f := true
   apx := false; pku := true; nx := true; la57 := false; sse42 := true; bmi2 := true; avx2 := true
   avx512bw := true; avx512dq := true; avx512vl := true; movbe := true; rdtscp := true; sse3 := true; fma := true
-  cetSs := false; rtm := true; hle := true; aes := true; vaes := true; popcnt := true; mpx := false
+  cetSs := false; rtm := true; hle := true; aes := true; vaes := true; popcnt := true; mpx := false; xsavec := true
 
 def featMin : Features where
   ssse3 := false; sse41 := false; sha := false; bmi1 := false; lzcnt := false; avx := false; avx512f := false
   apx := false; pku := false; nx := true; la57 := false; sse42 := false; bmi2 := false; avx2 := false
   avx512bw := false; avx512dq := false; avx512vl := false; movbe := false; rdtscp := false; sse3 := false
   fma := false; cetSs := false; rtm := false; hle := false; aes := false; vaes := false; popcnt := false; mpx := false
+  xsavec := false
 
 def ofHex (s : String) : Nat :=
   s.foldl (fun n c => 16 * n + (if c.isDigit then c.toNat - '0'.toNat else c.toLower.toNat - 'a'.toNat + 10)) 0

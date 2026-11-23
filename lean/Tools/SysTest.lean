@@ -174,7 +174,7 @@ def runCase (prof : Profile) (l : String) : String :=
   | _ => "err bad line"
 
 def prof (thp : Bool) : Profile where
-  vendor := .intel; feat := { ssse3 := false, sse41 := false, sha := false, bmi1 := false, lzcnt := false, avx := false, avx512f := false, apx := false, pku := false, nx := false, la57 := false, sse42 := false, bmi2 := false, avx2 := false, avx512bw := false, avx512dq := false, avx512vl := false, movbe := false, rdtscp := false, sse3 := false, fma := false, cetSs := false, rtm := false, hle := false, aes := false, vaes := false, popcnt := false, mpx := false }
+  vendor := .intel; feat := { ssse3 := false, sse41 := false, sha := false, bmi1 := false, lzcnt := false, avx := false, avx512f := false, apx := false, pku := false, nx := false, la57 := false, sse42 := false, bmi2 := false, avx2 := false, avx512bw := false, avx512dq := false, avx512vl := false, movbe := false, rdtscp := false, sse3 := false, fma := false, cetSs := false, rtm := false, hle := false, aes := false, vaes := false, popcnt := false, mpx := false, xsavec := false }
   aux := ⟨0, 0, 2048⟩; cpus := 1; cpuid := fun _ _ _ => ⟨0, 0, 0, 0⟩
   xcr0 := some 0x7; mxcsrMask := 0xffff; tscAux := fun _ => 0; fdpExcptnOnly := true; fcsDeprecated := true
   amdErrPtrs := false; linux := { vdsoData := fun _ => true, vdsoText := [], compatBrk := false, thp }

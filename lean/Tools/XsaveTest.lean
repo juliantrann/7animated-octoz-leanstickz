@@ -2,8 +2,8 @@ import ZellicX86.Spec.Semantics
 /-!
 # `xsavetest`: the model's side of the differential test of `XSAVE`, `XSAVEC` and `XRSTOR` (PLAN.md §6.4, G1)
 
-Not part of any statement: a test of the model's `Sem.xsave` and `Sem.xrstor` (`Spec/Semantics/X87.lean`,
-`Spec/Xsave.lean`, FV_7zip G1) against the processor this runs on (`tools/xsavetest/native.c` runs the same cases
+Not part of any statement: a test of the model's `XSAVE`, `XSAVEC` and `XRSTOR` (`Spec/Semantics/Xsave.lean`,
+`Spec/Xsave.lean`) against the processor this runs on (`tools/xsavetest/native.c` runs the same cases
 natively, `tools/xsavetest/run.py` generates them and compares). `tools/difftest` cannot: its cases have a 64-byte
 buffer and no x87 or opmask state.
 
@@ -42,6 +42,7 @@ structure St where
   zmm : Array (BitVec 512)
   k : Array (BitVec 64)
   mxcsr : BitVec 32
+  pkru : BitVec 32 := 0
   mem : ByteArray
   /-- The choices (`choose` and `pick`) made so far; choice `j` is all ones (`pick`: its last alternative) if bit `j`
   of `pat` is set, all zeros (its first) otherwise, but the first 64-bit `choose` is `hint` when that is given. -/
@@ -64,6 +65,23 @@ def wrBytes (s : St) (a : Addr) (bs : List (Option Byte)) : St :=
   { s with mem := bs.zipIdx.foldl (fun m (b, i) => match b with
       | some b => m.set! ((a.toNat + i) - base) b.toNat.toUInt8
       | none => m) s.mem }
+
+/-- `s` as the model's CPU state (`Op.getCpu`), with `RIP`, the flags and the segments fixed. -/
+def toCpu (s : St) : Cpu :=
+  let g (i : Nat) : BitVec 64 := s.gpr[i]!
+  { gpr := ⟨g 0, g 1, g 2, g 3, g 4, g 5, g 6, g 7, g 8, g 9, g 10, g 11, g 12, g 13, g 14, g 15⟩
+    rip := 0x401000, rflags := default, seg := ⟨0, 0, 0, 0, 0, 0, 0, 0⟩, x87 := s.x87
+    vec := ⟨fun j => s.zmm[j.val]!, fun j => s.k[j.val]!, s.mxcsr⟩, pkru := s.pkru }
+
+/-- `s` with the registers of `c` (`Op.setCpu`). -/
+def ofCpu (s : St) (c : Cpu) : St :=
+  { s with
+    gpr := (Array.range 16).map fun i => c.gpr.get (Fin.ofNat 16 i)
+    x87 := c.x87
+    zmm := (Array.range 32).map fun i => c.vec.zmm (Fin.ofNat 32 i)
+    k := (Array.range 8).map fun i => c.vec.k (Fin.ofNat 8 i)
+    mxcsr := c.vec.mxcsr
+    pkru := c.pkru }
 
 /-- A result; `exc` with the number of choices made before it. -/
 inductive Res | ok (s : St) | exc (e : Exception) (n : Nat) | nm (w : NotModelled) | fuel
@@ -90,9 +108,12 @@ def interp {α : Type} : Nat → Prog α → St → Res
     | .setMxcsr v, k => interp f (k ()) { s with mxcsr := v }
     | .getX87, k => interp f (k (s.x87 : X87)) s
     | .setX87 x, k => interp f (k ()) { s with x87 := x }
+    | .getCpu, k => interp f (k (toCpu s)) s
+    | .setCpu c, k => interp f (k ()) (ofCpu s c)
     | .load m w _, k => match check m (w / 8) with
       | some e => .exc e s.idx
       | none => interp f (k (ofBytesLE w ((List.range (w / 8)).map fun i => rdByte s (m.addr.toNat + i)) : BitVec w)) s
+    | .gatherLoad .., _ => .nm (.feature "xsavetest: gather")
     | .store m w v, k => match check m (w / 8) with
       | some e => .exc e s.idx
       | none => interp f (k ()) (wrBytes s m.addr ((toBytesLE v (w / 8)).map some))
@@ -110,9 +131,10 @@ def interp {α : Type} : Nat → Prog α → St → Res
       else match check m b with
         | none => .exc (.gp 0) s.idx
         | some _ => .exc (.gp 0) s.idx   -- `Prog.run` picks between the two; `run.py` accepts either
-    | .checkAll as, k => match as.findSome? (fun (m, _, n) => check m n) with
-      | some e => .exc e s.idx
-      | none => interp f (k ()) s
+    | .checkAll as onFault, k => match as.findSome? (fun (m, _, n) => check m n), onFault with
+      | some _, some w => .nm w
+      | some e, none => .exc e s.idx
+      | none, _ => interp f (k ()) s
     | .fence _, k => interp f (k ()) s
     | .choose w, k =>
       match s.hint with

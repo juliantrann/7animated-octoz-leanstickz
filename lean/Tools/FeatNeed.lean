@@ -20,7 +20,7 @@ def featFull : Features where
   ssse3 := true; sse41 := true; sha := true; bmi1 := true; lzcnt := true; avx := true; avx512f := true
   apx := false; pku := true; nx := true; la57 := false; sse42 := true; bmi2 := true; avx2 := true
   avx512bw := true; avx512dq := true; avx512vl := true; movbe := true; rdtscp := true; sse3 := true; fma := true
-  cetSs := false; rtm := true; hle := true; aes := true; vaes := true; popcnt := true; mpx := false
+  cetSs := false; rtm := true; hle := true; aes := true; vaes := true; popcnt := true; mpx := false; xsavec := true
 
 /-- The optional features, each with `full` without it. -/
 def drops : List (String × Features) :=

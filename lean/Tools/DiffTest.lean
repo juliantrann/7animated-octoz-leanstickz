@@ -82,8 +82,12 @@ def interp {α : Type} : Nat → Prog α → St → Res
     | .setMxcsr v, k => interp f (k ()) { s with mxcsr := v }
     | .getX87, _ => .nm (.feature "difftest: x87 state")
     | .setX87 _, _ => .nm (.feature "difftest: x87 state")
+    | .getCpu, _ | .setCpu _, _ => .nm (.feature "difftest: cpu state")
     | .load m w _, k => match check m (w / 8) with
       | some e => .exc e
+      | none => interp f (k (ofBytesLE w (rd s m.addr (w / 8)) : BitVec w)) s
+    | .gatherLoad m w, k => match check m (w / 8) with
+      | some _ => .nm (.feature "gather partial progress on fault or alignment checking")
       | none => interp f (k (ofBytesLE w (rd s m.addr (w / 8)) : BitVec w)) s
     | .store m w v, k => match check m (w / 8) with
       | some e => .exc e
@@ -99,9 +103,10 @@ def interp {α : Type} : Nat → Prog α → St → Res
       else match check m b with
         | none => .exc (.gp 0)
         | some _ => .exc (.gp 0)   -- `Prog.run` picks between the two; the processor's choice is compared loosely
-    | .checkAll as, k => match as.findSome? (fun (m, _, n) => check m n) with
-      | some e => .exc e
-      | none => interp f (k ()) s
+    | .checkAll as onFault, k => match as.findSome? (fun (m, _, n) => check m n), onFault with
+      | some _, some w => .nm w
+      | some e, none => .exc e
+      | none, _ => interp f (k ()) s
     | .fence _, k => interp f (k ()) s
     | .choose w, k => interp f (k (if s.ones then BitVec.allOnes w else 0 : BitVec w)) { s with undef := true }
     | .pick n, k => interp f (k (0 : Fin (n + 1))) s
@@ -132,7 +137,7 @@ def featOf (has : String → Bool) : Features where
   la57 := has "la57"; sse42 := has "sse42"; bmi2 := has "bmi2"; avx2 := has "avx2"; avx512bw := has "avx512bw"
   avx512dq := has "avx512dq"; avx512vl := has "avx512vl"; movbe := has "movbe"; rdtscp := has "rdtscp"
   sse3 := has "sse3"; fma := has "fma"; cetSs := has "cetSs"; rtm := has "rtm"; hle := has "hle"
-  aes := has "aes"; vaes := has "vaes"; popcnt := has "popcnt"; mpx := has "mpx"
+  aes := has "aes"; vaes := has "vaes"; popcnt := has "popcnt"; mpx := has "mpx"; xsavec := has "xsavec"
 
 /-- The profile of the processor the test runs on: its vendor (`run.py` passes `amd` on an AMD processor, from
 `/proc/cpuinfo`'s `vendor_id`; the model's semantics differ by vendor, e.g. `shaAligned`) and its features. -/
