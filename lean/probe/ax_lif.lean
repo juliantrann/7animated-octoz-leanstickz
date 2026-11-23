@@ -21,3 +21,4 @@ import FV7z.Start.Lp
 #print axioms FV7z.Tls.TlsMem_lp
 #print axioms FV7z.Tls.lp_pin
 #print axioms FV7z.Start.ptr_lp
+#print axioms FV7z.Lif.ent_rd
