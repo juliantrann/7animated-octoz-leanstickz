@@ -25,6 +25,7 @@ theorem ptr_img_mid {K : Ctx} {W V : Addr → Byte} {b : Addr} {ver : BitVec 32}
     (hy : 0x793408 ≤ y.toNat ∧ y.toNat + 8 ≤ 0x793908)
     (hD : ∀ i < 8, D (y.add i)) : rdq(W, y) = rdq(K.V0, y) := by
   have hf : (b + 2176#64).toNat = b.toNat + 2176 := by bv_omega
+  have hi0 := hK.himg
   suffices h : ∀ i < 8, W (y.add i) = K.V0 (y.add i) by rw [rd_ext (W' := W) (W := K.V0) y 8 h]
   intro i hi
   have hx : (y.add i).toNat = y.toNat + i := toNat_add_of_fits hi (by omega)
