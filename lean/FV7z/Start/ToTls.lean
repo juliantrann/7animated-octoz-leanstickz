@@ -13,7 +13,8 @@ function from its entry to its `ret`. Here the two are joined: the `call`, the f
   `__libc_setup_tls` used, and the variables the first two store to (`CpuVar`; of them `CpuOk` and `GotOk` say
   what is needed).
 - `launch_to_tls`: for a launch as in `launch_to_cpu`, on a kernel `Modest` that does not refuse memory, with the
-  limits unlimited (`LimitsUnlimited`), the `memcpy` of the PLT with its contract (`Tls.CpyAt`): the run from the first instruction goes on as the run from
+  limits unlimited (`LimitsUnlimited`), the `memcpy` of the PLT with its contract (`Tls.CpyAt`): the run from the
+  first instruction goes on as the run from
   `0x6133c0` does, from a new start with the two pages at the first break in its footprint, the break 4544 bytes
   further and the `fs` base at the thread control block; there the registers are as after the prologue (`Rg`),
   `CpuOk` and `GotOk` hold, and the bytes outside `Junk` are `TlsMem V' brk` for bytes `V'` with `MB`. Four system

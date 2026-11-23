@@ -21,7 +21,8 @@ signal waiting (`Start/Quiet.lean`), the RELRO pages mapped, and `RLIMIT_AS` and
   after the call, which is its own start, with zeros in the new pages.
 - `Seg.b_set_fs`: `Seg.s_set_fs` likewise, to a `Base` with the new `fs` base.
 - `Base.of_room`: a state with room above its break (`BreakRoom`), no `rseq` area, the default key open and the
-  limits unlimited has `Base`; `launch_base`: `7zzs` at its first instruction has it, with `2 ^ 41` bytes above the break.
+  limits unlimited has `Base`; `launch_base`: `7zzs` at its first instruction has it, with `2 ^ 41` bytes above the
+  break.
 -/
 namespace FV7z.Start
 open ZellicX86
