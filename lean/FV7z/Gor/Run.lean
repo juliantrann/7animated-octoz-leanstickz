@@ -69,9 +69,9 @@ theorem foot_wn {F : Footprint} {N : List Rgn} (hown : F.own = []) {a : Addr} (h
   · exact foot_append_iff.2 (.inl (foot_append_iff.2 (.inr h)))
   · exact foot_append_iff.2 (.inr h)
 
-theorem foot_wnN {F : Footprint} {N : List Rgn} {a : Addr} (h : Foot N a) : Foot (withNew F N).data a := by
-  simp only [Footprint.data]
-  exact foot_append_iff.2 (.inl (foot_append_iff.2 (.inl h)))
+/-- A byte of the new pages is in the data of `withNew F N` (`writes ++ own ++ reads`, the writes `N ++ F.writes`). -/
+theorem foot_wnN {F : Footprint} {N : List Rgn} {a : Addr} (h : Foot N a) : Foot (withNew F N).data a :=
+  foot_append_iff.2 (.inl (foot_append_iff.2 (.inl (foot_append_iff.2 (.inl h)))))
 
 /-- What `mal_firstn` needs besides the bytes below the break and the stack: the code, the root `Base`, the footprints
 of the globals and of the new pages `N`, the bounds; `mp_.top_pad` at least 4112; the break at least `0x7a9000` (the
