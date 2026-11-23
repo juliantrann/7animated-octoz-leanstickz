@@ -7,8 +7,8 @@ import FV7z.Start.Code
 `Ndi.lif_ok` starts at the entry of `__libc_init_first` (`0x672160`). `ptr_call` is the step between them: the
 return address `0x613439` (`lsm` 1017) is stored below `rsp`, and `rsp` goes down by 8.
 
-- `ent_rd`: 8 bytes from `0x7a85d8` up, and apart from the 40 stack bytes the `call` and `lif_a` store are, in the
-  bytes at the call of `_dl_non_dynamic_init` (`lif_ok`'s `W`), those at `0x613434`.
+- `ent_rd`: 8 bytes below `0x793ac0` or from `0x7a85d8` up, and apart from the 40 stack bytes the `call` and
+  `lif_a` store, are in the bytes at the call of `_dl_non_dynamic_init` (`lif_ok`'s `W`) those at `0x613434`.
 -/
 open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn
 open FV7z.Start (lsm lsm_at lsm_length)
@@ -40,11 +40,12 @@ theorem ptr_call (c : Seg prof F Wl L s₀ o) (hK : KeptW Wl s₀ X) (hA : Agree
   rintro Y t' hKY hAY ⟨hr, hg⟩
   exact k Y t' hKY hAY hr hg
 
-/-- 8 bytes above the variables `lif_a` stores and apart from the stack bytes stored since `0x613434` (the return
+/-- 8 bytes apart from the variables `lif_a` stores and from the stack bytes stored since `0x613434` (the return
 address of the `call`, three `push`es, the return address of the next `call`) are as at `0x613434`; `g` is the
 registers at the entry of `__libc_init_first`. -/
 theorem ent_rd {V : Addr → Byte} {g : Gprs} {y : Addr} {ra ra₀ : BitVec 64} (hr : 32 ≤ g.rsp.toNat)
-    (hr' : g.rsp.toNat + 8 ≤ 2 ^ 64) (hy : 8029656 ≤ y.toNat) (hy' : y.toNat + 8 ≤ 2 ^ 64)
+    (hr' : g.rsp.toNat + 8 ≤ 2 ^ 64) (hy : y.toNat + 8 ≤ 7944640 ∨ 8029656 ≤ y.toNat)
+    (hy' : y.toNat + 8 ≤ 2 ^ 64)
     (hs : y.toNat + 8 ≤ g.rsp.toNat - 32 ∨ g.rsp.toNat + 8 ≤ y.toNat) :
     rdq(Vst (LifMem (Vst V g.rsp (toBytesLE ra₀ 8)) g) (g.rsp - 32#64) (toBytesLE ra 8), y) = rdq(V, y) := by
   unfold LifMem LifStk
