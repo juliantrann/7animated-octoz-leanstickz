@@ -93,7 +93,7 @@ theorem ptr_exit {K : Ctx} {W V : Addr → Byte} {b : Addr} {ver : BitVec 32} {D
     rcases hx with h | h
     · exact not_dg (lo := 8010388) (hi := 8011440) (by decide) h.1 h.2
     · exact not_dg (lo := 8029184) (hi := 8029200) (by decide) h.1 h.2
-  rw [ptr_keep hK hM hb hb' hW (by omega) (by omega) hDa (by unfold TlsVar; omega) (by omega) hd
+  rw [ptr_keep hK hM hb hb' hW (by omega) (by omega) hDa (by unfold Tls.TlsVar; omega) (by omega) hd
     (by unfold CpuVar; omega) (by unfold Pim.PimVar; omega)]
   exact hB a (by omega) (by omega)
 
