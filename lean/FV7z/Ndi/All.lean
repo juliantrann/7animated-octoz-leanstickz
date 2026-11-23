@@ -193,7 +193,7 @@ theorem ndi_all {pl pc ip cpy : List Byte} {Pm : (Addr → Byte) → Prop} {E : 
     · have e := s4144 (sp := sp) (by omega)
       exact of_add hst (by rw [e]; omega) a (by rw [e]; omega) (by rw [e]; omega)
     · exact (hFs a (by omega) a2).1
-  have hfsp : fsb.toNat + 72 ≤ sp.toNat := by
+  have hfsp : fsb.toNat + 128 ≤ sp.toNat := by
     have hbt := mc.hB.brk_lt
     have hbl := mc.hbl
     have hsl := sp.isLt
