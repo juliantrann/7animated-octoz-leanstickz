@@ -85,7 +85,7 @@ theorem ws_acc (c : Seg prof F Wl L s₀ o) (hK : KeptW Wl s₀ X) {y : Addr}
   obtain ⟨q, hq, hqm⟩ := c.hww y hy
   have hw := c.foot.writable q hq y hqm
   refine ⟨hd, hw.1, by rw [hK.calm.check, hK.pkru]; exact hw.2, hK.calm.ownAt (ownAt_of (rs := [q]) ?_ ?_
-    ⟨q, List.mem_singleton_self _, hqm⟩)⟩
+    ⟨q, List.mem_singleton_self _, hqm⟩ hw.2)⟩
   · rintro a ⟨q', hq', hm'⟩
     simp only [List.mem_singleton] at hq'
     subst hq'

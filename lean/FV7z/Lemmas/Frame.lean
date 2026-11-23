@@ -201,6 +201,9 @@ theorem keepsProc (h : Kept s₀ s) : KeepsProc [] s₀ s where
   next := by rw [h.proc]
   sighand := by rw [h.proc]
   signal := by rw [h.proc]
+  startBrk := by rw [h.proc]
+  startData := by rw [h.proc]
+  endData := by rw [h.proc]
 
 theorem keepsFiles (h : Kept s₀ s) : KeepsFilesBut [] s₀ s :=
   fun _ _ => ⟨by rw [h.files], fun _ => by rw [h.files]⟩
@@ -241,13 +244,15 @@ theorem map_ne_none_of_check {feat : Features} {pkru : BitVec 32} {m : Memory} {
 
 /-- The store of a byte the kernel does not own, may not drop and does not share with a file goes to the process's own
 copy. -/
-theorem ownAt_of {s : State} {rs : List Rgn} {x : Addr} (hk : NotKernel s rs) (hs : NotShared s rs) (hx : Foot rs x) :
-    OwnAt s.proc.mm.mem x := by
+theorem ownAt_of {s : State} {rs : List Rgn} {x : Addr} {feat : Features} {pkru : BitVec 32} {acc : Access}
+    (hk : NotKernel s rs) (hs : NotShared s rs) (hx : Foot rs x)
+    (hc : s.proc.mm.mem.check feat pkru acc x = none) : OwnAt s.proc.mm.mem x := by
   intro mp hmp
   have h1 := hk x hx mp hmp
   have h2 := hs x hx mp hmp
   cases hb : s.proc.mm.mem.backings mp.backing <;> simp only [BOwn] <;>
     first | exact (h1.1 _ hb).elim | exact (h1.2 _ hb).elim | exact (h2 _ hb).elim
+      | (rw [check_eq, hmp, hb] at hc; simp [blocked, Backing.filePage, Backing.noSource, Backing.unpopulated] at hc)
 
 /-- A quiet `rseq` registration, with an area without aliases, is quiet in the sense of `AreaQuiet`. -/
 theorem quiet_of_rseqQuiet {feat : Features} {s : State} {rs : List Rgn} (h : RseqQuiet feat s)
@@ -263,7 +268,7 @@ theorem quiet_of_rseqQuiet {feat : Features} {s : State} {rs : List Rgn} (h : Rs
   have hmem : ∀ j < 32, Rgn.Mem ⟨r.area, 32⟩ (r.area.add j) := fun j hj => mem_add_of_fits hj hf
   have hok : AreaOk feat s.cpu.pkru s.proc.mm.mem r := fun j hj =>
     ⟨(hacc _ (hmem j hj)).1, (hacc _ (hmem j hj)).2,
-      ownAt_of hk hs ⟨_, List.mem_singleton_self _, hmem j hj⟩⟩
+      ownAt_of hk hs ⟨_, List.mem_singleton_self _, hmem j hj⟩ (hacc _ (hmem j hj)).2⟩
   refine ⟨hok, ?_, hw⟩
   intro j hj k hk' hjk
   have hne : r.area.add k ≠ r.area.add j := by
