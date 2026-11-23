@@ -8,7 +8,7 @@ pointer at `argv` (`ha0`), that it is not null (`hnz`), and that the string has 
 for an empty `argv`, as Linux 5.18 on does), so `argv[0]` is at `strings`; `ExecArgs.Ok` says no string has a 0.
 
 - `arg0`, `argv'_cons`, `arg0_nz`: the string, and that it has no 0.
-- `StackAt.arg0`: in the launch bytes `Entry.V1`, the pointer at `rsp + 8` is `strings`, the bytes there are the
+- `StackAt.argv0`: in the launch bytes `Entry.V1`, the pointer at `rsp + 8` is `strings`, the bytes there are the
   string and a 0, and where they lie.
 -/
 namespace FV7z.Start
@@ -40,7 +40,7 @@ theorem arg0_nz {a : ExecArgs} (hok : a.Ok) : ∀ k < (arg0 a).length, (arg0 a).
 
 /-- `argv[0]` in the launch bytes: the pointer at `rsp + 8` is `strings`, where the string and its 0 lie, above the
 words `execve` writes from `rsp` and below the stack's end. -/
-theorem StackAt.arg0 {prof : Profile} {s : State} {a : ExecArgs} {hdr : ElfHeader} {phs : List Phdr}
+theorem StackAt.argv0 {prof : Profile} {s : State} {a : ExecArgs} {hdr : ElfHeader} {phs : List Phdr}
     {c : ExecChoice} (h : StackAt prof s a hdr phs c) (hlo : 24 ≤ (stackLayout a prof.linux c).sp)
     (rax : BitVec 64) :
     rdq(Entry.V1 s.proc.mm.mem.readByte s.cpu.gpr.rsp rax, s.cpu.gpr.rsp + 8#64) =
@@ -79,8 +79,10 @@ theorem StackAt.arg0 {prof : Profile} {s : State} {a : ExecArgs} {hdr : ElfHeade
       omega
     rw [ea, V1_rdq (by rw [hrsp]; exact hlo) (by rw [hrsp]; omega) (by omega)]
     exact w
-  · rw [V1_byte (by rw [hrsp]; exact hlo) (by rw [hrsp]; omega) (by omega),
-      bytes_at h.bytes.2.2 (by omega), hS, getD_in _ _ _ (by simp only [List.length_append, List.length_cons,
-        List.length_nil]; omega)]
+  · have hk' : k < (arg0 a ++ [0]).length := by
+      simp only [List.length_append, List.length_cons, List.length_nil]
+      omega
+    rw [V1_byte (by rw [hrsp]; exact hlo) (by rw [hrsp]; omega) (by omega),
+      bytes_at h.bytes.2.2 (by omega), hS, getD_in _ _ _ hk']
 
 end FV7z.Start

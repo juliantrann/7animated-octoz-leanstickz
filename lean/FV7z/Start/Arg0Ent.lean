@@ -4,7 +4,7 @@ import FV7z.Start.ArgEnt
 
 The pointer `argv[0]` at `argv` and the string it points to lie above `__libc_start_main`'s frame, the TLS block
 and `lif_ok`'s stack, so in `lif_ok`'s bytes they are the launch bytes (`lif_hi`, `lif_rdq_hi`), where
-`StackAt.arg0` gives them.
+`StackAt.argv0` gives them.
 
 - `ent_arg0`: from the pointer at `y` and the string at `S` in the launch bytes, the same in `lif_ok`'s bytes, with
   `S ≠ 0` and no 0 in the string before its end.
