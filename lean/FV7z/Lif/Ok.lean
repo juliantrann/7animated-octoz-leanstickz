@@ -28,6 +28,19 @@ def NdiRet (W : Addr → Byte) (sp : Addr) (g : Gprs) (b fsb : Addr) (W₂ : Add
 
 theorem s152 (sp : Addr) : sp + 152#64 - 32#64 = sp + 120#64 := by bv_omega
 
+/-- The return address `__libc_init_first` leaves for `_dl_non_dynamic_init`, through the stores of its prologue. -/
+theorem lif_ret {V W : Addr → Byte} {g gY : Gprs} {sp : Addr} (hR : g.rsp = sp + 152#64)
+    (hs : sp.toNat + 160 ≤ 2 ^ 64)
+    (hW : W = Vst (Lif.LifMem V g) (g.rsp - 32#64) (toBytesLE (Lif.lif_at.add 70) 8)) :
+    rdq(fV W sp gY, sp + 120#64) = Lif.lif_at.add 70 := by
+  have s120 : (sp + 120#64).toNat = sp.toNat + 120 := by bv_omega
+  have e : g.rsp - 32#64 = sp + 120#64 := by rw [hR]; exact s152 sp
+  have q : rdq(fV W sp gY, sp + 120#64) = rdq(W, sp + 120#64) := Lif.rq_congr fun i hi => by
+    have := toNat_add_of_fits (a := sp + 120#64) (n := 8) hi (by omega)
+    exact fV_out (by omega) (.inr (by omega))
+  rw [q, hW, e, FV7z.Sga.vs (toBytesLE_length _ _) (by omega)]
+  exact ofBytesLE_toBytesLE (w := 64) (n := 8) rfl _
+
 variable {prof : Profile} {F : Footprint} {Wl N : List Rgn} {L : List (Addr × List Byte)} {s₀ : State} {o : Oracle}
   {gev : List Event} {gP : State → Nat → List Event → Prop} {gE : Outcome → List Event → Prop} {X : State} {t : Nat}
   {lim : Nat} {b fsb : Addr} {ks : Kst} {pad sm mx : BitVec 64}
@@ -122,7 +135,6 @@ theorem lif_ok {pl pc ip cpy : List Byte} {Pm : (Addr → Byte) → Prop} {E : E
     (hww : ∀ y, Foot Wl' y → ∃ q ∈ G.writes, q.Mem y)
     (hlG : ∀ i < 24, Foot G.data (Addr.add (sp - 24#64) i))
     (hl : ∀ i < 48, Foot G.data (Addr.add (sp + 80#64) i))
-    (hret : rdq(fV W sp gY, sp + 120#64) = Lif.lif_at.add 70)
     -- `Lif.lif_nb`
     {lp ct a0 : Addr} {ca cb cc : BitVec 64} {n : Nat} {pr : List Byte} {Pr : (Addr → Byte) → Prop}
     (hinS : CodeIn L Ims.ims_at Ims.ims) (hci : CodeIn L Cti.cti_at Cti.cti)
@@ -174,7 +186,7 @@ theorem lif_ok {pl pc ip cpy : List Byte} {Pm : (Addr → Byte) → Prop} {E : E
     (by rw [addr_add_zero]; exact hrY) hYs ke hin hinh hcpq hinm hm0 hinX hinI hinl hl0 hlenA hinz hz0 hset hint hn
     hPq hPk hPs he hal hFs hpg hx1 hx1z hx2 hx2z htls hU hm6 hhw hfh hfm hpl0 hf1 hf2 hWb hfN hW7a hW7b hFR hlenV
     hslV hpl hid him hfp hph hpgs hla hmg hGo hGc hfit hGw hGr hcode hww hlG hl hinL
-    (by rw [Lif.lif_length]; decide) hret ?_
+    (by rw [Lif.lif_length]; decide) (lif_ret hR hs hW) ?_
   intro x nn ss Vc M W' evs gg U s₂ Z t' W₂ _ _ _ _ _ _ _ _ _ _ hLo hSame hev hUr hc₂ hB hK₂ hA₂ hE hr₂ hs₂ hbx hbp
     h12 h13 h14 h15
   refine Lif.lif_nb (lp := lp) (ct := ct) (a := ca) (b := cb) (cc := cc) (a0 := a0) (n := n) (g := Y.cpu.gpr) hc₂
