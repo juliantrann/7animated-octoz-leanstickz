@@ -12,6 +12,8 @@ import FV7z.Ndi.Exit
 - `lifW_exit`: `lif_a` stores on the stack and to four variables, none of them `ExitB`.
 - `exit_ret`: the three joined with `Ndi.ndi_exit`.
 - `ptr_exit`: at `0x613434` they are 0, as in the image (the bss).
+- `ct_tcb`, `lifW_tcb`, `tcb_ret`: the same for the first 56 bytes of the TCB (`multiple_threads` at `fs + 24`,
+  `pointer_guard` at `fs + 48`), with `Ndi.ndi_tcb`.
 -/
 namespace FV7z.Start
 open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn
@@ -68,5 +70,43 @@ theorem ptr_exit {K : Ctx} {W V : Addr → Byte} {b : Addr} {ver : BitVec 32} {D
   rw [ptr_keep hK hM hb hb' hW (by omega) (by omega) hDa (by unfold TlsVar; omega) (by omega) hd
     (by unfold CpuVar; omega) (by unfold Pim.PimVar; omega)]
   exact hB a (by omega) (by omega)
+
+/-- After `_dl_non_dynamic_init` returns, the stores of `__init_misc` and `__ctype_init` miss the first 56 bytes of
+the TCB. -/
+theorem ct_tcb {W₂ : Addr → Byte} {g : Gprs} {a0 s fb x : Addr} {a1 a2 a3 : BitVec 64} (h1 : fb.toNat ≤ x.toNat)
+    (h2 : x.toNat < fb.toNat + 56) (hg : fb.toNat + 96 ≤ g.rsp.toNat) (hf : 0x7a9000 + 64 ≤ fb.toNat)
+    (hf' : fb.toNat ≤ 2 ^ 63) :
+    Cti.CtMem (Lif.bcV W₂ g a0 s) fb a1 a2 a3 x = W₂ x := by
+  unfold Cti.CtMem
+  rw [Vst_out _ _ _ _ (by simp only [toBytesLE_length]; bv_omega) (by simp only [toBytesLE_length]; bv_omega),
+    Vst_out _ _ _ _ (by simp only [toBytesLE_length]; bv_omega) (by simp only [toBytesLE_length]; bv_omega),
+    Vst_out _ _ _ _ (by simp only [toBytesLE_length]; bv_omega) (by simp only [toBytesLE_length]; bv_omega)]
+  exact Lif.bcV_out (by omega) (by omega) (by omega)
+
+/-- `lif_ok`'s bytes on the first 56 bytes of the TCB are those at `0x613434`. -/
+theorem lifW_tcb {W : Addr → Byte} {g : Gprs} {ra ra₀ : BitVec 64} {fb x : Addr} (h1 : fb.toNat ≤ x.toNat)
+    (h2 : x.toNat < fb.toNat + 56) (hf : 0x7a9000 ≤ fb.toNat) (hr : fb.toNat + 56 + 32 ≤ g.rsp.toNat)
+    (hr' : g.rsp.toNat + 8 ≤ 2 ^ 64) :
+    Vst (Lif.LifMem (Vst W g.rsp (toBytesLE ra₀ 8)) g) (g.rsp - 32#64) (toBytesLE ra 8) x = W x := by
+  unfold Lif.LifMem Lif.LifStk
+  rw [Ndi.vap (toBytesLE_length _ _) ?_ ?_, Ndi.vap (toBytesLE_length _ _) ?_ ?_,
+    Ndi.vap (toBytesLE_length _ _) ?_ ?_, Ndi.vap (toBytesLE_length _ _) ?_ ?_,
+    Ndi.vap (toBytesLE_length _ _) ?_ ?_, Ndi.vap (toBytesLE_length _ _) ?_ ?_,
+    Ndi.vap (toBytesLE_length _ _) ?_ ?_, Ndi.vap (toBytesLE_length _ _) ?_ ?_,
+    Ndi.vap (toBytesLE_length _ _) ?_ ?_]
+  all_goals bv_omega
+
+/-- At the return of `__libc_init_first` to `0x613439`, a byte of the first 56 of the TCB at `fb` is the byte `W` at
+`0x613434`. -/
+theorem tcb_ret {W W₂ : Addr → Byte} {Z : State} {b fb a0 s x : Addr} {g : Gprs} {a1 a2 a3 : BitVec 64}
+    (h1 : fb.toNat ≤ x.toNat) (h2 : x.toNat < fb.toNat + 56)
+    (hN : Ndi.NdiRet (lifW W Z) (lifSp Z) (lifY W Z) b fb W₂) (hb : fb.toNat + 56 ≤ b.toNat)
+    (hsp : fb.toNat + 56 + 72 ≤ (lifSp Z).toNat) (hs : (lifSp Z).toNat + 120 ≤ 2 ^ 64)
+    (he : fb.toNat + 56 + 32 ≤ (entG Z).rsp.toNat) (he' : (entG Z).rsp.toNat + 8 ≤ 2 ^ 64)
+    (hg : fb.toNat + 96 ≤ g.rsp.toNat) (hfb : 0x7a9000 + 64 ≤ fb.toNat) (hfb' : fb.toNat ≤ 2 ^ 63) :
+    Cti.CtMem (Lif.bcV W₂ g a0 s) fb a1 a2 a3 x = W x := by
+  obtain ⟨W', U, m, r, hE, hU, hL, -⟩ := hN
+  rw [ct_tcb h1 h2 hg hfb hfb', Ndi.ndi_tcb hE hU hL (by omega) hb hsp hs h1 h2]
+  exact lifW_tcb h1 h2 (by omega) he he'
 
 end FV7z.Start
