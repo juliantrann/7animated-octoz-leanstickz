@@ -7,116 +7,15 @@ import FV7z.Start.Keep
 `Ndi.lif_ok` asks for `rdq(·, 0x7a8580) = 0x400040` (`h2`, `_dl_phdr`) and `rdq(·, 0x7a8598) = 8` (`h3`,
 `_dl_phnum`). `_dl_aux_init` sets them from `AT_PHDR` and `AT_PHNUM`; no later store of the start code touches them.
 
-- `idx_pre`: a vector `pre ++ [(0, 0)]` in which every entry of type `T` has the value `v`, and one has type `T`.
-- `vsOf_fld`: a variable `_dl_aux_init` sets from one type only, after a vector as `idx_pre` gives.
-- `ctxOf_phdr`, `ctxOf_phnum`: so after `_dl_aux_init` in a run of 7zzs, `0x400040` and 8.
 - `ptr_gl`, `ent_gl`: a word of the variables above `0x7a8418` (but `_dl_osversion` and the CPU variables) is, in the
   bytes at `0x613434` and in `lif_ok`'s, that of `MB`.
-- `ent_phd`: `h2` and `h3` of `lif_ok`.
+- `ent_phd`: `h2` and `h3` of `lif_ok`, with `ctxOf_ph` (`TlsIn.lean`).
 -/
 namespace FV7z.Start
 open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn FV7z.Glibc FV7z.AuxInit
 open FV7z.Tun (Vst_out)
 open FV7z.Tls (TlsMem TlsVar TlsMem_out rd_ext)
 open FV7z.StartB (GuardMem PtrMem)
-
-theorem idx_pre {pre : List (Nat × Nat)} {T v : Nat} (hnz : ∀ e ∈ pre, e.1 ≠ 0 ∧ e.1 < 64)
-    (hT : ∀ e ∈ pre, e.1 = T → e.2 = v) (mT : (T, v) ∈ pre) :
-    (∃ n < pre.length, BitVec.ofNat 64 ((pre ++ [(0, 0)]).getD n (0, 0)).1 = BitVec.ofNat 64 T) ∧
-    (∀ n < pre.length, BitVec.ofNat 64 ((pre ++ [(0, 0)]).getD n (0, 0)).1 = BitVec.ofNat 64 T →
-      ((pre ++ [(0, 0)]).getD n (0, 0)).2 = v) := by
-  have hin : ∀ n, n < pre.length → (pre ++ [(0, 0)]).getD n (0, 0) ∈ pre := by
-    intro n hn
-    rw [getD_in _ _ _ hn, List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hn, Option.getD_some]
-    exact List.getElem_mem hn
-  have hT64 := (hnz _ mT).2
-  refine ⟨?_, ?_⟩
-  · obtain ⟨n, hn, e⟩ := List.mem_iff_getElem.1 mT
-    exact ⟨n, hn, by
-      rw [getD_in _ _ _ hn, List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hn, Option.getD_some, e]
-      try rfl⟩
-  · intro n hn h
-    refine hT _ (hin n hn) ?_
-    have := congrArg BitVec.toNat h
-    have b := (hnz _ (hin n hn)).2
-    simp only [BitVec.toNat_ofNat] at this
-    omega
-
-/-- A variable that `_dl_aux_init` sets from the entries of one type `T` only: after a vector with such an entry,
-each with the value `x`, it is `x`. -/
-theorem vsOf_fld (f : Vars → BitVec 64) (T : BitVec 64)
-    (hs : ∀ v e, f (AuxInit.step v e) = if e.1 = T then e.2 else f v) {ty val : Nat → BitVec 64} {w : Vars}
-    {x : BitVec 64} : ∀ M, (∃ n < M, ty n = T) → (∀ n < M, ty n = T → val n = x) → f (vsOf ty val w M) = x
-  | 0, ⟨_, hn, _⟩, _ => absurd hn (Nat.not_lt_zero _)
-  | M + 1, ⟨n, hn, h3⟩, hall => by
-    show f (AuxInit.step (vsOf ty val w M) (ty M, val M)) = x
-    rw [hs]
-    split
-    · next hM => exact hall M (Nat.lt_succ_self _) hM
-    · next hM =>
-      have hlt : n < M := by
-        rcases Nat.lt_succ_iff_lt_or_eq.1 hn with h | h
-        · exact h
-        · exact absurd (h ▸ h3) hM
-      exact vsOf_fld f T hs M ⟨n, hlt, h3⟩ fun k hk => hall k (Nat.lt_succ_of_lt hk)
-
-theorem step_phdr (v : Vars) (e : BitVec 64 × BitVec 64) :
-    (AuxInit.step v e).phdr = if e.1 = 3 then e.2 else v.phdr := by
-  by_cases h : e.1 = 3
-  · simp [AuxInit.step, h]
-  · simp only [AuxInit.step, apply_ite Vars.phdr, h, ↓reduceIte]
-    repeat' split
-    all_goals rfl
-
-theorem step_phnum (v : Vars) (e : BitVec 64 × BitVec 64) :
-    (AuxInit.step v e).phnum = if e.1 = 5 then e.2 else v.phnum := by
-  by_cases h : e.1 = 5
-  · simp [AuxInit.step, h]
-  · simp only [AuxInit.step, apply_ite Vars.phnum, h, ↓reduceIte]
-    repeat' split
-    all_goals rfl
-
-theorem auxv_pn (prof : Profile) (hdr : ElfHeader) (pa : Nat) (a : ExecArgs) (c : ExecChoice)
-    (l : StackLayout) :
-    ∃ pre, auxv prof hdr pa a c l = pre ++ [(0, 0)] ∧ (∀ e ∈ pre, e.1 ≠ 0 ∧ e.1 < 64) ∧
-      (∀ e ∈ pre, e.1 = 5 → e.2 = hdr.phnum) ∧ (5, hdr.phnum) ∈ pre := by
-  refine ⟨(if prof.linux.vdso then [(33, c.vdsoText)] else []) ++
-    [(51, prof.aux.minSigStkSz), (16, prof.aux.hwcap.toNat), (6, 4096), (17, 100), (3, pa), (4, phdrSize),
-      (5, hdr.phnum), (7, 0), (8, 0), (9, hdr.entry), (11, a.uid), (12, a.euid), (13, a.gid), (14, a.egid),
-      (23, if a.secure then 1 else 0), (25, l.platform - platformString.length - 16),
-      (26, prof.aux.hwcap2.toNat), (31, c.stackTop - 8 - (a.filename.length + 1)),
-      (15, l.platform - platformString.length), (27, 28), (28, 32)], ?_, ?_, ?_, ?_⟩ <;>
-    cases hv : prof.linux.vdso <;> simp [auxv, hv]
-
-theorem zzs_phnum : (ElfHeader.read V2606.zzs.blob.bytes).phnum = 8 := by decide +kernel
-
-/-- After `_dl_aux_init`, in a run of `7zzs`: `_dl_phdr` is `0x400040`. -/
-theorem ctxOf_phdr (prof : Profile) (s : State) (a : ExecArgs) (c : ExecChoice) :
-    ((ctxOf prof s a c).vs (ctxOf prof s a c).M).phdr = 0x400040#64 := by
-  obtain ⟨-, -, -, -, e3, h3⟩ := auxv_idx prof (ElfHeader.read V2606.zzs.blob.bytes)
-    (phdrAddr (ElfHeader.read V2606.zzs.blob.bytes) zzsPhdrs) a c (stackLayout a prof.linux c)
-  refine vsOf_fld AuxInit.Vars.phdr 3 step_phdr _ e3 fun n hn h => ?_
-  show BitVec.ofNat 64 _ = _
-  rw [h3 n hn h, zzs_phdrAddr]
-  try rfl
-
-/-- After `_dl_aux_init`, in a run of `7zzs`: `_dl_phnum` is 8. -/
-theorem ctxOf_phnum (prof : Profile) (s : State) (a : ExecArgs) (c : ExecChoice) :
-    ((ctxOf prof s a c).vs (ctxOf prof s a c).M).phnum = 8#64 := by
-  obtain ⟨pre, hA, hnz, h5, m5⟩ := auxv_pn prof (ElfHeader.read V2606.zzs.blob.bytes)
-    (phdrAddr (ElfHeader.read V2606.zzs.blob.bytes) zzsPhdrs) a c (stackLayout a prof.linux c)
-  have hlen : pre.length = auxCount prof.linux - 1 := by
-    have := auxv_length prof (ElfHeader.read V2606.zzs.blob.bytes)
-      (phdrAddr (ElfHeader.read V2606.zzs.blob.bytes) zzsPhdrs) a c (stackLayout a prof.linux c)
-    rw [hA] at this
-    simp only [List.length_append, List.length_cons, List.length_nil] at this
-    omega
-  obtain ⟨e5, f5⟩ := idx_pre hnz h5 m5
-  rw [hlen, ← hA] at e5 f5
-  refine vsOf_fld AuxInit.Vars.phnum 5 step_phnum _ e5 fun n hn h => ?_
-  show BitVec.ofNat 64 _ = _
-  rw [f5 n hn h, zzs_phnum]
-  try rfl
 
 /-- A word of the variables above `0x7a8418`, away from `_dl_osversion` (`0x7a8520`) and `_dl_platform`, is at the
 call of `__libc_init_first` that of the bytes `MB` describes. -/
