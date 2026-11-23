@@ -76,7 +76,7 @@ theorem StackAt.argv0 {prof : Profile} {s : State} {a : ExecArgs} {hdr : ElfHead
     have ea : s.cpu.gpr.rsp + 8#64 = BitVec.ofNat 64 ((stackLayout a prof.linux c).sp + 8 * (1 + 0)) := by
       apply BitVec.eq_of_toNat_eq
       simp only [BitVec.toNat_add, BitVec.toNat_ofNat, hrsp]
-      omega
+      all_goals omega
     rw [ea, V1_rdq (by rw [hrsp]; exact hlo) (by rw [hrsp]; omega) (by omega)]
     exact w
   · have hk' : k < (arg0 a ++ [0]).length := by
