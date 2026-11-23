@@ -9,6 +9,7 @@ import FV7z.Start.Lp
 import FV7z.Start.Ctp
 import FV7z.Start.Ent
 import FV7z.Start.Psz
+import FV7z.Start.Pgs
 /-! Probe: the axioms of the `__libc_init_first` and `_dl_non_dynamic_init` pieces (expected: `propext`,
 `Classical.choice`, `Quot.sound`). -/
 #print axioms FV7z.Lif.lif_bc
@@ -33,3 +34,4 @@ import FV7z.Start.Psz
 #print axioms FV7z.Start.auxv_ps
 #print axioms FV7z.Start.ctxOf_ps
 #print axioms FV7z.Start.mb_ps
+#print axioms FV7z.Start.ptr_ps

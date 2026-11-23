@@ -230,6 +230,7 @@ import FV7z.Start.Lp
 import FV7z.Start.Ctp
 import FV7z.Start.Ent
 import FV7z.Start.Psz
+import FV7z.Start.Pgs
 import FV7z.Lemmas.BlkOps7
 import FV7z.Gts.Holds
 import FV7z.Grl.Holds
