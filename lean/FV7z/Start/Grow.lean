@@ -293,15 +293,17 @@ theorem footOk_grow {feat : Features} {X Y : State} {F : Footprint} {N : List Rg
     cases hr
 
 /-- `Ready` after `n` pages from `P`, free before and below the end of the user address space, are mapped anew, the
-break at or above its lowest value, for a thread without an `rseq` area. -/
+break at or above its lowest value and its page at most `2 ^ 30` bytes above the end of the user address space, for a
+thread without an `rseq` area. -/
 theorem ready_grow {feat : Features} {X Y : State} (hR : Ready feat X)
     (hfree : X.proc.mm.mem.free P n = true)
     (hmem : Y.proc.mm.mem = X.proc.mm.mem.mapAnon P n prot)
     (hbm : Y.proc.mm.brkMin = X.proc.mm.brkMin) (hbk : X.proc.mm.brkMin.toNat ≤ Y.proc.mm.brk.toNat)
     (htf : Y.cpu.rflags.tf = false) (hac : Y.cpu.rflags.ac = false) (hth : Y.thread = X.thread)
-    (hrs : X.thread.rseq = none) (htop : (P + n) * 4096 ≤ taskSize feat) : Ready feat Y := by
-  obtain ⟨⟨-, -, h3, h4⟩, -, l1, l2, l3, -, l5, l6⟩ := hR
-  refine ⟨⟨htf, hac, by rw [hth]; exact h3, by rw [hth]; exact h4⟩, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+    (hrs : X.thread.rseq = none) (htop : (P + n) * 4096 ≤ taskSize feat)
+    (hbp : pageUp Y.proc.mm.brk.toNat ≤ taskSize feat + 2 ^ 30) : Ready feat Y := by
+  obtain ⟨⟨-, -, h3, h4⟩, -, l1, l2, l3, -, l5, l6, -, l8⟩ := hR
+  refine ⟨⟨htf, hac, by rw [hth]; exact h3, by rw [hth]; exact h4⟩, ?_, ?_, ?_, ?_, ?_, ?_, ?_, hbp, ?_⟩
   · simp only [RseqQuiet, hth, hrs]
   · intro g hg
     rw [hmem] at hg ⊢
@@ -331,6 +333,13 @@ theorem ready_grow {feat : Features} {X Y : State} (hR : Ready feat X)
     · exact l6 p mp hx
     · left
       exact Nat.le_trans (Nat.mul_le_mul_right _ (by omega)) htop
+  · intro p mp hp
+    rw [hmem] at hp ⊢
+    show mp.area < X.proc.mm.mem.fresh + n
+    rcases mapAnon_cases hfree hp with hx | ⟨-, h1, h2, rfl⟩
+    · exact Nat.lt_of_lt_of_le (l8 p mp hx) (Nat.le_add_right _ _)
+    · show X.proc.mm.mem.fresh < X.proc.mm.mem.fresh + n
+      omega
 
 /-- The footprint's bytes after: those before, and zeros in `N`. -/
 theorem agree_grow {feat : Features} {X Y : State} {F : Footprint} {N : List Rgn} {V V' : Addr → Byte}

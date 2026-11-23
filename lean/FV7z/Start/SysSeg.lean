@@ -158,6 +158,7 @@ theorem s_brk_grow (c : Seg prof F Wl L s₀ o) (hK : KeptW Wl s₀ X) (hA : Agr
   · exact
       { foot := footOk_grow hokX hRX.layout hfreeN rfl rfl hpkX hrsX hrsX c.own hN' (by rw [hsum]; omega)
         ready := ready_grow hRX hfreeN rfl rfl hlow htf hac rfl hrsX (by rw [hsum]; omega)
+          (show pageUp X.cpu.gpr.rdi.toNat ≤ taskSize prof.feat + 2 ^ 30 by unfold pageUp at htop' ⊢; omega)
         env := c.env
         code := c.code
         own := rfl

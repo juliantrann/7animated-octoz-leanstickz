@@ -7,7 +7,8 @@ This is `__sbrk`'s call when the bytes asked for fit below the next page's start
 the `correction` that aligns the end of the heap to a page).
 
 - `syscall_brk_same`: the instruction, on Zellic's model, `RLIMIT_DATA` unlimited; no answer of the stream is used.
-- `ready_brk`: `Ready` of a state with the same memory and thread and a break not below the lowest.
+- `ready_brk`: `Ready` of a state with the same memory and thread and a break not below the lowest, its page as
+  `LayoutOk.brkPage` bounds it.
 - `Seg.s_brk_same`: the step of a run; the run goes on from the state after as a new start, with the same footprint.
 - `Seg.b_brk_same`: from a start with `Base`, to a `Base` with the new break.
 -/
@@ -51,14 +52,14 @@ end FV7z
 namespace FV7z.Start
 open ZellicX86
 
-/-- `Ready` of a state with the same memory and thread, a break not below the lowest, `TF` and `AC` clear, without
-an `rseq` area. -/
+/-- `Ready` of a state with the same memory and thread, a break not below the lowest whose page ends at most `2 ^ 30`
+bytes above the end of the user address space, `TF` and `AC` clear, without an `rseq` area. -/
 theorem ready_brk {feat : Features} {X Y : State} (hR : Ready feat X) (hmem : Y.proc.mm.mem = X.proc.mm.mem)
     (hbm : Y.proc.mm.brkMin = X.proc.mm.brkMin) (hbk : X.proc.mm.brkMin.toNat ≤ Y.proc.mm.brk.toNat)
     (htf : Y.cpu.rflags.tf = false) (hac : Y.cpu.rflags.ac = false) (hth : Y.thread = X.thread)
-    (hrs : X.thread.rseq = none) : Ready feat Y := by
-  obtain ⟨⟨-, -, h3, h4⟩, -, l1, l2, l3, -, l5, l6⟩ := hR
-  refine ⟨⟨htf, hac, by rw [hth]; exact h3, by rw [hth]; exact h4⟩, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+    (hrs : X.thread.rseq = none) (hbp : pageUp Y.proc.mm.brk.toNat ≤ taskSize feat + 2 ^ 30) : Ready feat Y := by
+  obtain ⟨⟨-, -, h3, h4⟩, -, l1, l2, l3, -, l5, l6, -, l8⟩ := hR
+  refine ⟨⟨htf, hac, by rw [hth]; exact h3, by rw [hth]; exact h4⟩, ?_, ?_, ?_, ?_, ?_, ?_, ?_, hbp, ?_⟩
   · simp only [RseqQuiet, hth, hrs]
   · rw [hmem]
     exact l1
@@ -72,6 +73,8 @@ theorem ready_brk {feat : Features} {X Y : State} (hR : Ready feat X) (hmem : Y.
     exact l5
   · rw [hmem]
     exact l6
+  · rw [hmem]
+    exact l8
 
 end FV7z.Start
 
@@ -101,12 +104,16 @@ theorem s_brk_same (c : Seg prof F Wl L s₀ o) (hK : KeptW Wl s₀ X) (hA : Agr
   have hokX := c.foot.keptW c.ready.rseq c.hws hK' c.sub_self
   have hRX := c.ready.keptW c.foot c.hws hK'
   have hrsX : (X.withMem M).thread.rseq = none := by rw [hK'.thread]; exact hrs
+  have hbp : pageUp X.cpu.gpr.rdi.toNat ≤ taskSize prof.feat + 2 ^ 30 := by
+    have h7 : pageUp X.proc.mm.brk.toNat ≤ taskSize prof.feat + 2 ^ 30 := hRX.layout.brkPage
+    unfold pageUp at h7 heq ⊢
+    omega
   refine ⟨_, _, _, syscall_brk_same (s := X.withMem M) htf (c.dec hK' hin hrip hd) hnr hlow
     (limits_keptW hK' hlu).2 heq,
     k' (X.withMem M) _ _ hK' rfl rfl ?_ (c.agreeK hK hA hM)⟩
   exact
     { foot := footOk_congr hokX rfl rfl rfl
-      ready := ready_brk hRX rfl rfl hlow htf hac rfl hrsX
+      ready := ready_brk hRX rfl rfl hlow htf hac rfl hrsX hbp
       env := c.env
       code := c.code
       own := c.own

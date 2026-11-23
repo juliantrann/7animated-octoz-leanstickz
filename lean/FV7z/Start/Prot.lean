@@ -82,6 +82,38 @@ theorem prot_cases {p : PageNum} {mp : Mapping} (h : (protMem m P n prot).map p 
     cases h
     exact ⟨m0, rfl, h1, h2, h3, h4, h5, h6⟩
 
+/-- A run's first page is at or before the page (`Memory.runStart`). -/
+theorem runStart_le (mem : Memory) (first : Nat) : ∀ i, mem.runStart first i ≤ i
+  | 0 => by simp [Memory.runStart]
+  | i + 1 => by
+    have ih := runStart_le mem first i
+    unfold Memory.runStart
+    split
+    · split <;> omega
+    · omega
+
+/-- The areas after are below `fresh` after, if those before were below `fresh` before: `mprotect`'s new areas are
+`fresh` plus an offset among the pages. -/
+theorem prot_area (hl : ∀ p m0, m.map p = some m0 → m0.area < m.fresh) {p : PageNum} {mp : Mapping}
+    (h : (protMem m P n prot).map p = some mp) : mp.area < m.fresh + n := by
+  by_cases hi : inPages P n p = true
+  · have hin := hi
+    simp only [inPages, decide_eq_true_eq] at hin
+    rcases hm : m.map p with _ | m0
+    · rw [prot_none hm] at h
+      cases h
+    · have hk := runStart_le (m.protect P n prot) P (p.toNat - P)
+      have e : (protMem m P n prot).map p =
+          some { m0 with prot := prot, area := m.fresh + (m.protect P n prot).runStart P (p.toNat - P) } := by
+        simp only [Memory.renumber, Memory.protect, hi, ↓reduceIte, hm, Option.map_some] <;> rfl
+      rw [e] at h
+      cases h
+      show m.fresh + (m.protect P n prot).runStart P (p.toNat - P) < m.fresh + n
+      omega
+  · have hi' : inPages P n p = false := by simpa using hi
+    rw [prot_out hi'] at h
+    exact Nat.lt_of_lt_of_le (hl p mp h) (Nat.le_add_right _ _)
+
 theorem prot_readByte (x : Addr) : (protMem m P n prot).readByte x = m.readByte x := by
   have hb : (protMem m P n prot).backings = m.backings := rfl
   have hf : (protMem m P n prot).files = m.files := rfl
@@ -256,8 +288,8 @@ theorem ready_prot {feat : Features} {X Y : State} (hR : Ready feat X)
     (hmem : Y.proc.mm.mem = protMem X.proc.mm.mem P n prot) (hbm : Y.proc.mm.brkMin = X.proc.mm.brkMin)
     (hbk : Y.proc.mm.brk = X.proc.mm.brk) (htf : Y.cpu.rflags.tf = false) (hac : Y.cpu.rflags.ac = false)
     (hth : Y.thread = X.thread) (hrs : X.thread.rseq = none) : Ready feat Y := by
-  obtain ⟨⟨-, -, h3, h4⟩, -, l1, l2, l3, l4, l5, l6⟩ := hR
-  refine ⟨⟨htf, hac, by rw [hth]; exact h3, by rw [hth]; exact h4⟩, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  obtain ⟨⟨-, -, h3, h4⟩, -, l1, l2, l3, l4, l5, l6, l7, l8⟩ := hR
+  refine ⟨⟨htf, hac, by rw [hth]; exact h3, by rw [hth]; exact h4⟩, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · simp only [RseqQuiet, hth, hrs]
   · intro g hg
     rw [hmem] at hg ⊢
@@ -286,6 +318,11 @@ theorem ready_prot {feat : Features} {X Y : State} (hR : Ready feat X)
     obtain ⟨m0, h0, -, -, h3, -⟩ := prot_cases hp
     rw [h3]
     exact l6 p m0 h0
+  · rw [hbk]
+    exact l7
+  · intro p mp hp
+    rw [hmem] at hp ⊢
+    exact prot_area l8 hp
 
 /-- The footprint's bytes after are those before. -/
 theorem agree_prot {X Y : State} {F G : Footprint} {V : Addr → Byte}
