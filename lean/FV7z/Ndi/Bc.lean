@@ -224,7 +224,7 @@ theorem ndi_pc {pl pc : List Byte} {Pm : (Addr → Byte) → Prop} {E : Ev} {V W
     ((Ipa.rdk vmid (lo := 7944240) (hi := 8029532) (fun a h1 h2 => ⟨h1, h2⟩) (by ipd) (by ipd) (by ipd)).trans
       hpl0)
     hf1 hf2 (fun h0 => by rw [h0] at hpi; simp only [BitVec.toNat_ofNat, Nat.zero_mod] at hpi; omega)
-    (.inr (by rw [hs8]; omega)) hWb hfN hW7a hW7b hFR
+    (hpi.elim (fun h => .inr (by rw [hs8]; omega)) fun h => .inl (by omega)) hWb hfN hW7a hW7b hFR
     (fun i hi => by
       rw [Ipa.rdk vlo (lo := 0) (hi := 7937208) (fun a _ h2 => h2) (Nat.zero_le _) (by ipd) (by ipd)]
       exact hlenV i hi)
