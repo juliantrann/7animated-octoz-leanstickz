@@ -10,12 +10,14 @@ import FV7z.Start.Ro
 - `ptr_keep`: a byte of the image away from the stores of the start code is, there, the launch byte.
 - `ent_keep`: a byte below the stack and away from `Lif.LifMem`'s globals is, in `lif_ok`'s bytes, the same.
 - `ptr_pl`, `ent_pl`: the word at `0x7a8550` (`.bss`) is 0 (`hpl0` of `Ndi.lif_ok`).
+- `ptr_hi`, `ent_keep_hi`: the same for a byte of the stack above `__libc_start_main`'s frame (the strings and
+  vectors `execve` puts there, the platform string among them).
 - `ent_hw`: `_dl_hwcap` is 2 or 6 (`hhw` and the choice in `hn` of `Ndi.lif_ok`), from `CpuFeat.HwW` at `0x613434`.
 -/
 namespace FV7z.Start
 open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn
 open FV7z.Tun (Vst_out)
-open FV7z.Tls (TlsMem TlsVar rd_ext)
+open FV7z.Tls (TlsMem TlsVar TlsMem_out rd_ext)
 open FV7z.StartB (GuardMem PtrMem)
 
 /-- The bytes at the call of `__libc_init_first`: those of `MB` with the TLS block at `b`, the stack guard, the
@@ -100,6 +102,35 @@ theorem ent_pl {K : Ctx} {W V : Addr → Byte} {b : Addr} {ver : BitVec 32} {D :
     exact ent_keep (by omega) hr' (by omega) hsn ⟨by omega, by omega, by omega⟩
   rw [rd_ext 8029520#64 8 h]
   exact ptr_pl hK hB hM hb hb' hW hD
+
+/-- A byte of the stack above `__libc_start_main`'s frame and above the break's TLS block is, at the call of
+`__libc_init_first`, the byte of the launch: no store of the start code reaches it. -/
+theorem ptr_hi {K : Ctx} {W V : Addr → Byte} {b : Addr} {ver : BitVec 32} {D : Addr → Prop} (hM : MB K V)
+    (hb : 0x7a9000 ≤ b.toNat) (hb' : b.toNat + 8192 ≤ 2 ^ 63) (hW : PtrW K W V b ver D) {a : Addr}
+    (h1 : K.bp.toNat + 376 ≤ a.toNat) (h2 : b.toNat + 8192 ≤ a.toNat) (hDa : D a) : W a = K.V0 a := by
+  have hf : (b + 2176#64).toNat = b.toNat + 2176 := by bv_omega
+  have ha := a.isLt
+  rw [hW a (.inl hDa) ?_ (by unfold Pim.PimVar; omega)]
+  · unfold PtrMem
+    rw [Vst_out, ver_tls V ver hb' (by omega) (by omega) (by omega),
+      TlsMem_out _ hb hb' (by unfold TlsVar; omega) (by omega)]
+    · exact hM.same _ (by simp only [InStk]; omega)
+        (not_dg (lo := 0x7a9000) (hi := 2 ^ 64) (by decide) (by omega) ha)
+    all_goals first | (simp only [toBytesLE_length]; bv_omega) | bv_omega
+  · intro hj
+    unfold Junk3 Junk2 Junk CpuVar at hj
+    omega
+
+/-- A byte above `g.rsp + 8` (the return address of the call of `__libc_init_first`), above the pushes of
+`_dl_non_dynamic_init` and above the image is, in `lif_ok`'s bytes, that at the call of `__libc_init_first`. -/
+theorem ent_keep_hi {W : Addr → Byte} {g gY : Gprs} {ra ra₀ : BitVec 64} {sp a : Addr}
+    (hr : g.rsp.toNat + 8 ≤ a.toNat) (hr0 : 32 ≤ g.rsp.toNat) (hsp : sp.toNat + 120 ≤ a.toNat)
+    (hg : 0x7a9000 ≤ a.toNat) :
+    Ndi.fV (Vst (Lif.LifMem (Vst W g.rsp (toBytesLE ra₀ 8)) g) (g.rsp - 32#64) (toBytesLE ra 8)) sp gY a = W a := by
+  have ha := a.isLt
+  unfold Ndi.fV Lif.LifMem Lif.LifStk
+  repeat rw [Vst_out]
+  all_goals first | (simp only [toBytesLE_length]; bv_omega) | bv_omega
 
 /-- `hhw` of `Ndi.lif_ok`, and which case of `hn`: `_dl_hwcap` (`0x7a4ac8`) is 2 or 6 in the bytes at the `call`
 of `_dl_non_dynamic_init` after its pushes, as it is at the call of `__libc_init_first` (`CpuFeat.HwW`). -/
