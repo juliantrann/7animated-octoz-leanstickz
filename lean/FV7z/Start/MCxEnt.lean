@@ -74,11 +74,11 @@ theorem lw_heap {lo top : Nat} {L : List (Addr × List Byte)} {B a : Addr} (h1 :
     (h2 : a.toNat < B.toNat + 0x23000) (hB : B.toNat + 0x23000 < 2 ^ 64) :
     Foot (brkN B ++ ([⟨B, 8192⟩] ++ (zzsFoot lo top L).writes)) a := by
   rcases Nat.lt_or_ge a.toNat (B.toNat + 8192) with h | h
-  · have h1' : B.toNat ≤ a.toNat := by omega
-    exact lw_heap_lo h1' h
-  · have hB' : B.toNat + 8192 < 2 ^ 64 := by omega
-    have h2' : a.toNat < B.toNat + 8192 + 0x21000 := by omega
-    exact lw_heap_hi hB' h h2'
+  · exact lw_heap_lo (Nat.le_trans (Nat.le_add_right _ _) h1) h
+  · have e : B.toNat + 8192 + 0x21000 = B.toNat + 0x23000 := Nat.add_assoc _ _ _
+    have hB' : B.toNat + 8192 < 2 ^ 64 :=
+      Nat.lt_of_le_of_lt (Nat.le_trans (Nat.le_add_right _ 0x21000) (Nat.le_of_eq e)) hB
+    exact lw_heap_hi hB' h (by rw [e]; exact h2)
 
 /-- `MCx` at the call of `__libc_init_first`, for the footprint `launch_to_ptr` hands on: the break `B + 4544`,
 the thread pointer `B + 2176`, `mp_.top_pad = 0x20000`, `mp_.sbrk_base` and `mp_.max_sbrked_mem` 0, the new pages
@@ -125,9 +125,9 @@ theorem ent_mcx {prof : Profile} {L : List (Addr × List Byte)} {s₀ : State} {
     unfold pageUp
     omega
   · rw [tbc] at h1 h2
-    exact lw_heap h1 (by omega) (by omega)
+    exact lw_heap h1 (by omega) (Nat.lt_trans hB8 (by decide))
   · rw [tbc] at h1
     rw [ts] at h2
-    exact lw_heap h1 (by omega) (by omega)
+    exact lw_heap h1 (by omega) (Nat.lt_trans hB8 (by decide))
 
 end FV7z.Start
