@@ -66,7 +66,7 @@ def state (r : List (BitVec 64)) (umask : Nat) (fd : String) (ws : List (Nat × 
   let files : Files := ⟨fun _ => zeroFrame, fun _ => 0, fun _ => false, fun _ => true⟩
   let mem := regionsMemory [⟨base / 4096, 1, rw, fun _ => .priv (frame ws), false, fun _ => none, rw, false⟩] files []
   let g : Gprs := ⟨r[0]!, 0, r[3]!, 0, 0, 0, r[2]!, r[1]!, 0, 0, r[4]!, 0, 0, 0, 0, 0⟩
-  { proc := { mm := ⟨mem, 0, 0⟩, files := fdEntry fd, opens := ⟨fun _ => ⟨0, false, 0⟩, 1000⟩
+  { proc := { mm := ⟨mem, 0, 0, 0, 0, 0⟩, files := fdEntry fd, opens := ⟨fun _ => ⟨0, false, 0⟩, 1000⟩
               sighand := fun _ => SigAction.dfl
               signal := ⟨[], fun _ => ⟨RLIM_INFINITY, RLIM_INFINITY⟩, false⟩, fdMax := 1024
               umask := BitVec.ofNat 9 umask }

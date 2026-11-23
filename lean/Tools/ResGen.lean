@@ -27,7 +27,8 @@ def hex (n : Nat) : String := String.ofList (Nat.toDigits 16 n)
 
 /-- `reprStr` on one line. -/
 def flat (s : String) : String :=
-  " ".intercalate ((s.splitOn "\n").map String.trim)
+  " ".intercalate ((s.splitOn "\n").map fun l =>
+    String.ofList ((l.toList.dropWhile Char.isWhitespace).reverse.dropWhile Char.isWhitespace).reverse)
 
 def showMem (m : MemOp) : String :=
   if m.seg.isNone && m.index.isNone && m.scale == 1 && !m.addr32 then

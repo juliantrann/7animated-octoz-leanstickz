@@ -66,11 +66,17 @@ def wrBytes (s : St) (a : Addr) (bs : List (Option Byte)) : St :=
       | some b => m.set! ((a.toNat + i) - base) b.toNat.toUInt8
       | none => m) s.mem }
 
+/-- The flags `getCpu` answers (`XSAVE`, `XSAVEC` and `XRSTOR` neither read nor write them). -/
+def flags0 : Rflags :=
+  { cf := false, pf := false, af := false, zf := false, sf := false, tf := false, if_ := true, df := false
+    of := false, iopl := 0, nt := false, rf := false, vm := false, ac := false, vif := false, vip := false
+    id := false }
+
 /-- `s` as the model's CPU state (`Op.getCpu`), with `RIP`, the flags and the segments fixed. -/
 def toCpu (s : St) : Cpu :=
   let g (i : Nat) : BitVec 64 := s.gpr[i]!
   { gpr := ⟨g 0, g 1, g 2, g 3, g 4, g 5, g 6, g 7, g 8, g 9, g 10, g 11, g 12, g 13, g 14, g 15⟩
-    rip := 0x401000, rflags := default, seg := ⟨0, 0, 0, 0, 0, 0, 0, 0⟩, x87 := s.x87
+    rip := 0x401000, rflags := flags0, seg := ⟨0, 0, 0, 0, 0, 0, 0, 0⟩, x87 := s.x87
     vec := ⟨fun j => s.zmm[j.val]!, fun j => s.k[j.val]!, s.mxcsr⟩, pkru := s.pkru }
 
 /-- `s` with the registers of `c` (`Op.setCpu`). -/
@@ -164,10 +170,20 @@ def hexBytes (bs : List Byte) : String := String.join (bs.map fun b => hexN 2 b.
 def excName : Exception → String
   | .gp _ => "gp" | .ss _ => "ss" | .pf .. => "pf" | .ud => "ud" | .ac => "ac" | e => reprStr e
 
+/-- The features the XSAVE family depends on, from `XCR0` (the AVX, AVX-512 and PKRU components enabled) and
+`CPUID.(EAX=0DH,ECX=1):EAX[1]` (`XSAVEC`). -/
+def feats (kv : String → Nat) : Features :=
+  let x := kv "xcr0"
+  let avx := x.testBit 2
+  let z := x.testBit 5 && x.testBit 6 && x.testBit 7
+  { (default : Features) with
+    avx, avx2 := avx, fma := avx, avx512f := z, avx512bw := z, avx512dq := z, avx512vl := z, pku := x.testBit 9
+    nx := true, xsavec := (kv "d1.eax").testBit 1 }
+
 /-- The processor's profile from `native info`'s `KEY=VALUE` words. -/
 def prof (kv : String → Nat) : Profile where
   vendor := if kv "amd" = 1 then .amd else .intel
-  feat := default
+  feat := feats kv
   aux := ⟨0, 0, 2048⟩; cpus := 1
   cpuid := fun _ leaf sub =>
     if leaf = 0xD then ⟨BitVec.ofNat 32 (kv s!"d{sub.toNat}.eax"), BitVec.ofNat 32 (kv s!"d{sub.toNat}.ebx"),
