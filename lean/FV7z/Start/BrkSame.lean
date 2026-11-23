@@ -52,6 +52,11 @@ end FV7z
 namespace FV7z.Start
 open ZellicX86
 
+/-- `pageUp` is a multiple of the page size. -/
+theorem pageUp_div_mul (x : Nat) : pageUp x / 4096 * 4096 = pageUp x := by
+  unfold pageUp
+  rw [Nat.mul_div_cancel _ (by decide : 0 < 4096)]
+
 /-- `Ready` of a state with the same memory and thread, a break not below the lowest whose page ends at most `2 ^ 30`
 bytes above the end of the user address space, `TF` and `AC` clear, without an `rseq` area. -/
 theorem ready_brk {feat : Features} {X Y : State} (hR : Ready feat X) (hmem : Y.proc.mm.mem = X.proc.mm.mem)
@@ -105,9 +110,8 @@ theorem s_brk_same (c : Seg prof F Wl L s₀ o) (hK : KeptW Wl s₀ X) (hA : Agr
   have hRX := c.ready.keptW c.foot c.hws hK'
   have hrsX : (X.withMem M).thread.rseq = none := by rw [hK'.thread]; exact hrs
   have hbp : pageUp X.cpu.gpr.rdi.toNat ≤ taskSize prof.feat + 2 ^ 30 := by
-    have h7 : pageUp X.proc.mm.brk.toNat ≤ taskSize prof.feat + 2 ^ 30 := hRX.layout.brkPage
-    unfold pageUp at h7 heq ⊢
-    omega
+    rw [← pageUp_div_mul X.cpu.gpr.rdi.toNat, heq, pageUp_div_mul]
+    exact hRX.layout.brkPage
   refine ⟨_, _, _, syscall_brk_same (s := X.withMem M) htf (c.dec hK' hin hrip hd) hnr hlow
     (limits_keptW hK' hlu).2 heq,
     k' (X.withMem M) _ _ hK' rfl rfl ?_ (c.agreeK hK hA hM)⟩
