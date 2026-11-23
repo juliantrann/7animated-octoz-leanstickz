@@ -1,2 +1,4 @@
-# tools trial (Lean v4.35.0 + Zellic R2): the model's semantics against this runner's processor
-cd .. && mkdir -p build && CI_LOG_DIR=$PWD/build/cilog bash tools/ci.sh difftest x87 xsave
+# tools trial (Lean v4.35.0 + Zellic R2): the model's semantics against this runner's processor; prints the xsave
+# mismatches in full (cases, model and processor lines) for offline analysis
+cd .. && mkdir -p build && CI_LOG_DIR=$PWD/build/cilog bash tools/ci.sh difftest x87 xsave; rc=$?
+echo "=== xsave.diffs"; cat build/cilog/xsave.diffs 2>/dev/null; exit $rc
