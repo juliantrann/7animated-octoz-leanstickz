@@ -88,7 +88,7 @@ theorem lif_nb {fb lp ct a0 : Addr} {a b cc : BitVec 64} {n : Nat} {pr : List By
     hstk (x.add i) (by rw [toNat_add_of_fits hi h2]; omega)
   have hgb' : ∀ (x : Addr) (k : Nat), (x.toNat + k ≤ 7937208 ∨ 7937720 ≤ x.toNat ∧ x.toNat + k ≤ 7940480) →
       ∀ i < k, W₂ (x.add i) = W (x.add i) := fun x k h i hi =>
-    hgb (x.add i) (by rw [toNat_add_of_fits hi (by omega)]; omega)
+    hgb (x.add i) (by rw [toNat_add_of_fits (a := x) hi (by omega)]; omega)
   have q12 : rdq(W₂, X.cpu.gpr.r12) = rdq(W, X.cpu.gpr.r12) :=
     rq_congr (hst' X.cpu.gpr.r12 8 (by omega) hr8)
   have q0 : rdq(W₂, sp + 128#64) = rdq(W, sp + 128#64) := rq_congr (hst' (sp + 128#64) 8 (by omega) (by omega))
