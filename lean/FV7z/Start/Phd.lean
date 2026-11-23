@@ -92,7 +92,8 @@ theorem bss_rdq {V : Addr → Byte} (hB : Bss V) {x : Nat} (hx : 0x7945d0 ≤ x 
     have t := tg (b := x) hi (by omega)
     exact hB _ (by omega) (by omega)
   rw [e]
-  rfl
+  simp only [byteAddrs, List.map_map, Function.comp_def]
+  first | rfl | decide
 
 /-- `h2` and `h3` of `lif_ok`: `_dl_phdr` is `0x400040` and `_dl_phnum` 8. -/
 theorem ent_phd {K : Ctx} {W V : Addr → Byte} {b : Addr} {ver : BitVec 32} {D : Addr → Prop} {g gY : Gprs}
