@@ -170,10 +170,20 @@ def hexBytes (bs : List Byte) : String := String.join (bs.map fun b => hexN 2 b.
 def excName : Exception → String
   | .gp _ => "gp" | .ss _ => "ss" | .pf .. => "pf" | .ud => "ud" | .ac => "ac" | e => reprStr e
 
+/-- The features the XSAVE family depends on, from `XCR0` (the AVX, AVX-512 and PKRU components enabled) and
+`CPUID.(EAX=0DH,ECX=1):EAX[1]` (`XSAVEC`). -/
+def feats (kv : String → Nat) : Features :=
+  let x := kv "xcr0"
+  let avx := x.testBit 2
+  let z := x.testBit 5 && x.testBit 6 && x.testBit 7
+  { (default : Features) with
+    avx, avx2 := avx, fma := avx, avx512f := z, avx512bw := z, avx512dq := z, avx512vl := z, pku := x.testBit 9
+    nx := true, xsavec := (kv "d1.eax").testBit 1 }
+
 /-- The processor's profile from `native info`'s `KEY=VALUE` words. -/
 def prof (kv : String → Nat) : Profile where
   vendor := if kv "amd" = 1 then .amd else .intel
-  feat := default
+  feat := feats kv
   aux := ⟨0, 0, 2048⟩; cpus := 1
   cpuid := fun _ leaf sub =>
     if leaf = 0xD then ⟨BitVec.ofNat 32 (kv s!"d{sub.toNat}.eax"), BitVec.ofNat 32 (kv s!"d{sub.toNat}.ebx"),
