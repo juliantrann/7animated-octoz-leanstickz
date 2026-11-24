@@ -51,6 +51,12 @@ def RegsIn (R : Nat → List (BitVec 64)) (V : Addr → Byte) : Prop :=
 def upd (R : Nat → List (BitVec 64)) (r : Nat) (p : BitVec 64) : Nat → List (BitVec 64) :=
   fun r' => if r' = r then R r ++ [p] else R r'
 
+theorem upd_self (R : Nat → List (BitVec 64)) (r : Nat) (p : BitVec 64) : upd R r p r = R r ++ [p] := by
+  simp [upd]
+
+theorem upd_ne (R : Nat → List (BitVec 64)) {r r' : Nat} (p : BitVec 64) (h : r' ≠ r) : upd R r p r' = R r' := by
+  simp [upd, h]
+
 /-- A registrar's call with room adds its argument at the end of its table. -/
 theorem RegsIn.push {R : Nat → List (BitVec 64)} {V V' : Addr → Byte} {r : Nat} {p : BitVec 64}
     (h : RegsIn R V) (hr : r < 3) (hn : (R r).length < regMax r)
@@ -64,7 +70,7 @@ theorem RegsIn.push {R : Nat → List (BitVec 64)} {V V' : Addr → Byte} {r : N
   obtain ⟨h1, h2, h3⟩ := hO
   intro r' hr'
   by_cases e : r' = r
-  · rw [e, upd, if_pos rfl, List.length_append, List.length_singleton]
+  · rw [e, upd_self, List.length_append, List.length_singleton]
     refine ⟨?_, by omega, fun i hi => ?_⟩
     · rw [h1, BitVec.toNat_add, BitVec.toNat_ofNat, hc]
       omega
@@ -80,7 +86,7 @@ theorem RegsIn.push {R : Nat → List (BitVec 64)} {V V' : Addr → Byte} {r : N
         BitVec.eq_of_toNat_eq ((ent_toNat r _ (by omega)).trans (by rw [slot_toNat _ _ t8, hc]))
       rw [hg, ha]
       exact h2
-  · rw [upd, if_neg e]
+  · rw [upd_ne R p e]
     obtain ⟨hc', hle', he'⟩ := h r' hr'
     obtain ⟨c4', t8', ap'⟩ := reg_lay r'
     have hx' := reg_max r'
