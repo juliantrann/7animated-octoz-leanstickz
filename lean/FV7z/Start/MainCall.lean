@@ -29,10 +29,10 @@ def MainMem (V : Addr → Byte) (fb q : Addr) : Addr → Byte :=
 `__environ`. -/
 theorem vc_1089 {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} {ev av mn : BitVec 64} {ac : BitVec 32}
     (h0 : g.rax = 0) (hg0 : ∀ i < 8, Foot F.data ((fb + 768#64).add i))
-    (hs0 : ∀ i < 8, Foot Wl ((g.rsp + 184#64).add i)) (hg1 : ∀ i < 8, Foot F.data ((fb + 760#64).add i))
-    (hs1 : ∀ i < 8, Foot Wl ((g.rsp + 192#64).add i)) (hgw : ∀ i < 8, Foot Wl ((fb + 768#64).add i))
-    (h1 : ∀ i < 8, Foot F.data (Addr.add 8013720#64 i)) (h2 : ∀ i < 4, Foot F.data ((g.rsp + 12#64).add i))
-    (h3 : ∀ i < 8, Foot F.data ((g.rsp + 16#64).add i)) (h4 : ∀ i < 8, Foot F.data ((g.rsp + 24#64).add i))
+    (hs0 : ∀ i < 8, Foot Wl (Addr.add (g.rsp + 184#64) i)) (hg1 : ∀ i < 8, Foot F.data ((fb + 760#64).add i))
+    (hs1 : ∀ i < 8, Foot Wl (Addr.add (g.rsp + 192#64) i)) (hgw : ∀ i < 8, Foot Wl ((fb + 768#64).add i))
+    (h1 : ∀ i < 8, Foot F.data (Addr.add 8013720#64 i)) (h2 : ∀ i < 4, Foot F.data (Addr.add (g.rsp + 12#64) i))
+    (h3 : ∀ i < 8, Foot F.data (Addr.add (g.rsp + 16#64) i)) (h4 : ∀ i < 8, Foot F.data (Addr.add (g.rsp + 24#64) i))
     (he : rdq(MainMem V fb g.rsp, 8013720#64) = ev) (hc : rdd(MainMem V fb g.rsp, g.rsp + 12#64) = ac)
     (ha : rdq(MainMem V fb g.rsp, g.rsp + 16#64) = av) (hm : rdq(MainMem V fb g.rsp, g.rsp + 24#64) = mn) :
     W_1089 fb F Wl (fun j' g' _ V' => j' = 1166 ∧ g' = (((g.set 0 mn).set 2 ev).set 6 av).set 7 (ac.setWidth 64) ∧
@@ -83,13 +83,13 @@ theorem lsb_main {fb e₂ : Addr} {code₂ : List Byte} (c : Seg prof F Wl L s�
     (hq : 8 ≤ X.cpu.gpr.rsp.toNat) (hqn : X.cpu.gpr.rsp.toNat + 200 ≤ 2 ^ 64) (hfn : fb.toNat + 776 ≤ 2 ^ 64)
     (hg0 : ∀ i < 8, Foot F.data ((fb + 768#64).add i)) (hg1 : ∀ i < 8, Foot F.data ((fb + 760#64).add i))
     (hgw : ∀ i < 8, Foot Wl ((fb + 768#64).add i))
-    (hs0 : ∀ i < 8, Foot Wl ((X.cpu.gpr.rsp + 184#64).add i))
-    (hs1 : ∀ i < 8, Foot Wl ((X.cpu.gpr.rsp + 192#64).add i))
+    (hs0 : ∀ i < 8, Foot Wl (Addr.add (X.cpu.gpr.rsp + 184#64) i))
+    (hs1 : ∀ i < 8, Foot Wl (Addr.add (X.cpu.gpr.rsp + 192#64) i))
     (hra : ∀ i < 8, Foot Wl (Addr.add (X.cpu.gpr.rsp - 8) i))
     (h1 : ∀ i < 8, Foot F.data (Addr.add 8013720#64 i))
-    (h2 : ∀ i < 4, Foot F.data ((X.cpu.gpr.rsp + 12#64).add i))
-    (h3 : ∀ i < 8, Foot F.data ((X.cpu.gpr.rsp + 16#64).add i))
-    (h4 : ∀ i < 8, Foot F.data ((X.cpu.gpr.rsp + 24#64).add i))
+    (h2 : ∀ i < 4, Foot F.data (Addr.add (X.cpu.gpr.rsp + 12#64) i))
+    (h3 : ∀ i < 8, Foot F.data (Addr.add (X.cpu.gpr.rsp + 16#64) i))
+    (h4 : ∀ i < 8, Foot F.data (Addr.add (X.cpu.gpr.rsp + 24#64) i))
     (hfq : fb.toNat + 776 ≤ X.cpu.gpr.rsp.toNat + 12 ∨ X.cpu.gpr.rsp.toNat + 32 ≤ fb.toNat + 768)
     (hfe : fb.toNat + 776 ≤ 8013720 ∨ 8013728 ≤ fb.toNat + 768)
     (hqe : X.cpu.gpr.rsp.toNat + 200 ≤ 8013720 ∨ 8013728 ≤ X.cpu.gpr.rsp.toNat + 184)

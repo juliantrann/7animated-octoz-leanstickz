@@ -86,7 +86,7 @@ theorem ptr_fr {K : Ctx} {W V : Addr → Byte} {b : Addr} {ver : BitVec 32} {D :
 apart from its frame `[sp - 56, sp + 8)`, `initial`'s count and first place and the lock. -/
 theorem reg_out {V₀ V : Addr → Byte} {sp : Addr} {ra f0 : BitVec 64}
     (hR : Cxa.Reg (Vst V₀ sp (toBytesLE ra 8)) V sp 8010400#64 8010416#64 0 f0 0 0) (hs : sp.toNat + 8 ≤ 2 ^ 64)
-    {x : Addr} (h1 : x.toNat + 56 ≤ sp.toNat ∨ sp.toNat + 8 ≤ x.toNat)
+    {x : Addr} (h1 : x.toNat + 56 < sp.toNat ∨ sp.toNat + 8 ≤ x.toNat)
     (h2 : x.toNat < 8010408 ∨ 8010448 ≤ x.toNat ∧ x.toNat < 8029184 ∨ 8029200 ≤ x.toNat) : V x = V₀ x := by
   have tl : (8010400#64 : Addr).toNat = 8010400 := rfl
   have tp : (8010416#64 : Addr).toNat = 8010416 := rfl
