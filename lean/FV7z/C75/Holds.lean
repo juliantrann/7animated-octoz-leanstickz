@@ -1,5 +1,6 @@
 import FV7z.C75.Cuts
 import FV7z.Ctor.StSpec
+import FV7z.Ctor.Loop
 /-!
 # `csuTg 75`: a table of reversed bytes (PLAN.md §M, constructors)
 
@@ -23,39 +24,23 @@ variable {prof : Profile} {F : Footprint} {Wl : List Rgn} {L : List (Addr × Lis
 def wr75 : List (Nat × Nat) := [(7983936, 7984192)]
 
 /-- The bytes outside the table as before. -/
-def Out (V V' : Addr → Byte) : Prop := ∀ a : Addr, ¬ InR wr75 a.toNat → V' a = V a
+abbrev Out (V V' : Addr → Byte) : Prop := Raf.Out 7983936 (7983936 + 256) V V'
 
 /-- The invariant at the cut points, from the registers `g₀` and bytes `V₀` at the entry. -/
 def Inv (g₀ : Gprs) (V₀ : Addr → Byte) (ℓ n : Nat) (g : Gprs) (_ : Rflags) (V : Addr → Byte) : Prop :=
   (ℓ = 1584 ∧ n = 257 ∧ g = g₀ ∧ V = V₀) ∨
   (ℓ = 1600 ∧ g.rcx.toNat < 256 ∧ n = 256 - g.rcx.toNat ∧ g.rsi = 7983936#64 ∧ Kp g₀ g ∧ Out V₀ V)
 
-/-- A byte of the table is in `Wl`. -/
-theorem ft75 (hw : ∀ i < 256, Foot Wl (Addr.add 7983936#64 i)) {a : Addr} (h1 : 7983936 ≤ a.toNat)
-    (h2 : a.toNat < 7984192) : Foot Wl a := by
-  have e : Addr.add 7983936#64 (a.toNat - 7983936) = a := by
-    apply BitVec.eq_of_toNat_eq
-    simp only [Addr.add, BitVec.toNat_add, BitVec.toNat_ofNat]
-    omega
-  rw [← e]
-  exact hw _ (by omega)
-
-/-- A store of a byte into the table keeps `Out`. -/
-theorem out_st {V₀ V : Addr → Byte} {e : Addr} {bs : List Byte} (hO : Out V₀ V) (hl : bs.length = 1)
-    (h1 : 7983936 ≤ e.toNat) (h2 : e.toNat < 7984192) : Out V₀ (Vst V e bs) := fun a ha => by
-  have h : ¬ (7983936 ≤ a.toNat ∧ a.toNat < 7984192) := by simpa only [wr75, InR, or_false] using ha
-  rw [Tun.Vst_out V e bs a (by rw [hl]; omega) (by rw [hl]; omega)]
-  exact hO a ha
-
 /-- The count one more, not yet 256. -/
 theorem inc_lt {x : BitVec 64} (h : x.toNat < 256) (hne : ¬ x + 1#64 = 256#64) :
     (x + 1#64).toNat < 256 ∧ 256 - (x + 1#64).toNat < 256 - x.toNat := by
   bv_omega
 
-/-- The address of the loop's store lies in the table. -/
-macro "ea75" : tactic => `(tactic| first
-  | (simp only [Addr.add, BitVec.toNat_add, BitVec.toNat_ofNat, BitVec.toNat_mul]; omega)
-  | ((try simp only [Addr.add]) <;> bv_omega))
+/-- The loop's store goes to `[rcx + rsi - 1]` after `rcx` is one more: the byte `rcx` of the table. -/
+theorem ea_m1 (x s : BitVec 64) : x + 1#64 + s + 18446744073709551615#64 = s + x := by
+  apply BitVec.eq_of_toNat_eq
+  simp only [BitVec.toNat_add, BitVec.toNat_ofNat]
+  omega
 
 /-- From the entry to the loop's head: `rsi` the table, `rcx` 0. -/
 theorem vc_1584 {g : Gprs} {f : Rflags} {V : Addr → Byte} (Q : Post)
@@ -66,27 +51,25 @@ theorem vc_1584 {g : Gprs} {f : Rflags} {V : Addr → Byte} (Q : Post)
   apply hQ
   exact Or.inr ⟨rfl, by simp, by simp, rfl, ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩, fun _ _ => rfl⟩
 
-/-- One round of the loop: the byte stored in the table, then back to the head with the count one more, or on to
-the `ret` after the last. -/
-theorem vc_1600 {g₀ g : Gprs} {f : Rflags} {V₀ V : Addr → Byte} (hw : ∀ i < 256, Foot Wl (Addr.add 7983936#64 i))
-    (hr : g.rcx.toNat < 256) (hs : g.rsi = 7983936#64) (hK : Kp g₀ g) (hO : Out V₀ V) (Q : Post)
-    (hQ1 : ∀ g' f' V', Inv g₀ V₀ 1600 (256 - g'.rcx.toNat) g' f' V' → 256 - g'.rcx.toNat < 256 - g.rcx.toNat →
-      Q 1600 g' f' V')
-    (hQ2 : ∀ g' f' V', Kp g₀ g' → Out V₀ V' → Q 1665 g' f' V') : W_1600 F Wl Q g f V := by
+/-- One round of the loop, for the table at a variable `b`: the byte stored in the table, then back to the head with
+the count one more, or on to the `ret` after the last. -/
+theorem vc_1600 {b : Nat} {g₀ g : Gprs} {f : Rflags} {V₀ V : Addr → Byte} (hb : b + 256 < 2 ^ 64)
+    (hw : ∀ i < 256, Foot Wl (Addr.add (BitVec.ofNat 64 b) i)) (hr : g.rcx.toNat < 256)
+    (hs : g.rsi = BitVec.ofNat 64 b) (hK : Kp g₀ g) (hO : Raf.Out b (b + 256) V₀ V) (Q : Post)
+    (hQ1 : ∀ g' f' V', g'.rcx.toNat < 256 → g'.rsi = BitVec.ofNat 64 b → Kp g₀ g' → Raf.Out b (b + 256) V₀ V' →
+      256 - g'.rcx.toNat < 256 - g.rcx.toNat → Q 1600 g' f' V')
+    (hQ2 : ∀ g' f' V', Kp g₀ g' → Raf.Out b (b + 256) V₀ V' → Q 1665 g' f' V') : W_1600 F Wl Q g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at hr hs hQ1
   subst hs
-  wpx [W_1600, o1]
+  wpx -implicitDefEqProofs [W_1600, o1, ea_m1]
   intros
-  refine ⟨fun i hi => ft75 hw (by ea75) (by ea75), fun h => ?_, fun _ => ?_⟩
+  refine ⟨ft_bx hw hb (by omega), fun h => ?_, fun _ => ?_⟩
   · have hne : ¬ rcx + 1#64 = 256#64 := by simpa using h
     have hi := inc_lt hr hne
-    apply hQ1
-    · exact Or.inr ⟨rfl, hi.1, rfl, rfl, hK, out_st hO (by simp) (by ea75) (by ea75)⟩
-    · exact hi.2
-  · apply hQ2
-    · exact hK
-    · exact out_st hO (by simp) (by ea75) (by ea75)
+    exact hQ1 _ _ _ hi.1 rfl (Kp.of hK rfl rfl rfl rfl rfl rfl rfl) (out_bx hO hb (by omega) (toBytesLE_length _ _))
+      hi.2
+  · exact hQ2 _ _ _ (Kp.of hK rfl rfl rfl rfl rfl rfl rfl) (out_bx hO hb (by omega) (toBytesLE_length _ _))
 
 /-- The code from each cut point keeps the invariant with a smaller measure, or reaches the `ret` with the registers
 a call keeps and the bytes outside the table as at the entry. -/
@@ -95,11 +78,16 @@ theorem vc (hw : ∀ i < 256, Foot Wl (Addr.add 7983936#64 i)) (g₀ : Gprs) (V�
     Wt ℓ F Wl (fun j' g' f' V' => (∃ n' < n, Inv g₀ V₀ j' n' g' f' V') ∨ (j' = 1665 ∧ Kp g₀ g' ∧ Out V₀ V'))
       g f V := by
   rcases h with ⟨rfl, rfl, rfl, rfl⟩ | ⟨rfl, hr, rfl, hs, hK, hO⟩
-  · show W_1584 F Wl _ _ _ _
+  · simp only [Wt, ↓reduceIte]
     exact vc_1584 _ fun g' f' V' h => Or.inl ⟨256, by decide, h⟩
-  · show W_1600 F Wl _ _ _ _
-    exact vc_1600 hw hr hs hK hO _ (fun g' f' V' h hlt => Or.inl ⟨_, hlt, h⟩)
+  · simp only [Wt, ↓reduceIte]
+    exact vc_1600 (b := 7983936) (by decide) hw hr hs hK hO _
+      (fun g' f' V' h1 h2 h3 h4 hlt => Or.inl ⟨_, hlt, Or.inr ⟨rfl, h1, rfl, h2, h3, h4⟩⟩)
       fun g' f' V' hK' hO' => Or.inr ⟨rfl, hK', hO'⟩
+
+/-- `Out` says the bytes outside `wr75` are as before. -/
+theorem out_wr {V V' : Addr → Byte} (h : Out V V') : ∀ a : Addr, ¬ InR wr75 a.toNat → V' a = V a := fun a ha =>
+  h a fun h' => ha (by simp only [wr75, InR, or_false]; omega)
 
 /-- The `ret` at offset 1665 of `sti`. -/
 def r1665 : List Byte := [0xc3]
@@ -117,7 +105,7 @@ theorem runs75 {J : Nat → (Addr → Byte) → Prop} {sp : Addr} {tg : Nat → 
     Csu.Runs prof F Wl L s₀ o gev gP gE J sp a₀ a₁ a₂ 75 (csuTg 75) :=
   cfg_runs c hC hin tg75 (spAll prof) (Dec.shift (j := 1665) (k := 0) (r1665_0 _) v1665 (by decide))
     (lt_len (by decide)) Out Inv (fun _ _ _ => ⟨257, Or.inl ⟨rfl, rfl, rfl, rfl⟩⟩) (vc hw)
-    (fun _ _ h a ha => h a (by simp only [wr75, InR, or_false]; omega)) hJ
+    (fun _ _ h a ha => h a (by omega)) hJ
 
 /-- `csuTg 75` for `Jg`, its spec `wrSpec wr75`. -/
 theorem runs75_jg {V : Addr → Byte} {spec : Nat → CSpec} {G : Nat → (Addr → Byte) → Prop} {sp : Addr}
@@ -127,6 +115,6 @@ theorem runs75_jg {V : Addr → Byte} {spec : Nat → CSpec} {G : Nat → (Addr 
     (hXw : ∀ k, 3 ≤ k → k < 75 → ∀ x ∈ (spec k).wr, ∀ y ∈ wr75, x.2 ≤ y.1 ∨ y.2 ≤ x.1)
     (hG : ∀ W W', G 75 W → Out W W' → G 76 W') :
     Csu.Runs prof F Wl L s₀ o gev gP gE (Jg V sp.toNat spec G) sp a₀ a₁ a₂ 75 (csuTg 75) :=
-  runs75 c hC hin hw hsp fun W W' hJ hO => jg_wr (by decide) calls75 hspec hD wrT75 hXw hO (hG W W' · hO) hJ
+  runs75 c hC hin hw hsp fun W W' hJ hO => jg_wr (by decide) calls75 hspec hD wrT75 hXw (out_wr hO) (hG W W' · hO) hJ
 
 end FV7z.C75
