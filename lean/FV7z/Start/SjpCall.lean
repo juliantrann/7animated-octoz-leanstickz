@@ -22,7 +22,7 @@ theorem vc_1079 {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} :
     W_1079 fb F Wl (fun j' g' _ V' => j' = 1084 ∧ g' = { g with rdi := g.rsp + 112#64 } ∧ V' = V) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   wpx [W_1079, o11, Op.lea]
-  simp only [BitVec.zero_mul, BitVec.add_zero, BitVec.setWidth_eq]
+  try simp only [BitVec.zero_mul, BitVec.add_zero, BitVec.setWidth_eq]
   first | trivial | exact ⟨rfl, rfl, rfl⟩ | exact ⟨rfl, rfl⟩ | exact ⟨rfl, trivial⟩
 
 /-- The `call` of `_setjmp` in `__libc_start_main`. -/

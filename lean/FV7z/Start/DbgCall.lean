@@ -24,7 +24,7 @@ theorem vc_1070 {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} :
     W_1070 fb F Wl (fun j' g' _ V' => j' = 1074 ∧ g' = { g with rsi := 0#64, rdi := 0#64 } ∧ V' = V) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   wpx [W_1070, o10, Op.xor]
-  simp only [BitVec.xor_self]
+  try simp only [BitVec.xor_self]
   first | trivial | exact ⟨rfl, rfl, rfl⟩ | exact ⟨rfl, rfl⟩ | exact ⟨rfl, trivial⟩
 
 /-- The `call` of `_dl_debug_initialize` in `__libc_start_main`. -/
