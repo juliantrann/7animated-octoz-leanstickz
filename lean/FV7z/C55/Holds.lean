@@ -92,7 +92,7 @@ theorem vc (hw : ∀ i < 1024, Foot Wl (Addr.add 7982400#64 i)) (g₀ : Gprs) (V
     Wt ℓ F Wl (fun j' g' f' V' => (∃ n' < n, Inv g₀ V₀ j' n' g' f' V') ∨
       (j' = 1123 ∧ Kp g₀ g' ∧ g'.rdi = BitVec.ofNat 64 7851136 ∧ Out V₀ V')) g f V := by
   rcases h with ⟨rfl, rfl, rfl, rfl⟩ | ⟨k, hk, hd, hsi, hK, hO, ⟨rfl, rfl⟩ | ⟨rfl, hc1, hc8, rfl⟩⟩
-  · simp only [Wt, ↓reduceIte, Nat.reduceEqDiff]
+  · simp only [Wt, ↓reduceIte]
     exact vc_1056 _ fun g' f' V' h => Or.inl ⟨2560, by decide, h⟩
   · simp only [Wt, ↓reduceIte, Nat.reduceEqDiff]
     apply vc_1072 hd hK

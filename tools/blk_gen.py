@@ -227,6 +227,10 @@ FNS = {
     "c55": dict(grp="C55", code=("Ctor", "sti"), cn="csuTg 55", a=0x41c140, n=4624, entry=1056, pos=True,
                 stops=(1123,), tag="PLAN.md G3, constructors",
                 src="a static constructor of 7-Zip (`objdump -d`)"),
+    # `subb $1, [rip + d]` (a byte at 0x7921b0), then `lea rdi, [rip + d]; jmp RegisterArc`. Stop: the `jmp` (1234).
+    "c61": dict(grp="C61", code=("Ctor", "sti"), cn="csuTg 61", a=0x41c140, n=4624, entry=1216, pos=True,
+                stops=(1234,), tag="PLAN.md G3, constructors",
+                src="a static constructor of 7-Zip (`objdump -d`)"),
     "c75": dict(grp="C75", code=("Ctor", "sti"), cn="csuTg 75", a=0x41c140, n=4624, entry=1584, pos=True,
                 stops=(1665,), tag="PLAN.md G3, constructors",
                 src="a static constructor of 7-Zip (`objdump -d`)"),
