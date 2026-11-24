@@ -131,6 +131,14 @@ theorem st102_rp8 (V : Addr → Byte) {p : Addr} (hp : p.toNat + 16 < 2 ^ 64) : 
   have ep8 := Nst.o8 p hp
   exact rdq_self _ _ _ (by rw [ep8]; omega)
 
+/-- The bounds of the buffer `p` (standalone: `omega` in the proof's context reaches the recursion limit). -/
+theorem pbd {p h s : Nat} (hpn : p + 72704 ≤ h) (hhs : h + 1024 ≤ s) (hs : s < 2 ^ 64) (h1 : 8032256 + 16 ≤ p) :
+    p + 16 < 2 ^ 64 ∧ p + 72704 ≤ 2 ^ 64 ∧ 8008128 ≤ p := by omega
+
+/-- A word at `b` (8008096 or 8008120) is outside `[8008104, 8008120)` and below the buffer `q`. -/
+theorem rq_side {b x q : Nat} (hb : b = 8008096 ∨ b = 8008120) (h1 : b ≤ x) (h2 : x < b + 8)
+    (hq : 8032256 + 16 ≤ q) : ¬ (8008104 ≤ x ∧ x < 8008120) ∧ 7940776 ≤ x ∧ x + 8 < q := by omega
+
 /-- The words of `[0x7a3180, 0x7a31c0)` the stores write, from the footprint of the whole interval. -/
 theorem fwg {Wl : List Rgn} (h : ∀ i < 64, Foot Wl (Addr.add (BitVec.ofNat 64 8008064) i)) {x n : Nat}
     (h1 : 8008064 ≤ x) (h2 : x + n ≤ 8008128) : ∀ i < n, Foot Wl (Addr.add (BitVec.ofNat 64 x) i) :=
@@ -285,9 +293,7 @@ theorem c102_runs {J : Nat → (Addr → Byte) → Prop} {sp fb : Addr} {tg : Na
   rw [hsp₂, n80] at hV₂
   have hspZ' : Z.cpu.gpr.rsp = sp - 72#64 := by rw [hspZ, hsp₂, e80a]
   have hp0 : p ≠ 0 := by rintro rfl; exact absurd hp1 (by decide)
-  have hp16 : p.toNat + 16 < 2 ^ 64 := by omega
-  have hpw : p.toNat + 72704 ≤ 2 ^ 64 := by omega
-  have hp8 : 8008128 ≤ p.toNat := by omega
+  obtain ⟨hp16, hpw, hp8⟩ := pbd hpn hhs hsl hp1
   have hcZ : Cs Y₂.cpu.gpr Z.cpu.gpr := ⟨hbxZ, hbpZ, h12Z, h13Z, h14Z, h15Z⟩
   -- `mov [0x7a31b0], rax`
   have hgvZ : gv Z.cpu.gpr 64 0 = p := by show Z.cpu.gpr.rax.setWidth 64 = p; rw [sw_64_64]; exact haxZ
@@ -349,16 +355,18 @@ theorem c102_runs {J : Nat → (Addr → Byte) → Prop} {sp fb : Addr} {tg : Na
     fun a h1 h2 => (hv1 a (by omega) h2).trans (st3384_out V hb hb' h1)
   have r5 : rdq(st102 V₂ p, 8008120#64) = 72704#64 := by
     have e5 : (8008120#64 : Addr).toNat = 8008120 := rfl
-    have h8 : (8008120#64 : Addr).toNat + 8 ≤ 2 ^ 64 := by rw [e5]; omega
+    have h8 : (8008120#64 : Addr).toNat + 8 ≤ 2 ^ 64 := by rw [e5]; decide
     refine (rdq_eq h8 fun a h1 h2 => ?_).trans (st3384_r5 V hb hb')
     rw [e5] at h1 h2
-    refine hv1 a ?_ (.inr (.inl ⟨?_, ?_⟩)) <;> omega
+    obtain ⟨g1, g2, g3⟩ := rq_side (.inr rfl) h1 h2 hp1
+    exact hv1 a g1 (.inr (.inl ⟨g2, g3⟩))
   have r2 : rdq(st102 V₂ p, 8008096#64) = 0#64 := by
     have e2 : (8008096#64 : Addr).toNat = 8008096 := rfl
-    have h8 : (8008096#64 : Addr).toNat + 8 ≤ 2 ^ 64 := by rw [e2]; omega
+    have h8 : (8008096#64 : Addr).toNat + 8 ≤ 2 ^ 64 := by rw [e2]; decide
     refine (rdq_eq h8 fun a h1 h2 => ?_).trans (st3384_r2 V hb hb')
     rw [e2] at h1 h2
-    refine hv1 a ?_ (.inr (.inl ⟨?_, ?_⟩)) <;> omega
+    obtain ⟨g1, g2, g3⟩ := rq_side (.inl rfl) h1 h2 hp1
+    exact hv1 a g1 (.inr (.inl ⟨g2, g3⟩))
   have hU : ∀ U : Addr → Byte, (∀ a : Addr, Mal.GlR hi a → (a.toNat < p.toNat ∨ p.toNat + 72704 ≤ a.toNat) →
       U a = st102 V₂ p a) → Mal.Hp F Wl fb hi k U := fun U hW => by
     have h0 := hHp (fun a => if p.toNat ≤ a.toNat ∧ a.toNat < p.toNat + 72704 then U a else V₂ a)
