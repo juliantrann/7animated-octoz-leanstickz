@@ -73,7 +73,7 @@ theorem vc_599 {b k : Nat} {g₀ g : Gprs} {f : Rflags} {V₀ V : Addr → Byte}
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at hd hsi hc1 hc8 hQ1
   subst hsi
-  wpx -implicitDefEqProofs [W_599, W_620, W_637, o2, o3, o4, Op.zxr16]
+  wpx -implicitDefEqProofs [W_599, W_620, W_637, o2, o3, o4]
   intros
   have hi := inc_k hd hk
   refine ⟨fun h => ?_, fun _ => ⟨ft_b2 hw hb (by omega), fun h => ?_, fun _ => ?_⟩⟩
@@ -92,7 +92,7 @@ theorem vc (hw : ∀ i < 512, Foot Wl (Addr.add 7981888#64 i)) (g₀ : Gprs) (V�
     Wt ℓ F Wl (fun j' g' f' V' => (∃ n' < n, Inv g₀ V₀ j' n' g' f' V') ∨
       (j' = 644 ∧ Kp g₀ g' ∧ g'.rdi = BitVec.ofNat 64 7840512 ∧ Out V₀ V')) g f V := by
   rcases h with ⟨rfl, rfl, rfl, rfl⟩ | ⟨k, hk, hd, hsi, hK, hO, ⟨rfl, rfl⟩ | ⟨rfl, hc1, hc8, rfl⟩⟩
-  · simp only [Wt, ↓reduceIte, Nat.reduceEqDiff]
+  · simp only [Wt, ↓reduceIte]
     exact vc_576 _ fun g' f' V' h => Or.inl ⟨2560, by decide, h⟩
   · simp only [Wt, ↓reduceIte, Nat.reduceEqDiff]
     apply vc_592 hd hK
