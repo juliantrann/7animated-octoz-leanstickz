@@ -64,8 +64,9 @@ theorem nret_runs {J : Nat → (Addr → Byte) → Prop} {sp : Addr} {tg : Nat �
 /-- `Jc` at `m + 1` with the same bytes, for a constructor that calls no registrar and stores nothing. -/
 theorem Jc_nop {V W : Addr → Byte} {sp m : Nat} {spec : Nat → CSpec} {S : Addr} (hm : 3 ≤ m)
     (hSn : S.toNat + 64 = sp) (hS : 7991300 + 136 ≤ sp) (hc : calls m = []) (hD : ∀ k, (spec k).Dep)
-    (hT : ∀ k, ∀ x ∈ (spec k).wr, x.2 ≤ 7981024 ∨ 7991300 ≤ x.1) (hB : ∀ k, ∀ x ∈ (spec k).wr, x.2 ≤ sp - 136)
-    (hs : ∀ W, (spec m).post W) (hJ : Jc V sp spec m W) : Jc V sp spec (m + 1) W :=
+    (hT : ∀ k, ∀ x ∈ (spec k).wr, ∀ y ∈ tabs, x.2 ≤ y.1 ∨ y.2 ≤ x.1)
+    (hB : ∀ k, ∀ x ∈ (spec k).wr, x.2 ≤ sp - 136) (hs : ∀ W, (spec m).post W)
+    (hJ : Jc V sp spec m W) : Jc V sp spec (m + 1) W :=
   Jc_chain hm hSn hS hc trivial hD hT hB hs hJ (show W = W from rfl)
 
 /-- `csuTg 12`, at `0x41c1d0`: `endbr64; jmp nret_at`. -/
