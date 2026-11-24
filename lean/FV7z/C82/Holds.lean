@@ -3,7 +3,7 @@ import FV7z.Ctor.StSpec
 import FV7z.Ctor.Loop
 import FV7z.Ctor.CfgJ
 import FV7z.Ctor.Prep
-import FV7z.Tun.Inv
+import FV7z.Ctor.Tab
 /-!
 # `csuTg 82`: two tables of indices from the image's counts (PLAN.md §M, constructors)
 
@@ -105,106 +105,7 @@ def Inv (sp : Addr) (g₀ : Gprs) (V₀ : Addr → Byte) (ℓ n : Nat) (g : Gprs
   (ℓ = 2062 ∧ ∃ d < 18, n = 200 * (18 - d) + 5 ∧ g.rdx.toNat = d ∧ g.rax.toNat = S2 (d + 1) ∧ BR g ∧ Cr g₀ g ∧
     Cv sp g₀ V₀ V)
 
-/-! ## Arithmetic, each alone -/
-
-theorem xz (x : BitVec 64) : (BitVec.setWidth 64 (BitVec.setWidth 32 x ^^^ BitVec.setWidth 32 x)).toNat = 0 := by
-  rw [BitVec.xor_self]; decide
-
-theorem xz8 (x : BitVec 64) :
-    (BitVec.setWidth 8 (BitVec.setWidth 64 (BitVec.setWidth 32 x ^^^ BitVec.setWidth 32 x))).toNat = 0 := by
-  rw [BitVec.xor_self]; decide
-
-theorem w1 : BitVec.setWidth 32 (BitVec.setWidth 64 1#32) = 1#32 := by decide
-
 theorem s72 {sp : Addr} (h : 72 ≤ sp.toNat) : (sp - 64#64 - 8).toNat = sp.toNat - 72 := by bv_omega
-
-/-- The shift `1 << s` once its two registers are known. -/
-theorem shl {x c : BitVec 64} {s : Nat} {y : BitVec 32} (hx : x.setWidth 32 = 1#32) (hc : (c.setWidth 8).toNat = s)
-    (h : 1#32 <<< (s % 32) = y) : x.setWidth 32 <<< ((c.setWidth 8).toNat % 32) = y := by
-  rw [hx, hc, h]
-
-/-- `test r, r` of a count not 0 never takes the zero branch. -/
-theorem nz {N : Nat} (h1 : 1 ≤ N) (h2 : N < 2 ^ 32) (h : (BitVec.ofNat 32 N &&& BitVec.ofNat 32 N == 0) = true) :
-    False := by
-  rw [BitVec.and_self, beq_iff_eq] at h
-  bv_omega
-
-theorem bnot_t {p : Prop} [Decidable p] (h : (!decide p) = true) : ¬ p := fun hp => by simp [hp] at h
-
-theorem bnot_f {p : Prop} [Decidable p] (h : (!decide p) = false) : p := by
-  by_cases hp : p
-  · exact hp
-  · simp [hp] at h
-
-theorem addB {x y : BitVec 64} {a B : Nat} (hx : x.toNat = a) (hy : y = BitVec.ofNat 64 B) (h : B + a < 2 ^ 64) :
-    (x + y).toNat = B + a := by
-  subst hx hy; bv_omega
-
-theorem endA {x y : BitVec 64} {a B N : Nat} (hx : x.toNat = a) (hy : y = BitVec.ofNat 64 B + 1#64) (h1 : 1 ≤ N)
-    (hN : N < 2 ^ 32) (h : B + a + N < 2 ^ 64) :
-    (x + y + BitVec.setWidth 64 (BitVec.ofNat 32 N - 1#32)).toNat = B + a + N := by
-  subst hx hy; bv_omega
-
-theorem inc64 {x : BitVec 64} {p : Nat} (hx : x.toNat = p) (h : p + 1 < 2 ^ 64) : (x + 1#64).toNat = p + 1 := by
-  subst hx; bv_omega
-
-theorem inc64_ne {x y : BitVec 64} {p q : Nat} (hx : x.toNat = p) (hy : y.toNat = q) (h : p + 1 < 2 ^ 64)
-    (hb : (!decide (x + 1#64 = y)) = true) : p + 1 ≠ q := fun he => bnot_t hb (by subst hx hy; bv_omega)
-
-theorem inc64_eq {x y : BitVec 64} {p q : Nat} (hx : x.toNat = p) (hy : y.toNat = q) (h : p + 1 < 2 ^ 64)
-    (hb : (!decide (x + 1#64 = y)) = false) : p + 1 = q := by
-  have e := bnot_f hb; subst hx hy; bv_omega
-
-theorem eqk_t {x : BitVec 64} {d k : Nat} (hx : x.toNat = d) (hk : k < 2 ^ 64) (hd : d + 1 < 2 ^ 64)
-    (hb : decide (x + 1#64 = BitVec.ofNat 64 k) = true) : d + 1 = k := by
-  have e := of_decide_eq_true hb; subst hx; bv_omega
-
-theorem eqk_f {x : BitVec 64} {d k : Nat} (hx : x.toNat = d) (hk : k < 2 ^ 64) (hd : d + 1 < 2 ^ 64)
-    (hb : decide (x + 1#64 = BitVec.ofNat 64 k) = false) : d + 1 ≠ k := fun he =>
-  of_decide_eq_false hb (by subst hx; bv_omega)
-
-theorem zw {x : BitVec 64} {a : Nat} (hx : x.toNat = a) (h : a < 2 ^ 32) :
-    (BitVec.setWidth 64 (BitVec.setWidth 32 x)).toNat = a := by
-  subst hx; bv_omega
-
-theorem addw {x : BitVec 64} {a N : Nat} (hx : x.toNat = a) (h : a + N < 2 ^ 32) :
-    (BitVec.setWidth 64 (BitVec.ofNat 32 N + BitVec.setWidth 32 x)).toNat = a + N := by
-  subst hx; bv_omega
-
-theorem inc32 {x : BitVec 64} {p : Nat} (hx : x.toNat = p) (h : p + 1 < 2 ^ 32) :
-    (BitVec.setWidth 64 (BitVec.setWidth 32 x + 1#32)).toNat = p + 1 := by
-  subst hx; bv_omega
-
-theorem inc32_ne {x y : BitVec 64} {p q : Nat} (hx : x.toNat = p) (hy : y.toNat = q) (h : p + 1 < 2 ^ 32)
-    (hq : q < 2 ^ 32) (hb : (!decide (BitVec.setWidth 32 x + 1#32 = BitVec.setWidth 32 y)) = true) : p + 1 ≠ q :=
-  fun he => bnot_t hb (by subst hx hy; bv_omega)
-
-theorem inc32_eq {x y : BitVec 64} {p q : Nat} (hx : x.toNat = p) (hy : y.toNat = q) (h : p + 1 < 2 ^ 32)
-    (hq : q < 2 ^ 32) (hb : (!decide (BitVec.setWidth 32 x + 1#32 = BitVec.setWidth 32 y)) = false) : p + 1 = q := by
-  have e := bnot_f hb; subst hx hy; bv_omega
-
-theorem ta {R k : Nat} (h : R + k < 2 ^ 64) : (Addr.add (BitVec.ofNat 64 R) k).toNat = R + k := by
-  simp only [Addr.add]; bv_omega
-
-/-- The load `[R + x + 1]` of a byte `v` of the image's table at `R`, as `movzx`'s 64 bits. -/
-theorem ldx {V : Addr → Byte} {R d v : Nat} {x : BitVec 64} (hx : x.toNat = d) (hR : R + d + 1 < 2 ^ 64)
-    (hv : V (Addr.add (BitVec.ofNat 64 R) (d + 1)) = BitVec.ofNat 8 v) (h : v < 256) :
-    (BitVec.setWidth 64 (BitVec.setWidth 32
-      (ofBytesLE 8 (List.map V (byteAddrs (BitVec.ofNat 64 R + (x + 1#64)) 1))))).toNat = v := by
-  have e : BitVec.ofNat 64 R + (x + 1#64) = Addr.add (BitVec.ofNat 64 R) (d + 1) := by
-    subst hx; simp only [Addr.add]; bv_omega
-  rw [Tun.rd1, e, hv]
-  bv_omega
-
-/-- The same load, its low byte. -/
-theorem ldx8 {V : Addr → Byte} {R d v : Nat} {x : BitVec 64} (hx : x.toNat = d) (hR : R + d + 1 < 2 ^ 64)
-    (hv : V (Addr.add (BitVec.ofNat 64 R) (d + 1)) = BitVec.ofNat 8 v) (h : v < 256) :
-    (BitVec.setWidth 8 (BitVec.setWidth 64 (BitVec.setWidth 32
-      (ofBytesLE 8 (List.map V (byteAddrs (BitVec.ofNat 64 R + (x + 1#64)) 1)))))).toNat = v := by
-  have e : BitVec.ofNat 64 R + (x + 1#64) = Addr.add (BitVec.ofNat 64 R) (d + 1) := by
-    subst hx; simp only [Addr.add]; bv_omega
-  rw [Tun.rd1, e, hv]
-  bv_omega
 
 /-! ## The bytes -/
 
@@ -279,7 +180,7 @@ theorem vc_1936 {sp : Addr} {g₀ g : Gprs} {f : Rflags} {V₀ V : Addr → Byte
   obtain ⟨e, h1, h2, h3, -, -⟩ := fa d hd
   wpx [W_1936, W_1945, o1, o2]
   intro fl af
-  rw [shl h11 hcl e]
+  rw [shl1 h11 hcl e]
   refine ⟨fun h => (nz h1 (by omega) h).elim, fun _ => hQ _ _ _ _ ⟨_, by omega, Or.inr (Or.inr (Or.inl
     ⟨rfl, d, hd, 0, by omega, rfl, hdx, (addB hax h10 (by omega)).trans (Nat.add_zero _).symm,
       endA hax h9 h1 (by omega) (by omega), ⟨h8, hdi, h9, h10, h11⟩, hC, hV⟩))⟩⟩
@@ -340,7 +241,7 @@ theorem vc_2032 {sp : Addr} {g₀ g : Gprs} {f : Rflags} {V₀ V : Addr → Byte
   obtain ⟨e, h1, h2, h3, -⟩ := fb d hd
   wpx [W_2032, W_2046, o7, o8]
   intro fl af
-  rw [shl h8 hcl e]
+  rw [shl1 h8 hcl e]
   refine ⟨fun h => (nz h1 (by omega) h).elim, fun _ => hQ _ _ _ _ ⟨_, by omega, Or.inr (Or.inr (Or.inr (Or.inr
     (Or.inr (Or.inl ⟨rfl, d, hd, 0, by omega, rfl, hdx, hax.trans (Nat.add_zero _).symm,
       addw hax (by omega), ⟨h8, hdi, hsi⟩, hC, hV⟩)))))⟩⟩
@@ -368,10 +269,10 @@ theorem vc_2048 {sp : Addr} {g₀ g : Gprs} {f : Rflags} {V₀ V : Addr → Byte
   refine ⟨ft_bx hw (by omega) (by rw [hz]; omega), fun h => ?_, fun h => ?_⟩
   · have hne := inc32_ne hax hcx (by omega) (by omega) h
     exact hQ _ _ _ _ ⟨_, by omega, Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨rfl, d, hd, i + 1,
-      by omega, rfl, hdx, (inc32 hax (by omega)).trans (by omega), hcx, ⟨h8, rfl, hsi⟩, hC, hV'⟩)))))⟩
+      by omega, rfl, hdx, (inc32w hax (by omega)).trans (by omega), hcx, ⟨h8, rfl, hsi⟩, hC, hV'⟩)))))⟩
   · have heq := inc32_eq hax hcx (by omega) (by omega) h
     exact hQ _ _ _ _ ⟨_, by omega, Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr ⟨rfl, d, hd, rfl, hdx,
-      (inc32 hax (by omega)).trans (by omega), ⟨h8, rfl, hsi⟩, hC, hV'⟩)))))⟩
+      (inc32w hax (by omega)).trans (by omega), ⟨h8, rfl, hsi⟩, hC, hV'⟩)))))⟩
 
 /-- The step of the second loops: the next run's length from the image's table, or after the last the pop and the
 `ret`. -/
@@ -427,16 +328,6 @@ def wr82 : List (Nat × Nat) := [(7985216, 7985984)]
 theorem out_wr {sp : Addr} {V V' : Addr → Byte} (hS : 7991300 + 1024 ≤ sp.toNat) (h : Out sp V V') :
     ∀ a : Addr, ¬ InR wr82 a.toNat → ¬ (sp.toNat - 1024 ≤ a.toNat ∧ a.toNat < sp.toNat + 8) → V' a = V a :=
   fun a ha hk => h a (fun h' => ha (by simp only [wr82, InR, or_false]; omega)) (by omega)
-
-/-- No range of `rs` reaches below `b`. -/
-theorem InR_ge {b n : Nat} : ∀ {rs : List (Nat × Nat)}, (∀ x ∈ rs, b ≤ x.1) → n < b → ¬ InR rs n
-  | [], _, _, h => h.elim
-  | (lo, hi) :: rs, hb, hn, h => by
-    have h0 := hb (lo, hi) (by simp)
-    dsimp only at h0
-    rcases h with h | h
-    · omega
-    · exact InR_ge (fun x hx => hb x (List.mem_cons_of_mem _ hx)) hn h
 
 /-- The image's tables in `W` when `W` holds the bytes of `V` below them. -/
 theorem tbW {V W : Addr → Byte} (hT : Tb V) (h : ∀ a : Addr, a.toNat < 7235101 → W a = V a) : Tb W := by
