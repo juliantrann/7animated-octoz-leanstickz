@@ -23,18 +23,21 @@ def swPre (s : State) : Prop :=
 def swVal (Y : State) : BitVec 32 := ofBytesLE 32 (readBytes Y.proc.mm.mem 0x7967b8 4)
 
 /-- At the return: 1 (SSE2), or 2 on a processor with SSSE3, or 3 on one with AVX2 and AVX. -/
-def swPost (prof : Profile) (_ Y : State) : Prop :=
+def swOk (prof : Profile) (Y : State) : Prop :=
   swVal Y = 1 ∨ (swVal Y = 2 ∧ prof.feat.ssse3 = true) ∨
     (swVal Y = 3 ∧ prof.feat.avx2 = true ∧ prof.feat.avx = true)
+
+/-- `swOk`, and what the run kept (`fnK`: for a caller's run to go on). -/
+def swPost (prof : Profile) (s₀ Y : State) : Prop := swOk prof Y ∧ KeptW (ws 120 swW s₀) s₀ Y
 
 /-- The contract: a stack of 120 bytes, the mode written, the canary read. -/
 abbrev swC (prof : Profile) : Contract := fn 120 swW lzR swPre (swPost prof)
 
-theorem swPost_of {prof : Profile} {s₀ Y : State} {v : BitVec 32}
+theorem swPost_of {prof : Profile} {s₀ Y : State} {v : BitVec 32} (hk : KeptW (ws 120 swW s₀) s₀ Y)
     (hv : ofBytesLE 32 (readBytes Y.proc.mm.mem 0x7967b8 4) = v)
     (h : v = 1 ∨ (v = 2 ∧ prof.feat.ssse3 = true) ∨ (v = 3 ∧ prof.feat.avx2 = true ∧ prof.feat.avx = true)) :
     swPost prof s₀ Y := by
-  unfold swPost swVal; rw [hv]; exact h
+  refine ⟨?_, hk⟩; unfold swOk swVal; rw [hv]; exact h
 
 variable {prof : Profile} {L : List (Addr × List Byte)} {s₀ : State} {ra : Addr} {o : Oracle}
 
@@ -135,7 +138,7 @@ theorem swRun (hpc : prof.Consistent) (c : Call prof 120 swW lzR swPre (swPost p
     · simp [Saved, hg16, hg15, hg14, hg13, hg12, hg11]
     · simp only [hg16, hg15, hg14, hg13, hg12, hg11, set_r4, get_r4, set_r0]
       rw [hsp10]; exact (add_add8 p _).trans (by rw [hsp])
-    · refine swPost_of (v := rv Y14 32 0) ?_ ?_
+    · refine swPost_of (v := rv Y14 32 0) ((hK16.withMem hM).upd rfl rfl rfl) ?_ ?_
       · show ofBytesLE 32 (readBytes M 0x7967b8 4) = _
         rw [(c.agreeK hK16 hA16 hM).read (fun i hi => c.hws _ (hgf i hi))]
         exact read_Vst_self (by rfl) _ (by decide)
@@ -167,7 +170,7 @@ theorem swRun (hpc : prof.Consistent) (c : Call prof 120 swW lzR swPre (swPost p
     · simp [Saved, hg10, hg9, hg8]
     · simp only [hg10, hg9, hg8, set_r4, get_r4]
       rw [hsp7]; exact (add_add8 p _).trans (by rw [hsp])
-    · refine swPost_of (v := 3) ?_ (Or.inr (Or.inr ⟨rfl, hav⟩))
+    · refine swPost_of (v := 3) ((hK10.withMem hM).upd rfl rfl rfl) ?_ (Or.inr (Or.inr ⟨rfl, hav⟩))
       show ofBytesLE 32 (readBytes M 0x7967b8 4) = _
       rw [(c.agreeK hK10 hA10 hM).read (fun i hi => c.hws _ (hgf i hi))]
       refine (read_Vst_self (by rfl) _ (by decide)).trans ?_

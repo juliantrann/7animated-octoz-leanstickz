@@ -25,7 +25,7 @@ theorem im_secondA {fb S T szw sm n nb : Addr} (c : Seg prof F Wl L s₀ o) (hfs
     (hfz : ∀ k < 7, rdq(V, BitVec.ofNat 64 (7940688 + 8 * k)) = 0#64)
     (hbk : ∀ i, 2 ≤ i → i ≤ 63 →
       rdq(V, BitVec.ofNat 64 (7940776 + 16 * i)) = BitVec.ofNat 64 (7940752 + 16 * i))
-    (hlb : ∀ i, 64 ≤ i → i ≤ 99 →
+    (hlb : ∀ i, 64 ≤ i → i ≤ 126 →
       rdq(V, BitVec.ofNat 64 (7940768 + 16 * i)) = BitVec.ofNat 64 (7940752 + 16 * i))
     (htc : rdq(V, fb + 18446744073709551576#64) ≠ 0#64) (htb : rdq(V, 7940592#64) = 64#64)
     (hun : rdq(V, 7940792#64) = 7940768#64)
@@ -55,8 +55,9 @@ theorem im_secondA {fb S T szw sm n nb : Addr} (c : Seg prof F Wl L s₀ o) (hfs
   · exact Im2.im_secondn c hfs hin hK hA hrip hrsp hsi hdi h hS hlo hfb hgm hfz hbk htc htb hun hm0 hm1 hm2 hm3 hW
       hgf htf hsw hT hTS htw hrw hpb hp0 htop hsz hsm hle hge hin₂ h₂ hra
       (fun Z t' => k _ Z t' (Im2.Fr.v2n S X.cpu.gpr n nb V hS))
-  · exact im_secondl c hfs hin hK hA hrip hrsp hsi hdi h1 h2 h3 hS hlo hfb hgm hfc hlb htc htb hun hm2 hm3 hW hgf
-      htf hsw hT hTS htw hrw hpb hp0 htop hsz hsm hle hge hin₂ h₂ hra k
+  · exact im_secondl c hfs hin hK hA hrip hrsp hsi hdi h1 h2 h3 hS hlo hfb hgm hfc
+      (fun i i1 i2 => hlb i i1 (by omega)) htc htb hun hm2 hm3 hW hgf htf hsw hT hTS htw hrw hpb hp0 htop hsz hsm
+      hle hge hin₂ h₂ hra k
 
 /-- Every request `n ≤ 4104` (`ClsA`): `im_secondA`. -/
 theorem secA {n nb : Addr} (h : ClsA n nb) : SecA n nb := by

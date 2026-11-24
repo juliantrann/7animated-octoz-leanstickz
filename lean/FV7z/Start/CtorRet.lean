@@ -7,7 +7,8 @@ constructors of 7-Zip only (from the call 3 on): the first three (`elision_init`
 by `pre_runs`, on the bytes of `PreB`, which are the launch image's at `0x61344a` (`RetAt.pre`).
 
 - `AtCtor`: an invariant `J` from the call 3 on, `J 3` after `frame_dummy`'s stores (`Rfi.Dat`) on bytes whose
-  `PreB` are the image's, the 101 constructors' `Csu.Runs` for `J`, and the run from `main` on.
+  `PreB` are the image's and the others away from the stack as `V`, the 101 constructors' `Csu.Runs` for `J`, and
+  the run from `main` on.
 - `at_main_of_ctor`: `AtCtor` gives `AtMain` with `preI`.
 - `cxa_ctor_at`: `cxa_main_at` with `AtCtor`.
 - `gd_ro`: `.rodata` (with `__EH_FRAME_BEGIN__`) is data of `lifG`.
@@ -24,16 +25,17 @@ variable {prof : Profile} {L : List (Addr × List Byte)} {s₀ : State} {o : Ora
 
 /-- What the run from `0x61344a` to `main` asks beyond the bytes, for the bytes `V` there and the TCB at `fb`, once
 the first three calls of `__libc_csu_init` are proved: an invariant `J` of the 101 constructors (`Csu.Runs` for
-`csuTg 3` to `csuTg 103`), which `frame_dummy`'s stores on bytes with `PreB` as the image's start, and the run from
-`main` on. -/
+`csuTg 3` to `csuTg 103`), which `frame_dummy`'s stores start on bytes with `PreB` as the image's and the bytes
+outside the stack's `[sp - 1024, sp + 8)` and `elision_init`'s word as `V` (`Near`), and the run from `main` on. -/
 def AtCtor (prof : Profile) (F : Footprint) (Wl : List Rgn) (L : List (Addr × List Byte)) (s₀ : State) (o : Oracle)
     (gev : List Event) (gP : State → Nat → List Event → Prop) (gE : Outcome → List Event → Prop) (K : Ctx)
     (fb : Addr) (V : Addr → Byte) : Prop :=
   ∃ J : Nat → (Addr → Byte) → Prop,
     (∀ m, 3 ≤ m → ∀ V V', J m V →
       FV7z.Raf.Out ((K.bp + 112#64 - 8#64).toNat - 64) (K.bp + 112#64 - 8#64).toNat V V' → J m V') ∧
-    (∀ V V', Agr K.V0 V → Rfi.Dat ((K.bp + 112#64 - 8#64).toNat - 64 - 72) ((K.bp + 112#64 - 8#64).toNat - 64)
-      7947808#64 7388000#64 V V' → J 3 V') ∧
+    (∀ W W', Agr K.V0 W → Near ((K.bp + 112#64 - 8#64).toNat - 1024) ((K.bp + 112#64 - 8#64).toNat + 8) V W →
+      Rfi.Dat ((K.bp + 112#64 - 8#64).toNat - 64 - 72) ((K.bp + 112#64 - 8#64).toNat - 64) 7947808#64 7388000#64 W W' →
+      J 3 W') ∧
     (∀ m, 3 ≤ m → m < 104 → Csu.Runs prof F Wl L s₀ o gev gP gE J (K.bp + 112#64 - 8#64)
       (((K.argc.setWidth 64).setWidth 32).setWidth 64) K.argv rdq(V, 8013720#64) m (csuTg m)) ∧
     (∀ V', J 104 V' → ∀ a : Addr, ((K.bp + 112#64).toNat + 12 ≤ a.toNat ∧ a.toNat < (K.bp + 112#64).toNat + 32 ∨
@@ -59,12 +61,13 @@ theorem at_main_of_ctor {K : Ctx} {fb : Addr} {V : Addr → Byte} (c : Seg prof 
   have hs2 := hE2.s0
   have hs8 := hC.s8
   rw [n] at hs2
-  refine ⟨preI K.V0 J, fun m V V' hm ho => ?_, (preI_lt (by decide)).2 fun a ha => ?_, fun m hm => ?_,
+  refine ⟨preI K.V0 V ((K.bp + 112#64 - 8#64).toNat - 1024) ((K.bp + 112#64 - 8#64).toNat + 8) J,
+    fun m V V' hm ho => ?_, (preI_lt (by decide)).2 ⟨fun a ha => ?_, fun a h1 _ => ?_⟩, fun m hm => ?_,
     fun V' h => hJ104 V' ((preI_ge (by decide)).1 h),
     fun Vm V₁ Z' t' h1 h2 h104 => k Vm V₁ Z' t' h1 h2 ((preI_ge (by decide)).1 h104)⟩
   · by_cases h : m < 3
-    · have hA := (preI_lt h).1 hm
-      refine (preI_lt h).2 fun a ha => ?_
+    · obtain ⟨hA, hN⟩ := (preI_lt h).1 hm
+      refine (preI_lt h).2 ⟨fun a ha => ?_, fun a h1 h2 => (ho a (by omega)).trans (hN a h1 h2)⟩
       have ha' := ha
       unfold PreB PreN at ha'
       exact (ho a (by omega)).trans (hA a ha)
@@ -73,6 +76,7 @@ theorem at_main_of_ctor {K : Ctx} {fb : Addr} {V : Addr → Byte} (c : Seg prof 
     unfold PreB PreN at ha'
     rw [Vst_out _ _ _ _ (by simp only [toBytesLE_length]; omega) (.inl (by omega))]
     exact hV a ha
+  · exact Vst_out _ _ _ _ (by simp only [toBytesLE_length]; omega) (by simp only [toBytesLE_length]; omega)
   · by_cases h : m < 3
     · exact pre_runs c hfs hC hE0 hEi hE2 hIm hB hF hJ3 m h
     · exact runs_congr (funext fun V => propext (preI_ge h)) (funext fun V => propext (preI_ge (by omega)))

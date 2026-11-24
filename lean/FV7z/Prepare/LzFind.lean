@@ -30,20 +30,23 @@ def satVal (Y : State) : BitVec 64 := ofBytesLE 64 (readBytes Y.proc.mm.mem 0x79
 
 /-- At the return: `NULL`, or `LzFind_SaturSub_128` on a processor with SSE4.1, or `LzFind_SaturSub_256` on one with
 SSE4.1, AVX2 and AVX. -/
-def lzPost (prof : Profile) (_ Y : State) : Prop :=
+def lzOk (prof : Profile) (Y : State) : Prop :=
   satVal Y = 0 ∨ (satVal Y = 0x4251b0 ∧ prof.feat.sse41 = true) ∨
     (satVal Y = 0x425150 ∧ prof.feat.sse41 = true ∧ prof.feat.avx2 = true ∧ prof.feat.avx = true)
+
+/-- `lzOk`, and what the run kept (`fnK`: for a caller's run to go on). -/
+def lzPost (prof : Profile) (s₀ Y : State) : Prop := lzOk prof Y ∧ KeptW (ws 120 lzW s₀) s₀ Y
 
 /-- The contract: a stack of 120 bytes (its own 8, `CPU_IsSupported_AVX2`'s 104 with what it calls, a return
 address), the pointer written, the canary read. -/
 abbrev lzC (prof : Profile) : Contract := fn 120 lzW lzR lzPre (lzPost prof)
 
-theorem lzPost_of {prof : Profile} {s₀ Y : State} {v : BitVec 64}
+theorem lzPost_of {prof : Profile} {s₀ Y : State} {v : BitVec 64} (hk : KeptW (ws 120 lzW s₀) s₀ Y)
     (hv : ofBytesLE 64 (readBytes Y.proc.mm.mem 0x7967a0 8) = v)
     (h : v = 0 ∨ (v = 0x4251b0 ∧ prof.feat.sse41 = true) ∨
       (v = 0x425150 ∧ prof.feat.sse41 = true ∧ prof.feat.avx2 = true ∧ prof.feat.avx = true)) :
     lzPost prof s₀ Y := by
-  unfold lzPost satVal; rw [hv]; exact h
+  refine ⟨?_, hk⟩; unfold lzOk satVal; rw [hv]; exact h
 
 theorem callee_of {s₀ X : State} (h : Saved s₀ X) (hsp : X.cpu.gpr.rsp = s₀.cpu.gpr.rsp) : Callee s₀ X :=
   ⟨h.1, hsp, h.2.1, h.2.2.1, h.2.2.2.1, h.2.2.2.2.1, h.2.2.2.2.2⟩
@@ -156,7 +159,7 @@ theorem run (hpc : prof.Consistent) (c : Call prof 120 lzW lzR lzPre (lzPost pro
     · simp [Saved, hg16, hg15, hg14', hg13, hg12, hg11]
     · simp only [hg16, hg15, hg14', hg13, hg12, hg11, set_r4, get_r4, set_r0, set_r2]
       rw [hsp10]; exact (add_add8 p _).trans (by rw [hsp])
-    · refine lzPost_of (v := Y14.cpu.gpr.rax) ?_ ?_
+    · refine lzPost_of (v := Y14.cpu.gpr.rax) ((hK16.withMem hM).upd rfl rfl rfl) ?_ ?_
       · show ofBytesLE 64 (readBytes M 0x7967a0 8) = _
         rw [(c.agreeK hK16 hA16 hM).read (fun i hi => c.hws _ (hgf i hi))]
         exact read_Vst_self (by rfl) _ (by decide)
@@ -177,7 +180,7 @@ theorem run (hpc : prof.Consistent) (c : Call prof 120 lzW lzR lzPre (lzPost pro
     · simp [Saved, hg10, hg9, hg8]
     · simp only [hg10, hg9, hg8, set_r4, get_r4]
       rw [hsp7]; exact (add_add8 p _).trans (by rw [hsp])
-    · refine lzPost_of (v := 0) ?_ (Or.inl rfl)
+    · refine lzPost_of (v := 0) ((hK10.withMem hM).upd rfl rfl rfl) ?_ (Or.inl rfl)
       show ofBytesLE 64 (readBytes M 0x7967a0 8) = _
       rw [(c.agreeK hK10 hA10 hM).read (fun i hi => c.hws _ (hgf i hi))]
       refine (read_Vst_self (by rfl) _ (by decide)).trans ?_

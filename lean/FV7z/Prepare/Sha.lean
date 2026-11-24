@@ -303,20 +303,24 @@ def shPre (g1 g2 : Addr) (s : State) : Prop :=
 def ptrAt (g : Addr) (Y : State) : BitVec 64 := ofBytesLE 64 (readBytes Y.proc.mm.mem g 8)
 
 /-- At the return: the portable variant and `NULL`, or the SHA-NI variant twice on a processor with SHA and SSSE3. -/
-def shPost (prof : Profile) (sw hw g1 g2 : Addr) (_ Y : State) : Prop :=
+def shOk (prof : Profile) (sw hw g1 g2 : Addr) (Y : State) : Prop :=
   (ptrAt g1 Y = sw ∧ ptrAt g2 Y = 0) ∨
     (ptrAt g1 Y = hw ∧ ptrAt g2 Y = hw ∧ prof.feat.sha = true ∧ prof.feat.ssse3 = true)
+
+/-- `shOk`, and what the run kept (`fnK`: for a caller's run to go on). -/
+def shPost (prof : Profile) (sw hw g1 g2 : Addr) (s₀ Y : State) : Prop :=
+  shOk prof sw hw g1 g2 Y ∧ KeptW (ws 88 (shW g1 g2) s₀) s₀ Y
 
 /-- The contract: a stack of 88 bytes (its own 8, `CPU_IsSupported_SHA`'s 72 with what it calls, a return address),
 the pointers written, the canary read. -/
 abbrev shC (prof : Profile) (sw hw g1 g2 : Addr) : Contract :=
   fn 88 (shW g1 g2) lzR (shPre g1 g2) (shPost prof sw hw g1 g2)
 
-theorem shPost_of {sw hw g1 g2 : Addr} {Y : State} {v1 v2 : BitVec 64}
+theorem shPost_of {sw hw g1 g2 : Addr} {Y : State} {v1 v2 : BitVec 64} (hk : KeptW (ws 88 (shW g1 g2) s₀) s₀ Y)
     (h1 : ofBytesLE 64 (readBytes Y.proc.mm.mem g1 8) = v1) (h2 : ofBytesLE 64 (readBytes Y.proc.mm.mem g2 8) = v2)
     (h : (v1 = sw ∧ v2 = 0) ∨ (v1 = hw ∧ v2 = hw ∧ prof.feat.sha = true ∧ prof.feat.ssse3 = true)) :
     shPost prof sw hw g1 g2 s₀ Y := by
-  unfold shPost ptrAt; rw [h1, h2]; exact h
+  refine ⟨?_, hk⟩; unfold shOk ptrAt; rw [h1, h2]; exact h
 
 theorem shRun (hpc : prof.Consistent) {code : List Byte} {e sw hw g1 g2 : Addr} (sh : ShaPrep code e sw hw g1 g2)
     (c : Call prof 88 (shW g1 g2) lzR (shPre g1 g2) (shPost prof sw hw g1 g2) e L s₀ ra o)
@@ -377,7 +381,7 @@ theorem shRun (hpc : prof.Consistent) {code : List Byte} {e sw hw g1 g2 : Addr} 
         rw [hAM.read (fun i hi => c.hws _ (hg2 i hi))]
         refine (read_Vst_self (by rfl) _ sh.g2f).trans ?_
         rw [hgr2]; rfl
-      exact shPost_of r1 r2 hv
+      exact shPost_of ((hK4.withMem hM).upd rfl rfl rfl) r1 r2 hv
   -- the portable variant, from offset 17
   have swp : ∀ (V' : Addr → Byte) Y t', KeptW (ws 88 (shW g1 g2) s₀) s₀ Y →
       Agree (fp 88 (shW g1 g2) lzR (shPre g1 g2) (shPost prof sw hw g1 g2) L s₀) Y.proc.mm.mem V' →

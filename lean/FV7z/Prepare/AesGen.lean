@@ -196,9 +196,12 @@ def agVals (prof : Profile) (d e c : BitVec 64) (f : BitVec 32) : Prop :=
 
 /-- At the return: the portable code, or the AES-NI code on a processor with AES, or the VAES code on one with AES,
 VAES, AVX2 and AVX. -/
-def agPost (prof : Profile) (_ Y : State) : Prop :=
+def agOk (prof : Profile) (Y : State) : Prop :=
   agVals prof (ptrAt 0x7a7e10 Y) (ptrAt 0x7a7e00 Y) (ptrAt 0x7a7e08 Y)
     (ofBytesLE 32 (readBytes Y.proc.mm.mem 0x7a7e18 4))
+
+/-- `agOk`, and what the run kept (`fnK`: for a caller's run to go on). -/
+def agPost (prof : Profile) (s₀ Y : State) : Prop := agOk prof Y ∧ KeptW (ws 136 agW s₀) s₀ Y
 
 /-- The contract: a stack of 136 bytes (its three saved registers, a return address, `CPU_IsSupported_VAES_AVX2`'s
 104 with what it calls), the tables and globals written, the canary and `Sbox` read. -/
@@ -343,13 +346,13 @@ theorem agS {n : Nat} (h : n < 256) :
 theorem agK {p : Addr} (hE : AgEnv s₀ p) {n : Nat} (h : n < 136) : Foot (ws 136 agW s₀) (p.add n) :=
   ⟨below s₀ 136, by simp, by simp only [below, hE.lo]; exact mem_add_of_fits h (by have := hE.fit; omega)⟩
 
-theorem agPost_of {s₀ Y : State} {d e c : BitVec 64} {f : BitVec 32}
+theorem agPost_of {s₀ Y : State} {d e c : BitVec 64} {f : BitVec 32} (hk : KeptW (ws 136 agW s₀) s₀ Y)
     (hd : ofBytesLE 64 (readBytes Y.proc.mm.mem 0x7a7e10 8) = d)
     (he : ofBytesLE 64 (readBytes Y.proc.mm.mem 0x7a7e00 8) = e)
     (hc : ofBytesLE 64 (readBytes Y.proc.mm.mem 0x7a7e08 8) = c)
     (hf : ofBytesLE 32 (readBytes Y.proc.mm.mem 0x7a7e18 4) = f) (h : agVals prof d e c f) :
     agPost prof s₀ Y := by
-  unfold agPost ptrAt; rw [hd, he, hc, hf]; exact h
+  refine ⟨?_, hk⟩; unfold agOk ptrAt; rw [hd, he, hc, hf]; exact h
 
 /-! ## The first loop: `InvS[Sbox[i]] = i` -/
 
@@ -631,7 +634,7 @@ theorem agFin (c : Call prof 136 agW agR agPre (agPost prof) 0x41e540 L s₀ ra 
   · simp [hg12, hg11, hg10, hg9, hg8, hg7, hg6, hg5, hg4, hg3, hg2, hb1.r14]
   · simp [hg12, hg11, hg10, hg9, hg8, hg7, hg6, hg5, hg4, hg3, hg2, hb1.r15]
   · have hAM := c.agreeK hK12 hA12 hM
-    refine agPost_of ?_ ?_ ?_ ?_ hv
+    refine agPost_of ((hK12.withMem hM).upd rfl rfl rfl) ?_ ?_ ?_ ?_ hv
     · show ofBytesLE 64 (readBytes M 0x7a7e10 8) = _
       rw [hAM.read (fun i hi => c.hws _ (hgl _ 16 (by decide) 8 (by omega) i hi)),
         rd_apart (a := 0x7a7e18) (m := 32 / 8) (b := 0x7a7e10) (n := 8) _ (by decide) (by decide) (by decide),

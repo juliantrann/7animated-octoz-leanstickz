@@ -16,7 +16,7 @@ open FV7z.Tun (rd_Vst rd_Vst_self Vst_out)
 open FV7z.Sbrk (rd_eq)
 open FV7z.Imm (imm imm_at add_n)
 open FV7z.Im2 (VspN VspN_rd V2n V2n_out)
-open FV7z.Im5 (ClsA SecA)
+open FV7z.Im5 (ClsN SecA)
 open FV7z.Mhi (VspN_hd VspN_far VspN_frm)
 namespace FV7z.Mnx
 variable {F : Footprint} {Wl : List Rgn}
@@ -25,10 +25,10 @@ variable {prof : Profile} {L : List (Addr × List Byte)} {s₀ X : State} {o : O
   {gev : List Event} {gP : State → Nat → List Event → Prop} {gE : Outcome → List Event → Prop} {V : Addr → Byte}
 
 /-- `malloc` after the first call, from 52 (the pushes done, `rbx` the tcache index of `nb`, `rbp` = `n`) to the
-return address with `T + 16` in `rax`, `n ≤ 4104` (`Im5.ClsA`): as `Mhi.mhi_tailn`. -/
+return address with `T + 16` in `rax`, `n ≤ 4104` or `n` = 72704 (`Im5.ClsN`): as `Mhi.mhi_tailn`. -/
 theorem mal_tail {fb S T szw sm C n nb : Addr} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb)
     (hin : CodeIn L mnx_at mnx) (hinI : CodeIn L imm_at imm) (hK : KeptW Wl s₀ X) (hA : Agree F X.proc.mm.mem V)
-    (hcls : ClsA n nb) (hsec : SecA n nb)
+    (hcls : ClsN n nb) (hsec : SecA n nb)
     (hrip : X.cpu.rip = mnx_at.add 52) (hbx : X.cpu.gpr.rbx = (nb + 18446744073709551599#64) >>> 4)
     (hbp : X.cpu.gpr.rbp = n)
     (hrsp : X.cpu.gpr.rsp = S + 192#64) (hS : S.toNat + 256 < 2 ^ 64) (hlo : 8029888 ≤ S.toNat)
@@ -41,7 +41,7 @@ theorem mal_tail {fb S T szw sm C n nb : Addr} (c : Seg prof F Wl L s₀ o) (hfs
     (hfz : ∀ k < 7, rdq(V, BitVec.ofNat 64 (7940688 + 8 * k)) = 0#64)
     (hbk : ∀ i, 2 ≤ i → i ≤ 63 →
       rdq(V, BitVec.ofNat 64 (7940776 + 16 * i)) = BitVec.ofNat 64 (7940752 + 16 * i))
-    (hlb : ∀ i, 64 ≤ i → i ≤ 99 →
+    (hlb : ∀ i, 64 ≤ i → i ≤ 126 →
       rdq(V, BitVec.ofNat 64 (7940768 + 16 * i)) = BitVec.ofNat 64 (7940752 + 16 * i))
     (htb : rdq(V, 7940592#64) = 64#64)
     (hun : rdq(V, 7940792#64) = 7940768#64)
@@ -67,7 +67,9 @@ theorem mal_tail {fb S T szw sm C n nb : Addr} (c : Seg prof F Wl L s₀ o) (hfs
       (Z.cpu.gpr.r13 = X.cpu.gpr.r13 ∧ Z.cpu.gpr.r14 = X.cpu.gpr.r14 ∧ Z.cpu.gpr.r15 = X.cpu.gpr.r15) →
       GoG prof L o gev gP gE Z t') :
     GoG prof L o gev gP gE X t := by
-  obtain ⟨kb, hk1, hk2, hnbk⟩ := hcls.cases
+  obtain ⟨kb, hk, hnbk⟩ := hcls.cases
+  have hk1 : 2 ≤ kb := by omega
+  have hk2 : kb ≤ 257 ∨ kb = 4545 := hk.imp (fun h => h.2) id
   have hnbt := hcls.bnd
   have hWd : ∀ a : Addr, 7940480 ≤ a.toNat → a.toNat < 7943136 → Foot F.data a := fun a h1 h2 => c.hws _ (hW a h1 h2)
   have htf' : ∀ i < 8, Foot F.data (Addr.add (7940592#64) i) :=
@@ -153,7 +155,7 @@ theorem mal_tail {fb S T szw sm C n nb : Addr} (c : Seg prof F Wl L s₀ o) (hfs
     simp at this
     omega
   refine (c_114 prof fb).run c hfs hin _ hK₃ hA₃ (by rw [hr₃])
-    (vc_114m hk1 (by omega) (by rw [hax₃]; exact hT0) (by rw [hax₃, e8, ← hnbk]; exact VspN_hd _ hT' (by omega))
+    (vc_114m hk1 hk2 (by rw [hax₃]; exact hT0) (by rw [hax₃, e8, ← hnbk]; exact VspN_hd _ hT' (by omega))
       (by rw [hax₃, e8]; exact fun i hi => c.hws _ (htw i hi))) ?_
   rintro j' g fl V₄ ⟨rfl, rfl, hv₄⟩ Y₄ t₄ hK₄ hA₄ hr₄ hg₄ -
   rw [hv₄] at hA₄
@@ -234,7 +236,7 @@ its entry (`rsp = S + 216`) to the return address: the chunk `T + 16` split off 
 call keeps as at the entry. -/
 theorem mal_next {fb S T szw sm C n nb : Addr} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb)
     (hin : CodeIn L mnx_at mnx) (hinI : CodeIn L imm_at imm) (hK : KeptW Wl s₀ X) (hA : Agree F X.proc.mm.mem V)
-    (hcls : ClsA n nb) (hsec : SecA n nb) (hrip : X.cpu.rip = mnx_at) (hdi : X.cpu.gpr.rdi = n)
+    (hcls : ClsN n nb) (hsec : SecA n nb) (hrip : X.cpu.rip = mnx_at) (hdi : X.cpu.gpr.rdi = n)
     (hrsp : X.cpu.gpr.rsp = S + 216#64) (hS : S.toNat + 256 < 2 ^ 64) (hlo : 8029888 ≤ S.toNat)
     (hfb : (fb + 18446744073709551576#64).toNat + 8 ≤ S.toNat) (hf24 : (fb + 24#64).toNat + 4 ≤ S.toNat)
     (hhk : rdq(V, 7940656#64) = 0#64) (hfh : ∀ i < 8, Foot F.data (Addr.add (7940656#64) i))
@@ -246,7 +248,7 @@ theorem mal_next {fb S T szw sm C n nb : Addr} (c : Seg prof F Wl L s₀ o) (hfs
     (hfz : ∀ k < 7, rdq(V, BitVec.ofNat 64 (7940688 + 8 * k)) = 0#64)
     (hbk : ∀ i, 2 ≤ i → i ≤ 63 →
       rdq(V, BitVec.ofNat 64 (7940776 + 16 * i)) = BitVec.ofNat 64 (7940752 + 16 * i))
-    (hlb : ∀ i, 64 ≤ i → i ≤ 99 →
+    (hlb : ∀ i, 64 ≤ i → i ≤ 126 →
       rdq(V, BitVec.ofNat 64 (7940768 + 16 * i)) = BitVec.ofNat 64 (7940752 + 16 * i))
     (htb : rdq(V, 7940592#64) = 64#64)
     (hun : rdq(V, 7940792#64) = 7940768#64)
@@ -285,7 +287,7 @@ theorem mal_next {fb S T szw sm C n nb : Addr} (c : Seg prof F Wl L s₀ o) (hfs
       Y.cpu.gpr.rbx = (nb + 18446744073709551599#64) >>> 4 → Y.cpu.gpr.rbp = n →
       Y.cpu.gpr.r13 = X.cpu.gpr.r13 → Y.cpu.gpr.r14 = X.cpu.gpr.r14 → Y.cpu.gpr.r15 = X.cpu.gpr.r15 →
       GoG prof L o gev gP gE Y t₁ by
-    rcases hcls with (⟨h9, h10, h11⟩ | ⟨h8, h32⟩) | ⟨h9, h10, h11⟩
+    rcases hcls with ((⟨h9, h10, h11⟩ | ⟨h8, h32⟩) | ⟨h9, h10, h11⟩) | ⟨rfl, rfl⟩
     · refine (c_0 prof fb).run c hfs hin _ hK hA (by rw [addr_add_zero]; exact hrip)
         (vc_0n hdi h9 (by omega) hhk hfh hsp' hst) ?_
       rintro j' g fl V₁ ⟨rfl, rfl, rfl⟩ Y₁ t₁ hK₁ hA₁ hr₁ hg₁ -
@@ -301,13 +303,19 @@ theorem mal_next {fb S T szw sm C n nb : Addr} (c : Seg prof F Wl L s₀ o) (hfs
         (by rw [hg₁] <;> rfl) (by rw [hg₁] <;> rfl)
       rw [hg₁, h32] <;> rfl
     · refine (c_0 prof fb).run c hfs hin _ hK hA (by rw [addr_add_zero]; exact hrip)
-        (vc_0n hdi (by omega) h10 hhk hfh hsp' hst) ?_
+        (vc_0n hdi (by omega) (by omega) hhk hfh hsp' hst) ?_
       rintro j' g fl V₁ ⟨rfl, rfl, rfl⟩ Y₁ t₁ hK₁ hA₁ hr₁ hg₁ -
       refine K Y₁ t₁ hK₁ hA₁ hr₁ (by rw [hg₁]; exact e192) ?_ (by rw [hg₁] <;> rfl) (by rw [hg₁] <;> rfl)
         (by rw [hg₁] <;> rfl) (by rw [hg₁] <;> rfl)
       rw [hg₁]
       show ((n + 23#64 &&& 18446744073709551600#64) + 18446744073709551599#64) >>> 4 = _
       rw [h11]
+    · refine (c_0 prof fb).run c hfs hin _ hK hA (by rw [addr_add_zero]; exact hrip)
+        (vc_0n hdi (by decide) (by decide) hhk hfh hsp' hst) ?_
+      rintro j' g fl V₁ ⟨rfl, rfl, rfl⟩ Y₁ t₁ hK₁ hA₁ hr₁ hg₁ -
+      refine K Y₁ t₁ hK₁ hA₁ hr₁ (by rw [hg₁]; exact e192) ?_ (by rw [hg₁] <;> rfl) (by rw [hg₁] <;> rfl)
+        (by rw [hg₁] <;> rfl) (by rw [hg₁] <;> rfl)
+      rw [hg₁] <;> first | rfl | decide
   intro Y t₁ hKY hAY hrY hspY hbxY hbpY h13 h14 h15
   -- what the tail reads, below the pushes, is the entry's
   have O : ∀ (x : Addr) (m : Nat), x.toNat + m ≤ S.toNat + 192 →

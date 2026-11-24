@@ -40,6 +40,22 @@ theorem ClsA.bnd {n nb : Addr} (h : ClsA n nb) : 32 ≤ nb.toNat ∧ nb.toNat �
   rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
   omega
 
+/-- `nb` the chunk size of a request `n ≤ 4104` or of the request 72704 (ctor 102; `nb` = 72720). -/
+def ClsN (n nb : Addr) : Prop := ClsA n nb ∨ (n = 72704#64 ∧ nb = 72720#64)
+
+theorem ClsN.cases {n nb : Addr} (h : ClsN n nb) :
+    ∃ k, (2 ≤ k ∧ k ≤ 257 ∨ k = 4545) ∧ nb = BitVec.ofNat 64 (16 * k) := by
+  rcases h with h | ⟨-, rfl⟩
+  · obtain ⟨k, k1, k2, e⟩ := h.cases
+    exact ⟨k, .inl ⟨k1, k2⟩, e⟩
+  · exact ⟨4545, .inr rfl, rfl⟩
+
+theorem ClsN.bnd {n nb : Addr} (h : ClsN n nb) : 32 ≤ nb.toNat ∧ nb.toNat ≤ 72720 := by
+  rcases h with h | ⟨-, rfl⟩
+  · have := h.bnd
+    omega
+  · decide
+
 /-- `_int_malloc` on the second call for the request `n` (`nb` its chunk size): the hypotheses of `RunA.im_secondA`
 but the class. -/
 def SecA (n nb : Addr) : Prop :=
@@ -55,7 +71,7 @@ def SecA (n nb : Addr) : Prop :=
     (hfz : ∀ k < 7, rdq(V, BitVec.ofNat 64 (7940688 + 8 * k)) = 0#64)
     (hbk : ∀ i, 2 ≤ i → i ≤ 63 →
       rdq(V, BitVec.ofNat 64 (7940776 + 16 * i)) = BitVec.ofNat 64 (7940752 + 16 * i))
-    (hlb : ∀ i, 64 ≤ i → i ≤ 99 →
+    (hlb : ∀ i, 64 ≤ i → i ≤ 126 →
       rdq(V, BitVec.ofNat 64 (7940768 + 16 * i)) = BitVec.ofNat 64 (7940752 + 16 * i))
     (htc : rdq(V, fb + 18446744073709551576#64) ≠ 0#64) (htb : rdq(V, 7940592#64) = 64#64)
     (hun : rdq(V, 7940792#64) = 7940768#64)

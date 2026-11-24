@@ -32,22 +32,25 @@ def b2Vals (prof : Profile) (a b c d : BitVec 64) (f : BitVec 32) : Prop :=
 
 /-- At the return: the portable code, or the 128-bit code on a processor with SSE4.1, or the 256-bit code on one
 with SSE4.1, AVX2 and AVX. -/
-def b2Post (prof : Profile) (_ Y : State) : Prop :=
+def b2Ok (prof : Profile) (Y : State) : Prop :=
   b2Vals prof (ptrAt 0x792148 Y) (ptrAt 0x792140 Y) (ptrAt 0x796798 Y) (ptrAt 0x796790 Y)
     (ofBytesLE 32 (readBytes Y.proc.mm.mem 0x796788 4))
+
+/-- `b2Ok`, and what the run kept (`fnK`: for a caller's run to go on). -/
+def b2Post (prof : Profile) (s₀ Y : State) : Prop := b2Ok prof Y ∧ KeptW (ws 120 b2W s₀) s₀ Y
 
 /-- The contract: a stack of 120 bytes (its own 8, `CPU_IsSupported_AVX2`'s 104 with what it calls, a return
 address), the globals written, the canary read. -/
 abbrev b2C (prof : Profile) : Contract := fn 120 b2W lzR b2Pre (b2Post prof)
 
 theorem b2Post_of {prof : Profile} {s₀ Y : State} {a b c d : BitVec 64} {f : BitVec 32}
-    (ha : ofBytesLE 64 (readBytes Y.proc.mm.mem 0x792148 8) = a)
+    (hk : KeptW (ws 120 b2W s₀) s₀ Y) (ha : ofBytesLE 64 (readBytes Y.proc.mm.mem 0x792148 8) = a)
     (hb : ofBytesLE 64 (readBytes Y.proc.mm.mem 0x792140 8) = b)
     (hc : ofBytesLE 64 (readBytes Y.proc.mm.mem 0x796798 8) = c)
     (hd : ofBytesLE 64 (readBytes Y.proc.mm.mem 0x796790 8) = d)
     (hf : ofBytesLE 32 (readBytes Y.proc.mm.mem 0x796788 4) = f) (h : b2Vals prof a b c d f) :
     b2Post prof s₀ Y := by
-  unfold b2Post ptrAt; rw [ha, hb, hc, hd, hf]; exact h
+  refine ⟨?_, hk⟩; unfold b2Ok ptrAt; rw [ha, hb, hc, hd, hf]; exact h
 
 /-- A store of `m` bytes at `a` leaves the `n` bytes at `b` apart from it. -/
 theorem rd_apart {V : Addr → Byte} {a b : Addr} {m n w : Nat} (v : BitVec w) (ha : a.toNat + m ≤ 2 ^ 64)
@@ -125,7 +128,7 @@ theorem b2Run (hpc : prof.Consistent) (c : Call prof 120 b2W lzR b2Pre (b2Post p
     · simp only [hgr7, hgr6, hgr5, hgr4, hgr3, hgr2, set_r4, get_r4]
       rw [hsp1]; exact (add_add8 p _).trans (by rw [hsp])
     · have hAM := c.agreeK hK7 hA7 hM
-      refine b2Post_of ?_ ?_ ?_ ?_ ?_ hv
+      refine b2Post_of ((hK7.withMem hM).upd rfl rfl rfl) ?_ ?_ ?_ ?_ ?_ hv
       · show ofBytesLE 64 (readBytes M 0x792148 8) = _
         rw [hAM.read (fun i hi => c.hws _ (hgA i hi)),
           rd_apart (a := 0x796788) (m := 4) (b := 0x792148) (n := 8) _ (by decide) (by decide) (by decide),

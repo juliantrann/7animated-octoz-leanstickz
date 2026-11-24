@@ -202,6 +202,82 @@ FNS = {
     # libgcc's unwind-dw2-fde.c: `__register_frame_info_bases` (its body at 0x612730, the entry with the checks at
     # 0x6127c0) and `__register_frame_info` (0x6127e0, the entry here: offset 0xb0). Stops: the tail call of
     # `pthread_mutex_unlock` (0x6a), the `ret`s (0x76, 0xa8, 0xd0), the other entry (0x90).
+    # 7-Zip's static constructor `csuTg 75` (0x41c770, offset 1584 of `sti`): a table of 256 bytes at 0x79d340, each
+    # its index with the bits reversed. Stop: the `ret` (1665).
+    # 7-Zip's static constructor `csuTg 70` (0x41c6e0, offset 1440 of `sti`): the CRC-16 table (polynomial 0x1021)
+    # of 256 words at 0x79d140, two loops. Stop: the `ret` (1514).
+    "c70": dict(grp="C70", code=("Ctor", "sti"), cn="csuTg 70", a=0x41c140, n=4624, entry=1440, pos=True,
+                stops=(1514,), tag="PLAN.md G3, constructors",
+                src="a static constructor of 7-Zip (`objdump -d`)"),
+    # The CRC tables a constructor jumps to (`endbr64; jmp F`), named by their shape after 7-Zip's source: m = 78
+    # (CRC-32 MSB first for bzip2, 0x79d440), 3 (CRC-32 and its slicing tables, 0x7a4e00), 15 (CRC-64 and its slicing
+    # tables, 0x7967c0).
+    "c78": dict(grp="C78", cn="CBZip2Crc::InitTable", a=0x56c470, n=0x44, entry=0, pos=True, stops=(0x43,),
+                tag="PLAN.md G3, constructors", src="a function a static constructor of 7-Zip jumps to (`objdump -d`)"),
+    "c3": dict(grp="C3", cn="CrcGenerateTable", a=0x41d5e0, n=0x6b, entry=0, pos=True, stops=(0x6a,),
+               tag="PLAN.md G3, constructors", src="a function a static constructor of 7-Zip jumps to (`objdump -d`)"),
+    "c15": dict(grp="C15", cn="Crc64GenerateTable", a=0x443e70, n=0x8f, entry=0, pos=True, stops=(0x8e,),
+                tag="PLAN.md G3, constructors", src="a function a static constructor of 7-Zip jumps to (`objdump -d`)"),
+    # 7-Zip's static constructors `csuTg 37` (0x41c380, offset 576 of `sti`) and `csuTg 55` (0x41c560, offset 1056): a
+    # CRC table in two loops (CRC-16 with the polynomial 0xa001, 256 words at 0x79cb40; CRC-32C, 256 dwords at
+    # 0x79cd40), then `lea rdi, [rip + d]; jmp RegisterArc`. Stop: the `jmp` (644, 1123).
+    "c37": dict(grp="C37", code=("Ctor", "sti"), cn="csuTg 37", a=0x41c140, n=4624, entry=576, pos=True,
+                stops=(644,), tag="PLAN.md G3, constructors",
+                src="a static constructor of 7-Zip (`objdump -d`)"),
+    "c55": dict(grp="C55", code=("Ctor", "sti"), cn="csuTg 55", a=0x41c140, n=4624, entry=1056, pos=True,
+                stops=(1123,), tag="PLAN.md G3, constructors",
+                src="a static constructor of 7-Zip (`objdump -d`)"),
+    # `subb $1, [rip + d]` (a byte at 0x7921b0), then `lea rdi, [rip + d]; jmp RegisterArc`. Stop: the `jmp` (1234).
+    "c61": dict(grp="C61", code=("Ctor", "sti"), cn="csuTg 61", a=0x41c140, n=4624, entry=1216, pos=True,
+                stops=(1234,), tag="PLAN.md G3, constructors",
+                src="a static constructor of 7-Zip (`objdump -d`)"),
+    "c75": dict(grp="C75", code=("Ctor", "sti"), cn="csuTg 75", a=0x41c140, n=4624, entry=1584, pos=True,
+                stops=(1665,), tag="PLAN.md G3, constructors",
+                src="a static constructor of 7-Zip (`objdump -d`)"),
+    # `csuTg 82` (0x41c8a0, offset 1888 of `sti`) and `csuTg 87` (0x41c9b0, offset 2160): loops that fill tables
+    # from tables of `.rodata` (Deflate's length and distance slots).
+    "c82": dict(grp="C82", code=("Ctor", "sti"), cn="csuTg 82", a=0x41c140, n=4624, entry=1888, pos=True,
+                stops=(2081,), tag="PLAN.md G3, constructors",
+                src="a static constructor of 7-Zip (`objdump -d`)"),
+    # glibc's `init_cacheinfo` (`sysdeps/x86/cacheinfo.c`), `csuTg 103` (0x41cef0, offset 3504 of `sti`): by the
+    # vendor of `init_cpu_features` (0x7a4b48), `handle_intel` or `handle_amd` for the three cache sizes, the
+    # threads that share a cache from `cpuid` leaves 4 and 0xb (loops over subleaves), the stores of `__x86_*`. Stop:
+    # the `ret` (3731). By hand: `cpuid` (`Seg.s_cpuid`), `idiv` (`Seg.s_idiv64`), `bsr` (`Seg.s_bsr32`).
+    "c103": dict(grp="C103", code=("Ctor", "sti"), cn="csuTg 103", a=0x41c140, n=4624, entry=3504, pos=True,
+                 stops=(3731,), calls=True, jt=(0x6f20a4, 39),
+                 hand=(3865, 4079, 4100, 4141, 4197, 4346, 3707, 3981, 4005, 4223, 4380, 4454, 4594),
+                 tag="PLAN.md M, ctor 103", src="glibc's `init_cacheinfo` (`sysdeps/x86/cacheinfo.c`; `objdump -d`)"),
+    # glibc's `handle_amd` (`sysdeps/x86/cacheinfo.c`, 0x65cb10), the size of a cache from `cpuid` 0x80000005 or
+    # 0x80000006; its group's code (`hca`, 1624 bytes) also holds `intel_check_word` and `handle_intel`. `jt`: the
+    # `switch` on the name. Stops: the cases of an associativity or a line size (0x68, 0x88, 0xb0, 0xd8, 0x100,
+    # 0x120; init_cacheinfo asks for sizes only) and a name out of range (0x1b0, `__assert_fail`). By hand: `cpuid`.
+    "hca": dict(grp="Hca", cn="handle_amd", a=0x65cb10, n=1624, pos=True, calls=True, jt=(0x6f2000, 9),
+                stops=(0x68, 0x88, 0xb0, 0xd8, 0x100, 0x120, 0x1b0), hand=(6, 39), tag="PLAN.md M, ctor 103",
+                src="glibc's `handle_amd`, `intel_check_word` and `handle_intel` (`sysdeps/x86/cacheinfo.c`; "
+                    "`objdump -d`)"),
+    # glibc's `intel_check_word` (0x65cce0, offset 464 of `hca`): the descriptor bytes of a `cpuid` 2 word, by a
+    # binary search of `intel_02_known` (0x6f2140) or `cpuid` 4's subleaves. Stops: the two `assert`s on the name
+    # (1085, 1116; the name's offset is 0 for the three sizes). By hand: `cpuid`.
+    "icw": dict(grp="Icw", code=("Hca", "hca"), cn="intel_check_word", a=0x65cb10, n=1624, entry=464, pos=True,
+                calls=True, stops=(1085, 1116), hand=(773, 829, 1172, 1258), tag="PLAN.md M, ctor 103",
+                src="glibc's `intel_check_word` (`sysdeps/x86/cacheinfo.c`; `objdump -d`)"),
+    # glibc's `handle_intel` (0x65d010, offset 1280 of `hca`): `cpuid` 2's rounds, `intel_check_word` for each of
+    # the four words, the stack protector's check. Stop: `__stack_chk_fail` (1619). By hand: `cpuid`.
+    "hin": dict(grp="Hin", code=("Hca", "hca"), cn="handle_intel", a=0x65cb10, n=1624, entry=1280, pos=True,
+                fs=True, calls=True, stops=(1619,), hand=(1376,), tag="PLAN.md M, ctor 103",
+                src="glibc's `handle_intel` (`sysdeps/x86/cacheinfo.c`; `objdump -d`)"),
+    # 7-Zip's `CCriticalSection` constructor (`C/Threads.c`, `CriticalSection_Init`): `pthread_mutex_init (m, NULL)`
+    # for `m` not null. Stops: the tail jump (0xb), `m` null (0x10).
+    "mxs": dict(grp="Mxs", cn="CriticalSection_Init", a=0x448b40, n=0x16, pos=True, stops=(0xb, 0x10),
+                tag="PLAN.md G3, constructors", src="7-Zip's `CriticalSection_Init` (`C/Threads.c`; `objdump -d`)"),
+    # glibc 2.31 nptl/pthread_mutex_init.c, the way of a null `attr`. Stops: `attr` not null (0x2a),
+    # `__stack_chk_fail` (0x1d8). `vop`: the zeroing through `xmm0`.
+    "mxi": dict(grp="Mxi", cn="__pthread_mutex_init", a=0x5fbb20, n=0x1dd, pos=True, fs=True, vop=True,
+                stops=(0x2a, 0x1d8), tag="PLAN.md G3, constructors",
+                src="glibc 2.31's `__pthread_mutex_init` (`nptl/pthread_mutex_init.c`; `objdump -d`)"),
+    "c87": dict(grp="C87", code=("Ctor", "sti"), cn="csuTg 87", a=0x41c140, n=4624, entry=2160, pos=True,
+                stops=(2387,), tag="PLAN.md G3, constructors",
+                src="a static constructor of 7-Zip (`objdump -d`)"),
     "rfi": dict(grp="Rfi", cn="__register_frame_info", a=0x612730, n=0xd1, entry=0xb0, pos=True,
                 stops=(0x6a, 0x76, 0x90, 0xa8, 0xd0), calls=True, tag="PLAN.md G3, startup",
                 src="libgcc's `__register_frame_info` (`libgcc/unwind-dw2-fde.c`; `objdump -d`)"),
@@ -267,6 +343,13 @@ FNS = {
     # trace of `n` = 2000 and 4096). Stops: the branches that way does not take, 2549 itself and the `ret`.
     "im5": dict(grp="Im5", code=("Imm", "imm"), cn="_int_malloc", a=0x630be0, n=3702, pos=True, fs=True,
                 stops=(0x2e, 0x1ec, 0x20b, 0x350, 0x3c0, 0x47f, 0x610, 0x63e, 0x7d2, 0x808, 0x9d1, 0x9f5, 0xc07, 0x3b6),
+                calls=True, tag="PLAN.md G3, `malloc`",
+                src="glibc 2.31's `_int_malloc` (`malloc/malloc.c`; `objdump -d`)"),
+    # The same function on the second call for a request `nb >> 12 > 10` with `nb >> 15 < 5` (`nb` 45056 … 163824,
+    # largebin index `110 + (nb >> 15)`): the way of `im5` but through 492 and 2192 (gdb trace of `n` = 72704,
+    # `private/recon/malloc102.trace`). Stops: those of `im5` but 492, and 507 (`nb >> 12 ≤ 10`).
+    "im6": dict(grp="Im6", code=("Imm", "imm"), cn="_int_malloc", a=0x630be0, n=3702, pos=True, fs=True,
+                stops=(0x2e, 0x1fb, 0x20b, 0x350, 0x3c0, 0x47f, 0x610, 0x63e, 0x7d2, 0x808, 0x9d1, 0x9f5, 0xc07, 0x3b6),
                 calls=True, tag="PLAN.md G3, `malloc`",
                 src="glibc 2.31's `_int_malloc` (`malloc/malloc.c`; `objdump -d`)"),
     "imm": dict(grp="Imm", cn="_int_malloc", a=0x630be0, n=3702, pos=True, fs=True,
@@ -403,6 +486,8 @@ def operand(o):
     """(kind, Lean term of the operand, fields)"""
     m = re.fullmatch(r'reg \{ w(\d+), n(\d+), ?\}', o)
     if m: return ('r', f"gr {m[1]} {m[2]}", (int(m[1]), int(m[2])))
+    m = re.fullmatch(r'reg \{ w8, n(\d+), high8 := true \}', o)   # `ah`, `ch`, `dh`, `bh`
+    if m: return ('rh', f"gh {m[1]}", (8, int(m[1])))
     m = re.fullmatch(r'xmm (\d+)', o)
     if m: return ('x', f".xmm {m[1]}", (int(m[1]),))
     m = re.fullmatch(r'imm (\d+) (\d+)', o)
@@ -460,6 +545,8 @@ def effect(mn, sz, ol, pc=None):
             return terms, f"Op.vla 16 {absa(ops[1])}", f"OpIA.vl_{sm}_rip (by decide) (by decide)"
         if sm in ('movdqa', 'movaps') and ks == ('mr', 'x') and f[0][1] == 128:
             return terms, f"Op.vsa 16 {absa(ops[0])}", f"OpIA.vs_{sm}_rip (by decide) (by decide)"
+        if sm == 'pxor' and ks == ('x', 'x'):   # FV7z/Lemmas/BlkOps19.lean
+            return terms, "Op.vld 0 fun _ => 0", "OpI.vz_pxor"
         raise Exception(f"no effect for {mn} {sz} {ol}")
     # through `fs` (FV7z/Lemmas/SpFs.lean): the `Op` has the `fs` base `fb`
     if mn == 'mov' and ks == ('r', 'mf') and sz in (32, 64):
@@ -536,6 +623,8 @@ def effect(mn, sz, ol, pc=None):
         return terms, f"Op.stia {sz} {absa(ops[0])} {f[1][1]}", f"OpIA.sti_rip {hw3(sz)} (by decide)"
     if mn == 'movzx' and ks == ('r', 'r') and sz == 32 and f[1][0] == 8:   # FV7z/Lemmas/BlkOps14.lean
         return terms, f"Op.zxr {f[0][1]} {f[1][1]}", "OpI.zxr"
+    if mn == 'movzx' and ks == ('r', 'r') and sz == 32 and f[1][0] == 16:   # FV7z/Lemmas/BlkOps18.lean
+        return terms, f"Op.zxr16 {f[0][1]} {f[1][1]}", "OpI.zxr16"
     if mn.startswith('setcc ') and ks == ('r',) and sz == 8:
         return terms, f"Op.setcc {mn.split()[1]} {f[0][1]}", "OpI.setcc"
     if mn == 'movsx' and ks == ('r', 'm') and sz == 32 and f[1][4] == 8:   # FV7z/Lemmas/BlkOps5.lean
@@ -557,6 +646,9 @@ def effect(mn, sz, ol, pc=None):
         assert sz in (32, 64), (mn, sz, ol)
         return (tsrc(sz), f"Op.{mn} {sz} {r} {src(ops[1])}",
                 f"OpI.{mn} {src(ops[1])} {hw2(sz)}")
+    if mn == 'cmp' and ks == ('r', 'm') and sz == 8:   # FV7z/Lemmas/BlkOps20.lean
+        assert f[1][4] == 8
+        return terms, f"Op.cmpm 8 {f[0][1]} {mem(ops[1])}", "OpI.cmpm8"
     if mn == 'cmp' and ks == ('r', 'm') and sz == 16:   # FV7z/Lemmas/BlkOps10.lean
         assert f[1][4] == 16
         return terms, f"Op.cmpm 16 {f[0][1]} {mem(ops[1])}", "OpI.cmpm16"
@@ -595,6 +687,17 @@ def effect(mn, sz, ol, pc=None):
         return tsrc(8), f"Op.{mn}64 {f[0][1]} {src(ops[1])}", f"OpI.{mn}64 {src(ops[1])}"
     if mn in ('push', 'pop') and ks == ('r',) and sz == 64:
         return terms, f"Op.{mn} {f[0][1]}", f"OpI.{mn}"
+    if mn in ('and', 'test') and ks == ('rh', 'i') and sz == 8:   # FV7z/Lemmas/BlkOps20.lean
+        return terms, f"Op.{mn}h {f[0][1]} {f[1][1]}", f"OpI.{mn}h"
+    if mn == 'not' and ks == ('r',) and sz == 32:   # FV7z/Lemmas/BlkOps20.lean
+        return terms, f"Op.not32 {f[0][1]}", "OpI.not32"
+    if mn == 'cwd' and ks == () and sz == 64:
+        return terms, "Op.cqo", "OpI.cqo"
+    if mn == 'imul' and ks == ('r', 'r', 'i') and sz == 64:
+        return terms, f"Op.imul3 {f[0][1]} {f[1][1]} {f[2][1]}", "OpI.imul3"
+    if mn == 'imul' and ks == ('r', 'mr', 'i') and sz == 64:
+        assert f[1][1] == 64
+        return terms, f"Op.imul3ma {f[0][1]} {absa(ops[1])} {f[2][1]}", "OpIA.imul3_rip (by decide)"
     raise Exception(f"no effect for {mn} {sz} {ol}")
 
 
@@ -786,7 +889,7 @@ end FV7z.{grp}
                          f"theorem j{k}_0 : ∀ feat, Dec feat j{k} 0 (FV7z.mk {mnl(mn)} {sz} [{operand(ol[0])[1]}] {ln}) := "
                          "by dec_rfl\n")
     open(out + "/Pats.lean", "w").write(f"""import FV7z.Lemmas.Sp{"Fs" if FSM else ""}
-{"import FV7z.Lemmas.BlkOps17" + chr(10) if any("Op.mul64" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps16" + chr(10) if any("Op.bt64" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps15" + chr(10) if any("Op.sxr" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps14" + chr(10) if any(k in x for x in P for k in ("Op.zxr", "Op.test 16", "Op.cmpmif fb 8")) else ""}{"import FV7z.Lemmas.BlkOps13" + chr(10) if any("Op.cmpmif" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps12" + chr(10) if any(k in x for x in P for k in ("Op.cmpmr", "Op.testmi")) else ""}{"import FV7z.Lemmas.BlkOps11" + chr(10) if any(k in x for x in P for k in ("Op.rol64", "Op.ror64")) else ""}{"import FV7z.Lemmas.BlkOps10" + chr(10) if any("Op.cmpm 16" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps9" + chr(10) if any("Op.cmpma" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps8" + chr(10) if any(k in x for x in P for k in ("Op.vla", "Op.vsa", "Op.addma", "Op.cmpmia 8", "Op.stia 8")) else ""}{"import FV7z.Lemmas.BlkOps7" + chr(10) if any(k in x for x in P for k in ("Op.vl", "Op.vs", "Op.cdqe")) else ""}{"import FV7z.Lemmas.BlkOps6" + chr(10) if any(k in x for x in P for k in ("Op.stf8", "Op.stfi", "Op.xormf")) else ""}{("import FV7z.Lemmas.BlkOps5" if any("Op.ldsxb" in x for x in P) else
+{"import FV7z.Lemmas.BlkOps20" + chr(10) if any(k in x for x in P for k in ("Op.not32", "Op.cqo", "Op.imul3", "Op.andh", "Op.testh", "Op.cmpm 8")) else ""}{"import FV7z.Lemmas.BlkOps19" + chr(10) if any("Op.vld 0" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps18" + chr(10) if any("Op.zxr16" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps17" + chr(10) if any("Op.mul64" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps16" + chr(10) if any("Op.bt64" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps15" + chr(10) if any("Op.sxr" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps14" + chr(10) if any(k in x for x in P for k in ("Op.zxr", "Op.test 16", "Op.cmpmif fb 8")) else ""}{"import FV7z.Lemmas.BlkOps13" + chr(10) if any("Op.cmpmif" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps12" + chr(10) if any(k in x for x in P for k in ("Op.cmpmr", "Op.testmi")) else ""}{"import FV7z.Lemmas.BlkOps11" + chr(10) if any(k in x for x in P for k in ("Op.rol64", "Op.ror64")) else ""}{"import FV7z.Lemmas.BlkOps10" + chr(10) if any("Op.cmpm 16" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps9" + chr(10) if any("Op.cmpma" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps8" + chr(10) if any(k in x for x in P for k in ("Op.vla", "Op.vsa", "Op.addma", "Op.cmpmia 8", "Op.stia 8")) else ""}{"import FV7z.Lemmas.BlkOps7" + chr(10) if any(k in x for x in P for k in ("Op.vl", "Op.vs", "Op.cdqe")) else ""}{"import FV7z.Lemmas.BlkOps6" + chr(10) if any(k in x for x in P for k in ("Op.stf8", "Op.stfi", "Op.xormf")) else ""}{("import FV7z.Lemmas.BlkOps5" if any("Op.ldsxb" in x for x in P) else
   "import FV7z.Lemmas.BlkOps4" if any("Op.imul64" in x for x in P) else
   "import FV7z.Lemmas.BlkOps3" if any(k in x for x in P for k in ("Op.shl64", "Op.shr64", "Op.sar64")) else
   "import FV7z.Lemmas.BlkOps2") + chr(10) if pos else ""}/-!
