@@ -1,7 +1,9 @@
-import FV7z.Ctor.Cx99
+import FV7z.Ctor.Cx90
 open FV7z
-#print axioms FV7z.Ctor.mx_mid
-#print axioms FV7z.Ctor.cx_mid
-#print axioms FV7z.Ctor.CxPre.reg
-#print axioms FV7z.Ctor.c99_runs
-#print axioms FV7z.Ctor.c99_jg
+#print axioms FV7z.Ctor.mc_tail
+#print axioms FV7z.Ctor.mc_runs
+#print axioms FV7z.Ctor.mc_jg
+#print axioms FV7z.Ctor.c94_runs
+#print axioms FV7z.Ctor.c94_jg
+#print axioms FV7z.Ctor.c90_runs
+#print axioms FV7z.Ctor.c90_jg
