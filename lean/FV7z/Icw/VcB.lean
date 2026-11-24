@@ -14,8 +14,8 @@ set_option linter.unusedSimpArgs false
 variable {prof : Profile} {L : List (Addr × List Byte)} {F : Footprint} {Wl : List Rgn}
   {g₀ g : Gprs} {V₀ V : Addr → Byte} {f : Rflags} {n : Nat}
 
-/-- An exit of the leaf-4 loops: to a loop's next cut point, or to 885, or to 717. -/
 set_option hygiene false in
+/-- An exit of the leaf-4 loops: to a loop's next cut point, or to 885, or to 717. -/
 macro "icw_lk" : tactic => `(tactic| first
   | exact Or.inl ⟨_, by icw_om, rfl, ⟨⟨m1, m2, m3, m4⟩, hrd, hk⟩, hs⟩
   | exact Or.inl ⟨3, by icw_om, rfl, ⟨m1, m2, m3, m4⟩, hrd⟩

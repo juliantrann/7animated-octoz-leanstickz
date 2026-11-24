@@ -109,7 +109,7 @@ theorem vc_656 (hT : Te F Wl L g₀ V₀) (h : Ih g₀ V₀ 656 n g V) : W_656 F
     have hx := ix1 ((r10 + rax) >>> 1) (by omega)
     intro fl _
     exact ⟨tabB hT _ 1 (by rw [hx]; omega) (by rw [hx]; omega),
-      fun _ => Or.inl ⟨_, by icw_om, rfl, ⟨⟨m1, m2, m3, m4⟩, ⟨b1, b2, b3, b4, rfl⟩, hrd⟩, k1, k2, by omega⟩,
+      fun _ => Or.inl ⟨_, by icw_om, rfl, ⟨⟨m1, m2, m3, m4⟩, ⟨b1, b2, b3, b4, rfl⟩, hrd⟩, k1, k2, by icw_om⟩,
       fun _ => Or.inl ⟨_, by icw_om, rfl, ⟨⟨m1, m2, m3, m4⟩, ⟨b1, b2, b3, b4, rfl⟩, hrd⟩, _, by omega, hx⟩⟩
 
 theorem vc_682 (hT : Te F Wl L g₀ V₀) (h : Ih g₀ V₀ 682 n g V) : W_682 F Wl (Nx g₀ V₀ n) g f V := by
