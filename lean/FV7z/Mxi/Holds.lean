@@ -104,7 +104,10 @@ theorem vc_0 {fb S m : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (hS : g
   dsimp only at hS hM hsi
   subst hS hM hsi
   wpx [W_0, W_240, W_134, W_140, W_160, o0, o1, o2, o3, o4, Op.ldf, Op.xormf, Op.vs, BitVec.xor_self]
-  done
+  refine ⟨h1, h2, h3, h4, hfl, hcw, fun _ _ => ⟨fun _ => ⟨fun i hi => absurd hi (Nat.not_lt_zero _), hm32, fun _ =>
+    ⟨hm0, fun b1 hb1 => ⟨hm16, fun b2 hb2 => ⟨fun i hi => hm16 i (by omega), fun _ => ⟨hcr, hfl, fun _ =>
+      ⟨fun h => hX _ _ _ _ hb1 hb2 h, fun _ => ⟨hp0, hp1, hp2, hp3, hQ _ _ _ _ hb1 hb2⟩⟩⟩⟩⟩⟩⟩,
+    fun h => absurd h (by decide)⟩⟩
 
 /-! ## The frame -/
 
@@ -186,9 +189,70 @@ theorem mx_rd (V : Addr → Byte) (S m fb : Addr) (r13 r12 rbp rbx : BitVec 64) 
 variable {prof : Profile} {L : List (Addr × List Byte)} {s₀ X : State} {o : Oracle} {t : Nat}
   {gev : List Event} {gP : State → Nat → List Event → Prop} {gE : Outcome → List Event → Prop} {V : Addr → Byte}
 
+
+/-- `Osv.Back` from the registers with `rsi := 0`. -/
+theorem back_rsi {g g' : Gprs} (h : Osv.Back { g with rsi := 0 } g') : Osv.Back g g' := h
+
+/-- `__pthread_mutex_init (m, NULL)` from its entry with the stack pointer `S` at the return address: the run reaches
+the return address, the registers a call keeps as at the entry, the bytes outside the 56 under `S` and the 40 of the
+mutex as they were. -/
+theorem mxi_ok {fb S m : Addr} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb)
+    (hini : CodeIn L mxi_at mxi) (hK : KeptW Wl s₀ X) (hA : Agree F X.proc.mm.mem V)
+    (hrip : X.cpu.rip = mxi_at.add 0) (hS : X.cpu.gpr.rsp = S) (hM : X.cpu.gpr.rdi = m) (hsi : X.cpu.gpr.rsi = 0)
+    (hs : 56 ≤ S.toNat) (hs8 : S.toNat + 8 ≤ 2 ^ 64)
+    (hst : ∀ i < 56, Foot Wl (Addr.add (S - 56#64) i)) (hlr : ∀ i < 8, Foot F.data (Addr.add S i))
+    (hfl : ∀ i < 8, Foot F.data (Addr.add (fb + 40#64) i)) (hfb : (fb + 40#64).toNat + 8 ≤ 2 ^ 64)
+    (hfd : (fb + 40#64).toNat + 8 ≤ S.toNat - 56 ∨ S.toNat ≤ (fb + 40#64).toNat)
+    (hfm : (fb + 40#64).toNat + 8 ≤ m.toNat ∨ m.toNat + 40 ≤ (fb + 40#64).toNat)
+    (hmw : ∀ i < 40, Foot Wl (Addr.add m i)) (hm : m.toNat + 40 ≤ 2 ^ 64)
+    (hmd : m.toNat + 40 ≤ S.toNat - 56 ∨ S.toNat + 8 ≤ m.toNat)
+    {e₂ : Addr} {code₂ : List Byte} (hin₂ : CodeIn L e₂ code₂) {j₂ : Nat} (h₂ : j₂ < code₂.length)
+    (hra : rdq(V, S) = e₂.add j₂)
+    (k : ∀ V' Z t', KeptW Wl s₀ Z → Agree F Z.proc.mm.mem V' →
+      (∀ a : Addr, ¬ (S.toNat - 56 ≤ a.toNat ∧ a.toNat < S.toNat) → ¬ (m.toNat ≤ a.toNat ∧ a.toNat < m.toNat + 40) →
+        V' a = V a) →
+      Z.cpu.rip = e₂.add j₂ → Osv.Back X.cpu.gpr Z.cpu.gpr → GoG prof L o gev gP gE Z t') :
+    GoG prof L o gev gP gE X t := by
+  refine (c_0 prof fb).run c hfs hini _ hK hA hrip
+    (vc_0 (S := S) (m := m) hS hM hsi
+      (off_ft hst 48 (f8 _) (by decide)) (off_ft hst 40 (f16 _) (by decide)) (off_ft hst 32 (f24 _) (by decide))
+      (off_ft hst 24 (f32 _) (by decide)) hfl (off_ft hst 8 (fc _) (by decide))
+      (fun i hi => c.hws _ (off_ft hst 8 (fc _) (by decide) i hi)) (off_ft hmw 32 rfl (by decide))
+      (fun i hi => hmw i (by omega)) (off_ft hmw 16 rfl (by decide))
+      (fun i hi => c.hws _ (off_ft hst 24 (fp0 _) (by decide) i hi))
+      (fun i hi => c.hws _ (off_ft hst 32 (fp1 _) (by decide) i hi))
+      (fun i hi => c.hws _ (off_ft hst 40 (fp2 _) (by decide) i hi))
+      (fun i hi => c.hws _ (off_ft hst 48 (fp3 _) (by decide) i hi))
+      (fun j' g' _ V' => ∃ b1 b2 : List Byte, b1.length = 16 ∧ b2.length = 16 ∧
+        V' = mxV V S m fb X.cpu.gpr.r13 X.cpu.gpr.r12 X.cpu.gpr.rbp X.cpu.gpr.rbx b1 b2 ∧
+        ((j' = 170 ∧ ∃ c, g' = g170 X.cpu.gpr S V' c) ∨
+          (j' = 472 ∧ (!(rdq(V', sp1 S + 8#64) ^^^ rdq(V', fb + 40#64) == 0)) = true)))
+      (fun b1 b2 c _ h1 h2 => ⟨b1, b2, h1, h2, rfl, .inl ⟨rfl, c, rfl⟩⟩)
+      (fun b1 b2 _ _ h1 h2 h => ⟨b1, b2, h1, h2, rfl, .inr ⟨rfl, h⟩⟩)) ?_
+  rintro j' g' fl V₃ ⟨b1, b2, hb1, hb2, rfl, h⟩ Y₃ t₃ hK₃ hA₃ hr₃ hg₃ -
+  have hF := mx_rd V S m fb X.cpu.gpr.r13 X.cpu.gpr.r12 X.cpu.gpr.rbp X.cpu.gpr.rbx hb1 hb2 hs hs8 hm hmd hfb hfd hfm
+  rcases h with ⟨rfl, cc, rfl⟩ | ⟨rfl, hc⟩
+  rotate_left
+  · exact absurd hF.can (xne hc)
+  -- the `ret`
+  have hsp₃ : Y₃.cpu.gpr.rsp = S := (congrArg Gprs.rsp hg₃).trans (k56 _)
+  refine c.s_ret hK₃ hA₃ hini (lt_len (by decide)) hr₃ (ret_170 _) (fun i hi => ?_) hin₂ h₂ ?_ ?_
+  · rw [hsp₃]
+    exact hlr i hi
+  · rw [hsp₃, hF.ra]
+    exact hra
+  rintro Z t' hKZ hAZ ⟨hrZ, hgZ⟩
+  refine k _ Z t' hKZ hAZ hF.out hrZ ?_
+  rw [hgZ]
+  refine ⟨?_, (congrArg Gprs.rbx hg₃).trans hF.bx, (congrArg Gprs.rbp hg₃).trans hF.bp,
+    (congrArg Gprs.r12 hg₃).trans hF.x12, (congrArg Gprs.r13 hg₃).trans hF.x13, (congrArg Gprs.r14 hg₃).trans rfl,
+    (congrArg Gprs.r15 hg₃).trans rfl⟩
+  show Y₃.cpu.gpr.rsp + 8 = _
+  rw [hsp₃, hS]
+  rfl
+
 /-- `CriticalSection_Init (m)` with `m` not null, from its entry with the stack pointer `S` at the return address:
-the run reaches the return address, the registers a call keeps as at the entry, the bytes outside the 56 under `S` and
-the 40 of the mutex as they were. -/
+as `mxi_ok`. -/
 theorem mx_ok {fb : Addr} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb)
     (hin : CodeIn L Mxs.mxs_at Mxs.mxs) (hini : CodeIn L mxi_at mxi) (hK : KeptW Wl s₀ X)
     (hA : Agree F X.proc.mm.mem V) (hrip : X.cpu.rip = Mxs.mxs_at) (hm0 : X.cpu.gpr.rdi ≠ 0)
@@ -210,69 +274,15 @@ theorem mx_ok {fb : Addr} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBas
   -- `CriticalSection_Init`: `rsi := 0`, the jump
   refine (Mxs.c_0 prof).run c hin _ hK hA (by rw [addr_add_zero]; exact hrip)
     (vc_s hm0 (fun j' g' _ V' => j' = 11 ∧ g' = { X.cpu.gpr with rsi := 0 } ∧ V' = V) fun _ => ⟨rfl, rfl, rfl⟩) ?_
-  rintro j' g fl V₁ ⟨rfl, rfl, rfl⟩ Y₁ t₁ hK₁ hA₁ hr₁ hg₁ -
+  rintro j' g fl V₁ ⟨rfl, rfl, hV⟩ Y₁ t₁ hK₁ hA₁ hr₁ hg₁ -
+  rw [hV] at hA₁
   refine c.s_jmp_x hK₁ hA₁ hin (Mxs.lt_len (by decide)) hr₁ (jmp_11 _) hini (lt_len (j := 0) (by decide))
     (by decide) ?_
   rintro Y₂ t₂ hK₂ hA₂ ⟨hr₂, hg₂⟩
   have hg : Y₂.cpu.gpr = { X.cpu.gpr with rsi := 0 } := hg₂.trans hg₁
   -- `__pthread_mutex_init`
-  refine (c_0 prof fb).run c hfs hini _ hK₂ hA₂ hr₂
-    (vc_0 (S := X.cpu.gpr.rsp) (m := X.cpu.gpr.rdi) (by rw [hg]) (by rw [hg]) (by rw [hg])
-      (off_ft hst 48 (f8 _) (by decide)) (off_ft hst 40 (f16 _) (by decide)) (off_ft hst 32 (f24 _) (by decide))
-      (off_ft hst 24 (f32 _) (by decide)) hfl (off_ft hst 8 (fc _) (by decide))
-      (fun i hi => c.hws _ (off_ft hst 8 (fc _) (by decide) i hi)) (off_ft hmw 32 rfl (by decide))
-      (fun i hi => hmw i (by omega)) (off_ft hmw 16 rfl (by decide))
-      (fun i hi => c.hws _ (off_ft hst 24 (fp0 _) (by decide) i hi))
-      (fun i hi => c.hws _ (off_ft hst 32 (fp1 _) (by decide) i hi))
-      (fun i hi => c.hws _ (off_ft hst 40 (fp2 _) (by decide) i hi))
-      (fun i hi => c.hws _ (off_ft hst 48 (fp3 _) (by decide) i hi))
-      (fun j' g' _ V' => ∃ b1 b2 : List Byte, b1.length = 16 ∧ b2.length = 16 ∧
-        V' = mxV V X.cpu.gpr.rsp X.cpu.gpr.rdi fb Y₂.cpu.gpr.r13 Y₂.cpu.gpr.r12 Y₂.cpu.gpr.rbp Y₂.cpu.gpr.rbx b1 b2 ∧
-        ((j' = 170 ∧ ∃ c, g' = g170 Y₂.cpu.gpr X.cpu.gpr.rsp V' c) ∨
-          (j' = 472 ∧ (!(rdq(V', sp1 X.cpu.gpr.rsp + 8#64) ^^^ rdq(V', fb + 40#64) == 0)) = true)))
-      (fun b1 b2 c _ h1 h2 => ⟨b1, b2, h1, h2, rfl, .inl ⟨rfl, c, rfl⟩⟩)
-      (fun b1 b2 _ _ h1 h2 h => ⟨b1, b2, h1, h2, rfl, .inr ⟨rfl, h⟩⟩)) ?_
-  rintro j' g' fl V₃ ⟨b1, b2, hb1, hb2, rfl, h⟩ Y₃ t₃ hK₃ hA₃ hr₃ hg₃ -
-  have hF := mx_rd V X.cpu.gpr.rsp X.cpu.gpr.rdi fb Y₂.cpu.gpr.r13 Y₂.cpu.gpr.r12 Y₂.cpu.gpr.rbp Y₂.cpu.gpr.rbx
-    hb1 hb2 hs hs8 hm hmd hfb hfd hfm
-  rcases h with ⟨rfl, cc, rfl⟩ | ⟨rfl, hc⟩
-  rotate_left
-  · exact absurd hF.can (xne hc)
-  -- the `ret`
-  have hsp₃ : Y₃.cpu.gpr.rsp = X.cpu.gpr.rsp := by
-    rw [hg₃]
-    exact k56 _
-  refine c.s_ret hK₃ hA₃ hini (lt_len (by decide)) hr₃ (ret_170 _) (fun i hi => ?_) hin₂ h₂ ?_ ?_
-  · rw [hsp₃]
-    exact hlr i hi
-  · rw [hsp₃, hF.ra]
-    exact hra
-  rintro Z t' hKZ hAZ ⟨hrZ, hgZ⟩
-  refine k _ Z t' hKZ hAZ hF.out hrZ ?_
-  rw [hgZ]
-  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-  · show Y₃.cpu.gpr.rsp + 8 = _
-    rw [hsp₃]
-    rfl
-  · show Y₃.cpu.gpr.rbx = _
-    rw [hg₃]
-    exact hF.bx.trans (by rw [hg])
-  · show Y₃.cpu.gpr.rbp = _
-    rw [hg₃]
-    exact hF.bp.trans (by rw [hg])
-  · show Y₃.cpu.gpr.r12 = _
-    rw [hg₃]
-    exact hF.x12.trans (by rw [hg])
-  · show Y₃.cpu.gpr.r13 = _
-    rw [hg₃]
-    exact hF.x13.trans (by rw [hg])
-  · show Y₃.cpu.gpr.r14 = _
-    rw [hg₃]
-    show Y₂.cpu.gpr.r14 = _
-    rw [hg]
-  · show Y₃.cpu.gpr.r15 = _
-    rw [hg₃]
-    show Y₂.cpu.gpr.r15 = _
-    rw [hg]
-
-end FV7z.Mxi
+  refine mxi_ok c hfs hini hK₂ hA₂ hr₂ (congrArg Gprs.rsp hg) (congrArg Gprs.rdi hg) (congrArg Gprs.rsi hg) hs hs8
+    hst hlr hfl hfb hfd hfm hmw hm hmd hin₂ h₂ hra ?_
+  intro V' Z t' hKZ hAZ hout hrZ hB
+  rw [hg] at hB
+  exact k V' Z t' hKZ hAZ hout hrZ (back_rsi hB)
