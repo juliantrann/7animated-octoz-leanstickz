@@ -253,27 +253,58 @@ theorem jv3 : (ofBytesLE 32 [0xf0, 0xab, 0xf6, 0xff]).signExtend 64 + 7282688#64
 theorem jv6 : (ofBytesLE 32 [0x48, 0xac, 0xf6, 0xff]).signExtend 64 + 7282688#64 = Addr.add hca_at 312 := by
   decide +kernel
 
-theorem vc_54 (hT : Te F Wl L g₀ V₀) (h : Ih g₀ V₀ 54 n g V) : W_54 F Wl (Nx g₀ V₀ n) g f V := by
-  obtain ⟨rfl, hd, hM⟩ := h
-  have hr : g.rdi = 188#64 ∨ g.rdi = 191#64 ∨ g.rdi = 194#64 := by rw [hd]; exact hT.rdi
+/-- `vc_54` for `rdi = 188`: the table's entry 0, to `160`. -/
+theorem vc_54a (hT : Te F Wl L g₀ V₀) (hM : Mid g₀ V₀ g V) (hr : g.rdi = 188#64) :
+    W_54 F Wl (Nx g₀ V₀ 4) g f V := by
   have hj := jt_rd hT hM
   have hft := tab4 hT
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
-  have hr' : rdi = 188#64 ∨ rdi = 191#64 ∨ rdi = 194#64 := hr
-  wpx [W_54, W_69, o6, o7, Op.ldsx]
-  rcases hr' with rfl | rfl | rfl
-  · refine ⟨fun h => absurd h (by decide), fun _ => ⟨hft _ (by decide) (by decide), ?_⟩⟩
-    simp -implicitDefEqProofs (disch := decide) only [hj 0 (by decide), jw0]
-    refine ⟨160, lt_len (by decide), ?_, Or.inl ⟨3, by decide, rfl, hM⟩⟩
-    first | exact jv0 | (trace_state; sorry)
-  · refine ⟨fun h => absurd h (by decide), fun _ => ⟨hft _ (by decide) (by decide), ?_⟩⟩
-    simp -implicitDefEqProofs (disch := decide) only [hj 3 (by decide), jw3]
-    refine ⟨224, lt_len (by decide), ?_, Or.inl ⟨3, by decide, rfl, hM⟩⟩
-    first | exact jv3 | (trace_state; sorry)
-  · refine ⟨fun h => absurd h (by decide), fun _ => ⟨hft _ (by decide) (by decide), ?_⟩⟩
-    simp -implicitDefEqProofs (disch := decide) only [hj 6 (by decide), jw6]
-    refine ⟨312, lt_len (by decide), ?_, Or.inl ⟨3, by decide, rfl, hM⟩⟩
-    first | exact jv6 | (trace_state; sorry)
+  have hr' : rdi = 188#64 := hr
+  wpx -implicitDefEqProofs [W_54, W_69, o6, o7, Op.ldsx]
+  subst hr'
+  trace_state
+  refine ⟨fun h => absurd h (by decide), fun _ => ⟨hft _ (by decide) (by decide), ?_⟩⟩
+  simp -implicitDefEqProofs (disch := decide) only [hj 0 (by decide), jw0]
+  refine ⟨160, lt_len (by decide), ?_, Or.inl ⟨3, by decide, rfl, hM⟩⟩
+  first | exact jv0 | (trace_state; sorry)
+
+/-- `vc_54` for `rdi = 191`: the table's entry 3, to `224`. -/
+theorem vc_54b (hT : Te F Wl L g₀ V₀) (hM : Mid g₀ V₀ g V) (hr : g.rdi = 191#64) :
+    W_54 F Wl (Nx g₀ V₀ 4) g f V := by
+  have hj := jt_rd hT hM
+  have hft := tab4 hT
+  obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
+  have hr' : rdi = 191#64 := hr
+  wpx -implicitDefEqProofs [W_54, W_69, o6, o7, Op.ldsx]
+  subst hr'
+  trace_state
+  refine ⟨fun h => absurd h (by decide), fun _ => ⟨hft _ (by decide) (by decide), ?_⟩⟩
+  simp -implicitDefEqProofs (disch := decide) only [hj 3 (by decide), jw3]
+  refine ⟨224, lt_len (by decide), ?_, Or.inl ⟨3, by decide, rfl, hM⟩⟩
+  first | exact jv3 | (trace_state; sorry)
+
+/-- `vc_54` for `rdi = 194`: the table's entry 6, to `312`. -/
+theorem vc_54c (hT : Te F Wl L g₀ V₀) (hM : Mid g₀ V₀ g V) (hr : g.rdi = 194#64) :
+    W_54 F Wl (Nx g₀ V₀ 4) g f V := by
+  have hj := jt_rd hT hM
+  have hft := tab4 hT
+  obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
+  have hr' : rdi = 194#64 := hr
+  wpx -implicitDefEqProofs [W_54, W_69, o6, o7, Op.ldsx]
+  subst hr'
+  trace_state
+  refine ⟨fun h => absurd h (by decide), fun _ => ⟨hft _ (by decide) (by decide), ?_⟩⟩
+  simp -implicitDefEqProofs (disch := decide) only [hj 6 (by decide), jw6]
+  refine ⟨312, lt_len (by decide), ?_, Or.inl ⟨3, by decide, rfl, hM⟩⟩
+  first | exact jv6 | (trace_state; sorry)
+
+theorem vc_54 (hT : Te F Wl L g₀ V₀) (h : Ih g₀ V₀ 54 n g V) : W_54 F Wl (Nx g₀ V₀ n) g f V := by
+  obtain ⟨rfl, hd, hM⟩ := h
+  have hr : g.rdi = 188#64 ∨ g.rdi = 191#64 ∨ g.rdi = 194#64 := by rw [hd]; exact hT.rdi
+  rcases hr with h | h | h
+  · exact vc_54a hT hM h
+  · exact vc_54b hT hM h
+  · exact vc_54c hT hM h
 
 theorem vc_96 (h : Ih g₀ V₀ 96 n g V) : W_96 F Wl (Nx g₀ V₀ n) g f V := by
   obtain ⟨rfl, hM⟩ := h
