@@ -123,8 +123,9 @@ theorem lsb_dbg {fb sp : Addr} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.
         exact hsw y this.1 this.2
       · exact hdw y hm
     · rintro y ⟨r, hr, hm⟩
-      simp only [Contract.footprint, fnK, fn, DebugInit.reads, List.mem_cons, List.not_mem_nil, or_false] at hr
-      subst hr
+      have hr' : r = rLoaded := by
+        simpa [Contract.footprint, fnK, fn, DebugInit.reads] using hr
+      subst hr'
       exact hlr y hm
     · rintro y ⟨r, hr, hm⟩
       simp only [ws, List.mem_cons, List.not_mem_nil, or_false] at hr

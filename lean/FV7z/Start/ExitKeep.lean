@@ -16,8 +16,8 @@ import FV7z.Ndi.Exit
 - `ptr_exit`: at `0x613434` they are 0, as in the image (the bss); `ptr_ef`: `__exit_funcs` is `&initial`.
 - `ct_tcb`, `lifW_tcb`, `tcb_ret`: the same for the first 56 bytes of the TCB (`multiple_threads` at `fs + 24`,
   `pointer_guard` at `fs + 48`), with `Ndi.ndi_tcb`.
-- `lif_r12`: `r12` at `0x613439` (`fini`) is the one at `0x613434`, through the slot `__libc_init_first` saves it
-  to.
+- `lif_r12`, `lif_rbp`: `r12` (`fini`) and `rbp` (`init`) at `0x613439` are those at `0x613434`, through the slots
+  `__libc_init_first` saves them to.
 -/
 namespace FV7z.Start
 open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn
@@ -161,6 +161,19 @@ theorem lif_r12 {W : Addr → Byte} {Z : State} (h : 8029656 + 16 ≤ (entG Z).r
   rw [rd_Vst _ _ _ _ _ ?_ ?_ ?_, rd_Vst _ _ _ _ _ ?_ ?_ ?_, rd_Vst _ _ _ _ _ ?_ ?_ ?_, rd_Vst _ _ _ _ _ ?_ ?_ ?_,
     rd_Vst _ _ _ _ _ ?_ ?_ ?_, rd_Vst _ _ _ _ _ ?_ ?_ ?_, rd_Vst_self _ _ _ (toBytesLE_length _ _) ?_,
     ofBytesLE_toBytesLE (n := 8) rfl, hr]
+  all_goals first | (simp only [toBytesLE_length]; bv_omega) | bv_omega
+
+/-- `rbp` at the return of `__libc_init_first` (`rdq(lifW W Z, lifSp Z + 128)`, `launch_to_lif`) is `rbp` at
+`0x613434`: `lif_a` pushes it to `rsp - 24` and pops it back. -/
+theorem lif_rbp {W : Addr → Byte} {Z : State} (h : 8029656 + 24 ≤ (entG Z).rsp.toNat) :
+    rdq(lifW W Z, lifSp Z + 128#64) = Z.cpu.gpr.rbp := by
+  have e : lifSp Z + 128#64 = (entG Z).rsp - 24#64 := by simp only [lifSp]; bv_omega
+  have := (entG Z).rsp.isLt
+  have hr : (entG Z).rbp = Z.cpu.gpr.rbp := rfl
+  rw [e]
+  unfold lifW Lif.LifMem Lif.LifStk
+  rw [rd_Vst _ _ _ _ _ ?_ ?_ ?_, rd_Vst _ _ _ _ _ ?_ ?_ ?_, rd_Vst _ _ _ _ _ ?_ ?_ ?_, rd_Vst _ _ _ _ _ ?_ ?_ ?_,
+    rd_Vst _ _ _ _ _ ?_ ?_ ?_, rd_Vst_self _ _ _ (toBytesLE_length _ _) ?_, ofBytesLE_toBytesLE (n := 8) rfl, hr]
   all_goals first | (simp only [toBytesLE_length]; bv_omega) | bv_omega
 
 /-- `__exit_funcs` (`0x7923b0`) in the file: `&initial` (`0x7a3aa0`). -/
