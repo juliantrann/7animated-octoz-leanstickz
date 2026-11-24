@@ -1,16 +1,17 @@
 import FV7z.Start.ToCxa
-import FV7z.Start.MainRet
+import FV7z.Start.CtorRet
 /-!
 # From the launch of `7zzs` to `main` (PLAN.md G3, startup)
 
-`launch_to_cxa` ends at the return of `__cxa_atexit (fini, NULL, NULL)` to `0x61344a`; `cxa_main_at` runs from there
-through `__libc_csu_init` (its 104 calls by `Csu.Runs` for an invariant), `_dl_debug_initialize` and `_setjmp` to the
-first byte of `main` (`0x41cd90`), with `argc`, `argv` of the launch in `rdi`, `rsi`. Here the two are joined: the
-footprint facts come from `lifG` and the layout, the stack pointer and `rbp` (`init`) from `Osv.Back` and `Rg`.
+`launch_to_cxa` ends at the return of `__cxa_atexit (fini, NULL, NULL)` to `0x61344a`; `cxa_ctor_at` runs from there
+through `__libc_csu_init` (its first three calls proved, the 101 constructors by `Csu.Runs` for an invariant),
+`_dl_debug_initialize` and `_setjmp` to the first byte of `main` (`0x41cd90`), with `argc`, `argv` of the launch in
+`rdi`, `rsi`. Here the two are joined: the footprint facts come from `lifG` and the layout, the stack pointer and
+`rbp` (`init`) from `Osv.Back` and `Rg`.
 
 - `MainCode L`: the code of the functions called on the way and of `main`, and of the 104 functions `csuTg`.
-- `q_offs`, `brk_offs`, `back_q`, `rng_at`: the offsets and footprint facts, apart from the large context.
-- `launch_to_main`: as `launch_to_cxa`, with `__cxa_atexit`'s return continued to `main` (`AtMain`).
+- `q_offs`, `s_offs`, `brk_offs`, `back_q`, `rng_at`: the offsets and footprint facts, apart from the large context.
+- `launch_to_main`: as `launch_to_cxa`, with `__cxa_atexit`'s return continued to `main` (`AtCtor`).
 -/
 namespace FV7z.Start
 open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn FV7z.Glibc FV7z.AuxInit
@@ -21,7 +22,8 @@ open FV7z.StartB (PimCode)
 open FV7z.Tls (TlsMem)
 
 /-- The code of `_dl_debug_initialize`, `_setjmp` (and `__sigsetjmp`), `__libc_csu_init`, of `main` and of the 104
-functions `__libc_csu_init` calls. -/
+functions `__libc_csu_init` calls, with that of the first three and of the functions they call (`__tunable_get_val`,
+`register_tm_clones`, `__register_frame_info_bases`, `pthread_mutex_lock`, `pthread_mutex_unlock`). -/
 structure MainCode (L : List (Addr × List Byte)) : Prop where
   dbg : CodeIn L Dbg.dbg_at Dbg.dbg
   sjp : CodeIn L Sjp.sjp_at Sjp.sjp
@@ -29,6 +31,14 @@ structure MainCode (L : List (Addr × List Byte)) : Prop where
   csu : CodeIn L Csu.csu_at Csu.csu
   main : ∃ code, CodeIn L 0x41cd90#64 code ∧ 0 < code.length
   tcode : ∀ i < 104, ∃ code, CodeIn L (csuTg i) code ∧ 0 < code.length
+  eli : CodeIn L Eli.eli_at Eli.eli
+  tgv : CodeIn L Tgv.tgv_at Tgv.tgv
+  ini : CodeIn L Ini.ini_at Ini.ini
+  fdm : CodeIn L Fdm.fdm_at Fdm.fdm
+  rtc : CodeIn L Rtc.rtc_at Rtc.rtc
+  rfi : CodeIn L Rfi.rfi_at Rfi.rfi
+  pml : CodeIn L Pml.pml_at Pml.pml
+  pmu : CodeIn L Pmu.pmu_at Pmu.pmu
 
 /-- The stack offsets of `cxa_main_at` from `q = rsp` at `0x613434`. -/
 theorem q_offs {q : Addr} {S : Nat} (h : q.toNat = S - 288) (h1 : 4096 ≤ S) (h2 : S ≤ 2 ^ 47) :
@@ -37,10 +47,16 @@ theorem q_offs {q : Addr} {S : Nat} (h : q.toNat = S - 288) (h1 : 4096 ≤ S) (h
       (q + 184#64).toNat = S - 104 ∧ (q + 192#64).toNat = S - 96 ∧ (q - 8#64 - 64#64).toNat = S - 360 := by
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> bv_omega
 
+/-- The frames of the first functions `__libc_csu_init` calls. -/
+theorem s_offs {q : Addr} {S : Nat} (h : q.toNat = S - 288) (h1 : 4096 ≤ S) (h2 : S ≤ 2 ^ 47) :
+    (q - 8#64 - 64#64 - 32#64).toNat = S - 392 ∧ (q - 8#64 - 64#64 - 72#64).toNat = S - 432 := by
+  constructor <;> bv_omega
+
 /-- The TCB's offsets from the break. -/
 theorem brk_offs {B : Addr} (h : B.toNat + 8192 ≤ 2 ^ 63) :
-    (B + 2176#64 + 768#64).toNat = B.toNat + 2944 ∧ (B + 2176#64 + 760#64).toNat = B.toNat + 2936 := by
-  constructor <;> bv_omega
+    (B + 2176#64 + 768#64).toNat = B.toNat + 2944 ∧ (B + 2176#64 + 760#64).toNat = B.toNat + 2936 ∧
+      (B + 2176#64 + 40#64).toNat = B.toNat + 2216 := by
+  refine ⟨?_, ?_, ?_⟩ <;> bv_omega
 
 /-- The stack pointer after `__cxa_atexit` returns: that at `0x613434`. -/
 theorem back_q (Z : State) : lifSp Z + 152#64 + 8#64 = Z.cpu.gpr.rsp := by
@@ -147,7 +163,7 @@ theorem launch_to_main {l : Launch} {n : Nat} {o : Oracle} {L : List (Addr × Li
               7295296#64, brkOf l + 2176#64 + 48#64)).rotateLeft 17) 0 0 →
           Z''.cpu.rip = lsm_at.add 1034 → Z''.cpu.gpr = g' → g'.rax = 0 →
           Osv.Back (Z'.cpu.gpr.set 4 (lifSp Z + 152#64)) g' →
-          AtMain l.prof (lifG (loOf l n c) c.stackTop (brkOf l) L) (lifG (loOf l n c) c.stackTop (brkOf l) L).writes L
+          AtCtor l.prof (lifG (loOf l n c) c.stackTop (brkOf l) L) (lifG (loOf l n c) c.stackTop (brkOf l) L).writes L
             s₃ o (gev ++ ptrEvs l c s₂ g x1 x2 x3 d r10 r8 r9 u y1 y2 y3 y4 y5 q1 q2 q3 ++
               [gEv { lifY W Z with rsp := lifSp Z - 8#64 } (.procExe x)] ++ evs ++ [Ndi.ndiEv]) gP gE
             (ctxOf l.prof l.s₀ l.args c) (brkOf l + 2176#64) V'')) →
@@ -184,7 +200,7 @@ theorem launch_to_main {l : Launch} {n : Nat} {o : Oracle} {L : List (Addr × Li
   obtain ⟨n1, n2, -⟩ := lif_nums (Z := Z) hz (by omega) (by omega) h16
   obtain ⟨n3, n4⟩ := cxa_nums n2 (by omega) (by omega)
   have hf : (brkOf l + 2176#64).toNat = (brkOf l).toNat + 2176 := brk_2176 hb'
-  obtain ⟨f768, f760⟩ := brk_offs hb'
+  obtain ⟨f768, f760, f40⟩ := brk_offs hb'
   have hR : RetAt W W₂ Z (brkOf l) Z₁.cpu.gpr :=
     ⟨hN, hb1', hb', by omega, by omega, by omega, by omega, by rw [hz1, n4]; omega⟩
   -- `q = rsp` at `0x613434`, `__libc_start_main`'s frame at `K.bp`
@@ -209,9 +225,28 @@ theorem launch_to_main {l : Launch} {n : Nat} {o : Oracle} {L : List (Addr × Li
   have t0 : (7937248#64 : Addr).toNat = 7937248 := rfl
   have te : (8013720#64 : Addr).toNat = 8013720 := rfl
   have ta : (7829400#64 : Addr).toNat = 7829400 := rfl
+  obtain ⟨os32, os72⟩ := s_offs tq (by omega) (by omega)
+  have hFo : ∀ y : Addr, 0x6d8000 ≤ y.toNat → y.toNat < 0x776000 →
+      Foot (lifG (loOf l n c) c.stackTop (brkOf l) L).data y := fun _ h1 h2 => gd_ro h1 h2
+  have hE0 : Eli.Env (lifG (loOf l n c) c.stackTop (brkOf l) L) (lifG (loOf l n c) c.stackTop (brkOf l) L).writes L
+      (brkOf l + 2176#64) ((ctxOf l.prof l.s₀ l.args c).bp + 112#64 - 8#64 - 64#64) :=
+    { code := hMn.eli, tcode := hMn.tgv, s0 := by omega, s8 := by omega, hi := by omega,
+      st := rng_at os32 (by omega) (by omega) (by omega) hWs, lr := rng_at om72 (by omega) (by omega) (by omega) hFs,
+      fl := rng_at f40 (by omega) (by omega) (by omega) hFb, fb8 := by omega, fd := .inl (by omega),
+      fg := .inr (by omega),
+      fe := rng_at (rfl : (7991628#64 : Addr).toNat = 7991628) (by omega) (by omega) (by omega) hFd,
+      rt := rng_at (rfl : (7938696#64 : Addr).toNat = 7938696) (by omega) (by omega) (by omega) hFw }
+  have hE2 : Fdm.Env (lifG (loOf l n c) c.stackTop (brkOf l) L) (lifG (loOf l n c) c.stackTop (brkOf l) L).writes L
+      (brkOf l + 2176#64) ((ctxOf l.prof l.s₀ l.args c).bp + 112#64 - 8#64 - 64#64) :=
+    { code := hMn.fdm, tcode := hMn.rtc, rcode := hMn.rfi, lcode := hMn.pml, ucode := hMn.pmu,
+      s0 := by omega, s8 := by omega, f0 := by omega, f1 := by omega,
+      st := rng_at os72 (by omega) (by omega) (by omega) hWs, lr := rng_at om72 (by omega) (by omega) (by omega) hFs,
+      ob := rng_at (rfl : (7947808#64 : Addr).toNat = 7947808) (by omega) (by omega) (by omega) hFw,
+      bg := rng_at (rfl : (7388000#64 : Addr).toNat = 7388000) (by omega) (by omega) (by omega) hFo,
+      mu := rng_at (rfl : (8008608#64 : Addr).toNat = 8008608) (by omega) (by omega) (by omega) hFw }
   obtain ⟨code₂, hin₂, h₂⟩ := hMn.main
-  refine cxa_main_at (t := t'') c₃ hB₃.fsb hC.lsm hMn.dbg hMn.sjp hMn.ssj hin₂ h₂ hB₃.df hB₃.x87 hK'' hA'' hr''
-    ?_ ?_ hReg hR hK hI0 hMB hW (by omega) (by rw [hz1, n4]; omega) (by omega) (by omega) (by rw [tq]; omega)
+  refine cxa_ctor_at (t := t'') c₃ hB₃.fsb hC.lsm hMn.dbg hMn.sjp hMn.ssj hin₂ h₂ hB₃.df hB₃.x87 hK'' hA'' hr''
+    ?_ ?_ hReg hR hK hI0 hB0 hMB hW (by omega) (by rw [hz1, n4]; omega) (by omega) (by omega) (by rw [tq]; omega)
     (rng_at t0 (by omega) (by omega) (by omega) hFr) (rng_at te (by omega) (by omega) (by omega) hFd)
     (rng_at o12 (by omega) (by omega) (by omega) hFs) (rng_at o16 (by omega) (by omega) (by omega) hFs)
     (rng_at o24 (by omega) (by omega) (by omega) hFs) (rng_at om8 (by omega) (by omega) (by omega) hWs)
@@ -225,7 +260,7 @@ theorem launch_to_main {l : Launch} {n : Nat} {o : Oracle} {L : List (Addr × Li
     (rng_at f760 (by omega) (by omega) (by omega) hFb) (rng_at f768 (by omega) (by omega) (by omega) hWb)
     ⟨hMn.csu, rng_at om72 (by omega) (by omega) (by omega) hWs, by omega,
       rng_at om8 (by omega) (by omega) (by omega) hFs, by omega, rng_at ta (by omega) (by omega) (by omega) hFr,
-      .inr (by omega), hMn.tcode, rfl⟩ hG
+      .inr (by omega), hMn.tcode, rfl⟩ hE0 hMn.ini hE2 hFr hG
   · rw [hg'', hBk.1, ← hRg.1]
     exact back_q Z
   · rw [hg'', hBk.2.2.1]
