@@ -30,12 +30,13 @@ theorem hk_rd (V : Addr → Byte) (rsp r12 : Addr) (hsp : 7940664 + 8 ≤ rsp.to
   have hR := rsp.isLt
   exact Tun.rd_Vst _ _ _ _ _ (by rw [l, e8]; omega) (by rw [e0]; omega) (.inr (by rw [e0, e8]; omega))
 
-theorem n_msb {n : Addr} (h : n.toNat ≤ 4104) : n.msb = false := by
+theorem n_msb {n : Addr} (h : n.toNat ≤ 72704) : n.msb = false := by
   rw [BitVec.msb_eq_decide]; exact decide_eq_false (by show ¬ (2 ^ 63 ≤ n.toNat); omega)
 
-/-- From the entry to 52, `9 ≤ n ≤ 4104`: the pushes, `rbp = n`, `request2size` in `rax`, the tcache index in `rbx`. -/
+/-- From the entry to 52, `9 ≤ n ≤ 72704`: the pushes, `rbp = n`, `request2size` in `rax`, the tcache index in
+`rbx`. -/
 theorem vc_0n {fb n : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (hdi : g.rdi = n)
-    (hn : 9 ≤ n.toNat) (hn' : n.toNat ≤ 4104)
+    (hn : 9 ≤ n.toNat) (hn' : n.toNat ≤ 72704)
     (hhk : rdq(V, 7940656#64) = 0#64) (hfh : ∀ i < 8, Foot F.data (Addr.add (7940656#64) i))
     (hsp : 7940664 + 8 ≤ g.rsp.toNat) (hst : ∀ i < 24, Foot Wl (Addr.add (g.rsp - 24) i)) :
     W_0 fb F Wl (fun j' g' _ V' => j' = 52 ∧
@@ -136,8 +137,10 @@ theorem vc_52m {fb C : Addr} {k : Nat} {g : Gprs} {f : Rflags} {V : Addr → Byt
     first | exact ⟨hft, hfb, fk⟩ | exact ⟨hfb, hft, fk⟩)
 
 set_option maxHeartbeats 50000000 in
-/-- From 52 to 83: the tcache there, the index `k - 2` not below `mp_.tcache_bins` (`66 ≤ k ≤ 257`). -/
-theorem vc_52l {fb C : Addr} {k : Nat} {g : Gprs} {f : Rflags} {V : Addr → Byte} (hk1 : 66 ≤ k) (hk2 : k ≤ 257)
+/-- From 52 to 83: the tcache there, the index `k - 2` not below `mp_.tcache_bins` (`66 ≤ k ≤ 257`, or `k = 4545`:
+the request 72704 of ctor 102). -/
+theorem vc_52l {fb C : Addr} {k : Nat} {g : Gprs} {f : Rflags} {V : Addr → Byte} (hk1 : 66 ≤ k)
+    (hk2 : k ≤ 257 ∨ k = 4545)
     (hbx : g.rbx = (BitVec.ofNat 64 (16 * k) + 18446744073709551599#64) >>> 4)
     (htb : rdq(V, 7940592#64) = 64#64) (htc : rdq(V, fb + 18446744073709551576#64) = C) (hC : C ≠ 0#64)
     (hfb : ∀ i < 8, Foot F.data (Addr.add (7940592#64) i))
@@ -147,7 +150,7 @@ theorem vc_52l {fb C : Addr} {k : Nat} {g : Gprs} {f : Rflags} {V : Addr → Byt
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at hbx ⊢
   subst hbx
-  ksplit k from 66 to 257 using hk1 hk2 <;>
+  (rcases hk2 with hk2 | rfl; focus ksplit k from 66 to 257 using hk1 hk2) <;>
   ( simp only [Nat.reduceMul, Nat.reduceAdd]
     wpx [W_52, W_70, o3, o4, Op.cmpma, Op.ldf, htb, htc, hC', BitVec.and_self,
       BitVec.reduceAdd, BitVec.reduceAnd, BitVec.reduceSetWidth, BitVec.reduceHShiftRight, BitVec.reduceHShiftLeft,
@@ -182,7 +185,8 @@ theorem vc_83 {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte}
 
 set_option maxHeartbeats 50000000 in
 /-- From the return of `_int_malloc` (114) to 164: the chunk not null, its size word `16 k ||| 1`. -/
-theorem vc_114m {fb : Addr} {k : Nat} {g : Gprs} {f : Rflags} {V : Addr → Byte} (hk1 : 2 ≤ k) (hk2 : k ≤ 257)
+theorem vc_114m {fb : Addr} {k : Nat} {g : Gprs} {f : Rflags} {V : Addr → Byte} (hk1 : 2 ≤ k)
+    (hk2 : k ≤ 257 ∨ k = 4545)
     (hax : g.rax ≠ 0#64)
     (hsz : rdq(V, g.rax + 18446744073709551608#64) = BitVec.ofNat 64 (16 * k) ||| 1#64)
     (hfz : ∀ i < 8, Foot F.data (Addr.add (g.rax + 18446744073709551608#64) i)) :
@@ -191,7 +195,7 @@ theorem vc_114m {fb : Addr} {k : Nat} {g : Gprs} {f : Rflags} {V : Addr → Byte
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at hax hsz hfz ⊢
   have hax' : (rax == 0) = false := beq_eq_false_iff_ne.2 hax
-  ksplit k from 2 to 257 using hk1 hk2 <;>
+  (rcases hk2 with hk2 | rfl; focus ksplit k from 2 to 257 using hk1 hk2) <;>
   ( simp only [Nat.reduceMul, Nat.reduceAdd] at hsz ⊢
     wpx [W_114, W_126, W_134, o7, o8, o9, hax', hsz, BitVec.and_self,
       BitVec.reduceAdd, BitVec.reduceAnd, BitVec.reduceSetWidth, BitVec.reduceHShiftRight, BitVec.reduceHShiftLeft,
