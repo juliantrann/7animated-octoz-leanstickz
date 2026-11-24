@@ -52,12 +52,12 @@ theorem reg_lay : ∀ r, Lay (regCnt r) (regTab r) (regMax r)
 theorem reg_arr : ∀ r, 7830224 ≤ (regTab r).toNat
   | 0 => by decide
   | 1 => by decide
-  | _ + 2 => by decide
+  | _ + 2 => (by decide : 7830224 ≤ (7981024#64 : Addr).toNat)
 
 theorem reg_len : ∀ r, 0 < (regCode r).length
   | 0 => by decide
   | 1 => by decide
-  | _ + 2 => by decide
+  | _ + 2 => (by decide : 0 < Rgh.rgh.length)
 
 variable {prof : Profile} {F : Footprint} {Wl : List Rgn} {L : List (Addr × List Byte)} {s₀ : State} {o : Oracle}
 
@@ -109,7 +109,7 @@ theorem lea_runs {gev : List Event} {gP : State → Nat → List Event → Prop}
   have hap : X.cpu.gpr.rsp.toNat + 8 ≤ (regTab r).toNat ∨ (regCnt r).toNat + 4 ≤ X.cpu.gpr.rsp.toNat := by
     rw [hsp, n]
     omega
-  have hra' : rdq(V, X.cpu.gpr.rsp) = csu_at.add j₂ := by rw [hsp]; exact hra
+  have hra' : rdq(V, X.cpu.gpr.rsp) = Csu.csu_at.add j₂ := by rw [hsp]; exact hra
   refine lea_reg hb hd (sti_lt (by omega)) htgt c hin hinR (reg_len r) hR hK hA (hr.trans htg) hl h8 hap
     hC.code hj hra' ?_
   intro V' Z t' hKZ hAZ hO hrZ hbk
