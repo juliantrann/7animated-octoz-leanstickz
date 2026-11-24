@@ -36,11 +36,11 @@ def b2Ok (prof : Profile) (Y : State) : Prop :=
   b2Vals prof (ptrAt 0x792148 Y) (ptrAt 0x792140 Y) (ptrAt 0x796798 Y) (ptrAt 0x796790 Y)
     (ofBytesLE 32 (readBytes Y.proc.mm.mem 0x796788 4))
 
-/-- The contract: a stack of 120 bytes (its own 8, `CPU_IsSupported_AVX2`'s 104 with what it calls, a return
-address), the globals written, the canary read. -/
 /-- `b2Ok`, and what the run kept (`fnK`: for a caller's run to go on). -/
 def b2Post (prof : Profile) (s₀ Y : State) : Prop := b2Ok prof Y ∧ KeptW (ws 120 b2W s₀) s₀ Y
 
+/-- The contract: a stack of 120 bytes (its own 8, `CPU_IsSupported_AVX2`'s 104 with what it calls, a return
+address), the globals written, the canary read. -/
 abbrev b2C (prof : Profile) : Contract := fn 120 b2W lzR b2Pre (b2Post prof)
 
 theorem b2Post_of {prof : Profile} {s₀ Y : State} {a b c d : BitVec 64} {f : BitVec 32}

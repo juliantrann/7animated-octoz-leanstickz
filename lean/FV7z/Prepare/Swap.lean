@@ -27,10 +27,10 @@ def swOk (prof : Profile) (Y : State) : Prop :=
   swVal Y = 1 ∨ (swVal Y = 2 ∧ prof.feat.ssse3 = true) ∨
     (swVal Y = 3 ∧ prof.feat.avx2 = true ∧ prof.feat.avx = true)
 
-/-- The contract: a stack of 120 bytes, the mode written, the canary read. -/
 /-- `swOk`, and what the run kept (`fnK`: for a caller's run to go on). -/
 def swPost (prof : Profile) (s₀ Y : State) : Prop := swOk prof Y ∧ KeptW (ws 120 swW s₀) s₀ Y
 
+/-- The contract: a stack of 120 bytes, the mode written, the canary read. -/
 abbrev swC (prof : Profile) : Contract := fn 120 swW lzR swPre (swPost prof)
 
 theorem swPost_of {prof : Profile} {s₀ Y : State} {v : BitVec 32} (hk : KeptW (ws 120 swW s₀) s₀ Y)

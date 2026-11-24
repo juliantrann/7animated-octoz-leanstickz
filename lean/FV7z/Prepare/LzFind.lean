@@ -34,11 +34,11 @@ def lzOk (prof : Profile) (Y : State) : Prop :=
   satVal Y = 0 ∨ (satVal Y = 0x4251b0 ∧ prof.feat.sse41 = true) ∨
     (satVal Y = 0x425150 ∧ prof.feat.sse41 = true ∧ prof.feat.avx2 = true ∧ prof.feat.avx = true)
 
-/-- The contract: a stack of 120 bytes (its own 8, `CPU_IsSupported_AVX2`'s 104 with what it calls, a return
-address), the pointer written, the canary read. -/
 /-- `lzOk`, and what the run kept (`fnK`: for a caller's run to go on). -/
 def lzPost (prof : Profile) (s₀ Y : State) : Prop := lzOk prof Y ∧ KeptW (ws 120 lzW s₀) s₀ Y
 
+/-- The contract: a stack of 120 bytes (its own 8, `CPU_IsSupported_AVX2`'s 104 with what it calls, a return
+address), the pointer written, the canary read. -/
 abbrev lzC (prof : Profile) : Contract := fn 120 lzW lzR lzPre (lzPost prof)
 
 theorem lzPost_of {prof : Profile} {s₀ Y : State} {v : BitVec 64} (hk : KeptW (ws 120 lzW s₀) s₀ Y)

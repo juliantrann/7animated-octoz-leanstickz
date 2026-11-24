@@ -200,11 +200,11 @@ def agOk (prof : Profile) (Y : State) : Prop :=
   agVals prof (ptrAt 0x7a7e10 Y) (ptrAt 0x7a7e00 Y) (ptrAt 0x7a7e08 Y)
     (ofBytesLE 32 (readBytes Y.proc.mm.mem 0x7a7e18 4))
 
-/-- The contract: a stack of 136 bytes (its three saved registers, a return address, `CPU_IsSupported_VAES_AVX2`'s
-104 with what it calls), the tables and globals written, the canary and `Sbox` read. -/
 /-- `agOk`, and what the run kept (`fnK`: for a caller's run to go on). -/
 def agPost (prof : Profile) (s₀ Y : State) : Prop := agOk prof Y ∧ KeptW (ws 136 agW s₀) s₀ Y
 
+/-- The contract: a stack of 136 bytes (its three saved registers, a return address, `CPU_IsSupported_VAES_AVX2`'s
+104 with what it calls), the tables and globals written, the canary and `Sbox` read. -/
 abbrev agC (prof : Profile) : Contract := fn 136 agW agR agPre (agPost prof)
 
 /-! ## Invariants -/
