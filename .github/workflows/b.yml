@@ -12,11 +12,11 @@ jobs:
   j0:
     runs-on: ubuntu-24.04
     timeout-minutes: 350
-    # checks: write for the live status (tools/live.sh)
+    # checks: write for the live status (tools/live.sh); actions: write to drop older caches (actions/keep)
     permissions:
       contents: read
       checks: write
-      actions: read
+      actions: write
     outputs:
       key: ${{ steps.prep.outputs.key }}
     steps:
