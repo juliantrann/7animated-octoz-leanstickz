@@ -1,6 +1,7 @@
 import FV7z.Dbg.Cuts
 import FV7z.Spec.DebugInit
 import FV7z.Tun.Inv
+import FV7z.Lemmas.CallFn
 /-!
 # `_dl_debug_initialize` keeps its contract (PLAN.md G3, startup)
 
@@ -192,11 +193,14 @@ theorem vcAll (hE : Env F Wl) (ℓ : Nat) :
 
 variable {prof : Profile} {L : List (Addr × List Byte)} {ra : Addr} {o : Oracle}
 
-/-- A call runs to its return, as the contract says. -/
-theorem dbgRun (c : Call prof 0 (fun _ => [rDebug]) reads Pre DebugInit.Post dbg_at L s ra o)
+/-- A call runs to its return, as the contract says: for every postcondition `Q` that follows from the contract's
+`Post` and what the call kept (`KeptW`; `fn`'s form is `DebugInit.contract`, `fnK`'s the one `Seg.s_callK` takes). -/
+theorem dbgRun {Q : State → State → Prop}
+    (hQ : ∀ s Z, DebugInit.Post s Z → KeptW (ws 0 (fun _ => [rDebug]) s) s Z → Q s Z)
+    (c : Call prof 0 (fun _ => [rDebug]) reads Pre Q dbg_at L s ra o)
     (hin : CodeIn L dbg_at dbg) (t : Nat) :
-    Go prof 0 (fun _ => [rDebug]) reads Pre DebugInit.Post L s ra o s t := by
-  have hE : Env (fp 0 (fun _ => [rDebug]) reads Pre DebugInit.Post L s) (ws 0 (fun _ => [rDebug]) s) :=
+    Go prof 0 (fun _ => [rDebug]) reads Pre Q L s ra o s t := by
+  have hE : Env (fp 0 (fun _ => [rDebug]) reads Pre Q L s) (ws 0 (fun _ => [rDebug]) s) :=
     ⟨c.toSeg.hws, fun y h1 h2 => ⟨rDebug, by simp [ws], h1, h2⟩,
       fun y h1 h2 => ⟨rLoaded, by simp [Footprint.data, Contract.footprint, fn, reads], h1, h2⟩⟩
   refine c.toSeg.cfg hin (fun ℓ => spAll prof ℓ) (fun ℓ n g _ V => Inv s ℓ n g V)
@@ -214,7 +218,8 @@ theorem dbgRun (c : Call prof 0 (fun _ => [rDebug]) reads Pre DebugInit.Post dbg
     obtain ⟨w1, w2, w3, w4, w5, w6⟩ := W_rd (V0 s) (toBytesLE (1 : BitVec 32) 4) (toBytesLE (lb s) 8)
       (toBytesLE 0x66e490#64 8) (toBytesLE rdq(V0 s, 0x793440#64) 8) (by simp only [toBytesLE_length])
       (by simp only [toBytesLE_length]) (by simp only [toBytesLE_length]) (by simp only [toBytesLE_length])
-    refine ⟨hax, fun h1 h2 => hc.elim (fun h => absurd h h1) (fun h => absurd h2 h), fun _ => ⟨?_, ?_, ?_, ?_, ?_, ?_⟩⟩
+    refine hQ _ _ ⟨hax, fun h1 h2 => hc.elim (fun h => absurd h h1) (fun h => absurd h2 h),
+      fun _ => ⟨?_, ?_, ?_, ?_, ?_, ?_⟩⟩ ((hKY.withMem hM).upd rfl rfl rfl)
     · exact (congrArg (ofBytesLE 32) ((rd 0x7a84c0 4 (by decide) (by decide)).trans w1)).trans
         (ofBytesLE_toBytesLE (n := 4) rfl _)
     · exact (rd 0x7a84c4 4 (by decide) (by decide)).trans w2
@@ -227,23 +232,36 @@ theorem dbgRun (c : Call prof 0 (fun _ => [rDebug]) reads Pre DebugInit.Post dbg
         (ofBytesLE_toBytesLE (n := 8) rfl _)
   · refine c.ret hKY ⟨hbx, hsp, hbp, h12, h13, h14, h15⟩ hin (lt_len (by decide)) hrY (ret_96 _) fun M hM => ?_
     have hAM := c.agreeK hKY hAY hM
-    exact ⟨hax, fun _ _ => hAM.read fun i hi => hE.ws _ (hE.ft (b := 0x7a84c0) (by decide) (by decide) i hi),
-      fun h => h.elim (fun h => absurd h hnz) (fun h => absurd hdi h)⟩
+    exact hQ _ _ ⟨hax, fun _ _ => hAM.read fun i hi => hE.ws _ (hE.ft (b := 0x7a84c0) (by decide) (by decide) i hi),
+      fun h => h.elim (fun h => absurd h hnz) (fun h => absurd hdi h)⟩ ((hKY.withMem hM).upd rfl rfl rfl)
 
-/-- `_dl_debug_initialize`, at its place in `7zzs`, on every processor: every call returns as its contract says. -/
-theorem dbg_holds (L : List (Addr × List Byte)) (prof : Profile) (hin : CodeIn L dbg_at dbg) :
-    ImplementsCall prof dbg_at L DebugInit.contract := by
+/-- `_dl_debug_initialize`, at its place in `7zzs`, on every processor: every call returns with `Q`, for every `Q`
+that follows from the contract's `Post` and what the call kept. -/
+theorem dbg_impl {Q : State → State → Prop}
+    (hQ : ∀ s Z, DebugInit.Post s Z → KeptW (ws 0 (fun _ => [rDebug]) s) s Z → Q s Z)
+    (L : List (Addr × List Byte)) (prof : Profile) (hin : CodeIn L dbg_at dbg) :
+    ImplementsCall prof dbg_at L (fn 0 (fun _ => [rDebug]) reads Pre Q) := by
   intro s₀ ra hcall
-  have hcall' : CallOf prof dbg_at L (fn 0 (fun _ => [rDebug]) reads Pre DebugInit.Post) s₀ ra := hcall
+  have hcall' : CallOf prof dbg_at L (fn 0 (fun _ => [rDebug]) reads Pre Q) s₀ ra := hcall
   have hp : Pre s₀ := hcall'.pre
   have hfr : (frame s₀ 0).Fits :=
     hcall'.foot.fits _ (List.mem_append_left _ (by simp [Footprint.data, Contract.footprint, fn]))
   exact reachOrEndsIn_of_runsFrom fun o ho t =>
-    dbgRun (Call.of hcall' ho (by
+    dbgRun hQ (Call.of hcall' ho (by
       rintro i hi ⟨r, hr, hm⟩
       refine hp.frameApart _ (.head _) r hr _ ?_ hm
       simp only [frame, Rgn.Mem, Rgn.Fits] at hfr ⊢
       have := toNat_add_of_fits (a := s₀.cpu.gpr.rsp) hi (by bv_omega)
       bv_omega)) hin t
+
+/-- `_dl_debug_initialize`, at its place in `7zzs`, on every processor: every call returns as its contract says. -/
+theorem dbg_holds (L : List (Addr × List Byte)) (prof : Profile) (hin : CodeIn L dbg_at dbg) :
+    ImplementsCall prof dbg_at L DebugInit.contract :=
+  dbg_impl (fun _ _ h _ => h) L prof hin
+
+/-- `_dl_debug_initialize`, by the contract `fnK` a caller's run goes on with (`Seg.s_callK`). -/
+theorem dbg_holdsK (L : List (Addr × List Byte)) (prof : Profile) (hin : CodeIn L dbg_at dbg) :
+    ImplementsCall prof dbg_at L (fnK 0 (fun _ => [rDebug]) reads Pre DebugInit.Post) :=
+  dbg_impl (fun _ _ h k => ⟨h, k⟩) L prof hin
 
 end FV7z.Dbg

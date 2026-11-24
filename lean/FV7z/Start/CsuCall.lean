@@ -97,8 +97,8 @@ theorem lsb_csu {fb : Addr} {tg : Nat → Addr} {I : Nat → (Addr → Byte) →
     rfl
   have hrd : ∀ (x : Addr) (n : Nat), x.toNat + n ≤ 2 ^ 64 →
       ((X.cpu.gpr.rsp - 8#64).toNat + 8 ≤ x.toNat ∨ x.toNat + n ≤ (X.cpu.gpr.rsp - 8#64).toNat) →
-      List.map (Vst V (X.cpu.gpr.rsp - 8#64) (toBytesLE (lsm_at.add 1070) 8)) (byteAddrs x n) =
-        List.map V (byteAddrs x n) := fun x n hx h => rd_ra x n hb8 (by omega) hx h
+      List.map (Vst V' (X.cpu.gpr.rsp - 8#64) (toBytesLE (lsm_at.add 1070) 8)) (byteAddrs x n) =
+        List.map V' (byteAddrs x n) := fun x n hx h => rd_ra x n hb8 (by omega) hx h
   refine Csu.csu_ok (e₂ := lsm_at) (j₂ := 1070) c (by rw [hzs]; exact hE) hKZ hAZ hrZ hl
     (by rw [lsm_length]; decide)
     (by rw [hzs, rd_Vst_self _ _ _ hb8 (by omega), ofBytesLE_toBytesLE (n := 8) rfl])

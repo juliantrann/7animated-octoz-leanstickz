@@ -158,9 +158,9 @@ theorem launch_to_cxa {l : Launch} {n : Nat} {o : Oracle} {L : List (Addr × Lis
     rw [hRg.1]
     bv_omega
   obtain ⟨-, hb1, hb2⟩ := launch_brk h
-  have hb' : (brkOf l).toNat + 8192 ≤ 2 ^ 63 := by omega
   have hb1' : 0x7a9000 ≤ (brkOf l).toNat := hb1
   have hb2' : (brkOf l).toNat < 0x7a9000 + 4096 + 2 ^ 30 := hb2
+  have hb' : (brkOf l).toNat + 8192 ≤ 2 ^ 63 := by omega
   have hlo' : loOf l n c = (stackLayout l.args l.prof.linux c).sp - n := rfl
   obtain ⟨n1, n2, -⟩ := lif_nums (Z := Z) hz (by omega) (by omega) h16
   obtain ⟨n3, n4⟩ := cxa_nums n2 (by omega) (by omega)
