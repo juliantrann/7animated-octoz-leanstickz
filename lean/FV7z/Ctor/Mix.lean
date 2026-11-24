@@ -212,7 +212,7 @@ theorem runs_pre {J : Nat → (Addr → Byte) → Prop} {P : (Addr → Byte) →
   intro X t V j₂ hK hA hI hr hsp _ hj₂ hra k
   have n := Csu.sp_n hs
   refine hgo X t V hK hA hr hsp fun Z t' V' hKZ hAZ hPV hrZ hsZ hcZ => ?_
-  have hra' : rdq(V', sp - 64#64) = csu_at.add j₂ :=
+  have hra' : rdq(V', sp - 64#64) = Csu.csu_at.add j₂ :=
     (rdq_eq (V := V) (V' := V') (by rw [n]; omega) fun a h1 h2 =>
       hP V V' hPV a (.inl ⟨by rw [n] at h1; omega, by rw [n] at h2; omega⟩)).trans hra
   refine hE Z.cpu.gpr.rdi Z.cpu.gpr.rsi Z.cpu.gpr.rdx Z t' V' j₂ hKZ hAZ (Or.inl ⟨rfl, V, hI, hPV⟩) hrZ hsZ
