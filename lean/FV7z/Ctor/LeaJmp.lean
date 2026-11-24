@@ -42,7 +42,7 @@ theorem lea_reg {j A rel : Nat} {ra cnt tab : Addr} {max : Nat} {codeR : List By
     (c : Seg prof F Wl L s₀ o) (hin : CodeIn L sti_at sti) (hinR : CodeIn L ra codeR) (hR0 : 0 < codeR.length)
     (hR : RegSpec prof F Wl L s₀ o ra cnt tab max)
     (hK : KeptW Wl s₀ X) (hA : Agree F X.proc.mm.mem V) (hrip : X.cpu.rip = sti_at.add j)
-    (hl : ∀ i < 8, Foot F.data (Addr.add X.cpu.gpr.rsp i))
+    (hl : ∀ i < 8, Foot F.data (Addr.add X.cpu.gpr.rsp i)) (hs8 : X.cpu.gpr.rsp.toNat + 8 ≤ 2 ^ 64)
     (hap : X.cpu.gpr.rsp.toNat + 8 ≤ tab.toNat ∨ cnt.toNat + 4 ≤ X.cpu.gpr.rsp.toNat)
     {e₂ : Addr} {code₂ : List Byte} {j₂ : Nat} (hin₂ : CodeIn L e₂ code₂) (h₂ : j₂ < code₂.length)
     (hra : rdq(V, X.cpu.gpr.rsp) = e₂.add j₂)
@@ -52,7 +52,8 @@ theorem lea_reg {j A rel : Nat} {ra cnt tab : Addr} {max : Nat} {codeR : List By
   refine lea_jmp hb hd hj c hin hK hA hrip hinR hR0 htgt fun Y t₁ hKY hAY hrY hgY => ?_
   have hsp : Y.cpu.gpr.rsp = X.cpu.gpr.rsp := by rw [hgY]; rfl
   have hdi : Y.cpu.gpr.rdi = BitVec.ofNat 64 A := by rw [hgY]; exact sw_64_64 _
-  refine hR hKY hAY (by rw [hrY, addr_add_zero]) (by rw [hsp]; exact hl) (by rw [hsp]; exact hap) hin₂ h₂
+  refine hR hKY hAY (by rw [hrY, addr_add_zero]) (by rw [hsp]; exact hl) (by rw [hsp]; exact hs8)
+    (by rw [hsp]; exact hap) hin₂ h₂
     (by rw [hsp]; exact hra) fun V' Z t' hKZ hAZ hO hrZ hbk => ?_
   rw [hdi] at hO
   refine k V' Z t' hKZ hAZ hO hrZ ?_
