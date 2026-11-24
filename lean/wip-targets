@@ -1,1 +1,3 @@
-FV7z.Ctor.ChainRegs
+FV7z.Start.CsuPre
+FV7z.Start.CtorRet
+FV7z.Start.ToMain

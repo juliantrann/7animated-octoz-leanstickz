@@ -13,8 +13,8 @@ no layer of the start code stores to them.
 
 - `Ndi.CsuB`, `Ndi.ndi_csu`: the `.bss` words; `_dl_non_dynamic_init` keeps them.
 - `csu_ret`, `RetAt.pre`: a byte of `PreB` at `0x61344a` is the launch image's.
-- `Agr`, `preI`: the bytes of `PreB` as the image's, for the first three functions, and an invariant `J` of the
-  constructors after them.
+- `Agr`, `Near`, `preI`: for the first three functions the bytes of `PreB` as the image's and the bytes outside
+  their stores as at `0x61344a`, and an invariant `J` of the constructors after them.
 - `unset_of`, `pre_rd`, `pre_zero`: the tunables and the words from `Agr`.
 - `pre_runs`: `Runs` for the functions 0, 1 and 2 with `preI`.
 -/
@@ -135,17 +135,22 @@ theorem RetAt.pre {K : Ctx} {V₀ V : Addr → Byte} {ver : BitVec 32} {ra f0 : 
 /-- The bytes of `PreB` are `V₀`'s. -/
 def Agr (V₀ V : Addr → Byte) : Prop := ∀ a : Addr, PreB a → V a = V₀ a
 
-/-- The invariant of `__libc_csu_init`'s calls: `Agr V₀` for the first three functions, `J` after them. -/
-def preI (V₀ : Addr → Byte) (J : Nat → (Addr → Byte) → Prop) (m : Nat) (V : Addr → Byte) : Prop :=
-  if m < 3 then Agr V₀ V else J m V
+/-- The bytes outside the stack's `[lo, hi)` and `elision_init`'s word are `Vo`'s. -/
+def Near (lo hi : Nat) (Vo V : Addr → Byte) : Prop :=
+  ∀ a : Addr, ¬ (lo ≤ a.toNat ∧ a.toNat < hi) → ¬ (7938696 ≤ a.toNat ∧ a.toNat < 7938700) → V a = Vo a
 
-theorem preI_lt {V₀ V : Addr → Byte} {J : Nat → (Addr → Byte) → Prop} {m : Nat} (h : m < 3) :
-    preI V₀ J m V ↔ Agr V₀ V := by
+/-- The invariant of `__libc_csu_init`'s calls: for the first three functions `Agr V₀`, and the bytes outside the
+stack's `[lo, hi)` and `elision_init`'s word `Vo`'s; `J` after them. -/
+def preI (V₀ Vo : Addr → Byte) (lo hi : Nat) (J : Nat → (Addr → Byte) → Prop) (m : Nat) (V : Addr → Byte) : Prop :=
+  if m < 3 then Agr V₀ V ∧ Near lo hi Vo V else J m V
+
+theorem preI_lt {V₀ Vo V : Addr → Byte} {lo hi : Nat} {J : Nat → (Addr → Byte) → Prop} {m : Nat} (h : m < 3) :
+    preI V₀ Vo lo hi J m V ↔ Agr V₀ V ∧ Near lo hi Vo V := by
   unfold preI
   rw [if_pos h]
 
-theorem preI_ge {V₀ V : Addr → Byte} {J : Nat → (Addr → Byte) → Prop} {m : Nat} (h : ¬ m < 3) :
-    preI V₀ J m V ↔ J m V := by
+theorem preI_ge {V₀ Vo V : Addr → Byte} {lo hi : Nat} {J : Nat → (Addr → Byte) → Prop} {m : Nat} (h : ¬ m < 3) :
+    preI V₀ Vo lo hi J m V ↔ J m V := by
   unfold preI
   rw [if_neg h]
 
@@ -217,37 +222,39 @@ theorem runs_congr {prof : Profile} {F : Footprint} {Wl : List Rgn} {L : List (A
     k Z t' V' hKZ hAZ ((congrFun h1 V').mpr hI')
 
 set_option maxHeartbeats 800000 in
-/-- `Runs` for `elision_init`, `_init` and `frame_dummy` with `preI V₀ J`, when the bytes of `PreB` are the
-file's in `V₀`, and `J 3` holds after `frame_dummy`. -/
+/-- `Runs` for `elision_init`, `_init` and `frame_dummy` with `preI V₀ Vo (sp - 136) (sp + 8) J`, when the bytes of
+`PreB` are the file's in `V₀`, and `J 3` holds after `frame_dummy`. -/
 theorem pre_runs {prof : Profile} {F : Footprint} {Wl : List Rgn} {L : List (Addr × List Byte)} {s₀ : State}
     {o : Oracle} {gev : List Event} {gP : State → Nat → List Event → Prop} {gE : Outcome → List Event → Prop}
-    {V₀ : Addr → Byte} {J : Nat → (Addr → Byte) → Prop} {sp fb : Addr} {a₀ a₁ a₂ : BitVec 64}
+    {V₀ Vo : Addr → Byte} {J : Nat → (Addr → Byte) → Prop} {sp fb : Addr} {a₀ a₁ a₂ : BitVec 64}
     (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (hC : Csu.Env F Wl L sp csuTg)
     (hE0 : Eli.Env F Wl L fb (sp - 64#64)) (hEi : CodeIn L Ini.ini_at Ini.ini) (hE2 : Fdm.Env F Wl L fb (sp - 64#64))
     (hI : Img V₀) (hB : Bss V₀)
     (hF : ∀ y : Addr, 0x777000 ≤ y.toNat → y.toNat < 0x792000 → Foot F.data y)
-    (hJ3 : ∀ V V', Agr V₀ V → Rfi.Dat (sp.toNat - 64 - 72) (sp.toNat - 64) 7947808#64 7388000#64 V V' → J 3 V') :
-    ∀ m < 3, Csu.Runs prof F Wl L s₀ o gev gP gE (preI V₀ J) sp a₀ a₁ a₂ m (csuTg m) := by
+    (hJ3 : ∀ V V', Agr V₀ V → Near (sp.toNat - 136) (sp.toNat + 8) Vo V →
+      Rfi.Dat (sp.toNat - 64 - 72) (sp.toNat - 64) 7947808#64 7388000#64 V V' → J 3 V') :
+    ∀ m < 3, Csu.Runs prof F Wl L s₀ o gev gP gE (preI V₀ Vo (sp.toNat - 136) (sp.toNat + 8) J) sp a₀ a₁ a₂ m
+      (csuTg m) := by
   have n := Csu.sp_n hC.s0
   have hs2 := hE2.s0
   rw [n] at hs2
   intro m hm
   rcases (by omega : m = 0 ∨ m = 1 ∨ m = 2) with rfl | rfl | rfl
   · refine Csu.eli_runs c hfs hC hE0 csuTg_0 (fun V hV => ?_) (fun V V' hV ho => ?_)
-    · have hA := (preI_lt (by decide)).1 hV
+    · have hA := ((preI_lt (by decide)).1 hV).1
       exact ⟨unset_of hI hA hF (e := 7935864) (by decide) (by decide) (by decide) (by omega) (by omega) t5_ty t5_in,
         unset_of hI hA hF (e := 7935976) (by decide) (by decide) (by decide) (by omega) (by omega) t7_ty t7_in,
         unset_of hI hA hF (e := 7936536) (by decide) (by decide) (by decide) (by omega) (by omega) t17_ty t17_in,
         unset_of hI hA hF (e := 7935808) (by decide) (by decide) (by decide) (by omega) (by omega) t4_ty t4_in,
         unset_of hI hA hF (e := 7936312) (by decide) (by decide) (by decide) (by omega) (by omega) t13_ty t13_in⟩
-    · have hA := (preI_lt (by decide)).1 hV
-      refine (preI_lt (by decide)).2 fun a ha => ?_
+    · obtain ⟨hA, hN⟩ := (preI_lt (by decide)).1 hV
+      refine (preI_lt (by decide)).2 ⟨fun a ha => ?_, fun a h1 h2 => (ho a (by omega) h2).trans (hN a h1 h2)⟩
       have ha' := ha
       unfold PreB PreN at ha'
       exact (ho a (by omega) (by omega)).trans (hA a ha)
   · exact Csu.ini_runs c hC hEi fun V hV => (preI_lt (by decide)).2 ((preI_lt (by decide)).1 hV)
   · refine Csu.fd_runs c hfs hC hE2 csuTg_2 (fun V hV => ?_) (fun V V' hV hD => ?_)
-    · have hA := (preI_lt (by decide)).1 hV
+    · have hA := ((preI_lt (by decide)).1 hV).1
       have e16 : (8008608#64 + 16#64 : Addr) = 8008624#64 := by decide
       have e8 : (8008608#64 + 8#64 : Addr) = 8008616#64 := by decide
       have z : ∀ x : Nat, 0x7945d0 ≤ x → x + 4 ≤ 0x7a86c0 → (∀ i < 4, PreN (x + i)) →
@@ -265,6 +272,7 @@ theorem pre_runs {prof : Profile} {F : Footprint} {Wl : List Rgn} {L : List (Add
       · rw [e8]
         exact z _ (by omega) (by omega) fun i hi => by unfold PreN; omega
       · exact z _ (by omega) (by omega) fun i hi => by unfold PreN; omega
-    · exact (preI_ge (by decide)).2 (hJ3 V V' ((preI_lt (by decide)).1 hV) hD)
+    · obtain ⟨hA, hN⟩ := (preI_lt (by decide)).1 hV
+      exact (preI_ge (by decide)).2 (hJ3 V V' hA hN hD)
 
 end FV7z.Start
