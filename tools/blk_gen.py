@@ -218,6 +218,15 @@ FNS = {
                tag="PLAN.md G3, constructors", src="a function a static constructor of 7-Zip jumps to (`objdump -d`)"),
     "c15": dict(grp="C15", cn="Crc64GenerateTable", a=0x443e70, n=0x8f, entry=0, pos=True, stops=(0x8e,),
                 tag="PLAN.md G3, constructors", src="a function a static constructor of 7-Zip jumps to (`objdump -d`)"),
+    # 7-Zip's static constructors `csuTg 37` (0x41c380, offset 576 of `sti`) and `csuTg 55` (0x41c560, offset 1056): a
+    # CRC table in two loops (CRC-16 with the polynomial 0xa001, 256 words at 0x79cb40; CRC-32C, 256 dwords at
+    # 0x79cd40), then `lea rdi, [rip + d]; jmp RegisterArc`. Stop: the `jmp` (644, 1123).
+    "c37": dict(grp="C37", code=("Ctor", "sti"), cn="csuTg 37", a=0x41c140, n=4624, entry=576, pos=True,
+                stops=(644,), tag="PLAN.md G3, constructors",
+                src="a static constructor of 7-Zip (`objdump -d`)"),
+    "c55": dict(grp="C55", code=("Ctor", "sti"), cn="csuTg 55", a=0x41c140, n=4624, entry=1056, pos=True,
+                stops=(1123,), tag="PLAN.md G3, constructors",
+                src="a static constructor of 7-Zip (`objdump -d`)"),
     "c75": dict(grp="C75", code=("Ctor", "sti"), cn="csuTg 75", a=0x41c140, n=4624, entry=1584, pos=True,
                 stops=(1665,), tag="PLAN.md G3, constructors",
                 src="a static constructor of 7-Zip (`objdump -d`)"),

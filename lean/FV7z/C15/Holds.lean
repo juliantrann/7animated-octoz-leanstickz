@@ -15,7 +15,7 @@ import FV7z.Ctor.Loop
 No later code takes those bytes as an address, so its spec says only where they lie (`wrSpec wr15`).
 
 - `Inv`: the invariant at the four cut points (`Cuts.lean`), the measure as in `C3.Inv`.
-- `inc_k`, `step112`, `toNat_2040`: the loops' arithmetic.
+- `step112`, `toNat_2040`: the loops' arithmetic (and `Ctor.inc_k`).
 - `vc_0`, `vc_32`, `vc_48`, `vc_112`, `vc`: the code from each cut point keeps it with a smaller measure, or reaches
   the `ret`. `vc_48` and `vc_112` are for the table at a variable `b`.
 - `runsF`, `runs15`, `runs15_jg`: as `C3.runsF`, `C3.runs3`, `C3.runs3_jg`.
@@ -40,15 +40,6 @@ def Inv (g₀ : Gprs) (V₀ : Addr → Byte) (ℓ n : Nat) (g : Gprs) (_ : Rflag
       (ℓ = 48 ∧ 1 ≤ g.rdx.toNat ∧ g.rdx.toNat ≤ 8 ∧ n = 2817 + 10 * (256 - k) - 9 + g.rdx.toNat))) ∨
   (ℓ = 112 ∧ ∃ j < 2816, g.rdx.toNat = 7956416 + 8 * j ∧ g.r8 = BitVec.ofNat 64 7956416 ∧
     g.rsi = 7978944#64 ∧ Kp g₀ g ∧ Out V₀ V ∧ n = 2816 - j)
-
-/-- The first loop's index one more, and its test `cmp rdi, 256`: not the end means another quadword. -/
-theorem inc_k {x : BitVec 64} {k : Nat} (hx : x.toNat = k) (hk : k < 256) :
-    (x + 1#64).toNat = k + 1 ∧ (¬ x + 1#64 = 256#64 → k + 1 < 256) := by
-  subst hx
-  constructor
-  · bv_omega
-  · intro h
-    bv_omega
 
 /-- `rdx` one quadword on, and the second loop's test `cmp rsi, rdx`: not the end means another quadword. -/
 theorem step112 {r : BitVec 64} {b j : Nat} (hb : b + 24576 < 2 ^ 64) (hr : r.toNat = b + 8 * j) (hj : j < 2816) :
