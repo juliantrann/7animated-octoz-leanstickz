@@ -46,11 +46,10 @@ theorem rga_ok (c : Seg prof F Wl L s₀ o) (hin : CodeIn L rga_at rga)
     (ht : ∀ i < 576, Foot Wl (Addr.add 7990720#64 i)) :
     RegSpec prof F Wl L s₀ o rga_at 7991296#64 7990720#64 72 := by
   unfold RegSpec
-  intro gev gP gE X t V hK hA hrip hl hd e₂ code₂ j₂ hin₂ h₂ hra k
+  intro gev gP gE X t V hK hA hrip hl h8 hd e₂ code₂ j₂ hin₂ h₂ hra k
   refine (c_0 prof).run c hin _ hK hA (by rw [addr_add_zero]; exact hrip) (vc_0 hc hcw ht) ?_
   rintro j' g fl V' ⟨rfl, ⟨h1, h2, h3, h4, h5, h6, h7⟩, hR⟩ Y t₁ hKY hAY hrY hgY -
   have hsp : Y.cpu.gpr.rsp = X.cpu.gpr.rsp := by rw [hgY]; exact h1
-  have h8 : X.cpu.gpr.rsp.toNat + 8 ≤ 2 ^ 64 := by have := X.cpu.gpr.rsp.isLt; omega
   refine c.s_ret hKY hAY hin (lt_len (by decide)) hrY (ret_37 _) (fun i hi => ?_) hin₂ h₂ ?_ ?_
   · rw [hsp]
     exact hl i hi

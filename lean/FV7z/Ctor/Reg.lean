@@ -132,14 +132,14 @@ theorem RegOut.rd {cnt tab : Addr} {max : Nat} {p : BitVec 64} {V V' : Addr → 
 
 variable {prof : Profile} {F : Footprint} {Wl : List Rgn} {L : List (Addr × List Byte)} {s₀ : State} {o : Oracle}
 
-/-- A registrar's contract, from its entry at `ra` to its caller: with the return address readable and apart from
-the table and its count, the run gets to the return address with the bytes `RegOut` of those at the entry for the
-argument in `rdi`, and the registers a call keeps as they were. -/
+/-- A registrar's contract, from its entry at `ra` to its caller: with the return address readable, below the top
+and apart from the table and its count, the run gets to the return address with the bytes `RegOut` of those at the
+entry for the argument in `rdi`, and the registers a call keeps as they were. -/
 def RegSpec (prof : Profile) (F : Footprint) (Wl : List Rgn) (L : List (Addr × List Byte)) (s₀ : State) (o : Oracle)
     (ra cnt tab : Addr) (max : Nat) : Prop :=
   ∀ {gev : List Event} {gP : State → Nat → List Event → Prop} {gE : Outcome → List Event → Prop} {X : State}
     {t : Nat} {V : Addr → Byte}, KeptW Wl s₀ X → Agree F X.proc.mm.mem V → X.cpu.rip = ra →
-    (∀ i < 8, Foot F.data (Addr.add X.cpu.gpr.rsp i)) →
+    (∀ i < 8, Foot F.data (Addr.add X.cpu.gpr.rsp i)) → X.cpu.gpr.rsp.toNat + 8 ≤ 2 ^ 64 →
     (X.cpu.gpr.rsp.toNat + 8 ≤ tab.toNat ∨ cnt.toNat + 4 ≤ X.cpu.gpr.rsp.toNat) →
     ∀ {e₂ : Addr} {code₂ : List Byte} {j₂ : Nat}, CodeIn L e₂ code₂ → j₂ < code₂.length →
     rdq(V, X.cpu.gpr.rsp) = e₂.add j₂ →
