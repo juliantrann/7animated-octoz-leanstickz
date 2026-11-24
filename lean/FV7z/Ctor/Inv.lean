@@ -20,6 +20,11 @@ there, reading only `wr`):
   in `V`.
 - `Jc_end`: at `104`, the words `AtCtor` asks to keep are `V`'s.
 - `Jc_chain`: a constructor that only calls registrars (`ChainOut` of its `calls`, with room) keeps `Jc`.
+- `Jc_st`: a constructor that calls no registrar and stores only to its `wr`, apart from the tables (`tabs`) and
+  from the `wr` before it, keeps `Jc` when its `post` holds after.
+
+The tables are exactly `tabs` (`reg_tab`): `ChainOut.out_t` and `RegsIn.far_t` say so for the calls and the
+tables; constructors store to globals between them (`0x79ed50`, …).
 -/
 namespace FV7z.Ctor
 open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn FV7z.Start
@@ -47,6 +52,40 @@ theorem InR_apart {lo hi n : Nat} : ∀ {rs : List (Nat × Nat)}, (∀ x ∈ rs,
     rcases h with h | h
     · omega
     · exact InR_apart (fun x hx => hb x (List.mem_cons_of_mem _ hx)) h
+
+/-- `n` is in none of `bs` when it is in `as` and `as`, `bs` are apart. -/
+theorem InR_sep {n : Nat} {as : List (Nat × Nat)} (ha : InR as n) :
+    ∀ {bs : List (Nat × Nat)}, (∀ x ∈ as, ∀ y ∈ bs, x.2 ≤ y.1 ∨ y.2 ≤ x.1) → ¬ InR bs n
+  | [], _, h => h
+  | (lo, hi) :: bs, hb, h => by
+    rcases h with h | h
+    · have := InR_apart (fun x hx => hb x hx (lo, hi) (by simp)) ha
+      omega
+    · exact InR_sep ha (fun x hx y hy => hb x hx y (List.mem_cons_of_mem _ hy)) h
+
+/-- The registrars' tables with their counts, `[regTab r, regCnt r + 4)` for `r = 0, 1, 2`. -/
+def tabs : List (Nat × Nat) := [(7990720, 7991300), (7981312, 7981828), (7981024, 7981284)]
+
+theorem reg_tab {n : Nat} : ∀ r, (regTab r).toNat ≤ n → n < (regCnt r).toNat + 4 → InR tabs n
+  | 0, h1, h2 => by
+    have e : (regTab 0).toNat = 7990720 ∧ (regCnt 0).toNat = 7991296 := ⟨rfl, rfl⟩
+    simp only [tabs, InR]
+    omega
+  | 1, h1, h2 => by
+    have e : (regTab 1).toNat = 7981312 ∧ (regCnt 1).toNat = 7981824 := ⟨rfl, rfl⟩
+    simp only [tabs, InR]
+    omega
+  | k + 2, h1, h2 => by
+    have e : (regTab (k + 2)).toNat = 7981024 ∧ (regCnt (k + 2)).toNat = 7981280 := ⟨rfl, rfl⟩
+    simp only [tabs, InR]
+    omega
+
+theorem not_tab {n : Nat} (r : Nat) (h : ¬ InR tabs n) : n < (regTab r).toNat ∨ (regCnt r).toNat + 4 ≤ n := by
+  rcases Nat.lt_or_ge n (regTab r).toNat with h1 | h1
+  · exact .inl h1
+  rcases Nat.lt_or_ge n ((regCnt r).toNat + 4) with h2 | h2
+  · exact absurd (reg_tab r h1 h2) h
+  exact .inr h2
 
 /-- What a constructor stores apart from the registrars' tables and the stack (the intervals `wr`), and what it
 leaves there. -/
@@ -160,11 +199,43 @@ theorem Jc_end (hS : 8013728 + 136 ≤ sp) (hB : ∀ k, ∀ x ∈ (spec k).wr, x
   · have := InR_apart (hE k) hw
     omega
 
+/-- Bytes apart from `tabs` and the pushed return addresses are as before the calls. -/
+theorem ChainOut.out_t {S : Addr} (hS : 16 ≤ S.toNat) {a : Addr} (ha1 : ¬ InR tabs a.toNat)
+    (ha2 : a.toNat < S.toNat - 16 ∨ S.toNat - 8 ≤ a.toNat) :
+    ∀ (cs : List (Nat × Nat)) (V V' : Addr → Byte), ChainOut S cs V V' → V' a = V a
+  | [], V, V', h => by rw [show V' = V from h]
+  | [(r, A)], V, V', h =>
+    RegOut.out (show RegOut (regCnt r) (regTab r) (regMax r) _ V V' from h) (reg_lay r) (not_tab r ha1)
+  | (r, A) :: c :: cs, V, V', h => by
+    obtain ⟨ra, V₁, h1, h2⟩ := h
+    have e := sub16 S hS
+    have hs : (S - 8 - 8).toNat + (toBytesLE ra 8).length ≤ 2 ^ 64 := by
+      rw [e, toBytesLE_length]
+      have := S.isLt
+      omega
+    rw [ChainOut.out_t hS ha1 ha2 (c :: cs) V₁ V' h2, RegOut.out h1 (reg_lay r) (not_tab r ha1),
+      Tun.Vst_out V _ _ a hs (by rw [e, toBytesLE_length]; omega)]
+
+/-- The tables are as before when the bytes of `tabs` are. -/
+theorem RegsIn.far_t {R : Nat → List (BitVec 64)} {V V' : Addr → Byte} (h : RegsIn R V)
+    (hV : ∀ a : Addr, InR tabs a.toNat → V' a = V a) : RegsIn R V' := by
+  intro r hr
+  obtain ⟨hc, hle, he⟩ := h r hr
+  obtain ⟨c4, t8, ap⟩ := reg_lay r
+  have hx := reg_max r
+  refine ⟨?_, hle, fun i hi' => ?_⟩
+  · rw [rdd_eq c4 fun a h4 h5 => hV a (reg_tab r (by omega) (by omega))]
+    exact hc
+  · have ht := ent_toNat r i (by omega)
+    rw [rdq_eq (by omega) fun a h4 h5 => hV a (reg_tab r (by omega) (by omega))]
+    exact he i hi'
+
 /-- A constructor that only calls registrars, its `calls` with room, `ChainOut` from `S = sp - 64`, and stores
 nothing else, keeps `Jc`. -/
 theorem Jc_chain {S : Addr} {cs : List (Nat × Nat)} (hm : 3 ≤ m) (hSn : S.toNat + 64 = sp)
     (hS : 7991300 + 136 ≤ sp) (hc : calls m = cs) (hF : Fits (regsAt m) cs) (hD : ∀ k, (spec k).Dep)
-    (hT : ∀ k, ∀ x ∈ (spec k).wr, x.2 ≤ 7981024 ∨ 7991300 ≤ x.1) (hB : ∀ k, ∀ x ∈ (spec k).wr, x.2 ≤ sp - 136)
+    (hT : ∀ k, ∀ x ∈ (spec k).wr, ∀ y ∈ tabs, x.2 ≤ y.1 ∨ y.2 ≤ x.1)
+    (hB : ∀ k, ∀ x ∈ (spec k).wr, x.2 ≤ sp - 136)
     (hs : ∀ W, (spec m).post W) (hJ : Jc V sp spec m W) (hO : ChainOut S cs W W') :
     Jc V sp spec (m + 1) W' := by
   obtain ⟨hR, hK, hP⟩ := hJ
@@ -176,9 +247,26 @@ theorem Jc_chain {S : Addr} {cs : List (Nat × Nat)} (hm : 3 ≤ m) (hSn : S.toN
   · rcases Nat.lt_or_ge k m with hlt | hge
     · refine hD k W W' (fun a ha => ?_) (hP k hk hlt)
       have h1 := InR_lt (hB k) ha
-      have h2 := InR_apart (hT k) ha
-      exact ChainOut.out (by omega) (by omega) (by omega) cs W W' hO
+      exact ChainOut.out_t (by omega) (InR_sep ha (hT k)) (by omega) cs W W' hO
     · obtain rfl : k = m := by omega
       exact hs W'
+
+/-- A constructor that calls no registrar and stores only to its `wr` (apart from the tables and from the `wr` of
+the constructors before it) keeps `Jc` when its `post` holds after. -/
+theorem Jc_st {V W W' : Addr → Byte} {sp m : Nat} {spec : Nat → CSpec} (hm : 3 ≤ m) (hc : calls m = [])
+    (hD : ∀ k, (spec k).Dep) (hT : ∀ x ∈ (spec m).wr, ∀ y ∈ tabs, x.2 ≤ y.1 ∨ y.2 ≤ x.1)
+    (hX : ∀ k, 3 ≤ k → k < m → ∀ x ∈ (spec k).wr, ∀ y ∈ (spec m).wr, x.2 ≤ y.1 ∨ y.2 ≤ x.1)
+    (hJ : Jc V sp spec m W) (hW : ∀ a : Addr, ¬ InR (spec m).wr a.toNat → W' a = W a) (hp : (spec m).post W') :
+    Jc V sp spec (m + 1) W' := by
+  obtain ⟨hR, hK, hP⟩ := hJ
+  refine ⟨?_, fun a h1 h2 h3 h4 => ?_, fun k hk hkm => ?_⟩
+  · rw [regsAt_succ hm, hc]
+    exact hR.far_t fun a ha => hW a fun hw => InR_sep hw hT ha
+  · rw [hW a (h4 m hm (by omega))]
+    exact hK a h1 h2 h3 fun k hk hkm => h4 k hk (by omega)
+  · rcases Nat.lt_or_ge k m with hlt | hge
+    · exact hD k W W' (fun a ha => hW a (InR_sep ha (hX k hk hlt))) (hP k hk hlt)
+    · obtain rfl : k = m := by omega
+      exact hp
 
 end FV7z.Ctor
