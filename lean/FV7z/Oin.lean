@@ -149,8 +149,9 @@ theorem vc_0 {g : Gprs} {f : Rflags} {V : Addr → Byte} (hdi : g.rdi = 7990496#
     ft_at hw (by decide) (by decide) (by decide), ft_at hw (by decide) (by decide) (by decide), ?_⟩
   intros
   refine hQ _ _ _ rfl rfl ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩ ?_
-  refine out_at (out_at (out_at (out_at (fun _ _ => rfl) ?_ ?_ ?_ ?_) ?_ ?_ ?_ ?_) ?_ ?_ ?_ ?_) ?_ ?_ ?_ ?_ <;>
-    first | exact toBytesLE_length _ _ | decide
+  have hl := toBytesLE_length (w := 64) 0 8
+  refine out_at (out_at (out_at (out_at (fun _ _ => rfl) hl ?_ ?_ ?_) hl ?_ ?_ ?_) (toBytesLE_length _ _) ?_ ?_ ?_)
+    (toBytesLE_length _ _) ?_ ?_ ?_ <;> decide
 
 /-- One round of the loop: the byte at `rax` cleared, then back to the head with `rax` one more, or on to the `ret`
 after the last. -/
@@ -181,10 +182,10 @@ theorem vc (hw : ∀ i < 40, Foot Wl (Addr.add 7990568#64 i)) (g₀ : Gprs) (V�
     Wt ℓ F Wl (fun j' g' f' V' => (∃ n' < n, Inv g₀ V₀ j' n' g' f' V') ∨ (j' = 60 ∧ Kp g₀ g' ∧ Out V₀ V'))
       g f V := by
   rcases h with ⟨rfl, rfl, rfl, hdi, rfl⟩ | ⟨rfl, h1, h2, rfl, hdx, hK, hO⟩
-  · simp only [Wt, ↓reduceIte, Nat.reduceEqDiff]
+  · simp only [Wt, ↓reduceIte]
     refine vc_0 hdi hw _ fun g' f' V' ha hd hK hO => Or.inl ⟨16, by decide, Or.inr ⟨rfl, ?_, ?_, ?_, hd, hK, hO⟩⟩
     all_goals (rw [ha]; decide)
-  · simp only [Wt, ↓reduceIte, Nat.reduceEqDiff]
+  · simp only [Wt, ↓reduceIte]
     apply vc_48 h1 h2 hdx hK hO hw
     · intro g' f' V' h1' h2' hlt hd hK' hO'
       exact Or.inl ⟨_, hlt, Or.inr ⟨rfl, h1', h2', rfl, hd, hK', hO'⟩⟩
