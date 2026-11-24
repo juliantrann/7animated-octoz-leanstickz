@@ -11,6 +11,8 @@ A constructor that calls nothing and stores to a few fixed places takes the byte
 - `jg_st`: `Jg` goes from `m` to `m + 1` through `st` when `st` keeps the bytes outside `wr`, its bytes in `wr`
   depend only on the bytes of `rd`, `rd` holds bytes `Jc` keeps as `V`'s, and `wr` and `rd` are apart from the
   stores before.
+- `wrSpec`, `jg_wr`: the spec of a constructor that only stores to `wr` (a table whose bytes nothing later reads as
+  addresses), and `Jg` from `m` to `m + 1` through it.
 -/
 namespace FV7z.Ctor
 open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn FV7z.Start
@@ -63,5 +65,29 @@ theorem jg_st {V W : Addr → Byte} {sp m : Nat} {spec : Nat → CSpec} {G : Nat
   · rw [hspec]
     intro a ha
     exact hst W hrd a ha
+
+/-- The spec of a constructor that stores only to `wr`, with nothing said of the bytes there. -/
+def wrSpec (wr : List (Nat × Nat)) : CSpec := ⟨wr, fun _ => True⟩
+
+theorem wrSpec_dep (wr : List (Nat × Nat)) : (wrSpec wr).Dep := fun _ _ _ _ => trivial
+
+/-- `Jg` from `m` to `m + 1` for `spec m = wrSpec wr`, when the constructor keeps the bytes outside `wr` and `wr` is
+apart from the tables and the stores before. -/
+theorem jg_wr {V W W' : Addr → Byte} {sp m : Nat} {spec : Nat → CSpec} {G : Nat → (Addr → Byte) → Prop}
+    {wr : List (Nat × Nat)} (hm : 3 ≤ m) (hc : calls m = []) (hspec : spec m = wrSpec wr) (hD : ∀ k, (spec k).Dep)
+    (hT : ∀ x ∈ wr, ∀ y ∈ tabs, x.2 ≤ y.1 ∨ y.2 ≤ x.1)
+    (hXw : ∀ k, 3 ≤ k → k < m → ∀ x ∈ (spec k).wr, ∀ y ∈ wr, x.2 ≤ y.1 ∨ y.2 ≤ x.1)
+    (hout : ∀ a : Addr, ¬ InR wr a.toNat → W' a = W a) (hG : G m W → G (m + 1) W') (hJ : Jg V sp spec G m W) :
+    Jg V sp spec G (m + 1) W' := by
+  obtain ⟨hJc, hG'⟩ := hJ
+  refine ⟨Jc_st hm hc hD ?_ (fun k hk hkm => ?_) hJc (fun a ha => hout a ?_) ?_, hG hG'⟩
+  · rw [hspec]
+    exact hT
+  · rw [hspec]
+    exact hXw k hk hkm
+  · rw [hspec] at ha
+    exact ha
+  · rw [hspec]
+    trivial
 
 end FV7z.Ctor

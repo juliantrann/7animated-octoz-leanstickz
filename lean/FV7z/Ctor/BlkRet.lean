@@ -2,18 +2,51 @@ import FV7z.Ctor.Ret
 import FV7z.Lemmas.Wp
 import FV7z.Lemmas.BlkOps2
 /-!
-# A constructor that is straight-line code, then `ret` (PLAN.md §M, constructors)
+# Constructors that end in `ret`: straight-line code or loops (PLAN.md §M, constructors)
 
-`blk_runs`: a constructor at offset `j` of `sti`, a stretch of straight-line code (`BlkA`) up to a `ret`, is a
-function as `Csu.csu_ok` asks when the stretch keeps the registers a call keeps and leaves the bytes `st V`
-(`wp`), `st` keeps the frame of `__libc_csu_init` and its arrays, and the invariant goes from `m` to `m + 1`
-through `st`.
+- `ret_tail`: from the constructor's `ret`, back to `__libc_csu_init` as `Csu.Runs` asks.
+- `blk_runs`: a constructor at offset `j` of `sti`, a stretch of straight-line code (`BlkA`) up to a `ret`, is a
+  function as `Csu.csu_ok` asks when the stretch keeps the registers a call keeps and leaves the bytes `st V`
+  (`wp`), `st` keeps the frame of `__libc_csu_init` and its arrays, and the invariant goes from `m` to `m + 1`
+  through `st`.
+- `cfg_runs`: the same for a constructor with loops, by `Seg.cfg` over its cut points.
 -/
 namespace FV7z.Ctor
 open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn FV7z.Start
 
 variable {prof : Profile} {F : Footprint} {Wl : List Rgn} {L : List (Addr × List Byte)} {s₀ : State} {o : Oracle}
   {gev : List Event} {gP : State → Nat → List Event → Prop} {gE : Outcome → List Event → Prop}
+
+/-- From the `ret` at offset `jr` of `sti`, with the registers a call keeps and bytes `V'` that keep the frame of
+`__libc_csu_init` and its arrays, the run goes back to `__libc_csu_init` as `Csu.Runs` asks (its continuation `k`). -/
+theorem ret_tail {J : Nat → (Addr → Byte) → Prop} {sp : Addr} {tg : Nat → Addr} {m jr j₂ t₁ : Nat} {X Y : State}
+    {V V' : Addr → Byte} (c : Seg prof F Wl L s₀ o) (hC : Csu.Env F Wl L sp tg) (hin : CodeIn L sti_at sti)
+    (hd : Dec prof.feat sti jr (FV7z.mk .ret 64 [] 1)) (hjr : jr < sti.length) (hsp : X.cpu.gpr.rsp = sp - 64#64)
+    (hj₂ : j₂ < Csu.csu.length) (hra : rdq(V, sp - 64#64) = Csu.csu_at.add j₂) (hKY : KeptW Wl s₀ Y)
+    (hAY : Agree F Y.proc.mm.mem V') (hrY : Y.cpu.rip = sti_at.add jr) (hKp : Kp X.cpu.gpr Y.cpu.gpr)
+    (hI : J (m + 1) V') (hst : ∀ a : Addr, (sp.toNat - 64 ≤ a.toNat ∧ a.toNat < sp.toNat + 8) ∨
+      (7829400 ≤ a.toNat ∧ a.toNat < 7830224) → V' a = V a)
+    (k : ∀ (Z : State) (t' : Nat) (V' : Addr → Byte), KeptW Wl s₀ Z → Agree F Z.proc.mm.mem V' → J (m + 1) V' →
+      (∀ a : Addr, sp.toNat - 56 ≤ a.toNat ∧ a.toNat < sp.toNat + 8 → V' a = V a) →
+      (∀ a : Addr, 7829400 ≤ a.toNat ∧ a.toNat < 7830224 → V' a = V a) →
+      Z.cpu.rip = Csu.csu_at.add j₂ → Osv.Back X.cpu.gpr Z.cpu.gpr → GoG prof L o gev gP gE Z t') :
+    GoG prof L o gev gP gE Y t₁ := by
+  have hs0 := hC.s0
+  have hs8 := hC.s8
+  have n := Csu.sp_n hs0
+  have hsY : Y.cpu.gpr.rsp = sp - 64#64 := by rw [hKp.1]; exact hsp
+  have hl : ∀ i < 8, Foot F.data (Addr.add Y.cpu.gpr.rsp i) := fun i hi => by
+    rw [hsY]
+    exact c.hws _ (hC.st i (by omega))
+  have hraY : rdq(V', Y.cpu.gpr.rsp) = Csu.csu_at.add j₂ := by
+    rw [hsY, ← hra]
+    exact rdq_eq (by omega) fun a h1 h2 => hst a (.inl ⟨by omega, by omega⟩)
+  refine c.s_ret hKY hAY hin hjr hrY hd hl hC.code hj₂ hraY ?_
+  rintro Z t' hKZ hAZ ⟨hrZ, hgZ⟩
+  refine k Z t' V' hKZ hAZ hI (fun a ha => hst a (.inl ⟨by omega, ha.2⟩)) (fun a ha => hst a (.inr ha)) hrZ ?_
+  rw [hgZ]
+  obtain ⟨k1, k2, k3, k4, k5, k6, k7⟩ := hKp
+  exact ⟨by show Y.cpu.gpr.rsp + 8#64 = _; rw [k1], k2, k3, k4, k5, k6, k7⟩
 
 /-- A constructor that is straight-line code up to a `ret`, its bytes after `st V`, is a function as `Csu.csu_ok`
 asks. -/
@@ -27,26 +60,34 @@ theorem blk_runs {J : Nat → (Addr → Byte) → Prop} {sp : Addr} {tg : Nat �
     (hJ : ∀ V, J m V → J (m + 1) (st V)) :
     Csu.Runs prof F Wl L s₀ o gev gP gE J sp a₀ a₁ a₂ m (csuTg m) := by
   intro X t V j₂ hK hA hI hr hsp _ hj₂ hra k
-  have hs0 := hC.s0
-  have hs8 := hC.s8
-  have n := Csu.sp_n hs0
   refine (Sp.blkA hb).run c hin (fun j'' g' _ V' => j'' = j' ∧ Kp X.cpu.gpr g' ∧ V' = st V) hK hA
     (hr.trans htg) (wp_mono ops (fun g' _ V' h => ⟨rfl, h⟩) (hwp X.cpu.gpr X.cpu.rflags V)) ?_
-  rintro j'' g fl V' ⟨rfl, hKp, rfl⟩ Y t₁ hKY hAY hrY hgY -
-  have hsY : Y.cpu.gpr.rsp = sp - 64#64 := by rw [hgY, hKp.1]; exact hsp
-  have hl : ∀ i < 8, Foot F.data (Addr.add Y.cpu.gpr.rsp i) := fun i hi => by
-    rw [hsY]
-    exact c.hws _ (hC.st i (by omega))
-  have hraY : rdq(st V, Y.cpu.gpr.rsp) = Csu.csu_at.add j₂ := by
-    rw [hsY, ← hra]
-    exact rdq_eq (by omega) fun a h1 h2 => hst V a (.inl ⟨by omega, by omega⟩)
-  refine c.s_ret hKY hAY hin hj' hrY hd hl hC.code hj₂ hraY ?_
-  rintro Z t' hKZ hAZ ⟨hrZ, hgZ⟩
-  refine k Z t' (st V) hKZ hAZ (hJ V hI) (fun a ha => hst V a (.inl ⟨by omega, ha.2⟩))
-    (fun a ha => hst V a (.inr ha)) hrZ ?_
-  rw [hgZ, hgY]
-  obtain ⟨k1, k2, k3, k4, k5, k6, k7⟩ := hKp
-  exact ⟨by show g.rsp + 8#64 = _; rw [k1], k2, k3, k4, k5, k6, k7⟩
+  rintro j'' g fl V' ⟨rfl, hKp, rfl⟩ Y t₁ hKY hAY hrY rfl -
+  exact ret_tail c hC hin hd hj' hsp hj₂ hra hKY hAY hrY hKp (hJ V hI) (hst V) k
+
+/-- A constructor at offset `j` of `sti` with loops, up to a `ret` at `jr`, is a function as `Csu.csu_ok` asks: by
+`Seg.cfg` over cut points `W` with an invariant `Inv g₀ V₀` (the registers and bytes at the entry `g₀`, `V₀`) that
+holds at the entry and reaches the `ret` with the registers a call keeps and bytes `R V₀`, `R` keeps the frame of
+`__libc_csu_init` and its arrays, and the invariant goes from `m` to `m + 1` through `R`. -/
+theorem cfg_runs {J : Nat → (Addr → Byte) → Prop} {sp : Addr} {tg : Nat → Addr} {a₀ a₁ a₂ : BitVec 64}
+    {m j jr : Nat} {W : Nat → Wpt} (c : Seg prof F Wl L s₀ o) (hC : Csu.Env F Wl L sp tg)
+    (hin : CodeIn L sti_at sti) (htg : csuTg m = sti_at.add j) (hW : ∀ ℓ, Sp prof sti sti_at ℓ (W ℓ))
+    (hd : Dec prof.feat sti jr (FV7z.mk .ret 64 [] 1)) (hjr : jr < sti.length)
+    (R : (Addr → Byte) → (Addr → Byte) → Prop)
+    (Inv : Gprs → (Addr → Byte) → Nat → Nat → Gprs → Rflags → (Addr → Byte) → Prop)
+    (h0 : ∀ g f V, ∃ n, Inv g V j n g f V)
+    (vc : ∀ g₀ V₀ ℓ n g f V, Inv g₀ V₀ ℓ n g f V → W ℓ F Wl (fun j' g' f' V' =>
+      (∃ n' < n, Inv g₀ V₀ j' n' g' f' V') ∨ (j' = jr ∧ Kp g₀ g' ∧ R V₀ V')) g f V)
+    (hR : ∀ V V', R V V' → ∀ a : Addr, (sp.toNat - 64 ≤ a.toNat ∧ a.toNat < sp.toNat + 8) ∨
+      (7829400 ≤ a.toNat ∧ a.toNat < 7830224) → V' a = V a)
+    (hJ : ∀ V V', J m V → R V V' → J (m + 1) V') :
+    Csu.Runs prof F Wl L s₀ o gev gP gE J sp a₀ a₁ a₂ m (csuTg m) := by
+  intro X t V j₂ hK hA hI hr hsp _ hj₂ hra k
+  obtain ⟨n₀, h₀⟩ := h0 X.cpu.gpr X.cpu.rflags V
+  refine c.cfg hin hW (Inv X.cpu.gpr V) (fun j' g' _ V' => j' = jr ∧ Kp X.cpu.gpr g' ∧ R V V')
+    (vc X.cpu.gpr V) ?_ n₀ j hK hA (hr.trans htg) h₀
+  rintro j' g fl V' ⟨rfl, hKp, hRV⟩ Y t₁ hKY hAY hrY rfl -
+  exact ret_tail c hC hin hd hjr hsp hj₂ hra hKY hAY hrY hKp (hJ V V' hI hRV) (hR V V' hRV) k
 
 /-- A byte apart from a store at a fixed address is as before. -/
 theorem vo {V : Addr → Byte} {x n w : Nat} {v : BitVec w} {a : Addr} (hx : x + n < 2 ^ 64)
