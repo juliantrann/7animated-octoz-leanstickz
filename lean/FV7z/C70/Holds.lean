@@ -12,7 +12,7 @@ address, so its spec says only where they lie (`wrSpec wr70`).
 - `Inv`: the invariant at the three cut points (`Cuts.lean`): the entry; the outer loop's head with `rsi` at word `k`
   of the table; the inner loop's head, the same and `rcx` from 1 to 8. The measure falls by one in each inner step and
   by at least two from the inner loop's last step to the next word.
-- `dec32`, `step2`: the inner count one less; `rsi` one word on, the outer loop's test.
+- `step2`: `rsi` one word on, and the outer loop's test (the inner count by `dec32`).
 - `vc_1440`, `vc_1464`, `vc_1472`, `vc`: the code from each cut point keeps it with a smaller measure, or reaches the
   `ret`. `vc_1464` and `vc_1472` are for the table at a variable `b`.
 - `runs70`: `csuTg 70` is a function as `Csu.csu_ok` asks (`cfg_runs`), for an invariant that goes from `70` to `71`
@@ -36,11 +36,6 @@ def Inv (g₀ : Gprs) (V₀ : Addr → Byte) (ℓ n : Nat) (g : Gprs) (_ : Rflag
   ∃ k < 256, g.rsi.toNat = 7983424 + 2 * k ∧ g.r8 = BitVec.ofNat 64 (7983424 + 512) ∧ Kp g₀ g ∧ Out V₀ V ∧
     ((ℓ = 1464 ∧ n = 10 * (256 - k)) ∨
       (ℓ = 1472 ∧ 1 ≤ g.rcx.toNat ∧ g.rcx.toNat ≤ 8 ∧ n = 10 * (256 - k) - 9 + g.rcx.toNat))
-
-/-- The inner count one less (`sub ecx, 1`), when it was not 1. -/
-theorem dec32 {x : BitVec 64} (h1 : 1 ≤ x.toNat) (h8 : x.toNat ≤ 8) (hne : ¬ x.setWidth 32 = 1#32) :
-    ((x.setWidth 32 - 1#32).setWidth 64).toNat + 1 = x.toNat ∧ 1 ≤ ((x.setWidth 32 - 1#32).setWidth 64).toNat := by
-  bv_omega
 
 /-- `rsi` one word on, and the outer loop's test `cmp r8, rsi`: not the end means another word. -/
 theorem step2 {r s : BitVec 64} {b k : Nat} (hb : b + 512 < 2 ^ 64) (hr : r = BitVec.ofNat 64 (b + 512))
@@ -110,15 +105,19 @@ theorem vc (hw : ∀ i < 512, Foot Wl (Addr.add 7983424#64 i)) (g₀ : Gprs) (V�
   · simp only [Wt, ↓reduceIte]
     exact vc_1440 _ fun g' f' V' h => Or.inl ⟨2560, by decide, h⟩
   · simp only [Wt, ↓reduceIte]
-    exact vc_1464 hs hK _ fun g' f' h1 h2 h3 h4 => Or.inl ⟨10 * (256 - k) - 9 + g'.rcx.toNat, by omega,
+    apply vc_1464 hs hK
+    intro g' f' h1 h2 h3 h4
+    exact Or.inl ⟨10 * (256 - k) - 9 + g'.rcx.toNat, by omega,
       Or.inr ⟨k, hk, h1, h2.trans hr8, h3, hO, Or.inr ⟨rfl, by omega, by omega, rfl⟩⟩⟩
   · simp only [Wt, ↓reduceIte]
-    exact vc_1472 (b := 7983424) (by decide) hw hk hs hr8 hK hO hc1 hc8 _
-      (fun g' f' e1 e2 e3 e4 e5 => Or.inl ⟨10 * (256 - k) - 9 + g'.rcx.toNat, by omega,
-        Or.inr ⟨k, hk, e1, e2, e3, hO, Or.inr ⟨rfl, e5, by omega, rfl⟩⟩⟩)
-      (fun g' f' V' e1 e2 e3 e4 e5 => Or.inl ⟨10 * (256 - (k + 1)), by omega,
-        Or.inr ⟨k + 1, e1, e2, e3, e4, e5, Or.inl ⟨rfl, rfl⟩⟩⟩)
-      fun g' f' V' e1 e2 => Or.inr ⟨rfl, e1, e2⟩
+    apply vc_1472 (b := 7983424) (by decide) hw hk hs hr8 hK hO hc1 hc8
+    · intro g' f' e1 e2 e3 e4 e5
+      exact Or.inl ⟨10 * (256 - k) - 9 + g'.rcx.toNat, by omega,
+        Or.inr ⟨k, hk, e1, e2, e3, hO, Or.inr ⟨rfl, e5, by omega, rfl⟩⟩⟩
+    · intro g' f' V' e1 e2 e3 e4 e5
+      exact Or.inl ⟨10 * (256 - (k + 1)), by omega, Or.inr ⟨k + 1, e1, e2, e3, e4, e5, Or.inl ⟨rfl, rfl⟩⟩⟩
+    · intro g' f' V' e1 e2
+      exact Or.inr ⟨rfl, e1, e2⟩
 
 /-- `Out` says the bytes outside `wr70` are as before. -/
 theorem out_wr {V V' : Addr → Byte} (h : Out V V') : ∀ a : Addr, ¬ InR wr70 a.toNat → V' a = V a := fun a ha =>

@@ -8,6 +8,7 @@ the kernel checks the arithmetic once and never folds the table's literal addres
 
 - `ft_at`, `out_at`: bytes at an address `a` inside the table are in `Wl`, and a store there keeps `Raf.Out`.
 - `toNat_bx`, `ft_bx`, `out_bx`: the same for the address `b + x`, `x` an index into the table.
+- `dec32`: a loop's count one less.
 - `Kp.of`: `Kp` from the registers a call keeps, each as before; it never compares the other registers.
 -/
 namespace FV7z.Ctor
@@ -50,6 +51,11 @@ theorem out_bx {b m n : Nat} {V₀ V : Addr → Byte} {x : BitVec 64} {bs : List
     Raf.Out b (b + m) V₀ (Vst V (BitVec.ofNat 64 b + x) bs) := by
   have e : (BitVec.ofNat 64 b + x).toNat = b + x.toNat := toNat_bx (by omega)
   exact out_at hO hn (by rw [e]; omega) (by rw [e]; omega) (by omega)
+
+/-- A count from 1 to 8 one less (`sub r32, 1`), when it was not 1. -/
+theorem dec32 {x : BitVec 64} (h1 : 1 ≤ x.toNat) (h8 : x.toNat ≤ 8) (hne : ¬ x.setWidth 32 = 1#32) :
+    ((x.setWidth 32 - 1#32).setWidth 64).toNat + 1 = x.toNat ∧ 1 ≤ ((x.setWidth 32 - 1#32).setWidth 64).toNat := by
+  bv_omega
 
 /-- `Kp` for `g'` from `Kp` for `g`, the registers a call keeps the same in both. Give each as `rfl`: the kernel
 then reduces each projection alone. -/
