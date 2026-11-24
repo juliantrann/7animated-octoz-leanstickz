@@ -23,7 +23,7 @@ theorem vc_1079 {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} :
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   wpx [W_1079, o11, Op.lea]
   try simp only [BitVec.zero_mul, BitVec.add_zero, BitVec.setWidth_eq]
-  first | trivial | exact ⟨rfl, rfl, rfl⟩ | exact ⟨rfl, rfl⟩ | exact ⟨rfl, trivial⟩
+  all_goals first | trivial | exact ⟨rfl, rfl, rfl⟩ | exact ⟨rfl, rfl⟩ | exact ⟨rfl, trivial⟩
 
 /-- The `call` of `_setjmp` in `__libc_start_main`. -/
 def pc1084 : List Byte := [0xe8, 0xbf, 0xee, 0x00, 0x00]
