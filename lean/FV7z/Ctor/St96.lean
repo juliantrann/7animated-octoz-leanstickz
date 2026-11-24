@@ -1,5 +1,4 @@
-import FV7z.Ctor.AtCtor
-import FV7z.Ctor.BlkRet
+import FV7z.Ctor.StSpec
 /-!
 # A constructor that copies a global into a static object (PLAN.md §M, constructors)
 
@@ -13,8 +12,8 @@ endbr64; mov rax, 0x792978; mov rdx, [rax]; mov rax, 0x79ed50; mov [rax], rdx; m
 - `st96 V`: the bytes after; `st96_out`: the same as `V` apart from `[0x79ed50, 0x79ed5c)`.
 - `runs96`: `csuTg 96` is a function as `Csu.csu_ok` asks, for an invariant the step from `96` to `97` takes
   through `st96`.
-- `spec96 V`: what it stores (`[0x79ed50, 0x79ed5c)`) and leaves there (`post96`: the word of `V` at `0x792978`,
-  then `-1`); `jg96`: `Jg` goes from `96` to `97` through `st96`; `runs96_jg`: `runs96` for `Jg`.
+- `wr96`, `rd96`: the bytes it stores and reads; `runs96_jg`: `runs96` for `Jg`, with
+  `spec 96 = stSpec st96 V wr96` (`jg_st`).
 -/
 namespace FV7z.Ctor
 open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn FV7z.Start
@@ -113,62 +112,41 @@ theorem runs96 {J : Nat → (Addr → Byte) → Prop} {sp : Addr} {tg : Nat → 
   rw [hgZ, hg6, hg5, hg4, hg3, hg2, hg1]
   exact ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩
 
-/-- What `csuTg 96` leaves: the word of `V` at `0x792978` at `0x79ed50`, `-1` at `0x79ed58`. -/
-def post96 (V W : Addr → Byte) : Prop :=
-  rdq(W, 7990608#64) = rdq(V, 7940472#64) ∧ rdd(W, 7990616#64) = BitVec.ofNat 32 4294967295
-
-/-- What `csuTg 96` stores and leaves. -/
-def spec96 (V : Addr → Byte) : CSpec := ⟨[(7990608, 7990620)], post96 V⟩
+/-- The bytes `csuTg 96` stores. -/
+def wr96 : List (Nat × Nat) := [(7990608, 7990616), (7990616, 7990620)]
+/-- The bytes `csuTg 96` reads: the word at `0x792978`. -/
+def rd96 : List (Nat × Nat) := [(7940472, 7940480)]
 
 theorem calls96 : calls 96 = [] := by decide +kernel
+theorem wrT96 : ∀ x ∈ wr96, ∀ y ∈ tabs, x.2 ≤ y.1 ∨ y.2 ≤ x.1 := by decide
 
-theorem wr96 : ∀ x ∈ [((7990608 : Nat), (7990620 : Nat))], ∀ y ∈ tabs, x.2 ≤ y.1 ∨ y.2 ≤ x.1 := by decide
+theorem st96_kept (V : Addr → Byte) (a : Addr) (h : ¬ InR wr96 a.toNat) : st96 V a = V a := by
+  simp only [wr96, InR, or_false] at h
+  exact st96_out V a (by omega)
 
-theorem dep96 (V : Addr → Byte) : (spec96 V).Dep := by
-  rintro W W' h ⟨h1, h2⟩
-  refine ⟨?_, ?_⟩
-  · exact (rdq_at (by decide) fun a _h4 _h5 => h a (by simp only [spec96, InR]; omega)).trans h1
-  · exact (rdd_at (by decide) fun a _h4 _h5 => h a (by simp only [spec96, InR]; omega)).trans h2
+theorem st96_rd (V W : Addr → Byte) (h : ∀ a : Addr, InR rd96 a.toNat → W a = V a) (a : Addr)
+    (ha : InR wr96 a.toNat) : st96 W a = st96 V a := by
+  have e1 : rdq(W, 7940472#64) = rdq(V, 7940472#64) :=
+    rdq_at (by decide) fun b _h1 _h2 => h b (by simp only [rd96, InR]; omega)
+  unfold st96
+  rw [e1]
+  simp only [wr96, InR, or_false] at ha
+  rcases ha with h | h <;>
+    repeat (first | (apply vin <;> omega) | apply Tls.Vst_congr)
 
-theorem post96_st {V W : Addr → Byte} (hW : rdq(W, 7940472#64) = rdq(V, 7940472#64)) : post96 V (st96 W) := by
-  have h1 : rdq(st96 W, 7990608#64) = rdq(Vst W 7990608#64 (toBytesLE rdq(W, 7940472#64) 8), 7990608#64) :=
-    rdq_at (by decide) fun a _ h => vo (by decide) (Or.inl (by omega))
-  refine ⟨?_, ?_⟩
-  · rw [h1]
-    exact (rd_st (w := 64) (n := 8) rfl _ (by decide)).trans hW
-  · unfold st96
-    exact rd_st (w := 32) (n := 4) rfl _ (by decide)
-
-/-- `Jg` from `96` to `97` through `st96`, for `spec 96 = spec96 V`, the stores of the constructors before apart
-from the word `csuTg 96` reads and from what it writes, and `G` taken along. -/
-theorem jg96 {V W : Addr → Byte} {sp : Nat} {spec : Nat → CSpec} {G : Nat → (Addr → Byte) → Prop}
-    (hspec : spec 96 = spec96 V) (hD : ∀ k, (spec k).Dep)
-    (hX : ∀ k, 3 ≤ k → k < 96 → ∀ x ∈ (spec k).wr, ∀ y ∈ [(7940472, 7940480), (7990608, 7990620)],
-      x.2 ≤ y.1 ∨ y.2 ≤ x.1)
-    (hsp : 7990620 + 136 ≤ sp) (hG : G 96 W → G 97 (st96 W)) (hJ : Jg V sp spec G 96 W) :
-    Jg V sp spec G 97 (st96 W) := by
-  obtain ⟨hJc, hG'⟩ := hJ
-  have hrd : rdq(W, 7940472#64) = rdq(V, 7940472#64) :=
-    rdq_at (by decide) fun a _h4 _h5 => hJc.2.1 a (by omega) (by unfold Pre; omega) (by omega)
-      fun k hk hkm hin => InR_sep hin (hX k hk hkm) (by simp only [InR]; omega)
-  refine ⟨Jc_st (by decide) calls96 hD (by rw [hspec]; exact wr96) (fun k hk hkm x hx y hy => ?_) hJc
-    (fun a ha => st96_out W a ?_) (by rw [hspec]; exact post96_st hrd), hG hG'⟩
-  · rw [hspec] at hy
-    exact hX k hk hkm x hx y (List.mem_cons_of_mem _ hy)
-  · rw [hspec] at ha
-    simp only [spec96, InR] at ha
-    omega
-
-/-- `runs96` for `Jg`. -/
+/-- `runs96` for `Jg`: `spec 96 = stSpec st96 V wr96`, whose stores and reads are apart from the stores before. -/
 theorem runs96_jg {V : Addr → Byte} {spec : Nat → CSpec} {G : Nat → (Addr → Byte) → Prop} {sp : Addr}
     {tg : Nat → Addr} {a₀ a₁ a₂ : BitVec 64} (c : Seg prof F Wl L s₀ o) (hC : Csu.Env F Wl L sp tg)
     (hin : CodeIn L sti_at sti) (hl : ∀ i < 8, Foot F.data (Addr.add 7940472#64 i))
     (hw8 : ∀ i < 8, Foot Wl (Addr.add 7990608#64 i)) (hw4 : ∀ i < 4, Foot Wl (Addr.add 7990616#64 i))
-    (hsp : 7990620 + 136 ≤ sp.toNat) (hspec : spec 96 = spec96 V) (hD : ∀ k, (spec k).Dep)
-    (hX : ∀ k, 3 ≤ k → k < 96 → ∀ x ∈ (spec k).wr, ∀ y ∈ [(7940472, 7940480), (7990608, 7990620)],
-      x.2 ≤ y.1 ∨ y.2 ≤ x.1)
+    (hsp : 7990620 + 136 ≤ sp.toNat) (hspec : spec 96 = stSpec st96 V wr96) (hD : ∀ k, (spec k).Dep)
+    (hXw : ∀ k, 3 ≤ k → k < 96 → ∀ x ∈ (spec k).wr, ∀ y ∈ wr96, x.2 ≤ y.1 ∨ y.2 ≤ x.1)
+    (hXr : ∀ k, 3 ≤ k → k < 96 → ∀ x ∈ (spec k).wr, ∀ y ∈ rd96, x.2 ≤ y.1 ∨ y.2 ≤ x.1)
     (hG : ∀ W, G 96 W → G 97 (st96 W)) :
     Csu.Runs prof F Wl L s₀ o gev gP gE (Jg V sp.toNat spec G) sp a₀ a₁ a₂ 96 (csuTg 96) :=
-  runs96 c hC hin hl hw8 hw4 (by omega) fun W hJ => jg96 hspec hD hX (by omega) (hG W) hJ
+  runs96 c hC hin hl hw8 hw4 (by omega) fun W hJ =>
+    jg_st (by decide) calls96 hspec hD wrT96 hXw hXr
+      (fun n hn => by simp only [rd96, InR, or_false] at hn; unfold Pre; omega)
+      (fun W h a ha => st96_rd V W h a ha) st96_kept (hG W) hJ
 
 end FV7z.Ctor
