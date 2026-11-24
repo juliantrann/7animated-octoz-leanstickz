@@ -221,7 +221,7 @@ theorem mc_runs {J : Nat → (Addr → Byte) → Prop} {sp fb l : Addr} {tg : Na
     g' = wr (wr (wr (wr Z₁.cpu.gpr 7 (BitVec.ofNat 64 D)) 4
       (addR (gv (wr Z₁.cpu.gpr 7 (BitVec.ofNat 64 D)) 64 4) (BitVec.ofNat 64 8))) 2 (BitVec.ofNat 64 7938344)) 6
       (BitVec.ofNat 64 M) ∧ V₁ = V') hKZ hAZ hrZ ?_ ?_
-  · intros
+  · intro _ _ _ _ _ _ _ _
     exact ⟨rfl, rfl, rfl⟩
   rintro j' g fl V' ⟨rfl, rfl, rfl⟩ Y₃ t₄ hK₃ hA₃ hr₃ hg₃ -
   have hsp₃ : Y₃.cpu.gpr.rsp = sp - 64#64 := by
@@ -242,7 +242,7 @@ theorem mc_runs {J : Nat → (Addr → Byte) → Prop} {sp fb l : Addr} {tg : Na
     hn rfl hlw (by rw [n64]; omega) hkw (by rw [n64]; omega) hlc hX.lock hX.idx hX.next hX.prev ?_
   · exact (rdq_eq (V := V) (x := sp - 64#64) (by rw [n64]; omega) fun a h1 h2 => hmo a
       (by rw [n64] at h1 h2; omega) (by rw [n64] at h1 h2; omega)).trans hra
-  intro V' g' Z t' hKZ' hAZ' hR hrZ' hgZ - hBk
+  intro V' g' Z t' hKZ' hAZ' hR hrZ' hgZ _ hBk
   have hcs : Cs X.cpu.gpr Z.cpu.gpr := Cs.trans hcY (Cs.trans hc₂ (Cs.trans hcZ (Cs.trans hc₃
     (by rw [hgZ]; rw [hg₄] at hBk; exact hBk.2))))
   refine k Z t' V' hKZ' hAZ' (hJ V V₁ V' hI hmo hR) (fun a ha => ?_) (fun a ha => ?_) hrZ' ⟨?_, hcs⟩
@@ -251,6 +251,65 @@ theorem mc_runs {J : Nat → (Addr → Byte) → Prop} {sp fb l : Addr} {tg : Na
   · rw [hR.out a (by rw [n64]; omega) (by omega) (by rw [ep]; omega) (by omega)]
     exact hmo a (by omega) (by omega)
   · rw [hgZ, hBk.1, hg₄, hsp₃, hsp]
+
+/-- The words the constructors that call `__cxa_atexit` share: the list's count, the lock and `__new_exitfn`'s
+counter. -/
+def cxSh (l : Addr) : List (Nat × Nat) := [(l.toNat + 8, l.toNat + 16), (8029184, 8029200)]
+
+/-- The intervals of such a constructor: its mutex and the list's place `n`. -/
+def mcWr (l : Addr) (M n : Nat) : List (Nat × Nat) := [(M, M + 40), (l.toNat + 16 + 32 * n, l.toNat + 16 + 32 * n + 32)]
+
+/-- `mc_runs` for `Jg`, the spec `wrSpec (mcWr l M n)`, the shared words `cxSh l` in the spec of `k₀`: `G m` gives
+what `__cxa_atexit` needs, and `G` goes from `m` to `m + 1` by the stores (`hG`). -/
+theorem mc_jg {V : Addr → Byte} {spec : Nat → CSpec} {G : Nat → (Addr → Byte) → Prop} {sp fb l : Addr}
+    {tg : Nat → Addr} {a₀ a₁ a₂ : BitVec 64} {m j r₁ r₂ M D n k₀ : Nat} (c : Seg prof F Wl L s₀ o)
+    (hC : Csu.Env F Wl L sp tg) (hin : CodeIn L sti_at sti)
+    (hfs : s₀.cpu.seg.fsBase = fb) (hinM : CodeIn L Mxs.mxs_at Mxs.mxs) (hinI : CodeIn L Mxi.mxi_at Mxi.mxi)
+    (hinC : CodeIn L Cxa.cxa_at Cxa.cxa) (hinN : CodeIn L Nef.nef_at Nef.nef)
+    (htg : csuTg m = sti_at.add j) (hpro : BlkA prof sti sti_at j (j + 8) [Op.nop, Op.sub 64 4 (.i 8)])
+    (hlea : BlkA prof sti sti_at (j + 8) (j + 15) [Op.mov 64 7 (.i M)])
+    (hcd : Dec prof.feat sti (j + 15) (FV7z.mk .call 64 [.rel r₁] 5))
+    (htc : sti_at.add (j + 15 + 5) + BitVec.ofNat 64 r₁ = Mxs.mxs_at)
+    (htl : BlkA prof sti sti_at (j + 20) (j + 45)
+      [Op.mov 64 7 (.i D), Op.add 64 4 (.i 8), Op.mov 64 2 (.i 7938344), Op.mov 64 6 (.i M)])
+    (hjd : Dec prof.feat sti (j + 45) (FV7z.mk .jmp 64 [.rel r₂] 5))
+    (htj : sti_at.add (j + 45 + 5) + BitVec.ofNat 64 r₂ = Cxa.cxa_at.add 0) (hj : j + 45 < sti.length)
+    (hst : ∀ i < 72, Foot Wl (Addr.add (sp - 136#64) i)) (hS : 8029400 ≤ sp.toNat)
+    (hM0 : 0 < M) (hMg : 7939000 ≤ M ∧ M + 40 ≤ 8010388) (hMl : M + 40 ≤ l.toNat)
+    (hmw : ∀ i < 40, Foot Wl (Addr.add (BitVec.ofNat 64 M) i)) (hD0 : BitVec.ofNat 64 D ≠ 0)
+    (hft : ∀ i < 56, Foot F.data (Addr.add fb i)) (hfn : fb.toNat + 56 ≤ 2 ^ 64)
+    (hfsd : fb.toNat + 112 ≤ sp.toNat - 136 ∨ sp.toNat ≤ fb.toNat) (hfM : fb.toNat + 56 ≤ M ∨ M + 40 ≤ fb.toNat)
+    (hfld : fb.toNat + 56 ≤ l.toNat ∨ l.toNat + 1040 ≤ fb.toNat)
+    (hfcd : fb.toNat + 56 ≤ 8029184 ∨ 8029200 ≤ fb.toNat)
+    (hfl : ∀ i < 1, Foot F.data (Addr.add 8010388#64 i)) (hp : ∀ i < 8, Foot F.data (Addr.add 7938992#64 i))
+    (hl0 : l ≠ 0) (hn : n < 32) (hlw : ∀ i < 1040, Foot Wl (Addr.add l i))
+    (hld : l.toNat + 1096 ≤ sp.toNat - 136) (hkw : ∀ i < 16, Foot Wl (Addr.add 8029184#64 i))
+    (hlc : l.toNat + 1040 ≤ 8029184 ∨ 8029200 ≤ l.toNat)
+    (hm : 3 ≤ m) (hc : calls m = []) (hspec : spec m = wrSpec (mcWr l M n)) (hD : ∀ k, (spec k).Dep)
+    (hT : ∀ k, ∀ x ∈ (spec k).wr, ∀ y ∈ tabs, x.2 ≤ y.1 ∨ y.2 ≤ x.1)
+    (hB : ∀ k, ∀ x ∈ (spec k).wr, x.2 ≤ sp.toNat - 1024)
+    (hXw : ∀ k, 3 ≤ k → k < m → ∀ x ∈ (spec k).wr, ∀ y ∈ mcWr l M n, x.2 ≤ y.1 ∨ y.2 ≤ x.1)
+    (hk₀ : 3 ≤ k₀) (hk₀m : k₀ < m) (hSh : ∀ x, InR (cxSh l) x → InR (spec k₀).wr x)
+    (hP₀ : ∀ U, (spec k₀).post U)
+    (hShD : ∀ k, 3 ≤ k → k < m → k ≠ k₀ → ∀ x, InR (spec k).wr x → ¬ InR (cxSh l) x)
+    (hGx : ∀ W, G m W → CxPre fb l n W)
+    (hG : ∀ W V₁ V', G m W →
+      (∀ a : Addr, ¬ (sp.toNat - 136 ≤ a.toNat ∧ a.toNat < sp.toNat - 64) → ¬ (M ≤ a.toNat ∧ a.toNat < M + 40) →
+        V₁ a = W a) →
+      Cxa.Reg V₁ V' (sp - 64#64) l (l + BitVec.ofNat 64 (16 + 32 * n)) n
+        ((BitVec.ofNat 64 D ^^^ rdq(V₁, fb + 48#64)).rotateLeft 17) (BitVec.ofNat 64 M) 7938344#64 →
+      G (m + 1) V') :
+    Csu.Runs prof F Wl L s₀ o gev gP gE (Jg V sp.toNat spec G) sp a₀ a₁ a₂ m (csuTg m) := by
+  have n64 := Csu.sp_n hC.s0
+  have hsl := sp.isLt
+  obtain ⟨-, -, ep, -, -, -⟩ := Nef.l_n l n hn (by omega)
+  refine mc_runs c hC hin hfs hinM hinI hinC hinN htg hpro hlea hcd htc htl hjd htj hj hst hS hM0 hMg hMl hmw hD0
+    hft hfn hfsd hfM hfld hfcd hfl hp hl0 hn hlw hld hkw hlc (fun W hJ => hGx W hJ.2)
+    fun W V₁ V' hJ hmo hR => jg_sh hm hc (by omega) hspec hD hT hB hXw hk₀ hk₀m hSh hP₀ hShD
+      (fun a h1 h2 h3 => ?_) (hG W V₁ V' · hmo hR) hJ
+  rw [hR.out a (by rw [n64]; omega) (fun h => h3 (by simp only [cxSh, InR]; omega))
+    (fun h => h1 (by rw [ep] at h; simp only [mcWr, InR]; omega)) (fun h => h3 (by simp only [cxSh, InR]; omega))]
+  exact hmo a (by omega) fun h => h1 (by simp only [mcWr, InR]; omega)
 
 /-- `csuTg 100`, at `0x41cd50`: the mutex `0x79f0a0`. -/
 def c3088 : List Byte := [
@@ -282,7 +341,7 @@ theorem cd3088 (feat : Features) : Dec feat sti 3103 (FV7z.mk .call 64 [.rel 179
   Dec.shift (j := 3088) (k := 15) (c3088_15 feat) v3088 (by decide)
 theorem tq3088 (prof : Profile) : BlkA prof c3088 (0x41cd50 : Addr) 20 45
     [Op.mov 64 7 (.i 5875232), Op.add 64 4 (.i 8), Op.mov 64 2 (.i 7938344), Op.mov 64 6 (.i 7991456)] :=
-  .cons (c3088_20 _) (OpI.mov (.i 5875232) (.inr rfl)) (by decide) <|
+  .cons (c3088_20 _) ((OpI.mov (.i 5875232) (.inr rfl)).at _) (by decide) <|
   .cons (c3088_27 _) ((OpI.add (.i 8) (.inr rfl)).at _) (by decide) <|
   .cons (c3088_31 _) (OpIA.lea_rip (by decide)) (by decide) <|
   .cons (c3088_38 _) (OpIA.lea_rip (by decide)) (by decide) <| .nil 45
@@ -322,7 +381,7 @@ theorem cd3312 (feat : Features) : Dec feat sti 3327 (FV7z.mk .call 64 [.rel 179
   Dec.shift (j := 3312) (k := 15) (c3312_15 feat) v3312 (by decide)
 theorem tq3312 (prof : Profile) : BlkA prof c3312 (0x41ce30 : Addr) 20 45
     [Op.mov 64 7 (.i 5875232), Op.add 64 4 (.i 8), Op.mov 64 2 (.i 7938344), Op.mov 64 6 (.i 7991520)] :=
-  .cons (c3312_20 _) (OpI.mov (.i 5875232) (.inr rfl)) (by decide) <|
+  .cons (c3312_20 _) ((OpI.mov (.i 5875232) (.inr rfl)).at _) (by decide) <|
   .cons (c3312_27 _) ((OpI.add (.i 8) (.inr rfl)).at _) (by decide) <|
   .cons (c3312_31 _) (OpIA.lea_rip (by decide)) (by decide) <|
   .cons (c3312_38 _) (OpIA.lea_rip (by decide)) (by decide) <| .nil 45
