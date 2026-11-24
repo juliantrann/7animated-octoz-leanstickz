@@ -75,7 +75,8 @@ theorem RegsIn.push {R : Nat → List (BitVec 64)} {V V' : Addr → Byte} {r : N
     · rw [h1, BitVec.toNat_add, BitVec.toNat_ofNat, hc]
       omega
     rcases Nat.lt_or_ge i (R r).length with hi' | hi'
-    · have hg : (R r ++ [p]).getD i 0 = (R r).getD i 0 := List.getD_append _ _ _ _ hi'
+    · have hg : (R r ++ [p]).getD i 0 = (R r).getD i 0 := by
+        simp [List.getD_eq_getElem?_getD, List.getElem?_append_left hi']
       have ht := ent_toNat r i (by omega)
       rw [hg, ← he i hi']
       exact rdq_eq (by omega) fun a h4 h5 => h3 a (by omega) (by omega)
