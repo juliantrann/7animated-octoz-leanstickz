@@ -318,6 +318,13 @@ FNS = {
                 stops=(0x2e, 0x1ec, 0x20b, 0x350, 0x3c0, 0x47f, 0x610, 0x63e, 0x7d2, 0x808, 0x9d1, 0x9f5, 0xc07, 0x3b6),
                 calls=True, tag="PLAN.md G3, `malloc`",
                 src="glibc 2.31's `_int_malloc` (`malloc/malloc.c`; `objdump -d`)"),
+    # The same function on the second call for a request `nb >> 12 > 10` with `nb >> 15 < 5` (`nb` 45056 … 163824,
+    # largebin index `110 + (nb >> 15)`): the way of `im5` but through 492 and 2192 (gdb trace of `n` = 72704,
+    # `private/recon/malloc102.trace`). Stops: those of `im5` but 492, and 507 (`nb >> 12 ≤ 10`).
+    "im6": dict(grp="Im6", code=("Imm", "imm"), cn="_int_malloc", a=0x630be0, n=3702, pos=True, fs=True,
+                stops=(0x2e, 0x1fb, 0x20b, 0x350, 0x3c0, 0x47f, 0x610, 0x63e, 0x7d2, 0x808, 0x9d1, 0x9f5, 0xc07, 0x3b6),
+                calls=True, tag="PLAN.md G3, `malloc`",
+                src="glibc 2.31's `_int_malloc` (`malloc/malloc.c`; `objdump -d`)"),
     "imm": dict(grp="Imm", cn="_int_malloc", a=0x630be0, n=3702, pos=True, fs=True,
                 stops=(0x2e, 0x6a, 0x160, 0x3c0, 0x44b, 0x47f, 0x610, 0x63e, 0x7b9, 0x808, 0x988, 0x9e7, 0xa2b, 0xc07,
                        0xc20, 0xc77, 0xcef, 0x3b6),
