@@ -12,7 +12,7 @@ import FV7z.Ndi.Exit
 - `ct_away`: `__init_misc` and `__ctype_init` store on the stack, to `__init_misc`'s two variables and below `fb`.
 - `lifW_away`: `lif_a` stores on the stack and to four variables.
 - `exit_ret`: the three joined with `Ndi.ndi_exit`; `glob_ret`: with `Ndi.ndi_glob`, for `[0x791eb8, 0x792980)`
-  (`__exit_funcs` at `0x7923b0`).
+  (`__exit_funcs` at `0x7923b0`); `sec_ret`: with `Ndi.ndi_glob_w`, for `[0x791ce0, 0x791e80)`.
 - `ptr_exit`: at `0x613434` they are 0, as in the image (the bss); `ptr_ef`: `__exit_funcs` is `&initial`.
 - `ct_tcb`, `lifW_tcb`, `tcb_ret`: the same for the first 56 bytes of the TCB (`multiple_threads` at `fs + 24`,
   `pointer_guard` at `fs + 48`), with `Ndi.ndi_tcb`.
@@ -81,6 +81,20 @@ theorem glob_ret {W W₂ : Addr → Byte} {Z : State} {b fsb fb a0 s x : Addr} {
   obtain ⟨W', U, m, r, hE, hU, hL, -⟩ := hN
   have ha : Away x := by unfold Away; omega
   rw [ct_away ha hg hfb hfb', Ndi.ndi_glob hE hU hL (by omega) (by omega) (by omega) hs (.inr ⟨h1, h2⟩)]
+  exact lifW_away ha he he'
+
+/-- At the return of `__libc_init_first` to `0x613439`, a byte of `[0x791ce0, 0x791e80)` (with
+`__libc_enable_secure` at `0x791ce0`) is the byte `W` at `0x613434`. -/
+theorem sec_ret {W W₂ : Addr → Byte} {Z : State} {b fsb fb a0 s x : Addr} {g : Gprs} {a1 a2 a3 : BitVec 64}
+    (h1 : 7937248 ≤ x.toNat) (h2 : x.toNat < 7937664) (hN : Ndi.NdiRet (lifW W Z) (lifSp Z) (lifY W Z) b fsb W₂)
+    (hb : 8032256 ≤ b.toNat) (hf : 8032256 ≤ fsb.toNat) (hsp : 8032256 + 72 ≤ (lifSp Z).toNat)
+    (hs : (lifSp Z).toNat + 120 ≤ 2 ^ 64) (he : 0x7a9000 + 32 ≤ (entG Z).rsp.toNat)
+    (he' : (entG Z).rsp.toNat + 8 ≤ 2 ^ 64) (hg : 0x7a9000 + 40 ≤ g.rsp.toNat) (hfb : 0x7a9000 + 64 ≤ fb.toNat)
+    (hfb' : fb.toNat ≤ 2 ^ 63) :
+    Cti.CtMem (Lif.bcV W₂ g a0 s) fb a1 a2 a3 x = W x := by
+  obtain ⟨W', U, m, r, hE, hU, hL, -⟩ := hN
+  have ha : Away x := by unfold Away; omega
+  rw [ct_away ha hg hfb hfb', Ndi.ndi_glob_w hE hU hL (by omega) (by omega) (by omega) hs (.inr (.inl ⟨h1, h2⟩))]
   exact lifW_away ha he he'
 
 /-- At `0x613434` (`ptr_keep`'s bytes), a byte of `ExitB` is 0: none of the layers before stores to it. -/

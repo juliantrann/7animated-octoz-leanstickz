@@ -138,6 +138,28 @@ theorem hV_gb {V' : Addr → Byte} {r ph pn : BitVec 64} {x : Addr}
     vlt (a := 7944072) (n := 8) (x := x) (toBytesLE_length _ _) (by omega) (by omega),
     vlt (a := 7944232) (n := 8) (x := x) (toBytesLE_length _ _) (by omega) (by omega)]
 
+/-- A byte of the image below `_dl_get_origin`'s variables but `_dl_random`'s words, or of the GOT page but
+`main_arena`, at the return of `_dl_non_dynamic_init` is the one at its entry (`__ctype_init`'s locale words and
+tables, `__libc_enable_secure`). -/
+theorem ndi_glob_w {W W' U W₂ : Addr → Byte} {sp b fsb r x : Addr} {m : Nat} {g : Gprs}
+    (hE : Eqo sp W₂ (lV (bV U m)))
+    (hU : ∀ a : Addr, (a.toNat < 7937664 ∨ 7937720 ≤ a.toNat ∧ a.toNat < 7940480 ∨ sp.toNat ≤ a.toNat ∨
+      Mal.Kf fsb a) → U a = hV W' r 4194368#64 8#64 a)
+    (hL : ∀ a : Addr, Lo b fsb a → W' a = fV W sp g a) (hb : 7940480 ≤ b.toNat) (hf : 7940480 + 40 ≤ fsb.toNat)
+    (hsp : 7940480 + 72 ≤ sp.toNat) (hs : sp.toNat + 120 ≤ 2 ^ 64)
+    (hx : x.toNat < 7937208 ∨ 7937248 ≤ x.toNat ∧ x.toNat < 7937664 ∨ 7937720 ≤ x.toNat ∧ x.toNat < 7940480) :
+    W₂ x = W x := by
+  have hu : x.toNat < 7937664 ∨ 7937720 ≤ x.toNat ∧ x.toNat < 7940480 ∨ sp.toNat ≤ x.toNat ∨ Mal.Kf fsb x := by
+    rcases hx with h | h | h
+    · exact .inl (by omega)
+    · exact .inl (by omega)
+    · exact .inr (.inl h)
+  have hl : Lo b fsb x := ⟨by omega, by omega, by omega, by omega, by omega⟩
+  have hn : ¬ Scr sp x := by unfold Scr; omega
+  rw [hE x hn, lbV_gb (U := U) (m := m) (x := x) (by omega), hU x hu,
+    hV_gb (V' := W') (r := r) (ph := 4194368#64) (pn := 8#64) (x := x) (by omega), hL x hl,
+    fV_out (W := W) (g := g) (x := x) hs (.inl (by omega))]
+
 /-- A byte of the image below `_dl_get_origin`'s variables, or of the GOT page but `main_arena`, at the return of
 `_dl_non_dynamic_init` is the one at its entry (`__ctype_init`'s locale words and tables). -/
 theorem ndi_glob {W W' U W₂ : Addr → Byte} {sp b fsb r x : Addr} {m : Nat} {g : Gprs}
@@ -146,13 +168,7 @@ theorem ndi_glob {W W' U W₂ : Addr → Byte} {sp b fsb r x : Addr} {m : Nat} {
       Mal.Kf fsb a) → U a = hV W' r 4194368#64 8#64 a)
     (hL : ∀ a : Addr, Lo b fsb a → W' a = fV W sp g a) (hb : 7940480 ≤ b.toNat) (hf : 7940480 + 40 ≤ fsb.toNat)
     (hsp : 7940480 + 72 ≤ sp.toNat) (hs : sp.toNat + 120 ≤ 2 ^ 64)
-    (hx : x.toNat < 7937208 ∨ 7937720 ≤ x.toNat ∧ x.toNat < 7940480) : W₂ x = W x := by
-  have hu : x.toNat < 7937664 ∨ 7937720 ≤ x.toNat ∧ x.toNat < 7940480 ∨ sp.toNat ≤ x.toNat ∨ Mal.Kf fsb x :=
-    hx.elim (fun h => .inl (by omega)) (fun h => .inr (.inl h))
-  have hl : Lo b fsb x := ⟨by omega, by omega, by omega, by omega, by omega⟩
-  have hn : ¬ Scr sp x := by unfold Scr; omega
-  rw [hE x hn, lbV_gb (U := U) (m := m) (x := x) (by omega), hU x hu,
-    hV_gb (V' := W') (r := r) (ph := 4194368#64) (pn := 8#64) (x := x) (by omega), hL x hl,
-    fV_out (W := W) (g := g) (x := x) hs (.inl (by omega))]
+    (hx : x.toNat < 7937208 ∨ 7937720 ≤ x.toNat ∧ x.toNat < 7940480) : W₂ x = W x :=
+  ndi_glob_w hE hU hL hb hf hsp hs (by omega)
 
 end FV7z.Ndi
