@@ -239,6 +239,15 @@ FNS = {
     "c82": dict(grp="C82", code=("Ctor", "sti"), cn="csuTg 82", a=0x41c140, n=4624, entry=1888, pos=True,
                 stops=(2081,), tag="PLAN.md G3, constructors",
                 src="a static constructor of 7-Zip (`objdump -d`)"),
+    # 7-Zip's `CCriticalSection` constructor (`C/Threads.c`, `CriticalSection_Init`): `pthread_mutex_init (m, NULL)`
+    # for `m` not null. Stops: the tail jump (0xb), `m` null (0x10).
+    "mxs": dict(grp="Mxs", cn="CriticalSection_Init", a=0x448b40, n=0x16, pos=True, stops=(0xb, 0x10),
+                tag="PLAN.md G3, constructors", src="7-Zip's `CriticalSection_Init` (`C/Threads.c`; `objdump -d`)"),
+    # glibc 2.31 nptl/pthread_mutex_init.c, the way of a null `attr`. Stops: `attr` not null (0x2a),
+    # `__stack_chk_fail` (0x1d8). `vop`: the zeroing through `xmm0`.
+    "mxi": dict(grp="Mxi", cn="__pthread_mutex_init", a=0x5fbb20, n=0x1dd, pos=True, fs=True, vop=True,
+                stops=(0x2a, 0x1d8), tag="PLAN.md G3, constructors",
+                src="glibc 2.31's `__pthread_mutex_init` (`nptl/pthread_mutex_init.c`; `objdump -d`)"),
     "c87": dict(grp="C87", code=("Ctor", "sti"), cn="csuTg 87", a=0x41c140, n=4624, entry=2160, pos=True,
                 stops=(2387,), tag="PLAN.md G3, constructors",
                 src="a static constructor of 7-Zip (`objdump -d`)"),
@@ -500,6 +509,8 @@ def effect(mn, sz, ol, pc=None):
             return terms, f"Op.vla 16 {absa(ops[1])}", f"OpIA.vl_{sm}_rip (by decide) (by decide)"
         if sm in ('movdqa', 'movaps') and ks == ('mr', 'x') and f[0][1] == 128:
             return terms, f"Op.vsa 16 {absa(ops[0])}", f"OpIA.vs_{sm}_rip (by decide) (by decide)"
+        if sm == 'pxor' and ks == ('x', 'x'):   # FV7z/Lemmas/BlkOps19.lean
+            return terms, "Op.vld 0 fun _ => 0", "OpI.vz_pxor"
         raise Exception(f"no effect for {mn} {sz} {ol}")
     # through `fs` (FV7z/Lemmas/SpFs.lean): the `Op` has the `fs` base `fb`
     if mn == 'mov' and ks == ('r', 'mf') and sz in (32, 64):
@@ -828,7 +839,7 @@ end FV7z.{grp}
                          f"theorem j{k}_0 : ∀ feat, Dec feat j{k} 0 (FV7z.mk {mnl(mn)} {sz} [{operand(ol[0])[1]}] {ln}) := "
                          "by dec_rfl\n")
     open(out + "/Pats.lean", "w").write(f"""import FV7z.Lemmas.Sp{"Fs" if FSM else ""}
-{"import FV7z.Lemmas.BlkOps18" + chr(10) if any("Op.zxr16" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps17" + chr(10) if any("Op.mul64" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps16" + chr(10) if any("Op.bt64" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps15" + chr(10) if any("Op.sxr" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps14" + chr(10) if any(k in x for x in P for k in ("Op.zxr", "Op.test 16", "Op.cmpmif fb 8")) else ""}{"import FV7z.Lemmas.BlkOps13" + chr(10) if any("Op.cmpmif" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps12" + chr(10) if any(k in x for x in P for k in ("Op.cmpmr", "Op.testmi")) else ""}{"import FV7z.Lemmas.BlkOps11" + chr(10) if any(k in x for x in P for k in ("Op.rol64", "Op.ror64")) else ""}{"import FV7z.Lemmas.BlkOps10" + chr(10) if any("Op.cmpm 16" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps9" + chr(10) if any("Op.cmpma" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps8" + chr(10) if any(k in x for x in P for k in ("Op.vla", "Op.vsa", "Op.addma", "Op.cmpmia 8", "Op.stia 8")) else ""}{"import FV7z.Lemmas.BlkOps7" + chr(10) if any(k in x for x in P for k in ("Op.vl", "Op.vs", "Op.cdqe")) else ""}{"import FV7z.Lemmas.BlkOps6" + chr(10) if any(k in x for x in P for k in ("Op.stf8", "Op.stfi", "Op.xormf")) else ""}{("import FV7z.Lemmas.BlkOps5" if any("Op.ldsxb" in x for x in P) else
+{"import FV7z.Lemmas.BlkOps19" + chr(10) if any("Op.vld 0" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps18" + chr(10) if any("Op.zxr16" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps17" + chr(10) if any("Op.mul64" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps16" + chr(10) if any("Op.bt64" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps15" + chr(10) if any("Op.sxr" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps14" + chr(10) if any(k in x for x in P for k in ("Op.zxr", "Op.test 16", "Op.cmpmif fb 8")) else ""}{"import FV7z.Lemmas.BlkOps13" + chr(10) if any("Op.cmpmif" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps12" + chr(10) if any(k in x for x in P for k in ("Op.cmpmr", "Op.testmi")) else ""}{"import FV7z.Lemmas.BlkOps11" + chr(10) if any(k in x for x in P for k in ("Op.rol64", "Op.ror64")) else ""}{"import FV7z.Lemmas.BlkOps10" + chr(10) if any("Op.cmpm 16" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps9" + chr(10) if any("Op.cmpma" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps8" + chr(10) if any(k in x for x in P for k in ("Op.vla", "Op.vsa", "Op.addma", "Op.cmpmia 8", "Op.stia 8")) else ""}{"import FV7z.Lemmas.BlkOps7" + chr(10) if any(k in x for x in P for k in ("Op.vl", "Op.vs", "Op.cdqe")) else ""}{"import FV7z.Lemmas.BlkOps6" + chr(10) if any(k in x for x in P for k in ("Op.stf8", "Op.stfi", "Op.xormf")) else ""}{("import FV7z.Lemmas.BlkOps5" if any("Op.ldsxb" in x for x in P) else
   "import FV7z.Lemmas.BlkOps4" if any("Op.imul64" in x for x in P) else
   "import FV7z.Lemmas.BlkOps3" if any(k in x for x in P for k in ("Op.shl64", "Op.shr64", "Op.sar64")) else
   "import FV7z.Lemmas.BlkOps2") + chr(10) if pos else ""}/-!
