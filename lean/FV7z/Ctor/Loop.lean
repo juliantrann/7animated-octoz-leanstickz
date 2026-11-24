@@ -8,7 +8,8 @@ the kernel checks the arithmetic once and never folds the table's literal addres
 
 - `ft_at`, `out_at`: bytes at an address `a` inside the table are in `Wl`, and a store there keeps `Raf.Out`.
 - `toNat_bx`, `ft_bx`, `out_bx`: the same for the address `b + x`, `x` an index into the table.
-- `toNat_m4`, `ft_b4`, `out_b4`: the same for the address `b + 4·x`, `x` the index of a word.
+- `toNat_m4`, `ft_b4`, `out_b4`: the same for the address `b + 4·x`, `x` the index of a word; `toNat_m8`, `ft_b8`,
+  `out_b8`: of a quadword, at `b + 8·x`.
 - `dec32`: a loop's count one less.
 - `Kp.of`: `Kp` from the registers a call keeps, each as before; it never compares the other registers.
 -/
@@ -70,6 +71,25 @@ theorem out_b4 {b m : Nat} {V₀ V : Addr → Byte} {x : BitVec 64} {bs : List B
     (hb : b + m < 2 ^ 64) (hx : 4 * x.toNat + 4 ≤ m) (hn : bs.length = 4) :
     Raf.Out b (b + m) V₀ (Vst V (BitVec.ofNat 64 b + x * 4#64) bs) := by
   have e : (x * 4#64).toNat = 4 * x.toNat := toNat_m4 (by omega)
+  exact out_bx hO hb (by rw [e]; omega) hn
+
+/-- Eight times `x`, when it does not wrap. -/
+theorem toNat_m8 {x : BitVec 64} (h : 8 * x.toNat < 2 ^ 64) : (x * 8#64).toNat = 8 * x.toNat := by
+  simp only [BitVec.toNat_mul, BitVec.toNat_ofNat, Nat.reducePow, Nat.reduceMod]
+  omega
+
+/-- The quadword `x` of the table in `Wl`. -/
+theorem ft_b8 {R : List Rgn} {b m : Nat} (h : ∀ i < m, Foot R (Addr.add (BitVec.ofNat 64 b) i))
+    (hb : b + m < 2 ^ 64) {x : BitVec 64} (hx : 8 * x.toNat + 8 ≤ m) :
+    ∀ i < 8, Foot R (Addr.add (BitVec.ofNat 64 b + x * 8#64) i) := by
+  have e : (x * 8#64).toNat = 8 * x.toNat := toNat_m8 (by omega)
+  exact ft_bx h hb (by rw [e]; omega)
+
+/-- A store of the quadword `x` of the table keeps the bytes outside it. -/
+theorem out_b8 {b m : Nat} {V₀ V : Addr → Byte} {x : BitVec 64} {bs : List Byte} (hO : Raf.Out b (b + m) V₀ V)
+    (hb : b + m < 2 ^ 64) (hx : 8 * x.toNat + 8 ≤ m) (hn : bs.length = 8) :
+    Raf.Out b (b + m) V₀ (Vst V (BitVec.ofNat 64 b + x * 8#64) bs) := by
+  have e : (x * 8#64).toNat = 8 * x.toNat := toNat_m8 (by omega)
   exact out_bx hO hb (by rw [e]; omega) hn
 
 /-- A count from 1 to 8 one less (`sub r32, 1`), when it was not 1. -/
