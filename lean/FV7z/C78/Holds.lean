@@ -102,14 +102,14 @@ theorem vc (hw : ∀ i < 1024, Foot Wl (Addr.add 7984192#64 i)) (g₀ : Gprs) (V
     Wt ℓ F Wl (fun j' g' f' V' => (∃ n' < n, Inv g₀ V₀ j' n' g' f' V') ∨ (j' = 67 ∧ Kp g₀ g' ∧ Out V₀ V'))
       g f V := by
   rcases h with ⟨rfl, rfl, rfl, rfl⟩ | ⟨k, hk, hs, hr8, hK, hO, ⟨rfl, rfl⟩ | ⟨rfl, hc1, hc8, rfl⟩⟩
-  · simp only [Wt, ↓reduceIte]
+  · simp only [Wt, ↓reduceIte, Nat.reduceEqDiff]
     exact vc_0 _ fun g' f' V' h => Or.inl ⟨2560, by decide, h⟩
-  · simp only [Wt, ↓reduceIte]
+  · simp only [Wt, ↓reduceIte, Nat.reduceEqDiff]
     apply vc_24 hs hK
     intro g' f' h1 h2 h3 h4
     exact Or.inl ⟨10 * (256 - k) - 9 + g'.rdx.toNat, by omega,
       Or.inr ⟨k, hk, h1, h2.trans hr8, h3, hO, Or.inr ⟨rfl, by omega, by omega, rfl⟩⟩⟩
-  · simp only [Wt, ↓reduceIte]
+  · simp only [Wt, ↓reduceIte, Nat.reduceEqDiff]
     apply vc_32 (b := 7984192) (by decide) hw hk hs hr8 hK hO hc1 hc8
     · intro g' f' e1 e2 e3 e4 e5
       exact Or.inl ⟨10 * (256 - k) - 9 + g'.rdx.toNat, by omega,

@@ -78,9 +78,9 @@ theorem vc (hw : ∀ i < 256, Foot Wl (Addr.add 7983936#64 i)) (g₀ : Gprs) (V�
     Wt ℓ F Wl (fun j' g' f' V' => (∃ n' < n, Inv g₀ V₀ j' n' g' f' V') ∨ (j' = 1665 ∧ Kp g₀ g' ∧ Out V₀ V'))
       g f V := by
   rcases h with ⟨rfl, rfl, rfl, rfl⟩ | ⟨rfl, hr, rfl, hs, hK, hO⟩
-  · simp only [Wt, ↓reduceIte]
+  · simp only [Wt, ↓reduceIte, Nat.reduceEqDiff]
     exact vc_1584 _ fun g' f' V' h => Or.inl ⟨256, by decide, h⟩
-  · simp only [Wt, ↓reduceIte]
+  · simp only [Wt, ↓reduceIte, Nat.reduceEqDiff]
     apply vc_1600 (b := 7983936) (by decide) hw hr hs hK hO
     · intro g' f' V' h1 h2 h3 h4 hlt
       exact Or.inl ⟨_, hlt, Or.inr ⟨rfl, h1, rfl, h2, h3, h4⟩⟩
