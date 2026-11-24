@@ -55,8 +55,8 @@ theorem s_offs {q : Addr} {S : Nat} (h : q.toNat = S - 288) (h1 : 4096 ≤ S) (h
 /-- The TCB's offsets from the break. -/
 theorem brk_offs {B : Addr} (h : B.toNat + 8192 ≤ 2 ^ 63) :
     (B + 2176#64 + 768#64).toNat = B.toNat + 2944 ∧ (B + 2176#64 + 760#64).toNat = B.toNat + 2936 ∧
-      (B + 2176#64 + 40#64).toNat = B.toNat + 2216 := by
-  refine ⟨?_, ?_, ?_⟩ <;> bv_omega
+      (B + 2176#64 + 40#64).toNat = B.toNat + 2216 ∧ (B + 2176#64 + 720#64).toNat = B.toNat + 2896 := by
+  refine ⟨?_, ?_, ?_, ?_⟩ <;> bv_omega
 
 /-- The stack pointer after `__cxa_atexit` returns: that at `0x613434`. -/
 theorem back_q (Z : State) : lifSp Z + 152#64 + 8#64 = Z.cpu.gpr.rsp := by
@@ -200,9 +200,10 @@ theorem launch_to_main {l : Launch} {n : Nat} {o : Oracle} {L : List (Addr × Li
   obtain ⟨n1, n2, -⟩ := lif_nums (Z := Z) hz (by omega) (by omega) h16
   obtain ⟨n3, n4⟩ := cxa_nums n2 (by omega) (by omega)
   have hf : (brkOf l + 2176#64).toNat = (brkOf l).toNat + 2176 := brk_2176 hb'
-  obtain ⟨f768, f760, f40⟩ := brk_offs hb'
+  obtain ⟨f768, f760, f40, f720⟩ := brk_offs hb'
   have hR : RetAt W W₂ Z (brkOf l) Z₁.cpu.gpr :=
     ⟨hN, hb1', hb', by omega, by omega, by omega, by omega, by rw [hz1, n4]; omega⟩
+  have hgr : Z₁.cpu.gpr.rsp.toNat ≤ (entG Z).rsp.toNat + 8 := by rw [hz1, n4]; omega
   -- `q = rsp` at `0x613434`, `__libc_start_main`'s frame at `K.bp`
   have tq : ((ctxOf l.prof l.s₀ l.args c).bp + 112#64).toNat = (stackLayout l.args l.prof.linux c).sp - 288 := by
     rw [← hRg.1]
@@ -226,6 +227,13 @@ theorem launch_to_main {l : Launch} {n : Nat} {o : Oracle} {L : List (Addr × Li
   have te : (8013720#64 : Addr).toNat = 8013720 := rfl
   have ta : (7829400#64 : Addr).toNat = 7829400 := rfl
   obtain ⟨os32, os72⟩ := s_offs tq (by omega) (by omega)
+  have tfe : (7991628#64 : Addr).toNat = 7991628 := rfl
+  have trt : (7938696#64 : Addr).toNat = 7938696 := rfl
+  have tob : (7947808#64 : Addr).toNat = 7947808 := rfl
+  have tbg : (7388000#64 : Addr).toNat = 7388000 := rfl
+  have tmu : (8008608#64 : Addr).toNat = 8008608 := rfl
+  have tan : (8008648#64 : Addr).toNat = 8008648 := rfl
+  have tun : (8008664#64 : Addr).toNat = 8008664 := rfl
   have hFo : ∀ y : Addr, 0x6d8000 ≤ y.toNat → y.toNat < 0x776000 →
       Foot (lifG (loOf l n c) c.stackTop (brkOf l) L).data y := fun _ h1 h2 => gd_ro h1 h2
   have hE0 : Eli.Env (lifG (loOf l n c) c.stackTop (brkOf l) L) (lifG (loOf l n c) c.stackTop (brkOf l) L).writes L
@@ -234,19 +242,23 @@ theorem launch_to_main {l : Launch} {n : Nat} {o : Oracle} {L : List (Addr × Li
       st := rng_at os32 (by omega) (by omega) (by omega) hWs, lr := rng_at om72 (by omega) (by omega) (by omega) hFs,
       fl := rng_at f40 (by omega) (by omega) (by omega) hFb, fb8 := by omega, fd := .inl (by omega),
       fg := .inr (by omega),
-      fe := rng_at (rfl : (7991628#64 : Addr).toNat = 7991628) (by omega) (by omega) (by omega) hFd,
-      rt := rng_at (rfl : (7938696#64 : Addr).toNat = 7938696) (by omega) (by omega) (by omega) hFw }
+      fe := rng_at tfe (by omega) (by omega) (by omega) hFd,
+      rt := rng_at trt (by omega) (by omega) (by omega) hFw }
   have hE2 : Fdm.Env (lifG (loOf l n c) c.stackTop (brkOf l) L) (lifG (loOf l n c) c.stackTop (brkOf l) L).writes L
       (brkOf l + 2176#64) ((ctxOf l.prof l.s₀ l.args c).bp + 112#64 - 8#64 - 64#64) :=
     { code := hMn.fdm, tcode := hMn.rtc, rcode := hMn.rfi, lcode := hMn.pml, ucode := hMn.pmu,
       s0 := by omega, s8 := by omega, f0 := by omega, f1 := by omega,
       st := rng_at os72 (by omega) (by omega) (by omega) hWs, lr := rng_at om72 (by omega) (by omega) (by omega) hFs,
-      ob := rng_at (rfl : (7947808#64 : Addr).toNat = 7947808) (by omega) (by omega) (by omega) hFw,
-      bg := rng_at (rfl : (7388000#64 : Addr).toNat = 7388000) (by omega) (by omega) (by omega) hFo,
-      mu := rng_at (rfl : (8008608#64 : Addr).toNat = 8008608) (by omega) (by omega) (by omega) hFw }
+      ob := rng_at tob (by omega) (by omega) (by omega) hFw,
+      bg := rng_at tbg (by omega) (by omega) (by omega) hFo,
+      mu := rng_at tmu (by omega) (by omega) (by omega) hFw,
+      any := rng_at tan (by omega) (by omega) (by omega) hFw,
+      uns := rng_at tun (by omega) (by omega) (by omega) hFw,
+      tid := rng_at f720 (by omega) (by omega) (by omega) hFb,
+      fe := rng_at tfe (by omega) (by omega) (by omega) hFd }
   obtain ⟨code₂, hin₂, h₂⟩ := hMn.main
   refine cxa_ctor_at (t := t'') c₃ hB₃.fsb hC.lsm hMn.dbg hMn.sjp hMn.ssj hin₂ h₂ hB₃.df hB₃.x87 hK'' hA'' hr''
-    ?_ ?_ hReg hR hK hI0 hB0 hMB hW (by omega) (by rw [hz1, n4]; omega) (by omega) (by omega) (by rw [tq]; omega)
+    ?_ ?_ hReg hR hK hI0 hB0 hMB hW (by omega) hgr (by omega) (by omega) (by rw [tq]; omega)
     (rng_at t0 (by omega) (by omega) (by omega) hFr) (rng_at te (by omega) (by omega) (by omega) hFd)
     (rng_at o12 (by omega) (by omega) (by omega) hFs) (rng_at o16 (by omega) (by omega) (by omega) hFs)
     (rng_at o24 (by omega) (by omega) (by omega) hFs) (rng_at om8 (by omega) (by omega) (by omega) hWs)
