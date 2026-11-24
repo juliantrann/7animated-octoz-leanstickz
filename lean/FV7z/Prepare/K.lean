@@ -17,6 +17,7 @@ namespace FV7z.Prepare
 open ZellicX86 FV7z.Fn
 
 variable (prof : Profile) (hpc : prof.Consistent) {L : List (Addr × List Byte)}
+include hpc
 
 /-- `LzFindPrepare`, by `fnK`. -/
 theorem lzFindPrepareK (hin : CodeIn L 0x427de0 lz) (hinS : CodeIn L 0x424390 sse41)

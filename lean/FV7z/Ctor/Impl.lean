@@ -19,7 +19,7 @@ variable {prof : Profile} {F : Footprint} {Wl : List Rgn} {L : List (Addr × Lis
 
 /-- The return address into `__libc_csu_init` is canonical. -/
 theorem csu_canon {j : Nat} (hj : j < Csu.csu.length) (b : Bool) : (Csu.csu_at.add j).canonical b = true := by
-  have hl : Csu.csu.length ≤ 4096 := by decide
+  have hl := Csu.csu_length
   have e0 : Csu.csu_at.toNat = 0x613ca0 := rfl
   refine canonical_low ?_ b
   rw [toNat_add_of_fits hj (by rw [e0]; omega), e0]
