@@ -1,5 +1,5 @@
 import FV7z.Mnx.Run
-import FV7z.Im5.RunA
+import FV7z.Im6.Run
 import FV7z.Gor.Run
 /-!
 # The heap after the first `malloc`, kept by the next ones (PLAN.md G3, `malloc`)
@@ -12,10 +12,11 @@ import FV7z.Gor.Run
   that agree on `[0x792980, E)`.
 - `Hp F Wl fb hi k V`: `Gl` and the top `T` (`main_arena.top`) with its size at least `k`, not above `system_mem`,
   `[T, T + k)` in the footprint and below `hi` (the budget, not the whole top).
-- `nb_le`: the chunk size of `malloc (n)`, `n ≤ 1024`: `n + 8 ≤ nb ≤ 1040`, a multiple of 16.
-- `mal_hp`: `malloc (n)`, `n ≤ 1024`, from `Hp … (k + 1072)` (the stack from `hi + 216` below `rsp`): the chunk
-  `p = T + 16` split off the top, the bytes as before but for the top word, the two size words (below `p` and in
-  `[p + n, hi)`) and the frame; and `Hp … k` again for every byte map that agrees with the one at the return from
+- `nb_le`: the chunk size of `malloc (n)`, `n ≤ 1024`: `n + 8 ≤ nb ≤ 1040`, a multiple of 16; `nb_ex`: a chunk size
+  of class `Im5.ClsN` with `n + 8 ≤ nb ≤ B - 32` for `n ≤ 1024` (`B` = 1072) or `n` = 72704 (`B` = 72752, ctor 102).
+- `mal_hp`: `malloc (n)`, `n ≤ 1024` or `n` = 72704, from `Hp … (k + B)` (the stack from `hi + 216` below `rsp`):
+  the chunk `p = T + 16` split off the top, the bytes as before but for the top word, the two size words (below `p`
+  and in `[p + n, hi)`) and the frame; and `Hp … k` again for every byte map that agrees with the one at the return from
   `0x792980` to `hi` but for `[p, p + n)`. This is the form `Mal.At` is to take: `Pm` there is a predicate of bytes
   only, for every footprint, so the top's footprint can not be part of it.
 -/
@@ -125,6 +126,18 @@ theorem nb_le {n : Nat} (h : n ≤ 1024) :
   · rw [Im2.and_m16, BitVec.toNat_add, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
     omega
 
+/-- A chunk size for `malloc (n)`: `Im5.ClsN`, `n + 8 ≤ nb`, `nb + 32 ≤ B`, for `n ≤ 1024` with `B` = 1072 or
+`n` = 72704 with `B` = 72752. -/
+theorem nb_ex {n : Addr} {B : Nat} (h : n.toNat ≤ 1024 ∧ B = 1072 ∨ n = 72704#64 ∧ B = 72752) :
+    ∃ nb : Addr, Im5.ClsN n nb ∧ n.toNat + 8 ≤ nb.toNat ∧ nb.toNat + 32 ≤ B := by
+  rcases h with ⟨hn, rfl⟩ | ⟨rfl, rfl⟩
+  · obtain ⟨hb1, hb2, -⟩ := nb_le hn
+    have hcls := Gor.clsA_of (n := n.toNat) (by omega)
+    have en : BitVec.ofNat 64 n.toNat = n := BitVec.eq_of_toNat_eq (by rw [BitVec.toNat_ofNat]; omega)
+    rw [en] at hcls
+    exact ⟨_, .inl hcls, hb1, by omega⟩
+  · exact ⟨72720#64, .inr ⟨rfl, rfl⟩, by decide, by decide⟩
+
 /-- `main_arena.top` after the split. -/
 theorem VspN_top {T szw nb : Addr} (V : Addr → Byte) (h1 : 7940776 ≤ T.toNat) (hT : T.toNat + nb.toNat + 16 < 2 ^ 64) :
     rdq(VspN T szw nb V, 7940768#64) = T + nb := by
@@ -169,11 +182,13 @@ variable {F : Footprint} {Wl : List Rgn} {prof : Profile} {L : List (Addr × Lis
 
 set_option maxRecDepth 8192 in
 set_option maxHeartbeats 4000000 in
-/-- `malloc (n)`, `n ≤ 1024`, after the first call (`Hp` with a top of at least `n`'s chunk and 32 bytes more): from
-the entry to the return address with `p = T + 16` in `rax`; `Hp` again, for a top smaller by at most 1040. -/
-theorem mal_hp {fb : Addr} {hi m : Nat} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb)
+/-- `malloc (n)`, `n ≤ 1024` (`B` = 1072) or `n` = 72704 (`B` = 72752), after the first call (`Hp` with a top of at
+least `n`'s chunk and 32 bytes more): from the entry to the return address with `p = T + 16` in `rax`; `Hp` again,
+for a top smaller by at most `B - 32`. -/
+theorem mal_hp {fb : Addr} {hi m B : Nat} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb)
     (hin : CodeIn L mnx_at mnx) (hinI : CodeIn L imm_at imm) (hK : KeptW Wl s₀ X) (hA : Agree F X.proc.mm.mem V)
-    (hrip : X.cpu.rip = mnx_at) (hH : Hp F Wl fb hi (m + 1072) V) (hn : X.cpu.gpr.rdi.toNat ≤ 1024)
+    (hrip : X.cpu.rip = mnx_at) (hH : Hp F Wl fb hi (m + B) V)
+    (hn : X.cpu.gpr.rdi.toNat ≤ 1024 ∧ B = 1072 ∨ X.cpu.gpr.rdi = 72704#64 ∧ B = 72752)
     (hhi : hi + 216 ≤ X.cpu.gpr.rsp.toNat) (hR : X.cpu.gpr.rsp.toNat + 40 < 2 ^ 64)
     (hsw : ∀ i < 224, Foot Wl (Addr.add (X.cpu.gpr.rsp - 216#64) i))
     {e' : Addr} {code : List Byte} {j : Nat} (hin₂ : CodeIn L e' code) (hj : j < code.length)
@@ -195,12 +210,7 @@ theorem mal_hp {fb : Addr} {hi m : Nat} (c : Seg prof F Wl L s₀ o) (hfs : s₀
   have hrs := X.cpu.gpr.rsp.isLt
   have hdl := X.cpu.gpr.rdi.isLt
   have ha8 := Smm.and_m8 szw
-  obtain ⟨hb1, hb2, hb3⟩ := nb_le hn
-  have hcls := Gor.clsA_of (n := X.cpu.gpr.rdi.toNat) (by omega)
-  have en : BitVec.ofNat 64 X.cpu.gpr.rdi.toNat = X.cpu.gpr.rdi :=
-    BitVec.eq_of_toNat_eq (by rw [BitVec.toNat_ofNat]; omega)
-  rw [en] at hcls
-  generalize Gor.nbOf X.cpu.gpr.rdi.toNat = nb at hcls hb1 hb2 hb3
+  obtain ⟨nb, hcls, hb1, hb2⟩ := nb_ex hn
   obtain ⟨f24, -, f40⟩ := fofs fb (by omega) (by omega)
   have eS : (X.cpu.gpr.rsp - 216#64).toNat = X.cpu.gpr.rsp.toNat - 216 := by bvg
   have eS' : X.cpu.gpr.rsp - 216#64 + 216#64 = X.cpu.gpr.rsp := BitVec.sub_add_cancel _ _
@@ -210,13 +220,13 @@ theorem mal_hp {fb : Addr} {hi m : Nat} (c : Seg prof F Wl L s₀ o) (hfs : s₀
   have eTn : (T + nb).toNat = T.toNat + nb.toNat := by rw [BitVec.toNat_add]; omega
   have e72 : (T + nb + 8#64).toNat = T.toNat + nb.toNat + 8 := by
     rw [BitVec.toNat_add, BitVec.toNat_add, BitVec.toNat_ofNat]; omega
-  have hTF' : ∀ x : Addr, ∀ i < 8, T.toNat + 8 ≤ x.toNat → x.toNat + 8 ≤ T.toNat + 1072 →
+  have hTF' : ∀ x : Addr, ∀ i < 8, T.toNat + 8 ≤ x.toNat → x.toNat + 8 ≤ T.toNat + B →
       Foot Wl (Addr.add x i) := fun x i hi8 h1 h2 => by
     have e : (Addr.add x i).toNat = x.toNat + i := by
       simp only [Addr.add]; rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega
     exact (hTF (Addr.add x i) (by omega) (by omega)).1
   refine Mnx.mal_next (S := X.cpu.gpr.rsp - 216#64) (T := T) (szw := szw) (sm := sm) (C := C)
-    (n := X.cpu.gpr.rdi) (nb := nb) c hfs hin hinI hK hA (.inl hcls) (Im5.secA hcls) hrip rfl eS'.symm (by omega)
+    (n := X.cpu.gpr.rdi) (nb := nb) c hfs hin hinI hK hA hcls (Im6.secN hcls) hrip rfl eS'.symm (by omega)
     (by omega) (by rw [f40, eS]; omega) (by rw [f24, eS]; omega) G.hk G.fh G.tc
     (fun h0 => by rw [h0] at hc1; exact absurd hc1 (by decide))
     (by rw [eS]; omega) G.cn G.fn G.t1 G.f1 G.gm G.fc G.fz G.bk G.lb G.tb G.un G.m0 G.m1 G.m2 G.m3 G.W G.gf G.tf

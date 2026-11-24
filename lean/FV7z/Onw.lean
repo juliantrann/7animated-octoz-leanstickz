@@ -189,7 +189,7 @@ theorem onw_hp {fb : Addr} {hi m : Nat} (c : Seg prof F Wl L s₀ o) (hfs : s₀
   have hH4 : Mal.Hp F Wl fb hi (m + 1072) (Vst (Vst V (X.cpu.gpr.rsp - 8) (toBytesLE X.cpu.gpr.rbx 8))
       (X.cpu.gpr.rsp - 8 - 8) (toBytesLE (onw_at.add (20 + 5)) 8)) :=
     Mal.Hp.mv hH (by omega) fun a _ h2 => hV1 a (.inl (by omega))
-  refine Mal.mal_hp c hfs hinM hinI hK4 hA4 hr4 hH4 (by rw [hdi4]; exact hn) (by rw [hsp4, e16]; omega)
+  refine Mal.mal_hp c hfs hinM hinI hK4 hA4 hr4 hH4 (.inl ⟨by rw [hdi4]; exact hn, rfl⟩) (by rw [hsp4, e16]; omega)
     (by rw [hsp4, e16]; omega)
     (fun i hi' => by
       rw [hsp4]
