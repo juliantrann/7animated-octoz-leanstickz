@@ -54,7 +54,7 @@ theorem im_from2549 {fb S T szw sm nb : Addr} {G : Gprs} {M : Addr → Byte} {Y 
     (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (hin : CodeIn L imm_at imm)
     (hK : KeptW Wl s₀ Y) (hA : Agree F Y.proc.mm.mem M) (hr : Y.cpu.rip = imm_at.add 2549)
     (hbx : Y.cpu.gpr.rbx = 7940672#64) (h13 : Y.cpu.gpr.r13 = nb) (hsp : Y.cpu.gpr.rsp = S) (hfr : Fr S G V M)
-    (h32 : 32 ≤ nb.toNat) (hnb : nb.toNat ≤ 8192) (hS : S.toNat + 256 < 2 ^ 64)
+    (h32 : 32 ≤ nb.toNat) (hS : S.toNat + 256 < 2 ^ 64)
     (hW : ∀ a : Addr, 7940480 ≤ a.toNat → a.toNat < 7943136 → Foot Wl a)
     (hsw : ∀ i < 192, Foot Wl (Addr.add S i))
     (hT : 8029888 ≤ T.toNat) (hTS : T.toNat + nb.toNat + 16 ≤ S.toNat)
@@ -78,7 +78,7 @@ theorem im_from2549 {fb S T szw sm nb : Addr} {G : Gprs} {M : Addr → Byte} {Y 
       List.map M (byteAddrs x m) = List.map V (byteAddrs x m) := fun x m h =>
     rd_eq (by omega) fun a _ h2 => hfr.out a (.inl (by omega))
   refine (c_2549 prof fb).run c hfs hin _ hK hA hr
-    (vc_2549n (sm := sm) hbx h13 h32 hnb hT (by rw [hsp]; omega) (by rw [hsp]; exact hS) hWd
+    (vc_2549n (sm := sm) hbx h13 h32 hT (by rw [hsp]; omega) (by rw [hsp]; exact hS) hWd
       (fun i hi => hW _ (by simp only [Addr.add]; bv_omega) (by simp only [Addr.add]; bv_omega))
       (fun i hi => c.hws _ (htw i hi)) htw hrw (by rw [hsp]; exact hsd) hpb
       (by rw [T2 _ _ (by rw [BitVec.toNat_ofNat]; omega)]; exact hp0)
@@ -161,7 +161,7 @@ theorem im_secondn {fb S T szw sm n nb : Addr} (c : Seg prof F Wl L s₀ o) (hfs
     rintro j' g fl V₂ ⟨rfl, hbx₂, h13₂, hsp₂, rfl⟩ Y₂ t₂ hK₂ hA₂ hr₂ hg₂ -
     exact im_from2549 c hfs hin hK₂ hA₂ hr₂ (by rw [hg₂]; exact hbx₂) (by rw [hg₂]; exact h13₂)
       (by rw [hg₂]; exact hsp₂)
-      (Fr.v2n S X.cpu.gpr n nb V hS) (by omega) (by omega) hS hW hsw hT hTS htw hrw hpb hp0 htop hsz hsm hle hge
+      (Fr.v2n S X.cpu.gpr n nb V hS) (by omega) hS hW hsw hT hTS htw hrw hpb hp0 htop hsz hsm hle hge
       hin₂ h₂ hra k
   rcases hcls with ⟨hn, hn', rfl⟩ | ⟨hn, rfl⟩
   · by_cases h120 : n.toNat ≤ 120

@@ -1,11 +1,13 @@
 import FV7z.Im6.V
-import FV7z.Im6.Top
+import FV7z.Im2.RunN
+import FV7z.Im5.RunA
 /-!
 # `_int_malloc`: the second call for the request 72704 (PLAN.md G3, `malloc`; ctor 102)
 
-- `im_second72704`: from the entry through the cut points 512, 1115, 2012 to 2549 (`vc6`), then `Im2.im_from2549w`:
+- `im_second72704`: from the entry through the cut points 512, 1115, 2012 to 2549 (`vc6`), then `Im2.im_from2549`:
   the top split for `nb` = 72720, `T + 16` returned, the six registers back; the bytes at 2549 known only through the
   frame `Im2.Fr` (handed to the continuation). As `Im5.im_secondl` with the largebin 121 for the bins 64 … 99.
+- `secN`: `Im5.SecA` for every request of `Im5.ClsN` (`Im5.secA`, or `im_second72704`).
 -/
 open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn FV7z.Start
 open FV7z.Imm (imm imm_at)
@@ -60,8 +62,18 @@ theorem im_second72704 {fb S T szw sm : Addr} (c : Seg prof F Wl L s₀ o) (hfs 
   rintro j₃ g₃ f₃ V₃ ⟨rfl, h₃⟩ Y₃ t₃ hK₃ hA₃ hr₃ hg₃ hf₃
   refine (c_2012 prof fb).run c hfs hin _ hK₃ hA₃ hr₃ (by rw [hg₃, hf₃]; exact h₃) ?_
   rintro j₄ g₄ f₄ V₄ ⟨rfl, hbx, h13, hsp, hfr⟩ Y₄ t₄ hK₄ hA₄ hr₄ hg₄ -
-  exact Im2.im_from2549w (nb := 72720#64) c hfs hin hK₄ hA₄ hr₄ (by rw [hg₄]; exact hbx) (by rw [hg₄, h13])
+  exact Im2.im_from2549 (nb := 72720#64) c hfs hin hK₄ hA₄ hr₄ (by rw [hg₄]; exact hbx) (by rw [hg₄, h13])
     (by rw [hg₄]; exact hsp) hfr (by decide) hS hW hsw hT hTS htw hrw hpb hp0 htop hsz hsm hle hge hin₂ h₂ hra
     (fun Z t' => k V₄ Z t' hfr)
+
+/-- `Im5.SecA` for every request `n ≤ 4104` or 72704 (`Im5.ClsN`): `Im5.secA` or `im_second72704`. -/
+theorem secN {n nb : Addr} (h : Im5.ClsN n nb) : Im5.SecA n nb := by
+  rcases h with h | ⟨rfl, rfl⟩
+  · exact Im5.secA h
+  intro prof F Wl L s₀ X o t gev gP gE V fb S T szw sm c hfs hin hK hA hrip hrsp hsi hdi hS hlo hfb hgm hfc hfz hbk
+    hlb htc htb hun hm0 hm1 hm2 hm3 hW hgf htf hsw hT hTS htw hrw hpb hp0 htop hsz hsm hle hge e₂ code₂ hin₂ j₂ h₂
+    hra k
+  exact im_second72704 c hfs hin hK hA hrip hrsp hsi hdi hS hlo hfb hgm hfc (hlb 121 (by decide) (by decide)) htc htb
+    hun hm2 hm3 hW hgf htf hsw hT hTS htw hrw hpb hp0 htop hsz hsm hle hge hin₂ h₂ hra k
 
 end FV7z.Im6

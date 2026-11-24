@@ -73,7 +73,7 @@ theorem im_secondl {fb S T szw sm n nb : Addr} (c : Seg prof F Wl L s₀ o) (hfs
   refine (c_2012 prof fb).run c hfs hin _ hK₃ hA₃ hr₃ (by rw [hg₃, hf₃]; exact h₃) ?_
   rintro j₄ g₄ f₄ V₄ ⟨rfl, hbx, h13, hsp, hfr⟩ Y₄ t₄ hK₄ hA₄ hr₄ hg₄ -
   exact Im2.im_from2549 c hfs hin hK₄ hA₄ hr₄ (by rw [hg₄]; exact hbx) (by rw [hg₄, h13, hnbk])
-    (by rw [hg₄]; exact hsp) hfr (by omega) (by omega) hS hW hsw hT hTS htw hrw hpb hp0 htop hsz hsm hle hge
+    (by rw [hg₄]; exact hsp) hfr (by omega) hS hW hsw hT hTS htw hrw hpb hp0 htop hsz hsm hle hge
     hin₂ h₂ hra (fun Z t' => k V₄ Z t' hfr)
 
 end FV7z.Im5

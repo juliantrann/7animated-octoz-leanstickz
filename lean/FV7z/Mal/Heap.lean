@@ -38,7 +38,7 @@ structure Gl (F : Footprint) (Wl : List Rgn) (fb C : Addr) (V : Addr → Byte) :
   fz : ∀ k < 7, rdq(V, BitVec.ofNat 64 (7940688 + 8 * k)) = 0#64
   bk : ∀ i, 2 ≤ i → i ≤ 63 →
     rdq(V, BitVec.ofNat 64 (7940776 + 16 * i)) = BitVec.ofNat 64 (7940752 + 16 * i)
-  lb : ∀ i, 64 ≤ i → i ≤ 99 →
+  lb : ∀ i, 64 ≤ i → i ≤ 126 →
     rdq(V, BitVec.ofNat 64 (7940768 + 16 * i)) = BitVec.ofNat 64 (7940752 + 16 * i)
   tb : rdq(V, 7940592#64) = 64#64
   un : rdq(V, 7940792#64) = 7940768#64
@@ -216,8 +216,8 @@ theorem mal_hp {fb : Addr} {hi m : Nat} (c : Seg prof F Wl L s₀ o) (hfs : s₀
       simp only [Addr.add]; rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega
     exact (hTF (Addr.add x i) (by omega) (by omega)).1
   refine Mnx.mal_next (S := X.cpu.gpr.rsp - 216#64) (T := T) (szw := szw) (sm := sm) (C := C)
-    (n := X.cpu.gpr.rdi) (nb := nb) c hfs hin hinI hK hA hcls (Im5.secA hcls) hrip rfl eS'.symm (by omega) (by omega)
-    (by rw [f40, eS]; omega) (by rw [f24, eS]; omega) G.hk G.fh G.tc
+    (n := X.cpu.gpr.rdi) (nb := nb) c hfs hin hinI hK hA (.inl hcls) (Im5.secA hcls) hrip rfl eS'.symm (by omega)
+    (by omega) (by rw [f40, eS]; omega) (by rw [f24, eS]; omega) G.hk G.fh G.tc
     (fun h0 => by rw [h0] at hc1; exact absurd hc1 (by decide))
     (by rw [eS]; omega) G.cn G.fn G.t1 G.f1 G.gm G.fc G.fz G.bk G.lb G.tb G.un G.m0 G.m1 G.m2 G.m3 G.W G.gf G.tf
     hsw (by omega) (by rw [eS]; omega) (fun i hi8 => hTF' (T + 8#64) i hi8 (by omega) (by omega))

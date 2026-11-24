@@ -7,7 +7,7 @@ import FV7z.Imm.Tail
   is not above `av->system_mem` and at least `nb + MINSIZE`, and `perturb_byte` is 0, the top is split: `av->top`
   becomes `T + nb`, the chunk's size word `nb | 1`, the rest's `(size - nb) | 1`; the pieces reach the `ret` with
   `T + 16` in `rax`, the frame given back.
-- `VspN`, `VspN_rd`, `vc_2549n`: the same for any size `nb` in `r13` (32 ≤ `nb` ≤ 8192), the top at least
+- `VspN`, `VspN_rd`, `vc_2549n`: the same for any size `nb ≥ 32` in `r13`, the top at least
   `nb + MINSIZE`.
 -/
 open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn FV7z.Start
@@ -121,7 +121,7 @@ theorem VspN_rd {T szw nb x : Addr} {n : Nat} (V : Addr → Byte) (hT : T.toNat 
 
 set_option maxHeartbeats 1000000 in
 theorem vc_2549n {fb T szw sm nb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (hbx : g.rbx = 7940672#64)
-    (h13 : g.r13 = nb) (h32 : 32 ≤ nb.toNat) (hnb : nb.toNat ≤ 8192)
+    (h13 : g.r13 = nb) (h32 : 32 ≤ nb.toNat)
     (hT : 8029888 ≤ T.toNat) (hTS : T.toNat + nb.toNat + 16 ≤ g.rsp.toNat)
     (hsp2 : g.rsp.toNat + 256 < 2 ^ 64)
     (hW : ∀ a : Addr, 7940480 ≤ a.toNat → a.toNat < 7943136 → Foot F.data a)

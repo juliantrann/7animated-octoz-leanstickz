@@ -74,7 +74,7 @@ theorem mhi_tailn {fb S T szw sm C n nb : Addr} (c : Seg prof F Wl L s₀ o) (hf
     (hfz : ∀ k < 7, rdq(V, BitVec.ofNat 64 (7940688 + 8 * k)) = 0#64)
     (hbk : ∀ i, 2 ≤ i → i ≤ 63 →
       rdq(V, BitVec.ofNat 64 (7940776 + 16 * i)) = BitVec.ofNat 64 (7940752 + 16 * i))
-    (hlb : ∀ i, 64 ≤ i → i ≤ 99 →
+    (hlb : ∀ i, 64 ≤ i → i ≤ 126 →
       rdq(V, BitVec.ofNat 64 (7940768 + 16 * i)) = BitVec.ofNat 64 (7940752 + 16 * i))
     (htb : rdq(V, 7940592#64) = 64#64)
     (hun : rdq(V, 7940792#64) = 7940768#64)
