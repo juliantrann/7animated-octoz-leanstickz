@@ -46,17 +46,17 @@ theorem blk_runs {J : Nat → (Addr → Byte) → Prop} {sp : Addr} {tg : Nat �
     (fun a ha => hst V a (.inr ha)) hrZ ?_
   rw [hgZ, hgY]
   obtain ⟨k1, k2, k3, k4, k5, k6, k7⟩ := hKp
-  exact ⟨by show g.rsp + 8 = _; rw [k1], k2, k3, k4, k5, k6, k7⟩
+  exact ⟨by show g.rsp + 8#64 = _; rw [k1], k2, k3, k4, k5, k6, k7⟩
 
 /-- A byte apart from a store at a fixed address is as before. -/
-theorem vo {V : Addr → Byte} {x n w : Nat} {v : BitVec w} {a : Addr} (hx : x + n ≤ 2 ^ 64)
+theorem vo {V : Addr → Byte} {x n w : Nat} {v : BitVec w} {a : Addr} (hx : x + n < 2 ^ 64)
     (h : a.toNat < x ∨ x + n ≤ a.toNat) : Vst V (BitVec.ofNat 64 x) (toBytesLE v n) a = V a := by
   have e : (BitVec.ofNat 64 x).toNat = x := by rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
-  exact Tun.Vst_out V _ _ a (by rw [toBytesLE_length, e]; exact hx) (by rw [toBytesLE_length, e]; exact h)
+  exact Tun.Vst_out V _ _ a (by rw [toBytesLE_length, e]; omega) (by rw [toBytesLE_length, e]; exact h)
 
 /-- Bytes in `Wl` at a fixed address, from a larger stretch there. -/
 theorem ft_in {R : List Rgn} {b m : Nat} (h : ∀ i < m, Foot R (Addr.add (BitVec.ofNat 64 b) i)) {x n : Nat}
-    (h1 : b ≤ x) (h2 : x + n ≤ b + m) (h3 : b + m ≤ 2 ^ 64) :
+    (h1 : b ≤ x) (h2 : x + n ≤ b + m) (_h3 : b + m ≤ 2 ^ 64) :
     ∀ i < n, Foot R (Addr.add (BitVec.ofNat 64 x) i) := fun i hi => by
   have e : Addr.add (BitVec.ofNat 64 b) (x - b + i) = Addr.add (BitVec.ofNat 64 x) i := by
     simp only [Addr.add]
@@ -65,5 +65,33 @@ theorem ft_in {R : List Rgn} {b m : Nat} (h : ∀ i < m, Foot R (Addr.add (BitVe
     omega
   rw [← e]
   exact h _ (by omega)
+
+/-- Eight bytes at a fixed address where `V'` is `V`. -/
+theorem rdq_at {V V' : Addr → Byte} {x : Nat} (hx : x + 8 < 2 ^ 64)
+    (h : ∀ a : Addr, x ≤ a.toNat → a.toNat < x + 8 → V' a = V a) :
+    rdq(V', BitVec.ofNat 64 x) = rdq(V, BitVec.ofNat 64 x) := by
+  have e : (BitVec.ofNat 64 x).toNat = x := by rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+  refine rdq_eq (by rw [e]; omega) fun a h1 h2 => h a ?_ ?_
+  · rw [e] at h1
+    exact h1
+  · rw [e] at h2
+    exact h2
+
+/-- Four bytes at a fixed address where `V'` is `V`. -/
+theorem rdd_at {V V' : Addr → Byte} {x : Nat} (hx : x + 4 < 2 ^ 64)
+    (h : ∀ a : Addr, x ≤ a.toNat → a.toNat < x + 4 → V' a = V a) :
+    rdd(V', BitVec.ofNat 64 x) = rdd(V, BitVec.ofNat 64 x) := by
+  have e : (BitVec.ofNat 64 x).toNat = x := by rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+  refine rdd_eq (by rw [e]; omega) fun a h1 h2 => h a ?_ ?_
+  · rw [e] at h1
+    exact h1
+  · rw [e] at h2
+    exact h2
+
+/-- The value a store at a fixed address leaves there. -/
+theorem rd_st {V : Addr → Byte} {x n w : Nat} (hw : w = 8 * n) (v : BitVec w) (hx : x + n < 2 ^ 64) :
+    ofBytesLE w (List.map (Vst V (BitVec.ofNat 64 x) (toBytesLE v n)) (byteAddrs (BitVec.ofNat 64 x) n)) = v := by
+  have e : (BitVec.ofNat 64 x).toNat = x := by rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+  rw [Tun.rd_Vst_self V _ _ (toBytesLE_length v n) (by rw [e]; omega), ofBytesLE_toBytesLE hw]
 
 end FV7z.Ctor
