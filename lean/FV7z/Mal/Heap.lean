@@ -126,17 +126,17 @@ theorem nb_le {n : Nat} (h : n ≤ 1024) :
   · rw [Im2.and_m16, BitVec.toNat_add, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
     omega
 
-/-- A chunk size for `malloc (n)`: `Im5.ClsN`, `n + 8 ≤ nb`, `nb + 32 ≤ B`, for `n ≤ 1024` with `B` = 1072 or
+/-- A chunk size for `malloc (n)`: `Im5.ClsN`, `n + 8 ≤ nb`, `nb + 32 ≤ B`, `16 ∣ nb`, for `n ≤ 1024` with `B` = 1072 or
 `n` = 72704 with `B` = 72752. -/
 theorem nb_ex {n : Addr} {B : Nat} (h : n.toNat ≤ 1024 ∧ B = 1072 ∨ n = 72704#64 ∧ B = 72752) :
-    ∃ nb : Addr, Im5.ClsN n nb ∧ n.toNat + 8 ≤ nb.toNat ∧ nb.toNat + 32 ≤ B := by
+    ∃ nb : Addr, Im5.ClsN n nb ∧ n.toNat + 8 ≤ nb.toNat ∧ nb.toNat + 32 ≤ B ∧ nb.toNat % 16 = 0 := by
   rcases h with ⟨hn, rfl⟩ | ⟨rfl, rfl⟩
-  · obtain ⟨hb1, hb2, -⟩ := nb_le hn
+  · obtain ⟨hb1, hb2, hb3⟩ := nb_le hn
     have hcls := Gor.clsA_of (n := n.toNat) (by omega)
     have en : BitVec.ofNat 64 n.toNat = n := BitVec.eq_of_toNat_eq (by rw [BitVec.toNat_ofNat]; omega)
     rw [en] at hcls
-    exact ⟨_, .inl hcls, hb1, by omega⟩
-  · exact ⟨72720#64, .inr ⟨rfl, rfl⟩, by decide, by decide⟩
+    exact ⟨_, .inl hcls, hb1, by omega, hb3⟩
+  · exact ⟨72720#64, .inr ⟨rfl, rfl⟩, by decide, by decide, by decide⟩
 
 /-- `main_arena.top` after the split. -/
 theorem VspN_top {T szw nb : Addr} (V : Addr → Byte) (h1 : 7940776 ≤ T.toNat) (hT : T.toNat + nb.toNat + 16 < 2 ^ 64) :
@@ -210,7 +210,7 @@ theorem mal_hp {fb : Addr} {hi m B : Nat} (c : Seg prof F Wl L s₀ o) (hfs : s�
   have hrs := X.cpu.gpr.rsp.isLt
   have hdl := X.cpu.gpr.rdi.isLt
   have ha8 := Smm.and_m8 szw
-  obtain ⟨nb, hcls, hb1, hb2⟩ := nb_ex hn
+  obtain ⟨nb, hcls, hb1, hb2, hb3⟩ := nb_ex hn
   obtain ⟨f24, -, f40⟩ := fofs fb (by omega) (by omega)
   have eS : (X.cpu.gpr.rsp - 216#64).toNat = X.cpu.gpr.rsp.toNat - 216 := by bvg
   have eS' : X.cpu.gpr.rsp - 216#64 + 216#64 = X.cpu.gpr.rsp := BitVec.sub_add_cancel _ _
