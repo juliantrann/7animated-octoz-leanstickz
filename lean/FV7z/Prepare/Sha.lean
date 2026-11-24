@@ -307,12 +307,12 @@ def shOk (prof : Profile) (sw hw g1 g2 : Addr) (Y : State) : Prop :=
   (ptrAt g1 Y = sw ∧ ptrAt g2 Y = 0) ∨
     (ptrAt g1 Y = hw ∧ ptrAt g2 Y = hw ∧ prof.feat.sha = true ∧ prof.feat.ssse3 = true)
 
-/-- The contract: a stack of 88 bytes (its own 8, `CPU_IsSupported_SHA`'s 72 with what it calls, a return address),
-the pointers written, the canary read. -/
 /-- `shOk`, and what the run kept (`fnK`: for a caller's run to go on). -/
 def shPost (prof : Profile) (sw hw g1 g2 : Addr) (s₀ Y : State) : Prop :=
   shOk prof sw hw g1 g2 Y ∧ KeptW (ws 88 (shW g1 g2) s₀) s₀ Y
 
+/-- The contract: a stack of 88 bytes (its own 8, `CPU_IsSupported_SHA`'s 72 with what it calls, a return address),
+the pointers written, the canary read. -/
 abbrev shC (prof : Profile) (sw hw g1 g2 : Addr) : Contract :=
   fn 88 (shW g1 g2) lzR (shPre g1 g2) (shPost prof sw hw g1 g2)
 
