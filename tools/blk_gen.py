@@ -202,6 +202,11 @@ FNS = {
     # libgcc's unwind-dw2-fde.c: `__register_frame_info_bases` (its body at 0x612730, the entry with the checks at
     # 0x6127c0) and `__register_frame_info` (0x6127e0, the entry here: offset 0xb0). Stops: the tail call of
     # `pthread_mutex_unlock` (0x6a), the `ret`s (0x76, 0xa8, 0xd0), the other entry (0x90).
+    # 7-Zip's static constructor `csuTg 75` (0x41c770, offset 1584 of `sti`): a table of 256 bytes at 0x79d340, each
+    # its index with the bits reversed. Stop: the `ret` (1665).
+    "c75": dict(grp="C75", code=("Ctor", "sti"), cn="csuTg 75", a=0x41c140, n=4624, entry=1584, pos=True,
+                stops=(1665,), tag="PLAN.md G3, constructors",
+                src="a static constructor of 7-Zip (`objdump -d`)"),
     "rfi": dict(grp="Rfi", cn="__register_frame_info", a=0x612730, n=0xd1, entry=0xb0, pos=True,
                 stops=(0x6a, 0x76, 0x90, 0xa8, 0xd0), calls=True, tag="PLAN.md G3, startup",
                 src="libgcc's `__register_frame_info` (`libgcc/unwind-dw2-fde.c`; `objdump -d`)"),
