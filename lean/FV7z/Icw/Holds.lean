@@ -17,55 +17,55 @@ theorem vcAll (hC : Glibc.CacheEnds prof) (hT : Te F Wl L g₀ V₀) (ℓ : Nat)
     ∀ n g f V, Ih g₀ V₀ ℓ n g V → WtC prof F Wl ℓ (Nx g₀ V₀ n) g f V := by
   intro n g f V h
   by_cases h464 : ℓ = 464
-  · subst h464; exact vc_464 hT h
+  · subst h464; exact vc_464 (f := f) hT h
   by_cases h558 : ℓ = 558
-  · subst h558; exact vc_558 h
+  · subst h558; exact vc_558 (f := f) h
   by_cases h567 : ℓ = 567
-  · subst h567; exact vc_567 hT h
+  · subst h567; exact vc_567 (f := f) hT h
   by_cases h630 : ℓ = 630
-  · subst h630; exact vc_630 h
+  · subst h630; exact vc_630 (f := f) h
   by_cases h640 : ℓ = 640
-  · subst h640; exact vc_640 hT h
+  · subst h640; exact vc_640 (f := f) hT h
   by_cases h656 : ℓ = 656
-  · subst h656; exact vc_656 hT h
+  · subst h656; exact vc_656 (f := f) hT h
   by_cases h682 : ℓ = 682
-  · subst h682; exact vc_682 hT h
+  · subst h682; exact vc_682 (f := f) hT h
   by_cases h717 : ℓ = 717
-  · subst h717; exact vc_717 h
+  · subst h717; exact vc_717 (f := f) h
   by_cases h719 : ℓ = 719
-  · subst h719; exact vc_719 hT h
+  · subst h719; exact vc_719 (f := f) hT h
   by_cases h752 : ℓ = 752
-  · subst h752; exact vc_752 h
+  · subst h752; exact vc_752 (f := f) h
   by_cases h773 : ℓ = 773
   · subst h773; exact vc_773 h
   by_cases h775 : ℓ = 775
-  · subst h775; exact vc_775 h
+  · subst h775; exact vc_775 (f := f) h
   by_cases h821 : ℓ = 821
-  · subst h821; exact vc_821 h
+  · subst h821; exact vc_821 (f := f) h
   by_cases h829 : ℓ = 829
   · subst h829; exact vc_829 hC h
   by_cases h831 : ℓ = 831
-  · subst h831; exact vc_831 h
+  · subst h831; exact vc_831 (f := f) h
   by_cases h838 : ℓ = 838
-  · subst h838; exact vc_838 h
+  · subst h838; exact vc_838 (f := f) h
   by_cases h856 : ℓ = 856
-  · subst h856; exact vc_856 h
+  · subst h856; exact vc_856 (f := f) h
   by_cases h866 : ℓ = 866
-  · subst h866; exact vc_866 h
+  · subst h866; exact vc_866 (f := f) h
   by_cases h885 : ℓ = 885
-  · subst h885; exact vc_885 h
+  · subst h885; exact vc_885 (f := f) h
   by_cases h1033 : ℓ = 1033
-  · subst h1033; exact vc_1033 h
+  · subst h1033; exact vc_1033 (f := f) h
   by_cases h1048 : ℓ = 1048
-  · subst h1048; exact vc_1048 h
+  · subst h1048; exact vc_1048 (f := f) h
   by_cases h1230 : ℓ = 1230
-  · subst h1230; exact vc_1230 h
+  · subst h1230; exact vc_1230 (f := f) h
   by_cases h1250 : ℓ = 1250
-  · subst h1250; exact vc_1250 h
+  · subst h1250; exact vc_1250 (f := f) h
   by_cases h1258 : ℓ = 1258
   · subst h1258; exact vc_1258 hC h
   by_cases h1260 : ℓ = 1260
-  · subst h1260; exact vc_1260 h
+  · subst h1260; exact vc_1260 (f := f) h
   · simp only [Ih, h464, h558, h567, h630, h640, h656, h682, h717, h719, h752, h773, h775, h821, h829, h831,
       h838, h856, h866, h885, h1033, h1048, h1230, h1250, h1258, h1260, ↓reduceIte] at h
 
