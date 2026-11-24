@@ -14,13 +14,14 @@ where a created file may go, P6); the read-only commands need none.
 - `mmap` and `mprotect` never with `PROT_EXEC`;
 - `ioctl` only the terminal queries `TCGETS`, `TIOCGWINSZ`, `TCGETS2` (never `TIOCSTI`, which types into a terminal);
 - `prlimit64` only to read a limit (no new limit);
-- the rest (`read`, `close`, `stat`, `fstat`, `lseek`, `munmap`, `brk`, `rt_sigaction`, `rt_sigprocmask`, `uname`,
-  `getcwd`, `readlink`, `umask`, `sysinfo`, `arch_prctl`, `futex`, `getdents64`, `set_tid_address`,
+- the rest (`read`, `close`, `stat`, `fstat`, `lseek`, `munmap`, `brk`, `rt_sigaction`, `rt_sigprocmask`, `madvise`,
+  `uname`, `getcwd`, `readlink`, `umask`, `sysinfo`, `arch_prctl`, `futex`, `getdents64`, `set_tid_address`,
   `set_robust_list`, `exit_group`) with any arguments.
 Every other call is refused: `execve`, `execveat`, `fork`, `vfork`, `clone`, `clone3`, `socket`, `connect`,
 `ptrace`, `kill`, `unlink`, `rename`, `mkdir`, … . A call number is compared as the whole of `rax`, and an argument as
 the whole register: stricter than the kernel (which reads some of them in 32 bits), so a run the policy accepts makes
-only the calls listed. To check against the `strace` corpus (`tools/policy.py`, to come) before the proofs rely on it.
+only the calls listed. Checked on real runs by `tools/policy.py` (`strace` of `l` and `t` on eight formats, 2026-11-24:
+every call accepted); `madvise` is bzip2's `MADV_HUGEPAGE`.
 -/
 
 namespace FV7z.Statement
@@ -50,9 +51,9 @@ def argOf (ev : Event) (i : Nat) : BitVec 64 :=
 /-- The system calls `7zzs l` and `7zzs t` may make, with their arguments (see the module's comment). -/
 def allowT (ev : Event) : Bool :=
   match ev.nr.toNat with
-  -- read close stat fstat lseek munmap brk rt_sigaction rt_sigprocmask uname getcwd readlink umask sysinfo
-  -- arch_prctl futex getdents64 set_tid_address exit_group set_robust_list
-  | 0 | 3 | 4 | 5 | 8 | 11 | 12 | 13 | 14 | 63 | 79 | 89 | 95 | 99 | 158 | 202 | 217 | 218 | 231 | 273 => true
+  -- read close stat fstat lseek munmap brk rt_sigaction rt_sigprocmask madvise uname getcwd readlink umask
+  -- sysinfo arch_prctl futex getdents64 set_tid_address exit_group set_robust_list
+  | 0 | 3 | 4 | 5 | 8 | 11 | 12 | 13 | 14 | 28 | 63 | 79 | 89 | 95 | 99 | 158 | 202 | 217 | 218 | 231 | 273 => true
   -- write: to standard output or standard error
   | 1 => argOf ev 0 == 1#64 || argOf ev 0 == 2#64
   -- mmap, mprotect: not PROT_EXEC
