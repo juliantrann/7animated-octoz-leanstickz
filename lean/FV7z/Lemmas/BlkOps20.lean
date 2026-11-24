@@ -1,12 +1,12 @@
 import FV7z.Lemmas.BlkOps7
 /-!
-# `not`, `cqo`, three-operand `imul`, `idiv r64` and `bsr r32` (PLAN.md M, ctor 103: `init_cacheinfo`)
+# `not`, `cqo`, three-operand `imul`, `and`/`test` of a high byte, `idiv r64` and `bsr r32` (PLAN.md M, ctor 103)
 
 Instructions of glibc's `init_cacheinfo` and `handle_intel` (measured with `tools/blk_gen.py`: `not r9d`,
 `cqo; idiv rcx`, `imul rax, [rip + d], 3`, `imul rax, rax, 0x55555556`, `bsr ecx, r9d`).
 
-- `Op.not32`, `Op.cqo`, `Op.imul3`, `Op.imul3ma`: `Op`s of `Blk.lean`; `cqo` (`Mn.cwd` at 64 bits) fills `rdx` with the
-  sign of `rax`.
+- `Op.not32`, `Op.cqo`, `Op.imul3`, `Op.imul3ma`, `Op.andh`, `Op.testh`: `Op`s of `Blk.lean`; `cqo` (`Mn.cwd` at 64
+  bits) fills `rdx` with the sign of `rax`; `gvh g r` is bits 15–8 of register `r`.
 - `idiv64`, `Seg.s_idiv64`: `idiv r64` after `cqo` (`rdx` the sign of `rax`) with a positive divisor, a step of its own:
   it faults when the divisor is 0 or the quotient does not fit (`tdiv_fits`: it fits for a positive divisor).
 - `bsr32`, `Seg.s_bsr32`: `bsr r32, r32` with a source not 0, a step of its own: with a source 0 the destination is
@@ -53,11 +53,29 @@ theorem OpIA.imul3_rip {r len d A v : Nat} {x : Addr} (hA : x.add len + BitVec.o
   refine ⟨?fl, ?t, instruction_next htf hdec ?h, trivial, ?a, ?b, ?c⟩
   case h =>
     simp only [exec, Sem.imul, imulTrunc, mk, mrip, gr, bind, Prog.bind, readOp, Bool.false_eq_true, ↓reduceIte,
-      memRef, effOffset, pure, Prog.readRip, Prog.read, Prog.run, Opd.width, writeOp, BitVec.mul_one,
+      memRef, effOffset, pure, Prog.readRip, Prog.read, Prog.run, writeOp, BitVec.mul_one,
       Prog.readFlags]
     rw [eaR_adv, he, checkAccess_ok (s := advance s len) hac hld]
     rfl
   all_goals rfl
+
+/-- Bits 15–8 of register `r` (`ah`, `ch`, `dh`, `bh`). -/
+abbrev gvh (g : Gprs) (r : Nat) : BitVec 8 := ((g.get (regOf r)) >>> 8).setWidth 8
+
+/-- `and r8h, imm`: the other bits kept. -/
+def Op.andh (r v : Nat) : Op :=
+  .reg (fun g _ => g.set (regOf r) ((g.get (regOf r) &&& ~~~(BitVec.ofNat 64 ((2 ^ 8 - 1) * 2 ^ 8))) |||
+      ((gvh g r &&& BitVec.ofNat 8 v).setWidth 64 <<< 8)))
+    fun g f fl => LogF f (gvh g r &&& BitVec.ofNat 8 v) fl
+
+theorem OpI.andh {r v len : Nat} : OpI prof (mk .and 8 [gh r, .imm 8 v] len) (Op.andh r v) :=
+  fun _ _ _ htf hdec => ⟨_, _, instruction_next htf hdec rfl, ⟨_, rfl⟩, rfl, rfl, rfl⟩
+
+/-- `test r8h, imm`. -/
+def Op.testh (r v : Nat) : Op := .reg (fun g _ => g) fun g f fl => LogF f (gvh g r &&& BitVec.ofNat 8 v) fl
+
+theorem OpI.testh {r v len : Nat} : OpI prof (mk .test 8 [gh r, .imm 8 v] len) (Op.testh r v) :=
+  fun _ _ _ htf hdec => ⟨_, _, instruction_next htf hdec rfl, ⟨_, rfl⟩, rfl, rfl, rfl⟩
 
 /-- The dividend `rdx:rax` of `idiv` after `cqo` is `rax`, sign-extended. -/
 theorem sx_toInt (x h : BitVec 64) (hh : h = if x.msb then BitVec.allOnes 64 else 0) :
@@ -70,8 +88,9 @@ theorem sx_toInt (x h : BitVec 64) (hh : h = if x.msb then BitVec.allOnes 64 els
     by_cases h64 : i < 64
     · simp only [h64, ↓reduceIte, decide_true, Bool.true_and, hi]
     · cases hm : x.msb
-      · simp only [h64, ↓reduceIte, hm, Bool.false_eq_true, BitVec.getLsbD_zero, Bool.and_false]
-      · simp only [h64, ↓reduceIte, hm, BitVec.getLsbD_allOnes, Bool.and_true]
+      · simp only [h64, ↓reduceIte, Bool.false_eq_true, Bool.and_false]
+        exact BitVec.getLsbD_zero
+      · simp only [h64, ↓reduceIte, BitVec.getLsbD_allOnes, Bool.and_true]
         exact decide_eq_decide.2 (by omega)
   rw [e, BitVec.toInt_signExtend_of_le (by decide)]
 
