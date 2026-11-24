@@ -211,6 +211,17 @@ FNS = {
                 stops=(0x22, 0x30), calls=True, tag="PLAN.md G3, startup",
                 src="libgcc's `frame_dummy` (`libgcc/crtstuff.c`; `objdump -d`)"),
     # glibc's `__default_morecore` (`malloc/morecore.c`): `__sbrk (n)`, a null pointer for its -1.
+    # 7-Zip's registrars, which the constructors of `.init_array` call (`CPP/7zip/Archive/ArchiveExports.cpp`,
+    # `CPP/7zip/Common/CreateCoder.cpp`): the pointer into the table if there is room. Stop: the `ret`.
+    "rga": dict(grp="Rga", cn="RegisterArc", a=0x5ceb20, n=38, pos=True, stops=(0x25,),
+                tag="PLAN.md §M, constructors",
+                src="7-Zip's `RegisterArc` (`CPP/7zip/Archive/ArchiveExports.cpp`; `objdump -d`)"),
+    "rgc": dict(grp="Rgc", cn="RegisterCodec", a=0x458e60, n=35, pos=True, stops=(0x22,),
+                tag="PLAN.md §M, constructors",
+                src="7-Zip's `RegisterCodec` (`CPP/7zip/Common/CreateCoder.cpp`; `objdump -d`)"),
+    "rgh": dict(grp="Rgh", cn="RegisterHasher", a=0x458e90, n=35, pos=True, stops=(0x22,),
+                tag="PLAN.md §M, constructors",
+                src="7-Zip's `RegisterHasher` (`CPP/7zip/Common/CreateCoder.cpp`; `objdump -d`)"),
     "dmc": dict(grp="Dmc", cn="__default_morecore", a=0x635ab0, n=0x1f, pos=True, stops=(0x1e,), calls=True,
                 tag="PLAN.md G3, `malloc`",
                 src="glibc 2.31's `__default_morecore` (`malloc/morecore.c`; `objdump -d`)"),
