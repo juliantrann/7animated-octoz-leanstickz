@@ -97,14 +97,22 @@ structure CSpec where
 def CSpec.Dep (c : CSpec) : Prop :=
   ∀ W W' : Addr → Byte, (∀ a : Addr, InR c.wr a.toNat → W' a = W a) → c.post W → c.post W'
 
-/-- The registrar calls of the constructor `m`: its call of `leas`, its calls of `chains`, none for the others yet. -/
+/-- The constructors `m` that fill a table and then end with `jmp R` to the registrar `r` with `rdi = A`:
+`(m, r, A)`. -/
+def tails : List (Nat × Nat × Nat) := [(37, 0, 7840512), (55, 0, 7851136)]
+
+/-- The registrar calls of the constructor `m`: its call of `leas`, its calls of `chains`, its call of `tails`, none
+for the others yet. -/
 def calls (m : Nat) : List (Nat × Nat) :=
   match leas.find? (fun x => x.1 == m) with
   | some (_, _, r, A) => [(r, A)]
   | none =>
     match chains.find? (fun x => x.1 == m) with
     | some (_, _, cs) => cs
-    | none => []
+    | none =>
+      match tails.find? (fun x => x.1 == m) with
+      | some (_, r, A) => [(r, A)]
+      | none => []
 
 /-- The lists of the registrars' tables before the constructor `m`. -/
 def regsAt (m : Nat) : Nat → List (BitVec 64) :=
@@ -120,6 +128,8 @@ theorem regsAt_succ {m : Nat} (h : 3 ≤ m) : regsAt (m + 1) = updAll (regsAt m)
 theorem calls_lea : ∀ x ∈ leas, calls x.1 = [(x.2.2.1, x.2.2.2)] := by decide +kernel
 
 theorem calls_chain : ∀ x ∈ chains, calls x.1 = x.2.2 := by decide +kernel
+
+theorem calls_tail : ∀ x ∈ tails, calls x.1 = [(x.2.1, x.2.2)] := by decide +kernel
 
 /-- `Fits` as a test. -/
 def fitsB : (Nat → List (BitVec 64)) → List (Nat × Nat) → Bool

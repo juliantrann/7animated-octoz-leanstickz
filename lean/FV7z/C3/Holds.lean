@@ -16,7 +16,7 @@ No later code takes those bytes as an address, so its spec says only where they 
 
 - `Inv`: the invariant at the four cut points (`Cuts.lean`): the entry; the first loop's head and its inner loop's
   head (the measure as in `C78.Inv`, above that of the second loop); the second loop's head with `rdx` at word `j`.
-- `inc_k`, `step80`, `toNat_1020`, `toNat_b0`: the loops' arithmetic.
+- `step80`, `toNat_1020`, `toNat_b0`: the loops' arithmetic (and `Ctor.inc_k`).
 - `vc_0`, `vc_16`, `vc_32`, `vc_80`, `vc`: the code from each cut point keeps it with a smaller measure, or reaches
   the `ret`. `vc_32` and `vc_80` are for the table at a variable `b`; the second loop's loads need the table in the
   footprint's data (`Seg.hws`).
@@ -43,15 +43,6 @@ def Inv (g₀ : Gprs) (V₀ : Addr → Byte) (ℓ n : Nat) (g : Gprs) (_ : Rflag
       (ℓ = 32 ∧ 1 ≤ g.rdx.toNat ∧ g.rdx.toNat ≤ 8 ∧ n = 2817 + 10 * (256 - k) - 9 + g.rdx.toNat))) ∨
   (ℓ = 80 ∧ ∃ j < 2816, g.rdx.toNat = 8015360 + 4 * j ∧ g.rdi = BitVec.ofNat 64 8015360 ∧
     g.rsi = BitVec.ofNat 64 8015360 + 11264#64 ∧ Kp g₀ g ∧ Out V₀ V ∧ n = 2816 - j)
-
-/-- The first loop's index one more, and its test `cmp rsi, 256`: not the end means another word. -/
-theorem inc_k {x : BitVec 64} {k : Nat} (hx : x.toNat = k) (hk : k < 256) :
-    (x + 1#64).toNat = k + 1 ∧ (¬ x + 1#64 = 256#64 → k + 1 < 256) := by
-  subst hx
-  constructor
-  · bv_omega
-  · intro h
-    bv_omega
 
 /-- `rdx` one word on, and the second loop's test `cmp rsi, rdx`: not the end means another word. -/
 theorem step80 {r : BitVec 64} {b j : Nat} (hb : b + 12288 < 2 ^ 64) (hr : r.toNat = b + 4 * j) (hj : j < 2816) :

@@ -8,9 +8,9 @@ the kernel checks the arithmetic once and never folds the table's literal addres
 
 - `ft_at`, `out_at`: bytes at an address `a` inside the table are in `Wl`, and a store there keeps `Raf.Out`.
 - `toNat_bx`, `ft_bx`, `out_bx`: the same for the address `b + x`, `x` an index into the table.
-- `toNat_m4`, `ft_b4`, `out_b4`: the same for the address `b + 4·x`, `x` the index of a word; `toNat_m8`, `ft_b8`,
-  `out_b8`: of a quadword, at `b + 8·x`.
-- `dec32`: a loop's count one less.
+- `toNat_m4`, `ft_b4`, `out_b4`: the same for the address `b + 4·x`, `x` the index of a word; `toNat_m2`, `ft_b2`,
+  `out_b2`: of a 16-bit word, at `b + 2·x`; `toNat_m8`, `ft_b8`, `out_b8`: of a quadword, at `b + 8·x`.
+- `dec32`: a loop's count one less; `inc_k`: an index below 256 one more, and the test `cmp x, 256`.
 - `Kp.of`: `Kp` from the registers a call keeps, each as before; it never compares the other registers.
 -/
 namespace FV7z.Ctor
@@ -73,6 +73,25 @@ theorem out_b4 {b m : Nat} {V₀ V : Addr → Byte} {x : BitVec 64} {bs : List B
   have e : (x * 4#64).toNat = 4 * x.toNat := toNat_m4 (by omega)
   exact out_bx hO hb (by rw [e]; omega) hn
 
+/-- Two times `x`, when it does not wrap. -/
+theorem toNat_m2 {x : BitVec 64} (h : 2 * x.toNat < 2 ^ 64) : (x * 2#64).toNat = 2 * x.toNat := by
+  simp only [BitVec.toNat_mul, BitVec.toNat_ofNat, Nat.reducePow, Nat.reduceMod]
+  omega
+
+/-- The 16-bit word `x` of the table in `Wl`. -/
+theorem ft_b2 {R : List Rgn} {b m : Nat} (h : ∀ i < m, Foot R (Addr.add (BitVec.ofNat 64 b) i))
+    (hb : b + m < 2 ^ 64) {x : BitVec 64} (hx : 2 * x.toNat + 2 ≤ m) :
+    ∀ i < 2, Foot R (Addr.add (BitVec.ofNat 64 b + x * 2#64) i) := by
+  have e : (x * 2#64).toNat = 2 * x.toNat := toNat_m2 (by omega)
+  exact ft_bx h hb (by rw [e]; omega)
+
+/-- A store of the 16-bit word `x` of the table keeps the bytes outside it. -/
+theorem out_b2 {b m : Nat} {V₀ V : Addr → Byte} {x : BitVec 64} {bs : List Byte} (hO : Raf.Out b (b + m) V₀ V)
+    (hb : b + m < 2 ^ 64) (hx : 2 * x.toNat + 2 ≤ m) (hn : bs.length = 2) :
+    Raf.Out b (b + m) V₀ (Vst V (BitVec.ofNat 64 b + x * 2#64) bs) := by
+  have e : (x * 2#64).toNat = 2 * x.toNat := toNat_m2 (by omega)
+  exact out_bx hO hb (by rw [e]; omega) hn
+
 /-- Eight times `x`, when it does not wrap. -/
 theorem toNat_m8 {x : BitVec 64} (h : 8 * x.toNat < 2 ^ 64) : (x * 8#64).toNat = 8 * x.toNat := by
   simp only [BitVec.toNat_mul, BitVec.toNat_ofNat, Nat.reducePow, Nat.reduceMod]
@@ -91,6 +110,15 @@ theorem out_b8 {b m : Nat} {V₀ V : Addr → Byte} {x : BitVec 64} {bs : List B
     Raf.Out b (b + m) V₀ (Vst V (BitVec.ofNat 64 b + x * 8#64) bs) := by
   have e : (x * 8#64).toNat = 8 * x.toNat := toNat_m8 (by omega)
   exact out_bx hO hb (by rw [e]; omega) hn
+
+/-- An index below 256 one more, and the test `cmp x, 256`: not the end means another round. -/
+theorem inc_k {x : BitVec 64} {k : Nat} (hx : x.toNat = k) (hk : k < 256) :
+    (x + 1#64).toNat = k + 1 ∧ (¬ x + 1#64 = 256#64 → k + 1 < 256) := by
+  subst hx
+  constructor
+  · bv_omega
+  · intro h
+    bv_omega
 
 /-- A count from 1 to 8 one less (`sub r32, 1`), when it was not 1. -/
 theorem dec32 {x : BitVec 64} (h1 : 1 ≤ x.toNat) (h8 : x.toNat ≤ 8) (hne : ¬ x.setWidth 32 = 1#32) :
