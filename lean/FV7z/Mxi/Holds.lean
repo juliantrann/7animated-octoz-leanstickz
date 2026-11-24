@@ -104,16 +104,7 @@ theorem vc_0 {fb S m : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (hS : g
   dsimp only at hS hM hsi
   subst hS hM hsi
   wpx [W_0, W_240, W_134, W_140, W_160, o0, o1, o2, o3, o4, Op.ldf, Op.xormf, Op.vs, BitVec.xor_self]
-  repeat' first
-    | assumption
-    | exact fun i hi => absurd hi (Nat.not_lt_zero _)
-    | exact fun i hi => hm16 i (by omega)
-    | (intro h; exact absurd h (by decide))
-    | intro _
-    | apply And.intro
-  all_goals first
-    | exact hQ _ _ _ _ ‹_› ‹_›
-    | exact hX _ _ _ _ ‹_› ‹_› ‹_›
+  done
 
 /-! ## The frame -/
 
@@ -245,7 +236,7 @@ theorem mx_ok {fb : Addr} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBas
   have hF := mx_rd V X.cpu.gpr.rsp X.cpu.gpr.rdi fb Y₂.cpu.gpr.r13 Y₂.cpu.gpr.r12 Y₂.cpu.gpr.rbp Y₂.cpu.gpr.rbx
     hb1 hb2 hs hs8 hm hmd hfb hfd hfm
   rcases h with ⟨rfl, cc, rfl⟩ | ⟨rfl, hc⟩
-  swap
+  rotate_left
   · exact absurd hF.can (xne hc)
   -- the `ret`
   have hsp₃ : Y₃.cpu.gpr.rsp = X.cpu.gpr.rsp := by
