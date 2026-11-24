@@ -1,5 +1,6 @@
 import FV7z.Lemmas.Sp
 import FV7z.Lemmas.BlkOps20
+import FV7z.Lemmas.BlkOps21
 import FV7z.Lemmas.BlkOps15
 import FV7z.Lemmas.BlkOps14
 import FV7z.Lemmas.BlkOps3
@@ -147,10 +148,10 @@ theorem p4_0 : ∀ feat, Dec feat p4 0 (FV7z.mk .shr 32 [gr 32 6, Src.opd 8 (.i 
 
 /-- What the stretch does. -/
 def o4 : List Op := [
-  Op.shr 6 (.i 8)]
+  Op.shr32z 6 (.i 8)]
 
 theorem b4 (prof : Profile) : Blk prof p4 0 3 o4 :=
-  .cons (p4_0 _) (OpI.shr (.i 8)) (by decide) <|
+  .cons (p4_0 _) (OpI.shr32z (.i 8)) (by decide) <|
   .nil 3
 
 def j4 : List Byte := [0x0f, 0x84, 0x96, 0x00, 0x00, 0x00]
@@ -420,11 +421,11 @@ theorem p18_3 : ∀ feat, Dec feat p18 3 (FV7z.mk .mov 8 [.mem (mg (some 3) none
 
 /-- What the stretch does. -/
 def o18 : List Op := [
-  Op.shr 6 (.i 8),
+  Op.shr32z 6 (.i 8),
   Op.sti 8 (some 3) none 1 0 1]
 
 theorem b18 (prof : Profile) : Blk prof p18 0 6 o18 :=
-  .cons (p18_0 _) (OpI.shr (.i 8)) (by decide) <|
+  .cons (p18_0 _) (OpI.shr32z (.i 8)) (by decide) <|
   .cons (p18_3 _) (OpI.sti (.inl rfl)) (by decide) <|
   .nil 6
 

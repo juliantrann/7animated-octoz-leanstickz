@@ -1,5 +1,4 @@
-import FV7z.Hca.Holds
+import FV7z.Lemmas.BlkOps21
+import FV7z.Icw.Cuts
 open FV7z
-#print axioms FV7z.Hca.vc_54a
-#print axioms FV7z.Hca.vc_54
-#print axioms FV7z.Hca.ham_fnK
+#print axioms FV7z.OpI.shr32z
