@@ -71,6 +71,7 @@ runs:
         echo "base=fv7z-$PINS-" >> "$GITHUB_OUTPUT"
         echo "key=${GIVEN:-fv7z-$PINS-$GITHUB_SHA-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT}" >> "$GITHUB_OUTPUT"
     - name: cache (sources, toolchains, Lean builds)
+      id: restore
       uses: actions/cache/restore@v4
       with:
         path: |
@@ -84,3 +85,25 @@ runs:
         restore-keys: |
           ${{ steps.key.outputs.base }}
           fv7z-
+    - name: seed (no cache for this branch)
+      # A branch restores only its own caches (and main's, which has none), and the repository's 10 GB of caches are
+      # evicted oldest first, so a new or long-idle branch finds nothing and builds every module (35 min). Then the
+      # building job starts from the last green ci/full's build instead: release `seed` (b.yml, job seed), in parts
+      # of at most 1900 MB (a release asset's limit is 2 GB). Lake rebuilds what changed since that commit.
+      if: inputs.key == '' && steps.restore.outputs.cache-matched-key == ''
+      shell: bash
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        d=$RUNNER_TEMP/seed
+        mkdir -p "$d"
+        if gh release download seed -R "$GITHUB_REPOSITORY" -p 'seed.tar.zst.*' -D "$d"; then
+          ls -l "$d"
+          cat "$d"/seed.tar.zst.* | zstd -dc | tar -x -C "$GITHUB_WORKSPACE" && echo "seeded from release seed" ||
+            echo "seed did not unpack: building from nothing"
+          [ -d "$GITHUB_WORKSPACE/.elan-toolchains" ] && mkdir -p ~/.elan &&
+            rm -rf ~/.elan/toolchains && mv "$GITHUB_WORKSPACE/.elan-toolchains" ~/.elan/toolchains || true
+          rm -rf "$d"
+        else
+          echo "no release seed: building from nothing"
+        fi
