@@ -143,7 +143,7 @@ theorem lsb_dbg {fb sp : Addr} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.
       simp only [List.mem_singleton] at hr
       subst hr
       have h2 := rDebug_mem hm
-      rw [hEs, toNat_add_of_fits hi (by omega)] at h2
+      rw [hEs, toNat_add_of_fits (a := sp) hi (by omega)] at h2
       omega
     · intro r hr q hq a ha hb
       simp only [List.mem_singleton] at hr
