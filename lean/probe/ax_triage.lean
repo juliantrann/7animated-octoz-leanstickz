@@ -1,8 +1,6 @@
-import FV7z.Hca.Cuts
-import FV7z.Icw.Cuts
-import FV7z.Hin.Cuts
+import FV7z.Lemmas.SpCallK
+import FV7z.Hca.Holds
 open FV7z
-#print axioms FV7z.OpI.cmpm8
-#print axioms FV7z.Hca.c_0
-#print axioms FV7z.Icw.c_464
-#print axioms FV7z.Hin.c_1280
+#print axioms FV7z.Fn.SpAt.callK
+#print axioms FV7z.Fn.SpAt.cpuid
+#print axioms FV7z.Hca.ham_fnK
