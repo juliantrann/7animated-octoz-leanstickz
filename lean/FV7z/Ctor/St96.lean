@@ -99,7 +99,7 @@ theorem runs96 {J : Nat → (Addr → Byte) → Prop} {sp : Addr} {tg : Nat → 
   have hl6 : ∀ i < 8, Foot F.data (Addr.add Y6.cpu.gpr.rsp i) := fun i hi => by
     rw [hs6]
     exact c.hws _ (hC.st i (by omega))
-  have hra6 : rdq(st96 V, Y6.cpu.gpr.rsp) = csu_at.add j₂ := by
+  have hra6 : rdq(st96 V, Y6.cpu.gpr.rsp) = Csu.csu_at.add j₂ := by
     rw [hs6, ← hra]
     exact rdq_eq (by omega) fun a h1 h2 => st96_out V a (by omega)
   refine c.s_ret hK6 hA6 hin (sti_lt (by decide)) hr6 (Dec.shift (j := 2800) (k := 31) (c96_31 _) v96 (by decide))
