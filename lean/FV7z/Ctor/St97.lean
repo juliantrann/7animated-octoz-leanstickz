@@ -1,4 +1,4 @@
-import FV7z.Ctor.BlkRet
+import FV7z.Ctor.StSpec
 /-!
 # A constructor that sets up two static objects (PLAN.md §M, constructors)
 
@@ -8,6 +8,8 @@ then returns. Straight-line code: `blk_runs`.
 
 - `st97 V`: the bytes after; `st97_out`: the same as `V` apart from `[0x79ed60, 0x79ed80)`.
 - `vc97`: the stretch's `wp`; `runs97`: `csuTg 97` is a function as `Csu.csu_ok` asks.
+- `wr97`, `rd97`: the bytes it stores (eight stores, two bytes between them kept) and reads; `runs97_jg`: `runs97`
+  for `Jg`, with `spec 97 = stSpec st97 V wr97` (`jg_st`).
 -/
 namespace FV7z.Ctor
 open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn FV7z.Start
@@ -133,5 +135,53 @@ theorem runs97 {J : Nat → (Addr → Byte) → Prop} {sp : Addr} {tg : Nat → 
   blk_runs c hC hin tg97 (BlkA.shift (b97 prof) rfl v97)
     (Dec.shift (j := 2832) (k := 84) (c97_84 _) v97 (by decide)) (sti_lt (by decide))
     (fun _ _ _ => vc97 hl1 hl2 hw) (fun V a ha => st97_out V a (by omega)) hJ
+
+/-- The bytes `csuTg 97` stores: its eight stores. -/
+def wr97 : List (Nat × Nat) := [(7990624, 7990632), (7990632, 7990633), (7990633, 7990635), (7990636, 7990640),
+  (7990640, 7990648), (7990648, 7990649), (7990649, 7990651), (7990652, 7990656)]
+/-- The bytes `csuTg 97` reads: the words at `0x792968` and `0x792970`. -/
+def rd97 : List (Nat × Nat) := [(7940456, 7940472)]
+
+theorem calls97 : calls 97 = [] := by decide +kernel
+theorem wrT97 : ∀ x ∈ wr97, ∀ y ∈ tabs, x.2 ≤ y.1 ∨ y.2 ≤ x.1 := by decide
+
+theorem st97a_out (V : Addr → Byte) (a : Addr) (h : a.toNat < 7990640 ∨ 7990656 ≤ a.toNat) : st97a V a = V a := by
+  unfold st97a
+  rw [vo, vo, vo, vo] <;> omega
+
+theorem st97_kept (V : Addr → Byte) (a : Addr) (h : ¬ InR wr97 a.toNat) : st97 V a = V a := by
+  simp only [wr97, InR, or_false] at h
+  unfold st97 st97a
+  rw [vo, vo, vo, vo, vo, vo, vo, vo] <;> omega
+
+theorem st97_rd (V W : Addr → Byte) (h : ∀ a : Addr, InR rd97 a.toNat → W a = V a) (a : Addr)
+    (ha : InR wr97 a.toNat) : st97 W a = st97 V a := by
+  have e1 : rdq(W, 7940464#64) = rdq(V, 7940464#64) :=
+    rdq_at (by decide) fun b _h1 _h2 => h b (by simp only [rd97, InR]; omega)
+  have e2 : rdq(st97a W, 7940456#64) = rdq(st97a V, 7940456#64) :=
+    rdq_at (by decide) fun b _h1 _h2 =>
+      (st97a_out W b (by omega)).trans ((h b (by simp only [rd97, InR]; omega)).trans (st97a_out V b (by omega)).symm)
+  unfold st97
+  rw [e2]
+  unfold st97a
+  rw [e1]
+  simp only [wr97, InR, or_false] at ha
+  rcases ha with h | h | h | h | h | h | h | h <;>
+    repeat (first | (apply vin <;> omega) | apply Tls.Vst_congr)
+
+/-- `runs97` for `Jg`: `spec 97 = stSpec st97 V wr97`, whose stores and reads are apart from the stores before. -/
+theorem runs97_jg {V : Addr → Byte} {spec : Nat → CSpec} {G : Nat → (Addr → Byte) → Prop} {sp : Addr}
+    {tg : Nat → Addr} {a₀ a₁ a₂ : BitVec 64} (c : Seg prof F Wl L s₀ o) (hC : Csu.Env F Wl L sp tg)
+    (hin : CodeIn L sti_at sti) (hl1 : ∀ i < 8, Foot F.data (Addr.add 7940464#64 i))
+    (hl2 : ∀ i < 8, Foot F.data (Addr.add 7940456#64 i)) (hw : ∀ i < 32, Foot Wl (Addr.add 7990624#64 i))
+    (hsp : 7990656 + 136 ≤ sp.toNat) (hspec : spec 97 = stSpec st97 V wr97) (hD : ∀ k, (spec k).Dep)
+    (hXw : ∀ k, 3 ≤ k → k < 97 → ∀ x ∈ (spec k).wr, ∀ y ∈ wr97, x.2 ≤ y.1 ∨ y.2 ≤ x.1)
+    (hXr : ∀ k, 3 ≤ k → k < 97 → ∀ x ∈ (spec k).wr, ∀ y ∈ rd97, x.2 ≤ y.1 ∨ y.2 ≤ x.1)
+    (hG : ∀ W, G 97 W → G 98 (st97 W)) :
+    Csu.Runs prof F Wl L s₀ o gev gP gE (Jg V sp.toNat spec G) sp a₀ a₁ a₂ 97 (csuTg 97) :=
+  runs97 c hC hin hl1 hl2 hw (by omega) fun W hJ =>
+    jg_st (by decide) calls97 hspec hD wrT97 hXw hXr
+      (fun n hn => by simp only [rd97, InR, or_false] at hn; unfold Pre; omega)
+      (fun W h a ha => st97_rd V W h a ha) st97_kept (hG W) hJ
 
 end FV7z.Ctor

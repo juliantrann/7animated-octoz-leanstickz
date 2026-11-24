@@ -426,4 +426,5 @@ import FV7z.Ctor.Ret
 import FV7z.Ctor.AtCtor
 import FV7z.Ctor.St96
 import FV7z.Ctor.BlkRet
+import FV7z.Ctor.StSpec
 import FV7z.Ctor.St97
