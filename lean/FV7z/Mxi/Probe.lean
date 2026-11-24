@@ -6,7 +6,7 @@ open ZellicX86 Decode FV7z FV7z.Leaf
 
 variable {F : Footprint} {Wl : List Rgn}
 
-theorem p0 {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (Q : Post) : W_0 fb F Wl Q g f V := by
+theorem q0 {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (Q : Post) : W_0 fb F Wl Q g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   wpx [W_0, W_240, W_134, W_140, W_160, o0, o1, o2, o3, o4, Op.ldf, Op.xormf, BitVec.xor_self]
   done
