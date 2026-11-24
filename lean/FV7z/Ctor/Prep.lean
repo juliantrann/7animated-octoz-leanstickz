@@ -9,6 +9,8 @@ and maybe constant tables (`Rc`), and use a stack frame below the return address
 
 - `wrOf`, `inR_wrOf`, `Lo`: the intervals of a list of regions; regions that end at or below a bound.
 - `Jc_stk`, `jg_wrk`: `Jc_st`, `jg_wr` for a constructor that also stores into the stack's window.
+- `prepK_ws`, `prepK_sub`: at a call with `rsp = D`, what the function may store, and the part of `fnK`'s
+  `CallOf` about the footprint (also for a call from the middle of a constructor, `Mix.lean`).
 - `prepK_core`: a function at `e` with `ImplementsCall` of `fnK k (fun _ => Wc) (canary :: Rc)` is one as
   `Csu.csu_ok` asks, for an invariant its postcondition takes from `m` to `m + 1`; `prepK_runs`: for `Jg` with the
   spec `wrSpec (wrOf Wc)`.
@@ -102,6 +104,77 @@ theorem lo_canary {b : Nat} {s : State} (h : (Addr.add s.cpu.seg.fsBase 40).toNa
     subst hr
     exact h
 
+/-- `D - k` for `k ≤ D`. -/
+theorem subk_toNat {D : Addr} {k : Nat} (hk : k ≤ D.toNat) : (D - BitVec.ofNat 64 k).toNat = D.toNat - k := by
+  have hb := D.isLt
+  simp only [BitVec.toNat_sub, BitVec.toNat_ofNat]
+  omega
+
+/-- What the function may store into at a call with `rsp = D`: the `k` bytes below `D`, or `Wc`. -/
+theorem prepK_ws {D : Addr} {k : Nat} {Wc : List Rgn} {Y : State} (hsp : Y.cpu.gpr.rsp = D) (hk : k ≤ D.toNat)
+    {y : Addr} (hy : Foot (ws k (fun _ => Wc) Y) y) : (D.toNat - k ≤ y.toNat ∧ y.toNat < D.toNat) ∨ Foot Wc y := by
+  obtain ⟨r, hr, hm⟩ := hy
+  rcases List.mem_cons.1 hr with rfl | hr
+  · simp only [below, Rgn.Mem] at hm
+    rw [hsp, subk_toNat hk] at hm
+    exact .inl (by omega)
+  · exact .inr ⟨r, hr, hm⟩
+
+/-- A call, with `rsp = D`, of a function with the contract `fnK` writing the globals `Wc` (below the window) and
+reading the canary and `Rc`, its frame of `k` bytes below `D` in the stack's window (in `Wl`, `hstk`): the contract's
+footprint is a part of the run's, what it may store lies in `Wl`, and its frame is apart from what it names. -/
+theorem prepK_sub {sp D : Addr} {k : Nat} {Wc Rc : List Rgn} {pre : State → Prop} {post : State → State → Prop}
+    (c : Seg prof F Wl L s₀ o) (hk : sp.toNat - 1024 + k ≤ D.toNat) (hD : D.toNat + 64 ≤ sp.toNat)
+    (hstk : ∀ y : Addr, sp.toNat - 1024 ≤ y.toNat → y.toNat < sp.toNat - 56 → Foot Wl y)
+    (hWl : ∀ y, Foot Wc y → Foot Wl y) (hRl : Lo (sp.toNat - 1024) (canary s₀ :: Rc))
+    (hRF : ∀ y, Foot (canary s₀ :: Rc) y → Foot F.writes y ∨ Foot F.reads y) (hWlo : Lo (sp.toNat - 1024) Wc)
+    {Y : State} (hK : KeptW Wl s₀ Y) (hsp : Y.cpu.gpr.rsp = D) :
+    Sub F ((fnK k (fun _ => Wc) (fun s => canary s :: Rc) pre post).footprint L Y) ∧
+      (∀ y, Foot (ws k (fun _ => Wc) Y) y → Foot Wl y) ∧ Apart [frame Y k] (Wc ++ (canary Y :: Rc)) := by
+  have hsb := sp.isLt
+  have hkD : k ≤ D.toNat := by omega
+  have e := subk_toNat hkD
+  have hfr : ∀ y, (frame Y k).Mem y → D.toNat - k ≤ y.toNat ∧ y.toNat < D.toNat + 8 := fun y hy => by
+    simp only [frame, Rgn.Mem] at hy
+    rw [hsp, e] at hy
+    omega
+  have hRY : canary Y :: Rc = canary s₀ :: Rc := by unfold canary; rw [hK.seg]
+  refine ⟨⟨fun r hr => ?_, fun y ⟨r, hr, hm⟩ => ?_, fun y ⟨r, hr, hm⟩ => ?_, c.code.symm ▸ rfl, rfl, c.own⟩,
+    fun y hy => ?_, fun r hr q hq a ha hb => ?_⟩
+  · change r ∈ (frame Y k :: Wc) ++ ([] ++ (canary Y :: Rc)) at hr
+    rw [List.nil_append, hRY] at hr
+    unfold Rgn.Fits
+    rcases List.mem_append.1 hr with hr | hr
+    · rcases List.mem_cons.1 hr with rfl | hr
+      · simp only [frame]
+        rw [hsp, e]
+        omega
+      · have := hWlo r hr
+        omega
+    · have := hRl r hr
+      omega
+  · change r ∈ frame Y k :: Wc at hr
+    rcases List.mem_cons.1 hr with rfl | hr
+    · have := hfr y hm
+      exact c.hww y (hstk y (by omega) (by omega))
+    · exact c.hww y (hWl y ⟨r, hr, hm⟩)
+  · change r ∈ [] ++ (canary Y :: Rc) at hr
+    rw [List.nil_append, hRY] at hr
+    exact hRF y ⟨r, hr, hm⟩
+  · rcases prepK_ws hsp hkD hy with h | h
+    · exact hstk y (by omega) (by omega)
+    · exact hWl y h
+  · rw [List.mem_singleton] at hr
+    subst hr
+    have h1 := hfr a ha
+    change q ∈ Wc ++ (canary Y :: Rc) at hq
+    rw [hRY, List.mem_append] at hq
+    rcases hq with hq | hq
+    · have := hWlo.foot ⟨q, hq, hb⟩
+      omega
+    · have := hRl.foot ⟨q, hq, hb⟩
+      omega
+
 /-- A function at `e` with its own proof (`ImplementsCall` of `fnK`), writing the globals `Wc` (below the window and
 apart from the arrays) and reading the canary and `Rc`, is a function as `Csu.csu_ok` asks: its frame of `k` bytes lies
 in the stack's window and in `Wl` (`hstk`), `Wc` in `Wl`, what it reads below the window and in the footprint, and its
@@ -123,66 +196,23 @@ theorem prepK_core {J : Nat → (Addr → Byte) → Prop} {sp : Addr}
       (∀ y : Addr, ¬ (sp.toNat - 1024 ≤ y.toNat ∧ y.toNat < sp.toNat + 8) → ¬ Foot Wc y → W' y = W y) →
       Agree F Z.proc.mm.mem W' → J m W → J (m + 1) W') :
     Csu.Runs prof F Wl L s₀ o gev gP gE J sp a₀ a₁ a₂ m e := by
-  have hs8 := hC.s8
-  have hfr : ∀ (Y : State) (y : Addr), Y.cpu.gpr.rsp = sp - 64#64 → (frame Y k).Mem y →
-      sp.toNat - 64 - k ≤ y.toNat ∧ y.toNat < sp.toNat - 56 := fun Y y hsp hy => by
-    simp only [frame, Rgn.Mem] at hy
-    rw [hsp, fr_toNat hk (by omega)] at hy
-    omega
-  have hbl : ∀ (Y : State) (y : Addr), Y.cpu.gpr.rsp = sp - 64#64 → (below Y k).Mem y →
-      sp.toNat - 64 - k ≤ y.toNat ∧ y.toNat < sp.toNat - 64 := fun Y y hsp hy => by
-    simp only [below, Rgn.Mem] at hy
-    rw [hsp, fr_toNat hk (by omega)] at hy
-    omega
+  have n := Csu.sp_n (show 64 ≤ sp.toNat by omega)
   have hws : ∀ (Y : State) (y : Addr), Y.cpu.gpr.rsp = sp - 64#64 → Foot (ws k (fun _ => Wc) Y) y →
       (sp.toNat - 64 - k ≤ y.toNat ∧ y.toNat < sp.toNat - 64) ∨ (Foot Wc y ∧ y.toNat < sp.toNat - 1024) :=
-    fun Y y hsp ⟨r, hr, hm⟩ => by
-      rcases List.mem_cons.1 hr with rfl | hr
-      · exact .inl (hbl Y y hsp hm)
-      · exact .inr ⟨⟨r, hr, hm⟩, hWlo.foot ⟨r, hr, hm⟩⟩
+    fun Y y hsp hy => by
+      rcases prepK_ws hsp (by rw [n]; omega) hy with h | h
+      · rw [n] at h
+        exact .inl (by omega)
+      · exact .inr ⟨h, hWlo.foot h⟩
   refine implK_runs c hC himp hdf hx87 hal (fun Y U hK _ _ _ hsp _ => ?_)
     (fun Y Z U U' hsp hI hpost hU' hAZ => ?_)
-  · have hseg : Y.cpu.seg = s₀.cpu.seg := hK.seg
-    have hRY : canary Y :: Rc = canary s₀ :: Rc := by unfold canary; rw [hseg]
-    refine ⟨⟨fun r hr => ?_, fun y ⟨r, hr, hm⟩ => ?_, fun y ⟨r, hr, hm⟩ => ?_, c.code.symm ▸ rfl, rfl, c.own⟩,
-      fun y hy => ?_, hpre Y hseg hsp, fun r hr q hq a ha hb => ?_, fun y hy => ?_⟩
-    · change r ∈ (frame Y k :: Wc) ++ ([] ++ (canary Y :: Rc)) at hr
-      rw [List.nil_append, hRY] at hr
-      unfold Rgn.Fits
-      rcases List.mem_append.1 hr with hr | hr
-      · rcases List.mem_cons.1 hr with rfl | hr
-        · simp only [frame]
-          rw [hsp, fr_toNat hk (by omega)]
-          omega
-        · have := hWlo r hr
-          omega
-      · have := hRl r hr
-        omega
-    · change r ∈ frame Y k :: Wc at hr
-      rcases List.mem_cons.1 hr with rfl | hr
-      · have := hfr Y y hsp hm
-        exact c.hww y (hstk y (by omega) this.2)
-      · exact c.hww y (hWl y ⟨r, hr, hm⟩)
-    · change r ∈ [] ++ (canary Y :: Rc) at hr
-      rw [List.nil_append, hRY] at hr
-      exact hRF y ⟨r, hr, hm⟩
-    · rcases hws Y y hsp hy with h | h
-      · exact hstk y (by omega) (by omega)
-      · exact hWl y h.1
-    · rw [List.mem_singleton] at hr
-      subst hr
-      have h1 := hfr Y a hsp ha
-      change q ∈ Wc ++ (canary Y :: Rc) at hq
-      rw [hRY, List.mem_append] at hq
-      rcases hq with hq | hq
-      · have := hWlo.foot ⟨q, hq, hb⟩
-        omega
-      · have := hRl.foot ⟨q, hq, hb⟩
-        omega
-    · rcases hws Y y hsp hy with h | h
-      · exact ⟨by omega, by omega⟩
-      · have := InR_apart hA (foot_wrOf h.1)
-        exact ⟨by omega, by omega⟩
+  · obtain ⟨hsub, hwl, hap⟩ := prepK_sub (pre := pre) (post := post) c (by rw [n]; omega)
+      (by rw [n]; omega) hstk hWl hRl hRF hWlo hK hsp
+    refine ⟨hsub, hwl, hpre Y hK.seg hsp, hap, fun y hy => ?_⟩
+    rcases hws Y y hsp hy with h | h
+    · exact ⟨by omega, by omega⟩
+    · have := InR_apart hA (foot_wrOf h.1)
+      exact ⟨by omega, by omega⟩
   · refine hJ Y Z U U' hpost (fun y hw hy' => hU' y fun hy => ?_) hAZ hI
     rcases hws Y y hsp hy with h | h
     · exact hw ⟨by omega, by omega⟩

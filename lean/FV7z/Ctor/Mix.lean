@@ -14,6 +14,8 @@ jmp R₁`, with `f` a `*Prepare` function (`Prepare/K.lean`); their `calls` are 
 - `Mid J P m`: `J`, but at `m` the bytes `P` takes those of `J m` to; `runs_pre`: `Csu.Runs` at a constructor's entry
   from a stretch that reaches `e` with the frame's `rsp` and `Csu.Runs` at `e` for `Mid`.
 - `callsK_runs`: `Csu.Runs` for a constructor shaped as `csuTg 67`.
+- `Jc_kchain`, `jg_kchain`: `Jc`, `Jg` from `m` to `m + 1` for the function's stores and then the calls
+  (`ChainOut`); `callK_chain_runs`: `Csu.Runs` for a constructor shaped as `csuTg 77`.
 -/
 namespace FV7z.Ctor
 open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn FV7z.Start
@@ -105,6 +107,53 @@ theorem jg_callsK {V W U U' : Addr → Byte} {sp m : Nat} {spec : Nat → CSpec}
     (hG : G m W → G (m + 1) U') (hJ : Jg V sp spec G m W) : Jg V sp spec G (m + 1) U' := by
   obtain ⟨hJc, hG'⟩ := hJ
   refine ⟨Jc_callsK hm hSn hS hc hF hD hT hB (fun k hk hkm => ?_) hJc hO (fun a ha => hout a ?_) ?_, hG hG'⟩
+  · rw [hspec]
+    exact hXw k hk hkm
+  · rw [hspec] at ha
+    exact ha
+  · rw [hspec]
+    trivial
+
+/-- A constructor whose stores, only to its `wr` (apart from the tables and from the `wr` of the constructors before
+it) and into the stack's window, come before its registrar calls (its `calls`, with room, `ChainOut` from
+`S = sp - 64`) keeps `Jc` when its `post` holds after. -/
+theorem Jc_kchain {V W U U' : Addr → Byte} {sp m : Nat} {spec : Nat → CSpec} {S : Addr} {cs : List (Nat × Nat)}
+    (hm : 3 ≤ m) (hSn : S.toNat + 64 = sp) (hS : 7991300 + 1024 ≤ sp) (hc : calls m = cs)
+    (hF : Fits (regsAt m) cs) (hD : ∀ k, (spec k).Dep) (hT : ∀ k, ∀ x ∈ (spec k).wr, ∀ y ∈ tabs, x.2 ≤ y.1 ∨ y.2 ≤ x.1)
+    (hB : ∀ k, ∀ x ∈ (spec k).wr, x.2 ≤ sp - 1024)
+    (hX : ∀ k, 3 ≤ k → k < m → ∀ x ∈ (spec k).wr, ∀ y ∈ (spec m).wr, x.2 ≤ y.1 ∨ y.2 ≤ x.1)
+    (hJ : Jc V sp spec m W)
+    (hW : ∀ a : Addr, ¬ InR (spec m).wr a.toNat → ¬ (sp - 1024 ≤ a.toNat ∧ a.toNat < sp + 8) → U a = W a)
+    (hO : ChainOut S cs U U') (hp : (spec m).post U') : Jc V sp spec (m + 1) U' := by
+  obtain ⟨hR, hK, hP⟩ := hJ
+  have hO' : ∀ a : Addr, ¬ InR tabs a.toNat → ¬ (sp - 1024 ≤ a.toNat ∧ a.toNat < sp + 8) → U' a = U a :=
+    fun a h1 h2 => ChainOut.out_t (by omega) h1 (by omega) cs U U' hO
+  refine ⟨?_, fun a h1 h2 h3 h4 => ?_, fun k hk hkm => ?_⟩
+  · rw [regsAt_succ hm, hc]
+    exact RegsIn.chain (by omega) cs _ U U' (hR.far_t fun a ha => hW a (fun hw => InR_sep hw (hT m) ha)
+      (by have := tabs_in ha; omega)) hF hO
+  · have ht : ¬ InR tabs a.toNat := fun ht => h3 (tabs_in ht)
+    rw [hO' a ht h1, hW a (h4 m hm (by omega)) h1]
+    exact hK a h1 h2 h3 fun k hk hkm => h4 k hk (by omega)
+  · rcases Nat.lt_or_ge k m with hlt | hge
+    · refine hD k W U' (fun a ha => ?_) (hP k hk hlt)
+      have hb := InR_lt (hB k) ha
+      rw [hO' a (InR_sep ha (hT k)) (by omega), hW a (InR_sep ha (hX k hk hlt)) (by omega)]
+    · obtain rfl : k = m := by omega
+      exact hp
+
+/-- `Jg` from `m` to `m + 1` for `spec m = wrSpec wr`, when the constructor keeps the bytes outside `wr` and the
+stack's window and then makes its registrar calls. -/
+theorem jg_kchain {V W U U' : Addr → Byte} {sp m : Nat} {spec : Nat → CSpec} {G : Nat → (Addr → Byte) → Prop}
+    {S : Addr} {cs wr : List (Nat × Nat)} (hm : 3 ≤ m) (hSn : S.toNat + 64 = sp) (hS : 7991300 + 1024 ≤ sp)
+    (hc : calls m = cs) (hF : Fits (regsAt m) cs) (hspec : spec m = wrSpec wr) (hD : ∀ k, (spec k).Dep)
+    (hT : ∀ k, ∀ x ∈ (spec k).wr, ∀ y ∈ tabs, x.2 ≤ y.1 ∨ y.2 ≤ x.1) (hB : ∀ k, ∀ x ∈ (spec k).wr, x.2 ≤ sp - 1024)
+    (hXw : ∀ k, 3 ≤ k → k < m → ∀ x ∈ (spec k).wr, ∀ y ∈ wr, x.2 ≤ y.1 ∨ y.2 ≤ x.1)
+    (hout : ∀ a : Addr, ¬ InR wr a.toNat → ¬ (sp - 1024 ≤ a.toNat ∧ a.toNat < sp + 8) → U a = W a)
+    (hO : ChainOut S cs U U') (hG : G m W → G (m + 1) U') (hJ : Jg V sp spec G m W) :
+    Jg V sp spec G (m + 1) U' := by
+  obtain ⟨hJc, hG'⟩ := hJ
+  refine ⟨Jc_kchain hm hSn hS hc hF hD hT hB (fun k hk hkm => ?_) hJc (fun a ha => hout a ?_) hO ?_, hG hG'⟩
   · rw [hspec]
     exact hXw k hk hkm
   · rw [hspec] at ha
@@ -264,5 +313,108 @@ theorem callsK_runs {J : Nat → (Addr → Byte) → Prop} {sp : Addr} {tg : Nat
       have := tabs_in ht
       omega
     exact CallOut.out_t (by rw [n]; omega) hn (by rw [n]; omega) cs V V' hO
+
+theorem add8_n (x : Addr) (h : x.toNat + 8 < 2 ^ 64) : (x + 8).toNat = x.toNat + 8 := by bv_omega
+
+/-- A constructor `endbr64; sub rsp, 8; call f`, then the registrar calls `cs` (`CallsAt`, the last a `jmp`), the
+`m`-th function `__libc_csu_init` calls, `f` a function with its own proof (`ImplementsCall` of `fnK`), is a function
+as `Csu.csu_ok` asks: at `f`'s entry (`rsp = sp - 80`) the call is one its contract covers (`hY`, what it may store
+apart from the frame's bytes and the arrays), and `J (m + 1)` holds of the bytes after the calls (`hJ`: by the
+postcondition, the bytes it does not store into and those of the pushed return address as before, then
+`ChainOut`). -/
+theorem callK_chain_runs {J : Nat → (Addr → Byte) → Prop} {sp : Addr} {tg : Nat → Addr} {a₀ a₁ a₂ : BitVec 64}
+    {m j rel : Nat} {cs : List (Nat × Nat)} {e : Addr} {code : List Byte} {k : Nat} {W R : State → List Rgn}
+    {pre : State → Prop} {post : State → State → Prop}
+    (c : Seg prof F Wl L s₀ o) (hC : Csu.Env F Wl L sp tg) (hin : CodeIn L sti_at sti)
+    (htg : csuTg m = sti_at.add j) (hpro : BlkA prof sti sti_at j (j + 8) [Op.nop, Op.sub 64 4 (.i 8)])
+    (hd : Dec prof.feat sti (j + 8) (FV7z.mk .call 64 [.rel rel] 5)) (hj : j + 8 < sti.length)
+    (htgt : sti_at.add (j + 8 + 5) + BitVec.ofNat 64 rel = e) (hinE : CodeIn L e code) (h0 : 0 < code.length)
+    (himp : ImplementsCall prof e L (fnK k W R pre post))
+    (hdf : s₀.cpu.rflags.df = false) (hx87 : s₀.cpu.x87.full = 0) (hal : (sp - 64#64 + 8).toNat % 16 = 0)
+    (hcs : CallsAt prof (j + 8 + 5) cs)
+    (hR : ∀ r, RegSpec prof F Wl L s₀ o (regAt r) (regCnt r) (regTab r) (regMax r))
+    (hinR : ∀ r, CodeIn L (regAt r) (regCode r))
+    (hst : ∀ i < 8, Foot Wl (Addr.add (sp - 64#64 - 8 - 8) i)) (hhi : 7991300 + 80 ≤ sp.toNat)
+    (hY : ∀ Y : State, KeptW Wl s₀ Y → Y.cpu.gpr.rsp = sp - 64#64 - 8 - 8 →
+      Sub F ((fnK k W R pre post).footprint L Y) ∧ (∀ y, Foot (ws k W Y) y → Foot Wl y) ∧ pre Y ∧
+        (∀ i < 8, ¬ Foot (W Y) (Addr.add Y.cpu.gpr.rsp i)) ∧ Apart [frame Y k] (W Y ++ R Y) ∧
+        ∀ y, Foot (ws k W Y) y → ¬ (sp.toNat - 64 ≤ y.toNat ∧ y.toNat < sp.toNat + 8) ∧
+          ¬ (7829400 ≤ y.toNat ∧ y.toNat < 7830224))
+    (hJ : ∀ (Y Z : State) (V V₁ V' : Addr → Byte), Y.cpu.gpr.rsp = sp - 64#64 - 8 - 8 → J m V → post Y Z →
+      (∀ y : Addr, ¬ Foot (ws k W Y) y → ¬ (sp.toNat - 80 ≤ y.toNat ∧ y.toNat < sp.toNat - 72) → V₁ y = V y) →
+      Agree F Z.proc.mm.mem V₁ → ChainOut (sp - 64#64) cs V₁ V' → J (m + 1) V') :
+    Csu.Runs prof F Wl L s₀ o gev gP gE J sp a₀ a₁ a₂ m (csuTg m) := by
+  intro X t V j₂ hK hA hI hr hsp _ hj₂ hra k'
+  have hs0 := hC.s0
+  have hs8 := hC.s8
+  have n := Csu.sp_n hs0
+  have e8 : (sp - 64#64 - 8).toNat = sp.toNat - 72 := by rw [sub8 _ (by rw [n]; omega), n]
+  have e16 : (sp - 64#64 - 8 - 8).toNat = sp.toNat - 80 := by rw [sub16 _ (by rw [n]; omega), n]
+  have hal' : (sp.toNat - 56) % 16 = 0 := by
+    have h := hal
+    rw [add8_n _ (by rw [n]; omega), n] at h
+    omega
+  have hlS : ∀ i < 8, Foot F.data (Addr.add (sp - 64#64) i) := fun i hi => c.hws _ (hC.st i (by omega))
+  have hS8 : (sp - 64#64).toNat + 8 ≤ 2 ^ 64 := by rw [n]; omega
+  have hcan : (sti_at.add (j + 8 + 5)).canonical prof.feat.la57 = true := by
+    have hl := sti_length
+    have e0 : sti_at.toNat = 0x41c140 := rfl
+    refine canonical_low ?_ _
+    rw [toNat_add_of_fits (n := 4629) (by omega) (by rw [e0]; omega), e0]
+    omega
+  refine pro hpro c hin hK hA (hr.trans htg) fun X₁ t₁ hK₁ hA₁ hr₁ hs₁ hc₁ => ?_
+  rw [hsp] at hs₁
+  have hYs : ∀ Y : State, Y.cpu.gpr = X₁.cpu.gpr.set 4 (X₁.cpu.gpr.rsp - 8) →
+      Y.cpu.gpr.rsp = sp - 64#64 - 8 - 8 := fun Y hgY =>
+    (show Y.cpu.gpr.rsp = X₁.cpu.gpr.rsp - 8 by rw [hgY]; rfl).trans (by rw [hs₁])
+  refine c.s_callK hK₁ hA₁ hin hj hr₁ hd hinE h0 htgt (by rw [hs₁]; exact hst) (by rw [hs₁, e16]; omega) himp
+    hdf hx87 hcan (by rw [hs₁, e8]; omega) (fun Y hKY _ _ hgY => ?_) fun Y Z t' hKY hgY hKZ hZm hret hpost => ?_
+  · obtain ⟨h1, h2, h3, h4, h5, -⟩ := hY Y hKY (hYs Y hgY)
+    exact ⟨h1, h2, h3, h4, h5⟩
+  have hYs' := hYs Y hgY
+  obtain ⟨-, -, -, -, -, hout⟩ := hY Y hKY hYs'
+  obtain ⟨hrZ, hp, hsZ, -⟩ := hret
+  rw [hs₁] at hZm
+  classical
+  let V₁ : Addr → Byte := fun y => if Foot (ws k W Y) y then Z.proc.mm.mem.readByte y
+    else Vst V (sp - 64#64 - 8 - 8) (toBytesLE (sti_at.add (j + 8 + 5)) 8) y
+  have hV₁ : ∀ y, ¬ Foot (ws k W Y) y →
+      V₁ y = Vst V (sp - 64#64 - 8 - 8) (toBytesLE (sti_at.add (j + 8 + 5)) 8) y := fun y h => if_neg h
+  have hAZ : Agree F Z.proc.mm.mem V₁ := fun y hy => by
+    by_cases h : Foot (ws k W Y) y
+    · exact (if_pos h).symm
+    · rw [hV₁ y h]
+      exact hZm y hy h
+  have hvs : (sp - 64#64 - 8 - 8).toNat + (toBytesLE (sti_at.add (j + 8 + 5)) 8).length ≤ 2 ^ 64 := by
+    rw [e16, toBytesLE_length]
+    omega
+  have hVV : ∀ y : Addr, ¬ Foot (ws k W Y) y → ¬ (sp.toNat - 80 ≤ y.toNat ∧ y.toNat < sp.toNat - 72) →
+      V₁ y = V y := fun y h1 h2 => by
+    rw [hV₁ y h1, Tun.Vst_out V _ _ y hvs (by rw [e16, toBytesLE_length]; omega)]
+  have hZs : Z.cpu.gpr.rsp = sp - 64#64 - 8 := by
+    rw [hsZ, hYs']
+    exact BitVec.sub_add_cancel _ _
+  have hra₁ : rdq(V₁, sp - 64#64) = Csu.csu_at.add j₂ :=
+    (rdq_eq hS8 fun a h1 h2 => hVV a (fun hw => (hout a hw).1 ⟨by rw [n] at h1; omega, by rw [n] at h2; omega⟩)
+      (by rw [n] at h1; omega)).trans hra
+  have eg : ∀ r : Reg, RegName.gpr r ∈ sysv.preserved → Z.cpu.gpr.get r = Y.cpu.gpr.get r := fun r hr => hp _ hr
+  have hcY : Cs X₁.cpu.gpr Z.cpu.gpr := by
+    have g3 := eg 3 (by simp [sysv])
+    have g5 := eg 5 (by simp [sysv])
+    have g12 := eg 12 (by simp [sysv])
+    have g13 := eg 13 (by simp [sysv])
+    have g14 := eg 14 (by simp [sysv])
+    have g15 := eg 15 (by simp [sysv])
+    rw [hgY] at g3 g5 g12 g13 g14 g15
+    exact ⟨g3, g5, g12, g13, g14, g15⟩
+  refine chain_go c hin hR hinR hst hlS (by rw [n]; omega) hS8 hC.code hj₂ cs (j + 8 + 5) Z t' V₁ hcs hKZ hAZ
+    hrZ hZs hra₁ fun V' Z' t'' hKZ' hAZ' hO hrZ' hsZ' hcZ' => ?_
+  refine k' Z' t'' V' hKZ' hAZ' (hJ Y Z V V₁ V' hYs' hI hpost hVV hAZ hO) (fun a ha => ?_) (fun a ha => ?_) hrZ' ?_
+  · rw [ChainOut.out (by rw [n]; omega) (.inr (by omega)) (.inr (by rw [n]; omega)) cs V₁ V' hO]
+    exact hVV a (fun hw => (hout a hw).1 ⟨by omega, ha.2⟩) (by omega)
+  · rw [ChainOut.out (by rw [n]; omega) (.inl (by omega)) (.inl (by rw [n]; omega)) cs V₁ V' hO]
+    exact hVV a (fun hw => (hout a hw).2 ha) (by omega)
+  · obtain ⟨c2, c3, c4, c5, c6, c7⟩ := Cs.trans hc₁ (Cs.trans hcY hcZ')
+    exact ⟨by rw [hsZ', hsp]; rfl, c2, c3, c4, c5, c6, c7⟩
 
 end FV7z.Ctor
