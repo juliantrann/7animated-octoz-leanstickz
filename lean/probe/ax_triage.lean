@@ -1,6 +1,6 @@
-import FV7z.Mal.Heap
-import FV7z.Mal.Ok
-import FV7z.Onw
+import FV7z.Ctor.Cx102
 open FV7z
-#print axioms FV7z.Mal.mal_hp
-#print axioms FV7z.Mal.nb_ex
+#print axioms FV7z.Ctor.c102_runs
+#print axioms FV7z.Ctor.c102_jg
+#print axioms FV7z.Ctor.tg102
+#print axioms FV7z.Ctor.v3376
