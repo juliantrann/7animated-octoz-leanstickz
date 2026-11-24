@@ -13,6 +13,7 @@ Ten constructors call registrars one after the other: `sub rsp, 8; lea rdi, [rip
 -/
 namespace FV7z.Ctor
 open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn
+open FV7z.Sga (vs)
 
 theorem sub8 (x : Addr) (h : 8 ≤ x.toNat) : (x - 8).toNat = x.toNat - 8 := by bv_omega
 
@@ -50,9 +51,9 @@ theorem lea_call {j A rel r : Nat} (hb : BlkA prof sti sti_at j (j + 7) [Op.mov 
         (Vst V (X.cpu.gpr.rsp - 8) (toBytesLE (sti_at.add (j + 7 + 5)) 8)) V' →
       Z.cpu.rip = sti_at.add (j + 7 + 5) → Kp X.cpu.gpr Z.cpu.gpr → GoG prof L o gev gP gE Z t') :
     GoG prof L o gev gP gE X t := by
-  refine (Sp.blkA hb).run c hin (fun j' g' _ V' => j' = j + 7 ∧ g' = wr X.cpu.gpr 7 (BitVec.ofNat 64 A) ∧ V' = V)
+  refine (Sp.blkA hb).run c hin (fun j' g' _ V' => j' = j + 7 ∧ g' = wr X.cpu.gpr 7 (BitVec.ofNat 64 A) ∧ V = V')
     hK hA hrip ?_ ?_
-  · intro fl _ fl' _
+  · intro fl _
     exact ⟨rfl, rfl, rfl⟩
   rintro j' g fl V' ⟨rfl, rfl, rfl⟩ Y t₁ hKY hAY hrY hgY -
   have hsp : Y.cpu.gpr.rsp = X.cpu.gpr.rsp := by rw [hgY]; rfl
@@ -95,7 +96,7 @@ theorem pro {j : Nat} (hb : BlkA prof sti sti_at j (j + 8) [Op.nop, Op.sub 64 4 
       Y.cpu.gpr.rsp = X.cpu.gpr.rsp - 8 → Cs X.cpu.gpr Y.cpu.gpr → GoG prof L o gev gP gE Y t') :
     GoG prof L o gev gP gE X t := by
   refine (Sp.blkA hb).run c hin (fun j' g' _ V' => j' = j + 8 ∧
-    g' = wr X.cpu.gpr 4 (subR (gv X.cpu.gpr 64 4) (BitVec.ofNat 64 8)) ∧ V' = V) hK hA hrip ?_ ?_
+    g' = wr X.cpu.gpr 4 (subR (gv X.cpu.gpr 64 4) (BitVec.ofNat 64 8)) ∧ V = V') hK hA hrip ?_ ?_
   · intro fl _ fl' _
     exact ⟨rfl, rfl, rfl⟩
   rintro j' g fl V' ⟨rfl, rfl, rfl⟩ Y t₁ hKY hAY hrY hgY -
@@ -123,7 +124,7 @@ theorem lea_add_reg {p A rel r : Nat}
     GoG prof L o gev gP gE X t := by
   refine (Sp.blkA hb).run c hin (fun j' g' _ V' => j' = p + 11 ∧
     g' = wr (wr X.cpu.gpr 7 (BitVec.ofNat 64 A)) 4
-      (addR (gv (wr X.cpu.gpr 7 (BitVec.ofNat 64 A)) 64 4) (BitVec.ofNat 64 8)) ∧ V' = V) hK hA hrip ?_ ?_
+      (addR (gv (wr X.cpu.gpr 7 (BitVec.ofNat 64 A)) 64 4) (BitVec.ofNat 64 8)) ∧ V = V') hK hA hrip ?_ ?_
   · intro fl _ fl' _
     exact ⟨rfl, rfl, rfl⟩
   rintro j' g fl V' ⟨rfl, rfl, rfl⟩ Y t₁ hKY hAY hrY hgY -
