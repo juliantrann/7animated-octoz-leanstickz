@@ -16,7 +16,7 @@ open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn
 theorem reg_max : ∀ r, regMax r ≤ 72
   | 0 => by decide
   | 1 => by decide
-  | _ + 2 => by decide
+  | _ + 2 => (by decide : 32 ≤ 72)
 
 /-- The registrars' tables with their counts are apart. -/
 theorem reg_apart : ∀ r < 3, ∀ r' < 3, r ≠ r' →
