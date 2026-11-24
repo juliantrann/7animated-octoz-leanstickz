@@ -1,10 +1,10 @@
-import FV7z.Ctor.Inv
+import FV7z.Ctor.Ret
 /-!
 # `AtCtor` from the constructors not yet done (PLAN.md §M, constructors)
 
-`at_ctor`: `AtCtor` with the invariant `Jc`, the 64 constructors of `leas` (`lea_runs`) and the 8 of `chains`
-(`chain_runs`) done, from the `Csu.Runs` of the others for `Jc`, a table `spec` of their stores, and the run from
-`main` on.
+`at_ctor`: `AtCtor` with the invariant `Jc`, the constructors done (`Done`: the 64 of `leas` by `lea_runs`, the 8
+of `chains` by `chain_runs`, `csuTg 12` by `runs12`), from the `Csu.Runs` of the others for `Jc`, a table `spec` of
+their stores, and the run from `main` on.
 -/
 namespace FV7z.Ctor
 open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn FV7z.Start
@@ -12,20 +12,25 @@ open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn FV7z.Start
 variable {prof : Profile} {F : Footprint} {Wl : List Rgn} {L : List (Addr × List Byte)} {s₀ : State} {o : Oracle}
   {gev : List Event} {gP : State → Nat → List Event → Prop} {gE : Outcome → List Event → Prop}
 
-theorem add8_toNat (x : Addr) (h : (x - 8#64).toNat + 8 ≤ 2 ^ 64) : x.toNat = (x - 8#64).toNat + 8 := by bv_omega
+/-- The constructors done here. -/
+def Done (m : Nat) : Prop := (∃ x ∈ leas, x.1 = m) ∨ (∃ x ∈ chains, x.1 = m) ∨ m = 12
 
-/-- `AtCtor` from the constructors that are neither in `leas` nor in `chains`. -/
+theorem add8_toNat (b : Addr) (h : b.toNat + 392 ≤ 2 ^ 64) : (b + 112#64).toNat = (b + 112#64 - 8#64).toNat + 8 := by
+  bv_omega
+
+/-- `AtCtor` from the constructors not `Done`. -/
 theorem at_ctor {K : Ctx} {fb : Addr} {V : Addr → Byte} {spec : Nat → CSpec} (c : Seg prof F Wl L s₀ o)
     (hC : Csu.Env F Wl L (K.bp + 112#64 - 8#64) csuTg) (hin : CodeIn L sti_at sti)
     (hR : ∀ r, RegSpec prof F Wl L s₀ o (regAt r) (regCnt r) (regTab r) (regMax r))
-    (hinR : ∀ r, CodeIn L (regAt r) (regCode r))
+    (hinR : ∀ r, CodeIn L (regAt r) (regCode r)) (hinN : CodeIn L nret_at nret)
     (hst : ∀ i < 8, Foot Wl (Addr.add (K.bp + 112#64 - 8#64 - 64#64 - 8 - 8) i))
-    (hS : 8013728 + 136 ≤ (K.bp + 112#64 - 8#64).toNat) (hz : ∀ r < 3, rdd(V, regCnt r) = 0)
+    (hbp : K.bp.toNat + 392 ≤ 2 ^ 64) (hS : 8013728 + 136 ≤ (K.bp + 112#64 - 8#64).toNat)
+    (hz : ∀ r < 3, rdd(V, regCnt r) = 0)
     (hD : ∀ k, (spec k).Dep) (hT : ∀ k, ∀ x ∈ (spec k).wr, x.2 ≤ 7981024 ∨ 7991300 ≤ x.1)
     (hB : ∀ k, ∀ x ∈ (spec k).wr, x.2 ≤ (K.bp + 112#64 - 8#64).toNat - 136)
     (hE : ∀ k, ∀ x ∈ (spec k).wr, x.2 ≤ 8013720 ∨ 8013728 ≤ x.1)
-    (hs : ∀ m W, ((∃ x ∈ leas, x.1 = m) ∨ ∃ x ∈ chains, x.1 = m) → (spec m).post W)
-    (hO : ∀ m, 3 ≤ m → m < 104 → (¬ ∃ x ∈ leas, x.1 = m) → (¬ ∃ x ∈ chains, x.1 = m) →
+    (hs : ∀ m W, Done m → (spec m).post W)
+    (hO : ∀ m, 3 ≤ m → m < 104 → ¬ Done m →
       Csu.Runs prof F Wl L s₀ o gev gP gE (Jc V (K.bp + 112#64 - 8#64).toNat spec) (K.bp + 112#64 - 8#64)
         (((K.argc.setWidth 64).setWidth 32).setWidth 64) K.argv rdq(V, 8013720#64) m (csuTg m))
     (hmain : ∀ (Vm V₁ : Addr → Byte) (Z' : State) (t' : Nat), KeptW Wl s₀ Z' → Agree F Z'.proc.mm.mem Vm →
@@ -41,7 +46,7 @@ theorem at_ctor {K : Ctx} {fb : Addr} {V : Addr → Byte} {spec : Nat → CSpec}
   have hs0 := hC.s0
   have hs8 := hC.s8
   have n := Csu.sp_n hs0
-  have e8 := add8_toNat (K.bp + 112#64) hs8
+  have e8 := add8_toNat K.bp hbp
   refine ⟨Jc V (K.bp + 112#64 - 8#64).toNat spec, fun m _ W W' hJ ho => Jc_out (by omega) hD hB hJ ho,
     fun W W' _ hN hd => Jc_three (by omega) hz hN hd, fun m hm hm' => ?_,
     fun W hJ a ha => Jc_end hS hB hE hJ a (by rw [e8] at ha; omega), hmain⟩
@@ -66,7 +71,12 @@ theorem at_ctor {K : Ctx} {fb : Addr} {V : Addr → Byte} {spec : Nat → CSpec}
     dsimp only at hc htg hpro hcs
     rw [hc] at hF
     refine chain_runs c hC hin htg hpro hcs hR hinR hst (by omega) fun W W' hJ hO' => ?_
-    exact Jc_chain hm (by rw [n]; omega) (by omega) hc hF hD hT hB (fun W => hs _ W (.inr ⟨_, hx, rfl⟩)) hJ hO'
-  exact hO m hm hm' h1 h2
+    exact Jc_chain hm (by rw [n]; omega) (by omega) hc hF hD hT hB (fun W => hs _ W (.inr (.inl ⟨_, hx, rfl⟩))) hJ hO'
+  by_cases h3 : m = 12
+  · subst h3
+    exact runs12 c hC hin hinN fun W hJ =>
+      Jc_nop (S := K.bp + 112#64 - 8#64 - 64#64) hm (by rw [n]; omega) (by omega) calls12 hD hT hB
+        (fun W => hs _ W (.inr (.inr rfl))) hJ
+  exact hO m hm hm' fun h => h.elim h1 fun h => h.elim h2 h3
 
 end FV7z.Ctor
