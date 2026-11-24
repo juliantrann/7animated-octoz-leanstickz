@@ -164,6 +164,7 @@ def load(cfg):
     return g
 
 
+VDSO = 0x7F0000000000  # above every address of the file and its heap
 QEMU = re.compile(r"\[[0-9a-f]+/([0-9a-f]+)/")
 
 
@@ -181,13 +182,24 @@ def check(cfg, path):
     stk = []
     seen = {}
     prev = None
-    n = 0
+    n = vd = 0
     for q in trace(path):
         n += 1
         if prev is None:
             prev = q
             continue
         p, ok = prev, False
+        if p >= VDSO:
+            # inside the vDSO (the real kernel maps one; the theorems assume none, `vdso = false`, and glibc then
+            # makes the system call): an opaque function, left at the return address its call pushed
+            if stk and q == stk[-1]:
+                stk.pop()
+            elif q < VDSO:
+                print(f"step {n}: {p:x} -> {q:x} leaves the vDSO but not to the return address")
+                sys.exit(1)
+            prev = q
+            vd += 1
+            continue
         for e in g.get(p, []):
             k = e.split(":")
             if k[0] in ("go", "jt") and int(k[1], 16) == q:
@@ -209,7 +221,7 @@ def check(cfg, path):
                   f" ghost stack top {stk[-1]:x}" if stk else f"step {n}: {p:x} -> {q:x} follows no edge")
             sys.exit(1)
         prev = q
-    print(f"ok: {n} steps follow the graph; ghost stack depth {len(stk)} at the end")
+    print(f"ok: {n} steps follow the graph ({vd} in the vDSO); ghost stack depth {len(stk)} at the end")
     print(f"indirect sites seen: {len(seen)}, targets {sum(map(len, seen.values()))}")
     for p in sorted(seen)[:20]:
         print(f"  {p:x}: {' '.join(f'{q:x}' for q in sorted(seen[p]))}")
