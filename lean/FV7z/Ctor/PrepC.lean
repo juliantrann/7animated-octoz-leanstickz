@@ -185,13 +185,14 @@ theorem lo92 {sp : Addr} (hs : 7991300 + 1024 ≤ sp.toNat) {s : State}
     show 0x6d8040 + 256 ≤ sp.toNat - 1024
     omega
 
-/-- `csuTg 92` for `Jg`, its spec `wrSpec (wrOf w92)`. -/
+/-- `csuTg 92` for `Jg`, its spec `wrSpec (wrOf w92)`; its frame above `AesGenTables`' tables (`hS92`). -/
 theorem runs92_jg {V : Addr → Byte} {spec : Nat → CSpec} {G : Nat → (Addr → Byte) → Prop} {sp : Addr}
     {tg : Nat → Addr} {a₀ a₁ a₂ : BitVec 64} (c : Seg prof F Wl L s₀ o) (hC : Csu.Env F Wl L sp tg)
     (hP : PEnv prof F Wl s₀ sp) (hin : CodeIn L sti_at sti) (hinE : CodeIn L 0x41e540 aesg)
     (hinA : CodeIn L 0x4242f0 aes) (hinV : CodeIn L 0x4245a0 vaes) (hinX : CodeIn L 0x424440 avx)
     (hinM : CodeIn L 0x4242b0 maxf) (hinC : CodeIn L 0x424290 cpuid) (hWl : ∀ y, Foot w92 y → Foot Wl y)
     (hSb : ∀ y, Foot [canary s₀, ⟨0x6d8040, 256⟩] y → Foot F.writes y ∨ Foot F.reads y)
+    (hS92 : 0x7a7e1c + 200 ≤ sp.toNat)
     (hspec : spec 92 = wrSpec (wrOf w92)) (hD : ∀ k, (spec k).Dep)
     (hB : ∀ k, ∀ x ∈ (spec k).wr, x.2 ≤ sp.toNat - 1024)
     (hXw : ∀ k, 3 ≤ k → k < 92 → ∀ x ∈ (spec k).wr, ∀ y ∈ wrOf w92, x.2 ≤ y.1 ∨ y.2 ≤ x.1)
@@ -199,7 +200,7 @@ theorem runs92_jg {V : Addr → Byte} {spec : Nat → CSpec} {G : Nat → (Addr 
       (∀ y : Addr, ¬ (sp.toNat - 1024 ≤ y.toNat ∧ y.toNat < sp.toNat + 8) → ¬ Foot w92 y → W' y = W y) →
       Agree F Z.proc.mm.mem W' → G 92 W → G 93 W') :
     Csu.Runs prof F Wl L s₀ o gev gP gE (Jg V sp.toNat spec G) sp a₀ a₁ a₂ 92 (csuTg 92) :=
-  jmp_runs (j := 2608) (rel := 6599) c hin hinE (by decide) tg92
+  jmp_runs (j := 2608) (rel := 6599) c hin hinE (by decide +kernel) tg92
     (Dec.shift (j := 2608) (k := 0) (jp92_0 _) vp92 (by decide))
     (Dec.shift (j := 2608) (k := 4) (jp92_4 _) vp92 (by decide))
     (sti_lt (by decide)) (by decide)
@@ -209,6 +210,7 @@ theorem runs92_jg {V : Addr → Byte} {spec : Nat → CSpec} {G : Nat → (Addr 
       (fun Y hs hr => by
         obtain ⟨h1, h2⟩ := hP.can' hs hr
         have := hP.hi
+        have := hS92
         unfold agPre
         omega)
       (by decide) calls92 hspec hD wrT92 wrA92 hB hXw (fun _ Z W W' hp => hG Z W W' hp))
