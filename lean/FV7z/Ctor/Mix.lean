@@ -348,8 +348,8 @@ theorem callK_chain_runs {J : Nat → (Addr → Byte) → Prop} {sp : Addr} {tg 
   have hs0 := hC.s0
   have hs8 := hC.s8
   have n := Csu.sp_n hs0
-  have e8 : (sp - 64#64 - 8).toNat = sp.toNat - 72 := by rw [sub8 _ (by rw [n]; omega), n]
-  have e16 : (sp - 64#64 - 8 - 8).toNat = sp.toNat - 80 := by rw [sub16 _ (by rw [n]; omega), n]
+  have e8 : (sp - 64#64 - 8).toNat = sp.toNat - 72 := by rw [sub8 _ (by rw [n]; omega), n]; omega
+  have e16 : (sp - 64#64 - 8 - 8).toNat = sp.toNat - 80 := by rw [sub16 _ (by rw [n]; omega), n]; omega
   have hal' : (sp.toNat - 56) % 16 = 0 := by
     have h := hal
     rw [add8_n _ (by rw [n]; omega), n] at h
