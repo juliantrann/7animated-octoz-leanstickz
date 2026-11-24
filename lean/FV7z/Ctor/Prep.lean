@@ -206,7 +206,8 @@ theorem prepK_core {J : Nat → (Addr → Byte) → Prop} {sp : Addr}
       · exact .inr ⟨h, hWlo.foot h⟩
   refine implK_runs c hC himp hdf hx87 hal (fun Y U hK _ _ _ hsp _ => ?_)
     (fun Y Z U U' hsp hI hpost hU' hAZ => ?_)
-  · obtain ⟨hsub, hwl, hap⟩ := prepK_sub (pre := pre) (post := post) c (by rw [n]; omega)
+  · obtain ⟨hsub, hwl, hap⟩ := prepK_sub (D := sp - 64#64) (pre := pre) (post := post) c
+      (by rw [n]; omega)
       (by rw [n]; omega) hstk hWl hRl hRF hWlo hK hsp
     refine ⟨hsub, hwl, hpre Y hK.seg hsp, hap, fun y hy => ?_⟩
     rcases hws Y y hsp hy with h | h
