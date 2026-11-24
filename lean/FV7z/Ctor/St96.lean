@@ -139,7 +139,7 @@ theorem runs96_jg {V : Addr → Byte} {spec : Nat → CSpec} {G : Nat → (Addr 
     {tg : Nat → Addr} {a₀ a₁ a₂ : BitVec 64} (c : Seg prof F Wl L s₀ o) (hC : Csu.Env F Wl L sp tg)
     (hin : CodeIn L sti_at sti) (hl : ∀ i < 8, Foot F.data (Addr.add 7940472#64 i))
     (hw8 : ∀ i < 8, Foot Wl (Addr.add 7990608#64 i)) (hw4 : ∀ i < 4, Foot Wl (Addr.add 7990616#64 i))
-    (hsp : 7990620 + 136 ≤ sp.toNat) (hspec : spec 96 = stSpec st96 V wr96) (hD : ∀ k, (spec k).Dep)
+    (hsp : 7990620 + 1024 ≤ sp.toNat) (hspec : spec 96 = stSpec st96 V wr96) (hD : ∀ k, (spec k).Dep)
     (hXw : ∀ k, 3 ≤ k → k < 96 → ∀ x ∈ (spec k).wr, ∀ y ∈ wr96, x.2 ≤ y.1 ∨ y.2 ≤ x.1)
     (hXr : ∀ k, 3 ≤ k → k < 96 → ∀ x ∈ (spec k).wr, ∀ y ∈ rd96, x.2 ≤ y.1 ∨ y.2 ≤ x.1)
     (hG : ∀ W, G 96 W → G 97 (st96 W)) :

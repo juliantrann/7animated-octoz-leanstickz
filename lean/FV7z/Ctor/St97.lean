@@ -174,7 +174,7 @@ theorem runs97_jg {V : Addr → Byte} {spec : Nat → CSpec} {G : Nat → (Addr 
     {tg : Nat → Addr} {a₀ a₁ a₂ : BitVec 64} (c : Seg prof F Wl L s₀ o) (hC : Csu.Env F Wl L sp tg)
     (hin : CodeIn L sti_at sti) (hl1 : ∀ i < 8, Foot F.data (Addr.add 7940464#64 i))
     (hl2 : ∀ i < 8, Foot F.data (Addr.add 7940456#64 i)) (hw : ∀ i < 32, Foot Wl (Addr.add 7990624#64 i))
-    (hsp : 7990656 + 136 ≤ sp.toNat) (hspec : spec 97 = stSpec st97 V wr97) (hD : ∀ k, (spec k).Dep)
+    (hsp : 7990656 + 1024 ≤ sp.toNat) (hspec : spec 97 = stSpec st97 V wr97) (hD : ∀ k, (spec k).Dep)
     (hXw : ∀ k, 3 ≤ k → k < 97 → ∀ x ∈ (spec k).wr, ∀ y ∈ wr97, x.2 ≤ y.1 ∨ y.2 ≤ x.1)
     (hXr : ∀ k, 3 ≤ k → k < 97 → ∀ x ∈ (spec k).wr, ∀ y ∈ rd97, x.2 ≤ y.1 ∨ y.2 ≤ x.1)
     (hG : ∀ W, G 97 W → G 98 (st97 W)) :

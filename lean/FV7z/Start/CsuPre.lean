@@ -248,7 +248,7 @@ theorem runs_congr {prof : Profile} {F : Footprint} {Wl : List Rgn} {L : List (A
     k Z t' V' hKZ hAZ ((congrFun h1 V').mpr hI')
 
 set_option maxHeartbeats 800000 in
-/-- `Runs` for `elision_init`, `_init` and `frame_dummy` with `preI V₀ Vo (sp - 136) (sp + 8) J`, when the bytes of
+/-- `Runs` for `elision_init`, `_init` and `frame_dummy` with `preI V₀ Vo (sp - 1024) (sp + 8) J`, when the bytes of
 `PreB` are the file's in `V₀`, and `J 3` holds after `frame_dummy`. -/
 theorem pre_runs {prof : Profile} {F : Footprint} {Wl : List Rgn} {L : List (Addr × List Byte)} {s₀ : State}
     {o : Oracle} {gev : List Event} {gP : State → Nat → List Event → Prop} {gE : Outcome → List Event → Prop}
@@ -257,9 +257,9 @@ theorem pre_runs {prof : Profile} {F : Footprint} {Wl : List Rgn} {L : List (Add
     (hE0 : Eli.Env F Wl L fb (sp - 64#64)) (hEi : CodeIn L Ini.ini_at Ini.ini) (hE2 : Fdm.Env F Wl L fb (sp - 64#64))
     (hI : Img V₀) (hB : Bss V₀)
     (hF : ∀ y : Addr, 0x777000 ≤ y.toNat → y.toNat < 0x792000 → Foot F.data y)
-    (hJ3 : ∀ V V', Agr V₀ V → Near (sp.toNat - 136) (sp.toNat + 8) Vo V →
+    (hJ3 : ∀ V V', Agr V₀ V → Near (sp.toNat - 1024) (sp.toNat + 8) Vo V →
       Rfi.Dat (sp.toNat - 64 - 72) (sp.toNat - 64) 7947808#64 7388000#64 V V' → J 3 V') :
-    ∀ m < 3, Csu.Runs prof F Wl L s₀ o gev gP gE (preI V₀ Vo (sp.toNat - 136) (sp.toNat + 8) J) sp a₀ a₁ a₂ m
+    ∀ m < 3, Csu.Runs prof F Wl L s₀ o gev gP gE (preI V₀ Vo (sp.toNat - 1024) (sp.toNat + 8) J) sp a₀ a₁ a₂ m
       (csuTg m) := by
   have n := Csu.sp_n hC.s0
   have hs2 := hE2.s0

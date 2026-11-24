@@ -26,14 +26,14 @@ variable {prof : Profile} {L : List (Addr × List Byte)} {s₀ : State} {o : Ora
 /-- What the run from `0x61344a` to `main` asks beyond the bytes, for the bytes `V` there and the TCB at `fb`, once
 the first three calls of `__libc_csu_init` are proved: an invariant `J` of the 101 constructors (`Csu.Runs` for
 `csuTg 3` to `csuTg 103`), which `frame_dummy`'s stores start on bytes with `PreB` as the image's and the bytes
-outside the stack's `[sp - 136, sp + 8)` and `elision_init`'s word as `V` (`Near`), and the run from `main` on. -/
+outside the stack's `[sp - 1024, sp + 8)` and `elision_init`'s word as `V` (`Near`), and the run from `main` on. -/
 def AtCtor (prof : Profile) (F : Footprint) (Wl : List Rgn) (L : List (Addr × List Byte)) (s₀ : State) (o : Oracle)
     (gev : List Event) (gP : State → Nat → List Event → Prop) (gE : Outcome → List Event → Prop) (K : Ctx)
     (fb : Addr) (V : Addr → Byte) : Prop :=
   ∃ J : Nat → (Addr → Byte) → Prop,
     (∀ m, 3 ≤ m → ∀ V V', J m V →
       FV7z.Raf.Out ((K.bp + 112#64 - 8#64).toNat - 64) (K.bp + 112#64 - 8#64).toNat V V' → J m V') ∧
-    (∀ W W', Agr K.V0 W → Near ((K.bp + 112#64 - 8#64).toNat - 136) ((K.bp + 112#64 - 8#64).toNat + 8) V W →
+    (∀ W W', Agr K.V0 W → Near ((K.bp + 112#64 - 8#64).toNat - 1024) ((K.bp + 112#64 - 8#64).toNat + 8) V W →
       Rfi.Dat ((K.bp + 112#64 - 8#64).toNat - 64 - 72) ((K.bp + 112#64 - 8#64).toNat - 64) 7947808#64 7388000#64 W W' →
       J 3 W') ∧
     (∀ m, 3 ≤ m → m < 104 → Csu.Runs prof F Wl L s₀ o gev gP gE J (K.bp + 112#64 - 8#64)
@@ -61,7 +61,7 @@ theorem at_main_of_ctor {K : Ctx} {fb : Addr} {V : Addr → Byte} (c : Seg prof 
   have hs2 := hE2.s0
   have hs8 := hC.s8
   rw [n] at hs2
-  refine ⟨preI K.V0 V ((K.bp + 112#64 - 8#64).toNat - 136) ((K.bp + 112#64 - 8#64).toNat + 8) J,
+  refine ⟨preI K.V0 V ((K.bp + 112#64 - 8#64).toNat - 1024) ((K.bp + 112#64 - 8#64).toNat + 8) J,
     fun m V V' hm ho => ?_, (preI_lt (by decide)).2 ⟨fun a ha => ?_, fun a h1 _ => ?_⟩, fun m hm => ?_,
     fun V' h => hJ104 V' ((preI_ge (by decide)).1 h),
     fun Vm V₁ Z' t' h1 h2 h104 => k Vm V₁ Z' t' h1 h2 ((preI_ge (by decide)).1 h104)⟩

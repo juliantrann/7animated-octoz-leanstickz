@@ -149,7 +149,7 @@ theorem runs61 {J : Nat → (Addr → Byte) → Prop} {sp : Addr} {tg : Nat → 
 /-- `csuTg 61` for `Jg`, its spec `stSpec st61 V wr61`. -/
 theorem runs61_jg {V : Addr → Byte} {spec : Nat → CSpec} {G : Nat → (Addr → Byte) → Prop} {sp : Addr}
     {tg : Nat → Addr} {a₀ a₁ a₂ : BitVec 64} (c : Seg prof F Wl L s₀ o) (hC : Csu.Env F Wl L sp tg)
-    (hin : CodeIn L sti_at sti) (hw : ∀ i < 1, Foot Wl (Addr.add 7938480#64 i)) (hsp : 7991300 + 136 ≤ sp.toNat)
+    (hin : CodeIn L sti_at sti) (hw : ∀ i < 1, Foot Wl (Addr.add 7938480#64 i)) (hsp : 7991300 + 1024 ≤ sp.toNat)
     (hR : RegSpec prof F Wl L s₀ o (regAt 0) (regCnt 0) (regTab 0) (regMax 0))
     (hinR : CodeIn L (regAt 0) (regCode 0)) (hspec : spec 61 = stSpec st61 V wr61) (hD : ∀ k, (spec k).Dep)
     (hT : ∀ k, ∀ x ∈ (spec k).wr, ∀ y ∈ tabs, x.2 ≤ y.1 ∨ y.2 ≤ x.1)
