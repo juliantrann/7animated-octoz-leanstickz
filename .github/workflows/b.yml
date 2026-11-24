@@ -91,3 +91,35 @@ jobs:
             build/7zzs.featneed.tsv
             build/7zzs.dispatch.txt
             build/ci-logs
+  seed:
+    # After a green run: this build as release `seed`, which a branch without a cache starts from (actions/prep).
+    needs: [j0, checks]
+    if: ${{ success() }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/prep
+        with:
+          key: ${{ needs.j0.outputs.key }}
+      - name: pack and publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mv ~/.elan/toolchains .elan-toolchains
+          d=$RUNNER_TEMP/seed
+          mkdir -p "$d"
+          # the paths of the cache (actions/prep), those that exist
+          tar -c $(ls -d .elan-toolchains refs upstream release/26.06 lean/.lake build/rebuild 2>/dev/null) |
+            zstd -T0 -3 |
+            split -b 1900M -d -a 2 - "$d/seed.tar.zst."
+          ls -l "$d"
+          gh release view seed >/dev/null 2>&1 ||
+            gh release create seed --target "$GITHUB_SHA" --title seed --notes 'build cache' --latest=false
+          for a in $(gh release view seed --json assets -q '.assets[].name'); do
+            gh release delete-asset seed "$a" -y
+          done
+          gh release upload seed "$d"/seed.tar.zst.*
+          echo "seed: $(du -sh "$d" | cut -f1) from $GITHUB_SHA" >> "$GITHUB_STEP_SUMMARY"
