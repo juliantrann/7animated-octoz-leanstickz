@@ -15,7 +15,8 @@ import FV7z.Ctor.St97
 import FV7z.Im6.Run
 import FV7z.Start.ToMain
 open FV7z FV7z.Start
-#print axioms FV7z.Im6.secN
-#print axioms FV7z.Mnx.mal_next
-#print axioms FV7z.Mnx.vc_52l
-#print axioms FV7z.Mnx.vc_114m
+#print axioms FV7z.Mal.mal_hp
+#print axioms FV7z.Mal.nb_ex
+#print axioms FV7z.Onw.onw_hp
+#print axioms FV7z.Mal.at_ok
+#print axioms FV7z.Ctor.c98_jg

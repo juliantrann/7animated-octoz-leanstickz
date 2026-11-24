@@ -73,7 +73,7 @@ theorem at_hp {prof : Profile} {F : Footprint} {Wl : List Rgn} {L : List (Addr �
   intro s₀ gev gP gE X t V e' code j k c hfs hK hA hrip hH hn hhi hR hsw hin₂ hj hra kc
   have e : 1072 * (k + 1) + 16 = 1072 * k + 16 + 1072 := by omega
   rw [e] at hH
-  exact mal_hp c hfs hin hinI hK hA hrip hH hn hhi hR hsw hin₂ hj hra kc
+  exact mal_hp c hfs hin hinI hK hA hrip hH (.inl ⟨hn, rfl⟩) hhi hR hsw hin₂ hj hra kc
 
 /-- The bytes of `Kf fb` are kept by `malloc` (`AtH`'s frame: below the chunk, apart from `main_arena.top`). -/
 theorem kn_kept {fb : Addr} {V V₂ : Addr → Byte} {p : Addr} (hp : 8032256 + 16 ≤ p.toNat)
