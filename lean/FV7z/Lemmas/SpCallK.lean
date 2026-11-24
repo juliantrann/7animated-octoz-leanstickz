@@ -60,7 +60,7 @@ theorem SpAt.callK (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e' code) {j rel 
     have e := Vst_self (toBytesLE (e'.add (j + len)) 8) V (X.cpu.gpr.rsp - 8) (by rw [toBytesLE_length]; exact hov)
     rw [toBytesLE_length] at e
     rw [e]
-    exact ofBytesLE_toBytesLE rfl _
+    exact ofBytesLE_toBytesLE (w := 64) (n := 8) rfl _
   exact k _ _ _ _ (hR _ _ (hgY ▸ hRZ) Z.cpu.rflags) Z t₂ hKZ hAZ (hrZ.trans hra) rfl rfl
 
 /-- The registers after `cpuid` on CPU `cpu`. -/
