@@ -9,8 +9,8 @@ import FV7z.Ctor.StSpec
 - `cfg_reg_runs`: code with loops at `e.add j` up to such a `jmp` at `jl` is a function as `Csu.csu_ok` asks: by
   `Seg.cfg` over its cut points (as `cfg_runs`) up to the `jmp` with `rdi = A`, the registers a call keeps and bytes
   `R V₀`, then `jmp_reg`; the invariant goes from `m` to `m + 1` through `R` and then `RegOut`.
-- `Jc_wreg`, `jg_wreg`: such a constructor (its `calls` the one call of `tails`) keeps `Jc` and `Jg` when it stores
-  only to its `wr` before the call.
+- `Jc_wreg`, `jg_wreg`, `jg_streg`: such a constructor (its `calls` the one call of `tails`) keeps `Jc` and `Jg`
+  when it stores only to its `wr` before the call (`wrSpec`, or `stSpec` for stores whose bytes the spec gives).
 -/
 namespace FV7z.Ctor
 open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn FV7z.Start
@@ -101,13 +101,14 @@ theorem cfg_reg_runs {J : Nat → (Addr → Byte) → Prop} {sp : Addr} {tg : Na
     exact ⟨by rw [b1, k1], b2.trans k2, b3.trans k3, b4.trans k4, b5.trans k5, b6.trans k6, b7.trans k7⟩
 
 /-- A constructor whose one registrar call `(r, A)` (its `calls`, with room) comes after stores only to its `wr`
-(apart from the tables and from the `wr` of the constructors before it) keeps `Jc`, its `post` true of any bytes. -/
+(apart from the tables and from the `wr` of the constructors before it) keeps `Jc` when its `post` holds after. -/
 theorem Jc_wreg {V W W' W'' : Addr → Byte} {sp m r A : Nat} {spec : Nat → CSpec} (hm : 3 ≤ m)
     (hc : calls m = [(r, A)]) (hF : Fits (regsAt m) [(r, A)]) (hD : ∀ k, (spec k).Dep)
     (hT : ∀ k, ∀ x ∈ (spec k).wr, ∀ y ∈ tabs, x.2 ≤ y.1 ∨ y.2 ≤ x.1)
     (hX : ∀ k, 3 ≤ k → k < m → ∀ x ∈ (spec k).wr, ∀ y ∈ (spec m).wr, x.2 ≤ y.1 ∨ y.2 ≤ x.1)
-    (hs : ∀ W, (spec m).post W) (hJ : Jc V sp spec m W) (hW : ∀ a : Addr, ¬ InR (spec m).wr a.toNat → W' a = W a)
-    (hO : RegOut (regCnt r) (regTab r) (regMax r) (BitVec.ofNat 64 A) W' W'') : Jc V sp spec (m + 1) W'' := by
+    (hJ : Jc V sp spec m W) (hW : ∀ a : Addr, ¬ InR (spec m).wr a.toNat → W' a = W a)
+    (hO : RegOut (regCnt r) (regTab r) (regMax r) (BitVec.ofNat 64 A) W' W'') (hp : (spec m).post W'') :
+    Jc V sp spec (m + 1) W'' := by
   obtain ⟨hR, hK, hP⟩ := hJ
   have hO' : ChainOut 8000000#64 [(r, A)] W' W'' := hO
   have hi := reg_in r
@@ -121,7 +122,7 @@ theorem Jc_wreg {V W W' W'' : Addr → Byte} {sp m r A : Nat} {spec : Nat → CS
       rw [RegOut.out hO (reg_lay r) (not_tab r (InR_sep ha (hT k)))]
       exact hW a (InR_sep ha (hX k hk hlt))
     · obtain rfl : k = m := by omega
-      exact hs W''
+      exact hp
 
 /-- `Jg` from `m` to `m + 1` for `spec m = wrSpec wr`, when the constructor stores only to `wr` (apart from the
 tables and the stores before) and then makes its one registrar call `(r, A)`. -/
@@ -134,12 +135,43 @@ theorem jg_wreg {V W W' W'' : Addr → Byte} {sp m r A : Nat} {spec : Nat → CS
     (hO : RegOut (regCnt r) (regTab r) (regMax r) (BitVec.ofNat 64 A) W' W'') (hG : G m W → G (m + 1) W'')
     (hJ : Jg V sp spec G m W) : Jg V sp spec G (m + 1) W'' := by
   obtain ⟨hJc, hG'⟩ := hJ
-  refine ⟨Jc_wreg hm hc hF hD hT (fun k hk hkm => ?_) (fun W => ?_) hJc (fun a ha => hout a ?_) hO, hG hG'⟩
+  refine ⟨Jc_wreg hm hc hF hD hT (fun k hk hkm => ?_) hJc (fun a ha => hout a ?_) hO ?_, hG hG'⟩
   · rw [hspec]
     exact hXw k hk hkm
-  · rw [hspec]
-    trivial
   · rw [hspec] at ha
     exact ha
+  · rw [hspec]
+    trivial
+
+/-- `Jg` from `m` to `m + 1` for `spec m = stSpec st V wr`, when the constructor stores as `st` (keeping the bytes
+outside `wr`, its bytes in `wr` those of `st V` when the bytes of `rd` are `V`'s, `rd` outside the stack, `Pre` and
+the tables) and then makes its one registrar call `(r, A)`; `wr` and `rd` apart from the stores before. -/
+theorem jg_streg {V W W'' : Addr → Byte} {sp m r A : Nat} {spec : Nat → CSpec} {G : Nat → (Addr → Byte) → Prop}
+    {st : (Addr → Byte) → Addr → Byte} {wr rd : List (Nat × Nat)} (hm : 3 ≤ m) (hc : calls m = [(r, A)])
+    (hF : Fits (regsAt m) [(r, A)]) (hspec : spec m = stSpec st V wr) (hD : ∀ k, (spec k).Dep)
+    (hT : ∀ k, ∀ x ∈ (spec k).wr, ∀ y ∈ tabs, x.2 ≤ y.1 ∨ y.2 ≤ x.1)
+    (hXw : ∀ k, 3 ≤ k → k < m → ∀ x ∈ (spec k).wr, ∀ y ∈ wr, x.2 ≤ y.1 ∨ y.2 ≤ x.1)
+    (hXr : ∀ k, 3 ≤ k → k < m → ∀ x ∈ (spec k).wr, ∀ y ∈ rd, x.2 ≤ y.1 ∨ y.2 ≤ x.1)
+    (hR : ∀ n, InR rd n → ¬ (sp - 136 ≤ n ∧ n < sp + 8) ∧ ¬ Pre n ∧ ¬ (7981024 ≤ n ∧ n < 7991300))
+    (hst : ∀ W, (∀ a : Addr, InR rd a.toNat → W a = V a) → ∀ a : Addr, InR wr a.toNat → st W a = st V a)
+    (hout : ∀ W (a : Addr), ¬ InR wr a.toNat → st W a = W a)
+    (hO : RegOut (regCnt r) (regTab r) (regMax r) (BitVec.ofNat 64 A) (st W) W'') (hG : G m W → G (m + 1) W'')
+    (hJ : Jg V sp spec G m W) : Jg V sp spec G (m + 1) W'' := by
+  obtain ⟨hJc, hG'⟩ := hJ
+  have hrd : ∀ a : Addr, InR rd a.toNat → W a = V a := fun a ha =>
+    hJc.2.1 a (hR _ ha).1 (hR _ ha).2.1 (hR _ ha).2.2 fun k hk hkm hin => InR_sep hin (hXr k hk hkm) ha
+  have hTm : ∀ x ∈ wr, ∀ y ∈ tabs, x.2 ≤ y.1 ∨ y.2 ≤ x.1 := by
+    have h := hT m
+    rw [hspec] at h
+    exact h
+  refine ⟨Jc_wreg hm hc hF hD hT (fun k hk hkm => ?_) hJc (fun a ha => hout W a ?_) hO ?_, hG hG'⟩
+  · rw [hspec]
+    exact hXw k hk hkm
+  · rw [hspec] at ha
+    exact ha
+  · rw [hspec]
+    intro a ha
+    rw [RegOut.out hO (reg_lay r) (not_tab r (InR_sep ha hTm))]
+    exact hst W hrd a ha
 
 end FV7z.Ctor

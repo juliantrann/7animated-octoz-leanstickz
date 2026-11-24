@@ -97,9 +97,9 @@ structure CSpec where
 def CSpec.Dep (c : CSpec) : Prop :=
   ∀ W W' : Addr → Byte, (∀ a : Addr, InR c.wr a.toNat → W' a = W a) → c.post W → c.post W'
 
-/-- The constructors `m` that fill a table and then end with `jmp R` to the registrar `r` with `rdi = A`:
+/-- The constructors `m` that store elsewhere first and then end with `jmp R` to the registrar `r` with `rdi = A`:
 `(m, r, A)`. -/
-def tails : List (Nat × Nat × Nat) := [(37, 0, 7840512), (55, 0, 7851136)]
+def tails : List (Nat × Nat × Nat) := [(37, 0, 7840512), (55, 0, 7851136), (61, 0, 7852416)]
 
 /-- The registrar calls of the constructor `m`: its call of `leas`, its calls of `chains`, its call of `tails`, none
 for the others yet. -/
