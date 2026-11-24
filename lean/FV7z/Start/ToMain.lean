@@ -203,7 +203,7 @@ theorem launch_to_main {l : Launch} {n : Nat} {o : Oracle} {L : List (Addr × Li
   obtain ⟨f768, f760, f40, f720⟩ := brk_offs hb'
   have hR : RetAt W W₂ Z (brkOf l) Z₁.cpu.gpr :=
     ⟨hN, hb1', hb', by omega, by omega, by omega, by omega, by rw [hz1, n4]; omega⟩
-  have hgr : Z₁.cpu.gpr.rsp.toNat ≤ (entG Z).rsp.toNat + 8 := by rw [hz1, n4]; omega
+  have hgr : Z₁.cpu.gpr.rsp.toNat ≤ (entG Z).rsp.toNat + 8 := by rw [hz1, n4, n1]; omega
   -- `q = rsp` at `0x613434`, `__libc_start_main`'s frame at `K.bp`
   have tq : ((ctxOf l.prof l.s₀ l.args c).bp + 112#64).toNat = (stackLayout l.args l.prof.linux c).sp - 288 := by
     rw [← hRg.1]
