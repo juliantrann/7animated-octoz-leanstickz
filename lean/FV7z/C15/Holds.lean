@@ -216,7 +216,7 @@ theorem runs15 {J : Nat → (Addr → Byte) → Prop} {sp : Addr} {tg : Nat → 
     (hinE : CodeIn L c15_at c15) (hw : ∀ i < 24576, Foot Wl (Addr.add 7956416#64 i))
     (hsp : 7980992 + 64 ≤ sp.toNat) (hJ : ∀ V V', J 15 V → Out V V' → J 16 V') :
     Csu.Runs prof F Wl L s₀ o gev gP gE J sp a₀ a₁ a₂ 15 (csuTg 15) :=
-  jmp_runs (j := 224) (rel := 162887) c hin hinE (by decide) tg15
+  jmp_runs (j := 224) (rel := 162887) c hin hinE (lt_len (by decide)) tg15
     (Dec.shift (j := 224) (k := 0) (c224_0 _) v224 (by decide))
     (Dec.shift (j := 224) (k := 4) (c224_4 _) v224 (by decide))
     (sti_lt (by decide)) (by decide) (runsF c hC hinE hw hsp hJ)
