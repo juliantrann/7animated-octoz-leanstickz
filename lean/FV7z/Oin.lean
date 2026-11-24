@@ -185,7 +185,8 @@ theorem vc (hw : ∀ i < 40, Foot Wl (Addr.add 7990568#64 i)) (g₀ : Gprs) (V�
   · simp only [Wt, ↓reduceIte]
     refine vc_0 hdi hw _ fun g' f' V' ha hd hK hO => Or.inl ⟨16, by decide, Or.inr ⟨rfl, ?_, ?_, ?_, hd, hK, hO⟩⟩
     all_goals (rw [ha]; decide)
-  · show W_48 _ _ _ _ _ _
+  · have e : Wt 48 = W_48 := by unfold Wt; rw [if_neg (by decide), if_pos rfl]
+    rw [e]
     apply vc_48 h1 h2 hdx hK hO hw
     · intro g' f' V' h1' h2' hlt hd hK' hO'
       exact Or.inl ⟨_, hlt, Or.inr ⟨rfl, h1', h2', rfl, hd, hK', hO'⟩⟩
