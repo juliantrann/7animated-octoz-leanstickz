@@ -1135,3 +1135,92 @@ index 3dd255b..580d702 100644
  
  /-- The x87 state `XRSTOR` or `FXRSTOR` loads from the legacy region `rd` (SDM Vol. 1, 13.5.1;
  `FXRSTOR`): `FCW`, `FSW` with `ES` and `B` computed from the loaded words (`x87Summary`), `FOP`,
+diff --git a/lakefile.toml b/lakefile.toml
+index c05e649..916f3f2 100644
+--- a/lakefile.toml
++++ b/lakefile.toml
+@@ -16,8 +16,82 @@ relaxedAutoImplicit = false
+ # The model and the vocabulary, and the loader, compiled (the loader hashes and reads a binary natively).
+ [[lean_lib]]
+ name = "ZellicX86"
+-roots = []
+-globs = ["ZellicX86.Spec.+", "ZellicX86.Load.+"]
++# FV_7zip G1: the modules of the globs ZellicX86.Spec.+ and ZellicX86.Load.+, listed sorted. Lake lists a glob in
++# readDir order, which differs between machines; the shared lib's link order, and so its hash, then changed on a
++# runner restoring another's cache, and every module importing ZellicX86 was rebuilt (FV_7zip CI, kt103).
++roots = [
++  "ZellicX86.Load.FileImage",
++  "ZellicX86.Spec.Decode.Decode",
++  "ZellicX86.Spec.Decode.Maps",
++  "ZellicX86.Spec.Decode.Types",
++  "ZellicX86.Spec.Elf",
++  "ZellicX86.Spec.ExecCode",
++  "ZellicX86.Spec.Executable",
++  "ZellicX86.Spec.Float",
++  "ZellicX86.Spec.Lib.C.Errno",
++  "ZellicX86.Spec.Lib.C.Malloc",
++  "ZellicX86.Spec.Lib.C.Runtime",
++  "ZellicX86.Spec.Lib.C.Start",
++  "ZellicX86.Spec.Lib.C.Stdio",
++  "ZellicX86.Spec.Lib.C.String",
++  "ZellicX86.Spec.Lib.C.Unistd",
++  "ZellicX86.Spec.Lib.Linked",
++  "ZellicX86.Spec.Lib.Text",
++  "ZellicX86.Spec.Linux",
++  "ZellicX86.Spec.Linux.Account",
++  "ZellicX86.Spec.Linux.Basic",
++  "ZellicX86.Spec.Linux.Boot",
++  "ZellicX86.Spec.Linux.Env",
++  "ZellicX86.Spec.Linux.Exec",
++  "ZellicX86.Spec.Linux.Signal",
++  "ZellicX86.Spec.Linux.Stack",
++  "ZellicX86.Spec.Linux.Syscall",
++  "ZellicX86.Spec.Linux.Syscall.Common",
++  "ZellicX86.Spec.Linux.Syscall.Fd",
++  "ZellicX86.Spec.Linux.Syscall.Files",
++  "ZellicX86.Spec.Linux.Syscall.Futex",
++  "ZellicX86.Spec.Linux.Syscall.Info",
++  "ZellicX86.Spec.Linux.Syscall.Mm",
++  "ZellicX86.Spec.Linux.Syscall.Prctl",
++  "ZellicX86.Spec.Linux.Syscall.Random",
++  "ZellicX86.Spec.Linux.Syscall.ReadWrite",
++  "ZellicX86.Spec.Linux.Syscall.Signal",
++  "ZellicX86.Spec.Linux.Syscall.Task",
++  "ZellicX86.Spec.Linux.Syscall.Time",
++  "ZellicX86.Spec.Linux.Syscall.Writev",
++  "ZellicX86.Spec.Linux.Vsyscall",
++  "ZellicX86.Spec.Machine",
++  "ZellicX86.Spec.Memory",
++  "ZellicX86.Spec.MemoryEval",
++  "ZellicX86.Spec.Object",
++  "ZellicX86.Spec.Outcome",
++  "ZellicX86.Spec.Process",
++  "ZellicX86.Spec.Profile",
++  "ZellicX86.Spec.Request",
++  "ZellicX86.Spec.Semantics",
++  "ZellicX86.Spec.Semantics.Arith",
++  "ZellicX86.Spec.Semantics.Avx",
++  "ZellicX86.Spec.Semantics.Basic",
++  "ZellicX86.Spec.Semantics.Bits",
++  "ZellicX86.Spec.Semantics.Control",
++  "ZellicX86.Spec.Semantics.Lock",
++  "ZellicX86.Spec.Semantics.Move",
++  "ZellicX86.Spec.Semantics.Sse",
++  "ZellicX86.Spec.Semantics.SseFloat",
++  "ZellicX86.Spec.Semantics.String",
++  "ZellicX86.Spec.Semantics.X87",
++  "ZellicX86.Spec.Semantics.Xsave",
++  "ZellicX86.Spec.Signal",
++  "ZellicX86.Spec.State",
++  "ZellicX86.Spec.Statement",
++  "ZellicX86.Spec.Statement.Linux",
++  "ZellicX86.Spec.Statement.Memory",
++  "ZellicX86.Spec.Step",
++  "ZellicX86.Spec.Vdso",
++  "ZellicX86.Spec.VdsoImages",
++  "ZellicX86.Spec.Word",
++  "ZellicX86.Spec.Xsave",
++]
+ precompileModules = true
+ 
+ [[lean_lib]]
