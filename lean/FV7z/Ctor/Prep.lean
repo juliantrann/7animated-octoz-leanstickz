@@ -9,8 +9,9 @@ and maybe constant tables (`Rc`), and use a stack frame below the return address
 
 - `wrOf`, `inR_wrOf`, `Lo`: the intervals of a list of regions; regions that end at or below a bound.
 - `Jc_stk`, `jg_wrk`: `Jc_st`, `jg_wr` for a constructor that also stores into the stack's window.
-- `prepK_runs`: a function at `e` with `ImplementsCall` of `fnK k (fun _ => Wc) (canary :: Rc)` is one as
-  `Csu.csu_ok` asks, for `Jg` with the spec `wrSpec (wrOf Wc)`.
+- `prepK_core`: a function at `e` with `ImplementsCall` of `fnK k (fun _ => Wc) (canary :: Rc)` is one as
+  `Csu.csu_ok` asks, for an invariant its postcondition takes from `m` to `m + 1`; `prepK_runs`: for `Jg` with the
+  spec `wrSpec (wrOf Wc)`.
 -/
 namespace FV7z.Ctor
 open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn FV7z.Start
@@ -101,11 +102,12 @@ theorem lo_canary {b : Nat} {s : State} (h : (Addr.add s.cpu.seg.fsBase 40).toNa
     subst hr
     exact h
 
-/-- A function at `e` with its own proof (`ImplementsCall` of `fnK`), writing the globals `Wc` and reading the canary
-and `Rc`, is a function as `Csu.csu_ok` asks for `Jg` with the spec `wrSpec (wrOf Wc)`: its frame of `k` bytes lies in
-the stack's window and in `Wl` (`hstk`), `Wc` in `Wl`, what it reads below the window and in the footprint, and its
-precondition holds at the frame's call (`hpre`). `G` goes from `m` to `m + 1` by the postcondition (`hG`). -/
-theorem prepK_runs {V : Addr → Byte} {spec : Nat → CSpec} {G : Nat → (Addr → Byte) → Prop} {sp : Addr}
+/-- A function at `e` with its own proof (`ImplementsCall` of `fnK`), writing the globals `Wc` (below the window and
+apart from the arrays) and reading the canary and `Rc`, is a function as `Csu.csu_ok` asks: its frame of `k` bytes lies
+in the stack's window and in `Wl` (`hstk`), `Wc` in `Wl`, what it reads below the window and in the footprint, and its
+precondition holds at the frame's call (`hpre`). `J` goes from `m` to `m + 1` by the postcondition and the bytes it
+keeps (`hJ`). -/
+theorem prepK_core {J : Nat → (Addr → Byte) → Prop} {sp : Addr}
     {tg : Nat → Addr} {a₀ a₁ a₂ : BitVec 64} {m : Nat} {e : Addr} {k : Nat} {Wc Rc : List Rgn}
     {pre : State → Prop} {post : State → State → Prop}
     (c : Seg prof F Wl L s₀ o) (hC : Csu.Env F Wl L sp tg)
@@ -116,17 +118,12 @@ theorem prepK_runs {V : Addr → Byte} {spec : Nat → CSpec} {G : Nat → (Addr
     (hWl : ∀ y, Foot Wc y → Foot Wl y) (hRl : Lo (sp.toNat - 1024) (canary s₀ :: Rc))
     (hRF : ∀ y, Foot (canary s₀ :: Rc) y → Foot F.writes y ∨ Foot F.reads y)
     (hpre : ∀ Y : State, Y.cpu.seg = s₀.cpu.seg → Y.cpu.gpr.rsp = sp - 64#64 → pre Y)
-    (hm3 : 3 ≤ m) (hc : calls m = []) (hspec : spec m = wrSpec (wrOf Wc)) (hD : ∀ k, (spec k).Dep)
-    (hT : ∀ x ∈ wrOf Wc, ∀ y ∈ tabs, x.2 ≤ y.1 ∨ y.2 ≤ x.1)
-    (hA : ∀ x ∈ wrOf Wc, x.2 ≤ 7829400 ∨ 7830224 ≤ x.1)
-    (hB : ∀ k, ∀ x ∈ (spec k).wr, x.2 ≤ sp.toNat - 1024)
-    (hXw : ∀ k, 3 ≤ k → k < m → ∀ x ∈ (spec k).wr, ∀ y ∈ wrOf Wc, x.2 ≤ y.1 ∨ y.2 ≤ x.1)
-    (hG : ∀ (Y Z : State) (W W' : Addr → Byte), post Y Z →
+    (hWlo : Lo (sp.toNat - 1024) Wc) (hA : ∀ x ∈ wrOf Wc, x.2 ≤ 7829400 ∨ 7830224 ≤ x.1)
+    (hJ : ∀ (Y Z : State) (W W' : Addr → Byte), post Y Z →
       (∀ y : Addr, ¬ (sp.toNat - 1024 ≤ y.toNat ∧ y.toNat < sp.toNat + 8) → ¬ Foot Wc y → W' y = W y) →
-      Agree F Z.proc.mm.mem W' → G m W → G (m + 1) W') :
-    Csu.Runs prof F Wl L s₀ o gev gP gE (Jg V sp.toNat spec G) sp a₀ a₁ a₂ m e := by
+      Agree F Z.proc.mm.mem W' → J m W → J (m + 1) W') :
+    Csu.Runs prof F Wl L s₀ o gev gP gE J sp a₀ a₁ a₂ m e := by
   have hs8 := hC.s8
-  have hWlo : Lo (sp.toNat - 1024) Wc := lo_wrOf (by have h := hB m; rw [hspec] at h; exact h)
   have hfr : ∀ (Y : State) (y : Addr), Y.cpu.gpr.rsp = sp - 64#64 → (frame Y k).Mem y →
       sp.toNat - 64 - k ≤ y.toNat ∧ y.toNat < sp.toNat - 56 := fun Y y hsp hy => by
     simp only [frame, Rgn.Mem] at hy
@@ -186,13 +183,36 @@ theorem prepK_runs {V : Addr → Byte} {spec : Nat → CSpec} {G : Nat → (Addr
       · exact ⟨by omega, by omega⟩
       · have := InR_apart hA (foot_wrOf h.1)
         exact ⟨by omega, by omega⟩
-  · refine jg_wrk hm3 hc hS hspec hD hT hB hXw (fun a ha hw => hU' a fun hy => ?_)
-      (hG Y Z U U' hpost (fun y hw hy' => hU' y fun hy => ?_) hAZ) hI
-    · rcases hws Y a hsp hy with h | h
-      · exact hw ⟨by omega, by omega⟩
-      · exact ha (foot_wrOf h.1)
-    · rcases hws Y y hsp hy with h | h
-      · exact hw ⟨by omega, by omega⟩
-      · exact hy' h.1
+  · refine hJ Y Z U U' hpost (fun y hw hy' => hU' y fun hy => ?_) hAZ hI
+    rcases hws Y y hsp hy with h | h
+    · exact hw ⟨by omega, by omega⟩
+    · exact hy' h.1
+
+/-- `prepK_core` for `Jg` with the spec `wrSpec (wrOf Wc)`: `G` goes from `m` to `m + 1` by the postcondition
+(`hG`). -/
+theorem prepK_runs {V : Addr → Byte} {spec : Nat → CSpec} {G : Nat → (Addr → Byte) → Prop} {sp : Addr}
+    {tg : Nat → Addr} {a₀ a₁ a₂ : BitVec 64} {m : Nat} {e : Addr} {k : Nat} {Wc Rc : List Rgn}
+    {pre : State → Prop} {post : State → State → Prop}
+    (c : Seg prof F Wl L s₀ o) (hC : Csu.Env F Wl L sp tg)
+    (himp : ImplementsCall prof e L (fnK k (fun _ => Wc) (fun s => canary s :: Rc) pre post))
+    (hdf : s₀.cpu.rflags.df = false) (hx87 : s₀.cpu.x87.full = 0) (hal : (sp - 64#64 + 8).toNat % 16 = 0)
+    (hk : k + 64 ≤ 1024) (hS : 7991300 + 1024 ≤ sp.toNat)
+    (hstk : ∀ y : Addr, sp.toNat - 1024 ≤ y.toNat → y.toNat < sp.toNat - 56 → Foot Wl y)
+    (hWl : ∀ y, Foot Wc y → Foot Wl y) (hRl : Lo (sp.toNat - 1024) (canary s₀ :: Rc))
+    (hRF : ∀ y, Foot (canary s₀ :: Rc) y → Foot F.writes y ∨ Foot F.reads y)
+    (hpre : ∀ Y : State, Y.cpu.seg = s₀.cpu.seg → Y.cpu.gpr.rsp = sp - 64#64 → pre Y)
+    (hm3 : 3 ≤ m) (hc : calls m = []) (hspec : spec m = wrSpec (wrOf Wc)) (hD : ∀ k, (spec k).Dep)
+    (hT : ∀ x ∈ wrOf Wc, ∀ y ∈ tabs, x.2 ≤ y.1 ∨ y.2 ≤ x.1)
+    (hA : ∀ x ∈ wrOf Wc, x.2 ≤ 7829400 ∨ 7830224 ≤ x.1)
+    (hB : ∀ k, ∀ x ∈ (spec k).wr, x.2 ≤ sp.toNat - 1024)
+    (hXw : ∀ k, 3 ≤ k → k < m → ∀ x ∈ (spec k).wr, ∀ y ∈ wrOf Wc, x.2 ≤ y.1 ∨ y.2 ≤ x.1)
+    (hG : ∀ (Y Z : State) (W W' : Addr → Byte), post Y Z →
+      (∀ y : Addr, ¬ (sp.toNat - 1024 ≤ y.toNat ∧ y.toNat < sp.toNat + 8) → ¬ Foot Wc y → W' y = W y) →
+      Agree F Z.proc.mm.mem W' → G m W → G (m + 1) W') :
+    Csu.Runs prof F Wl L s₀ o gev gP gE (Jg V sp.toNat spec G) sp a₀ a₁ a₂ m e :=
+  prepK_core c hC himp hdf hx87 hal hk hS hstk hWl hRl hRF hpre
+    (lo_wrOf (by have h := hB m; rw [hspec] at h; exact h)) hA
+    fun Y Z U U' hpost hU' hAZ hI => jg_wrk hm3 hc hS hspec hD hT hB hXw
+      (fun a ha hw => hU' a hw fun hy => ha (foot_wrOf hy)) (hG Y Z U U' hpost hU' hAZ) hI
 
 end FV7z.Ctor

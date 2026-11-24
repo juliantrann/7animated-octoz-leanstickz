@@ -101,8 +101,13 @@ def CSpec.Dep (c : CSpec) : Prop :=
 `(m, r, A)`. -/
 def tails : List (Nat × Nat × Nat) := [(37, 0, 7840512), (55, 0, 7851136), (61, 0, 7852416)]
 
-/-- The registrar calls of the constructor `m`: its call of `leas`, its calls of `chains`, its call of `tails`, none
-for the others yet. -/
+/-- The constructors `m` whose registrar calls come with a call of a `*Prepare` function (`Mix.lean`): `(m, calls)`.
+`csuTg 67` calls `RegisterArc`, `RegisterHasher`, then jumps to `z7_Black2sp_Prepare`; `csuTg 77` calls
+`z7_SwapBytesPrepare`, then `RegisterCodec` twice. -/
+def mixes : List (Nat × List (Nat × Nat)) := [(67, [(0, 7853824), (2, 7853792)]), (77, [(1, 7856128), (1, 7856168)])]
+
+/-- The registrar calls of the constructor `m`: its call of `leas`, its calls of `chains`, its call of `tails`, its
+calls of `mixes`, none for the others yet. -/
 def calls (m : Nat) : List (Nat × Nat) :=
   match leas.find? (fun x => x.1 == m) with
   | some (_, _, r, A) => [(r, A)]
@@ -112,7 +117,10 @@ def calls (m : Nat) : List (Nat × Nat) :=
     | none =>
       match tails.find? (fun x => x.1 == m) with
       | some (_, r, A) => [(r, A)]
-      | none => []
+      | none =>
+        match mixes.find? (fun x => x.1 == m) with
+        | some (_, cs) => cs
+        | none => []
 
 /-- The lists of the registrars' tables before the constructor `m`. -/
 def regsAt (m : Nat) : Nat → List (BitVec 64) :=
@@ -130,6 +138,8 @@ theorem calls_lea : ∀ x ∈ leas, calls x.1 = [(x.2.2.1, x.2.2.2)] := by decid
 theorem calls_chain : ∀ x ∈ chains, calls x.1 = x.2.2 := by decide +kernel
 
 theorem calls_tail : ∀ x ∈ tails, calls x.1 = [(x.2.1, x.2.2)] := by decide +kernel
+
+theorem calls_mix : ∀ x ∈ mixes, calls x.1 = x.2 := by decide +kernel
 
 /-- `Fits` as a test. -/
 def fitsB : (Nat → List (BitVec 64)) → List (Nat × Nat) → Bool
