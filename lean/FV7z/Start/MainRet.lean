@@ -10,6 +10,7 @@ arrays are the file's (`RetAt.arr`, so the 104 functions are `csuTg`), and `main
 `__libc_start_main`'s frame (`RetAt.cxa_rd`, `Fr`).
 
 - `cxa_main`: from `0x61344a` to `main`, with `rdi`, `rsi` the launch's `argc` and `argv`.
+- `AtMain`, `cxa_main_at`: the invariant of `__libc_csu_init` and the run from `main` as one condition.
 -/
 namespace FV7z.Start
 open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn
@@ -104,5 +105,64 @@ theorem cxa_main {K : Ctx} {V₀ V : Addr → Byte} {ver : BitVec 32} {f0 : BitV
     hlr hft hg0 hg1 hgw hsec hmn hE hpre harr hI hI0 (by rw [ec, ea]; exact hfn) hI104 ?_
   intro Vm V₁ Z' t' hKZ hAZ hI1 hout hra' hrZ hsZ hdi hsi hdx
   exact k Vm V₁ Z' t' hKZ hAZ hI1 hout hra' hrZ hsZ (by rw [hdi, ec]) (by rw [hsi, ea]) hdx
+
+/-- What the run from `0x61344a` to `main` asks beyond the bytes, for the bytes `V` there and the TCB at `fb`: an
+invariant `I` of `__libc_csu_init`'s 104 calls (`Csu.Runs` for `csuTg`), and the run from `main` on. -/
+def AtMain (prof : Profile) (F : Footprint) (Wl : List Rgn) (L : List (Addr × List Byte)) (s₀ : State) (o : Oracle)
+    (gev : List Event) (gP : State → Nat → List Event → Prop) (gE : Outcome → List Event → Prop) (K : Ctx)
+    (fb : Addr) (V : Addr → Byte) : Prop :=
+  ∃ I : Nat → (Addr → Byte) → Prop,
+    (∀ m V V', I m V → FV7z.Raf.Out ((K.bp + 112#64 - 8#64).toNat - 64) (K.bp + 112#64 - 8#64).toNat V V' →
+      I m V') ∧
+    I 0 (Vst V (K.bp + 112#64 - 8#64) (toBytesLE (lsm_at.add 1070) 8)) ∧
+    (∀ m < 104, Csu.Runs prof F Wl L s₀ o gev gP gE I (K.bp + 112#64 - 8#64)
+      (((K.argc.setWidth 64).setWidth 32).setWidth 64) K.argv rdq(V, 8013720#64) m (csuTg m)) ∧
+    (∀ V', I 104 V' → ∀ a : Addr, ((K.bp + 112#64).toNat + 12 ≤ a.toNat ∧ a.toNat < (K.bp + 112#64).toNat + 32 ∨
+      8013720 ≤ a.toNat ∧ a.toNat < 8013728) → V' a = V a) ∧
+    ∀ (Vm V₁ : Addr → Byte) (Z' : State) (t' : Nat), KeptW Wl s₀ Z' → Agree F Z'.proc.mm.mem Vm → I 104 V₁ →
+      (∀ a : Addr, ¬ ((K.bp + 112#64).toNat - 16 ≤ a.toNat ∧ a.toNat < (K.bp + 112#64).toNat) →
+        ¬ ((K.bp + 112#64).toNat + 112 ≤ a.toNat ∧ a.toNat < (K.bp + 112#64).toNat + 208) →
+        ¬ (0x7a84c0 ≤ a.toNat ∧ a.toNat < 0x7a84e8) → ¬ (fb.toNat + 768 ≤ a.toNat ∧ a.toNat < fb.toNat + 776) →
+        Vm a = V₁ a) →
+      rdq(Vm, K.bp + 112#64 - 8#64) = lsm_at.add 1168 →
+      Z'.cpu.rip = K.main → Z'.cpu.gpr.rsp = K.bp + 112#64 - 8#64 → Z'.cpu.gpr.rdi = K.argc.setWidth 64 →
+      Z'.cpu.gpr.rsi = K.argv → Z'.cpu.gpr.rdx = rdq(V, 8013720#64) → GoG prof L o gev gP gE Z' t'
+
+/-- `cxa_main` with `AtMain`. -/
+theorem cxa_main_at {K : Ctx} {V₀ V : Addr → Byte} {ver : BitVec 32} {f0 : BitVec 64} {code₂ : List Byte}
+    (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = B + 2176#64) (hl : CodeIn L lsm_at lsm)
+    (hinD : CodeIn L Dbg.dbg_at Dbg.dbg) (hinP : CodeIn L Sjp.sjp_at Sjp.sjp) (hinS : CodeIn L Ssj.ssj_at Ssj.ssj)
+    (hin₂ : CodeIn L K.main code₂) (h₂ : 0 < code₂.length)
+    (hdf : s₀.cpu.rflags.df = false) (hx87 : s₀.cpu.x87.full = 0)
+    (hK : KeptW Wl s₀ X) (hA : Agree F X.proc.mm.mem V) (hrip : X.cpu.rip = lsm_at.add 1034)
+    (hq : X.cpu.gpr.rsp = K.bp + 112#64) (hbp : X.cpu.gpr.rbp = Csu.csu_at)
+    (hR : Cxa.Reg (Vst (Cti.CtMem (Lif.bcV W₂ g a0 s) (B + 2176#64) a1 a2 a3) (lifSp Z + 152#64)
+      (toBytesLE (lsm_at.add 1034) 8)) V (lifSp Z + 152#64) 8010400#64 8010416#64 0 f0 0 0)
+    (h : RetAt W W₂ Z B g) (hKo : K.Ok) (hIm : Img K.V0) (hM : MB K V₀) (hW : PtrW K W V₀ B ver (fun _ => True))
+    (hez : K.bp.toNat + 112 = (entG Z).rsp.toNat + 8) (hg : g.rsp.toNat ≤ (entG Z).rsp.toNat + 8)
+    (hbB : B.toNat + 2072 + 448 < K.bp.toNat) (hbn : K.bp.toNat + 328 ≤ 2 ^ 64)
+    (hq16 : (K.bp + 112#64).toNat % 16 = 0)
+    (h0 : ∀ i < 4, Foot F.data (Addr.add 7937248#64 i)) (hfe8 : ∀ i < 8, Foot F.data (Addr.add 8013720#64 i))
+    (hfc : ∀ i < 4, Foot F.data ((K.bp + 112#64 + 12#64).add i))
+    (hfa : ∀ i < 8, Foot F.data ((K.bp + 112#64 + 16#64).add i))
+    (hfm : ∀ i < 8, Foot F.data ((K.bp + 112#64 + 24#64).add i))
+    (hra : ∀ i < 8, Foot Wl (Addr.add (K.bp + 112#64 - 8#64) i))
+    (hst : ∀ i < 16, Foot Wl (Addr.add (K.bp + 112#64 - 16#64) i))
+    (hsw : ∀ y : Addr, (K.bp + 112#64).toNat - 8 ≤ y.toNat → y.toNat < (K.bp + 112#64).toNat → Foot F.writes y)
+    (hbw : ∀ i < 96, Foot Wl (Addr.add (K.bp + 112#64 + 112#64) i))
+    (hs0 : ∀ i < 8, Foot Wl ((K.bp + 112#64 + 184#64).add i))
+    (hs1 : ∀ i < 8, Foot Wl ((K.bp + 112#64 + 192#64).add i))
+    (hdw : ∀ y, rDebug.Mem y → Foot F.writes y) (hdW : ∀ y, rDebug.Mem y → Foot Wl y)
+    (hlr : ∀ y, rLoaded.Mem y → Foot F.writes y ∨ Foot F.reads y)
+    (hft : ∀ i < 56, Foot F.data (Addr.add (B + 2176#64) i))
+    (hg0 : ∀ i < 8, Foot F.data ((B + 2176#64 + 768#64).add i))
+    (hg1 : ∀ i < 8, Foot F.data ((B + 2176#64 + 760#64).add i))
+    (hgw : ∀ i < 8, Foot Wl ((B + 2176#64 + 768#64).add i))
+    (hE : Csu.Env F Wl L (K.bp + 112#64 - 8#64) csuTg)
+    (hG : AtMain prof F Wl L s₀ o gev gP gE K (B + 2176#64) V) :
+    GoG prof L o gev gP gE X t := by
+  obtain ⟨I, hI, hI0, hfn, hI104, k⟩ := hG
+  exact cxa_main c hfs hl hinD hinP hinS hin₂ h₂ hdf hx87 hK hA hrip rfl hq hbp hR h hKo hIm hM hW hez hg hbB hbn
+    hq16 h0 hfe8 hfc hfa hfm hra hst hsw hbw hs0 hs1 hdw hdW hlr hft hg0 hg1 hgw hE hI hI0 hfn hI104 k
 
 end FV7z.Start
