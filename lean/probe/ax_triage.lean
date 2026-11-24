@@ -1,6 +1,5 @@
-import FV7z.Oin
-import FV7z.Ctor.Cx95
+import FV7z.Onw
 open FV7z
-#print axioms FV7z.Oin.oin_ok
-#print axioms FV7z.Ctor.c95_runs
-#print axioms FV7z.Ctor.c95_jg
+#print axioms FV7z.Onw.onw_hp
+#print axioms FV7z.Onw.vc_0
+#print axioms FV7z.Onw.onw_pin
