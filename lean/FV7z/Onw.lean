@@ -9,6 +9,8 @@ import FV7z.Lemmas.Wp
 `malloc (rbx)` (`0x633160`, called directly), and back with the block if it is not null (the null way calls the
 new handler: not reached, `malloc` after the first call does not fail on `n ≤ 1024`).
 
+- `Mal.Hp.mvR`: `Hp` for bytes that agree on `GlR` (what it reads), for the callers that store into the
+  `.bss` between the allocator's words (the objects of the constructors).
 - `onw`, `onw_pin`: the 73 bytes, the file's (by the kernel's evaluation of Zellic's ELF reader).
 - `ob`, `blk_0`, `vc_0`: the stretch from `0` to the `call` (the `push`, `test`, `mov`, `cmovne`, `mov`).
 - `onw_hp`: from `0x6029b0` with `n ≠ 0`, `n ≤ 1024` and `Mal.Hp` with a top of at least `m + 1072` bytes:
@@ -19,6 +21,31 @@ new handler: not reached, `malloc` after the first call does not fail on `n ≤ 
 open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn
 open FV7z.Imm (imm imm_at)
 open FV7z.Mnx (mnx mnx_at mnx_length)
+
+namespace FV7z.Mal
+
+/-- `Hp` (a top of at least 16 bytes) for bytes that agree on `GlR hi`: all it reads (`Gl` on `GlR` below the top,
+`main_arena.top`, the top's size word, `system_mem`). -/
+theorem Hp.mvR {F : Footprint} {Wl : List Rgn} {fb : Addr} {hi m : Nat} {V W : Addr → Byte}
+    (h : Hp F Wl fb hi m V) (hm : 16 ≤ m) (hW : ∀ a : Addr, GlR hi a → W a = V a) : Hp F Wl fb hi m W := by
+  obtain ⟨C, T, szw, sm, G, hf1, hf2, hc1, hc2, hT, hTh, hhi, htop, hsz, hsm, hle, hge, hTF⟩ := h
+  have e8 : (T + 8#64).toNat = T.toNat + 8 := by rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega
+  have et : (7940768#64 : Addr).toNat = 7940768 := rfl
+  have es : (7942856#64 : Addr).toNat = 7942856 := rfl
+  refine ⟨C, T, szw, sm, G.mvR (E := T.toNat) hf1 hf2 hc1 hc2 (by omega) fun a ha _ => hW a (by
+      unfold GlR at ha ⊢; omega), hf1, hf2, hc1, hc2, hT, hTh, hhi, ?_, ?_, ?_, hle, hge, hTF⟩
+  · rw [Sbrk.rd_eq (V := V) (x := 7940768#64) (n := 8) (by rw [et]; omega) fun a a1 a2 =>
+      hW a (by unfold GlR; rw [et] at a1 a2; omega)]
+    exact htop
+  · rw [Sbrk.rd_eq (V := V) (x := T + 8#64) (n := 8) (by rw [e8]; omega) fun a a1 a2 =>
+      hW a (by unfold GlR; rw [e8] at a1 a2; omega)]
+    exact hsz
+  · rw [Sbrk.rd_eq (V := V) (x := 7942856#64) (n := 8) (by rw [es]; omega) fun a a1 a2 =>
+      hW a (by unfold GlR; rw [es] at a1 a2; omega)]
+    exact hsm
+
+end FV7z.Mal
+
 namespace FV7z.Onw
 set_option maxRecDepth 100000
 
