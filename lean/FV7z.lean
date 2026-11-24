@@ -15,6 +15,7 @@ import FV7z.Prepare.Swap
 import FV7z.Prepare.Sha
 import FV7z.Prepare.Black2sp
 import FV7z.Prepare.AesGen
+import FV7z.Prepare.K
 import FV7z.CpuFeat.IcfI
 import FV7z.CpuFeat.Irel
 import FV7z.Lemmas.Sp
@@ -423,6 +424,7 @@ import FV7z.Ctor.Chains
 import FV7z.Ctor.ChainRegs
 import FV7z.Ctor.Inv
 import FV7z.Ctor.Ret
+import FV7z.Ctor.Impl
 import FV7z.Ctor.AtCtor
 import FV7z.Ctor.BlkRet
 import FV7z.Ctor.StSpec
