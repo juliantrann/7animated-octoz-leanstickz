@@ -52,14 +52,14 @@ theorem at_ctor {K : Ctx} {fb : Addr} {V : Addr → Byte} {spec : Nat → CSpec}
     (hR : ∀ r, RegSpec prof F Wl L s₀ o (regAt r) (regCnt r) (regTab r) (regMax r))
     (hinR : ∀ r, CodeIn L (regAt r) (regCode r)) (hinN : CodeIn L nret_at nret)
     (hst : ∀ i < 8, Foot Wl (Addr.add (K.bp + 112#64 - 8#64 - 64#64 - 8 - 8) i))
-    (hbp : K.bp.toNat + 392 ≤ 2 ^ 64) (hS : 8013728 + 136 ≤ sp.toNat)
+    (hbp : K.bp.toNat + 392 ≤ 2 ^ 64) (hS : 8013728 + 1024 ≤ sp.toNat)
     (hz : ∀ r < 3, rdd(V, regCnt r) = 0)
     (hD : ∀ k, (spec k).Dep) (hT : ∀ k, ∀ x ∈ (spec k).wr, ∀ y ∈ tabs, x.2 ≤ y.1 ∨ y.2 ≤ x.1)
-    (hB : ∀ k, ∀ x ∈ (spec k).wr, x.2 ≤ sp.toNat - 136)
+    (hB : ∀ k, ∀ x ∈ (spec k).wr, x.2 ≤ sp.toNat - 1024)
     (hE : ∀ k, ∀ x ∈ (spec k).wr, x.2 ≤ 8013720 ∨ 8013728 ≤ x.1)
     (hs : ∀ m W, Done m → (spec m).post W)
     (hGo : ∀ m W W', G m W → Raf.Out (sp.toNat - 64) sp.toNat W W' → G m W')
-    (hG3 : ∀ W W', Near (sp.toNat - 136) (sp.toNat + 8) V W →
+    (hG3 : ∀ W W', Near (sp.toNat - 1024) (sp.toNat + 8) V W →
       Rfi.Dat (sp.toNat - 64 - 72) (sp.toNat - 64) 7947808#64 7388000#64 W W' → G 3 W')
     (hGd : ∀ m W W', Done m → G m W → (∀ a : Addr, (a.toNat < 7981024 ∨ 7991300 ≤ a.toNat) →
       (a.toNat < sp.toNat - 64 - 16 ∨ sp.toNat - 64 - 8 ≤ a.toNat) → W' a = W a) →

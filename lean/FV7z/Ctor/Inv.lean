@@ -11,7 +11,7 @@ there, reading only `wr`):
 
 - the registrars' tables hold `regsAt m`, the lists the registrar calls `calls k` of the constructors before `m`
   add, in order (`RegsIn`);
-- a byte away from the stack's `[sp - 136, sp + 8)`, from the first three functions' stores (`Pre`), from the
+- a byte away from the stack's `[sp - 1024, sp + 8)`, from the first three functions' stores (`Pre`), from the
   tables and from the `wr` of the constructors before `m` is `V`'s;
 - the `post` of each constructor before `m` holds.
 
@@ -162,7 +162,7 @@ theorem pre_of_wr {n : Nat} (h : Rfi.Wr 7947808#64 n) : Pre n := by
 constructors' stores `spec`. -/
 def Jc (V : Addr → Byte) (sp : Nat) (spec : Nat → CSpec) (m : Nat) (W : Addr → Byte) : Prop :=
   RegsIn (regsAt m) W ∧
-  (∀ a : Addr, ¬ (sp - 136 ≤ a.toNat ∧ a.toNat < sp + 8) → ¬ Pre a.toNat →
+  (∀ a : Addr, ¬ (sp - 1024 ≤ a.toNat ∧ a.toNat < sp + 8) → ¬ Pre a.toNat →
     ¬ (7981024 ≤ a.toNat ∧ a.toNat < 7991300) → (∀ k, 3 ≤ k → k < m → ¬ InR (spec k).wr a.toNat) → W a = V a) ∧
   ∀ k, 3 ≤ k → k < m → (spec k).post W
 
@@ -175,7 +175,7 @@ theorem cnt_in (r : Nat) : 7981024 ≤ (regCnt r).toNat ∧ (regCnt r).toNat + 4
   omega
 
 /-- `__libc_csu_init`'s stores to its frame keep `Jc`. -/
-theorem Jc_out (hS : 7991300 + 136 ≤ sp) (hD : ∀ k, (spec k).Dep) (hB : ∀ k, ∀ x ∈ (spec k).wr, x.2 ≤ sp - 136)
+theorem Jc_out (hS : 7991300 + 1024 ≤ sp) (hD : ∀ k, (spec k).Dep) (hB : ∀ k, ∀ x ∈ (spec k).wr, x.2 ≤ sp - 1024)
     (hJ : Jc V sp spec m W) (ho : Raf.Out (sp - 64) sp W W') : Jc V sp spec m W' := by
   obtain ⟨hR, hK, hP⟩ := hJ
   refine ⟨hR.far fun a h4 h5 => ho a (by omega), fun a h1 h2 h3 h4 => (ho a (by omega)).trans (hK a h1 h2 h3 h4),
@@ -184,10 +184,10 @@ theorem Jc_out (hS : 7991300 + 136 ≤ sp) (hD : ∀ k, (spec k).Dep) (hB : ∀ 
   omega
 
 /-- `frame_dummy`'s stores on bytes `Near` `V`, the counts of the registrars' tables 0 in `V`, give `Jc` at `3`. -/
-theorem Jc_three (hS : 8008672 + 136 ≤ sp) (hz : ∀ r < 3, rdd(V, regCnt r) = 0)
-    (hN : Near (sp - 136) (sp + 8) V W) (hd : Rfi.Dat (sp - 64 - 72) (sp - 64) 7947808#64 7388000#64 W W') :
+theorem Jc_three (hS : 8008672 + 1024 ≤ sp) (hz : ∀ r < 3, rdd(V, regCnt r) = 0)
+    (hN : Near (sp - 1024) (sp + 8) V W) (hd : Rfi.Dat (sp - 64 - 72) (sp - 64) 7947808#64 7388000#64 W W') :
     Jc V sp spec 3 W' := by
-  have e : ∀ a : Addr, ¬ (sp - 136 ≤ a.toNat ∧ a.toNat < sp + 8) → ¬ Pre a.toNat → W' a = V a := fun a h1 h2 =>
+  have e : ∀ a : Addr, ¬ (sp - 1024 ≤ a.toNat ∧ a.toNat < sp + 8) → ¬ Pre a.toNat → W' a = V a := fun a h1 h2 =>
     (hd.out a (by omega) fun hw => h2 (pre_of_wr hw)).trans (hN a h1 fun h => h2 (by unfold Pre; omega))
   refine ⟨?_, fun a h1 h2 _ _ => e a h1 h2, fun k hk hkm => absurd hkm (by omega)⟩
   rw [regsAt_three]
@@ -197,9 +197,9 @@ theorem Jc_three (hS : 8008672 + 136 ≤ sp) (hz : ∀ r < 3, rdd(V, regCnt r) =
   have h : rdd(W', regCnt r) = rdd(V, regCnt r) := rdd_eq c4 fun a h4 h5 => e a (by omega) (by unfold Pre; omega)
   refine ⟨by rw [h, hz r hr]; rfl, Nat.zero_le _, fun i hi => absurd hi (Nat.not_lt_zero _)⟩
 
-/-- At `104`, the words above the stack's `[sp - 136, sp + 8)` that `AtCtor` asks to keep, and `__environ`, are
+/-- At `104`, the words above the stack's `[sp - 1024, sp + 8)` that `AtCtor` asks to keep, and `__environ`, are
 `V`'s. -/
-theorem Jc_end (hS : 8013728 + 136 ≤ sp) (hB : ∀ k, ∀ x ∈ (spec k).wr, x.2 ≤ sp - 136)
+theorem Jc_end (hS : 8013728 + 1024 ≤ sp) (hB : ∀ k, ∀ x ∈ (spec k).wr, x.2 ≤ sp - 1024)
     (hE : ∀ k, ∀ x ∈ (spec k).wr, x.2 ≤ 8013720 ∨ 8013728 ≤ x.1) (hJ : Jc V sp spec 104 W) (a : Addr)
     (ha : sp + 20 ≤ a.toNat ∧ a.toNat < sp + 40 ∨ 8013720 ≤ a.toNat ∧ a.toNat < 8013728) : W a = V a := by
   refine hJ.2.1 a (by omega) (by unfold Pre; omega) (by omega) fun k _ _ hw => ?_
@@ -243,9 +243,9 @@ theorem RegsIn.far_t {R : Nat → List (BitVec 64)} {V V' : Addr → Byte} (h : 
 /-- A constructor that only calls registrars, its `calls` with room, `ChainOut` from `S = sp - 64`, and stores
 nothing else, keeps `Jc`. -/
 theorem Jc_chain {S : Addr} {cs : List (Nat × Nat)} (hm : 3 ≤ m) (hSn : S.toNat + 64 = sp)
-    (hS : 7991300 + 136 ≤ sp) (hc : calls m = cs) (hF : Fits (regsAt m) cs) (hD : ∀ k, (spec k).Dep)
+    (hS : 7991300 + 1024 ≤ sp) (hc : calls m = cs) (hF : Fits (regsAt m) cs) (hD : ∀ k, (spec k).Dep)
     (hT : ∀ k, ∀ x ∈ (spec k).wr, ∀ y ∈ tabs, x.2 ≤ y.1 ∨ y.2 ≤ x.1)
-    (hB : ∀ k, ∀ x ∈ (spec k).wr, x.2 ≤ sp - 136)
+    (hB : ∀ k, ∀ x ∈ (spec k).wr, x.2 ≤ sp - 1024)
     (hs : ∀ W, (spec m).post W) (hJ : Jc V sp spec m W) (hO : ChainOut S cs W W') :
     Jc V sp spec (m + 1) W' := by
   obtain ⟨hR, hK, hP⟩ := hJ

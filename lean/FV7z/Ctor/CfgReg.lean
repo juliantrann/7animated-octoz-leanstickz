@@ -152,7 +152,7 @@ theorem jg_streg {V W W'' : Addr → Byte} {sp m r A : Nat} {spec : Nat → CSpe
     (hT : ∀ k, ∀ x ∈ (spec k).wr, ∀ y ∈ tabs, x.2 ≤ y.1 ∨ y.2 ≤ x.1)
     (hXw : ∀ k, 3 ≤ k → k < m → ∀ x ∈ (spec k).wr, ∀ y ∈ wr, x.2 ≤ y.1 ∨ y.2 ≤ x.1)
     (hXr : ∀ k, 3 ≤ k → k < m → ∀ x ∈ (spec k).wr, ∀ y ∈ rd, x.2 ≤ y.1 ∨ y.2 ≤ x.1)
-    (hR : ∀ n, InR rd n → ¬ (sp - 136 ≤ n ∧ n < sp + 8) ∧ ¬ Pre n ∧ ¬ (7981024 ≤ n ∧ n < 7991300))
+    (hR : ∀ n, InR rd n → ¬ (sp - 1024 ≤ n ∧ n < sp + 8) ∧ ¬ Pre n ∧ ¬ (7981024 ≤ n ∧ n < 7991300))
     (hst : ∀ W, (∀ a : Addr, InR rd a.toNat → W a = V a) → ∀ a : Addr, InR wr a.toNat → st W a = st V a)
     (hout : ∀ W (a : Addr), ¬ InR wr a.toNat → st W a = W a)
     (hO : RegOut (regCnt r) (regTab r) (regMax r) (BitVec.ofNat 64 A) (st W) W'') (hG : G m W → G (m + 1) W'')
