@@ -239,6 +239,14 @@ FNS = {
     "c82": dict(grp="C82", code=("Ctor", "sti"), cn="csuTg 82", a=0x41c140, n=4624, entry=1888, pos=True,
                 stops=(2081,), tag="PLAN.md G3, constructors",
                 src="a static constructor of 7-Zip (`objdump -d`)"),
+    # glibc's `init_cacheinfo` (`sysdeps/x86/cacheinfo.c`), `csuTg 103` (0x41cef0, offset 3504 of `sti`): by the
+    # vendor of `init_cpu_features` (0x7a4b48), `handle_intel` or `handle_amd` for the three cache sizes, the
+    # threads that share a cache from `cpuid` leaves 4 and 0xb (loops over subleaves), the stores of `__x86_*`. Stop:
+    # the `ret` (3731). By hand: `cpuid` (`Seg.s_cpuid`), `idiv` (`Seg.s_idiv64`), `bsr` (`Seg.s_bsr32`).
+    "c103": dict(grp="C103", code=("Ctor", "sti"), cn="csuTg 103", a=0x41c140, n=4624, entry=3504, pos=True,
+                 stops=(3731,), calls=True, jt=(0x6f20a4, 39),
+                 hand=(3865, 4079, 4100, 4141, 4197, 4346, 3707, 3981, 4005, 4223, 4380, 4454, 4594),
+                 tag="PLAN.md M, ctor 103", src="glibc's `init_cacheinfo` (`sysdeps/x86/cacheinfo.c`; `objdump -d`)"),
     # 7-Zip's `CCriticalSection` constructor (`C/Threads.c`, `CriticalSection_Init`): `pthread_mutex_init (m, NULL)`
     # for `m` not null. Stops: the tail jump (0xb), `m` null (0x10).
     "mxs": dict(grp="Mxs", cn="CriticalSection_Init", a=0x448b40, n=0x16, pos=True, stops=(0xb, 0x10),
@@ -459,6 +467,8 @@ def operand(o):
     """(kind, Lean term of the operand, fields)"""
     m = re.fullmatch(r'reg \{ w(\d+), n(\d+), ?\}', o)
     if m: return ('r', f"gr {m[1]} {m[2]}", (int(m[1]), int(m[2])))
+    m = re.fullmatch(r'reg \{ w8, n(\d+), high8 := true \}', o)   # `ah`, `ch`, `dh`, `bh`
+    if m: return ('rh', f"gh {m[1]}", (8, int(m[1])))
     m = re.fullmatch(r'xmm (\d+)', o)
     if m: return ('x', f".xmm {m[1]}", (int(m[1]),))
     m = re.fullmatch(r'imm (\d+) (\d+)', o)
@@ -655,6 +665,8 @@ def effect(mn, sz, ol, pc=None):
         return tsrc(8), f"Op.{mn}64 {f[0][1]} {src(ops[1])}", f"OpI.{mn}64 {src(ops[1])}"
     if mn in ('push', 'pop') and ks == ('r',) and sz == 64:
         return terms, f"Op.{mn} {f[0][1]}", f"OpI.{mn}"
+    if mn in ('and', 'test') and ks == ('rh', 'i') and sz == 8:   # FV7z/Lemmas/BlkOps20.lean
+        return terms, f"Op.{mn}h {f[0][1]} {f[1][1]}", f"OpI.{mn}h"
     if mn == 'not' and ks == ('r',) and sz == 32:   # FV7z/Lemmas/BlkOps20.lean
         return terms, f"Op.not32 {f[0][1]}", "OpI.not32"
     if mn == 'cwd' and ks == () and sz == 64:
@@ -855,7 +867,7 @@ end FV7z.{grp}
                          f"theorem j{k}_0 : ∀ feat, Dec feat j{k} 0 (FV7z.mk {mnl(mn)} {sz} [{operand(ol[0])[1]}] {ln}) := "
                          "by dec_rfl\n")
     open(out + "/Pats.lean", "w").write(f"""import FV7z.Lemmas.Sp{"Fs" if FSM else ""}
-{"import FV7z.Lemmas.BlkOps20" + chr(10) if any(k in x for x in P for k in ("Op.not32", "Op.cqo", "Op.imul3")) else ""}{"import FV7z.Lemmas.BlkOps19" + chr(10) if any("Op.vld 0" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps18" + chr(10) if any("Op.zxr16" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps17" + chr(10) if any("Op.mul64" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps16" + chr(10) if any("Op.bt64" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps15" + chr(10) if any("Op.sxr" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps14" + chr(10) if any(k in x for x in P for k in ("Op.zxr", "Op.test 16", "Op.cmpmif fb 8")) else ""}{"import FV7z.Lemmas.BlkOps13" + chr(10) if any("Op.cmpmif" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps12" + chr(10) if any(k in x for x in P for k in ("Op.cmpmr", "Op.testmi")) else ""}{"import FV7z.Lemmas.BlkOps11" + chr(10) if any(k in x for x in P for k in ("Op.rol64", "Op.ror64")) else ""}{"import FV7z.Lemmas.BlkOps10" + chr(10) if any("Op.cmpm 16" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps9" + chr(10) if any("Op.cmpma" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps8" + chr(10) if any(k in x for x in P for k in ("Op.vla", "Op.vsa", "Op.addma", "Op.cmpmia 8", "Op.stia 8")) else ""}{"import FV7z.Lemmas.BlkOps7" + chr(10) if any(k in x for x in P for k in ("Op.vl", "Op.vs", "Op.cdqe")) else ""}{"import FV7z.Lemmas.BlkOps6" + chr(10) if any(k in x for x in P for k in ("Op.stf8", "Op.stfi", "Op.xormf")) else ""}{("import FV7z.Lemmas.BlkOps5" if any("Op.ldsxb" in x for x in P) else
+{"import FV7z.Lemmas.BlkOps20" + chr(10) if any(k in x for x in P for k in ("Op.not32", "Op.cqo", "Op.imul3", "Op.andh", "Op.testh")) else ""}{"import FV7z.Lemmas.BlkOps19" + chr(10) if any("Op.vld 0" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps18" + chr(10) if any("Op.zxr16" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps17" + chr(10) if any("Op.mul64" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps16" + chr(10) if any("Op.bt64" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps15" + chr(10) if any("Op.sxr" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps14" + chr(10) if any(k in x for x in P for k in ("Op.zxr", "Op.test 16", "Op.cmpmif fb 8")) else ""}{"import FV7z.Lemmas.BlkOps13" + chr(10) if any("Op.cmpmif" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps12" + chr(10) if any(k in x for x in P for k in ("Op.cmpmr", "Op.testmi")) else ""}{"import FV7z.Lemmas.BlkOps11" + chr(10) if any(k in x for x in P for k in ("Op.rol64", "Op.ror64")) else ""}{"import FV7z.Lemmas.BlkOps10" + chr(10) if any("Op.cmpm 16" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps9" + chr(10) if any("Op.cmpma" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps8" + chr(10) if any(k in x for x in P for k in ("Op.vla", "Op.vsa", "Op.addma", "Op.cmpmia 8", "Op.stia 8")) else ""}{"import FV7z.Lemmas.BlkOps7" + chr(10) if any(k in x for x in P for k in ("Op.vl", "Op.vs", "Op.cdqe")) else ""}{"import FV7z.Lemmas.BlkOps6" + chr(10) if any(k in x for x in P for k in ("Op.stf8", "Op.stfi", "Op.xormf")) else ""}{("import FV7z.Lemmas.BlkOps5" if any("Op.ldsxb" in x for x in P) else
   "import FV7z.Lemmas.BlkOps4" if any("Op.imul64" in x for x in P) else
   "import FV7z.Lemmas.BlkOps3" if any(k in x for x in P for k in ("Op.shl64", "Op.shr64", "Op.sar64")) else
   "import FV7z.Lemmas.BlkOps2") + chr(10) if pos else ""}/-!
