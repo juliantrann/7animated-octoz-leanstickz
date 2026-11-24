@@ -106,7 +106,7 @@ theorem lsb_tail {fb q e₂ : Addr} {code₂ : List Byte} {tg : Nat → Addr} {I
   refine lsb_dbg (sp := X.cpu.gpr.rsp - 8#64) c hfs hl hinD hK₁ hA₁ hr₁ hB₁.1 hdf hx87
     (by rw [BitVec.sub_add_cancel]; exact hq16) (by rw [tq8]; omega) (by rw [tq8]; omega) hra
     (fun y h1 h2 => hsw y (by rw [tq8] at h1; omega) (by rw [tq8] at h2; omega)) hdw hdW hlr ?_
-  intro V₂ Z₂ t₂ hK₂ hA₂ hout₂ hr₂ hB₂ -
+  intro V₂ Z₂ t₂ hK₂ hA₂ hout₂ hr₂ hB₂ _
   -- `_setjmp`
   refine lsb_sjp (sp := X.cpu.gpr.rsp - 8#64) c hfs hl hinP hinS hK₂ hA₂ hr₂ hB₂.1 (by rw [tq8]; omega)
     (by rw [tq8]; omega) (fun i hi => by rw [q_m16]; exact hst i hi)
