@@ -286,6 +286,8 @@ theorem c102_runs {J : Nat → (Addr → Byte) → Prop} {sp fb : Addr} {tg : Na
   have hspZ' : Z.cpu.gpr.rsp = sp - 72#64 := by rw [hspZ, hsp₂, e80a]
   have hp0 : p ≠ 0 := by rintro rfl; exact absurd hp1 (by decide)
   have hp16 : p.toNat + 16 < 2 ^ 64 := by omega
+  have hpw : p.toNat + 72704 ≤ 2 ^ 64 := by omega
+  have hp8 : 8008128 ≤ p.toNat := by omega
   have hcZ : Cs Y₂.cpu.gpr Z.cpu.gpr := ⟨hbxZ, hbpZ, h12Z, h13Z, h14Z, h15Z⟩
   -- `mov [0x7a31b0], rax`
   have hgvZ : gv Z.cpu.gpr 64 0 = p := by show Z.cpu.gpr.rax.setWidth 64 = p; rw [sw_64_64]; exact haxZ
@@ -306,7 +308,6 @@ theorem c102_runs {J : Nat → (Addr → Byte) → Prop} {sp fb : Addr} {tg : Na
   -- `mov [0x7a31a8], rax; mov qword [rax], 0x11c00; mov qword [rax + 8], 0; add rsp, 8`
   have ep8 := Nst.o8 p hp16
   have hgv5 : gv Y₅.cpu.gpr 64 0 = p := by show Y₅.cpu.gpr.rax.setWidth 64 = p; rw [sw_64_64]; exact haxY
-  have hpw : p.toNat + 72704 ≤ 2 ^ 64 := by omega
   have hq0 : p.toNat + 64 / 8 ≤ p.toNat + 72704 := by omega
   have hq1 : p.toNat ≤ (p + 8#64).toNat := by rw [ep8]; omega
   have hq2 : (p + 8#64).toNat + 64 / 8 ≤ p.toNat + 72704 := by rw [ep8]; omega
@@ -319,6 +320,7 @@ theorem c102_runs {J : Nat → (Addr → Byte) → Prop} {sp fb : Addr} {tg : Na
     rw [ea8, haxY]
     intro i hi'
     exact Nst.fw hpW hpw hi' hq1 hq2
+  clear hq1 hq2 ep8
   have hE : Vst (Vst (Vst (Vst V₂ (BitVec.ofNat 64 8008112) (toBytesLE p (64 / 8))) (BitVec.ofNat 64 8008104)
       (toBytesLE (gv Y₅.cpu.gpr 64 0) (64 / 8))) (eaG Y₅.cpu.gpr (some 0) none 1 0)
       (toBytesLE (BitVec.ofNat 64 72704) (64 / 8))) (eaG Y₅.cpu.gpr (some 0) none 1 8)
@@ -345,7 +347,6 @@ theorem c102_runs {J : Nat → (Addr → Byte) → Prop} {sp fb : Addr} {tg : Na
       (a.toNat < 7940768 ∨ 7940776 ≤ a.toNat ∧ a.toNat + 8 < p.toNat ∨
         hi ≤ a.toNat ∧ (a.toNat + 320 < sp.toNat ∨ sp.toNat - 72 ≤ a.toNat)) → st102 V₂ p a = V a :=
     fun a h1 h2 => (hv1 a (by omega) h2).trans (st3384_out V hb hb' h1)
-  have hp8 : 8008128 ≤ p.toNat := by omega
   have r5 : rdq(st102 V₂ p, 8008120#64) = 72704#64 := by
     have e5 : (8008120#64 : Addr).toNat = 8008120 := rfl
     have h8 : (8008120#64 : Addr).toNat + 8 ≤ 2 ^ 64 := by rw [e5]; omega
