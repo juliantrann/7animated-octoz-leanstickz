@@ -242,6 +242,17 @@ theorem vc_41 (hT : Te F Wl L g₀ V₀) (h : Ih g₀ V₀ 41 n g V) : W_41 F Wl
   rcases hr' with rfl | rfl | rfl <;>
     exact ⟨fun _ => Or.inl ⟨4, by decide, rfl, hd, hM⟩, fun h => absurd h (by decide)⟩
 
+/-- The table's three entries `handle_amd` uses: `188`, `191` and `194` go to `160`, `224` and `312`. -/
+theorem jw0 : (hca_jt.drop (4 * 0)).take 4 = [0xb0, 0xab, 0xf6, 0xff] := rfl
+theorem jw3 : (hca_jt.drop (4 * 3)).take 4 = [0xf0, 0xab, 0xf6, 0xff] := rfl
+theorem jw6 : (hca_jt.drop (4 * 6)).take 4 = [0x48, 0xac, 0xf6, 0xff] := rfl
+theorem jv0 : (ofBytesLE 32 [0xb0, 0xab, 0xf6, 0xff]).signExtend 64 + 7282688#64 = Addr.add hca_at 160 := by
+  decide +kernel
+theorem jv3 : (ofBytesLE 32 [0xf0, 0xab, 0xf6, 0xff]).signExtend 64 + 7282688#64 = Addr.add hca_at 224 := by
+  decide +kernel
+theorem jv6 : (ofBytesLE 32 [0x48, 0xac, 0xf6, 0xff]).signExtend 64 + 7282688#64 = Addr.add hca_at 312 := by
+  decide +kernel
+
 theorem vc_54 (hT : Te F Wl L g₀ V₀) (h : Ih g₀ V₀ 54 n g V) : W_54 F Wl (Nx g₀ V₀ n) g f V := by
   obtain ⟨rfl, hd, hM⟩ := h
   have hr : g.rdi = 188#64 ∨ g.rdi = 191#64 ∨ g.rdi = 194#64 := by rw [hd]; exact hT.rdi
@@ -252,14 +263,17 @@ theorem vc_54 (hT : Te F Wl L g₀ V₀) (h : Ih g₀ V₀ 54 n g V) : W_54 F Wl
   wpx [W_54, W_69, o6, o7, Op.ldsx]
   rcases hr' with rfl | rfl | rfl
   · refine ⟨fun h => absurd h (by decide), fun _ => ⟨hft _ (by decide) (by decide), ?_⟩⟩
-    simp (disch := decide) only [hj 0 (by decide)]
-    exact ⟨160, lt_len (by decide), by decide +kernel, Or.inl ⟨3, by decide, rfl, hM⟩⟩
+    simp -implicitDefEqProofs (disch := decide) only [hj 0 (by decide), jw0]
+    refine ⟨160, lt_len (by decide), ?_, Or.inl ⟨3, by decide, rfl, hM⟩⟩
+    first | exact jv0 | (trace_state; sorry)
   · refine ⟨fun h => absurd h (by decide), fun _ => ⟨hft _ (by decide) (by decide), ?_⟩⟩
-    simp (disch := decide) only [hj 3 (by decide)]
-    exact ⟨224, lt_len (by decide), by decide +kernel, Or.inl ⟨3, by decide, rfl, hM⟩⟩
+    simp -implicitDefEqProofs (disch := decide) only [hj 3 (by decide), jw3]
+    refine ⟨224, lt_len (by decide), ?_, Or.inl ⟨3, by decide, rfl, hM⟩⟩
+    first | exact jv3 | (trace_state; sorry)
   · refine ⟨fun h => absurd h (by decide), fun _ => ⟨hft _ (by decide) (by decide), ?_⟩⟩
-    simp (disch := decide) only [hj 6 (by decide)]
-    exact ⟨312, lt_len (by decide), by decide +kernel, Or.inl ⟨3, by decide, rfl, hM⟩⟩
+    simp -implicitDefEqProofs (disch := decide) only [hj 6 (by decide), jw6]
+    refine ⟨312, lt_len (by decide), ?_, Or.inl ⟨3, by decide, rfl, hM⟩⟩
+    first | exact jv6 | (trace_state; sorry)
 
 theorem vc_96 (h : Ih g₀ V₀ 96 n g V) : W_96 F Wl (Nx g₀ V₀ n) g f V := by
   obtain ⟨rfl, hM⟩ := h
@@ -348,7 +362,7 @@ theorem ham_fnK (c : Seg prof F Wl L s₀ o) (hin : CodeIn L hca_at hca) :
     rw [hg, hs]; exact ld8 hT
   have hra' : ofBytesLE 64 ((byteAddrs Y.cpu.gpr.rsp 8).map V') = e₂.add j₂ := by
     rw [hg, hs, hV, rd_ret hT]; exact hra
-  refine c.s_ret hKY hAY hin (ret_at _ hj).1 hrY (ret_at _ hj).2 hl hin₂ hj₂ hra' ?_
+  refine c.s_ret hKY hAY hin (ret_at prof.feat hj).1 hrY (ret_at prof.feat hj).2 hl hin₂ hj₂ hra' ?_
   rintro Z t₂ hKZ hAZ ⟨hrZ, hgZ⟩
   exact k Z t₂ V' hKZ hAZ (hrZ.trans hra.symm) (by rw [hgZ, hg]; exact rh_of hF')
 
