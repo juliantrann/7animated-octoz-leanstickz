@@ -69,7 +69,7 @@ theorem c2704_0 : ∀ feat, Dec feat c2704 0 (FV7z.mk .endbr64 32 [] 4) := by de
 theorem c2704_4 : ∀ feat, Dec feat c2704 4 (FV7z.mk .sub 64 [gr 64 4, Src.opd 64 (.i 8)] 4) := by dec_rfl
 theorem c2704_8 : ∀ feat, Dec feat c2704 8 (FV7z.mk .lea 64 [gr 64 7, .mem (mrip 3678465 0)] 7) := by dec_rfl
 theorem c2704_15 : ∀ feat, Dec feat c2704 15 (FV7z.mk .call 64 [.rel 1580620] 5) := by dec_rfl
-theorem c2704_20 : ∀ feat, Dec feat c2704 20 (FV7z.mk .mov 64 [gr 64 7, Src.opd 64 (.i 5876416)] 7) := by dec_rfl
+theorem c2704_20 : ∀ feat, Dec feat c2704 20 (FV7z.mk .mov 64 [gr 64 7, Src.opd 64 (.i 5892800)] 7) := by dec_rfl
 theorem c2704_27 : ∀ feat, Dec feat c2704 27 (FV7z.mk .lea 64 [gr 64 2, .mem (mrip 3626294 0)] 7) := by dec_rfl
 theorem c2704_34 : ∀ feat, Dec feat c2704 34 (FV7z.mk .lea 64 [gr 64 6, .mem (mrip 3678439 0)] 7) := by dec_rfl
 theorem c2704_41 : ∀ feat, Dec feat c2704 41 (FV7z.mk .call 64 [.rel 2124434] 5) := by dec_rfl
@@ -95,12 +95,12 @@ theorem lb2704 (prof : Profile) : BlkA prof sti sti_at 2712 2719 [Op.mov 64 7 (.
 theorem cd2719 (feat : Features) : Dec feat sti 2719 (FV7z.mk .call 64 [.rel 1580620] 5) :=
   Dec.shift (j := 2704) (k := 15) (c2704_15 feat) v2704 (by decide)
 theorem bq2724 (prof : Profile) : BlkA prof c2704 (0x41cbd0 : Addr) 20 41
-    [Op.mov 64 7 (.i 5876416), Op.mov 64 2 (.i 7938344), Op.mov 64 6 (.i 7990496)] :=
-  .cons (c2704_20 _) ((OpI.mov (.i 5876416) (.inr rfl)).at _) (by decide) <|
+    [Op.mov 64 7 (.i 5892800), Op.mov 64 2 (.i 7938344), Op.mov 64 6 (.i 7990496)] :=
+  .cons (c2704_20 _) ((OpI.mov (.i 5892800) (.inr rfl)).at _) (by decide) <|
   .cons (c2704_27 _) (OpIA.lea_rip (by decide)) (by decide) <|
   .cons (c2704_34 _) (OpIA.lea_rip (by decide)) (by decide) <| .nil 41
 theorem b2724 (prof : Profile) : BlkA prof sti sti_at 2724 2745
-    [Op.mov 64 7 (.i 5876416), Op.mov 64 2 (.i 7938344), Op.mov 64 6 (.i 7990496)] :=
+    [Op.mov 64 7 (.i 5892800), Op.mov 64 2 (.i 7938344), Op.mov 64 6 (.i 7990496)] :=
   (bq2724 prof).shift (by decide) v2704
 theorem cd2745 (feat : Features) : Dec feat sti 2745 (FV7z.mk .call 64 [.rel 2124434] 5) :=
   Dec.shift (j := 2704) (k := 41) (c2704_41 feat) v2704 (by decide)
@@ -152,7 +152,7 @@ theorem c95_runs {J : Nat → (Addr → Byte) → Prop} {sp fb l : Addr} {tg : N
       (∀ a : Addr, ¬ (sp.toNat - 136 ≤ a.toNat ∧ a.toNat < sp.toNat - 64) →
         ¬ (7990568 ≤ a.toNat ∧ a.toNat < 7990608) → V₁ a = W a) →
       Cxa.Reg V₁ V₂ (sp - 80#64) l (l + BitVec.ofNat 64 (16 + 32 * n)) n
-        ((BitVec.ofNat 64 5876416 ^^^ rdq(V₁, fb + 48#64)).rotateLeft 17) (BitVec.ofNat 64 7990496) 7938344#64 →
+        ((BitVec.ofNat 64 5892800 ^^^ rdq(V₁, fb + 48#64)).rotateLeft 17) (BitVec.ofNat 64 7990496) 7938344#64 →
       (∀ a : Addr, ¬ (sp.toNat - 136 ≤ a.toNat ∧ a.toNat < sp.toNat - 64) →
         ¬ (7990432 ≤ a.toNat ∧ a.toNat < 7990472) → V₃ a = V₂ a) →
       Cxa.Reg V₃ V' (sp - 64#64) l (l + BitVec.ofNat 64 (16 + 32 * (n + 1))) (n + 1)
@@ -187,13 +187,13 @@ theorem c95_runs {J : Nat → (Addr → Byte) → Prop} {sp fb l : Addr} {tg : N
   rw [n72] at ho₀
   -- `mov rdi, 0x59eac0; lea rdx, __dso_handle; lea rsi, O`
   refine (Sp.blkA (b2724 prof)).run c hin (fun j' g' _ V' => j' = 2745 ∧
-    g' = wr (wr (wr Y₂.cpu.gpr 7 (BitVec.ofNat 64 5876416)) 2 (BitVec.ofNat 64 7938344)) 6
+    g' = wr (wr (wr Y₂.cpu.gpr 7 (BitVec.ofNat 64 5892800)) 2 (BitVec.ofNat 64 7938344)) 6
       (BitVec.ofNat 64 7990496) ∧ V₀ = V') hK₂ hA₂ hr₂ ?_ ?_
   · intro _ _ _ _ _ _
     exact ⟨rfl, rfl, rfl⟩
   rintro j' g fl V' ⟨rfl, rfl, rfl⟩ Y₃ t₃ hK₃ hA₃ hr₃ hg₃ -
   have hs₃ : Y₃.cpu.gpr.rsp = sp - 72#64 := by rw [hg₃]; exact hs₂
-  have hd₃ : Y₃.cpu.gpr.rdi = BitVec.ofNat 64 5876416 := by rw [hg₃]; exact sw_64_64 _
+  have hd₃ : Y₃.cpu.gpr.rdi = BitVec.ofNat 64 5892800 := by rw [hg₃]; exact sw_64_64 _
   have hx₃ : Y₃.cpu.gpr.rsi = BitVec.ofNat 64 7990496 := by rw [hg₃]; exact sw_64_64 _
   have hdx₃ : Y₃.cpu.gpr.rdx = BitVec.ofNat 64 7938344 := by rw [hg₃]; exact sw_64_64 _
   have hc₃ : Cs Y₂.cpu.gpr Y₃.cpu.gpr := by rw [hg₃]; exact ⟨rfl, rfl, rfl, rfl, rfl, rfl⟩
@@ -270,7 +270,7 @@ theorem c95_jg {V : Addr → Byte} {spec : Nat → CSpec} {G : Nat → (Addr →
       (∀ a : Addr, ¬ (sp.toNat - 136 ≤ a.toNat ∧ a.toNat < sp.toNat - 64) →
         ¬ (7990568 ≤ a.toNat ∧ a.toNat < 7990608) → V₁ a = W a) →
       Cxa.Reg V₁ V₂ (sp - 80#64) l (l + BitVec.ofNat 64 (16 + 32 * n)) n
-        ((BitVec.ofNat 64 5876416 ^^^ rdq(V₁, fb + 48#64)).rotateLeft 17) (BitVec.ofNat 64 7990496) 7938344#64 →
+        ((BitVec.ofNat 64 5892800 ^^^ rdq(V₁, fb + 48#64)).rotateLeft 17) (BitVec.ofNat 64 7990496) 7938344#64 →
       (∀ a : Addr, ¬ (sp.toNat - 136 ≤ a.toNat ∧ a.toNat < sp.toNat - 64) →
         ¬ (7990432 ≤ a.toNat ∧ a.toNat < 7990472) → V₃ a = V₂ a) →
       Cxa.Reg V₃ V' (sp - 64#64) l (l + BitVec.ofNat 64 (16 + 32 * (n + 1))) (n + 1)
