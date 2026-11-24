@@ -1,2 +1,5 @@
-FV7z.Lemmas.BlkOps21
-FV7z.Icw.Cuts
+FV7z.Spec.Cache
+FV7z.Icw.Inv
+FV7z.Icw.VcA
+FV7z.Icw.VcB
+FV7z.Icw.Holds
