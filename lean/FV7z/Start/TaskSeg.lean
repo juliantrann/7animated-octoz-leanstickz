@@ -22,8 +22,9 @@ theorem Base.next {Wl : List Rgn} {s₀ X' Y : State} {lim : Nat} {b fsb : Addr}
     (hK' : KeptW Wl s₀ X') (hmm : Y.proc.mm = X'.proc.mm) (hsg : Y.proc.signal = X'.proc.signal)
     (hp : Y.cpu.pkru = X'.cpu.pkru) (hseg : Y.cpu.seg = X'.cpu.seg) (hrq : Y.thread.rseq = X'.thread.rseq)
     (htid : Y.thread.tid = X'.thread.tid) (hpd : Y.thread.pending = X'.thread.pending)
-    (hdf : Y.cpu.rflags.df = X'.cpu.rflags.df) : Base Y lim b fsb k := by
+    (hdf : Y.cpu.rflags.df = X'.cpu.rflags.df) (hx8 : Y.cpu.x87 = X'.cpu.x87) : Base Y lim b fsb k := by
   refine ⟨hrq.trans ?_, ?_, ?_, ?_, hB.le, hB.top, fun p h1 h2 => ?_, htid.trans ?_, hpd.trans ?_, ?_, hdf.trans ?_,
+    (by rw [hx8, hK'.x87]; exact hB.x87),
     Relro.of_map (by rw [hmm, hK'.mem_map]) hB.relro, ?_⟩
   · rw [hK'.thread]
     exact hB.rseq
@@ -87,7 +88,8 @@ theorem b_set_tid (c : Seg prof F Wl L s₀ o) (hB : Base s₀ lim b fsb k) (hK 
   have htid : (X.withMem M).thread.tid = k.tid := by rw [hK'.thread]; exact hB.tid
   refine ⟨_, _, _, syscall_set_tid (s := X.withMem M) htf (c.dec hK' hin hrip hd) hnr, ?_⟩
   rw [htid]
-  refine k' _ _ (c.reroot hK' rfl rfl rfl rfl rfl htf hac hB.rseq) (hB.next hK' rfl rfl rfl rfl rfl rfl rfl rfl)
+  refine k' _ _ (c.reroot hK' rfl rfl rfl rfl rfl htf hac hB.rseq)
+    (hB.next hK' rfl rfl rfl rfl rfl rfl rfl rfl rfl)
     (c.agreeK hK hA hM) ?_ rfl rfl
   show X.cpu.rip.add len = _
   rw [hrip, addr_add_add]
@@ -104,7 +106,8 @@ theorem b_set_robust (c : Seg prof F Wl L s₀ o) (hB : Base s₀ lim b fsb k) (
     GoG prof L o gev gP gE X t := by
   refine c.stepE hK hin hj hrip fun M hM hK' htf hac => ?_
   refine ⟨_, _, _, syscall_set_robust (s := X.withMem M) htf (c.dec hK' hin hrip hd) hnr h24, ?_⟩
-  refine k' _ _ (c.reroot hK' rfl rfl rfl rfl rfl htf hac hB.rseq) (hB.next hK' rfl rfl rfl rfl rfl rfl rfl rfl)
+  refine k' _ _ (c.reroot hK' rfl rfl rfl rfl rfl htf hac hB.rseq)
+    (hB.next hK' rfl rfl rfl rfl rfl rfl rfl rfl rfl)
     (c.agreeK hK hA hM) ?_ rfl rfl
   show X.cpu.rip.add len = _
   rw [hrip, addr_add_add]
@@ -126,7 +129,8 @@ theorem b_sigaction (c : Seg prof F Wl L s₀ o) (hB : Base s₀ lim b fsb k) (h
   obtain ⟨hrd, hv⟩ := c.load_ok (X := X.withMem M) hK' (c.agreeK hK hA hM) hl
   refine ⟨_, _, _, syscall_sigaction (s := X.withMem M) htf (c.dec hK' hin hrip hd) hnr h10 hact hold hsig h1 h64
     h9 h19 htop hrd (hv ▸ hign), ?_⟩
-  refine k' _ _ (c.reroot hK' rfl rfl rfl rfl rfl htf hac hB.rseq) (hB.next hK' rfl rfl rfl rfl rfl rfl rfl rfl)
+  refine k' _ _ (c.reroot hK' rfl rfl rfl rfl rfl htf hac hB.rseq)
+    (hB.next hK' rfl rfl rfl rfl rfl rfl rfl rfl rfl)
     (c.agreeK hK hA hM) ?_ rfl rfl
   show X.cpu.rip.add len = _
   rw [hrip, addr_add_add]
@@ -149,7 +153,8 @@ theorem b_sigunblock (c : Seg prof F Wl L s₀ o) (hB : Base s₀ lim b fsb k) (
   have hpp : (X.withMem M).proc.signal.pending = [] := by rw [hK'.proc]; exact hB.ppend
   refine ⟨_, _, _, syscall_sigunblock (s := X.withMem M) htf (c.dec hK' hin hrip hd) hnr h10 hset hold hhow htop
     hrd htp hpp, ?_⟩
-  refine k' _ _ (c.reroot hK' rfl rfl rfl rfl rfl htf hac hB.rseq) (hB.next hK' rfl rfl rfl rfl rfl rfl rfl rfl)
+  refine k' _ _ (c.reroot hK' rfl rfl rfl rfl rfl htf hac hB.rseq)
+    (hB.next hK' rfl rfl rfl rfl rfl rfl rfl rfl rfl)
     (c.agreeK hK hA hM) ?_ rfl rfl
   show X.cpu.rip.add len = _
   rw [hrip, addr_add_add]

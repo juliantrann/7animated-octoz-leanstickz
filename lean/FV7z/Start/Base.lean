@@ -44,6 +44,7 @@ structure Base (s : State) (lim : Nat) (b fsb : Addr) (k : Kst) : Prop where
   tpend : s.thread.pending = []
   ppend : s.proc.signal.pending = []
   df : s.cpu.rflags.df = false
+  x87 : s.cpu.x87.full = 0
   relro : Relro s.proc.mm.mem
   lims : LimitsUnlimited s
 
@@ -124,11 +125,11 @@ theorem Base.brk_lt {s : State} {lim : Nat} {b fsb : Addr} {k : Kst} (h : Base s
 /-- A state with room above its break has `Base`, up to the page of the break and the room. -/
 theorem Base.of_room {s : State} {n : Nat} (hr : s.thread.rseq = none) (hp : s.cpu.pkru &&& 3 = 0)
     (h : BreakRoom s n) (hq : s.thread.pending = [] ∧ s.proc.signal.pending = []) (hdf : s.cpu.rflags.df = false)
-    (hrel : Relro s.proc.mm.mem) (hlu : LimitsUnlimited s) :
+    (hx87 : s.cpu.x87.full = 0) (hrel : Relro s.proc.mm.mem) (hlu : LimitsUnlimited s) :
     Base s (pageUp (s.proc.mm.brk.toNat + n) / 4096) s.proc.mm.brk s.cpu.seg.fsBase ⟨s.thread.tid⟩ := by
   obtain ⟨h1, h2⟩ := h
   simp only [stackTopMax] at h1
-  refine ⟨hr, hp, rfl, rfl, ?_, ?_, fun p q1 q2 => free_page h2 q1 ?_, rfl, hq.1, hq.2, hdf, hrel, hlu⟩
+  refine ⟨hr, hp, rfl, rfl, ?_, ?_, fun p q1 q2 => free_page h2 q1 ?_, rfl, hq.1, hq.2, hdf, hx87, hrel, hlu⟩
   · simp only [pageUp]
     omega
   · omega
@@ -145,7 +146,7 @@ theorem launch_base {l : Launch} {m : Nat} (h : Launch.Of V2606.zzs.blob.bytes V
       ⟨l.s₀.thread.tid⟩ :=
   Base.of_room (launch_misc h).2.1 (launch_misc h).1 (launch_breakRoom h hroom hM (Nat.le_refl _))
     (launch_quiet h hq.1 hq.2) (by obtain ⟨_, _, _, _, _, _, _, _, hdf⟩ := launch_regs h; exact hdf)
-    (launch_relro h) hlu
+    (by obtain ⟨_, -, hcpu⟩ := launch_cpu h; rw [hcpu]; rfl) (launch_relro h) hlu
 
 end FV7z.Start
 
@@ -204,7 +205,8 @@ theorem b_brk_grow (c : Seg prof F Wl L s₀ o) (hB : Base s₀ lim b fsb k) (hK
   · rw [free_congr hK.mem_map]
     exact free_of_map fun p h1 h2 => hB.free p h1 (by omega)
   · rintro X' Y t' hK' hcpu rfl c' hA'
-    refine k' _ t' c' ⟨?_, ?_, rfl, ?_, hlim, hB.top, ?_, ?_, ?_, ?_, ?_, ?_,
+    refine k' _ t' c' ⟨?_, ?_, rfl, ?_, hlim, hB.top, ?_, ?_, ?_, ?_, ?_,
+      (by show X'.cpu.x87.full = 0; rw [hK'.x87]; exact hB.x87), ?_,
       limits_of_signal (X := X') rfl (limits_keptW hK' hB.lims)⟩ hA' ?_ ?_
     · show X'.thread.rseq = none
       rw [hK'.thread]
@@ -255,7 +257,8 @@ theorem b_set_fs (c : Seg prof F Wl L s₀ o) (hB : Base s₀ lim b fsb k) (hK :
     GoG prof L o gev gP gE X t := by
   refine c.s_set_fs hK hA hin hj hrip hd hnr hopt ha hB.rseq ?_
   rintro X' Y t' hK' hcpu rfl c' hA'
-  refine k' _ t' c' ⟨?_, ?_, ?_, rfl, hB.le, hB.top, ?_, ?_, ?_, ?_, ?_, ?_,
+  refine k' _ t' c' ⟨?_, ?_, ?_, rfl, hB.le, hB.top, ?_, ?_, ?_, ?_, ?_,
+      (by show X'.cpu.x87.full = 0; rw [hK'.x87]; exact hB.x87), ?_,
     limits_of_signal (X := X') rfl (limits_keptW hK' hB.lims)⟩ hA' ?_ ?_
   · show X'.thread.rseq = none
     rw [hK'.thread]
