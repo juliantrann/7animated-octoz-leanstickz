@@ -1,6 +1,5 @@
-import FV7z.Onw
-import FV7z.Nst
+import FV7z.Ctor.Cx98
 open FV7z
-#print axioms FV7z.Mal.Hp.mvR
-#print axioms FV7z.Nst.nst_ok
-#print axioms FV7z.Nst.nst_pin
+#print axioms FV7z.Ctor.c98_runs
+#print axioms FV7z.Ctor.c98_jg
+#print axioms FV7z.Ctor.cx_tail
