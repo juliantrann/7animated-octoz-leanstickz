@@ -4,7 +4,7 @@ import FV7z.Ctor.Ret
 
 `at_ctor`: `AtCtor` with the invariant `Jc`, the constructors done (`Done`: the 64 of `leas` by `lea_runs`, the 8
 of `chains` by `chain_runs`, `csuTg 12` by `runs12`), from the `Csu.Runs` of the others for `Jc`, a table `spec` of
-their stores, and the run from `main` on.
+their stores, and the run from `main` on. `cnt_zero`: the registrars' counts are 0 at the start (its `hz`).
 -/
 namespace FV7z.Ctor
 open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn FV7z.Start
@@ -17,6 +17,24 @@ def Done (m : Nat) : Prop := (∃ x ∈ leas, x.1 = m) ∨ (∃ x ∈ chains, x.
 
 theorem add8_toNat (b : Addr) (h : b.toNat + 392 ≤ 2 ^ 64) : (b + 112#64).toNat = (b + 112#64 - 8#64).toNat + 8 := by
   bv_omega
+
+/-- Four bytes of counts in `.bss` that are the image's are 0. -/
+theorem cnt_zero1 {V V₀ : Addr → Byte} (hV : ∀ x : Addr, Ndi.CntN x.toNat → V x = V₀ x) (hB : Bss V₀) {x : Nat}
+    (hx : ∀ i < 4, Ndi.CntN (x + i)) (h1 : 0x7945d0 ≤ x) (h2 : x + 4 ≤ 0x7a86c0) : rdd(V, BitVec.ofNat 64 x) = 0 := by
+  have hz : ∀ i < 4, V ((BitVec.ofNat 64 x).add i) = 0 := fun i hi => by
+    have t := ofNat_add_toNat (x := x) hi (by omega)
+    rw [hV _ (by rw [t]; exact hx i hi)]
+    exact hB _ (by rw [t]; omega) (by rw [t]; omega)
+  rw [rd_zero hz]
+  rfl
+
+/-- The registrars' counts are 0 in bytes whose counts are the image's (`RetAt.cnt`). -/
+theorem cnt_zero {V V₀ : Addr → Byte} (hV : ∀ x : Addr, Ndi.CntN x.toNat → V x = V₀ x) (hB : Bss V₀) :
+    ∀ r < 3, rdd(V, regCnt r) = 0
+  | 0, _ => cnt_zero1 (x := 7991296) hV hB (fun i hi => by unfold Ndi.CntN; omega) (by decide) (by decide)
+  | 1, _ => cnt_zero1 (x := 7981824) hV hB (fun i hi => by unfold Ndi.CntN; omega) (by decide) (by decide)
+  | 2, _ => cnt_zero1 (x := 7981280) hV hB (fun i hi => by unfold Ndi.CntN; omega) (by decide) (by decide)
+  | _ + 3, h => absurd h (by omega)
 
 /-- `AtCtor` from the constructors not `Done`. -/
 theorem at_ctor {K : Ctx} {fb : Addr} {V : Addr → Byte} {spec : Nat → CSpec} (c : Seg prof F Wl L s₀ o)

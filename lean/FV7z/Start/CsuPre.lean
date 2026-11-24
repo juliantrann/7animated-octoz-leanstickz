@@ -12,7 +12,8 @@ reads as in the file: `__EH_FRAME_BEGIN__`'s first word (not 0), `__pthread_forc
 no layer of the start code stores to them.
 
 - `Ndi.CsuB`, `Ndi.ndi_csu`: the `.bss` words; `_dl_non_dynamic_init` keeps them.
-- `csu_ret`, `RetAt.pre`: a byte of `PreB` at `0x61344a` is the launch image's.
+- `csu_ret`, `RetAt.pre`, `RetAt.cnt`: a byte of `PreB` or of a registrar's count (`Ndi.CntN`) at `0x61344a` is the
+  launch image's.
 - `Agr`, `Near`, `preI`: for the first three functions the bytes of `PreB` as the image's and the bytes outside
   their stores as at `0x61344a`, and an invariant `J` of the constructors after them.
 - `unset_of`, `pre_rd`, `pre_zero`: the tunables and the words from `Agr`.
@@ -23,10 +24,16 @@ open FV7z.Gor (Lo)
 
 namespace FV7z.Ndi
 
-/-- A byte of `__pthread_force_elision` (`0x79f14c`) or of `object_mutex` up to `any_objects_registered`
-(`[0x7a33a0, 0x7a33cc)`). -/
+/-- The counts of the three registrars of 7-Zip's tables (`.bss`), by number: `0x79c8e0`, `0x79cb00`, `0x79f000`. -/
+def CntN (n : Nat) : Prop :=
+  7981280 ≤ n ∧ n < 7981284 ∨ 7981824 ≤ n ∧ n < 7981828 ∨ 7991296 ≤ n ∧ n < 7991300
+
+/-- A byte of `__pthread_force_elision` (`0x79f14c`), of `object_mutex` up to `any_objects_registered`
+(`[0x7a33a0, 0x7a33cc)`), or of a registrar's count (`CntN`). -/
 def CsuB (x : Addr) : Prop :=
-  7991628 ≤ x.toNat ∧ x.toNat < 7991632 ∨ 8008608 ≤ x.toNat ∧ x.toNat < 8008652
+  7991628 ≤ x.toNat ∧ x.toNat < 7991632 ∨ 8008608 ≤ x.toNat ∧ x.toNat < 8008652 ∨
+    (7981280 ≤ x.toNat ∧ x.toNat < 7981284 ∨ 7981824 ≤ x.toNat ∧ x.toNat < 7981828 ∨
+      7991296 ≤ x.toNat ∧ x.toNat < 7991300)
 
 theorem lbV_cs {U : Addr → Byte} {m : Nat} {x : Addr} (hx : CsuB x) : lV (bV U m) x = U x := by
   unfold CsuB at hx
@@ -120,7 +127,7 @@ theorem RetAt.pre {K : Ctx} {V₀ V : Addr → Byte} {ver : BitVec 32} {ra f0 : 
         (by omega) (by omega)
     · exact csu_ret (.inl hx) h.nd (by omega) (by omega) (by omega) (by omega) (by omega) h.he' (by omega)
         (by omega) (by omega)
-    · exact csu_ret (.inr hx) h.nd (by omega) (by omega) (by omega) (by omega) (by omega) h.he' (by omega)
+    · exact csu_ret (.inr (.inl hx)) h.nd (by omega) (by omega) (by omega) (by omega) (by omega) h.he' (by omega)
         (by omega) (by omega)
   rw [e]
   have hd : ¬ Foot (d3 ++ AuxInit.globals) x := by
@@ -129,6 +136,25 @@ theorem RetAt.pre {K : Ctx} {V₀ V : Addr → Byte} {ver : BitVec 32} {ra f0 : 
     · exact not_dg (lo := 7388000) (hi := 7388004) (by decide) hx.1 hx.2
     · exact not_dg (lo := 7991628) (hi := 7991632) (by decide) hx.1 hx.2
     · exact not_dg (lo := 8008608) (hi := 8008652) (by decide) hx.1 hx.2
+  exact ptr_keep hK hM h.hb h.hb' hW (by omega) (by omega) trivial (by unfold TlsVar; omega) (by omega) hd
+    (by unfold CpuVar; omega) (by unfold Pim.PimVar; omega)
+
+/-- A byte of a registrar's count at the return of `__cxa_atexit` to `0x61344a` is the launch image's. -/
+theorem RetAt.cnt {K : Ctx} {V₀ V : Addr → Byte} {ver : BitVec 32} {ra f0 : BitVec 64} (h : RetAt W W₂ Z B g)
+    (hK : K.Ok) (hM : MB K V₀) (hW : PtrW K W V₀ B ver (fun _ => True))
+    (hR : Cxa.Reg (Vst (Cti.CtMem (Lif.bcV W₂ g a0 s) (B + 2176#64) a1 a2 a3) (lifSp Z + 152#64) (toBytesLE ra 8)) V
+      (lifSp Z + 152#64) 8010400#64 8010416#64 0 f0 0 0) {x : Addr} (hx : Ndi.CntN x.toNat) : V x = K.V0 x := by
+  have := h.hb; have := h.hb'; have := h.hsp; have := h.hs; have := h.he; have := h.hg
+  have h1 : (B + 2176#64).toNat = B.toNat + 2176 := by bv_omega
+  have h2 : (B + 4544#64).toNat = B.toNat + 4544 := by bv_omega
+  unfold Ndi.CntN at hx
+  rw [h.cxa_lo hR (by omega), csu_ret (.inr (.inr hx)) h.nd (by omega) (by omega) (by omega) (by omega) (by omega)
+    h.he' (by omega) (by omega) (by omega)]
+  have hd : ¬ Foot (d3 ++ AuxInit.globals) x := by
+    rcases hx with hx | hx | hx
+    · exact not_dg (lo := 7981280) (hi := 7981284) (by decide) hx.1 hx.2
+    · exact not_dg (lo := 7981824) (hi := 7981828) (by decide) hx.1 hx.2
+    · exact not_dg (lo := 7991296) (hi := 7991300) (by decide) hx.1 hx.2
   exact ptr_keep hK hM h.hb h.hb' hW (by omega) (by omega) trivial (by unfold TlsVar; omega) (by omega) hd
     (by unfold CpuVar; omega) (by unfold Pim.PimVar; omega)
 
