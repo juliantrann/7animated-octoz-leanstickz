@@ -247,6 +247,25 @@ FNS = {
                  stops=(3731,), calls=True, jt=(0x6f20a4, 39),
                  hand=(3865, 4079, 4100, 4141, 4197, 4346, 3707, 3981, 4005, 4223, 4380, 4454, 4594),
                  tag="PLAN.md M, ctor 103", src="glibc's `init_cacheinfo` (`sysdeps/x86/cacheinfo.c`; `objdump -d`)"),
+    # glibc's `handle_amd` (`sysdeps/x86/cacheinfo.c`, 0x65cb10), the size of a cache from `cpuid` 0x80000005 or
+    # 0x80000006; its group's code (`hca`, 1624 bytes) also holds `intel_check_word` and `handle_intel`. `jt`: the
+    # `switch` on the name. Stops: the cases of an associativity or a line size (0x68, 0x88, 0xb0, 0xd8, 0x100,
+    # 0x120; init_cacheinfo asks for sizes only) and a name out of range (0x1b0, `__assert_fail`). By hand: `cpuid`.
+    "hca": dict(grp="Hca", cn="handle_amd", a=0x65cb10, n=1624, pos=True, calls=True, jt=(0x6f2000, 9),
+                stops=(0x68, 0x88, 0xb0, 0xd8, 0x100, 0x120, 0x1b0), hand=(6, 39), tag="PLAN.md M, ctor 103",
+                src="glibc's `handle_amd`, `intel_check_word` and `handle_intel` (`sysdeps/x86/cacheinfo.c`; "
+                    "`objdump -d`)"),
+    # glibc's `intel_check_word` (0x65cce0, offset 464 of `hca`): the descriptor bytes of a `cpuid` 2 word, by a
+    # binary search of `intel_02_known` (0x6f2140) or `cpuid` 4's subleaves. Stops: the two `assert`s on the name
+    # (1085, 1116; the name's offset is 0 for the three sizes). By hand: `cpuid`.
+    "icw": dict(grp="Icw", code=("Hca", "hca"), cn="intel_check_word", a=0x65cb10, n=1624, entry=464, pos=True,
+                calls=True, stops=(1085, 1116), hand=(773, 829, 1172, 1258), tag="PLAN.md M, ctor 103",
+                src="glibc's `intel_check_word` (`sysdeps/x86/cacheinfo.c`; `objdump -d`)"),
+    # glibc's `handle_intel` (0x65d010, offset 1280 of `hca`): `cpuid` 2's rounds, `intel_check_word` for each of
+    # the four words, the stack protector's check. Stop: `__stack_chk_fail` (1619). By hand: `cpuid`.
+    "hin": dict(grp="Hin", code=("Hca", "hca"), cn="handle_intel", a=0x65cb10, n=1624, entry=1280, pos=True,
+                fs=True, calls=True, stops=(1619,), hand=(1376,), tag="PLAN.md M, ctor 103",
+                src="glibc's `handle_intel` (`sysdeps/x86/cacheinfo.c`; `objdump -d`)"),
     # 7-Zip's `CCriticalSection` constructor (`C/Threads.c`, `CriticalSection_Init`): `pthread_mutex_init (m, NULL)`
     # for `m` not null. Stops: the tail jump (0xb), `m` null (0x10).
     "mxs": dict(grp="Mxs", cn="CriticalSection_Init", a=0x448b40, n=0x16, pos=True, stops=(0xb, 0x10),
@@ -627,6 +646,9 @@ def effect(mn, sz, ol, pc=None):
         assert sz in (32, 64), (mn, sz, ol)
         return (tsrc(sz), f"Op.{mn} {sz} {r} {src(ops[1])}",
                 f"OpI.{mn} {src(ops[1])} {hw2(sz)}")
+    if mn == 'cmp' and ks == ('r', 'm') and sz == 8:   # FV7z/Lemmas/BlkOps20.lean
+        assert f[1][4] == 8
+        return terms, f"Op.cmpm 8 {f[0][1]} {mem(ops[1])}", "OpI.cmpm8"
     if mn == 'cmp' and ks == ('r', 'm') and sz == 16:   # FV7z/Lemmas/BlkOps10.lean
         assert f[1][4] == 16
         return terms, f"Op.cmpm 16 {f[0][1]} {mem(ops[1])}", "OpI.cmpm16"
@@ -867,7 +889,7 @@ end FV7z.{grp}
                          f"theorem j{k}_0 : ∀ feat, Dec feat j{k} 0 (FV7z.mk {mnl(mn)} {sz} [{operand(ol[0])[1]}] {ln}) := "
                          "by dec_rfl\n")
     open(out + "/Pats.lean", "w").write(f"""import FV7z.Lemmas.Sp{"Fs" if FSM else ""}
-{"import FV7z.Lemmas.BlkOps20" + chr(10) if any(k in x for x in P for k in ("Op.not32", "Op.cqo", "Op.imul3", "Op.andh", "Op.testh")) else ""}{"import FV7z.Lemmas.BlkOps19" + chr(10) if any("Op.vld 0" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps18" + chr(10) if any("Op.zxr16" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps17" + chr(10) if any("Op.mul64" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps16" + chr(10) if any("Op.bt64" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps15" + chr(10) if any("Op.sxr" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps14" + chr(10) if any(k in x for x in P for k in ("Op.zxr", "Op.test 16", "Op.cmpmif fb 8")) else ""}{"import FV7z.Lemmas.BlkOps13" + chr(10) if any("Op.cmpmif" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps12" + chr(10) if any(k in x for x in P for k in ("Op.cmpmr", "Op.testmi")) else ""}{"import FV7z.Lemmas.BlkOps11" + chr(10) if any(k in x for x in P for k in ("Op.rol64", "Op.ror64")) else ""}{"import FV7z.Lemmas.BlkOps10" + chr(10) if any("Op.cmpm 16" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps9" + chr(10) if any("Op.cmpma" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps8" + chr(10) if any(k in x for x in P for k in ("Op.vla", "Op.vsa", "Op.addma", "Op.cmpmia 8", "Op.stia 8")) else ""}{"import FV7z.Lemmas.BlkOps7" + chr(10) if any(k in x for x in P for k in ("Op.vl", "Op.vs", "Op.cdqe")) else ""}{"import FV7z.Lemmas.BlkOps6" + chr(10) if any(k in x for x in P for k in ("Op.stf8", "Op.stfi", "Op.xormf")) else ""}{("import FV7z.Lemmas.BlkOps5" if any("Op.ldsxb" in x for x in P) else
+{"import FV7z.Lemmas.BlkOps20" + chr(10) if any(k in x for x in P for k in ("Op.not32", "Op.cqo", "Op.imul3", "Op.andh", "Op.testh", "Op.cmpm 8")) else ""}{"import FV7z.Lemmas.BlkOps19" + chr(10) if any("Op.vld 0" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps18" + chr(10) if any("Op.zxr16" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps17" + chr(10) if any("Op.mul64" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps16" + chr(10) if any("Op.bt64" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps15" + chr(10) if any("Op.sxr" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps14" + chr(10) if any(k in x for x in P for k in ("Op.zxr", "Op.test 16", "Op.cmpmif fb 8")) else ""}{"import FV7z.Lemmas.BlkOps13" + chr(10) if any("Op.cmpmif" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps12" + chr(10) if any(k in x for x in P for k in ("Op.cmpmr", "Op.testmi")) else ""}{"import FV7z.Lemmas.BlkOps11" + chr(10) if any(k in x for x in P for k in ("Op.rol64", "Op.ror64")) else ""}{"import FV7z.Lemmas.BlkOps10" + chr(10) if any("Op.cmpm 16" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps9" + chr(10) if any("Op.cmpma" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps8" + chr(10) if any(k in x for x in P for k in ("Op.vla", "Op.vsa", "Op.addma", "Op.cmpmia 8", "Op.stia 8")) else ""}{"import FV7z.Lemmas.BlkOps7" + chr(10) if any(k in x for x in P for k in ("Op.vl", "Op.vs", "Op.cdqe")) else ""}{"import FV7z.Lemmas.BlkOps6" + chr(10) if any(k in x for x in P for k in ("Op.stf8", "Op.stfi", "Op.xormf")) else ""}{("import FV7z.Lemmas.BlkOps5" if any("Op.ldsxb" in x for x in P) else
   "import FV7z.Lemmas.BlkOps4" if any("Op.imul64" in x for x in P) else
   "import FV7z.Lemmas.BlkOps3" if any(k in x for x in P for k in ("Op.shl64", "Op.shr64", "Op.sar64")) else
   "import FV7z.Lemmas.BlkOps2") + chr(10) if pos else ""}/-!

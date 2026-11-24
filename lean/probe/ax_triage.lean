@@ -1,8 +1,8 @@
-import FV7z.Lemmas.BlkOps20
-import FV7z.C103.Cuts
+import FV7z.Hca.Cuts
+import FV7z.Icw.Cuts
+import FV7z.Hin.Cuts
 open FV7z
-#print axioms FV7z.idiv64
-#print axioms FV7z.bsr32
-#print axioms FV7z.OpIA.imul3_rip
-#print axioms FV7z.OpI.andh
-#print axioms FV7z.C103.c_3504
+#print axioms FV7z.OpI.cmpm8
+#print axioms FV7z.Hca.c_0
+#print axioms FV7z.Icw.c_464
+#print axioms FV7z.Hin.c_1280
