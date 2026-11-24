@@ -49,7 +49,7 @@ def arrB : List Byte :=
 theorem arr_pin : Exe.bytesAt V2606.zzs.blob 0x777798 824 = some arrB := by
   decide +kernel
 
-theorem arrB_length : arrB.length = 824 := rfl
+theorem arrB_length : arrB.length = 824 := by decide +kernel
 
 /-- The functions `__libc_csu_init` calls, in order: the word of `.preinit_array`, `_init`, the 102 words of
 `.init_array`. -/
