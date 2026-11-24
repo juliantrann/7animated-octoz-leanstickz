@@ -58,6 +58,10 @@ theorem brk_offs {B : Addr} (h : B.toNat + 8192 ≤ 2 ^ 63) :
       (B + 2176#64 + 40#64).toNat = B.toNat + 2216 ∧ (B + 2176#64 + 720#64).toNat = B.toNat + 2896 := by
   refine ⟨?_, ?_, ?_, ?_⟩ <;> bv_omega
 
+/-- `__cxa_atexit`'s stack pointer at its return (`R - 320`) against `main`'s entry one (`R - 296`): stated alone so
+that `omega` does not run in `launch_to_main`'s context (maximum recursion depth, kt101, kt102). -/
+theorem rsp_320_296 (R : Nat) : R - 320 ≤ R - 296 + 8 := by omega
+
 /-- The stack pointer after `__cxa_atexit` returns: that at `0x613434`. -/
 theorem back_q (Z : State) : lifSp Z + 152#64 + 8#64 = Z.cpu.gpr.rsp := by
   rw [lifSp_152]
@@ -203,7 +207,7 @@ theorem launch_to_main {l : Launch} {n : Nat} {o : Oracle} {L : List (Addr × Li
   obtain ⟨f768, f760, f40, f720⟩ := brk_offs hb'
   have hR : RetAt W W₂ Z (brkOf l) Z₁.cpu.gpr :=
     ⟨hN, hb1', hb', by omega, by omega, by omega, by omega, by rw [hz1, n4]; omega⟩
-  have hgr : Z₁.cpu.gpr.rsp.toNat ≤ (entG Z).rsp.toNat + 8 := by rw [hz1, n4, n1]; omega
+  have hgr : Z₁.cpu.gpr.rsp.toNat ≤ (entG Z).rsp.toNat + 8 := by rw [hz1, n4, n1]; exact rsp_320_296 _
   -- `q = rsp` at `0x613434`, `__libc_start_main`'s frame at `K.bp`
   have tq : ((ctxOf l.prof l.s₀ l.args c).bp + 112#64).toNat = (stackLayout l.args l.prof.linux c).sp - 288 := by
     rw [← hRg.1]
