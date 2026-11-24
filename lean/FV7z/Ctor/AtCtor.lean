@@ -21,7 +21,7 @@ theorem add8_toNat (b : Addr) (h : b.toNat + 392 ≤ 2 ^ 64) : (b + 112#64).toNa
 /-- Four bytes of counts in `.bss` that are the image's are 0. -/
 theorem cnt_zero1 {V V₀ : Addr → Byte} (hV : ∀ x : Addr, Ndi.CntN x.toNat → V x = V₀ x) (hB : Bss V₀) {x : Nat}
     (hx : ∀ i < 4, Ndi.CntN (x + i)) (h1 : 0x7945d0 ≤ x) (h2 : x + 4 ≤ 0x7a86c0) : rdd(V, BitVec.ofNat 64 x) = 0 := by
-  have hz : ∀ i < 4, V ((BitVec.ofNat 64 x).add i) = 0 := fun i hi => by
+  have hz : ∀ i < 4, V (Addr.add (BitVec.ofNat 64 x) i) = 0 := fun i hi => by
     have t := ofNat_add_toNat (x := x) hi (by omega)
     rw [hV _ (by rw [t]; exact hx i hi)]
     exact hB _ (by rw [t]; omega) (by rw [t]; omega)
