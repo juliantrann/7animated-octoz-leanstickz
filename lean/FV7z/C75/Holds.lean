@@ -38,9 +38,9 @@ theorem inc_lt {x : BitVec 64} (h : x.toNat < 256) (hne : ¬ x + 1#64 = 256#64) 
 
 /-- The loop's store goes to `[rcx + rsi - 1]` after `rcx` is one more: the byte `rcx` of the table. -/
 theorem ea_m1 (x s : BitVec 64) : x + 1#64 + s + 18446744073709551615#64 = s + x := by
-  apply BitVec.eq_of_toNat_eq
-  simp only [BitVec.toNat_add, BitVec.toNat_ofNat]
-  omega
+  have h : (1#64 : BitVec 64) + 18446744073709551615#64 = 0#64 := by decide
+  rw [BitVec.add_assoc x 1#64 s, BitVec.add_comm 1#64 s, ← BitVec.add_assoc x s 1#64, BitVec.add_assoc (x + s), h,
+    BitVec.add_zero, BitVec.add_comm]
 
 /-- From the entry to the loop's head: `rsi` the table, `rcx` 0. -/
 theorem vc_1584 {g : Gprs} {f : Rflags} {V : Addr → Byte} (Q : Post)
@@ -81,9 +81,11 @@ theorem vc (hw : ∀ i < 256, Foot Wl (Addr.add 7983936#64 i)) (g₀ : Gprs) (V�
   · simp only [Wt, ↓reduceIte]
     exact vc_1584 _ fun g' f' V' h => Or.inl ⟨256, by decide, h⟩
   · simp only [Wt, ↓reduceIte]
-    exact vc_1600 (b := 7983936) (by decide) hw hr hs hK hO _
-      (fun g' f' V' h1 h2 h3 h4 hlt => Or.inl ⟨_, hlt, Or.inr ⟨rfl, h1, rfl, h2, h3, h4⟩⟩)
-      fun g' f' V' hK' hO' => Or.inr ⟨rfl, hK', hO'⟩
+    apply vc_1600 (b := 7983936) (by decide) hw hr hs hK hO
+    · intro g' f' V' h1 h2 h3 h4 hlt
+      exact Or.inl ⟨_, hlt, Or.inr ⟨rfl, h1, rfl, h2, h3, h4⟩⟩
+    · intro g' f' V' hK' hO'
+      exact Or.inr ⟨rfl, hK', hO'⟩
 
 /-- `Out` says the bytes outside `wr75` are as before. -/
 theorem out_wr {V V' : Addr → Byte} (h : Out V V') : ∀ a : Addr, ¬ InR wr75 a.toNat → V' a = V a := fun a ha =>

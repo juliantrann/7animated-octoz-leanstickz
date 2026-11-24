@@ -209,6 +209,15 @@ FNS = {
     "c70": dict(grp="C70", code=("Ctor", "sti"), cn="csuTg 70", a=0x41c140, n=4624, entry=1440, pos=True,
                 stops=(1514,), tag="PLAN.md G3, constructors",
                 src="a static constructor of 7-Zip (`objdump -d`)"),
+    # The CRC tables a constructor jumps to (`endbr64; jmp F`), named by their shape after 7-Zip's source: m = 78
+    # (CRC-32 MSB first for bzip2, 0x79d440), 3 (CRC-32 and its slicing tables, 0x7a4e00), 15 (CRC-64 and its slicing
+    # tables, 0x7967c0).
+    "c78": dict(grp="C78", cn="CBZip2Crc::InitTable", a=0x56c470, n=0x44, entry=0, pos=True, stops=(0x43,),
+                tag="PLAN.md G3, constructors", src="a function a static constructor of 7-Zip jumps to (`objdump -d`)"),
+    "c3": dict(grp="C3", cn="CrcGenerateTable", a=0x41d5e0, n=0x6b, entry=0, pos=True, stops=(0x6a,),
+               tag="PLAN.md G3, constructors", src="a function a static constructor of 7-Zip jumps to (`objdump -d`)"),
+    "c15": dict(grp="C15", cn="Crc64GenerateTable", a=0x443e70, n=0x8f, entry=0, pos=True, stops=(0x8e,),
+                tag="PLAN.md G3, constructors", src="a function a static constructor of 7-Zip jumps to (`objdump -d`)"),
     "c75": dict(grp="C75", code=("Ctor", "sti"), cn="csuTg 75", a=0x41c140, n=4624, entry=1584, pos=True,
                 stops=(1665,), tag="PLAN.md G3, constructors",
                 src="a static constructor of 7-Zip (`objdump -d`)"),

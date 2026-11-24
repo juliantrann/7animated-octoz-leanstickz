@@ -4,12 +4,14 @@ import FV7z.Lemmas.BlkOps2
 /-!
 # Constructors that end in `ret`: straight-line code or loops (PLAN.md §M, constructors)
 
-- `ret_tail`: from the constructor's `ret`, back to `__libc_csu_init` as `Csu.Runs` asks.
+- `ret_tail`: from the constructor's `ret` (in `sti`, or in a function it jumps to), back to `__libc_csu_init` as
+  `Csu.Runs` asks.
 - `blk_runs`: a constructor at offset `j` of `sti`, a stretch of straight-line code (`BlkA`) up to a `ret`, is a
   function as `Csu.csu_ok` asks when the stretch keeps the registers a call keeps and leaves the bytes `st V`
   (`wp`), `st` keeps the frame of `__libc_csu_init` and its arrays, and the invariant goes from `m` to `m + 1`
   through `st`.
-- `cfg_runs`: the same for a constructor with loops, by `Seg.cfg` over its cut points.
+- `cfg_runs`: the same for code with loops at `e.add j`, by `Seg.cfg` over its cut points: a constructor in `sti`
+  (`e = sti_at`, `csuTg m = e.add j`), or a function a constructor jumps to (with `jmp_runs`).
 -/
 namespace FV7z.Ctor
 open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn FV7z.Start
@@ -17,13 +19,14 @@ open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn FV7z.Start
 variable {prof : Profile} {F : Footprint} {Wl : List Rgn} {L : List (Addr × List Byte)} {s₀ : State} {o : Oracle}
   {gev : List Event} {gP : State → Nat → List Event → Prop} {gE : Outcome → List Event → Prop}
 
-/-- From the `ret` at offset `jr` of `sti`, with the registers a call keeps and bytes `V'` that keep the frame of
-`__libc_csu_init` and its arrays, the run goes back to `__libc_csu_init` as `Csu.Runs` asks (its continuation `k`). -/
+/-- From the `ret` at offset `jr` of `code` (at `e`), with the registers a call keeps and bytes `V'` that keep the
+frame of `__libc_csu_init` and its arrays, the run goes back to `__libc_csu_init` as `Csu.Runs` asks (its
+continuation `k`). -/
 theorem ret_tail {J : Nat → (Addr → Byte) → Prop} {sp : Addr} {tg : Nat → Addr} {m jr j₂ t₁ : Nat} {X Y : State}
-    {V V' : Addr → Byte} (c : Seg prof F Wl L s₀ o) (hC : Csu.Env F Wl L sp tg) (hin : CodeIn L sti_at sti)
-    (hd : Dec prof.feat sti jr (FV7z.mk .ret 64 [] 1)) (hjr : jr < sti.length) (hsp : X.cpu.gpr.rsp = sp - 64#64)
-    (hj₂ : j₂ < Csu.csu.length) (hra : rdq(V, sp - 64#64) = Csu.csu_at.add j₂) (hKY : KeptW Wl s₀ Y)
-    (hAY : Agree F Y.proc.mm.mem V') (hrY : Y.cpu.rip = sti_at.add jr) (hKp : Kp X.cpu.gpr Y.cpu.gpr)
+    {V V' : Addr → Byte} {e : Addr} {code : List Byte} (c : Seg prof F Wl L s₀ o) (hC : Csu.Env F Wl L sp tg)
+    (hin : CodeIn L e code) (hd : Dec prof.feat code jr (FV7z.mk .ret 64 [] 1)) (hjr : jr < code.length)
+    (hsp : X.cpu.gpr.rsp = sp - 64#64) (hj₂ : j₂ < Csu.csu.length) (hra : rdq(V, sp - 64#64) = Csu.csu_at.add j₂)
+    (hKY : KeptW Wl s₀ Y) (hAY : Agree F Y.proc.mm.mem V') (hrY : Y.cpu.rip = e.add jr) (hKp : Kp X.cpu.gpr Y.cpu.gpr)
     (hI : J (m + 1) V') (hst : ∀ a : Addr, (sp.toNat - 64 ≤ a.toNat ∧ a.toNat < sp.toNat + 8) ∨
       (7829400 ≤ a.toNat ∧ a.toNat < 7830224) → V' a = V a)
     (k : ∀ (Z : State) (t' : Nat) (V' : Addr → Byte), KeptW Wl s₀ Z → Agree F Z.proc.mm.mem V' → J (m + 1) V' →
@@ -65,14 +68,14 @@ theorem blk_runs {J : Nat → (Addr → Byte) → Prop} {sp : Addr} {tg : Nat �
   rintro j'' g fl V' ⟨rfl, hKp, rfl⟩ Y t₁ hKY hAY hrY rfl -
   exact ret_tail c hC hin hd hj' hsp hj₂ hra hKY hAY hrY hKp (hJ V hI) (hst V) k
 
-/-- A constructor at offset `j` of `sti` with loops, up to a `ret` at `jr`, is a function as `Csu.csu_ok` asks: by
+/-- Code at offset `j` of `code` (at `e`) with loops, up to a `ret` at `jr`, is a function as `Csu.csu_ok` asks: by
 `Seg.cfg` over cut points `W` with an invariant `Inv g₀ V₀` (the registers and bytes at the entry `g₀`, `V₀`) that
 holds at the entry and reaches the `ret` with the registers a call keeps and bytes `R V₀`, `R` keeps the frame of
 `__libc_csu_init` and its arrays, and the invariant goes from `m` to `m + 1` through `R`. -/
 theorem cfg_runs {J : Nat → (Addr → Byte) → Prop} {sp : Addr} {tg : Nat → Addr} {a₀ a₁ a₂ : BitVec 64}
-    {m j jr : Nat} {W : Nat → Wpt} (c : Seg prof F Wl L s₀ o) (hC : Csu.Env F Wl L sp tg)
-    (hin : CodeIn L sti_at sti) (htg : csuTg m = sti_at.add j) (hW : ∀ ℓ, Sp prof sti sti_at ℓ (W ℓ))
-    (hd : Dec prof.feat sti jr (FV7z.mk .ret 64 [] 1)) (hjr : jr < sti.length)
+    {m j jr : Nat} {W : Nat → Wpt} {a e : Addr} {code : List Byte} (c : Seg prof F Wl L s₀ o)
+    (hC : Csu.Env F Wl L sp tg) (hin : CodeIn L e code) (htg : a = e.add j) (hW : ∀ ℓ, Sp prof code e ℓ (W ℓ))
+    (hd : Dec prof.feat code jr (FV7z.mk .ret 64 [] 1)) (hjr : jr < code.length)
     (R : (Addr → Byte) → (Addr → Byte) → Prop)
     (Inv : Gprs → (Addr → Byte) → Nat → Nat → Gprs → Rflags → (Addr → Byte) → Prop)
     (h0 : ∀ g f V, ∃ n, Inv g V j n g f V)
@@ -81,7 +84,7 @@ theorem cfg_runs {J : Nat → (Addr → Byte) → Prop} {sp : Addr} {tg : Nat �
     (hR : ∀ V V', R V V' → ∀ a : Addr, (sp.toNat - 64 ≤ a.toNat ∧ a.toNat < sp.toNat + 8) ∨
       (7829400 ≤ a.toNat ∧ a.toNat < 7830224) → V' a = V a)
     (hJ : ∀ V V', J m V → R V V' → J (m + 1) V') :
-    Csu.Runs prof F Wl L s₀ o gev gP gE J sp a₀ a₁ a₂ m (csuTg m) := by
+    Csu.Runs prof F Wl L s₀ o gev gP gE J sp a₀ a₁ a₂ m a := by
   intro X t V j₂ hK hA hI hr hsp _ hj₂ hra k
   obtain ⟨n₀, h₀⟩ := h0 X.cpu.gpr X.cpu.rflags V
   refine c.cfg hin hW (Inv X.cpu.gpr V) (fun j' g' _ V' => j' = jr ∧ Kp X.cpu.gpr g' ∧ R V V')
