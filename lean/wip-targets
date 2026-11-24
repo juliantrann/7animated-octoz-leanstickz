@@ -1,6 +1,2 @@
-FV7z.Ctor.Reg
-FV7z.Rgc.Holds
-FV7z.Rgh.Holds
-FV7z.Rga.Holds
-FV7z.Ctor.Lea
-FV7z.Ctor.LeaJmp
+FV7z.Ctor.Runs
+FV7z.Ctor.Regs
