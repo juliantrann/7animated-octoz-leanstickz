@@ -1,4 +1,5 @@
 import FV7z.Ctor.Cx90
+import FV7z.Ctor.Loop
 /-!
 # The constructor at `0x59ea30` of the object at `0x79ece0` (PLAN.md G3, constructors)
 
@@ -147,7 +148,7 @@ theorem vc_0 {g : Gprs} {f : Rflags} {V : Addr → Byte} (hdi : g.rdi = 7990496#
   refine ⟨ft_at hw (by decide) (by decide) (by decide), ft_at hw (by decide) (by decide) (by decide),
     ft_at hw (by decide) (by decide) (by decide), ft_at hw (by decide) (by decide) (by decide), ?_⟩
   intros
-  refine hQ _ _ _ (by decide) (by decide) ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩ ?_
+  refine hQ _ _ _ rfl rfl ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩ ?_
   refine out_at (out_at (out_at (out_at (fun _ _ => rfl) ?_ ?_ ?_ ?_) ?_ ?_ ?_ ?_) ?_ ?_ ?_ ?_) ?_ ?_ ?_ ?_ <;>
     first | exact toBytesLE_length _ _ | decide
 
