@@ -1,0 +1,61 @@
+import FV7z.Ctor.BlkRet
+/-!
+# Loops that fill a table (PLAN.md §M, constructors)
+
+Helpers for a constructor whose loop stores into a table at a fixed address `b`: the table's bytes from `b` up to
+`b + m` are in `Wl`, and the bytes outside it stay as at the entry (`Raf.Out`). Each is stated for a variable `b`, so
+the kernel checks the arithmetic once and never folds the table's literal address.
+
+- `ft_at`, `out_at`: bytes at an address `a` inside the table are in `Wl`, and a store there keeps `Raf.Out`.
+- `toNat_bx`, `ft_bx`, `out_bx`: the same for the address `b + x`, `x` an index into the table.
+- `Kp.of`: `Kp` from the registers a call keeps, each as before; it never compares the other registers.
+-/
+namespace FV7z.Ctor
+open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn FV7z.Start
+
+/-- `n` bytes at `a` in `Wl`, from the table's `m` bytes at `b`. -/
+theorem ft_at {R : List Rgn} {b m : Nat} (h : ∀ i < m, Foot R (Addr.add (BitVec.ofNat 64 b) i))
+    (hb : b + m ≤ 2 ^ 64) {a : Addr} {n : Nat} (h1 : b ≤ a.toNat) (h2 : a.toNat + n ≤ b + m) :
+    ∀ i < n, Foot R (Addr.add a i) := fun i hi => by
+  have e : Addr.add (BitVec.ofNat 64 b) (a.toNat - b + i) = Addr.add a i := by
+    simp only [Addr.add]
+    apply BitVec.eq_of_toNat_eq
+    simp only [BitVec.toNat_add, BitVec.toNat_ofNat]
+    omega
+  rw [← e]
+  exact h _ (by omega)
+
+/-- A store of `n` bytes at `a`, inside the table, keeps the bytes outside it. -/
+theorem out_at {b m n : Nat} {V₀ V : Addr → Byte} {a : Addr} {bs : List Byte} (hO : Raf.Out b (b + m) V₀ V)
+    (hn : bs.length = n) (h1 : b ≤ a.toNat) (h2 : a.toNat + n ≤ b + m) (hb : b + m ≤ 2 ^ 64) :
+    Raf.Out b (b + m) V₀ (Vst V a bs) :=
+  hO.trans ((Raf.Out.vst hn (by omega)).mono h1 h2)
+
+/-- The address `x` past `b`, when it does not wrap. -/
+theorem toNat_bx {b : Nat} {x : BitVec 64} (h : b + x.toNat < 2 ^ 64) :
+    (BitVec.ofNat 64 b + x).toNat = b + x.toNat := by
+  simp only [BitVec.toNat_add, BitVec.toNat_ofNat]
+  omega
+
+/-- `n` bytes at `x` past `b` in `Wl`, from the table's `m` bytes. -/
+theorem ft_bx {R : List Rgn} {b m : Nat} (h : ∀ i < m, Foot R (Addr.add (BitVec.ofNat 64 b) i))
+    (hb : b + m < 2 ^ 64) {x : BitVec 64} {n : Nat} (hx : x.toNat + n ≤ m) :
+    ∀ i < n, Foot R (Addr.add (BitVec.ofNat 64 b + x) i) := by
+  have e : (BitVec.ofNat 64 b + x).toNat = b + x.toNat := toNat_bx (by omega)
+  exact ft_at h (by omega) (by rw [e]; omega) (by rw [e]; omega)
+
+/-- A store of `n` bytes at `x` past `b`, inside the table, keeps the bytes outside it. -/
+theorem out_bx {b m n : Nat} {V₀ V : Addr → Byte} {x : BitVec 64} {bs : List Byte} (hO : Raf.Out b (b + m) V₀ V)
+    (hb : b + m < 2 ^ 64) (hx : x.toNat + n ≤ m) (hn : bs.length = n) :
+    Raf.Out b (b + m) V₀ (Vst V (BitVec.ofNat 64 b + x) bs) := by
+  have e : (BitVec.ofNat 64 b + x).toNat = b + x.toNat := toNat_bx (by omega)
+  exact out_at hO hn (by rw [e]; omega) (by rw [e]; omega) (by omega)
+
+/-- `Kp` for `g'` from `Kp` for `g`, the registers a call keeps the same in both. Give each as `rfl`: the kernel
+then reduces each projection alone. -/
+theorem Kp.of {g₀ g g' : Gprs} (h : Kp g₀ g) (e1 : g'.rsp = g.rsp) (e2 : g'.rbx = g.rbx) (e3 : g'.rbp = g.rbp)
+    (e4 : g'.r12 = g.r12) (e5 : g'.r13 = g.r13) (e6 : g'.r14 = g.r14) (e7 : g'.r15 = g.r15) : Kp g₀ g' :=
+  ⟨e1.trans h.1, e2.trans h.2.1, e3.trans h.2.2.1, e4.trans h.2.2.2.1, e5.trans h.2.2.2.2.1,
+    e6.trans h.2.2.2.2.2.1, e7.trans h.2.2.2.2.2.2⟩
+
+end FV7z.Ctor
