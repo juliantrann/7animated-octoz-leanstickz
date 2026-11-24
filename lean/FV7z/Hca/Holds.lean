@@ -259,14 +259,14 @@ theorem vc_54a (hT : Te F Wl L g₀ V₀) (hM : Mid g₀ V₀ g V) (hr : g.rdi =
   have hj := jt_rd hT hM
   have hft := tab4 hT
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
+  obtain ⟨m1, m2, m3, m4, m5, m6, m7⟩ := hM
+  try dsimp only at m1 m2 m3 m4 m5 m6
   have hr' : rdi = 188#64 := hr
   wpx -implicitDefEqProofs [W_54, W_69, o6, o7, Op.ldsx]
   subst hr'
-  trace_state
   refine ⟨fun h => absurd h (by decide), fun _ => ⟨hft _ (by decide) (by decide), ?_⟩⟩
   simp -implicitDefEqProofs (disch := decide) only [hj 0 (by decide), jw0]
-  refine ⟨160, lt_len (by decide), ?_, Or.inl ⟨3, by decide, rfl, hM⟩⟩
-  first | exact jv0 | (trace_state; sorry)
+  exact ⟨160, lt_len (by decide), jv0, Or.inl ⟨3, by decide, rfl, m1, m2, m3, m4, m5, m6, m7⟩⟩
 
 /-- `vc_54` for `rdi = 191`: the table's entry 3, to `224`. -/
 theorem vc_54b (hT : Te F Wl L g₀ V₀) (hM : Mid g₀ V₀ g V) (hr : g.rdi = 191#64) :
@@ -274,14 +274,14 @@ theorem vc_54b (hT : Te F Wl L g₀ V₀) (hM : Mid g₀ V₀ g V) (hr : g.rdi =
   have hj := jt_rd hT hM
   have hft := tab4 hT
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
+  obtain ⟨m1, m2, m3, m4, m5, m6, m7⟩ := hM
+  try dsimp only at m1 m2 m3 m4 m5 m6
   have hr' : rdi = 191#64 := hr
   wpx -implicitDefEqProofs [W_54, W_69, o6, o7, Op.ldsx]
   subst hr'
-  trace_state
   refine ⟨fun h => absurd h (by decide), fun _ => ⟨hft _ (by decide) (by decide), ?_⟩⟩
   simp -implicitDefEqProofs (disch := decide) only [hj 3 (by decide), jw3]
-  refine ⟨224, lt_len (by decide), ?_, Or.inl ⟨3, by decide, rfl, hM⟩⟩
-  first | exact jv3 | (trace_state; sorry)
+  exact ⟨224, lt_len (by decide), jv3, Or.inl ⟨3, by decide, rfl, m1, m2, m3, m4, m5, m6, m7⟩⟩
 
 /-- `vc_54` for `rdi = 194`: the table's entry 6, to `312`. -/
 theorem vc_54c (hT : Te F Wl L g₀ V₀) (hM : Mid g₀ V₀ g V) (hr : g.rdi = 194#64) :
@@ -289,14 +289,14 @@ theorem vc_54c (hT : Te F Wl L g₀ V₀) (hM : Mid g₀ V₀ g V) (hr : g.rdi =
   have hj := jt_rd hT hM
   have hft := tab4 hT
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
+  obtain ⟨m1, m2, m3, m4, m5, m6, m7⟩ := hM
+  try dsimp only at m1 m2 m3 m4 m5 m6
   have hr' : rdi = 194#64 := hr
   wpx -implicitDefEqProofs [W_54, W_69, o6, o7, Op.ldsx]
   subst hr'
-  trace_state
   refine ⟨fun h => absurd h (by decide), fun _ => ⟨hft _ (by decide) (by decide), ?_⟩⟩
   simp -implicitDefEqProofs (disch := decide) only [hj 6 (by decide), jw6]
-  refine ⟨312, lt_len (by decide), ?_, Or.inl ⟨3, by decide, rfl, hM⟩⟩
-  first | exact jv6 | (trace_state; sorry)
+  exact ⟨312, lt_len (by decide), jv6, Or.inl ⟨3, by decide, rfl, m1, m2, m3, m4, m5, m6, m7⟩⟩
 
 theorem vc_54 (hT : Te F Wl L g₀ V₀) (h : Ih g₀ V₀ 54 n g V) : W_54 F Wl (Nx g₀ V₀ n) g f V := by
   obtain ⟨rfl, hd, hM⟩ := h
