@@ -271,6 +271,7 @@ import FV7z.Start.ExitKeep
 import FV7z.Start.CxaRet
 import FV7z.Start.ToCxa
 import FV7z.Start.SecRet
+import FV7z.Start.ArrRet
 import FV7z.Start.CsuCall
 import FV7z.Start.DbgCall
 import FV7z.Start.SjpCall
