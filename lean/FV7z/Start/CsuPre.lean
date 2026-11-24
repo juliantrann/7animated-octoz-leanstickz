@@ -150,7 +150,7 @@ theorem preI_ge {V₀ V : Addr → Byte} {J : Nat → (Addr → Byte) → Prop} 
   rw [if_neg h]
 
 theorem ofNat_add_toNat {x i n : Nat} (hi : i < n) (hx : x + n ≤ 2 ^ 64) :
-    ((BitVec.ofNat 64 x : Addr).add i).toNat = x + i := by
+    (Addr.add (BitVec.ofNat 64 x) i).toNat = x + i := by
   rw [toNat_add_of_fits hi (by rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]; omega), BitVec.toNat_ofNat,
     Nat.mod_eq_of_lt (by omega)]
 
