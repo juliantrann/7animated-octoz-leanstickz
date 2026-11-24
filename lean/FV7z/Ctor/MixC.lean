@@ -198,7 +198,7 @@ theorem runs77_jg {V : Addr → Byte} {spec : Nat → CSpec} {G : Nat → (Addr 
     Csu.Runs prof F Wl L s₀ o gev gP gE (Jg V sp.toNat spec G) sp a₀ a₁ a₂ 77 (csuTg 77) := by
   have hS := hP.hi
   have n := Csu.sp_n (show 64 ≤ sp.toNat by omega)
-  have e80 : (sp - 64#64 - 8 - 8).toNat = sp.toNat - 80 := by rw [sub16 _ (by rw [n]; omega), n]
+  have e80 : (sp - 64#64 - 8 - 8).toNat = sp.toNat - 80 := by rw [sub16 _ (by rw [n]; omega), n]; omega
   have hlo : Lo (sp.toNat - 1024) w77 := lo_wrOf (by have h := hB 77; rw [hspec] at h; exact h)
   have hws : ∀ Y : State, Y.cpu.gpr.rsp = sp - 64#64 - 8 - 8 → ∀ y, Foot (ws 120 swW Y) y →
       (sp.toNat - 200 ≤ y.toNat ∧ y.toNat < sp.toNat - 80) ∨ Foot w77 y := fun Y hYs y hy => by
@@ -209,7 +209,7 @@ theorem runs77_jg {V : Addr → Byte} {spec : Nat → CSpec} {G : Nat → (Addr 
   refine callK_chain_runs (k := 120) c hC hin tg77 (pb1776 prof) (cd1776 _) (sti_lt (by decide)) (by decide)
     hinE (by decide +kernel) (swapBytesPrepareK prof hP.pc hinE hinS hinA2 hinA hinM hinC) hP.df hP.x87 hP.al
     (cs1776 prof) hR hinR hst (by omega) (fun Y hK hYs => ?_) fun Y Z U U₁ U' hYs hI hpost hU hAZ hO => ?_
-  · obtain ⟨hsub, hwl, hap⟩ := prepK_sub (Wc := w77) (Rc := []) (pre := swPre)
+  · obtain ⟨hsub, hwl, hap⟩ := prepK_sub (D := sp - 64#64 - 8 - 8) (k := 120) (Wc := w77) (Rc := []) (pre := swPre)
       (post := fun _ Y => swOk prof Y) c (by rw [e80]; omega) (by rw [e80]; omega) hP.stk hWl (lo_canary hP.can)
       hP.rf1 hlo hK hYs
     refine ⟨hsub, hwl, ?_, fun i hi hm => ?_, hap, fun y hy => ?_⟩
