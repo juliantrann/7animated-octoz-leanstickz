@@ -131,6 +131,11 @@ theorem st102_rp8 (V : Addr → Byte) {p : Addr} (hp : p.toNat + 16 < 2 ^ 64) : 
   have ep8 := Nst.o8 p hp
   exact rdq_self _ _ _ (by rw [ep8]; omega)
 
+/-- The words of `[0x7a3180, 0x7a31c0)` the stores write, from the footprint of the whole interval. -/
+theorem fwg {Wl : List Rgn} (h : ∀ i < 64, Foot Wl (Addr.add (BitVec.ofNat 64 8008064) i)) {x n : Nat}
+    (h1 : 8008064 ≤ x) (h2 : x + n ≤ 8008128) : ∀ i < n, Foot Wl (Addr.add (BitVec.ofNat 64 x) i) :=
+  ft_in h h1 (by omega) (by omega)
+
 /-! ## `csuTg 102` -/
 
 /-- `csuTg 102`, at `0x41ce70`, to the `ret`. -/
@@ -247,9 +252,10 @@ theorem c102_runs {J : Nat → (Addr → Byte) → Prop} {sp fb : Addr} {tg : Na
     g' = wr Y₀.cpu.gpr 7 ((Src.i 72704).val 32 Y₀.cpu.gpr) ∧
     ∃ bs bs' : List Byte, bs.length = 16 ∧ bs'.length = 16 ∧ V' = st3384 V bs bs') hK₀ hA₀ hr₀ ?_ ?_
   · exact ⟨fun i hi' => absurd hi' (Nat.not_lt_zero _), fun _ _ => ⟨toBytesLE_length _ _,
-      ft_in hgw (by omega) (by omega) (by omega), toBytesLE_length _ _, ft_in hgw (by omega) (by omega) (by omega),
-      ft_in hgw (by omega) (by omega) (by omega), fun bs hb => ⟨ft_in hgw (by omega) (by omega) (by omega),
-        fun bs' hb' => ⟨rfl, rfl, bs, bs', hb, hb', rfl⟩⟩⟩⟩
+      fwg hgw (x := 8008096) (n := 64 / 8) (by decide) (by decide), toBytesLE_length _ _,
+      fwg hgw (x := 8008120) (n := 64 / 8) (by decide) (by decide),
+      fwg hgw (x := 8008064) (n := 16) (by decide) (by decide), fun bs hb =>
+        ⟨fwg hgw (x := 8008080) (n := 16) (by decide) (by decide), fun bs' hb' => ⟨rfl, rfl, bs, bs', hb, hb', rfl⟩⟩⟩⟩
   rintro j' g fl V' ⟨rfl, rfl, bs, bs', hb, hb', rfl⟩ Y₁ t₁ hK₁ hA₁ hr₁ hg₁ -
   have hs₁ : Y₁.cpu.gpr.rsp = sp - 72#64 := by rw [hg₁]; exact hs₀
   have hd₁ : Y₁.cpu.gpr.rdi = 72704#64 := by rw [hg₁]; exact sw72704
@@ -287,7 +293,7 @@ theorem c102_runs {J : Nat → (Addr → Byte) → Prop} {sp fb : Addr} {tg : Na
       Vst V₂ (BitVec.ofNat 64 8008112) (toBytesLE p (64 / 8)) := by rw [hgvZ]
   refine (Sp.blkA (b3434 prof)).run c hin (fun j' g' _ V' => j' = 3441 ∧ g' = Z.cpu.gpr ∧
     V' = Vst V₂ (BitVec.ofNat 64 8008112) (toBytesLE p (64 / 8))) hKZ hAZ hrZ ?_ ?_
-  · exact ⟨toBytesLE_length _ _, ft_in hgw (by omega) (by omega) (by omega), rfl, rfl, hE₃⟩
+  · exact ⟨toBytesLE_length _ _, fwg hgw (x := 8008112) (n := 64 / 8) (by decide) (by decide), rfl, rfl, hE₃⟩
   rintro j' g fl V' ⟨rfl, rfl, rfl⟩ Y₃ t₄ hK₃ hA₃ hr₃ hg₃ -
   -- `test rax, rax`, `je` not taken
   refine c.s_test_rr64 hK₃ hA₃ hin (sti_lt (by decide)) hr₃ (td3441 _) ?_
@@ -300,12 +306,19 @@ theorem c102_runs {J : Nat → (Addr → Byte) → Prop} {sp fb : Addr} {tg : Na
   -- `mov [0x7a31a8], rax; mov qword [rax], 0x11c00; mov qword [rax + 8], 0; add rsp, 8`
   have ep8 := Nst.o8 p hp16
   have hgv5 : gv Y₅.cpu.gpr 64 0 = p := by show Y₅.cpu.gpr.rax.setWidth 64 = p; rw [sw_64_64]; exact haxY
+  have hpw : p.toNat + 72704 ≤ 2 ^ 64 := by omega
+  have hq0 : p.toNat + 64 / 8 ≤ p.toNat + 72704 := by omega
+  have hq1 : p.toNat ≤ (p + 8#64).toNat := by rw [ep8]; omega
+  have hq2 : (p + 8#64).toNat + 64 / 8 ≤ p.toNat + 72704 := by rw [ep8]; omega
+  have hpW : ∀ a : Addr, p.toNat ≤ a.toNat → a.toNat < p.toNat + 72704 → Foot Wl a := fun a h1 h2 => (hpF a h1 h2).1
   have hf0 : ∀ i < 64 / 8, Foot Wl (Addr.add (eaG Y₅.cpu.gpr (some 0) none 1 0) i) := by
     rw [ea0, haxY]
-    exact fun i hi' => Nst.fw (fun a h1 h2 => (hpF a h1 h2).1) (by omega) hi' (Nat.le_refl _) (by omega)
+    intro i hi'
+    exact Nst.fw hpW hpw hi' (Nat.le_refl _) hq0
   have hf8 : ∀ i < 64 / 8, Foot Wl (Addr.add (eaG Y₅.cpu.gpr (some 0) none 1 8) i) := by
     rw [ea8, haxY]
-    exact fun i hi' => Nst.fw (fun a h1 h2 => (hpF a h1 h2).1) (by omega) hi' (by rw [ep8]; omega) (by rw [ep8]; omega)
+    intro i hi'
+    exact Nst.fw hpW hpw hi' hq1 hq2
   have hE : Vst (Vst (Vst (Vst V₂ (BitVec.ofNat 64 8008112) (toBytesLE p (64 / 8))) (BitVec.ofNat 64 8008104)
       (toBytesLE (gv Y₅.cpu.gpr 64 0) (64 / 8))) (eaG Y₅.cpu.gpr (some 0) none 1 0)
       (toBytesLE (BitVec.ofNat 64 72704) (64 / 8))) (eaG Y₅.cpu.gpr (some 0) none 1 8)
@@ -314,7 +327,8 @@ theorem c102_runs {J : Nat → (Addr → Byte) → Prop} {sp fb : Addr} {tg : Na
     rw [hgv5, ea0, ea8, haxY]
   refine (Sp.blkA (b3446 prof)).run c hin (fun j' g' _ V' => j' = 3472 ∧
     g' = wr Y₅.cpu.gpr 4 (addR (gv Y₅.cpu.gpr 64 4) (BitVec.ofNat 64 8)) ∧ V' = st102 V₂ p) hK₅ hA₅ hr₅ ?_ ?_
-  · exact ⟨toBytesLE_length _ _, ft_in hgw (by omega) (by omega) (by omega), toBytesLE_length _ _, hf0,
+  · exact ⟨toBytesLE_length _ _, fwg hgw (x := 8008104) (n := 64 / 8) (by decide) (by decide),
+      toBytesLE_length _ _, hf0,
       toBytesLE_length _ _, hf8, fun _ _ => ⟨rfl, rfl, hE⟩⟩
   rintro j' g fl V' ⟨rfl, rfl, rfl⟩ Y₆ t₇ hK₆ hA₆ hr₆ hg₆ -
   have hs₆ : Y₆.cpu.gpr.rsp = sp - 64#64 := by rw [hg₆, rsp_add8, hg₅, hg₄, hg₃, hspZ', e72a]
@@ -331,14 +345,19 @@ theorem c102_runs {J : Nat → (Addr → Byte) → Prop} {sp fb : Addr} {tg : Na
       (a.toNat < 7940768 ∨ 7940776 ≤ a.toNat ∧ a.toNat + 8 < p.toNat ∨
         hi ≤ a.toNat ∧ (a.toNat + 320 < sp.toNat ∨ sp.toNat - 72 ≤ a.toNat)) → st102 V₂ p a = V a :=
     fun a h1 h2 => (hv1 a (by omega) h2).trans (st3384_out V hb hb' h1)
-  have e5 : (8008120#64 : Addr).toNat = 8008120 := rfl
-  have e2 : (8008096#64 : Addr).toNat = 8008096 := rfl
-  have r5 : rdq(st102 V₂ p, 8008120#64) = 72704#64 :=
-    (rdq_eq (by rw [e5]; omega) fun a h1 h2 => hv1 a (by rw [e5] at h1 h2; omega)
-      (.inr (.inl ⟨by rw [e5] at h1; omega, by rw [e5] at h2; omega⟩))).trans (st3384_r5 V hb hb')
-  have r2 : rdq(st102 V₂ p, 8008096#64) = 0#64 :=
-    (rdq_eq (by rw [e2]; omega) fun a h1 h2 => hv1 a (by rw [e2] at h1 h2; omega)
-      (.inr (.inl ⟨by rw [e2] at h1; omega, by rw [e2] at h2; omega⟩))).trans (st3384_r2 V hb hb')
+  have hp8 : 8008128 ≤ p.toNat := by omega
+  have r5 : rdq(st102 V₂ p, 8008120#64) = 72704#64 := by
+    have e5 : (8008120#64 : Addr).toNat = 8008120 := rfl
+    have h8 : (8008120#64 : Addr).toNat + 8 ≤ 2 ^ 64 := by rw [e5]; omega
+    refine (rdq_eq h8 fun a h1 h2 => ?_).trans (st3384_r5 V hb hb')
+    rw [e5] at h1 h2
+    refine hv1 a ?_ (.inr (.inl ⟨?_, ?_⟩)) <;> omega
+  have r2 : rdq(st102 V₂ p, 8008096#64) = 0#64 := by
+    have e2 : (8008096#64 : Addr).toNat = 8008096 := rfl
+    have h8 : (8008096#64 : Addr).toNat + 8 ≤ 2 ^ 64 := by rw [e2]; omega
+    refine (rdq_eq h8 fun a h1 h2 => ?_).trans (st3384_r2 V hb hb')
+    rw [e2] at h1 h2
+    refine hv1 a ?_ (.inr (.inl ⟨?_, ?_⟩)) <;> omega
   have hU : ∀ U : Addr → Byte, (∀ a : Addr, Mal.GlR hi a → (a.toNat < p.toNat ∨ p.toNat + 72704 ≤ a.toNat) →
       U a = st102 V₂ p a) → Mal.Hp F Wl fb hi k U := fun U hW => by
     have h0 := hHp (fun a => if p.toNat ≤ a.toNat ∧ a.toNat < p.toNat + 72704 then U a else V₂ a)
@@ -351,7 +370,7 @@ theorem c102_runs {J : Nat → (Addr → Byte) → Prop} {sp fb : Addr} {tg : Na
   -- `ret`
   refine ret_tail c hC hin (rd3472 _) (sti_lt (by decide)) hsp hj₂ hra hK₆ hA₆ hr₆
     ⟨hs₆.trans hsp.symm, hcs.1, hcs.2.1, hcs.2.2.1, hcs.2.2.2.1, hcs.2.2.2.2.1, hcs.2.2.2.2.2⟩
-    (hJ V (st102 V₂ p) p hI hvf (st102_r4 V₂ (by omega) hp16) (st102_r3 V₂ (by omega) hp16) r5 r2
+    (hJ V (st102 V₂ p) p hI hvf (st102_r4 V₂ hp8 hp16) (st102_r3 V₂ hp8 hp16) r5 r2
       (st102_rp V₂ hp16) (st102_rp8 V₂ hp16) hp1 hp2 hpn hpF hU)
     (fun a ha => hvf a (by omega) (by omega)) kk
 
