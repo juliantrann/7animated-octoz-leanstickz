@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate lean/FV7z/Ctor/Code.lean and lean/FV7z/Ctor/Lea.lean: the constructors of `.init_array` (PLAN.md §M).
+"""Generate lean/FV7z/Ctor/Code.lean, Lea*.lean and Chains.lean: the constructors of `.init_array` (PLAN.md §M).
 
   Code.lean  the bytes of 7zzs 26.06 from the first constructor to `_start` (`0x41c140` to `0x41d350`), where all 101
              lie, as one list `sti`, pinned to the file by `decide +kernel`.
@@ -7,6 +7,9 @@
              them): its 16 bytes as a pattern, what they decode to, where they lie in `sti`, the stretch to the `jmp`
              as a `BlkA` (`rdi` set to the argument), the `jmp`'s `Dec`; and `leas`, the table of the 64 (`csuTg`
              number, offset in `sti`, registrar, argument).
+  Chains.lean for each constructor `endbr64; sub rsp, 8; (lea rdi, [rip + d]; call R)+; lea rdi, [rip + d];
+             add rsp, 8; jmp R` (8 of them): its bytes, decodings, prologue, stretches, `call`s and `jmp` as
+             `CallsAt`; and `chains`, the table (`csuTg` number, offset, calls).
 
 The decodings are checked by Lean (`rfl`), not taken from here: a wrong one fails the build.
 Usage (from the main repo or a worktree): python3 -I tools/ctor_gen.py [release/26.06/7zzs] [lean]
@@ -14,6 +17,7 @@ Usage (from the main repo or a worktree): python3 -I tools/ctor_gen.py [release/
 import os
 import struct
 import sys
+import textwrap
 
 STI, END = 0x41C140, 0x41D350  # the first constructor; `_start`
 PART = 16  # constructors a file
@@ -62,6 +66,28 @@ def main():
         if tgt not in REG:
             continue
         leas.append(dict(m=m, a=a, j=a - STI, b=b, d=d % 2**64, r=r % 2**64, A=(a + 11 + d) % 2**64, tgt=tgt))
+    chains = []
+    for m in range(3, 104):
+        a = arr[m - 2]
+        b = rd(a, 4 + 4 + 12 * 8 + 16)
+        if b[:8] != bytes.fromhex("f30f1efa4883ec08"):
+            continue
+        p, cs = 8, []
+        while b[p:p + 3] == bytes.fromhex("488d3d") and b[p + 7] == 0xE8:
+            d, = struct.unpack_from("<i", b, p + 3)
+            r, = struct.unpack_from("<i", b, p + 8)
+            cs.append(dict(p=p, d=d % 2**64, r=r % 2**64, A=(a + p + 7 + d) % 2**64, tgt=(a + p + 12 + r) % 2**64,
+                           last=False))
+            p += 12
+        if b[p:p + 3] != bytes.fromhex("488d3d") or b[p + 7:p + 11] != bytes.fromhex("4883c408") or b[p + 11] != 0xE9:
+            continue
+        d, = struct.unpack_from("<i", b, p + 3)
+        r, = struct.unpack_from("<i", b, p + 12)
+        cs.append(dict(p=p, d=d % 2**64, r=r % 2**64, A=(a + p + 7 + d) % 2**64, tgt=(a + p + 16 + r) % 2**64,
+                       last=True))
+        if not cs[:-1] or any(c["tgt"] not in REG for c in cs):
+            continue
+        chains.append(dict(m=m, a=a, j=a - STI, b=b[:p + 16], cs=cs))
     os.makedirs(f"{out}/FV7z/Ctor", exist_ok=True)
     with open(f"{out}/FV7z/Ctor/Code.lean", "w") as f:
         f.write(f"""import ZellicX86.Spec.Executable
@@ -177,7 +203,104 @@ theorem lea_at (prof : Profile) {{m j r A : Nat}} (h : (m, j, r, A) ∈ leas) :
 
 end FV7z.Ctor
 """)
-    print(f"sti: {len(sti)} bytes; {len(leas)} constructors lea+jmp")
+    write_chains(out, chains)
+    print(f"sti: {len(sti)} bytes; {len(leas)} constructors lea+jmp; {len(chains)} chains")
+
+
+def write_chains(out, chains):
+    """`Chains.lean`: for each constructor `endbr64; sub rsp, 8; (lea rdi, [rip + d]; call R)+; lea rdi, [rip + d];
+    add rsp, 8; jmp R`: its bytes, decodings, stretches and `CallsAt`; the table `chains`."""
+    body = []
+    for ch in chains:
+        j, a, nm = ch["j"], ch["a"], f"c{ch['j']}"
+        names = ", ".join(f"`{REG[c['tgt']][1]} (0x{c['A']:x})`" for c in ch["cs"])
+        doc = textwrap.fill(f"/-- `csuTg {ch['m']}`, at `0x{a:x}`: {names}. -/", 120, break_on_hyphens=False)
+        t = [f"""{doc}
+def {nm} : List Byte := [
+{blist(ch['b'])}]
+theorem {nm}_0 : ∀ feat, Dec feat {nm} 0 (FV7z.mk .endbr64 32 [] 4) := by dec_rfl
+theorem {nm}_4 : ∀ feat, Dec feat {nm} 4 (FV7z.mk .sub 64 [gr 64 4, Src.opd 64 (.i 8)] 4) := by dec_rfl"""]
+        for c in ch["cs"]:
+            p = c["p"]
+            t.append(f"theorem {nm}_{p} : ∀ feat, Dec feat {nm} {p} (FV7z.mk .lea 64 [gr 64 7, .mem (mrip {c['d']} 0)] 7) :=\n"
+                     "  by dec_rfl")
+            if c["last"]:
+                t.append(f"theorem {nm}_{p + 7} : ∀ feat, Dec feat {nm} {p + 7} "
+                         "(FV7z.mk .add 64 [gr 64 4, Src.opd 64 (.i 8)] 4) := by dec_rfl")
+                t.append(f"theorem {nm}_{p + 11} : ∀ feat, Dec feat {nm} {p + 11} (FV7z.mk .jmp 64 [.rel {c['r']}] 5) :=\n"
+                         "  by dec_rfl")
+            else:
+                t.append(f"theorem {nm}_{p + 7} : ∀ feat, Dec feat {nm} {p + 7} (FV7z.mk .call 64 [.rel {c['r']}] 5) :=\n"
+                         "  by dec_rfl")
+        t.append(f"""theorem v{j} : {nm} <+: sti.drop {j} := by decide +kernel
+theorem pq{j} (prof : Profile) : BlkA prof {nm} (0x{a:x} : Addr) 0 8 [Op.nop, Op.sub 64 4 (.i 8)] :=
+  .cons ({nm}_0 _) ((OpI.endbr).at _) (by decide) <|
+  .cons ({nm}_4 _) ((OpI.sub (.i 8) (.inr rfl)).at _) (by decide) <|
+  .nil 8
+theorem pb{j} (prof : Profile) : BlkA prof sti sti_at {j} {j + 8} [Op.nop, Op.sub 64 4 (.i 8)] :=
+  (pq{j} prof).shift (by decide) v{j}""")
+        for c in ch["cs"]:
+            p, A = c["p"], c["A"]
+            if c["last"]:
+                ops, k = f"[Op.mov 64 7 (.i {A}), Op.add 64 4 (.i 8)]", 11
+                add = f"\n  .cons ({nm}_{p + 7} _) ((OpI.add (.i 8) (.inr rfl)).at _) (by decide) <|"
+                ins = f"(FV7z.mk .jmp 64 [.rel {c['r']}] 5)"
+            else:
+                ops, k, add = f"[Op.mov 64 7 (.i {A})]", 7, ""
+                ins = f"(FV7z.mk .call 64 [.rel {c['r']}] 5)"
+            t.append(f"""theorem lq{j}_{p} (prof : Profile) :
+    BlkA prof {nm} (0x{a:x} : Addr) {p} {p + k} {ops} :=
+  .cons ({nm}_{p} _) (OpIA.lea_rip (by decide)) (by decide) <|{add}
+  .nil {p + k}
+theorem lb{j}_{p} (prof : Profile) :
+    BlkA prof sti sti_at {j + p} {j + p + k} {ops} :=
+  (lq{j}_{p} prof).shift (by decide) v{j}
+theorem ld{j}_{p} (feat : Features) : Dec feat sti {j + p + k} {ins} :=
+  Dec.shift (j := {j}) (k := {p + k}) ({nm}_{p + k} feat) v{j} (by decide)""")
+        its = [f"({REG[c['tgt']][0]}, {c['A']})" for c in ch["cs"]]
+        lst = ",\n    ".join(", ".join(its[i:i + 4]) for i in range(0, len(its), 4))
+        steps = " <|\n  ".join(
+            f"CallsAt.{'last' if c['last'] else 'mid'} (lb{j}_{c['p']} prof) (ld{j}_{c['p']} _)\n    (sti_lt (by decide)) (by decide)"
+            for c in ch["cs"])
+        t.append(f"""theorem cs{j} (prof : Profile) : CallsAt prof {j + 8} [{lst}] :=
+  {steps}
+""")
+        body.append("\n".join(t))
+        ch["lst"] = lst
+    rows = ",\n".join(f"  ({ch['m']}, {ch['j']}, [{ch['lst']}])" for ch in chains)
+    pats = " | ".join(["rfl"] * len(chains))
+    cases = "\n".join(f"  · exact ⟨by decide +kernel, pb{ch['j']} prof, cs{ch['j']} prof⟩" for ch in chains)
+    with open(f"{out}/FV7z/Ctor/Chains.lean", "w") as f:
+        f.write(f"""import FV7z.Ctor.ChainGo
+/-!
+# The constructors that call registrars one after the other: the code (PLAN.md §M, constructors)
+
+{len(chains)} of the constructors of `.init_array` are `endbr64; sub rsp, 8`, then `lea rdi, [rip + d]; call R` one or
+more times, then `lea rdi, [rip + d]; add rsp, 8; jmp R`, each `R` one of the three registrars. For each, at offset
+`j` of `sti`: its bytes `c<j>`, what they decode to, where they lie (`v<j>`), the prologue (`pb<j>`), each `lea` with
+its `call` or `add` and `jmp` (`lb<j>_<p>`, `ld<j>_<p>`), and the calls as `CallsAt` (`cs<j>`). `chains`: the table
+of them. Generated by `tools/ctor_gen.py`.
+-/
+namespace FV7z.Ctor
+set_option maxRecDepth 100000
+open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Start
+
+{chr(10).join(body)}
+/-- The constructors that call registrars one after the other: their number `m` in `csuTg`, offset in `sti`, and
+the calls (registrar, argument). -/
+def chains : List (Nat × Nat × List (Nat × Nat)) := [
+{rows}]
+
+/-- Each constructor of `chains`: the entry of `.init_array` its number says, its prologue and its calls. -/
+theorem chain_at (prof : Profile) : ∀ x ∈ chains, csuTg x.1 = sti_at.add x.2.1 ∧
+    BlkA prof sti sti_at x.2.1 (x.2.1 + 8) [Op.nop, Op.sub 64 4 (.i 8)] ∧ CallsAt prof (x.2.1 + 8) x.2.2 := by
+  intro x hx
+  simp only [chains, List.mem_cons, List.not_mem_nil, or_false] at hx
+  rcases hx with {pats}
+{cases}
+
+end FV7z.Ctor
+""")
 
 
 if __name__ == "__main__":

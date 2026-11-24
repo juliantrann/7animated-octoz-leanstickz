@@ -9,12 +9,13 @@ of (registrar, argument).
 - `ChainOut S cs V V'`: the bytes after the calls, from those before, the constructor entered with `rsp = S`: each
   call but the last with its return address pushed at `S - 16`.
 - `ChainOut.out`: bytes apart from the registrars' tables and the pushed return addresses are unchanged.
-- `CallsAt prof p cs`: the stretches, `call`s and `jmp` of the calls from offset `p` of `sti` on.
+- `CallsAt prof p cs`: the stretches, `call`s and `jmp` of the calls from offset `p` of `sti` on; `CallsAt.mid`,
+  `CallsAt.last` to build it.
 - `chain_go`: from the first `lea` to the constructor's caller.
 - `chain_runs`: `Csu.Runs` for such a constructor.
 -/
 namespace FV7z.Ctor
-open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn
+open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn FV7z.Start
 open FV7z.Sga (vr)
 open FV7z.Tun (Vst_out)
 
@@ -66,6 +67,21 @@ def CallsAt (prof : Profile) : Nat → List (Nat × Nat) → Prop
   | p, (r, A) :: c :: cs => ∃ rel, BlkA prof sti sti_at p (p + 7) [Op.mov 64 7 (.i A)] ∧
       Dec prof.feat sti (p + 7) (FV7z.mk .call 64 [.rel rel] 5) ∧ p + 7 + 5 < sti.length ∧
       sti_at.add (p + 7 + 5) + BitVec.ofNat 64 rel = regAt r ∧ CallsAt prof (p + 7 + 5) (c :: cs)
+
+theorem CallsAt.last {p r A rel : Nat}
+    (hb : BlkA prof sti sti_at p (p + 11) [Op.mov 64 7 (.i A), Op.add 64 4 (.i 8)])
+    (hd : Dec prof.feat sti (p + 11) (FV7z.mk .jmp 64 [.rel rel] 5)) (hj : p + 11 < sti.length)
+    (htgt : sti_at.add (p + 11 + 5) + BitVec.ofNat 64 rel = (regAt r).add 0) : CallsAt prof p [(r, A)] := by
+  unfold CallsAt
+  exact ⟨rel, hb, hd, hj, htgt⟩
+
+theorem CallsAt.mid {p r A rel : Nat} {c : Nat × Nat} {cs : List (Nat × Nat)}
+    (hb : BlkA prof sti sti_at p (p + 7) [Op.mov 64 7 (.i A)])
+    (hd : Dec prof.feat sti (p + 7) (FV7z.mk .call 64 [.rel rel] 5)) (hj : p + 7 + 5 < sti.length)
+    (htgt : sti_at.add (p + 7 + 5) + BitVec.ofNat 64 rel = regAt r) (h : CallsAt prof (p + 7 + 5) (c :: cs)) :
+    CallsAt prof p ((r, A) :: c :: cs) := by
+  unfold CallsAt
+  exact ⟨rel, hb, hd, hj, htgt, h⟩
 
 theorem Cs.trans {g g' g'' : Gprs} (h : Cs g g') (h' : Cs g' g'') : Cs g g'' :=
   ⟨h'.1.trans h.1, h'.2.1.trans h.2.1, h'.2.2.1.trans h.2.2.1, h'.2.2.2.1.trans h.2.2.2.1,
