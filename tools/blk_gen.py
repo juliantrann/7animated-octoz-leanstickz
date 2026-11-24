@@ -234,6 +234,14 @@ FNS = {
     "c75": dict(grp="C75", code=("Ctor", "sti"), cn="csuTg 75", a=0x41c140, n=4624, entry=1584, pos=True,
                 stops=(1665,), tag="PLAN.md G3, constructors",
                 src="a static constructor of 7-Zip (`objdump -d`)"),
+    # `csuTg 82` (0x41c8a0, offset 1888 of `sti`) and `csuTg 87` (0x41c9b0, offset 2160): loops that fill tables
+    # from tables of `.rodata` (Deflate's length and distance slots).
+    "c82": dict(grp="C82", code=("Ctor", "sti"), cn="csuTg 82", a=0x41c140, n=4624, entry=1888, pos=True,
+                stops=(2081,), tag="PLAN.md G3, constructors",
+                src="a static constructor of 7-Zip (`objdump -d`)"),
+    "c87": dict(grp="C87", code=("Ctor", "sti"), cn="csuTg 87", a=0x41c140, n=4624, entry=2160, pos=True,
+                stops=(2387,), tag="PLAN.md G3, constructors",
+                src="a static constructor of 7-Zip (`objdump -d`)"),
     "rfi": dict(grp="Rfi", cn="__register_frame_info", a=0x612730, n=0xd1, entry=0xb0, pos=True,
                 stops=(0x6a, 0x76, 0x90, 0xa8, 0xd0), calls=True, tag="PLAN.md G3, startup",
                 src="libgcc's `__register_frame_info` (`libgcc/unwind-dw2-fde.c`; `objdump -d`)"),
