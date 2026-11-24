@@ -3,10 +3,10 @@ import FV7z.Lemmas.BlkOps7
 # `not`, `cqo`, three-operand `imul`, `and`/`test` of a high byte, `idiv r64` and `bsr r32` (PLAN.md M, ctor 103)
 
 Instructions of glibc's `init_cacheinfo` and `handle_intel` (measured with `tools/blk_gen.py`: `not r9d`,
-`cqo; idiv rcx`, `imul rax, [rip + d], 3`, `imul rax, rax, 0x55555556`, `bsr ecx, r9d`).
+`cqo; idiv rcx`, `imul rax, [rip + d], 3`, `imul rax, rax, 0x55555556`, `bsr ecx, r9d`, `cmp cl, [r11]`).
 
 - `Op.not32`, `Op.cqo`, `Op.imul3`, `Op.imul3ma`, `Op.andh`, `Op.testh`: `Op`s of `Blk.lean`; `cqo` (`Mn.cwd` at 64
-  bits) fills `rdx` with the sign of `rax`; `gvh g r` is bits 15–8 of register `r`.
+  bits) fills `rdx` with the sign of `rax`; `gvh g r` is bits 15–8 of register `r`; `OpI.cmpm8`: `cmp r8, [m]`.
 - `idiv64`, `Seg.s_idiv64`: `idiv r64` after `cqo` (`rdx` the sign of `rax`) with a positive divisor, a step of its own:
   it faults when the divisor is 0 or the quotient does not fit (`tdiv_fits`: it fits for a positive divisor).
 - `bsr32`, `Seg.s_bsr32`: `bsr r32, r32` with a source not 0, a step of its own: with a source 0 the destination is
@@ -76,6 +76,19 @@ def Op.testh (r v : Nat) : Op := .reg (fun g _ => g) fun g f fl => LogF f (gvh g
 
 theorem OpI.testh {r v len : Nat} : OpI prof (mk .test 8 [gh r, .imm 8 v] len) (Op.testh r v) :=
   fun _ _ _ htf hdec => ⟨_, _, instruction_next htf hdec rfl, ⟨_, rfl⟩, rfl, rfl, rfl⟩
+
+set_option linter.unusedSimpArgs false in
+/-- `cmp r8, [m]` (`OpI.cmpm` is of 32 and 64 bits, `OpI.cmpm16` of 16). -/
+theorem OpI.cmpm8 {r len sc d : Nat} {b i : Option Nat} :
+    OpI prof (mk .cmp 8 [gr 8 r, .mem (mg b i sc d 8)] len) (Op.cmpm 8 r b i sc d) := by
+  dsimp only [Op.cmpm, OpI]
+  intro s o t htf hac hdec hld
+  refine ⟨_, t, instruction_next htf hdec ?_, rfl, rfl, rfl, rfl⟩
+  cases b <;> cases i <;>
+  · simp only [exec, Sem.cmp, alu, subOp, mk, mg, gr, bind, Prog.bind, readOp, Bool.false_eq_true, ↓reduceIte, memRef,
+      effOffset, pure, Prog.readReg, Prog.read, Prog.run, writeOp, Prog.readFlags]
+    rw [checkAccess_ok (s := advance s len) hac hld]
+    rfl
 
 /-- The dividend `rdx:rax` of `idiv` after `cqo` is `rax`, sign-extended. -/
 theorem sx_toInt (x h : BitVec 64) (hh : h = if x.msb then BitVec.allOnes 64 else 0) :
