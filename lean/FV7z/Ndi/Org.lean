@@ -77,7 +77,8 @@ theorem ndi_ab {pl pc ip cpy : List Byte} {Pm : (Addr → Byte) → Prop} {E : E
     (h5 : rdd(fV W sp X.cpu.gpr, 7937248#64) = 0#32)
     (hK : KeptW Wl s₀ X) (hA : Agree F X.proc.mm.mem W) (hrip : X.cpu.rip = ndi_at.add 0)
     (hsp : X.cpu.gpr.rsp = sp + 120#64)
-    (ke : ∀ r Z t', KeptW Wl s₀ Z →
+    (ke : ∀ r, (∃ t₀, o t₀ (.readlink none Gor.pse) = r ∧ ∀ x, r = .procExe x → pathMax ≤ x.bytes.length) →
+      ∀ Z t', KeptW Wl s₀ Z →
       Agree F Z.proc.mm.mem (Gor.frV (nV W sp X.cpu.gpr) { X.cpu.gpr with rsp := sp - 8#64 }) →
       Z.cpu.rip = gor_at.add 271 → Z.cpu.gpr.rax = 18446744073709551615#64 → Z.cpu.gpr.rsp = sp - 8#64 →
       Z.cpu.gpr.rbx = X.cpu.gpr.rbx → Z.cpu.gpr.rbp = X.cpu.gpr.rbp → Z.cpu.gpr.r12 = X.cpu.gpr.r12 →
@@ -123,9 +124,9 @@ theorem ndi_ab {pl pc ip cpy : List Byte} {Pm : (Addr → Byte) → Prop} {E : E
       unfold nV
       rw [Sga.vs (toBytesLE_length _ 8) (by rw [m8 sp (by omega)]; omega)]
       exact ofBytesLE_toBytesLE (w := 64) (n := 8) rfl _)
-    (fun r Z t' a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 => by
+    (fun r hro Z t' a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 => by
       rw [hg] at a2 a5 a6 a7 a8 a9 a10 a11 ⊢
-      exact ke r Z t' a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11) ?_
+      exact ke r hro Z t' a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11) ?_
   intro x n s s₁ Vc M W' evs Z t' g hx c₁ hB₁ hK₂ hA₂ h2n hn4 h1s hs1 hg' hVc hAf MV ML hnul hout hr₂ hax hsp₂
     _ _ _ _ _ h15 hev
   rw [hz] at hg' hAf

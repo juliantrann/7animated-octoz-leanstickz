@@ -62,7 +62,7 @@ theorem launch_reaches {l : Launch} {n : Nat} {o : Oracle} {L : List (Addr × Li
   intro s₂ Z W V' g x1 x2 x3 d r10 r8 r9 u y1 y2 y3 y4 y5 q1 q2 q3
   intros
   refine ⟨?_, ?_⟩
-  · intro r Z' t' _ _ hrip
+  · intro r _ Z' t' _ _ hrip
     intros
     exact runsFrom_done (.inr hrip)
   · intros

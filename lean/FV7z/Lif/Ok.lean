@@ -106,7 +106,8 @@ theorem lif_ok {pl pc ip cpy : List Byte} {Pm : (Addr → Byte) → Prop} {E : E
     (h1 : rdq(fV W sp gY, 8029448#64) = 0#64) (h2 : rdq(fV W sp gY, 8029568#64) = 4194368#64)
     (h3 : rdq(fV W sp gY, 8029592#64) = 8#64) (h4 : rdq(fV W sp gY, 8029424#64) = 0#64)
     (h5 : rdd(fV W sp gY, 7937248#64) = 0#32)
-    (ke : ∀ r Z t', KeptW Wl s₀ Z →
+    (ke : ∀ r, (∃ t₀, o t₀ (.readlink none Gor.pse) = r ∧ ∀ x, r = .procExe x → pathMax ≤ x.bytes.length) →
+      ∀ Z t', KeptW Wl s₀ Z →
       Agree F Z.proc.mm.mem (Gor.frV (nV W sp gY) { gY with rsp := sp - 8#64 }) →
       Z.cpu.rip = gor_at.add 271 → Z.cpu.gpr.rax = 18446744073709551615#64 → Z.cpu.gpr.rsp = sp - 8#64 →
       Z.cpu.gpr.rbx = gY.rbx → Z.cpu.gpr.rbp = gY.rbp → Z.cpu.gpr.r12 = gY.r12 →

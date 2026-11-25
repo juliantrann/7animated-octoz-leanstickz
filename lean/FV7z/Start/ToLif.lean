@@ -76,7 +76,8 @@ theorem ptr_lif {prof : Profile} {L : List (Addr × List Byte)} {o : Oracle} {ge
     (nnz : ∀ k < n, lifW W Z (Addr.add a0 k) ≠ 0) (nz : lifW W Z (Addr.add a0 n) = 0)
     (ha1 : R ≤ a0.toNat) (ha2 : a0.toNat + n < top)
     -- `lif_ok`'s continuations
-    (ke : ∀ r Z' t', KeptW ([⟨B, 8192⟩] ++ (zzsFoot lo top L).writes) s₂ Z' →
+    (ke : ∀ r, (∃ t₀, o t₀ (.readlink none Gor.pse) = r ∧ ∀ x, r = .procExe x → pathMax ≤ x.bytes.length) →
+      ∀ Z' t', KeptW ([⟨B, 8192⟩] ++ (zzsFoot lo top L).writes) s₂ Z' →
       Agree (withNew (zzsFoot lo top L) [⟨B, 8192⟩]) Z'.proc.mm.mem
         (Gor.frV (Ndi.nV (lifW W Z) (lifSp Z) (lifY W Z)) { lifY W Z with rsp := lifSp Z - 8#64 }) →
       Z'.cpu.rip = gor_at.add 271 → Z'.cpu.gpr.rax = 18446744073709551615#64 →

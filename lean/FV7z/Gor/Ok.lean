@@ -57,7 +57,8 @@ theorem gor_ok (c : Seg prof F Wl L s₀ o) (hin : CodeIn L gor_at gor)
     (hinc : CodeIn L 4198592#64 cpy) (hc0 : 0 < cpy.length) (hcpy : PcpyAt prof L o 4198592#64 Pm)
     (hPm : ∀ W : Addr → Byte, (∀ a : Addr, a.toNat < 7940480 → W a = V a) → Pm W)
     (hinr : CodeIn L e' code) (hj : j < code.length) (hra : rdq(V, X.cpu.gpr.rsp) = e'.add j)
-    (ke : ∀ r Z t', KeptW Wl s₀ Z → Agree F Z.proc.mm.mem (frV V X.cpu.gpr) → Z.cpu.rip = gor_at.add 271 →
+    (ke : ∀ r, (∃ t₀, o t₀ (.readlink none Gor.pse) = r ∧ ∀ x, r = .procExe x → pathMax ≤ x.bytes.length) →
+      ∀ Z t', KeptW Wl s₀ Z → Agree F Z.proc.mm.mem (frV V X.cpu.gpr) → Z.cpu.rip = gor_at.add 271 →
       Z.cpu.gpr.rax = 18446744073709551615#64 → Z.cpu.gpr.rsp = X.cpu.gpr.rsp → Z.cpu.gpr.rbx = X.cpu.gpr.rbx →
       Z.cpu.gpr.rbp = X.cpu.gpr.rbp → Z.cpu.gpr.r12 = X.cpu.gpr.r12 → Z.cpu.gpr.r13 = X.cpu.gpr.r13 →
       Z.cpu.gpr.r14 = X.cpu.gpr.r14 → Z.cpu.gpr.r15 = X.cpu.gpr.r15 →
