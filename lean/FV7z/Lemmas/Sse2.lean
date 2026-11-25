@@ -69,7 +69,7 @@ theorem lane_ofBytes (f : Nat → BitVec 8) {j : Nat} (hj : j < 16) : lane 8 (of
     j = 12 ∨ j = 13 ∨ j = 14 ∨ j = 15 := by omega
   rcases this with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
   · simp (disch := omega) only [BitVec.getLsbD_append, if_pos, if_neg]
-    first | rfl | (congr 1; omega)
+    congr 1; omega
 
 theorem getLsbD_bit (c : Bool) (a i : Nat) :
     ((BitVec.ofBool c).setWidth 32 <<< a).getLsbD i = (decide (a = i) && decide (i < 32) && c) := by
@@ -90,7 +90,7 @@ theorem getLsbD_foldl_bits (g : Nat → Bool) : ∀ (l : List Nat) (m : BitVec 3
     rw [List.foldl_cons, getLsbD_foldl_bits g l, BitVec.getLsbD_or, getLsbD_bit]
     by_cases h : a = i
     · subst h
-      cases h1 : decide (a < 32) <;> cases hg : g a <;> cases hm : m.getLsbD a <;> simp [hg, hm, h1]
+      cases h1 : decide (a < 32) <;> cases hg : g a <;> cases hm : m.getLsbD a <;> simp [hm, h1]
     · have h' : ¬ i = a := fun e => h e.symm
       simp [h, h', List.mem_cons]
 
