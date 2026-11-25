@@ -1,8 +1,5 @@
-import FV7z.C103.VcC
+import FV7z.C103.Holds
 open FV7z
-#print axioms C103.vc_3504
-#print axioms C103.vc_3710
-#print axioms C103.vc_3921
-#print axioms C103.vc_4348
-#print axioms C103.vc_4502
-#print axioms C103.andc
+#print axioms C103.vcAll
+#print axioms C103.c103_fnK
+#print axioms C103.rc_of
