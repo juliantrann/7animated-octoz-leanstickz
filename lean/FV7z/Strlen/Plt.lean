@@ -26,11 +26,11 @@ theorem jmp_mrip {d len : Nat} (htf : s.cpu.rflags.tf = false) (hac : s.cpu.rfla
     (instruction prof s).runStream o t =
       (.running (upd s (ofBytesLE 64 (readBytes s.proc.mm.mem (eaR s len d) 8)) s.cpu.gpr (rf0 s)) none, t) := by
   refine instruction_next htf hdec ?_
-  simp only [exec, Sem.jmp, mk, mrip, bind, Prog.bind, readOp, Bool.false_eq_true, ↓reduceIte, memRef,
-    effOffset, pure, Prog.readRip, Prog.read, Prog.run, Opd.width, BitVec.mul_one, jumpTo]
+  simp only [exec, Sem.jmp, mrip, bind, Prog.bind, readOp, Bool.false_eq_true, ↓reduceIte, memRef, effOffset,
+    pure, Prog.readRip, Prog.read, Prog.run, BitVec.mul_one, jumpTo]
   rw [eaR_adv, checkAccess_ok (s := advance s len) hac hld]
   rw [show (advance s len).proc.mm.mem = s.proc.mm.mem from rfl, hcan]
-  simp only [↓reduceIte, Prog.writeRip, done, Prog.run, bind, Prog.bind, pure, BitVec.setWidth_eq]
+  simp only [↓reduceIte, Prog.writeRip, done, Prog.run, Prog.bind, pure]
   rfl
 
 end
@@ -130,8 +130,7 @@ theorem lenAtG_plt {prof : Profile} {L : List (Addr × List Byte)} {o : Oracle}
     · simp only [Addr.add, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.reducePow, Nat.reduceMod]; omega
     · simp only [Addr.add, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.reducePow, Nat.reduceMod]; omega
   · rintro Y t' hKY hAY ⟨hrY, hgY⟩
-    have h := lenAt_sse2 (prof := prof) (L := L) (o := o) (Pm := fun _ => True) hin n c hKY hAY hrY trivial hin₂ hj
-    rw [hgY] at h
-    exact h hra hl hov hnz hz hft K
+    rw [← hgY] at hra hl hov hnz hz hft K
+    exact lenAt_sse2 (Pm := fun _ => True) hin n c hKY hAY hrY trivial hin₂ hj hra hl hov hnz hz hft K
 
 end FV7z.Strlen
