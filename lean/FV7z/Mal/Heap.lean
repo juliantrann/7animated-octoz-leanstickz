@@ -110,7 +110,7 @@ theorem Gl.mv {F : Footprint} {Wl : List Rgn} {fb C : Addr} {E : Nat} {V W : Add
 /-- The heap for the next `malloc`: `Gl`, the tcache `C` and the TLS words below the top `T`, the top's size (without
 the in-use bit) at least `k` and not above `system_mem`, `[T, T + k)` in the footprint and below `hi`. -/
 def Hp (F : Footprint) (Wl : List Rgn) (fb : Addr) (hi k : Nat) (V : Addr → Byte) : Prop :=
-  ∃ C T szw sm : Addr, Gl F Wl fb C V ∧ 8029928 ≤ fb.toNat ∧ fb.toNat + 48 ≤ T.toNat ∧ 8029888 ≤ C.toNat ∧
+  ∃ C T szw sm : Addr, Gl F Wl fb C V ∧ 8029928 ≤ fb.toNat ∧ fb.toNat + 48 ≤ T.toNat ∧ fb.toNat + 64 ≤ C.toNat ∧
     C.toNat + 128 ≤ T.toNat ∧ 8032256 ≤ T.toNat ∧ T.toNat + k ≤ hi ∧
     hi < 2 ^ 64 ∧ rdq(V, 7940768#64) = T ∧ rdq(V, T + 8#64) = szw ∧ rdq(V, 7942856#64) = sm ∧
     (szw &&& 18446744073709551608#64).toNat ≤ sm.toNat ∧ k ≤ (szw &&& 18446744073709551608#64).toNat ∧
@@ -230,7 +230,7 @@ theorem mal_hp {fb : Addr} {hi m B : Nat} (c : Seg prof F Wl L s₀ o) (hfs : s�
   refine Mnx.mal_next (S := X.cpu.gpr.rsp - 216#64) (T := T) (szw := szw) (sm := sm) (C := C)
     (n := X.cpu.gpr.rdi) (nb := nb) c hfs hin hinI hK hA hcls (Im6.secN hcls) hrip rfl eS'.symm (by omega)
     (by omega) (by rw [f40, eS]; omega) (by rw [f24, eS]; omega) G.hk G.fh G.tc
-    (fun h0 => by rw [h0] at hc1; exact absurd hc1 (by decide))
+    (fun h0 => by rw [h0] at hc1; simp only [BitVec.toNat_ofNat, Nat.zero_mod] at hc1; omega)
     (by rw [eS]; omega) G.cn G.fn G.t1 G.f1 G.gm G.fc G.fz G.bk G.lb G.tb G.un G.m0 G.m1 G.m2 G.m3 G.W G.gf G.tf
     hsw (by omega) (by rw [eS]; omega) (fun i hi8 => hTF' (T + 8#64) i hi8 (by omega) (by omega))
     (fun i hi8 => hTF' (T + nb + 8#64) i hi8 (by rw [e72]; omega) (by rw [e72]; omega))
@@ -268,7 +268,7 @@ theorem mal_hp {fb : Addr} {hi m B : Nat} (c : Seg prof F Wl L s₀ o) (hfs : s�
       (szw &&& 18446744073709551608#64).toNat - nb.toNat := by
     rw [Mhi.or1_m8, hx]; omega
   refine ⟨C, T + nb, (szw &&& 18446744073709551608#64) - nb ||| 1#64, sm,
-    G.mv (E := T.toNat) hf1 hf2 hc1 hc2 (by omega) WV, hf1, by rw [eTn]; omega, hc1, by rw [eTn]; omega,
+    G.mv (E := T.toNat) hf1 hf2 (by omega) hc2 (by omega) WV, hf1, by rw [eTn]; omega, hc1, by rw [eTn]; omega,
     by rw [eTn]; omega, by rw [eTn]; omega, hhi', ?_, ?_, ?_, by rw [hs']; omega, by rw [hs']; omega, ?_⟩
   · -- the top word
     have et : (7940768#64 : Addr).toNat = 7940768 := rfl

@@ -73,7 +73,7 @@ theorem Gl.mvF {C : Addr} (h : Gl F Wl fb C V) (hf1 : 8029928 ≤ fb.toNat) (hf2
 /-- `Hp` (a budget of at least 16) names its tcache `C` and top `T`, with their bounds, and holds of every byte map
 that agrees on `HpF fb C T`. -/
 theorem Hp.cut (h : Hp F Wl fb hi m V) (hm : 16 ≤ m) : ∃ C T : Addr, 8029928 ≤ fb.toNat ∧ fb.toNat + 48 ≤ T.toNat ∧
-    8029888 ≤ C.toNat ∧ C.toNat + 128 ≤ T.toNat ∧ 8032256 ≤ T.toNat ∧ T.toNat + m ≤ hi ∧ hi < 2 ^ 64 ∧
+    fb.toNat + 64 ≤ C.toNat ∧ C.toNat + 128 ≤ T.toNat ∧ 8032256 ≤ T.toNat ∧ T.toNat + m ≤ hi ∧ hi < 2 ^ 64 ∧
     rdq(V, 7940768#64) = T ∧ rdq(V, fb + 18446744073709551576#64) = C ∧
     ∀ W : Addr → Byte, (∀ a : Addr, HpF fb C T a.toNat → W a = V a) → Hp F Wl fb hi m W := by
   obtain ⟨C, T, szw, sm, G, hf1, hf2, hc1, hc2, hT, hTh, hhi, htop, hsz, hsm, hle, hge, hTF⟩ := h
@@ -82,8 +82,8 @@ theorem Hp.cut (h : Hp F Wl fb hi m V) (hm : 16 ≤ m) : ∃ C T : Addr, 8029928
   have e8 : (T + 8#64).toNat = T.toNat + 8 := by rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega
   have et : (7940768#64 : Addr).toNat = 7940768 := rfl
   have es : (7942856#64 : Addr).toNat = 7942856 := rfl
-  refine ⟨C, T, szw, sm, G.mvF hf1 (by omega) hc1 (by omega) fun a ha _ => hW a (Or.inl ha), hf1, hf2, hc1, hc2, hT,
-    hTh, hhi, ?_, ?_, ?_, hle, hge, hTF⟩
+  refine ⟨C, T, szw, sm, G.mvF hf1 (by omega) (by omega) (by omega) fun a ha _ => hW a (Or.inl ha), hf1, hf2, hc1,
+    hc2, hT, hTh, hhi, ?_, ?_, ?_, hle, hge, hTF⟩
   · rw [rd_eq (V := V) (x := 7940768#64) (n := 8) (by rw [et]; omega) fun a a1 a2 =>
       hW a (by unfold HpF GlF; rw [et] at a1 a2; omega)]
     exact htop
@@ -181,6 +181,18 @@ theorem HpR.mal {R : Nat → Prop} {V₂ : Addr → Byte} {m₀ : Nat} {p : Addr
 theorem HpR.addLo {R S : Nat → Prop} (h : HpR F Wl fb hi m R V) (hm : 16 ≤ m)
     (hS : ∀ a, S a → 7942880 ≤ a ∧ a < 8013220 ∨ 8013232 ≤ a ∧ a < 8029888) :
     HpR F Wl fb hi m (fun a => R a ∨ S a) V := by
+  obtain ⟨hp, hR⟩ := h
+  obtain ⟨C, T, hf1, hf2, hc1, hc2, hT, hTh, hhi, htop, htc, -⟩ := hp.cut hm
+  refine ⟨hp, fun a ha => ?_⟩
+  rcases ha with ha | ha
+  · exact hR a ha
+  · have := hS a ha
+    rw [htc, htop]
+    exact ⟨by unfold GlF; omega, by omega⟩
+
+/-- `HpR` for more bytes in the TLS block below the tcache word, `[fs:-0x40, fs:-0x28)`. -/
+theorem HpR.addTls {R S : Nat → Prop} (h : HpR F Wl fb hi m R V) (hm : 16 ≤ m)
+    (hS : ∀ a, S a → fb.toNat - 64 ≤ a ∧ a < fb.toNat - 40) : HpR F Wl fb hi m (fun a => R a ∨ S a) V := by
   obtain ⟨hp, hR⟩ := h
   obtain ⟨C, T, hf1, hf2, hc1, hc2, hT, hTh, hhi, htop, htc, -⟩ := hp.cut hm
   refine ⟨hp, fun a ha => ?_⟩

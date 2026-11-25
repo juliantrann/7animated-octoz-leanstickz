@@ -149,6 +149,11 @@ theorem launch_to_main {l : Launch} {n : Nat} {o : Oracle} {L : List (Addr × Li
           Agree (lifG (loOf l n c) c.stackTop (brkOf l) L) Z'.proc.mm.mem
             (Cti.CtMem (Lif.bcV W₂ Z₁.cpu.gpr (BitVec.ofNat 64 (stackLayout l.args l.prof.linux c).strings) s)
               (brkOf l + 2176#64) 7299392#64 7296832#64 7295296#64) →
+          Mal.Hp (withNew (withNew (zzsFoot (loOf l n c) c.stackTop L) [⟨brkOf l, 8192⟩]) (brkN (brkOf l)))
+            (brkN (brkOf l) ++ ([⟨brkOf l, 8192⟩] ++ (zzsFoot (loOf l n c) c.stackTop L).writes)) (brkOf l + 2176#64)
+            ((lifSp Z).toNat - 4144) (1072 * 0 + 73840)
+            (Cti.CtMem (Lif.bcV W₂ Z₁.cpu.gpr (BitVec.ofNat 64 (stackLayout l.args l.prof.linux c).strings) s)
+              (brkOf l + 2176#64) 7299392#64 7296832#64 7295296#64) →
           Ims.Short (lifW W Z) (BitVec.ofNat 64 (stackLayout l.args l.prof.linux c).strings) (arg0 l.args).length s →
           Z'.cpu.rip = lsm_at.add 1017 → Z'.cpu.gpr.rsp = lifSp Z + 160#64 →
           Z'.cpu.gpr.rbx = (lifY W Z).rbx → Z'.cpu.gpr.rbp = rdq(lifW W Z, lifSp Z + 128#64) →
@@ -180,9 +185,9 @@ theorem launch_to_main {l : Launch} {n : Nat} {o : Oracle} {L : List (Addr × Li
   obtain ⟨hke, hk⟩ := hfin s₂ Z W V' g x1 x2 x3 d r10 r8 r9 u y1 y2 y3 y4 y5 q1 q2 q3 hax hdi c₂ hB₂ hK₂ hA₂ hr₂
     hRg hdx hsi hdi' hcpu hgot hhw hpl hMB hu hnew hW hT3
   refine ⟨hke, ?_⟩
-  intro x evs s₃ Z₁ Z' s W₂ hevs c₃ hB₃ hN hz1 hzp h12' h13' hK₃ hA₃ hsh hrip hrsp hrbx hrbp hr12 hr13 hr14 hr15
+  intro x evs s₃ Z₁ Z' s W₂ hevs c₃ hB₃ hN hz1 hzp h12' h13' hK₃ hA₃ hHp hsh hrip hrsp hrbx hrbp hr12 hr13 hr14 hr15
     V'' g' Z'' t'' hK'' hA'' hReg hr'' hg'' hax' hBk
-  have hG := hk x evs s₃ Z₁ Z' s W₂ hevs c₃ hB₃ hN hz1 hzp h12' h13' hK₃ hA₃ hsh hrip hrsp hrbx hrbp hr12 hr13 hr14
+  have hG := hk x evs s₃ Z₁ Z' s W₂ hevs c₃ hB₃ hN hz1 hzp h12' h13' hK₃ hA₃ hHp hsh hrip hrsp hrbx hrbp hr12 hr13 hr14
     hr15 V'' g' Z'' hK'' hA'' hReg hr'' hg'' hax' hBk
   -- where the layout puts things
   obtain ⟨h16, hn', -, -, hlt, hlo, htop⟩ :=

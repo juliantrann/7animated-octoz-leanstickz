@@ -95,6 +95,9 @@ theorem ptr_lif {prof : Profile} {L : List (Addr × List Byte)} {o : Oracle} {ge
       KeptW (lifG lo top B L).writes s₃ Z' →
       Agree (lifG lo top B L) Z'.proc.mm.mem
         (Cti.CtMem (Lif.bcV W₂ Z₁.cpu.gpr a0 s) (B + 2176#64) 7299392#64 7296832#64 7295296#64) →
+      Mal.Hp (withNew (withNew (zzsFoot lo top L) [⟨B, 8192⟩]) (brkN B))
+        (brkN B ++ ([⟨B, 8192⟩] ++ (zzsFoot lo top L).writes)) (B + 2176#64) ((lifSp Z).toNat - 4144)
+        (1072 * 0 + 73840) (Cti.CtMem (Lif.bcV W₂ Z₁.cpu.gpr a0 s) (B + 2176#64) 7299392#64 7296832#64 7295296#64) →
       Ims.Short (lifW W Z) a0 n s → Z'.cpu.rip = lsm_at.add 1017 → Z'.cpu.gpr.rsp = lifSp Z + 160#64 →
       Z'.cpu.gpr.rbx = (lifY W Z).rbx → Z'.cpu.gpr.rbp = rdq(lifW W Z, lifSp Z + 128#64) →
       Z'.cpu.gpr.r12 = rdq(lifW W Z, lifSp Z + 136#64) → Z'.cpu.gpr.r13 = rdq(lifW W Z, lifSp Z + 144#64) →

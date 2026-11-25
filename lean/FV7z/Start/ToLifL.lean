@@ -97,6 +97,11 @@ theorem launch_to_lif {l : Launch} {n : Nat} {o : Oracle} {L : List (Addr × Lis
           Agree (lifG (loOf l n c) c.stackTop (brkOf l) L) Z'.proc.mm.mem
             (Cti.CtMem (Lif.bcV W₂ Z₁.cpu.gpr (BitVec.ofNat 64 (stackLayout l.args l.prof.linux c).strings) s)
               (brkOf l + 2176#64) 7299392#64 7296832#64 7295296#64) →
+          Mal.Hp (withNew (withNew (zzsFoot (loOf l n c) c.stackTop L) [⟨brkOf l, 8192⟩]) (brkN (brkOf l)))
+            (brkN (brkOf l) ++ ([⟨brkOf l, 8192⟩] ++ (zzsFoot (loOf l n c) c.stackTop L).writes)) (brkOf l + 2176#64)
+            ((lifSp Z).toNat - 4144) (1072 * 0 + 73840)
+            (Cti.CtMem (Lif.bcV W₂ Z₁.cpu.gpr (BitVec.ofNat 64 (stackLayout l.args l.prof.linux c).strings) s)
+              (brkOf l + 2176#64) 7299392#64 7296832#64 7295296#64) →
           Ims.Short (lifW W Z) (BitVec.ofNat 64 (stackLayout l.args l.prof.linux c).strings) (arg0 l.args).length s →
           Z'.cpu.rip = lsm_at.add 1017 → Z'.cpu.gpr.rsp = lifSp Z + 160#64 →
           Z'.cpu.gpr.rbx = (lifY W Z).rbx → Z'.cpu.gpr.rbp = rdq(lifW W Z, lifSp Z + 128#64) →
