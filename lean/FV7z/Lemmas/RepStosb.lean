@@ -83,7 +83,7 @@ theorem VfillB_in (v : BitVec 8) : ∀ (n : Nat) (V : Addr → Byte) (a : Addr),
     rcases i with _ | i
     · rw [VfillB_out v n _ _ _ fun j hj => ?_]
       · rw [addr_add_zero, toBytesLE_one8]
-        simp only [Vst, upd1, if_pos]
+        simp only [Vst, upd1, ite_eq_left]
       · rw [addr_add_zero, addr_one_add]
         intro e
         have := congrArg BitVec.toNat e
