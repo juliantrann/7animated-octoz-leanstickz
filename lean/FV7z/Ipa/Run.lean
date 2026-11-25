@@ -158,7 +158,7 @@ theorem whole (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (hin
     (by rw [hgZ, set4_r13, h13Y, rR _ (by ifd) (by ifd), i0r13])
     (by rw [hgZ, set4_r14, h14Y, rR _ (by ifd) (by ifd), i0r14])
     (by rw [hgZ, set4_r15, h15Y, rR _ (by ifd) (by ifd), i0r15]) ?_
-    fun a ha => (hkY a (Or.inr (Or.inr (Or.inr ha)))).trans ((hKn5 a ha).trans (hKn4 a ha))
+    fun a ha => (hkY a (Or.inr (Or.inr (Or.inr (Or.inl ha))))).trans ((hKn5 a ha).trans (hKn4 a ha))
   intro a ha
   rcases ha with ha | ha | ha
   · exact (hkY a (Or.inl (by omega))).trans (hlo5 a (Or.inl ha))

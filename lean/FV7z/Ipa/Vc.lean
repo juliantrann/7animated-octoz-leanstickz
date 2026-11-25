@@ -280,7 +280,9 @@ theorem vc_293 {g : Gprs} {f : Rflags} {V : Addr → Byte} {i n q : Nat} (hq : n
       g'.r12 = BitVec.ofNat 64 (7364040 + 8 * i) ∧ g'.rbx = BitVec.ofNat 64 (sA (i + 1)) ∧ g'.r13 = g.r13 ∧
       g'.rbp = g.rbp ∧ g'.rsp = g.rsp ∧
       (∀ a : Addr, (a.toNat < 7940480 ∨ g.rbp.toNat - 88 ≤ a.toNat) → V' a = V a) ∧
-      (∀ a : Addr, Mal.Kf fb a → V' a = V a)) g f V := by
+      (∀ a : Addr, Mal.Kf fb a → V' a = V a) ∧
+      (∀ a : Addr, (a.toNat < g.r14.toNat ∨ g.r14.toNat + 8 ≤ a.toNat) ∧
+        (a.toNat < g.r15.toNat ∨ g.r15.toNat + 40 * q + 40 ≤ a.toNat) → V' a = V a)) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at hr12 hbx h72 h64 h56 hr hr2 hBl hBk hBh hAl hAk hAh hWA hWB hFD hBf hAf ⊢
   have hr0 : 96 ≤ rbp.toNat := by omega
@@ -320,7 +322,10 @@ theorem vc_384 {g : Gprs} {f : Rflags} {V : Addr → Byte}
     (hBf : fb.toNat + 64 ≤ g.r15.toNat) (hAf : fb.toNat + 64 ≤ g.r14.toNat) :
     W_384 F Wl (fun j' g' _ V' => j' = 425 ∧ g' = g ∧
       (∀ a : Addr, (a.toNat < 7940480 ∨ g.rbp.toNat - 88 ≤ a.toNat) → V' a = V a) ∧
-      (∀ a : Addr, Mal.Kf fb a → V' a = V a)) g f V := by
+      (∀ a : Addr, Mal.Kf fb a → V' a = V a) ∧
+      (∀ a : Addr, (a.toNat < g.r14.toNat ∨ g.r14.toNat + 8 ≤ a.toNat) ∧
+        (a.toNat < g.r15.toNat ∨ g.r15.toNat + 8 ≤ a.toNat) ∧ (a.toNat < 8014920 ∨ 8014928 ≤ a.toNat) →
+        V' a = V a)) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at hllp hr hr2 hBl hBk hBh hAl hAk hAh h7a hWA hWB hFD hBf hAf ⊢
   have hr0 : 96 ≤ rbp.toNat := by omega
