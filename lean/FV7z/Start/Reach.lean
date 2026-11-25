@@ -10,7 +10,12 @@ to one of the two, with no fault, exit or signal on the way. The obligations of 
 - `launch_reaches`: that run.
 -/
 namespace FV7z.Start
-open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn
+open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn FV7z.Glibc FV7z.AuxInit
+open FV7z.Smm (size smEv smEv2)
+open FV7z.Mhi (C2)
+open FV7z.Gor (gEv gor_at)
+open FV7z.StartB (PimCode)
+open FV7z.Tls (TlsMem)
 
 /-- From the launch of `7zzs`, the run gets to `main` or to the failed `readlink` of `/proc/self/exe`, staying in `L`
 with no outcome on the way. -/
