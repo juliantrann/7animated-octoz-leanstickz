@@ -17,6 +17,7 @@ variable {prof : Profile} {L : List (Addr × List Byte)} {F : Footprint} {Wl : L
   {fb : Addr} {g₀ g : Gprs} {V₀ V : Addr → Byte} {f : Rflags} {n : Nat}
 
 macro "x_om" : tactic => `(tactic| ((try dsimp only) <;> (try simp only [sw_64_32, xs]) <;> omega))
+macro "d_ec" : tactic => `(tactic| ((try dsimp only) <;> decide))
 
 /-! ## Register moves -/
 
@@ -39,28 +40,28 @@ theorem vc_3763 (h : Ih g₀ V₀ 3763 n g V) : W_3763 F Wl (Nx g₀ V₀ n) g f
   obtain ⟨rfl, hm⟩ := h
   wpx [W_3763, o16, Op.lda, Op.sta, Op.sar64, Op.cqo, Op.not32, Op.setcc, Op.xor8, Op.sxr, Op.ldsx, Op.andh, Op.testmia,
     Op.stia, Op.ldzxa, Op.imul3ma, Op.zxr, Op.cmpmi, Op.cmpmia, Op.cmpmr, Op.xormf, Op.ldf, Op.shr32z]
-  exact Or.inl ⟨_, by decide, rfl, hm, by decide⟩
+  exact Or.inl ⟨_, by decide, rfl, hm, by d_ec⟩
 
 theorem vc_3776 (h : Ih g₀ V₀ 3776 n g V) : W_3776 F Wl (Nx g₀ V₀ n) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   obtain ⟨rfl, hm⟩ := h
   wpx [W_3776, o17, Op.lda, Op.sta, Op.sar64, Op.cqo, Op.not32, Op.setcc, Op.xor8, Op.sxr, Op.ldsx, Op.andh, Op.testmia,
     Op.stia, Op.ldzxa, Op.imul3ma, Op.zxr, Op.cmpmi, Op.cmpmia, Op.cmpmr, Op.xormf, Op.ldf, Op.shr32z]
-  exact Or.inl ⟨_, by decide, rfl, hm, by decide⟩
+  exact Or.inl ⟨_, by decide, rfl, hm, by d_ec⟩
 
 theorem vc_4045 (h : Ih g₀ V₀ 4045 n g V) : W_4045 F Wl (Nx g₀ V₀ n) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   obtain ⟨rfl, hm⟩ := h
   wpx [W_4045, o16, Op.lda, Op.sta, Op.sar64, Op.cqo, Op.not32, Op.setcc, Op.xor8, Op.sxr, Op.ldsx, Op.andh, Op.testmia,
     Op.stia, Op.ldzxa, Op.imul3ma, Op.zxr, Op.cmpmi, Op.cmpmia, Op.cmpmr, Op.xormf, Op.ldf, Op.shr32z]
-  exact Or.inl ⟨_, by decide, rfl, hm, by decide⟩
+  exact Or.inl ⟨_, by decide, rfl, hm, by d_ec⟩
 
 theorem vc_4058 (h : Ih g₀ V₀ 4058 n g V) : W_4058 F Wl (Nx g₀ V₀ n) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   obtain ⟨rfl, hm⟩ := h
   wpx [W_4058, o44, Op.lda, Op.sta, Op.sar64, Op.cqo, Op.not32, Op.setcc, Op.xor8, Op.sxr, Op.ldsx, Op.andh, Op.testmia,
     Op.stia, Op.ldzxa, Op.imul3ma, Op.zxr, Op.cmpmi, Op.cmpmia, Op.cmpmr, Op.xormf, Op.ldf, Op.shr32z]
-  exact Or.inl ⟨_, by decide, rfl, hm, by decide⟩
+  exact Or.inl ⟨_, by decide, rfl, hm, by d_ec⟩
 
 theorem vc_4071 (h : Ih g₀ V₀ 4071 n g V) : W_4071 F Wl (Nx g₀ V₀ n) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
@@ -109,7 +110,7 @@ theorem vc_4570 (h : Ih g₀ V₀ 4570 n g V) : W_4570 F Wl (Nx g₀ V₀ n) g f
   obtain ⟨rfl, hm, h9⟩ := h
   wpx [W_4570, o90, Op.lda, Op.sta, Op.sar64, Op.cqo, Op.not32, Op.setcc, Op.xor8, Op.sxr, Op.ldsx, Op.andh, Op.testmia,
     Op.stia, Op.ldzxa, Op.imul3ma, Op.zxr, Op.cmpmi, Op.cmpmia, Op.cmpmr, Op.xormf, Op.ldf, Op.shr32z]
-  exact Or.inl ⟨_, by decide, rfl, hm, h9, by decide⟩
+  exact Or.inl ⟨_, by decide, rfl, hm, h9, by d_ec⟩
 
 theorem vc_4216 (h : Ih g₀ V₀ 4216 n g V) : W_4216 F Wl (Nx g₀ V₀ n) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
@@ -135,7 +136,7 @@ theorem vc_3841 (h : Ih g₀ V₀ 3841 n g V) : W_3841 F Wl (Nx g₀ V₀ n) g f
   wpx [W_3841, o23, Op.lda, Op.sta, Op.sar64, Op.cqo, Op.not32, Op.setcc, Op.xor8, Op.sxr, Op.ldsx, Op.andh, Op.testmia,
     Op.stia, Op.ldzxa, Op.imul3ma, Op.zxr, Op.cmpmi, Op.cmpmia, Op.cmpmr, Op.xormf, Op.ldf, Op.shr32z]
   intro _ _
-  exact Or.inl ⟨_, by x_om, rfl, hm, ⟨h15, by x_om, by decide, h2⟩, by x_om⟩
+  exact Or.inl ⟨_, by x_om, rfl, hm, ⟨h15, by x_om, by d_ec, h2⟩, by x_om⟩
 
 theorem vc_3858 (h : Ih g₀ V₀ 3858 n g V) : W_3858 F Wl (Nx g₀ V₀ n) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
@@ -146,7 +147,7 @@ theorem vc_3858 (h : Ih g₀ V₀ 3858 n g V) : W_3858 F Wl (Nx g₀ V₀ n) g f
   have h10 : r10 = 4#64 := by obtain ⟨-, -, h, -⟩ := hL; exact h
   wpx [W_3858, o24, Op.lda, Op.sta, Op.sar64, Op.cqo, Op.not32, Op.setcc, Op.xor8, Op.sxr, Op.ldsx, Op.andh, Op.testmia,
     Op.stia, Op.ldzxa, Op.imul3ma, Op.zxr, Op.cmpmi, Op.cmpmia, Op.cmpmr, Op.xormf, Op.ldf, Op.shr32z]
-  exact Or.inl ⟨_, by c_om, rfl, hm, hL, by c_om, hc, by subst h10; decide⟩
+  exact Or.inl ⟨_, by c_om, rfl, hm, hL, by c_om, hc, by subst h10; d_ec⟩
 
 theorem vc_3929 (h : Ih g₀ V₀ 3929 n g V) : W_3929 F Wl (Nx g₀ V₀ n) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
@@ -167,7 +168,7 @@ theorem vc_4306 (h : Ih g₀ V₀ 4306 n g V) : W_4306 F Wl (Nx g₀ V₀ n) g f
   wpx [W_4306, o67, Op.lda, Op.sta, Op.sar64, Op.cqo, Op.not32, Op.setcc, Op.xor8, Op.sxr, Op.ldsx, Op.andh, Op.testmia,
     Op.stia, Op.ldzxa, Op.imul3ma, Op.zxr, Op.cmpmi, Op.cmpmia, Op.cmpmr, Op.xormf, Op.ldf, Op.shr32z]
   intro _
-  exact Or.inl ⟨_, by c_om, rfl, hm, ⟨h15, h9, by decide, bits06 hax hdx hd1 ha1⟩, by c_om⟩
+  exact Or.inl ⟨_, by c_om, rfl, hm, ⟨h15, h9, by d_ec, bits06 hax hdx hd1 ha1⟩, by c_om⟩
 
 theorem vc_4329 (h : Ih g₀ V₀ 4329 n g V) : W_4329 F Wl (Nx g₀ V₀ n) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
@@ -187,10 +188,10 @@ theorem vc_4469 (h : Ih g₀ V₀ 4469 n g V) : W_4469 F Wl (Nx g₀ V₀ n) g f
     Op.stia, Op.ldzxa, Op.imul3ma, Op.zxr, Op.cmpmi, Op.cmpmia, Op.cmpmr, Op.xormf, Op.ldf, Op.shr32z]
   intro _
   rcases h8 with rfl | ⟨rfl, rfl, hz⟩
-  · exact Or.inl ⟨_, by c_om, rfl, hm, ⟨h15, h9, h13, by decide, fun h => absurd h (by decide),
-      fun h => absurd h (by decide)⟩, h10⟩
-  · exact Or.inl ⟨_, by c_om, rfl, hm, ⟨h15, h9, h13, by decide, fun _ => ⟨rfl, hz⟩,
-      fun h => absurd h (by decide)⟩, h10⟩
+  · exact Or.inl ⟨_, by c_om, rfl, hm, ⟨h15, h9, h13, by d_ec, fun h => absurd h (by d_ec),
+      fun h => absurd h (by d_ec)⟩, h10⟩
+  · exact Or.inl ⟨_, by c_om, rfl, hm, ⟨h15, h9, h13, by d_ec, fun _ => ⟨rfl, hz⟩,
+      fun h => absurd h (by d_ec)⟩, h10⟩
 
 /-! ## Reads and stores of the globals -/
 
@@ -257,7 +258,7 @@ theorem vc_3865 (hC : Glibc.CacheEnds prof) (h : Ih g₀ V₀ 3865 n g V) :
   refine Or.inl ⟨60000 + 10 * (66 - (r8.setWidth 32).toNat) + 4, by omega, rfl, cp_mf hm, hL,
     show (r8.setWidth 32).toNat ≤ 65 by omega, fun e => ?_⟩
   have e' : (r8.setWidth 32).toNat = 65 := e
-  show (((prof.cpuid cpu (rax.setWidth 32) (rcx.setWidth 32)).eax.setWidth 64).setWidth 8 &&& 31#8 = 0#8
+  show ((prof.cpuid cpu (rax.setWidth 32) (rcx.setWidth 32)).eax.setWidth 64).setWidth 8 &&& 31#8 = 0#8
   rw [ha]
   exact and31 _ (hC.leaf4 cpu hcpu _ (by omega))
 
@@ -304,7 +305,8 @@ theorem vc_3707 (h : Ih g₀ V₀ 3707 n g V) : Dv 3707 1 (Nx g₀ V₀ n) g f V
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   try dsimp only at hc
   subst hc
-  exact ⟨hq, by decide, by decide, fun _ => Or.inl ⟨_, by decide, rfl, dv_mf hm⟩⟩
+  exact ⟨hq, show (4#64 : BitVec 64).setWidth 64 ≠ 0 by decide,
+    show ((4#64 : BitVec 64).setWidth 64).msb = false by decide, fun _ => Or.inl ⟨_, by decide, rfl, dv_mf hm⟩⟩
 
 theorem vc_3981 (h : Ih g₀ V₀ 3981 n g V) : Dv 3981 7 (Nx g₀ V₀ n) g f V := by
   obtain ⟨rfl, hm, h9, hd, hp, hq⟩ := h
