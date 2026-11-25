@@ -51,7 +51,7 @@ theorem VOpI.movups_m {w n b d len : Nat} :
   refine ⟨withZmm s.cpu.vec.zmm (xmmOf n) ((s.cpu.vec.zmm (xmmOf n)).extractLsb' 128 384 ++
     ofBytesLE 128 (readBytes s.proc.mm.mem (eaD s b d) 16)),
     t, instruction_next htf hdec ?_, xsOf_with _ _ _ _⟩
-  simp only [exec, execSse, Sem.movups, moveBits, mk, mbd, bind, Prog.bind, readOp, Bool.false_eq_true, ↓reduceIte,
+  simp only [exec, execSse, Sem.movups, moveBits, mbd, bind, Prog.bind, readOp, Bool.false_eq_true, ↓reduceIte,
     memRef, effOffset, pure, Prog.readReg, Prog.read, Prog.run, BitVec.mul_one, writeOp, Prog.readZmm]
   rw [eaD_adv, checkAccess_ok (s := advance s len) hac hld]
   rfl
@@ -62,7 +62,7 @@ theorem VOpI.movups_mi {w n b i d len : Nat} :
   refine ⟨withZmm s.cpu.vec.zmm (xmmOf n) ((s.cpu.vec.zmm (xmmOf n)).extractLsb' 128 384 ++
     ofBytesLE 128 (readBytes s.proc.mm.mem (eaI s b i d) 16)),
     t, instruction_next htf hdec ?_, xsOf_with _ _ _ _⟩
-  simp only [exec, execSse, Sem.movups, moveBits, mk, mbi, bind, Prog.bind, readOp, Bool.false_eq_true, ↓reduceIte,
+  simp only [exec, execSse, Sem.movups, moveBits, mbi, bind, Prog.bind, readOp, Bool.false_eq_true, ↓reduceIte,
     memRef, effOffset, pure, Prog.readReg, Prog.read, Prog.run, BitVec.mul_one, writeOp, Prog.readZmm]
   rw [checkAccess_ok (s := advance s len) hac hld]
   rfl
