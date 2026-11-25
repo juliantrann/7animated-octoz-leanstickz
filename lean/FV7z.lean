@@ -361,6 +361,8 @@ import FV7z.Strlen.Loop
 import FV7z.Strlen.Entry
 import FV7z.Strlen.Len
 import FV7z.Strlen.Plt
+import FV7z.Lemmas.Sse2b
+import FV7z.Strrchr.Code
 import FV7z.Pmi.Holds
 import FV7z.Lemmas.Lock2
 import FV7z.Pml.Holds
