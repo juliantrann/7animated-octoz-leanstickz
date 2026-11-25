@@ -189,7 +189,7 @@ theorem lif_ok {pl pc ip cpy : List Byte} {Pm : (Addr → Byte) → Prop} {E : E
     hPq hPk hPs he hal hFs hpg hx1 hx1z hx2 hx2z htls hU hm6 hhw hfh hfm hpl0 hf1 hf2 hWb hfN hW7a hW7b hFR hlenV
     hslV hpl hid him hfp hph hpgs hla hmg hGo hGc hfit hGw hGr hcode hww hlG hl hinL
     (by rw [Lif.lif_length]; decide) (lif_ret hR hs hW) ?_
-  intro x nn ss Vc M W' evs gg U s₂ Z t' W₂ _ _ _ _ _ _ _ _ _ _ hLo hSame hev hUr hc₂ hB hK₂ hA₂ hE hr₂ hs₂ hbx hbp
+  intro x nn ss Vc M W' evs gg U s₂ Z t' W₂ _ _ _ _ _ _ _ _ _ _ hLo hSame hev hUr _ hc₂ hB hK₂ hA₂ hE hr₂ hs₂ hbx hbp
     h12 h13 h14 h15
   refine Lif.lif_nb (lp := lp) (ct := ct) (a := ca) (b := cb) (cc := cc) (a0 := a0) (n := n) (g := Y.cpu.gpr) hc₂
     hB.fsb hinL hinS hci hir hr0 hrchr hK₂ hA₂ hr₂ hs₂ hE hUr hLo hSame hbk hfl hfsp hs (by rw [hs₂]; exact hst₂)
