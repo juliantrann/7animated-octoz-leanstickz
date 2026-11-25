@@ -1,3 +1,5 @@
+import FV7z.Strlen.Code
+import FV7z.Strlen.Loop
 import FV7z.Strlen.Entry
 import FV7z.Strlen.Len
 import FV7z.Strlen.Plt

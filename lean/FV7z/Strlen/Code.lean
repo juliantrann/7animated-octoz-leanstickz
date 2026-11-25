@@ -200,37 +200,49 @@ theorem b62 (prof : Profile) : BlkV prof sl2 62 66 o62 :=
   .cons (d62 _) (OpI.and (.i 18446744073709551600) (.inr rfl)) (by decide) <|
   .nil 66
 
-/-- The stretch from `66` to `128`. -/
+/-- The stretch from `66` to `94`. -/
 def o66 : List VOp := [
   VOp.pcmpeqb_m 1 0 16,
   VOp.pcmpeqb_m 2 0 32,
   VOp.pcmpeqb_m 3 0 48,
   VOp.pmovmskb 2 1,
   VOp.pmovmskb 8 2,
-  VOp.pmovmskb 1 3,
-  VOp.op (Op.shl64 2 (.i 16)),
-  VOp.op (Op.shl64 1 (.i 16)),
-  VOp.op (Op.or 64 1 (.r 8)),
-  VOp.op (Op.shl64 1 (.i 32)),
-  VOp.op (Op.or 64 2 (.r 1)),
-  VOp.op (Op.mov 64 1 (.r 7)),
-  VOp.op (Op.xor 64 1 (.r 0)),
-  VOp.op (Op.and 64 0 (.i 18446744073709551552)),
-  VOp.op (Op.sar64 2 (.r 1)),
-  VOp.op (Op.test 64 2 (.r 2))]
+  VOp.pmovmskb 1 3]
 
-theorem b66 (prof : Profile) : BlkV prof sl2 66 128 o66 :=
+theorem b66 (prof : Profile) : BlkV prof sl2 66 94 o66 :=
   .cons (d66 _) (VOpI.pcmpeqb_m) (by decide) <|
   .cons (d71 _) (VOpI.pcmpeqb_m) (by decide) <|
   .cons (d76 _) (VOpI.pcmpeqb_m) (by decide) <|
   .cons (d81 _) (VOpI.pmovmskb) (by decide) <|
   .cons (d85 _) (VOpI.pmovmskb) (by decide) <|
   .cons (d90 _) (VOpI.pmovmskb) (by decide) <|
+  .nil 94
+
+/-- The stretch from `94` to `112`. -/
+def o94 : List VOp := [
+  VOp.op (Op.shl64 2 (.i 16)),
+  VOp.op (Op.shl64 1 (.i 16)),
+  VOp.op (Op.or 64 1 (.r 8)),
+  VOp.op (Op.shl64 1 (.i 32)),
+  VOp.op (Op.or 64 2 (.r 1))]
+
+theorem b94 (prof : Profile) : BlkV prof sl2 94 112 o94 :=
   .cons (d94 _) (OpI.shl64 (.i 16)) (by decide) <|
   .cons (d98 _) (OpI.shl64 (.i 16)) (by decide) <|
   .cons (d102 _) (OpI.or (.r 8) (.inr rfl)) (by decide) <|
   .cons (d105 _) (OpI.shl64 (.i 32)) (by decide) <|
   .cons (d109 _) (OpI.or (.r 1) (.inr rfl)) (by decide) <|
+  .nil 112
+
+/-- The stretch from `112` to `128`. -/
+def o112 : List VOp := [
+  VOp.op (Op.mov 64 1 (.r 7)),
+  VOp.op (Op.xor 64 1 (.r 0)),
+  VOp.op (Op.and 64 0 (.i 18446744073709551552)),
+  VOp.op (Op.sar64 2 (.r 1)),
+  VOp.op (Op.test 64 2 (.r 2))]
+
+theorem b112 (prof : Profile) : BlkV prof sl2 112 128 o112 :=
   .cons (d112 _) (OpI.mov (.r 7) (.inr rfl)) (by decide) <|
   .cons (d115 _) (OpI.xor (.r 0) (.inr rfl)) (by decide) <|
   .cons (d118 _) (OpI.and (.i 18446744073709551552) (.inr rfl)) (by decide) <|
@@ -246,7 +258,7 @@ theorem b144 (prof : Profile) : BlkV prof sl2 144 148 o144 :=
   .cons (d144 _) (OpI.and (.i 18446744073709551552) (.inr rfl)) (by decide) <|
   .nil 148
 
-/-- The stretch from `148` to `221`. -/
+/-- The stretch from `148` to `184`. -/
 def o148 : List VOp := [
   VOp.pcmpeqb_m 0 0 0,
   VOp.pcmpeqb_m 1 0 16,
@@ -255,20 +267,9 @@ def o148 : List VOp := [
   VOp.pmovmskb 6 0,
   VOp.pmovmskb 2 1,
   VOp.pmovmskb 8 2,
-  VOp.pmovmskb 1 3,
-  VOp.op (Op.shl64 2 (.i 16)),
-  VOp.op (Op.shl64 1 (.i 16)),
-  VOp.op (Op.or 64 2 (.r 6)),
-  VOp.op (Op.or 64 1 (.r 8)),
-  VOp.op (Op.shl64 1 (.i 32)),
-  VOp.op (Op.or 64 2 (.r 1)),
-  VOp.op (Op.mov 64 1 (.r 7)),
-  VOp.op (Op.xor 64 1 (.r 0)),
-  VOp.op (Op.and 64 0 (.i 18446744073709551552)),
-  VOp.op (Op.sar64 2 (.r 1)),
-  VOp.op (Op.test 64 2 (.r 2))]
+  VOp.pmovmskb 1 3]
 
-theorem b148 (prof : Profile) : BlkV prof sl2 148 221 o148 :=
+theorem b148 (prof : Profile) : BlkV prof sl2 148 184 o148 :=
   .cons (d148 _) (VOpI.pcmpeqb_m) (by decide) <|
   .cons (d152 _) (VOpI.pcmpeqb_m) (by decide) <|
   .cons (d157 _) (VOpI.pcmpeqb_m) (by decide) <|
@@ -277,11 +278,34 @@ theorem b148 (prof : Profile) : BlkV prof sl2 148 221 o148 :=
   .cons (d171 _) (VOpI.pmovmskb) (by decide) <|
   .cons (d175 _) (VOpI.pmovmskb) (by decide) <|
   .cons (d180 _) (VOpI.pmovmskb) (by decide) <|
+  .nil 184
+
+/-- The stretch from `184` to `202`. -/
+def o184 : List VOp := [
+  VOp.op (Op.shl64 2 (.i 16)),
+  VOp.op (Op.shl64 1 (.i 16)),
+  VOp.op (Op.or 64 2 (.r 6)),
+  VOp.op (Op.or 64 1 (.r 8)),
+  VOp.op (Op.shl64 1 (.i 32))]
+
+theorem b184 (prof : Profile) : BlkV prof sl2 184 202 o184 :=
   .cons (d184 _) (OpI.shl64 (.i 16)) (by decide) <|
   .cons (d188 _) (OpI.shl64 (.i 16)) (by decide) <|
   .cons (d192 _) (OpI.or (.r 6) (.inr rfl)) (by decide) <|
   .cons (d195 _) (OpI.or (.r 8) (.inr rfl)) (by decide) <|
   .cons (d198 _) (OpI.shl64 (.i 32)) (by decide) <|
+  .nil 202
+
+/-- The stretch from `202` to `221`. -/
+def o202 : List VOp := [
+  VOp.op (Op.or 64 2 (.r 1)),
+  VOp.op (Op.mov 64 1 (.r 7)),
+  VOp.op (Op.xor 64 1 (.r 0)),
+  VOp.op (Op.and 64 0 (.i 18446744073709551552)),
+  VOp.op (Op.sar64 2 (.r 1)),
+  VOp.op (Op.test 64 2 (.r 2))]
+
+theorem b202 (prof : Profile) : BlkV prof sl2 202 221 o202 :=
   .cons (d202 _) (OpI.or (.r 1) (.inr rfl)) (by decide) <|
   .cons (d205 _) (OpI.mov (.r 7) (.inr rfl)) (by decide) <|
   .cons (d208 _) (OpI.xor (.r 0) (.inr rfl)) (by decide) <|
