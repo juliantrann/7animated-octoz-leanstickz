@@ -40,6 +40,7 @@ theorem whole (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (hin
     {mb : Nat} (hmb : 16 ≤ mb) (hPaH : ∀ k W, Pa k W ↔ Mal.Hp F Wl fb hi (1072 * k + mb) W)
     (hinl : CodeIn L 4198664#64 sl) (hl0 : 0 < sl.length) (hlenA : Str.LenAt prof L o 4198664#64 Pl)
     (hinz : CodeIn L 4198528#64 ms) (hz0 : 0 < ms.length) (hset : SetAt prof L o 4198528#64 Ps)
+    (hgf : Ipa.GotF F) (hdf₀ : s₀.cpu.rflags.df = false)
     (hint : CodeIn L Tgv.tgv_at Tgv.tgv)
     {V : Addr → Byte} {h e p : Addr} {cnt E H s : Nat}
     (hn : h = 2#64 ∧ cnt = 3 ∧ E = 8 ∧ H = 4 ∧ s = 151 ∨ h = 6#64 ∧ cnt = 4 ∧ E = 16 ∧ H = 8 ∧ s = 320)
@@ -132,7 +133,7 @@ theorem whole (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (hin
       (lo := 0) (hi := 7937664) (fun a _ h => Or.inl h) (Nat.zero_le _) hb (by omega))]
     exact hslV k hk
   -- the loop from `i = 0`, to the `ret`
-  refine loop c hin hinz hz0 hset hq (r := e + 18446744073709551608#64)
+  refine loop c hin hinz hz0 hset hgf hdf₀ hq (r := e + 18446744073709551608#64)
     (fun W hW => hPs W fun x h1 h2 => (hW x h1).trans (hlo5 x (by omega))) (by rw [hr8]; omega)
     (by rw [hr8]; omega) (fun x h1 h2 => hFr x h1 h2) hFR hW7b (fun x h1 h2 => hWb x (by omega) h2)
     h72 h64 h56 h80 hlen hsl hB1 hBk hB2 hBW hA1 hAk hA2' (fun a h1 h2 => (hAf a h1 h2).1) hBfb5 hAfb4 ?_
