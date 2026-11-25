@@ -15,14 +15,14 @@ def o148a : List VOp := [
   VOp.pmovmskb 1 3]
 
 theorem b148a (prof : Profile) : BlkV prof sl2 148 184 o148a :=
-  .cons (d148 _) (VOpI.pcmpeqb_m) (by decide) <|
-  .cons (d152 _) (VOpI.pcmpeqb_m) (by decide) <|
-  .cons (d157 _) (VOpI.pcmpeqb_m) (by decide) <|
-  .cons (d162 _) (VOpI.pcmpeqb_m) (by decide) <|
-  .cons (d167 _) (VOpI.pmovmskb) (by decide) <|
-  .cons (d171 _) (VOpI.pmovmskb) (by decide) <|
-  .cons (d175 _) (VOpI.pmovmskb) (by decide) <|
-  .cons (d180 _) (VOpI.pmovmskb) (by decide) <|
+  .cons (d148 _) (VOpI.pcmpeqb_m) (by rw [sl2_length]; decide) <|
+  .cons (d152 _) (VOpI.pcmpeqb_m) (by rw [sl2_length]; decide) <|
+  .cons (d157 _) (VOpI.pcmpeqb_m) (by rw [sl2_length]; decide) <|
+  .cons (d162 _) (VOpI.pcmpeqb_m) (by rw [sl2_length]; decide) <|
+  .cons (d167 _) (VOpI.pmovmskb) (by rw [sl2_length]; decide) <|
+  .cons (d171 _) (VOpI.pmovmskb) (by rw [sl2_length]; decide) <|
+  .cons (d175 _) (VOpI.pmovmskb) (by rw [sl2_length]; decide) <|
+  .cons (d180 _) (VOpI.pmovmskb) (by rw [sl2_length]; decide) <|
   .nil 184
 
 /-- The stretch from `184` to `202`. -/
@@ -34,11 +34,11 @@ def o184 : List VOp := [
   VOp.op (Op.shl64 1 (.i 32))]
 
 theorem b184 (prof : Profile) : BlkV prof sl2 184 202 o184 :=
-  .cons (d184 _) (OpI.shl64 (.i 16)) (by decide) <|
-  .cons (d188 _) (OpI.shl64 (.i 16)) (by decide) <|
-  .cons (d192 _) (OpI.or (.r 6) (.inr rfl)) (by decide) <|
-  .cons (d195 _) (OpI.or (.r 8) (.inr rfl)) (by decide) <|
-  .cons (d198 _) (OpI.shl64 (.i 32)) (by decide) <|
+  .cons (d184 _) (OpI.shl64 (.i 16)) (by rw [sl2_length]; decide) <|
+  .cons (d188 _) (OpI.shl64 (.i 16)) (by rw [sl2_length]; decide) <|
+  .cons (d192 _) (OpI.or (.r 6) (.inr rfl)) (by rw [sl2_length]; decide) <|
+  .cons (d195 _) (OpI.or (.r 8) (.inr rfl)) (by rw [sl2_length]; decide) <|
+  .cons (d198 _) (OpI.shl64 (.i 32)) (by rw [sl2_length]; decide) <|
   .nil 202
 
 /-- The stretch from `202` to `221`. -/
@@ -51,12 +51,12 @@ def o202 : List VOp := [
   VOp.op (Op.test 64 2 (.r 2))]
 
 theorem b202 (prof : Profile) : BlkV prof sl2 202 221 o202 :=
-  .cons (d202 _) (OpI.or (.r 1) (.inr rfl)) (by decide) <|
-  .cons (d205 _) (OpI.mov (.r 7) (.inr rfl)) (by decide) <|
-  .cons (d208 _) (OpI.xor (.r 0) (.inr rfl)) (by decide) <|
-  .cons (d211 _) (OpI.and (.i 18446744073709551552) (.inr rfl)) (by decide) <|
-  .cons (d215 _) (OpI.sar64 (.r 1)) (by decide) <|
-  .cons (d218 _) (OpI.test (.r 2) (.inr rfl)) (by decide) <|
+  .cons (d202 _) (OpI.or (.r 1) (.inr rfl)) (by rw [sl2_length]; decide) <|
+  .cons (d205 _) (OpI.mov (.r 7) (.inr rfl)) (by rw [sl2_length]; decide) <|
+  .cons (d208 _) (OpI.xor (.r 0) (.inr rfl)) (by rw [sl2_length]; decide) <|
+  .cons (d211 _) (OpI.and (.i 18446744073709551552) (.inr rfl)) (by rw [sl2_length]; decide) <|
+  .cons (d215 _) (OpI.sar64 (.r 1)) (by rw [sl2_length]; decide) <|
+  .cons (d218 _) (OpI.test (.r 2) (.inr rfl)) (by rw [sl2_length]; decide) <|
   .nil 221
 
 variable {prof : Profile} {L : List (Addr × List Byte)} {s₀ : State} {o : Oracle} {F : Footprint} {Wl : List Rgn}
