@@ -7,7 +7,7 @@ import FV7z.Ctor.AtCtor
 (`.data`/`.bss` up to `0x7a86c0`, the stack's frames between the heap's top `hi` and `sp - 64`), the readable ones,
 the layout `8029928 ≤ fb`, `fb + 64 ≤ hi`, `hi + 1024 ≤ sp`, and the tables the constructors `82`, `87` read.
 
-`oN`: the constructor `N` runs for `Jg V sp (spec V hi) (Gs … 1 k)`, from its `*_jg` and the step `gN` of `Gs`.
+`hoN`: the constructor `N` runs for `Jg V sp (spec V hi) (Gs … 1 k)`, from its `*_jg` and the step `gN` of `Gs`.
 `hO_of`: all those not `Done`. `at_ctor_gs`: `AtCtor` from `CEnv`, `Gs … 3 V` and the run from `main` on.
 -/
 namespace FV7z.Ctor
@@ -140,55 +140,55 @@ section runs
 variable (E : CEnv prof F Wl L s₀ o gP gE V sp fb hi) (hk : 16 ≤ k)
 include E hk
 
-theorem o3 : Csu.Runs prof F Wl L s₀ o gev gP gE (JG V sp F Wl fb hi k) sp a₀ a₁ a₂ 3 (csuTg 3) := by
+theorem ho3 : Csu.Runs prof F Wl L s₀ o gev gP gE (JG V sp F Wl fb hi k) sp a₀ a₁ a₂ 3 (csuTg 3) := by
   have hL := E.lay
   exact C3.runs3_jg (c := E.c) (hC := E.hC) (hin := E.hin) (hinE := E.i3) (hw := E.w (by decide) (by decide))
     (hsp := by omega) (hspec := rfl) (hD := spec_dep) (hXw := spec_Xw (m := 3) (by decide))
     (hG := g3 (by decide) hk)
 
-theorem o15 : Csu.Runs prof F Wl L s₀ o gev gP gE (JG V sp F Wl fb hi k) sp a₀ a₁ a₂ 15 (csuTg 15) := by
+theorem ho15 : Csu.Runs prof F Wl L s₀ o gev gP gE (JG V sp F Wl fb hi k) sp a₀ a₁ a₂ 15 (csuTg 15) := by
   have hL := E.lay
   exact C15.runs15_jg (c := E.c) (hC := E.hC) (hin := E.hin) (hinE := E.i15) (hw := E.w (by decide) (by decide))
     (hsp := by omega) (hspec := rfl) (hD := spec_dep) (hXw := spec_Xw (m := 15) (by decide))
     (hG := g15 (by decide) hk)
 
-theorem o37 : Csu.Runs prof F Wl L s₀ o gev gP gE (JG V sp F Wl fb hi k) sp a₀ a₁ a₂ 37 (csuTg 37) := by
+theorem ho37 : Csu.Runs prof F Wl L s₀ o gev gP gE (JG V sp F Wl fb hi k) sp a₀ a₁ a₂ 37 (csuTg 37) := by
   have hL := E.lay
   exact C37.runs37_jg (c := E.c) (hC := E.hC) (hin := E.hin) (hw := E.w (by decide) (by decide))
     (hsp := by omega) (hR := E.hR 0) (hinR := E.hinR 0) (hspec := rfl) (hD := spec_dep) (hT := spec_T)
     (hXw := spec_Xw (m := 37) (by decide)) (hG := g37 (by decide) hk)
 
-theorem o55 : Csu.Runs prof F Wl L s₀ o gev gP gE (JG V sp F Wl fb hi k) sp a₀ a₁ a₂ 55 (csuTg 55) := by
+theorem ho55 : Csu.Runs prof F Wl L s₀ o gev gP gE (JG V sp F Wl fb hi k) sp a₀ a₁ a₂ 55 (csuTg 55) := by
   have hL := E.lay
   exact C55.runs55_jg (c := E.c) (hC := E.hC) (hin := E.hin) (hw := E.w (by decide) (by decide))
     (hsp := by omega) (hR := E.hR 0) (hinR := E.hinR 0) (hspec := rfl) (hD := spec_dep) (hT := spec_T)
     (hXw := spec_Xw (m := 55) (by decide)) (hG := g55 (by decide) hk)
 
-theorem o61 : Csu.Runs prof F Wl L s₀ o gev gP gE (JG V sp F Wl fb hi k) sp a₀ a₁ a₂ 61 (csuTg 61) := by
+theorem ho61 : Csu.Runs prof F Wl L s₀ o gev gP gE (JG V sp F Wl fb hi k) sp a₀ a₁ a₂ 61 (csuTg 61) := by
   have hL := E.lay
   exact C61.runs61_jg (c := E.c) (hC := E.hC) (hin := E.hin) (hw := E.w (by decide) (by decide))
     (hsp := by omega) (hR := E.hR 0) (hinR := E.hinR 0) (hspec := rfl) (hD := spec_dep) (hT := spec_T)
     (hXw := spec_Xw (m := 61) (by decide)) (hG := g61 (by decide) hk)
 
-theorem o70 : Csu.Runs prof F Wl L s₀ o gev gP gE (JG V sp F Wl fb hi k) sp a₀ a₁ a₂ 70 (csuTg 70) := by
+theorem ho70 : Csu.Runs prof F Wl L s₀ o gev gP gE (JG V sp F Wl fb hi k) sp a₀ a₁ a₂ 70 (csuTg 70) := by
   have hL := E.lay
   exact C70.runs70_jg (c := E.c) (hC := E.hC) (hin := E.hin) (hw := E.w (by decide) (by decide))
     (hsp := by omega) (hspec := rfl) (hD := spec_dep) (hXw := spec_Xw (m := 70) (by decide))
     (hG := g70 (by decide) hk)
 
-theorem o75 : Csu.Runs prof F Wl L s₀ o gev gP gE (JG V sp F Wl fb hi k) sp a₀ a₁ a₂ 75 (csuTg 75) := by
+theorem ho75 : Csu.Runs prof F Wl L s₀ o gev gP gE (JG V sp F Wl fb hi k) sp a₀ a₁ a₂ 75 (csuTg 75) := by
   have hL := E.lay
   exact C75.runs75_jg (c := E.c) (hC := E.hC) (hin := E.hin) (hw := E.w (by decide) (by decide))
     (hsp := by omega) (hspec := rfl) (hD := spec_dep) (hXw := spec_Xw (m := 75) (by decide))
     (hG := g75 (by decide) hk)
 
-theorem o78 : Csu.Runs prof F Wl L s₀ o gev gP gE (JG V sp F Wl fb hi k) sp a₀ a₁ a₂ 78 (csuTg 78) := by
+theorem ho78 : Csu.Runs prof F Wl L s₀ o gev gP gE (JG V sp F Wl fb hi k) sp a₀ a₁ a₂ 78 (csuTg 78) := by
   have hL := E.lay
   exact C78.runs78_jg (c := E.c) (hC := E.hC) (hin := E.hin) (hinE := E.i78) (hw := E.w (by decide) (by decide))
     (hsp := by omega) (hspec := rfl) (hD := spec_dep) (hXw := spec_Xw (m := 78) (by decide))
     (hG := g78 (by decide) hk)
 
-theorem o82 : Csu.Runs prof F Wl L s₀ o gev gP gE (JG V sp F Wl fb hi k) sp a₀ a₁ a₂ 82 (csuTg 82) := by
+theorem ho82 : Csu.Runs prof F Wl L s₀ o gev gP gE (JG V sp F Wl fb hi k) sp a₀ a₁ a₂ 82 (csuTg 82) := by
   have hL := E.lay
   exact C82.runs82_jg (c := E.c) (hC := E.hC) (hin := E.hin) (hS := by omega)
     (hw := E.w (by decide) (by decide)) (hstk := E.hst72) (hF1 := E.ro (by decide) (by decide))
@@ -196,7 +196,7 @@ theorem o82 : Csu.Runs prof F Wl L s₀ o gev gP gE (JG V sp F Wl fb hi k) sp a�
     (hD := spec_dep) (hB := spec_B E.hhi E.hhs) (hlo := fun k x hx => by have := spec_lo k x hx; omega)
     (hXw := spec_Xw (m := 82) (by decide)) (hG := g82 (by decide) hk E.hhs)
 
-theorem o87 : Csu.Runs prof F Wl L s₀ o gev gP gE (JG V sp F Wl fb hi k) sp a₀ a₁ a₂ 87 (csuTg 87) := by
+theorem ho87 : Csu.Runs prof F Wl L s₀ o gev gP gE (JG V sp F Wl fb hi k) sp a₀ a₁ a₂ 87 (csuTg 87) := by
   have hL := E.lay
   exact C87.runs87_jg (c := E.c) (hC := E.hC) (hin := E.hin) (hS := by omega)
     (hw := E.w (by decide) (by decide)) (hF3 := E.ro (by decide) (by decide))
@@ -204,7 +204,7 @@ theorem o87 : Csu.Runs prof F Wl L s₀ o gev gP gE (JG V sp F Wl fb hi k) sp a�
     (hlo := fun k x hx => by have := spec_lo k x hx; omega)
     (hXw := spec_Xw (m := 87) (by decide)) (hG := g87 (by decide) hk)
 
-theorem o5 : Csu.Runs prof F Wl L s₀ o gev gP gE (JG V sp F Wl fb hi k) sp a₀ a₁ a₂ 5 (csuTg 5) :=
+theorem ho5 : Csu.Runs prof F Wl L s₀ o gev gP gE (JG V sp F Wl fb hi k) sp a₀ a₁ a₂ 5 (csuTg 5) :=
   runs5_jg (c := E.c) (hC := E.hC) (hP := E.hP) (hin := E.hin) (hinE := E.iLz) (hinS := E.iSse41)
     (hinA2 := E.iAvx2) (hinA := E.iAvx) (hinM := E.iMaxf) (hinC := E.iCpuid)
     (hWl := fun y hy => by
@@ -214,7 +214,7 @@ theorem o5 : Csu.Runs prof F Wl L s₀ o gev gP gE (JG V sp F Wl fb hi k) sp a�
     (hspec := rfl) (hD := spec_dep) (hB := spec_B E.hhi E.hhs) (hXw := spec_Xw (m := 5) (by decide))
     (hG := fun _ _ _ _ ho _ h => gB (by decide) hk E.hhs hw5 ⟨by simp [nOf], by simp [kOf]⟩ ho h)
 
-theorem o7 : Csu.Runs prof F Wl L s₀ o gev gP gE (JG V sp F Wl fb hi k) sp a₀ a₁ a₂ 7 (csuTg 7) :=
+theorem ho7 : Csu.Runs prof F Wl L s₀ o gev gP gE (JG V sp F Wl fb hi k) sp a₀ a₁ a₂ 7 (csuTg 7) :=
   runs7_jg (c := E.c) (hC := E.hC) (hP := E.hP) (hin := E.hin) (hinE := E.iSha1p) (hinH := E.iSha)
     (hinS := E.iSsse3) (hinM := E.iMaxf) (hinC := E.iCpuid)
     (hWl := fun y hy => by
@@ -224,7 +224,7 @@ theorem o7 : Csu.Runs prof F Wl L s₀ o gev gP gE (JG V sp F Wl fb hi k) sp a�
     (hspec := rfl) (hD := spec_dep) (hB := spec_B E.hhi E.hhs) (hXw := spec_Xw (m := 7) (by decide))
     (hG := fun _ _ _ _ ho _ h => gB (by decide) hk E.hhs hw7 ⟨by simp [nOf], by simp [kOf]⟩ ho h)
 
-theorem o9 : Csu.Runs prof F Wl L s₀ o gev gP gE (JG V sp F Wl fb hi k) sp a₀ a₁ a₂ 9 (csuTg 9) :=
+theorem ho9 : Csu.Runs prof F Wl L s₀ o gev gP gE (JG V sp F Wl fb hi k) sp a₀ a₁ a₂ 9 (csuTg 9) :=
   runs9_jg (c := E.c) (hC := E.hC) (hP := E.hP) (hin := E.hin) (hinE := E.iSha256p) (hinH := E.iSha)
     (hinS := E.iSsse3) (hinM := E.iMaxf) (hinC := E.iCpuid)
     (hWl := fun y hy => by
@@ -234,7 +234,7 @@ theorem o9 : Csu.Runs prof F Wl L s₀ o gev gP gE (JG V sp F Wl fb hi k) sp a�
     (hspec := rfl) (hD := spec_dep) (hB := spec_B E.hhi E.hhs) (hXw := spec_Xw (m := 9) (by decide))
     (hG := fun _ _ _ _ ho _ h => gB (by decide) hk E.hhs hw9 ⟨by simp [nOf], by simp [kOf]⟩ ho h)
 
-theorem o92 : Csu.Runs prof F Wl L s₀ o gev gP gE (JG V sp F Wl fb hi k) sp a₀ a₁ a₂ 92 (csuTg 92) := by
+theorem ho92 : Csu.Runs prof F Wl L s₀ o gev gP gE (JG V sp F Wl fb hi k) sp a₀ a₁ a₂ 92 (csuTg 92) := by
   have hL := E.lay
   exact runs92_jg (c := E.c) (hC := E.hC) (hP := E.hP) (hin := E.hin) (hinE := E.iAesg) (hinA := E.iAes)
     (hinV := E.iVaes) (hinX := E.iAvx) (hinM := E.iMaxf) (hinC := E.iCpuid)
@@ -246,7 +246,7 @@ theorem o92 : Csu.Runs prof F Wl L s₀ o gev gP gE (JG V sp F Wl fb hi k) sp a�
     (hspec := rfl) (hD := spec_dep) (hB := spec_B E.hhi E.hhs) (hXw := spec_Xw (m := 92) (by decide))
     (hG := fun _ _ _ _ ho _ h => gB (by decide) hk E.hhs hw92 ⟨by simp [nOf], by simp [kOf]⟩ ho h)
 
-theorem o67 : Csu.Runs prof F Wl L s₀ o gev gP gE (JG V sp F Wl fb hi k) sp a₀ a₁ a₂ 67 (csuTg 67) :=
+theorem ho67 : Csu.Runs prof F Wl L s₀ o gev gP gE (JG V sp F Wl fb hi k) sp a₀ a₁ a₂ 67 (csuTg 67) :=
   runs67_jg (c := E.c) (hC := E.hC) (hP := E.hP) (hin := E.hin) (hR := E.hR) (hinR := E.hinR) (hinE := E.iB2s)
     (hinS := E.iSse41) (hinA2 := E.iAvx2) (hinA := E.iAvx) (hinM := E.iMaxf) (hinC := E.iCpuid)
     (hst := E.hst80)
@@ -258,7 +258,7 @@ theorem o67 : Csu.Runs prof F Wl L s₀ o gev gP gE (JG V sp F Wl fb hi k) sp a�
     (hXw := spec_Xw (m := 67) (by decide))
     (hG := fun _ _ _ _ hc _ ho _ h => g67 (by decide) hk E.hhs hc ho h)
 
-theorem o77 : Csu.Runs prof F Wl L s₀ o gev gP gE (JG V sp F Wl fb hi k) sp a₀ a₁ a₂ 77 (csuTg 77) :=
+theorem ho77 : Csu.Runs prof F Wl L s₀ o gev gP gE (JG V sp F Wl fb hi k) sp a₀ a₁ a₂ 77 (csuTg 77) :=
   runs77_jg (c := E.c) (hC := E.hC) (hP := E.hP) (hin := E.hin) (hR := E.hR) (hinR := E.hinR) (hinE := E.iSwap)
     (hinS := E.iSsse3) (hinA2 := E.iAvx2) (hinA := E.iAvx) (hinM := E.iMaxf) (hinC := E.iCpuid)
     (hst := E.hst80)
@@ -270,28 +270,28 @@ theorem o77 : Csu.Runs prof F Wl L s₀ o gev gP gE (JG V sp F Wl fb hi k) sp a�
     (hXw := spec_Xw (m := 77) (by decide))
     (hG := fun _ _ _ _ _ ho _ hc h => g77 (by decide) hk E.hhs ho hc h)
 
-theorem o96 : Csu.Runs prof F Wl L s₀ o gev gP gE (JG V sp F Wl fb hi k) sp a₀ a₁ a₂ 96 (csuTg 96) := by
+theorem ho96 : Csu.Runs prof F Wl L s₀ o gev gP gE (JG V sp F Wl fb hi k) sp a₀ a₁ a₂ 96 (csuTg 96) := by
   have hL := E.lay
   exact runs96_jg (c := E.c) (hC := E.hC) (hin := E.hin) (hl := E.rw (by decide) (by decide))
     (hw8 := E.w (by decide) (by decide)) (hw4 := E.w (by decide) (by decide)) (hsp := by omega)
     (hspec := rfl) (hD := spec_dep) (hXw := spec_Xw (m := 96) (by decide)) (hXr := spec_R96)
     (hG := g96 (by decide) hk)
 
-theorem o97 : Csu.Runs prof F Wl L s₀ o gev gP gE (JG V sp F Wl fb hi k) sp a₀ a₁ a₂ 97 (csuTg 97) := by
+theorem ho97 : Csu.Runs prof F Wl L s₀ o gev gP gE (JG V sp F Wl fb hi k) sp a₀ a₁ a₂ 97 (csuTg 97) := by
   have hL := E.lay
   exact runs97_jg (c := E.c) (hC := E.hC) (hin := E.hin) (hl1 := E.rw (by decide) (by decide))
     (hl2 := E.rw (by decide) (by decide)) (hw := E.w (by decide) (by decide)) (hsp := by omega)
     (hspec := rfl) (hD := spec_dep) (hXw := spec_Xw (m := 97) (by decide)) (hXr := spec_R97)
     (hG := g97 (by decide) hk)
 
-theorem o17 : Csu.Runs prof F Wl L s₀ o gev gP gE (JG V sp F Wl fb hi k) sp a₀ a₁ a₂ 17 (csuTg 17) := by
+theorem ho17 : Csu.Runs prof F Wl L s₀ o gev gP gE (JG V sp F Wl fb hi k) sp a₀ a₁ a₂ 17 (csuTg 17) := by
   have hL := E.lay
   exact c17_jg (hU := E.hU) (hrs := E.hrs) (c := E.c) (hC := E.hC) (hin := E.hin) (hinF := E.iF17)
     (hinU := E.iU17) (hs72 := E.st (by decide) (by decide)) (hs80 := E.st (by decide) (by decide))
     (hgw := E.w (by decide) (by decide)) (hS := by omega) (hspec := rfl) (hD := spec_dep)
     (hB := spec_B E.hhi E.hhs) (hXw := spec_Xw (m := 17) (by decide)) (hG := g17 (by decide) hk E.hhs)
 
-theorem o90 : Csu.Runs prof F Wl L s₀ o gev gP gE (JG V sp F Wl fb hi k) sp a₀ a₁ a₂ 90 (csuTg 90) := by
+theorem ho90 : Csu.Runs prof F Wl L s₀ o gev gP gE (JG V sp F Wl fb hi k) sp a₀ a₁ a₂ 90 (csuTg 90) := by
   have hL := E.lay
   have el : xl.toNat = 8010400 := rfl
   exact c90_jg (m := 90) (n := 1) (l := xl) (ex := exH hi) (c := E.c) (hC := E.hC) (hin := E.hin)
@@ -306,7 +306,7 @@ theorem o90 : Csu.Runs prof F Wl L s₀ o gev gP gE (JG V sp F Wl fb hi k) sp a�
     (hGx := fun _ h => h.cx)
     (hG := fun _ _ _ _ _ h hv hR₁ hmo hR₂ => g90 (by decide) hk E.hhs h hv hR₁ hmo hR₂)
 
-theorem o94 : Csu.Runs prof F Wl L s₀ o gev gP gE (JG V sp F Wl fb hi k) sp a₀ a₁ a₂ 94 (csuTg 94) := by
+theorem ho94 : Csu.Runs prof F Wl L s₀ o gev gP gE (JG V sp F Wl fb hi k) sp a₀ a₁ a₂ 94 (csuTg 94) := by
   have hL := E.lay
   have el : xl.toNat = 8010400 := rfl
   exact c94_jg (m := 94) (n := 3) (k₀ := 90) (l := xl) (c := E.c) (hC := E.hC) (hin := E.hin)
@@ -323,7 +323,7 @@ theorem o94 : Csu.Runs prof F Wl L s₀ o gev gP gE (JG V sp F Wl fb hi k) sp a�
     (hShD := fun k h1 h2 h3 x hx h => spec_ShD (m := 94) (by decide) k h1 h2 h3 x hx (InR_append_left h))
     (hGx := fun _ h => h.cx) (hG := fun _ _ _ h hv hR => g94 (by decide) hk E.hhs h hv hR)
 
-theorem o95 : Csu.Runs prof F Wl L s₀ o gev gP gE (JG V sp F Wl fb hi k) sp a₀ a₁ a₂ 95 (csuTg 95) := by
+theorem ho95 : Csu.Runs prof F Wl L s₀ o gev gP gE (JG V sp F Wl fb hi k) sp a₀ a₁ a₂ 95 (csuTg 95) := by
   have hL := E.lay
   have el : xl.toNat = 8010400 := rfl
   exact c95_jg (m := 95) (n := 4) (k₀ := 90) (l := xl) (c := E.c) (hC := E.hC) (hin := E.hin)
@@ -341,7 +341,7 @@ theorem o95 : Csu.Runs prof F Wl L s₀ o gev gP gE (JG V sp F Wl fb hi k) sp a�
     (hGx := fun _ h => h.cx)
     (hG := fun _ _ _ _ _ h hv hR₁ hmo hR₂ => g95 (by decide) hk E.hhs h hv hR₁ hmo hR₂)
 
-theorem o99 : Csu.Runs prof F Wl L s₀ o gev gP gE (JG V sp F Wl fb hi k) sp a₀ a₁ a₂ 99 (csuTg 99) := by
+theorem ho99 : Csu.Runs prof F Wl L s₀ o gev gP gE (JG V sp F Wl fb hi k) sp a₀ a₁ a₂ 99 (csuTg 99) := by
   have hL := E.lay
   have el : xl.toNat = 8010400 := rfl
   exact c99_jg (m := 99) (n := 7) (k₀ := 90) (l := xl) (c := E.c) (hC := E.hC) (hin := E.hin)
@@ -359,7 +359,7 @@ theorem o99 : Csu.Runs prof F Wl L s₀ o gev gP gE (JG V sp F Wl fb hi k) sp a�
     (hGx := fun _ h => h.cx)
     (hG := fun _ _ _ _ _ h hv hR₁ hmo hR₂ => g99 (by decide) hk E.hhs h hv hR₁ hmo hR₂)
 
-theorem o100 : Csu.Runs prof F Wl L s₀ o gev gP gE (JG V sp F Wl fb hi k) sp a₀ a₁ a₂ 100 (csuTg 100) := by
+theorem ho100 : Csu.Runs prof F Wl L s₀ o gev gP gE (JG V sp F Wl fb hi k) sp a₀ a₁ a₂ 100 (csuTg 100) := by
   have hL := E.lay
   have el : xl.toNat = 8010400 := rfl
   exact mc_jg (m := 100) (j := 3088) (M := 7991456) (D := 5875232) (n := 9) (k₀ := 90) (l := xl) (c := E.c)
@@ -381,7 +381,7 @@ theorem o100 : Csu.Runs prof F Wl L s₀ o gev gP gE (JG V sp F Wl fb hi k) sp a
     (hG := fun _ _ _ h hv hR => gmc (by decide) hk E.hhs ⟨by simp [nOf], by simp [kOf]⟩
       (fun a ha => by unfold GRd at ha; omega) h hv hR)
 
-theorem o101 : Csu.Runs prof F Wl L s₀ o gev gP gE (JG V sp F Wl fb hi k) sp a₀ a₁ a₂ 101 (csuTg 101) := by
+theorem ho101 : Csu.Runs prof F Wl L s₀ o gev gP gE (JG V sp F Wl fb hi k) sp a₀ a₁ a₂ 101 (csuTg 101) := by
   have hL := E.lay
   have el : xl.toNat = 8010400 := rfl
   exact mc_jg (m := 101) (j := 3312) (M := 7991520) (D := 5875232) (n := 10) (k₀ := 90) (l := xl) (c := E.c)
@@ -403,7 +403,7 @@ theorem o101 : Csu.Runs prof F Wl L s₀ o gev gP gE (JG V sp F Wl fb hi k) sp a
     (hG := fun _ _ _ h hv hR => gmc (by decide) hk E.hhs ⟨by simp [nOf], by simp [kOf]⟩
       (fun a ha => by unfold GRd at ha; omega) h hv hR)
 
-theorem o98 : Csu.Runs prof F Wl L s₀ o gev gP gE (JG V sp F Wl fb hi k) sp a₀ a₁ a₂ 98 (csuTg 98) := by
+theorem ho98 : Csu.Runs prof F Wl L s₀ o gev gP gE (JG V sp F Wl fb hi k) sp a₀ a₁ a₂ 98 (csuTg 98) := by
   have hL := E.lay
   have el : xl.toNat = 8010400 := rfl
   have e98 : kOf k 98 = k + 72752 + 1072 := by
@@ -424,7 +424,7 @@ theorem o98 : Csu.Runs prof F Wl L s₀ o gev gP gE (JG V sp F Wl fb hi k) sp a�
     (hGx := fun _ h => ⟨h.cx, e98 ▸ h.hp⟩)
     (hG := fun _ _ _ _ h hv _ _ _ _ hp _ _ hH hR => g98 (by decide) hk E.hhs h hv hp hH hR)
 
-theorem o102 : Csu.Runs prof F Wl L s₀ o gev gP gE (JG V sp F Wl fb hi k) sp a₀ a₁ a₂ 102 (csuTg 102) := by
+theorem ho102 : Csu.Runs prof F Wl L s₀ o gev gP gE (JG V sp F Wl fb hi k) sp a₀ a₁ a₂ 102 (csuTg 102) := by
   have hL := E.lay
   exact c102_jg (m := 102) (k₀ := 90) (hi := hi) (k := k) (c := E.c) (hC := E.hC) (hin := E.hin)
     (hfs := E.hfs) (hinM := E.iMnx) (hinI := E.iImm) (htg := tg102) (hsw := E.hsw) (hhs := E.hhs)
@@ -436,7 +436,7 @@ theorem o102 : Csu.Runs prof F Wl L s₀ o gev gP gE (JG V sp F Wl fb hi k) sp a
     (hGx := fun _ h => h.hp)
     (hG := fun _ _ _ h hv _ _ _ _ _ _ _ hp _ _ hH => g102 (by decide) hk E.hhs h hv hp hH)
 
-theorem o103 : Csu.Runs prof F Wl L s₀ o gev gP gE (JG V sp F Wl fb hi k) sp a₀ a₁ a₂ 103 (csuTg 103) := by
+theorem ho103 : Csu.Runs prof F Wl L s₀ o gev gP gE (JG V sp F Wl fb hi k) sp a₀ a₁ a₂ 103 (csuTg 103) := by
   have hL := E.lay
   have e40 := E.fb40
   exact c103_jg (m := 103) (hCe := E.hCe) (c := E.c) (hC := E.hC) (hin := E.hin) (hinH := E.iHca)
@@ -468,34 +468,34 @@ theorem hO_of (E : CEnv prof F Wl L s₀ o gP gE V sp fb hi) (hk : 16 ≤ k) : �
   simp only [todo, List.mem_cons, List.not_mem_nil, or_false] at h
   rcases h with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
     rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-  · exact o3 E hk
-  · exact o5 E hk
-  · exact o7 E hk
-  · exact o9 E hk
-  · exact o15 E hk
-  · exact o17 E hk
-  · exact o37 E hk
-  · exact o55 E hk
-  · exact o61 E hk
-  · exact o67 E hk
-  · exact o70 E hk
-  · exact o75 E hk
-  · exact o77 E hk
-  · exact o78 E hk
-  · exact o82 E hk
-  · exact o87 E hk
-  · exact o90 E hk
-  · exact o92 E hk
-  · exact o94 E hk
-  · exact o95 E hk
-  · exact o96 E hk
-  · exact o97 E hk
-  · exact o98 E hk
-  · exact o99 E hk
-  · exact o100 E hk
-  · exact o101 E hk
-  · exact o102 E hk
-  · exact o103 E hk
+  · exact ho3 E hk
+  · exact ho5 E hk
+  · exact ho7 E hk
+  · exact ho9 E hk
+  · exact ho15 E hk
+  · exact ho17 E hk
+  · exact ho37 E hk
+  · exact ho55 E hk
+  · exact ho61 E hk
+  · exact ho67 E hk
+  · exact ho70 E hk
+  · exact ho75 E hk
+  · exact ho77 E hk
+  · exact ho78 E hk
+  · exact ho82 E hk
+  · exact ho87 E hk
+  · exact ho90 E hk
+  · exact ho92 E hk
+  · exact ho94 E hk
+  · exact ho95 E hk
+  · exact ho96 E hk
+  · exact ho97 E hk
+  · exact ho98 E hk
+  · exact ho99 E hk
+  · exact ho100 E hk
+  · exact ho101 E hk
+  · exact ho102 E hk
+  · exact ho103 E hk
 
 theorem leasM : ∀ x ∈ leas, x.1 ≠ 90 ∧ x.1 ≠ 94 ∧ x.1 ≠ 95 ∧ x.1 ≠ 98 ∧ x.1 ≠ 99 ∧ x.1 ≠ 100 ∧ x.1 ≠ 101 ∧
     x.1 ≠ 102 := by decide +kernel
