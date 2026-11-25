@@ -1,4 +1,7 @@
-import FV7z.Strrchr.Mid
+import FV7z.Strrchr.Loop
 open FV7z
-#print axioms FV7z.Strrchr.tail228
-#print axioms FV7z.Strrchr.path112
+#print axioms FV7z.Strrchr.body
+#print axioms FV7z.Strrchr.exit430
+#print axioms FV7z.Strrchr.loop
+#print axioms FV7z.Strrchr.at268
+#print axioms FV7z.Strrchr.from256
