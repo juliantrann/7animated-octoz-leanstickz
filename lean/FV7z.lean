@@ -483,3 +483,5 @@ import FV7z.C55.Holds
 import FV7z.C61.Holds
 import FV7z.Lemmas.SysUm
 import FV7z.Ctor.Cx17
+import FV7z.Mal.HeapS
+import FV7z.Ctor.Gs
