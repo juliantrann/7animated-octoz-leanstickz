@@ -373,6 +373,7 @@ import FV7z.Strrchr.Cross
 import FV7z.Strrchr.Run
 import FV7z.Strrchr.Plt
 import FV7z.Lemmas.RepStosb
+import FV7z.Lemmas.RepMovsb
 import FV7z.Lemmas.StoreX
 import FV7z.Memset.Code
 import FV7z.Memset.Erms
