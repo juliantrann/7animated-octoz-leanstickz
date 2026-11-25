@@ -284,6 +284,7 @@ import FV7z.Start.CsuPre
 import FV7z.Start.CtorRet
 import FV7z.Start.ToMain
 import FV7z.Start.GsMain
+import FV7z.Start.RegZ
 import FV7z.Statement.Examples
 import FV7z.Lemmas.BlkOps7
 import FV7z.Gts.Holds
