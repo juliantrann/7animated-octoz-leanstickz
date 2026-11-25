@@ -34,7 +34,7 @@ theorem c16_227 (feat : Features) : C16 feat 227 :=
 theorem bL16 {prof : Profile} {j : Nat} (h : C16 prof.feat j) :
     BlkV prof mc2 j (j + 3 + 5) [VOp.movups_m 0 6 0, VOp.movups_mi 1 6 2 18446744073709551600] :=
   .cons h.l0 VOpI.movups_m (by have := h.lt; omega)
-    (.cons h.l1 VOpI.movups_mi (by have := h.lt; omega) (.nil _))
+    (.cons h.l1 VOpI.movups_mi (by have := h.lt; show j + 3 < _; omega) (.nil _))
 
 variable {prof : Profile} {L : List (Addr × List Byte)} {s₀ : State} {o : Oracle} {F : Footprint} {Wl : List Rgn}
   {gev : List Event} {gP : State → Nat → List Event → Prop} {gE : Outcome → List Event → Prop}
@@ -108,11 +108,9 @@ theorem p16 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e mc2) {j : Nat} (hc : 
     (by rw [List.length_map, byteAddrs_len]) (by omega) CopyP.ld).st (Nat.le_of_lt hd64)
     (o := g₀.rdx.toNat - 16) (k := 16) (by rw [List.length_map, byteAddrs_len]) (by omega) CopyP.ld
   refine ret_atC c hin hlt hc.rt hK₃ hA₃ hr₃ (by rw [hg₃, hg₂, hg₁]; exact hkp)
-    (by rw [hg₃, hg₂, hg₁]; exact hax) (fun i hi => hC.2 _ fun ⟨h1, h2⟩ => ?_) (fun i hi => hC.1 i hi ?_) hC.2 hR
-  · rw [toNat_add_of_fits (n := 8) hi hsp8] at h1 h2
-    omega
-  · by_cases h : i < 16
-    · exact .inl (.inr ⟨Nat.zero_le _, by omega⟩)
-    · exact .inr ⟨by omega, by omega⟩
+    (by rw [hg₃, hg₂, hg₁]; exact hax)
+    (fun i hi => hC.2 _ fun ⟨h1, h2⟩ => by rw [toNat_add_of_fits (n := 8) hi hsp8] at h1 h2; omega)
+    (fun i hi => hC.1 i hi (if h : i < 16 then Or.inl (Or.inr ⟨Nat.zero_le _, by omega⟩)
+      else Or.inr ⟨by omega, by omega⟩)) hC.2 hR
 
 end FV7z.Memcpy
