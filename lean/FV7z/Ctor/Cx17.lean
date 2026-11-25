@@ -5,7 +5,7 @@ import FV7z.Lemmas.BlkOps20
 /-!
 # Constructor 17: the file mode creation mask (PLAN.md §M, constructors)
 
-`csuTg 17` (`0x41c240`, offset 304 of `sti`) is `endbr64; mov rdi, 0x79c7c0; jmp f` with `f` (`cf17`, at
+`csuTg 17` (`0x41c240`, offset 256 of `sti`) is `endbr64; mov rdi, 0x79c7c0; jmp f` with `f` (`cf17`, at
 `0x455720`) the function
 
     push rbx; mov rbx, rdi; xor edi, edi; call umask; mov edi, eax; not eax; and eax, 0x1ff; mov [rbx], eax;
@@ -44,7 +44,7 @@ theorem f17_0 : ∀ feat, Dec feat cf17 0 (FV7z.mk .endbr64 32 [] 4) := by dec_r
 theorem f17_4 : ∀ feat, Dec feat cf17 4 (FV7z.mk .push 64 [gr 64 3] 1) := by dec_rfl
 theorem f17_5 : ∀ feat, Dec feat cf17 5 (FV7z.mk .mov 64 [gr 64 3, gr 64 7] 3) := by dec_rfl
 theorem f17_8 : ∀ feat, Dec feat cf17 8 (FV7z.mk .xor 32 [gr 32 7, gr 32 7] 2) := by dec_rfl
-theorem f17_10 : ∀ feat, Dec feat cf17 10 (FV7z.mk .call 64 [.rel 2161969] 5) := by dec_rfl
+theorem f17_10 : ∀ feat, Dec feat cf17 10 (FV7z.mk .call 64 [.rel 2162001] 5) := by dec_rfl
 theorem f17_15 : ∀ feat, Dec feat cf17 15 (FV7z.mk .mov 32 [gr 32 7, gr 32 0] 2) := by dec_rfl
 theorem f17_17 : ∀ feat, Dec feat cf17 17 (FV7z.mk .not 32 [gr 32 0] 2) := by dec_rfl
 theorem f17_19 : ∀ feat, Dec feat cf17 19 (FV7z.mk .and 32 [gr 32 0, .imm 32 511] 5) := by dec_rfl
@@ -58,21 +58,21 @@ theorem umk_9 : ∀ feat, Dec feat umk 9 (FV7z.mk .syscall 32 [] 2) := by dec_rf
 theorem umk_11 : ∀ feat, Dec feat umk 11 (FV7z.mk .ret 64 [] 1) := by dec_rfl
 
 /-- `csuTg 17`: `endbr64; mov rdi, 0x79c7c0; jmp cf17_at`. -/
-def c304 : List Byte :=
+def c256 : List Byte :=
   [0xf3, 0x0f, 0x1e, 0xfa, 0x48, 0xc7, 0xc7, 0xc0, 0xc7, 0x79, 0x00, 0xe9, 0xd0, 0x94, 0x03, 0x00]
-theorem c304_0 : ∀ feat, Dec feat c304 0 (FV7z.mk .endbr64 32 [] 4) := by dec_rfl
-theorem c304_4 : ∀ feat, Dec feat c304 4 (FV7z.mk .mov 64 [gr 64 7, .imm 64 7980992] 7) := by dec_rfl
-theorem c304_11 : ∀ feat, Dec feat c304 11 (FV7z.mk .jmp 64 [.rel 234704] 5) := by dec_rfl
-theorem v304 : c304 <+: sti.drop 304 := by decide +kernel
-theorem tg17 : csuTg 17 = sti_at.add 304 := by decide +kernel
+theorem c256_0 : ∀ feat, Dec feat c256 0 (FV7z.mk .endbr64 32 [] 4) := by dec_rfl
+theorem c256_4 : ∀ feat, Dec feat c256 4 (FV7z.mk .mov 64 [gr 64 7, .imm 64 7980992] 7) := by dec_rfl
+theorem c256_11 : ∀ feat, Dec feat c256 11 (FV7z.mk .jmp 64 [.rel 234704] 5) := by dec_rfl
+theorem v256 : c256 <+: sti.drop 256 := by decide +kernel
+theorem tg17 : csuTg 17 = sti_at.add 256 := by decide +kernel
 theorem calls17 : calls 17 = [] := by decide +kernel
 
-theorem s304 (feat : Features) : Dec feat sti 304 (FV7z.mk .endbr64 32 [] 4) :=
-  Dec.shift (j := 304) (k := 0) (c304_0 feat) v304 (by decide)
-theorem s308 (feat : Features) : Dec feat sti 308 (FV7z.mk .mov 64 [gr 64 7, .imm 64 7980992] 7) :=
-  Dec.shift (j := 304) (k := 4) (c304_4 feat) v304 (by decide)
-theorem s315 (feat : Features) : Dec feat sti 315 (FV7z.mk .jmp 64 [.rel 234704] 5) :=
-  Dec.shift (j := 304) (k := 11) (c304_11 feat) v304 (by decide)
+theorem s256 (feat : Features) : Dec feat sti 256 (FV7z.mk .endbr64 32 [] 4) :=
+  Dec.shift (j := 256) (k := 0) (c256_0 feat) v256 (by decide)
+theorem s260 (feat : Features) : Dec feat sti 260 (FV7z.mk .mov 64 [gr 64 7, .imm 64 7980992] 7) :=
+  Dec.shift (j := 256) (k := 4) (c256_4 feat) v256 (by decide)
+theorem s267 (feat : Features) : Dec feat sti 267 (FV7z.mk .jmp 64 [.rel 234704] 5) :=
+  Dec.shift (j := 256) (k := 11) (c256_11 feat) v256 (by decide)
 
 /-- `not eax`. -/
 theorem b17 {prof : Profile} : Blk prof cf17 17 19 [Op.not32 0] :=
@@ -168,16 +168,16 @@ theorem runs17 {J : Nat → (Addr → Byte) → Prop} {tg : Nat → Addr} {a₀ 
   intro X t V j₂ hK hA hI hr hsp _ hj₂ hra kk
   have hsl := sp.isLt
   -- the constructor: `mov rdi, 0x79c7c0; jmp cf17_at`
-  refine c.s_endbr hK hA hin (sti_lt (by decide)) (hr.trans tg17) (s304 _) ?_
+  refine c.s_endbr hK hA hin (sti_lt (by decide)) (hr.trans tg17) (s256 _) ?_
   rintro Y1 t1 hK1 hA1 ⟨hr1, hg1⟩
   have k1 : Tr17 X.cpu.gpr (sp - 64#64) X.cpu.gpr.rbx Y1.cpu.gpr := by
     rw [hg1]
     exact ⟨hsp, rfl, rfl, rfl, rfl, rfl, rfl⟩
-  refine c.s_mov_ri64 hK1 hA1 hin (sti_lt (by decide)) hr1 (s308 _) ?_
+  refine c.s_mov_ri64 hK1 hA1 hin (sti_lt (by decide)) hr1 (s260 _) ?_
   rintro Y2 t2 hK2 hA2 ⟨hr2, hg2⟩
   have k2 : Tr17 X.cpu.gpr (sp - 64#64) X.cpu.gpr.rbx Y2.cpu.gpr := by rw [hg2]; exact k1
   have d2 : Y2.cpu.gpr.rdi = 7980992#64 := by rw [hg2]; rfl
-  refine c.s_jmp_x hK2 hA2 hin (sti_lt (by decide)) hr2 (s315 _) hinF (tgt := 0) (by decide) (by decide) ?_
+  refine c.s_jmp_x hK2 hA2 hin (sti_lt (by decide)) hr2 (s267 _) hinF (tgt := 0) (by decide) (by decide) ?_
   rintro Y3 t3 hK3 hA3 ⟨hr3, hg3⟩
   have k3 : Tr17 X.cpu.gpr (sp - 64#64) X.cpu.gpr.rbx Y3.cpu.gpr := by rw [hg3]; exact k2
   have d3 : Y3.cpu.gpr.rdi = 7980992#64 := by rw [hg3]; exact d2
