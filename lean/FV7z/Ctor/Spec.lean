@@ -63,6 +63,17 @@ theorem InR_append_right {n : Nat} {bs : List (Nat × Nat)} : ∀ {as : List (Na
   | [], h => h
   | (_, _) :: _, h => Or.inr (InR_append_right h)
 
+/-- `n` in `as ++ bs` is in `as` or in `bs`. -/
+theorem InR_append_or {n : Nat} {bs : List (Nat × Nat)} : ∀ {as : List (Nat × Nat)}, InR (as ++ bs) n →
+    InR as n ∨ InR bs n
+  | [], h => .inr h
+  | (_, _) :: _, h => by
+    rcases h with h | h
+    · exact .inl (.inl h)
+    · rcases InR_append_or h with h | h
+      · exact .inl (.inr h)
+      · exact .inr h
+
 variable {V : Addr → Byte} {hi : Nat}
 
 theorem spec_dep : ∀ k, (spec V hi k).Dep := fun k => by
@@ -193,8 +204,14 @@ theorem spec_R97 : ∀ k, 3 ≤ k → k < 97 → ∀ x ∈ (spec V hi k).wr, ∀
 /-- `csuTg 90`'s spec has the shared words. -/
 theorem spec_Sh : ∀ x, InR (cxSh xl ++ exH hi) x → InR (spec V hi 90).wr x := fun x h => by
   show InR (c90Wr xl 1 ++ exH hi) x
-  simp only [cxSh, exH, exC, c90Wr, List.cons_append, List.nil_append, InR] at h ⊢
-  omega
+  rcases InR_append_or h with h | h
+  · apply InR_append_left
+    simp only [cxSh, InR] at h
+    rcases h with h | h | h
+    · exact .inr (.inr (.inr (.inl h)))
+    · exact .inr (.inr (.inr (.inr (.inl h))))
+    · exact h.elim
+  · exact InR_append_right h
 
 theorem spec_P90 : ∀ U, (spec V hi 90).post U := fun _ => trivial
 
