@@ -1,5 +1,17 @@
 import FV7z.Ctor.Cx103
 import FV7z.Ctor.Cx17
+import FV7z.Ctor.St96
+import FV7z.Ctor.St97
+import FV7z.C3.Holds
+import FV7z.C15.Holds
+import FV7z.C37.Holds
+import FV7z.C55.Holds
+import FV7z.C61.Holds
+import FV7z.C70.Holds
+import FV7z.C75.Holds
+import FV7z.C78.Holds
+import FV7z.C82.Holds
+import FV7z.C87.Holds
 import FV7z.Mal.HeapS
 /-!
 # The invariant `G` of the constructors not `Done` (PLAN.md §M, assembly of `at_ctor`)
@@ -11,9 +23,10 @@ One `G` for `at_ctor`: what the constructors from 3 to 103 read of the global st
 - `kOf k m`: the top's budget before constructor `m`: 98 takes `operator new (4)` (1072), 102 `malloc (72704)`
   (72752).
 - `Tb103 W`: the two jump tables `init_cacheinfo` reads (`handle_amd`'s, its own).
-- `Gs F Wl fb hi n₀ k m W`: `Tb103`, `CxPre` with `nOf n₀ m` places, `Hp` with `kOf k m`.
-- `GRd hi a`: the bytes `Gs` reads (with the `fs` block inside `[0x7a86c0, hi)` by `Hp`); `Gs.kept`: `Gs` for bytes
-  that agree on them; `Gs.step`: the same `Gs` for constructors with the same counts.
+- `Gn F Wl fb hi n K W`: `Tb103`, `CxPre` with `n` places, `Hp` with the budget `K`; `Gs F Wl fb hi n₀ k m W`: `Gn`
+  with `nOf n₀ m` and `kOf k m`.
+- `GRd hi a`: the bytes `Gn` reads (with the `fs` block inside `[0x7a86c0, hi)` by `Hp`); `Gn.kept`, `Gs.kept`: for
+  bytes that agree on them; `Gs.of`, `Gs.step`: `Gs` from `Gn` with its counts, from `Gs` with the same counts.
 - `g3`, …: the step of `G` each constructor's theorem asks for (`hG`), for the constructors that leave what `Gs`
   reads.
 -/
@@ -49,9 +62,13 @@ structure Tb103 (W : Addr → Byte) : Prop where
   amd : List.map W (byteAddrs 0x6f2000#64 36) = hca_jt
   own : List.map W (byteAddrs 7282852#64 156) = C103.c103_jt
 
+/-- The tables, the exit list with `n` places taken, the heap with the budget `K`. -/
+def Gn (F : Footprint) (Wl : List Rgn) (fb : Addr) (hi n K : Nat) (W : Addr → Byte) : Prop :=
+  Tb103 W ∧ CxPre fb xl n W ∧ Hp F Wl fb hi K W
+
 /-- The invariant `G` before constructor `m`. -/
 def Gs (F : Footprint) (Wl : List Rgn) (fb : Addr) (hi n₀ k m : Nat) (W : Addr → Byte) : Prop :=
-  Tb103 W ∧ CxPre fb xl (nOf n₀ m) W ∧ Hp F Wl fb hi (kOf k m) W
+  Gn F Wl fb hi (nOf n₀ m) (kOf k m) W
 
 /-- The bytes `Gs` reads: the tables, `__exit_funcs`, `main_arena` below the `__x86_*` words, the flag and the list
 `initial`, `global_max_fast`, the lock with its counter, and from `0x7a86c0` (the TLS block, the tcache) up to `hi`. -/
@@ -61,17 +78,15 @@ def GRd (hi a : Nat) : Prop :=
 
 variable {F : Footprint} {Wl : List Rgn} {fb : Addr} {hi n₀ k : Nat}
 
-/-- `Gs` for bytes that agree on `GRd`. -/
-theorem Gs.kept {m : Nat} {W W' : Addr → Byte} (h : Gs F Wl fb hi n₀ k m W) (hn : n₀ + 10 < 32) (hk : 16 ≤ k)
-    (hW : ∀ a : Addr, GRd hi a.toNat → W' a = W a) : Gs F Wl fb hi n₀ k m W' := by
+/-- `Gn` for bytes that agree on `GRd`. -/
+theorem Gn.kept {n K : Nat} {W W' : Addr → Byte} (h : Gn F Wl fb hi n K W) (hn : n < 32) (hK : 16 ≤ K)
+    (hW : ∀ a : Addr, GRd hi a.toNat → W' a = W a) : Gn F Wl fb hi n K W' := by
   obtain ⟨⟨t1, t2⟩, hc, hp⟩ := h
-  have hk' : 16 ≤ kOf k m := Nat.le_trans hk (kOf_ge k m)
-  obtain ⟨f1, f2, f3⟩ := hp.bnd hk'
+  obtain ⟨f1, f2, f3⟩ := hp.bnd hK
   have e1 : (0x6f2000#64 : Addr).toNat = 7282688 := rfl
   have e2 : (7282852#64 : Addr).toNat = 7282852 := rfl
   have el : xl.toNat = 8010400 := rfl
-  refine ⟨⟨?_, ?_⟩, hc.kept (Nat.lt_of_le_of_lt (nOf_le n₀ m) hn) (by omega) (by decide) fun a ha => hW a ?_,
-    hp.mvS hk' fun a ha => hW a ?_⟩
+  refine ⟨⟨?_, ?_⟩, hc.kept hn (by omega) (by decide) fun a ha => hW a ?_, hp.mvS hK fun a ha => hW a ?_⟩
   · rw [rd_eq (by rw [e1]; omega) fun a h1 h2 => hW a (by rw [e1] at h1 h2; unfold GRd; omega)]
     exact t1
   · rw [rd_eq (by rw [e2]; omega) fun a h1 h2 => hW a (by rw [e2] at h1 h2; unfold GRd; omega)]
@@ -84,12 +99,31 @@ theorem Gs.kept {m : Nat} {W W' : Addr → Byte} (h : Gs F Wl fb hi n₀ k m W) 
     unfold GRd
     omega
 
-/-- `Gs` before `m'` from `Gs` before `m` when the counts are the same. -/
-theorem Gs.step {m m' : Nat} {W : Addr → Byte} (e : nOf n₀ m' = nOf n₀ m ∧ kOf k m' = kOf k m)
-    (h : Gs F Wl fb hi n₀ k m W) : Gs F Wl fb hi n₀ k m' W := by
-  unfold Gs at h ⊢
+/-- The `fs` block and `hi` above the tables and globals `Gn` reads. -/
+theorem Gn.hi {n K : Nat} {W : Addr → Byte} (h : Gn F Wl fb hi n K W) (hK : 16 ≤ K) :
+    8029928 ≤ fb.toNat ∧ fb.toNat + 64 ≤ hi ∧ hi < 2 ^ 64 :=
+  h.2.2.bnd hK
+
+/-- `Gs` for bytes that agree on `GRd`. -/
+theorem Gs.kept {m : Nat} {W W' : Addr → Byte} (h : Gs F Wl fb hi n₀ k m W) (hn : n₀ + 10 < 32) (hk : 16 ≤ k)
+    (hW : ∀ a : Addr, GRd hi a.toNat → W' a = W a) : Gs F Wl fb hi n₀ k m W' :=
+  Gn.kept h (Nat.lt_of_le_of_lt (nOf_le n₀ m) hn) (Nat.le_trans hk (kOf_ge k m)) hW
+
+theorem Gs.hi {m : Nat} {W : Addr → Byte} (h : Gs F Wl fb hi n₀ k m W) (hk : 16 ≤ k) :
+    8029928 ≤ fb.toNat ∧ fb.toNat + 64 ≤ hi ∧ hi < 2 ^ 64 :=
+  Gn.hi h (Nat.le_trans hk (kOf_ge k m))
+
+/-- `Gs` before `m` from `Gn` with its counts. -/
+theorem Gs.of {m n K : Nat} {W : Addr → Byte} (e : nOf n₀ m = n ∧ kOf k m = K) (h : Gn F Wl fb hi n K W) :
+    Gs F Wl fb hi n₀ k m W := by
+  unfold Gs
   rw [e.1, e.2]
   exact h
+
+/-- `Gs` before `m'` from `Gs` before `m` when the counts are the same. -/
+theorem Gs.step {m m' : Nat} {W : Addr → Byte} (e : nOf n₀ m' = nOf n₀ m ∧ kOf k m' = kOf k m)
+    (h : Gs F Wl fb hi n₀ k m W) : Gs F Wl fb hi n₀ k m' W :=
+  Gs.of e h
 
 /-- `Gs` after stores to an interval apart from what it reads. -/
 theorem Gs.out {m m' lo up : Nat} {W W' : Addr → Byte} (h : Gs F Wl fb hi n₀ k m W) (hn : n₀ + 10 < 32)
@@ -153,19 +187,19 @@ theorem g97 : ∀ W, Gs F Wl fb hi n₀ k 97 W → Gs F Wl fb hi n₀ k 98 (st97
 
 theorem g82 {sp : Addr} (hsp : hi + 1024 ≤ sp.toNat) :
     ∀ W W', Gs F Wl fb hi n₀ k 82 W → C82.Out sp W W' → Gs F Wl fb hi n₀ k 83 W' :=
-  fun _ _ h ho => Gs.step ⟨by simp [nOf], by simp [kOf]⟩ (h.kept hn hk fun a ha =>
+  fun _ _ h ho => have := h.hi hk; Gs.step ⟨by simp [nOf], by simp [kOf]⟩ (h.kept hn hk fun a ha =>
     ho a (by unfold GRd at ha; omega) (by unfold GRd at ha; omega))
 
 theorem g17 {sp : Addr} (hsp : hi + 1024 ≤ sp.toNat) :
     ∀ W V', Gs F Wl fb hi n₀ k 17 W → (∀ a : Addr, ¬ (sp.toNat - 80 ≤ a.toNat ∧ a.toNat < sp.toNat - 64) →
       ¬ (7980992 ≤ a.toNat ∧ a.toNat < 7980996) → V' a = W a) → Gs F Wl fb hi n₀ k 18 V' :=
-  fun _ _ h ho => Gs.step ⟨by simp [nOf], by simp [kOf]⟩ (h.kept hn hk fun a ha =>
+  fun _ _ h ho => have := h.hi hk; Gs.step ⟨by simp [nOf], by simp [kOf]⟩ (h.kept hn hk fun a ha =>
     ho a (by unfold GRd at ha; omega) (by unfold GRd at ha; omega))
 
 theorem g103 {sp : Addr} (hsp : hi + 1024 ≤ sp.toNat) :
     ∀ W V', Gs F Wl fb hi n₀ k 103 W → (∀ a : Addr, ¬ (sp.toNat - 256 ≤ a.toNat ∧ a.toNat < sp.toNat - 64) →
       ¬ C103.Gw a → V' a = W a) → Gs F Wl fb hi n₀ k 104 V' :=
-  fun _ _ h ho => Gs.step ⟨by simp [nOf], by simp [kOf]⟩ (h.kept hn hk fun a ha =>
+  fun _ _ h ho => have := h.hi hk; Gs.step ⟨by simp [nOf], by simp [kOf]⟩ (h.kept hn hk fun a ha =>
     ho a (by unfold GRd at ha; omega) (by unfold C103.Gw; unfold GRd at ha; omega))
 
 end steps
