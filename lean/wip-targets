@@ -1,4 +1,3 @@
-FV7z.Strrchr.Loop
-FV7z.Strrchr.Cross
-FV7z.Strrchr.Run
-FV7z.Strrchr.Plt
+FV7z.Lemmas.RepStosb
+FV7z.Memset.Code
+FV7z.Memset.Erms
