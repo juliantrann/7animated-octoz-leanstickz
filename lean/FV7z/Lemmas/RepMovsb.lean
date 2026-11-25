@@ -83,14 +83,6 @@ theorem VcopyB_in : ∀ (n : Nat) (V : Addr → Byte) (d s : Addr), d.toNat + n 
     (s.toNat + n ≤ d.toNat ∨ d.toNat + n ≤ s.toNat) → ∀ i < n, VcopyB V d s n (d.add i) = V (s.add i)
   | 0, _, _, _, _, _, _, _, hi => absurd hi (Nat.not_lt_zero _)
   | n + 1, V, d, s, hd, hs, hap, i, hi => by
-    have hd1 : (d + 1).toNat = d.toNat + 1 := by
-      have h1 := toNat_add_of_fits (a := d) (i := 1) (n := n + 1) (by omega) hd
-      rw [show d.add 1 = d + 1 from rfl] at h1
-      omega
-    have hs1 : (s + 1).toNat = s.toNat + 1 := by
-      have h1 := toNat_add_of_fits (a := s) (i := 1) (n := n + 1) (by omega) hs
-      rw [show s.add 1 = s + 1 from rfl] at h1
-      omega
     rw [VcopyB_succ]
     rcases i with _ | i
     · rw [VcopyB_out n _ _ _ _ fun j hj => ?_]
@@ -102,7 +94,15 @@ theorem VcopyB_in : ∀ (n : Nat) (V : Addr → Byte) (d s : Addr), d.toNat + n 
         have := congrArg BitVec.toNat e
         rw [toNat_add_of_fits (n := n + 1) (by omega) hd] at this
         omega
-    · rw [← addr_one_add, ← addr_one_add]
+    · have hd1 : (d + 1).toNat = d.toNat + 1 := by
+        have h1 := toNat_add_of_fits (a := d) (i := 1) (n := n + 1) (by omega) hd
+        rw [show d.add 1 = d + 1 from rfl] at h1
+        omega
+      have hs1 : (s + 1).toNat = s.toNat + 1 := by
+        have h1 := toNat_add_of_fits (a := s) (i := 1) (n := n + 1) (by omega) hs
+        rw [show s.add 1 = s + 1 from rfl] at h1
+        omega
+      rw [← addr_one_add, ← addr_one_add]
       rw [VcopyB_in n _ (d + 1) (s + 1) (by omega) (by omega) (by omega) i (by omega)]
       refine Vst_apart _ V d _ fun k hk => ?_
       rw [show k = 0 by simp at hk; omega, addr_add_zero]
