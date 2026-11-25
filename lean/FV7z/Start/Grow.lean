@@ -103,6 +103,17 @@ theorem in_page {r : Rgn} (hr : r.In (P * 4096) ((P + n) * 4096)) {a : Addr} (ha
 /-- A footprint that owns nothing, with regions `N` of new pages added to what it writes. -/
 abbrev withNew (F : Footprint) (N : List Rgn) : Footprint := ⟨N ++ F.writes, [], F.reads, F.code⟩
 
+/-- Data of a footprint with no owned regions stays data once new pages are added. -/
+theorem withNew_data {F : Footprint} {N : List Rgn} (hown : F.own = []) {a : Addr} (h : Foot F.data a) :
+    Foot (withNew F N).data a := by
+  rcases foot_append_iff.1 h with h | h
+  · rcases foot_append_iff.1 h with h | h
+    · exact foot_append_iff.2 (.inl (foot_append_iff.2 (.inl (foot_append_iff.2 (.inr h)))))
+    · obtain ⟨r, hr, -⟩ := h
+      rw [hown] at hr
+      cases hr
+  · exact foot_append_iff.2 (.inr h)
+
 theorem withNew_foot {F : Footprint} {N : List Rgn} (hown : F.own = []) {a : Addr}
     (h : Foot ((withNew F N).data ++ (withNew F N).codeRgns) a) : Foot N a ∨ Foot (F.data ++ F.codeRgns) a := by
   simp only [Footprint.data, Footprint.codeRgns, hown, List.append_nil] at h ⊢
