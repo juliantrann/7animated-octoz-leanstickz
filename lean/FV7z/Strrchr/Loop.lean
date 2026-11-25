@@ -127,7 +127,7 @@ theorem body (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e' sr2) {X : State} {t
   have hs₀ : Kc g₀ X.cpu.gpr X.cpu.gpr := ⟨hkp, rfl, rfl, rfl⟩
   have hx0₁ : xsOf Y₁.cpu.vec.zmm (xmmOf 0) =
       pminb (rd16 V (X.cpu.gpr.rdi + BitVec.ofNat 64 32)) (rd16 V (X.cpu.gpr.rdi + BitVec.ofNat 64 48)) := by
-    rw [hv₁]; simp (disch := decide) only [xset_same, xset_ne] <;> rfl
+    rw [hv₁]; simp (disch := decide) only [xset_same] <;> rfl
   have hx1₁ : xsOf Y₁.cpu.vec.zmm (xmmOf 1) = Bc g₀.rsi := by
     rw [hv₁]; simp (disch := decide) only [xset_ne, hx1]
   have hx2₁ : xsOf Y₁.cpu.vec.zmm (xmmOf 2) = rd16 V (X.cpu.gpr.rdi + BitVec.ofNat 64 48) := by
@@ -154,7 +154,7 @@ theorem body (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e' sr2) {X : State} {t
       (rd16 V (X.cpu.gpr.rdi + BitVec.ofNat 64 0))) 0)).setWidth 64 := by
     simp only [hg₂] <;> rfl
   have hx0₂ : xsOf Y₂.cpu.vec.zmm (xmmOf 0) = rd16 V (X.cpu.gpr.rdi + BitVec.ofNat 64 0) := by
-    rw [hv₂]; simp (disch := decide) only [xset_same, xset_ne] <;> rfl
+    rw [hv₂]; simp (disch := decide) only [xset_same] <;> rfl
   have hx1₂ : xsOf Y₂.cpu.vec.zmm (xmmOf 1) = Bc g₀.rsi := by
     rw [hv₂]; simp (disch := decide) only [xset_ne, hx1₁]
   have hx2₂ : xsOf Y₂.cpu.vec.zmm (xmmOf 2) = rd16 V (X.cpu.gpr.rdi + BitVec.ofNat 64 48) := by
@@ -182,7 +182,7 @@ theorem body (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e' sr2) {X : State} {t
   have hdx₃ : ∀ i, Y₃.cpu.gpr.rdx.getLsbD i = (decide (i < 16) && Fb V X.cpu.gpr.rdi (g₀.rsi.setWidth 8) (i + 16)) := by
     simp only [hg₃]; exact bits64 fun i => cbit' V X.cpu.gpr.rdi 16 i g₀.rsi
   have hx0₃ : xsOf Y₃.cpu.vec.zmm (xmmOf 0) = rd16 V (X.cpu.gpr.rdi + BitVec.ofNat 64 32) := by
-    rw [hv₃]; simp (disch := decide) only [xset_same, xset_ne] <;> rfl
+    rw [hv₃]; simp (disch := decide) only [xset_same] <;> rfl
   have hx1₃ : xsOf Y₃.cpu.vec.zmm (xmmOf 1) = Bc g₀.rsi := by
     rw [hv₃]; simp (disch := decide) only [xset_ne, hx1₂]
   have hx2₃ : xsOf Y₃.cpu.vec.zmm (xmmOf 2) = rd16 V (X.cpu.gpr.rdi + BitVec.ofNat 64 48) := by
@@ -202,7 +202,7 @@ theorem body (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e' sr2) {X : State} {t
   have hr10₄ : R 32 48 (Fb V X.cpu.gpr.rdi (g₀.rsi.setWidth 8)) Y₄.cpu.gpr.r10 := by
     simp only [hg₄]; exact R_m (fun i => cbit' V X.cpu.gpr.rdi 32 i g₀.rsi) (by omega)
   have hx0₄ : xsOf Y₄.cpu.vec.zmm (xmmOf 0) = peqb (rd16 V (X.cpu.gpr.rdi + BitVec.ofNat 64 48)) (Bc g₀.rsi) := by
-    rw [hv₄]; simp (disch := decide) only [xset_same, xset_ne] <;> rfl
+    rw [hv₄]; simp (disch := decide) only [xset_same] <;> rfl
   -- the vectors but `xmm0` as at `Y₂`
   have hxe : ∀ k, k ≠ xmmOf 0 → xsOf Y₄.cpu.vec.zmm k = xsOf Y₂.cpu.vec.zmm k := fun k hk => by
     rw [hv₄, hv₃]; simp only [xset_ne _ _ hk]
@@ -255,11 +255,11 @@ def o479a : List VOp := [
   VOp.op (Op.and 64 2 (.r 8))]
 
 theorem b479a (prof : Profile) : BlkV prof sr2 479 496 o479a :=
-  .cons (d479 _) (OpI.shl64 (.i 48)) (by decide) <|
-  .cons (d483 _) (OpI.or (.r 8) (.inr rfl)) (by decide) <|
-  .cons (d486 _) (OpI.lea (.inr rfl)) (by decide) <|
-  .cons (d490 _) (OpI.xor (.r 0) (.inr rfl)) (by decide) <|
-  .cons (d493 _) (OpI.and (.r 8) (.inr rfl)) (by decide) <|
+  .cons (d479 _) (OpI.shl64 (.i 48)) (by rw [sr2_length]; decide) <|
+  .cons (d483 _) (OpI.or (.r 8) (.inr rfl)) (by rw [sr2_length]; decide) <|
+  .cons (d486 _) (OpI.lea (.inr rfl)) (by rw [sr2_length]; decide) <|
+  .cons (d490 _) (OpI.xor (.r 0) (.inr rfl)) (by rw [sr2_length]; decide) <|
+  .cons (d493 _) (OpI.and (.r 8) (.inr rfl)) (by rw [sr2_length]; decide) <|
   .nil 496
 
 /-- The stretch from `496` to `504`: `cmovne rcx, rdi`, `cmovne rsi, rdx`. -/
@@ -268,8 +268,8 @@ def o496 : List VOp := [
   VOp.op (Op.cmov64 5 6 2)]
 
 theorem b496 (prof : Profile) : BlkV prof sr2 496 504 o496 :=
-  .cons (d496 _) (OpI.cmov64) (by decide) <|
-  .cons (d500 _) (OpI.cmov64) (by decide) <|
+  .cons (d496 _) (OpI.cmov64) (by rw [sr2_length]; decide) <|
+  .cons (d500 _) (OpI.cmov64) (by rw [sr2_length]; decide) <|
   .nil 504
 
 /-- From `+430`, the chunk at `A` with the string's 0, its four loads in `xmm5`, `xmm4`, `xmm3`, `xmm2`, `rdx` its
@@ -311,7 +311,7 @@ theorem exit430 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e' sr2) {X : State}
   have hx5₁ : xsOf Y₁.cpu.vec.zmm (xmmOf 5) = peqb (rd16 V (A + BitVec.ofNat 64 0)) 0 := by
     rw [hv₁]; simp (disch := decide) only [xset_same, xset_ne] <;> rfl
   have hx2₁ : xsOf Y₁.cpu.vec.zmm (xmmOf 2) = peqb (rd16 V (A + BitVec.ofNat 64 48)) 0 := by
-    rw [hv₁]; simp (disch := decide) only [xset_same, xset_ne] <;> rfl
+    rw [hv₁]; simp (disch := decide) only [xset_same] <;> rfl
   -- `pmovmskb r9d, xmm5`, `shl r10, 32`, `shl rax, 16`, `pmovmskb r8d, xmm2`, `or rax, r10`, `or rax, r9`
   refine c.s_blkV hin (b455 prof) hK₁ hA₁ hr₁ ?_
   refine wpV_v0 (wpV_reg fun _ _ => wpV_reg fun _ _ => wpV_v0 (wpV_reg fun _ _ => wpV_reg fun _ _ => wpV_nil ?_))
@@ -389,7 +389,7 @@ theorem exit430 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e' sr2) {X : State}
     refine c.s_blkV hin (b508 prof) hK₅ hA₅ hr₅ ?_
     refine wpV_reg fun _ _ => wpV_nil ?_
     intro Y₆ t₆ hK₆ hA₆ hr₆ hg₆ _ _
-    simp only [wr, gv, eaG, optV, set_rax, get1, get6, BitVec.setWidth_eq, BitVec.mul_one, BitVec.add_zero] at hg₆
+    simp only [wr, eaG, optV, set_rax, get1, get6, BitVec.setWidth_eq, BitVec.mul_one, BitVec.add_zero] at hg₆
     simp only [hg₅] at hg₆
     have hkp₆ : KpR g₀ Y₆.cpu.gpr := by simp only [KpR, hg₆]; exact hkp₄
     have hax₆ : Y₆.cpu.gpr.rax = Addr.add a (highestSetBit b) := by
@@ -410,7 +410,7 @@ theorem exit430 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e' sr2) {X : State}
     exact last hkp₄ (by rw [hg₄]; exact hcx₃) (by rw [hg₄]; exact hsi₃) hsi0 (rok_ext hok hEn hno)
   · -- the last match before the 0: `rcx = A`, `rsi` the matches
     have hc' : Y₃.cpu.rflags.cond 5 = true := by rw [hc, beq_false_of_ne hd0] <;> rfl
-    simp only [rfz_cond, hc', eq_self_iff_true, ↓reduceIte, wr, gv, set_rcx, set_rsi, get2, get7,
+    simp only [rfz_cond, hc', ↓reduceIte, wr, gv, set_rcx, set_rsi, get2, get7,
       BitVec.setWidth_eq] at hg₄
     have hkp₄ : KpR g₀ Y₄.cpu.gpr := by simp only [KpR, hg₄]; exact hkp₃
     have hok' := rok_new (p := g₀.rdi) (d := A.toNat - g₀.rdi.toNat) (by omega) (by omega) hKb hd0
@@ -476,10 +476,10 @@ theorem loop (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e' sr2) {g₀ : Gprs} 
       exact rok_ext hok (by omega) hno
     · -- a match: `rsi` the chunk's matches, `rcx = A`
       have hc' : fl.cond 5 = true := by rw [hc, beq_false_of_ne hd0] <;> rfl
-      simp only [rfz_cond, hc', eq_self_iff_true, ↓reduceIte, wr, gv, Src.val, set_rsi, set_rcx, set_rdi, get2,
+      simp only [rfz_cond, hc', ↓reduceIte, wr, gv, Src.val, set_rsi, set_rcx, set_rdi, get2,
         get7, BitVec.setWidth_eq, hdi₁] at hg₂
       generalize hA' : addR A (BitVec.ofNat 64 64) = A' at hg₂ ht
-      have hok' := rok_new (p := g₀.rdi) (d := A.toNat - g₀.rdi.toNat) (by omega) (le_refl 64) (R_full hdx₁) hd0
+      have hok' := rok_new (p := g₀.rdi) (d := A.toNat - g₀.rdi.toNat) (by omega) (Nat.le_refl 64) (R_full hdx₁) hd0
       refine ih Y₂ t₂ A' (A.toNat - g₀.rdi.toNat + 64) (by omega) hK₂ hA₂ hr₂ (by simp only [hg₂])
         (by simp only [KpR, hg₂]; exact hkp₁) hx1₂ hx7₂ (by omega) (by omega) (by omega) (by omega) (by omega)
         (by simp only [hg₂]; exact hd0) ?_
@@ -537,17 +537,17 @@ theorem from256 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e' sr2) {g₀ : Gpr
       Y.cpu.gpr.rdi = g₀.rdi → R 0 64 (Fb V g₀.rdi (g₀.rsi.setWidth 8)) Y.cpu.gpr.rsi →
       xsOf Y.cpu.vec.zmm (xmmOf 1) = Bc g₀.rsi → 64 ≤ n → GoG prof L o gev gP gE Y t' := by
   intro Y t hK hA hrip hkp hdi hsi hx1 h64
-  have hS := rok_mask (le_refl 64) (R_full hsi)
+  have hS := rok_mask (Nat.le_refl 64) (R_full hsi)
   refine c.s_blkV hin (b256 prof) hK hA hrip ?_
-  refine wpV_reg fun fl hP => wpV_reg fun _ _ => wpV_nil ?_
+  refine wpV_reg fun fl hP => wpV_reg fun fl₂ hP₂ => wpV_nil ?_
   intro Y₁ t₁ hK₁ hA₁ hr₁ hg₁ hf₁ hv₁
   simp only [wr, gv, Src.val, set_rcx, get6, get7, BitVec.setWidth_eq, BitVec.and_self] at hg₁ hP
-  have hc := cond4_mask hP
+  have hc : Y₁.cpu.rflags.cond 4 = (Y.cpu.gpr.rsi == 0) := by rw [hf₁, hP₂, rfz_cond, cond4_mask hP]
   refine c.s_jccV hK₁ hA₁ hin (by rw [sr2_length]; omega) hr₁ (d262 prof.feat) (tgt := 528) rfl
     (by rw [sr2_length]; omega) ?_ ?_
   · -- no match: `rsi = 1`, `rcx = 0`
     intro htk Y₂ t₂ hK₂ hA₂ ⟨hr₂, hg₂, hv₂⟩
-    rw [hf₁, hc] at htk
+    rw [hc] at htk
     have h0 := eq_of_beq htk
     refine c.s_blkV hin (b528 prof) hK₂ hA₂ hr₂ ?_
     refine wpV_reg fun _ _ => wpV_reg fun _ _ => wpV_nil ?_
@@ -564,7 +564,7 @@ theorem from256 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e' sr2) {g₀ : Gpr
       (by rw [hsi₄, hcx₄, hsb_one, addr_add_zero]; exact rok_none (hS.1.1 h0))
   · -- `rcx = p`
     intro hfa Y₂ t₂ hK₂ hA₂ ⟨hr₂, hg₂, hv₂⟩
-    rw [hf₁, hc] at hfa
+    rw [hc] at hfa
     have hne := ne_of_beq_false hfa
     exact at268 c hin hov hnz hz hch hft hR hK₂ hA₂ hr₂ (by rw [hg₂]; simp only [KpR, hg₁]; exact hkp)
       (by rw [hg₂]; simp only [hg₁]; exact hdi) (by rw [hv₂, hv₁]; exact hx1) h64
