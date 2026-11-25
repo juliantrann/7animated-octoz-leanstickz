@@ -23,7 +23,8 @@ theorem to267 {fb : Addr} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBas
     {mlc : List Byte} {Pa : Nat → (Addr → Byte) → Prop} {hi ka : Nat}
     (hinm : CodeIn L 6500704#64 mlc) (hm0 : 0 < mlc.length)
     (hmal : Mal.At prof F Wl L o fb hi 6500704#64 Pa)
-    (hPaH : ∀ k W, Pa k W ↔ Mal.Hp F Wl fb hi (1072 * k + 16) W) {V₄ : Addr → Byte} {r A : Addr} {E q : Nat}
+    {mb : Nat} (hmb : 16 ≤ mb) (hPaH : ∀ k W, Pa k W ↔ Mal.Hp F Wl fb hi (1072 * k + mb) W)
+    {V₄ : Addr → Byte} {r A : Addr} {E q : Nat}
     (hq : E = 8 ∧ q = 2 ∨ E = 16 ∧ q = 3)
     (hr : 8029560 + 88 ≤ r.toNat) (hr2 : r.toNat + 16 ≤ 2 ^ 64)
     (hFs : ∀ a : Addr, r.toNat - 88 ≤ a.toNat → a.toNat < r.toNat + 8 → Foot Wl a ∧ Foot F.data a)
@@ -35,7 +36,7 @@ theorem to267 {fb : Addr} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBas
     (hA2 : A.toNat + 40 ≤ r.toNat - 88)
     (hAW : ∀ a : Addr, A.toNat ≤ a.toNat → a.toNat < A.toNat + 40 → Foot Wl a)
     (hN4 : rdq(V₄, 7937688#64) = BitVec.ofNat 64 E)
-    (hR4 : Mal.HpR F Wl fb hi (1072 * (ka + 1) + 16) (fun a => A.toNat ≤ a ∧ a < A.toNat + 40) V₄)
+    (hR4 : Mal.HpR F Wl fb hi (1072 * (ka + 1) + mb) (fun a => A.toNat ≤ a ∧ a < A.toNat + 40) V₄)
     (Z : State) (t : Nat) (hK : KeptW Wl s₀ Z) (hA : Agree F Z.proc.mm.mem V₄) (hrip : Z.cpu.rip = ipa_at.add 75)
     (hsp : Z.cpu.gpr.rsp = r + 18446744073709551536#64) (hax : Z.cpu.gpr.rax = A) (hbp : Z.cpu.gpr.rbp = r)
     (k : ∀ Z' t' (V₅ : Addr → Byte) (B : Addr), KeptW Wl s₀ Z' → Agree F Z'.proc.mm.mem V₅ →
@@ -50,7 +51,7 @@ theorem to267 {fb : Addr} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBas
       (∀ a : Addr, (a.toNat < 7937664 ∨ 7937720 ≤ a.toNat ∧ a.toNat < 7940480 ∨
         r.toNat - 80 ≤ a.toNat ∧ a.toNat < r.toNat - 72 ∨ r.toNat - 48 ≤ a.toNat) → V₅ a = V₄ a) →
       (∀ a : Addr, Mal.Kf fb a → V₅ a = V₄ a) → 8032256 ≤ B.toNat → fb.toNat + 64 ≤ B.toNat →
-      Mal.HpR F Wl fb hi (1072 * ka + 16) (fun a => (A.toNat ≤ a ∧ a < A.toNat + 40 ∨
+      Mal.HpR F Wl fb hi (1072 * ka + mb) (fun a => (A.toNat ≤ a ∧ a < A.toNat + 40 ∨
         B.toNat ≤ a ∧ a < B.toNat + 160 * q) ∨ 8029552 ≤ a ∧ a < 8029560) V₅ →
       GoG prof L o gev gP gE Z' t') :
     GoG prof L o gev gP gE Z t := by
@@ -92,7 +93,7 @@ theorem to267 {fb : Addr} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBas
     hT3
   simp only [hdi₂, s₂, hq160, f88 hr0] at hB2 hBf hkeep hT2
   -- the heap after `malloc (160 q)`: `A`, `B` and `_dl_all_dirs` apart
-  have hR5 : Mal.HpR F Wl fb hi (1072 * ka + 16) (fun a => (A.toNat ≤ a ∧ a < A.toNat + 40 ∨
+  have hR5 : Mal.HpR F Wl fb hi (1072 * ka + mb) (fun a => (A.toNat ≤ a ∧ a < A.toNat + 40 ∨
       B.toNat ≤ a ∧ a < B.toNat + 160 * q) ∨ 8029552 ≤ a ∧ a < 8029560) V₅ :=
     (Mal.HpR.mal (hR4.keep (by omega) fun a h1 h2 _ => by
         rw [Tun.Vst_out _ _ _ _ (by ifd) (by ifd), Tun.Vst_out _ _ _ _ (by ifd) (by ifd),

@@ -115,6 +115,7 @@ structure MCx (prof : Profile) (F : Footprint) (Wl N : List Rgn) (L : List (Addr
   hown : F.own = []
   hbk : 8032256 ≤ b.toNat
   hH : ∀ a : Addr, (b + corr b).toNat ≤ a.toNat → a.toNat < (b + size pad 656#64).toNat → Foot (N ++ Wl) a
+  htp : 131072 ≤ pad.toNat
 
 variable {prof : Profile} {F : Footprint} {Wl N : List Rgn} {L : List (Addr × List Byte)} {s₀ : State} {o : Oracle}
   {gev : List Event} {gP : State → Nat → List Event → Prop} {gE : Outcome → List Event → Prop}

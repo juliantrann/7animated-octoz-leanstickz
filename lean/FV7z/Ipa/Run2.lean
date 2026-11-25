@@ -21,8 +21,8 @@ theorem to75 {fb : Addr} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase
     {mlc : List Byte} {Pa : Nat → (Addr → Byte) → Prop} {hi ka : Nat}
     (hinm : CodeIn L 6500704#64 mlc) (hm0 : 0 < mlc.length)
     (hmal : Mal.At prof F Wl L o fb hi 6500704#64 Pa)
-    (hPaH : ∀ k W, Pa k W ↔ Mal.Hp F Wl fb hi (1072 * k + 16) W) {V V₃ : Addr → Byte} {g : Gprs} {e P : Addr}
-    {s E : Nat}
+    {mb : Nat} (hmb : 16 ≤ mb) (hPaH : ∀ k W, Pa k W ↔ Mal.Hp F Wl fb hi (1072 * k + mb) W)
+    {V V₃ : Addr → Byte} {g : Gprs} {e P : Addr} {s E : Nat}
     (he : 8388872 + 400 ≤ e.toNat) (he2 : e.toNat + 16 ≤ 2 ^ 64)
     (hFs : ∀ a : Addr, e.toNat - 400 ≤ a.toNat → a.toNat < e.toNat + 8 → Foot Wl a ∧ Foot F.data a)
     (hwl : ∀ a : Addr, hi ≤ a.toNat → a.toNat < e.toNat → Foot Wl a) (hhi : hi + 600 ≤ e.toNat)
@@ -44,7 +44,7 @@ theorem to75 {fb : Addr} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase
       (∀ a : Addr, a.toNat < 7940480 → (a.toNat < 7937680 ∨ 7937704 ≤ a.toNat) → V₄ a = V a) →
       rdq(V₄, 7937688#64) = BitVec.ofNat 64 E →
       (∀ a : Addr, e.toNat - 88 ≤ a.toNat → V₄ a = iV0 V g a) →
-      Mal.HpR F Wl fb hi (1072 * ka + 16) (fun a => A.toNat ≤ a ∧ a < A.toNat + 40) V₄ →
+      Mal.HpR F Wl fb hi (1072 * ka + mb) (fun a => A.toNat ≤ a ∧ a < A.toNat + 40) V₄ →
       (∀ a : Addr, Mal.Kf fb a → V₄ a = V a) → 8032256 ≤ A.toNat → fb.toNat + 64 ≤ A.toNat →
       GoG prof L o gev gP gE Z' t') :
     GoG prof L o gev gP gE Z t := by
@@ -77,7 +77,7 @@ theorem to75 {fb : Addr} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase
     hT3
   simp only [hdi, s₂, BitVec.toNat_ofNat, Nat.reducePow, Nat.reduceMod, f96 hr0] at hA2 hAf hkeep hPa4 hT2
   -- the heap after `malloc (40)`, `A` given
-  have hR4 : Mal.HpR F Wl fb hi (1072 * ka + 16) (fun a => A.toNat ≤ a ∧ a < A.toNat + 40) V₄ :=
+  have hR4 : Mal.HpR F Wl fb hi (1072 * ka + mb) (fun a => A.toNat ≤ a ∧ a < A.toNat + 40) V₄ :=
     (Mal.HpR.mal (R := fun _ => False)
       ⟨(hPaH _ _).1 (hPa3 _ fun a h1 h2 h3 => by
         rw [Tun.Vst_out _ _ _ _ (by ifd) (by ifd), Tun.Vst_out _ _ _ _ (by ipd) (by ipd)]), fun _ h => h.elim⟩

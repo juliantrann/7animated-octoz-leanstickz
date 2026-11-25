@@ -116,7 +116,7 @@ theorem ndi_pc {pl pc : List Byte} {Pm : (Addr → Byte) → Prop} {E : Ev} {V W
     {Pa : Nat → (Addr → Byte) → Prop} {hi ka : Nat}
     (hinc : CodeIn L 4198592#64 cpy) (hc0 : 0 < cpy.length) (hcpy : Gor.PcpyAt prof L o 4198592#64 Pq)
     (hinm : CodeIn L 6500704#64 mlc) (hm0 : 0 < mlc.length) (hmal : Mal.At prof F Wl L o fb hi 6500704#64 Pa)
-    (hPaH : ∀ k W, Pa k W ↔ Mal.Hp F Wl fb hi (1072 * k + 16) W)
+    {mb : Nat} (hmb : 16 ≤ mb) (hPaH : ∀ k W, Pa k W ↔ Mal.Hp F Wl fb hi (1072 * k + mb) W)
     (hinl : CodeIn L 4198664#64 sl) (hl0 : 0 < sl.length) (hlenA : Str.LenAt prof L o 4198664#64 Pk)
     (hinz : CodeIn L 4198528#64 ms) (hz0 : 0 < ms.length) (hset : Ipa.SetAt prof L o 4198528#64 Ps)
     (hint : CodeIn L Tgv.tgv_at Tgv.tgv)
@@ -169,7 +169,7 @@ theorem ndi_pc {pl pc : List Byte} {Pm : (Addr → Byte) → Prop} {E : Ev} {V W
     (k : ∀ (U : Addr → Byte) s₁ Z t' W',
       (∀ a : Addr, (a.toNat < 7937664 ∨ 7937720 ≤ a.toNat ∧ a.toNat < 7940480 ∨ sp.toNat ≤ a.toNat ∨
         Mal.Kf fb a) →
-        U a = hV V org 4194368#64 8#64 a) →
+        U a = hV V org 4194368#64 8#64 a) → Mal.Hp F Wl fb hi (1072 * ka + mb) U →
       Seg prof G Wl' L s₁ o → Base s₁ lim b fsb ks → KeptW Wl' s₁ Z →
       Agree G Z.proc.mm.mem W' → Eqo sp W' (lV (bV U n)) → Z.cpu.rip = e₂.add j₂ → Z.cpu.gpr.rsp = sp + 128#64 →
       Z.cpu.gpr.rbx = rdq(V, sp + 80#64) → Z.cpu.gpr.rbp = rdq(V, sp + 88#64) →
@@ -197,7 +197,7 @@ theorem ndi_pc {pl pc : List Byte} {Pm : (Addr → Byte) → Prop} {E : Ev} {V W
       Vst W' (sp - 8#64) (toBytesLE (ndi_at.add 2063) 8) a = V a :=
     fun a ha => vi a (.inl (by omega)) (by unfold Hv; omega)
   -- `_dl_init_paths`
-  refine Ipa.whole c hfs hin hinh hinc hc0 hcpy hinm hm0 hmal hPaH hinl hl0 hlenA hinz hz0 hset hint
+  refine Ipa.whole c hfs hin hinh hinc hc0 hcpy hinm hm0 hmal hmb hPaH hinl hl0 hlenA hinz hz0 hset hint
     (V := Vst W' (sp - 8#64) (toBytesLE (ndi_at.add 2063) 8)) (e := sp - 8#64) (p := p) hn
     (fun W hW => hPq W fun a h1 h2 h3 => (hW a h1 h2).trans (vi a (.inl (by omega)) h3))
     (fun W hW => hPa W fun a h1 h2 h3 => (hW a (bc_lt h8 h1) h2).trans (vi a (.inl (by omega)) h3))
@@ -241,7 +241,7 @@ theorem ndi_pc {pl pc : List Byte} {Pm : (Addr → Byte) → Prop} {E : Ev} {V W
       rw [Tun.rd_Vst_self _ _ _ (toBytesLE_length _ _) (by rw [hs8]; omega), ofBytesLE_toBytesLE (n := 8) rfl]
       try rfl)
     Y t₁ hKZ hAZ (hrZ.trans rfl) hspZ hdiZ ?_
-  intro Z₂ t₂ U hK₂ hA₂ hr₂ hs₂ hbx₂ hbp₂ h12₂ h13₂ h14₂ h15₂ hkp hkn _
+  intro Z₂ t₂ U hK₂ hA₂ hr₂ hs₂ hbx₂ hbp₂ h12₂ h13₂ h14₂ h15₂ hkp hkn hHp
   -- the bytes after it
   have uv : ∀ a : Addr, (a.toNat < 7937664 ∨ 7937720 ≤ a.toNat ∧ a.toNat < 7940480 ∨ sp.toNat ≤ a.toNat ∨
       Mal.Kf fb a) → U a = hV V org 4194368#64 8#64 a := fun a ha => by
@@ -292,7 +292,7 @@ theorem ndi_pc {pl pc : List Byte} {Pm : (Addr → Byte) → Prop} {E : Ev} {V W
     hmg hB.relro hGo hGc hfit hGw hGr hcode hww hlG hl hin₂ h₂ (by rw [rS 120 (by omega)]; exact hret)
     hK₂ hA₂ (Eqo.refl _ _) hr₂ (by rw [hs₂, bc_q8]) ?_
   intro s₁ Z₃ t₃ W₃ c₁ hB₁ hK₃ hA₃ hM₃ hr₃ hs₃ hbx hbp h12 h13 h14 h15
-  exact k U s₁ Z₃ t₃ W₃ uv c₁ hB₁ hK₃ hA₃ hM₃ hr₃ hs₃ (hbx.trans (rS 80 (by omega)))
+  exact k U s₁ Z₃ t₃ W₃ uv hHp c₁ hB₁ hK₃ hA₃ hM₃ hr₃ hs₃ (hbx.trans (rS 80 (by omega)))
     (hbp.trans (rS 88 (by omega))) (h12.trans (rS 96 (by omega))) (h13.trans (rS 104 (by omega)))
     (h14.trans (rS 112 (by omega))) (by rw [h15, h15₂])
 
@@ -310,7 +310,7 @@ theorem ndi_bc {pl pc : List Byte} {Pm : (Addr → Byte) → Prop} {E : Ev} {V W
     {Pa : Nat → (Addr → Byte) → Prop} {hi ka : Nat}
     (hinc : CodeIn L 4198592#64 cpy) (hc0 : 0 < cpy.length) (hcpy : Gor.PcpyAt prof L o 4198592#64 Pq)
     (hinm : CodeIn L 6500704#64 mlc) (hm0 : 0 < mlc.length) (hmal : Mal.At prof F Wl L o fb hi 6500704#64 Pa)
-    (hPaH : ∀ k W, Pa k W ↔ Mal.Hp F Wl fb hi (1072 * k + 16) W)
+    {mb : Nat} (hmb : 16 ≤ mb) (hPaH : ∀ k W, Pa k W ↔ Mal.Hp F Wl fb hi (1072 * k + mb) W)
     (hinl : CodeIn L 4198664#64 sl) (hl0 : 0 < sl.length) (hlenA : Str.LenAt prof L o 4198664#64 Pk)
     (hinz : CodeIn L 4198528#64 ms) (hz0 : 0 < ms.length) (hset : Ipa.SetAt prof L o 4198528#64 Ps)
     (hint : CodeIn L Tgv.tgv_at Tgv.tgv)
@@ -362,7 +362,7 @@ theorem ndi_bc {pl pc : List Byte} {Pm : (Addr → Byte) → Prop} {E : Ev} {V W
     (k : ∀ (U : Addr → Byte) s₁ Z t' W',
       (∀ a : Addr, (a.toNat < 7937664 ∨ 7937720 ≤ a.toNat ∧ a.toNat < 7940480 ∨ sp.toNat ≤ a.toNat ∨
         Mal.Kf fb a) →
-        U a = hV V X.cpu.gpr.rax 4194368#64 8#64 a) →
+        U a = hV V X.cpu.gpr.rax 4194368#64 8#64 a) → Mal.Hp F Wl fb hi (1072 * ka + mb) U →
       Seg prof G Wl' L s₁ o → Base s₁ lim b fsb ks → KeptW Wl' s₁ Z →
       Agree G Z.proc.mm.mem W' → Eqo sp W' (lV (bV U n)) → Z.cpu.rip = e₂.add j₂ → Z.cpu.gpr.rsp = sp + 128#64 →
       Z.cpu.gpr.rbx = rdq(V, sp + 80#64) → Z.cpu.gpr.rbp = rdq(V, sp + 88#64) →
@@ -374,12 +374,13 @@ theorem ndi_bc {pl pc : List Byte} {Pm : (Addr → Byte) → Prop} {E : Ev} {V W
   refine ndi_b (ph := 4194368#64) (pn := 8#64) c cx hin (by rw [Ipa.ipa_length]; decide) h1 hd1 hd2 h4 h5 hK hA
     hM hrip hsp ?_
   intro Z t₁ W' hKZ hAZ hMZ hrZ hspZ hdiZ h15Z
-  exact ndi_pc c cx hfs hd1 hd2 h4 h5 hin hinh hinc hc0 hcpy hinm hm0 hmal hPaH hinl hl0 hlenA hinz hz0 hset hint hn hPq
+  exact ndi_pc c cx hfs hd1 hd2 h4 h5 hin hinh hinc hc0 hcpy hinm hm0 hmal hmb hPaH hinl hl0 hlenA hinz hz0 hset hint hn
+    hPq
     hPa hPk hPs he hal hFs hwl hhi hfsp
     hpg hx1 hx1z hx2 hx2z htls hU hm6 hhw hfh hfm hpl0 hf1 hf2 hWb hfN hW7a hW7b hFR hlenV hslV
     hB hpl hid him hfp hph hsn hps hla hmg hGo hGc hfit hGw hGr hcode hww hlG hl hin₂ h₂ hret hKZ hAZ hMZ hrZ hspZ
     hdiZ
-    (fun U s₁ Z₃ t₃ W₃ uv c₁ hB₁ hK₃ hA₃ hM₃ hr₃ hs₃ hbx hbp h12 h13 h14 h15 =>
-      k U s₁ Z₃ t₃ W₃ uv c₁ hB₁ hK₃ hA₃ hM₃ hr₃ hs₃ hbx hbp h12 h13 h14 (h15.trans h15Z))
+    (fun U s₁ Z₃ t₃ W₃ uv hHp c₁ hB₁ hK₃ hA₃ hM₃ hr₃ hs₃ hbx hbp h12 h13 h14 h15 =>
+      k U s₁ Z₃ t₃ W₃ uv hHp c₁ hB₁ hK₃ hA₃ hM₃ hr₃ hs₃ hbx hbp h12 h13 h14 (h15.trans h15Z))
 
 end FV7z.Ndi
