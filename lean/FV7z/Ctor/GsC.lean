@@ -58,14 +58,14 @@ theorem gB {m : Nat} {sp : Addr} {w : List Rgn} {W W' : Addr → Byte} (hsp : hi
     (hw : ∀ x, InR (wrOf w) x → ¬ GRd hi x) (e : nOf n₀ (m + 1) = nOf n₀ m ∧ kOf k (m + 1) = kOf k m)
     (ho : ∀ y : Addr, ¬ (sp.toNat - 1024 ≤ y.toNat ∧ y.toNat < sp.toNat + 8) → ¬ Foot w y → W' y = W y)
     (h : Gs F Wl fb hi n₀ k m W) : Gs F Wl fb hi n₀ k (m + 1) W' :=
-  have := h.hi hk
+  have := h.bnd hk
   Gs.step e (h.kept hn hk fun a ha => ho a (by unfold GRd at ha; omega) fun hf => hw _ (foot_wrOf hf) ha)
 
 theorem g67 {sp : Addr} {cs : List (Nat × Nat)} {W U U' : Addr → Byte} (hsp : hi + 1024 ≤ sp.toNat)
     (hc : CallOut (sp - 64#64) cs W U)
     (ho : ∀ y : Addr, ¬ (sp.toNat - 1024 ≤ y.toNat ∧ y.toNat < sp.toNat + 8) → ¬ Foot w67 y → U' y = U y)
     (h : Gs F Wl fb hi n₀ k 67 W) : Gs F Wl fb hi n₀ k 68 U' :=
-  have := h.hi hk
+  have := h.bnd hk
   have e64 := subk_toNat (D := sp) (k := 64) (by omega)
   Gs.step ⟨by simp [nOf], by simp [kOf]⟩ (h.kept hn hk fun a ha => by
     rw [ho a (by unfold GRd at ha; omega) fun hf => hw67 _ (foot_wrOf hf) ha]
@@ -75,7 +75,7 @@ theorem g67 {sp : Addr} {cs : List (Nat × Nat)} {W U U' : Addr → Byte} (hsp :
 theorem g77 {sp : Addr} {cs : List (Nat × Nat)} {W U U' : Addr → Byte} (hsp : hi + 1024 ≤ sp.toNat)
     (ho : ∀ y : Addr, ¬ (sp.toNat - 1024 ≤ y.toNat ∧ y.toNat < sp.toNat + 8) → ¬ Foot w77 y → U y = W y)
     (hc : ChainOut (sp - 64#64) cs U U') (h : Gs F Wl fb hi n₀ k 77 W) : Gs F Wl fb hi n₀ k 78 U' :=
-  have := h.hi hk
+  have := h.bnd hk
   have e64 := subk_toNat (D := sp) (k := 64) (by omega)
   Gs.step ⟨by simp [nOf], by simp [kOf]⟩ (h.kept hn hk fun a ha => by
     rw [ChainOut.out_t (by rw [e64]; omega) (by unfold GRd at ha; simp only [tabs, InR, or_false]; omega)
@@ -101,7 +101,7 @@ theorem Tb103.kept {W W' : Addr → Byte} (h : Tb103 W)
 theorem Gn.reg {n K : Nat} {S : Addr} {fn arg dso : BitVec 64} {W W' : Addr → Byte} (h : Gn F Wl fb hi n K W)
     (hn : n + 1 < 32) (hK : 16 ≤ K) (hS : hi + 80 ≤ S.toNat)
     (hR : Cxa.Reg W W' S xl (xl + BitVec.ofNat 64 (16 + 32 * n)) n fn arg dso) : Gn F Wl fb hi (n + 1) K W' := by
-  obtain ⟨f1, f2, f3⟩ := h.hi hK
+  obtain ⟨f1, f2, f3⟩ := h.bnd hK
   obtain ⟨-, -, ep, -, -, -⟩ := Nef.l_n xl n (by omega) (by decide)
   have el : xl.toNat = 8010400 := rfl
   have hc := h.2.1.reg hR hn (by omega) (by decide) (.inl (by omega)) (by omega) (.inr (by rw [el]; omega))
@@ -126,7 +126,7 @@ theorem g90 {sp : Addr} {f₁ a₁ d₁ f₂ a₂ d₂ : BitVec 64} {W V₁ V₂
     Gs F Wl fb hi n₀ k 91 V' := by
   have q : nOf n₀ 90 = n₀ := by simp [nOf]
   have hK : 16 ≤ kOf k 90 := Nat.le_trans hk (kOf_ge k 90)
-  have := h.hi hk
+  have := h.bnd hk
   have e64 := subk_toNat (D := sp) (k := 64) (by omega)
   have e80 := subk_toNat (D := sp) (k := 80) (by omega)
   have h1 : Gn F Wl fb hi (nOf n₀ 90) (kOf k 90) V₁ := Gn.kept h (by omega) hK fun a ha => by
@@ -145,7 +145,7 @@ theorem g94 {sp : Addr} {f₁ a₁ d₁ : BitVec 64} {W V₁ V₂ : Addr → Byt
     Gs F Wl fb hi n₀ k 95 (Vst V₂ 7990336#64 (toBytesLE (BitVec.ofNat 8 1) 1)) := by
   have q : nOf n₀ 94 = n₀ + 2 := by simp [nOf]
   have hK : 16 ≤ kOf k 94 := Nat.le_trans hk (kOf_ge k 94)
-  have := h.hi hk
+  have := h.bnd hk
   have e80 := subk_toNat (D := sp) (k := 80) (by omega)
   have h1 : Gn F Wl fb hi (nOf n₀ 94) (kOf k 94) V₁ := Gn.kept h (by omega) hK fun a ha =>
     hv a (by unfold GRd at ha; omega) (by unfold GRd at ha; omega)
@@ -171,7 +171,7 @@ theorem gCx2 {m : Nat} {sp : Addr} {lo₁ up₁ lo₂ up₂ : Nat} {f₁ a₁ d�
     Gs F Wl fb hi n₀ k (m + 1) V' := by
   have q := nOf_le n₀ (m + 1)
   have hK : 16 ≤ kOf k m := Nat.le_trans hk (kOf_ge k m)
-  have := h.hi hk
+  have := h.bnd hk
   have e64 := subk_toNat (D := sp) (k := 64) (by omega)
   have e80 := subk_toNat (D := sp) (k := 80) (by omega)
   have h1 : Gn F Wl fb hi (nOf n₀ m) (kOf k m) V₁ := Gn.kept h (by omega) hK fun a ha =>
@@ -217,7 +217,7 @@ theorem gmc {m M : Nat} {sp : Addr} {f₁ a₁ d₁ : BitVec 64} {W V₁ V' : Ad
     Gs F Wl fb hi n₀ k (m + 1) V' := by
   have q := nOf_le n₀ (m + 1)
   have hK : 16 ≤ kOf k m := Nat.le_trans hk (kOf_ge k m)
-  have := h.hi hk
+  have := h.bnd hk
   have e64 := subk_toNat (D := sp) (k := 64) (by omega)
   have h1 : Gn F Wl fb hi (nOf n₀ m) (kOf k m) V₁ := Gn.kept h (by omega) hK fun a ha =>
     hv a (by unfold GRd at ha; omega) (by have := hd _ ha; omega)
@@ -236,7 +236,7 @@ theorem g98 {sp p : Addr} {f₁ a₁ d₁ : BitVec 64} {W V₂ V' : Addr → Byt
     (hR : Cxa.Reg V₂ V' (sp - 64#64) xl (xl + BitVec.ofNat 64 (16 + 32 * nOf n₀ 98)) (nOf n₀ 98) f₁ a₁ d₁) :
     Gs F Wl fb hi n₀ k 99 V' := by
   have q : nOf n₀ 98 = n₀ + 5 := by simp [nOf]
-  have := h.hi hk
+  have := h.bnd hk
   have e64 := subk_toNat (D := sp) (k := 64) (by omega)
   have el : xl.toNat = 8010400 := rfl
   have h1 : Gn F Wl fb hi (nOf n₀ 98) (k + 72752) V₂ :=
@@ -256,7 +256,7 @@ theorem g102 {sp p : Addr} {W V' : Addr → Byte} (hsp : hi + 1024 ≤ sp.toNat)
       U a = V' a) → Hp F Wl fb hi k U) :
     Gs F Wl fb hi n₀ k 103 V' := by
   have q : nOf n₀ 102 = n₀ + 10 := by simp [nOf]
-  have := h.hi hk
+  have := h.bnd hk
   have el : xl.toNat = 8010400 := rfl
   exact Gs.of ⟨by simp [nOf] <;> omega, by simp [kOf]⟩
     (⟨h.1.kept fun a h1 h2 => hv a (by omega) (.inl (by omega)),
