@@ -175,7 +175,8 @@ theorem gor_head (c : Seg prof F Wl L s₀ o) (hin : CodeIn L gor_at gor) {X : S
     (hpz : V (Addr.add 7366691#64 14) = 0) (hpp : (byteAddrs 7366691#64 14).map V = pse)
     (hof : ∀ i < 8, Foot F.data (Addr.add (8029440#64) i)) (hoz : rdq(V, 8029440#64) = 0#64)
     (hps : ProcSelfExe o)
-    (ke : ∀ r Z t', KeptW Wl s₀ Z → Agree F Z.proc.mm.mem (frV V X.cpu.gpr) → Z.cpu.rip = gor_at.add 271 →
+    (ke : ∀ r, (∃ t₀, o t₀ (.readlink none Gor.pse) = r ∧ ∀ x, r = .procExe x → pathMax ≤ x.bytes.length) →
+      ∀ Z t', KeptW Wl s₀ Z → Agree F Z.proc.mm.mem (frV V X.cpu.gpr) → Z.cpu.rip = gor_at.add 271 →
       Z.cpu.gpr.rax = 18446744073709551615#64 → Z.cpu.gpr.rsp = X.cpu.gpr.rsp → Z.cpu.gpr.rbx = X.cpu.gpr.rbx →
       Z.cpu.gpr.rbp = X.cpu.gpr.rbp → Z.cpu.gpr.r12 = X.cpu.gpr.r12 → Z.cpu.gpr.r13 = X.cpu.gpr.r13 →
       Z.cpu.gpr.r14 = X.cpu.gpr.r14 → Z.cpu.gpr.r15 = X.cpu.gpr.r15 →
@@ -248,8 +249,9 @@ theorem gor_head (c : Seg prof F Wl L s₀ o) (hin : CodeIn L gor_at gor) {X : S
       exact hpp)
     (by rw [hg₃]; first | rfl | (dsimp only; decide)) (by decide) (by rw [hsi₃]; bvg)
     (fun i hi => by rw [hsi₃, bva]; exact slot _ i (by omega) rfl)
-    (P := fun r => ∀ bs, r ≠ .target bs) (fun t' bs => hps t' none bs) ?_
-  intro r hr Y₄ t₄ hK₄ hA₄ ⟨hr₄, hg₄⟩
+    (P := fun r => (∀ bs, r ≠ .target bs) ∧ ∃ t₀, o t₀ (.readlink none pse) = r)
+    (fun t' => ⟨fun bs => hps t' none bs, t', rfl⟩) ?_
+  intro r ⟨hr, hro⟩ Y₄ t₄ hK₄ hA₄ ⟨hr₄, hg₄⟩
   rw [hsi₃] at hA₄
   rw [hev]
   have hsp₄ : Y₄.cpu.gpr.rsp = X.cpu.gpr.rsp - 4136#64 := by rw [hg₄]; exact hsp₃
@@ -269,15 +271,16 @@ theorem gor_head (c : Seg prof F Wl L s₀ o) (hin : CodeIn L gor_at gor) {X : S
     rw [map_eq (8029440#64) 8 fun i hi => fout (Addr.add 8029440#64 i) (by simp only [Addr.add]; bvg)]
     exact hoz
   have kerr : ∀ e, 0 < e → e < 4096 → (linkRes 4096 r) = (errRet e, []) →
-      GoG prof L o (gev ++ [gEv X.cpu.gpr r]) gP gE Y₄ t₄ := by
-    intro e he1 he2 hl
+      (∀ x, r = .procExe x → pathMax ≤ x.bytes.length) → GoG prof L o (gev ++ [gEv X.cpu.gpr r]) gP gE Y₄ t₄ := by
+    intro e he1 he2 hl hf
     rw [hl] at hA₄ hax₄
     try dsimp only at hA₄ hax₄
     rw [Vst_nil] at hA₄
     exact err_path (g := X.cpu.gpr) (V := V) c hin he1 he2 (by omega) hfr hof hoz' hK₄ hA₄ hr₄ hax₄ hsp₄ h14₄ h15₄
-      fun Z t' hKZ hAZ hrZ h0 h1 h2 h3 h4 h5 h6 h7 => ke r Z t' hKZ hAZ hrZ h0 h1 h2 h3 h4 h5 h6 h7
+      fun Z t' hKZ hAZ hrZ h0 h1 h2 h3 h4 h5 h6 h7 =>
+        ke r (hro.elim fun t₀ h => ⟨t₀, h, hf⟩) Z t' hKZ hAZ hrZ h0 h1 h2 h3 h4 h5 h6 h7
   cases r with
-  | error e => exact kerr e.val e.2.1 e.2.2 rfl
+  | error e => exact kerr e.val e.2.1 e.2.2 rfl fun _ h => nomatch h
   | target bs => exact absurd rfl (hr bs)
   | procExe x =>
     by_cases hx : x.bytes.length < pathMax
@@ -311,5 +314,6 @@ theorem gor_head (c : Seg prof F Wl L s₀ o) (hin : CodeIn L gor_at gor) {X : S
         exact k2 x Z t' hx' hKZ hAZ hrZ hdi hbx (hkp.1.trans hsp₄) (hkp.2.1.trans hbp₄) (hkp.2.2.1.trans h14₄)
           (hkp.2.2.2.trans h15₄) h1
     · exact kerr ENAMETOOLONG (by decide) (by decide) (by simp only [linkRes, hx, ↓reduceIte])
+        fun x' h => by cases h; omega
 
 end FV7z.Gor
