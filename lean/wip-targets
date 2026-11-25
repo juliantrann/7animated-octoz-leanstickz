@@ -1,5 +1,4 @@
-FV7z.Strlen.Code
-FV7z.Strlen.Loop
-FV7z.Strlen.Entry
-FV7z.Strlen.Len
-FV7z.Strlen.Plt
+FV7z.Strrchr.First
+FV7z.Strrchr.Loop
+FV7z.Strrchr.Cross
+FV7z.Strrchr.Run

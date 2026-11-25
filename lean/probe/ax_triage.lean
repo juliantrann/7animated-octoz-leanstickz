@@ -1,9 +1,9 @@
-import FV7z.Strlen.Code
-import FV7z.Strlen.Loop
-import FV7z.Strlen.Entry
-import FV7z.Strlen.Len
-import FV7z.Strlen.Plt
+import FV7z.Strrchr.First
+import FV7z.Strrchr.Loop
+import FV7z.Strrchr.Cross
+import FV7z.Strrchr.Run
 open FV7z
-#print axioms FV7z.Strlen.run
-#print axioms FV7z.Strlen.lenAt_sse2
-#print axioms FV7z.Strlen.lenAtG_plt
+#print axioms FV7z.Strrchr.entry
+#print axioms FV7z.Strrchr.path560
+#print axioms FV7z.Strrchr.run
+#print axioms FV7z.Strrchr.rchrAt_sse2
