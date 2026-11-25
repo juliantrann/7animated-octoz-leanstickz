@@ -35,7 +35,7 @@ theorem wpV_v0 {ea : Gprs → Addr} {hg : Gprs → XRegs → List Byte → Gprs}
     {ops : List VOp} {Q : Gprs → Rflags → XRegs → (Addr → Byte) → Prop} {g : Gprs} {f : Rflags} {x : XRegs}
     {V : Addr → Byte} (k : wpV F Wl ops Q (hg g x []) (rfz f) (hx g x []) V) :
     wpV F Wl (.v 0 false ea hg hx :: ops) Q g f x V :=
-  ⟨fun _ h => absurd h (Nat.not_lt_zero _), fun h => nomatch h, k⟩
+  ⟨fun _ h => absurd h (Nat.not_lt_zero _), (fun h => nomatch h), k⟩
 
 end
 
@@ -48,7 +48,7 @@ theorem addr_eq {a b : Addr} {i j : Nat} (h : a.toNat + i = b.toNat + j) : a.add
   simp only [Addr.add, BitVec.toNat_add, BitVec.toNat_ofNat]
   omega
 
-theorem al16 {B : Addr} (hB : B.toNat % 64 = 0) {d : Nat} (hd : d % 16 = 0) (hd' : d < 64) :
+theorem al16 {B : Addr} (hB : B.toNat % 64 = 0) {d : Nat} (hd : d % 16 = 0) :
     (B + BitVec.ofNat 64 d).toNat % 16 = 0 := by
   have := B.isLt
   simp only [BitVec.toNat_add, BitVec.toNat_ofNat]
@@ -89,12 +89,21 @@ theorem zbit (V : Addr → Byte) (B : Addr) (d i : Nat) :
 theorem rax_fin {B p : Addr} {k n : Nat} (h : B.toNat + k = p.toNat + n) (hn : p.toNat + n < 2 ^ 64) :
     subR (addR B (BitVec.ofNat 64 k)) p = BitVec.ofNat 64 n := by
   have h0 : (BitVec.ofBool false).setWidth 64 = (0 : BitVec 64) := by decide
-  simp only [subR, addR, h0, BitVec.add_zero, BitVec.sub_zero]
+  simp only [subR, addR, h0, BitVec.sub_zero]
   apply BitVec.eq_of_toNat_eq
   have := p.isLt
   have := B.isLt
   simp only [BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_ofNat]
   omega
+
+/-! ## Registers by name -/
+
+theorem get0 (g : Gprs) : g.get (regOf 0) = g.rax := rfl
+theorem get1 (g : Gprs) : g.get (regOf 1) = g.rcx := rfl
+theorem get2 (g : Gprs) : g.get (regOf 2) = g.rdx := rfl
+theorem get6 (g : Gprs) : g.get (regOf 6) = g.rsi := rfl
+theorem get7 (g : Gprs) : g.get (regOf 7) = g.rdi := rfl
+theorem get8 (g : Gprs) : g.get (regOf 8) = g.r8 := rfl
 
 /-! ## The call -/
 
@@ -152,7 +161,7 @@ theorem exit340 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e' sl2) {Y : State}
     (hR : Ret prof F Wl L s₀ o gev gP gE V g₀ n) : GoG prof L o gev gP gE Y t := by
   have hF := foot64 hft hB (by omega) hge
   have hal : ∀ d, d % 16 = 0 → d < 64 → true = true → (Y.cpu.gpr.rax + BitVec.ofNat 64 d).toNat % 16 = 0 :=
-    fun d h1 h2 _ => al16 hB h1 h2
+    fun d h1 _ _ => al16 hB h1
   refine c.s_blkV hin (b340 prof) hK hA hrip ?_
   refine wpV_v0 (wpV_v (foot16 hF (d := 0) (by omega)) (hal 0 rfl (by omega))
     (wpV_v (foot16 hF (d := 16) (by omega)) (hal 16 rfl (by omega))
@@ -161,22 +170,18 @@ theorem exit340 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e' sl2) {Y : State}
     (wpV_v0 (wpV_v0 (wpV_v0 (wpV_v0 (wpV_reg fun _ _ => wpV_reg fun _ _ => wpV_reg fun _ _ => wpV_reg fun _ _ =>
       wpV_reg fun _ _ => wpV_reg fun _ _ => wpV_nil ?_)))))))))
   intro Y₁ t₁ hK₁ hA₁ hr₁ hg₁ _ _
-  -- the joined mask
+  -- the registers the block leaves
   generalize hxd : xsOf Y.cpu.vec.zmm = x at hg₁ hx1 hx2 hx3
-  have hdx₁ : Y₁.cpu.gpr.rdx =
-      (((pmsk (peqb (x (xmmOf 1)) (rd16 V (Y.cpu.gpr.rax + BitVec.ofNat 64 16)))).setWidth 64 <<< 16 |||
-        (pmsk (peqb (x (xmmOf 0) ^^^ x (xmmOf 0)) (rd16 V (Y.cpu.gpr.rax + BitVec.ofNat 64 0)))).setWidth 64) |||
-      ((pmsk (peqb (x (xmmOf 3)) (rd16 V (Y.cpu.gpr.rax + BitVec.ofNat 64 48)))).setWidth 64 <<< 16 |||
-        (pmsk (peqb (x (xmmOf 2)) (rd16 V (Y.cpu.gpr.rax + BitVec.ofNat 64 32)))).setWidth 64) <<< 32) := by
-    rw [hg₁] <;> rfl
-  rw [BitVec.xor_self, hx1, hx2, hx3] at hdx₁
-  have hax₁ : Y₁.cpu.gpr.rax = Y.cpu.gpr.rax := by rw [hg₁] <;> rfl
-  have hkp₁ : Kp g₀ Y₁.cpu.gpr := by rw [hg₁]; exact hkp
-  -- its bits, its lowest set bit
-  generalize hBd : Y.cpu.gpr.rax = B at hdx₁ hax₁ hB hpB hge hlt hF
+  simp (disch := decide) only [wr, gv, Src.val, eaB, set_rcx, set_rdx, set_rsi, set_r8, get0, get1, get2, get6, get8,
+    xset_same, xset_ne, BitVec.setWidth_eq, BitVec.toNat_ofNat, Nat.reducePow, Nat.reduceMod, BitVec.xor_self, hx1,
+    hx2, hx3] at hg₁
+  have hax₁ : Y₁.cpu.gpr.rax = Y.cpu.gpr.rax := by simp only [hg₁]
+  have hkp₁ : Kp g₀ Y₁.cpu.gpr := by simp only [Kp, hg₁]; exact hkp
+  -- the joined mask: its bits, its lowest set bit
+  generalize hBd : Y.cpu.gpr.rax = B at hg₁ hax₁ hB hpB hge hlt hF
   have hbit : ∀ i < 64, Y₁.cpu.gpr.rdx.getLsbD i = decide (V (B.add i) = 0) := by
     intro i hi
-    rw [hdx₁]
+    simp only [hg₁]
     exact getLsbD_join _ _ _ _ (fun i => decide (V (B.add i) = 0)) (zbit V B 0) (zbit V B 16) (zbit V B 32)
       (zbit V B 48) hi
   have hk : g₀.rdi.toNat + n - B.toNat < 64 := by omega
@@ -188,28 +193,24 @@ theorem exit340 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e' sl2) {Y : State}
     rw [hbit i (by omega), addr_eq (a := B) (i := i) (b := g₀.rdi) (j := B.toNat + i - g₀.rdi.toNat) (by omega)]
     exact decide_eq_false (hnz _ (by omega))
   have hnz₁ : rv Y₁ 64 2 ≠ 0 := by
-    show Y₁.cpu.gpr.rdx.setWidth 64 ≠ 0
-    rw [BitVec.setWidth_eq]
+    simp only [rv, get2, BitVec.setWidth_eq]
     intro h
     rw [h, getLsbD_zero'] at hset
     exact Bool.false_ne_true hset
   -- `bsf rdx, rdx`
   refine c.s_bsf64 hK₁ hA₁ hin (by decide) hr₁ (d401 prof.feat) hnz₁ ?_
   rintro Y₂ t₂ hK₂ hA₂ ⟨hr₂, hg₂⟩
-  have hdx₂ : Y₂.cpu.gpr.rdx = BitVec.ofNat 64 (g₀.rdi.toNat + n - B.toNat) := by
-    rw [hg₂, ← hlow]
-    show BitVec.ofNat 64 (lowestSetBit (Y₁.cpu.gpr.rdx.setWidth 64)) = _
-    rw [BitVec.setWidth_eq]
-  have hax₂ : Y₂.cpu.gpr.rax = B := by rw [hg₂]; exact hax₁
-  have hkp₂ : Kp g₀ Y₂.cpu.gpr := by rw [hg₂]; exact hkp₁
+  simp only [rv, get2, BitVec.setWidth_eq, hlow, set_rdx] at hg₂
+  have hdx₂ : Y₂.cpu.gpr.rdx = BitVec.ofNat 64 (g₀.rdi.toNat + n - B.toNat) := by simp only [hg₂]
+  have hax₂ : Y₂.cpu.gpr.rax = B := by simp only [hg₂]; exact hax₁
+  have hkp₂ : Kp g₀ Y₂.cpu.gpr := by simp only [Kp, hg₂]; exact hkp₁
   -- `add rax, rdx`, `sub rax, rdi`
   refine c.s_blkV hin (b405 prof) hK₂ hA₂ hr₂ ?_
   refine wpV_reg fun _ _ => wpV_reg fun _ _ => wpV_nil ?_
   intro Y₃ t₃ hK₃ hA₃ hr₃ hg₃ _ _
-  have hkp₃ : Kp g₀ Y₃.cpu.gpr := by rw [hg₃]; exact hkp₂
-  have hax₃ : Y₃.cpu.gpr.rax = subR (addR Y₂.cpu.gpr.rax Y₂.cpu.gpr.rdx) Y₂.cpu.gpr.rdi := by
-    rw [hg₃]
-    simp only [wr, gv, Src.val, BitVec.setWidth_eq] <;> rfl
+  simp only [wr, gv, Src.val, set_rax, get0, get2, get7, BitVec.setWidth_eq] at hg₃
+  have hkp₃ : Kp g₀ Y₃.cpu.gpr := by simp only [Kp, hg₃]; exact hkp₂
+  have hax₃ : Y₃.cpu.gpr.rax = subR (addR Y₂.cpu.gpr.rax Y₂.cpu.gpr.rdx) Y₂.cpu.gpr.rdi := by simp only [hg₃]
   rw [hax₂, hdx₂, hkp₂.1] at hax₃
   exact ret_at c hin (by decide) (d411 prof.feat) hK₃ hA₃ hr₃ hkp₃ (hax₃.trans (rax_fin (by omega) hov)) hR
 
