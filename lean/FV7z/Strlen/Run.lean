@@ -179,10 +179,10 @@ theorem exit340 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e' sl2) {Y : State}
   have hkp₁ : Kp g₀ Y₁.cpu.gpr := by simp only [Kp, hg₁]; exact hkp
   -- the joined mask: its bits, its lowest set bit
   generalize hBd : Y.cpu.gpr.rax = B at hg₁ hax₁ hB hpB hge hlt hF
-  have hbit : ∀ i < 64, Y₁.cpu.gpr.rdx.getLsbD i = decide (V (B.add i) = 0) := by
+  have hbit : ∀ i < 64, Y₁.cpu.gpr.rdx.getLsbD i = decide (V (Addr.add B i) = 0) := by
     intro i hi
     simp only [hg₁]
-    exact getLsbD_join _ _ _ _ (fun i => decide (V (B.add i) = 0)) (zbit V B 0) (zbit V B 16) (zbit V B 32)
+    exact getLsbD_join _ _ _ _ (fun i => decide (V (Addr.add B i) = 0)) (zbit V B 0) (zbit V B 16) (zbit V B 32)
       (zbit V B 48) hi
   have hk : g₀.rdi.toNat + n - B.toNat < 64 := by omega
   have hset : Y₁.cpu.gpr.rdx.getLsbD (g₀.rdi.toNat + n - B.toNat) = true := by
@@ -198,7 +198,7 @@ theorem exit340 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e' sl2) {Y : State}
     rw [h, getLsbD_zero'] at hset
     exact Bool.false_ne_true hset
   -- `bsf rdx, rdx`
-  refine c.s_bsf64 hK₁ hA₁ hin (by decide) hr₁ (d401 prof.feat) hnz₁ ?_
+  refine c.s_bsf64 hK₁ hA₁ hin (by rw [sl2_length]; omega) hr₁ (d401 prof.feat) hnz₁ ?_
   rintro Y₂ t₂ hK₂ hA₂ ⟨hr₂, hg₂⟩
   simp only [rv, get2, BitVec.setWidth_eq, hlow, set_rdx] at hg₂
   have hdx₂ : Y₂.cpu.gpr.rdx = BitVec.ofNat 64 (g₀.rdi.toNat + n - B.toNat) := by simp only [hg₂]
@@ -212,7 +212,7 @@ theorem exit340 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e' sl2) {Y : State}
   have hkp₃ : Kp g₀ Y₃.cpu.gpr := by simp only [Kp, hg₃]; exact hkp₂
   have hax₃ : Y₃.cpu.gpr.rax = subR (addR Y₂.cpu.gpr.rax Y₂.cpu.gpr.rdx) Y₂.cpu.gpr.rdi := by simp only [hg₃]
   rw [hax₂, hdx₂, hkp₂.1] at hax₃
-  exact ret_at c hin (by decide) (d411 prof.feat) hK₃ hA₃ hr₃ hkp₃ (hax₃.trans (rax_fin (by omega) hov)) hR
+  exact ret_at c hin (by rw [sl2_length]; omega) (d411 prof.feat) hK₃ hA₃ hr₃ hkp₃ (hax₃.trans (rax_fin (by omega) hov)) hR
 
 end Strlen
 end FV7z
