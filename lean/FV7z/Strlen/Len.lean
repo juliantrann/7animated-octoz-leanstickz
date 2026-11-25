@@ -10,12 +10,6 @@ The PLT stub at `0x401108` jumping through the GOT to it is a separate step.
 namespace FV7z.Strlen
 open ZellicX86 Decode FV7z.Leaf FV7z.Fn
 
-theorem addr_add_zero (e : Addr) : Addr.add e 0 = e := by
-  apply BitVec.eq_of_toNat_eq
-  have := e.isLt
-  simp only [Addr.add, BitVec.toNat_add, BitVec.toNat_ofNat]
-  omega
-
 theorem lenAt_sse2 {prof : Profile} {L : List (Addr × List Byte)} {o : Oracle} {e : Addr}
     {Pm : (Addr → Byte) → Prop} (hin : CodeIn L e sl2) : Str.LenAt prof L o e Pm := by
   intro F Wl s₀ gev gP gE X t V e' code j n c hK hA hrip _ hin₂ hj hra hl hov hnz hz hft K
