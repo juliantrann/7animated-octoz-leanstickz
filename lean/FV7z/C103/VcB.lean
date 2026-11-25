@@ -91,7 +91,10 @@ theorem vc_3809 (hT : Te F Wl L fb g₀ V₀) (h : Ih g₀ V₀ 3809 n g V) : W_
     Op.setcc, Op.xor8, Op.sxr, Op.ldsx, Op.andh, Op.testmia, Op.stia, Op.ldzxa, Op.imul3ma, Op.zxr, Op.cmpmi, Op.cmpmia,
     Op.cmpmr, Op.xormf, Op.ldf, Op.shr32z]
   refine ⟨fC hT (by decide) (by decide), fun _ => ⟨fun _ => Or.inl ⟨_, by decide, rfl, hm⟩,
-    fun _ => ⟨fun _ _ => Or.inl ⟨_, by decide, rfl, hm, by x_om⟩, fun _ _ => ⟨fun _ _ => ?_, fun hz => ?_⟩⟩⟩⟩
+    fun _ => ⟨fun _ _ => Or.inl ⟨_, by decide, rfl, hm, ?_⟩, fun _ _ => ⟨fun _ _ => ?_, fun hz => ?_⟩⟩⟩⟩
+  · show (((r9.setWidth 32 ^^^ r9.setWidth 32).setWidth 64).setWidth 32).toNat ≤ 1024
+    rw [sw_64_32, BitVec.xor_self]
+    decide
   · refine Or.inl ⟨_, by decide, rfl, hm, h15, fun _ => ⟨?_, Or.inl (by d_ec)⟩⟩
     show ((rdi.setWidth 32 ||| 4294967295#32).setWidth 64).setWidth 32 = 4294967295#32
     rw [sw_64_32, or_ones]
@@ -228,6 +231,7 @@ theorem vc_4384 (h : Ih g₀ V₀ 4384 n g V) : W_4384 F Wl (Nx g₀ V₀ n) g f
   try dsimp only at hn h10 h8 hb1 hb2
   subst hn
   obtain ⟨h15, -, h13, -, hc2, hc3⟩ := id hB
+  obtain ⟨hs, hm⟩ := hm
   wpx [W_4384, o76, Op.lda, Op.sta, Op.sar64, Op.cqo, Op.not32, Op.setcc, Op.xor8, Op.sxr, Op.ldsx, Op.andh, Op.testmia,
     Op.stia, Op.ldzxa, Op.imul3ma, Op.zxr, Op.cmpmi, Op.cmpmia, Op.cmpmr, Op.xormf, Op.ldf, Op.shr32z]
   intro _ _
@@ -236,9 +240,9 @@ theorem vc_4384 (h : Ih g₀ V₀ 4384 n g V) : W_4384 F Wl (Nx g₀ V₀ n) g f
     rw [sw_64_32]
     exact Nat.le_trans (and_le_r _ _) (by rw [dec64 rbx hb1]; omega)
   rcases h8 with rfl | rfl
-  · exact Or.inl ⟨_, by c_om, rfl, hm, ⟨h15, r9b, h13, by d_ec, fun h => absurd h (by d_ec),
+  · exact Or.inl ⟨_, by c_om, rfl, ⟨hs, hm⟩, ⟨h15, r9b, h13, by d_ec, fun h => absurd h (by d_ec),
       fun h => absurd h (by d_ec)⟩, h10⟩
-  · exact Or.inl ⟨_, by c_om, rfl, hm, ⟨h15, r9b, h13, by d_ec, fun h => absurd h (by d_ec),
+  · exact Or.inl ⟨_, by c_om, rfl, ⟨hs, hm⟩, ⟨h15, r9b, h13, by d_ec, fun h => absurd h (by d_ec),
       fun _ => ⟨fun e => (hc3 (Or.inr rfl)).1 e,
         fun e => absurd (e.symm.trans (hc2 (Or.inr rfl)).1) (by decide)⟩⟩, h10⟩
 
