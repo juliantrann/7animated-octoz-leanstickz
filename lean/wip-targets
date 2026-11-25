@@ -1,3 +1,5 @@
 FV7z.Lemmas.RepStosb
+FV7z.Lemmas.StoreX
 FV7z.Memset.Code
 FV7z.Memset.Erms
+FV7z.Memset.Sse2
