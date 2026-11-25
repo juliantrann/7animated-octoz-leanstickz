@@ -124,23 +124,23 @@ theorem eaG_back {g : Gprs} {a d : Addr} (h7 : g.rdi = a) (h2 : g.rdx = d) {k D 
     (hk : k ≤ d.toNat) : eaG g (some 7) (some 2) 1 D = a.add (d.toNat - k) := by
   rw [← ea_back a d hD hk, ← h7, ← h2]
   apply BitVec.eq_of_toNat_eq
-  simp [eaG, optV, get7, get2]
+  simp [eaG, optV]
 
 theorem eaG_0 {g : Gprs} {a : Addr} (h7 : g.rdi = a) : eaG g (some 7) none 1 0 = a.add 0 := by
   rw [← h7]
   apply BitVec.eq_of_toNat_eq
-  simp [eaG, optV, get7, Addr.add]
+  simp [eaG, optV, Addr.add]
 
 theorem eaG_64 {g : Gprs} {a : Addr} (h7 : g.rdi = a) (hf : a.toNat + 64 < 2 ^ 64) :
     (eaG g (some 7) none 1 64).toNat = a.toNat + 64 := by
   have e : eaG g (some 7) none 1 64 = a.add 64 := by
     rw [← h7]
     apply BitVec.eq_of_toNat_eq
-    simp [eaG, optV, get7, Addr.add]
+    simp [eaG, optV, Addr.add]
   rw [e, toNat_add_of_fits (n := 65) (by omega) (by omega)]
 
 /-- `and r, -64` of `a + k`, `k ≥ 64`: `a` and an offset, the next multiple of 64 at or below `a + k`. -/
-theorem and_al {x a : Addr} {k : Nat} (hx : x.toNat = a.toNat + k) (hk : a.toNat + k < 2 ^ 64) (h64 : 64 ≤ k) :
+theorem and_al {x a : Addr} {k : Nat} (hx : x.toNat = a.toNat + k) (h64 : 64 ≤ k) :
     x &&& BitVec.ofNat 64 18446744073709551552 = a.add ((a.toNat + k) / 64 * 64 - a.toNat) := by
   apply BitVec.eq_of_toNat_eq
   rw [and_m64, hx]
@@ -412,7 +412,8 @@ theorem p16 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e ms2) {j : Nat} (hj : 
 theorem round (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e ms2) {g₀ : Gprs}
     (C : Ctx prof F Wl L s₀ o gev gP gE V g₀) {Y : State} {t : Nat} {V₁ : Addr → Byte} {R E : Nat}
     (hK : KeptW Wl s₀ Y) (hA : Agree F Y.proc.mm.mem V₁) (hrip : Y.cpu.rip = e.add 263) (hI : Inv g₀ Y)
-    (hcx : Y.cpu.gpr.rcx = Addr.add g₀.rdi R) (hdx : Y.cpu.gpr.rdx = Addr.add g₀.rdi E) (hal : (g₀.rdi.toNat + R) % 64 = 0)
+    (hcx : Y.cpu.gpr.rcx = Addr.add g₀.rdi R) (hdx : Y.cpu.gpr.rdx = Addr.add g₀.rdi E)
+    (hal : (g₀.rdi.toNat + R) % 64 = 0)
     (hRE : R + 64 ≤ E) (hEn : E ≤ g₀.rdx.toNat) (hF : FillG V V₁ g₀ fun i => i < R ∨ g₀.rdx.toNat - 64 ≤ i)
     (K : ∀ Y' t' V₂, KeptW Wl s₀ Y' → Agree F Y'.proc.mm.mem V₂ → Inv g₀ Y' →
       Y'.cpu.gpr.rcx = Addr.add g₀.rdi (R + 64) → Y'.cpu.gpr.rdx = Addr.add g₀.rdi E →
@@ -513,7 +514,7 @@ theorem p200 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e ms2) {g₀ : Gprs}
   have hdx₃ : Y₃.cpu.gpr.rdx = g₀.rdx := by rw [hg₃]; show Y₂.cpu.gpr.rdx = _; rw [hg₂]; exact hdx₁
   have hcx₃ : Y₃.cpu.gpr.rcx = Addr.add g₀.rdi ((g₀.rdi.toNat + 64) / 64 * 64 - g₀.rdi.toNat) := by
     rw [hg₃]
-    exact and_al (x := Y₂.cpu.gpr.rcx) (a := g₀.rdi) (by rw [hg₂]; exact hcx₁) (by omega) (Nat.le_refl _)
+    exact and_al (x := Y₂.cpu.gpr.rcx) (a := g₀.rdi) (by rw [hg₂]; exact hcx₁) (Nat.le_refl _)
   generalize hR0 : (g₀.rdi.toNat + 64) / 64 * 64 - g₀.rdi.toNat = R0 at hcx₃
   -- the last 64 bytes and the first 64
   refine stI c hin (by ms2_lt) (d212 prof.feat) C hK₃ hA₃ hr₃ hI₃ hF₂ hdx₃ (k := 16) rfl (by omega) (by omega) ?_
@@ -543,7 +544,8 @@ theorem p200 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e ms2) {g₀ : Gprs}
   simp only [wr, gv, Src.val, get1, get2, get7, set_rdx, addR_eq, BitVec.setWidth_eq] at hg₁₁ hP
   have hE : (Y₁₀.cpu.gpr.rdx + Y₁₀.cpu.gpr.rdi) &&& BitVec.ofNat 64 18446744073709551552 =
       Addr.add g₀.rdi ((g₀.rdi.toNat + g₀.rdx.toNat) / 64 * 64 - g₀.rdi.toNat) :=
-    and_al (x := Y₁₀.cpu.gpr.rdx + Y₁₀.cpu.gpr.rdi) (a := g₀.rdi) (by rw [hdx₁₀, hI₁₀.2.2.1, BitVec.toNat_add]; omega) (by omega) (by omega)
+    and_al (x := Y₁₀.cpu.gpr.rdx + Y₁₀.cpu.gpr.rdi) (a := g₀.rdi)
+      (by rw [hdx₁₀, hI₁₀.2.2.1, BitVec.toNat_add]; omega) (by omega)
   generalize hE0 : (g₀.rdi.toNat + g₀.rdx.toNat) / 64 * 64 - g₀.rdi.toNat = E at hE
   have hI₁₁ : Inv g₀ Y₁₁ := hI₁₀.rdx hg₁₁ hv₁₁
   have hdx₁₁ : Y₁₁.cpu.gpr.rdx = Addr.add g₀.rdi E := by rw [hg₁₁]; exact hE
@@ -615,7 +617,7 @@ theorem head (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e ms2) {j : Nat} (hb1 
   refine c.s_blkV hin hb1 hK hA hrip ?_
   refine wpV_reg fun _ _ => wpV_v0 (wpV_reg fun _ _ => wpV_v0 (wpV_nil ?_))
   intro Y₁ t₁ hK₁ hA₁ hr₁ hg₁ _ hv₁
-  simp only [wr, gv, Src.val, set_rax, get0, get6, get7, BitVec.setWidth_eq] at hg₁ hv₁
+  simp only [wr, gv, Src.val, set_rax, get6, get7, BitVec.setWidth_eq] at hg₁ hv₁
   refine c.s_blkV hin hb2 hK₁ hA₁ hr₁ ?_
   refine wpV_v0 (wpV_v0 (wpV_reg fun fl hP => wpV_nil ?_))
   intro Y₂ t₂ hK₂ hA₂ hr₂ hg₂ hf₂ hv₂
