@@ -120,6 +120,33 @@ theorem Hp.foot {F' : Footprint} {Wl' : List Rgn} (h : Hp F Wl fb hi m V)
   exact ⟨C, T, szw, sm, G.foot hF hW, hf1, hf2, hc1, hc2, hT, hTh, hhi, htop, hsz, hsm, hle, hge,
     fun a a1 a2 => ⟨hW _ (hTF a a1 a2).1, hF _ (hTF a a1 a2).2⟩⟩
 
+/-- `Hp` for footprints that are larger from `0x792980` (`main_arena`) up: all the bytes whose footprint `Hp` states
+lie there. -/
+theorem Hp.footHi {F' : Footprint} {Wl' : List Rgn} (h : Hp F Wl fb hi m V)
+    (hF : ∀ a : Addr, 7940480 ≤ a.toNat → Foot F.data a → Foot F'.data a)
+    (hW : ∀ a : Addr, 7940480 ≤ a.toNat → Foot Wl a → Foot Wl' a) : Hp F' Wl' fb hi m V := by
+  obtain ⟨C, T, szw, sm, G, hf1, hf2, hc1, hc2, hT, hTh, hhi, htop, hsz, hsm, hle, hge, hTF⟩ := h
+  have hTl := T.isLt
+  have e24 : (fb + 24#64).toNat = fb.toNat + 24 := by rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega
+  have e40 : (fb + 18446744073709551576#64).toNat = fb.toNat - 40 := by
+    rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega
+  have eC : ∀ i < 64, (C + BitVec.ofNat 64 (2 * i)).toNat = C.toNat + 2 * i := fun i hi => by
+    rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega
+  have t1 : (7940656#64 : Addr).toNat = 7940656 := rfl
+  have t2 : (8013224#64 : Addr).toNat = 8013224 := rfl
+  have t3 : (8013220#64 : Addr).toNat = 8013220 := rfl
+  refine ⟨C, T, szw, sm, { G with
+    fh := fun i hi => hF _ (by rw [toNat_add_of_fits (n := 8) hi (by rw [t1]; omega), t1]; omega) (G.fh i hi)
+    fn := fun i hi j hj => hF _ (by rw [toNat_add_of_fits (n := 2) hj (by rw [eC i hi]; omega), eC i hi]; omega)
+      (G.fn i hi j hj)
+    f1 := fun i hi => hF _ (by rw [toNat_add_of_fits (n := 4) hi (by rw [e24]; omega), e24]; omega) (G.f1 i hi)
+    W := fun a a1 a2 => hW _ (by omega) (G.W a a1 a2)
+    gf := fun i hi => hF _ (by rw [toNat_add_of_fits (n := 8) hi (by rw [t2]; omega), t2]; omega) (G.gf i hi)
+    tf := fun i hi => hF _ (by rw [toNat_add_of_fits (n := 8) hi (by rw [e40]; omega), e40]; omega) (G.tf i hi)
+    pb := fun i hi => hF _ (by rw [toNat_add_of_fits (n := 4) hi (by rw [t3]; omega), t3]; omega) (G.pb i hi) },
+    hf1, hf2, hc1, hc2, hT, hTh, hhi, htop, hsz, hsm, hle, hge,
+    fun a a1 a2 => ⟨hW _ (by omega) (hTF a a1 a2).1, hF _ (by omega) (hTF a a1 a2).2⟩⟩
+
 /-- `Hp`, and the bytes `R` apart from what `Gl` reads (its tcache the word at `fs:-0x28`) and below the top's size
 word. -/
 def HpR (F : Footprint) (Wl : List Rgn) (fb : Addr) (hi m : Nat) (R : Nat → Prop) (V : Addr → Byte) : Prop :=
