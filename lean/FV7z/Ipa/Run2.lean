@@ -1,4 +1,5 @@
 import FV7z.Ipa.Run1
+import FV7z.Mal.HeapF
 /-!
 # `_dl_init_paths`: from 58 to the return of the first `malloc` (75) (PLAN.md G3, startup)
 
