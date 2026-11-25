@@ -1,7 +1,7 @@
-import FV7z.C103.VcA
+import FV7z.C103.Lem
+import FV7z.C103.VcB
 open FV7z
-#print axioms C103.spC
-#print axioms C103.pops
-#print axioms C103.vc_3865
-#print axioms C103.vc_4306
-#print axioms C103.vc_4469
+#print axioms C103.vc_3867
+#print axioms C103.vc_3809
+#print axioms C103.vc_4384
+#print axioms C103.vc_3569

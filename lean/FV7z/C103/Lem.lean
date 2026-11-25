@@ -58,4 +58,44 @@ theorem bits06 {a d r15 r9 rdi : BitVec 64} (ha : a = 0#64 ∨ a = 1#64) (hd : d
   rcases ha with rfl | rfl <;> rcases hd with rfl | rfl <;> refine ⟨by decide, fun h => ?_, fun h => ?_⟩ <;>
     first | exact hd1 rfl | exact ha1 rfl | exact absurd h (by decide)
 
+theorem or_ones (x : BitVec 32) : x ||| 4294967295#32 = 4294967295#32 := by
+  have e : (4294967295#32 : BitVec 32) = BitVec.allOnes 32 := by decide
+  rw [e]
+  exact BitVec.or_allOnes
+
+theorem msb_lt (x : BitVec 64) (h : x.toNat < 2 ^ 32) : x.msb = false := by
+  rw [BitVec.msb_eq_decide]
+  simp only [decide_eq_false_iff_not]
+  omega
+
+/-- A small `threads`, sign-extended, is zero-extended. -/
+theorem sext_small (x : BitVec 32) (h : x.toNat ≤ 1024) : x.signExtend 64 = x.setWidth 64 := by
+  have hm : x.msb = false := by
+    rw [BitVec.msb_eq_decide]
+    simp only [decide_eq_false_iff_not]
+    omega
+  exact BitVec.signExtend_eq_setWidth_of_msb_false hm
+
+theorem sext_ne (x : BitVec 32) (h0 : x ≠ 0#32) (h : x.toNat ≤ 1024) : x.signExtend 64 ≠ 0#64 := by
+  rw [sext_small x h]
+  exact sw_ne x h0
+
+theorem sext_msb (x : BitVec 32) (h : x.toNat ≤ 1024) : (x.signExtend 64).msb = false := by
+  rw [sext_small x h]
+  exact sw_msb x
+
+theorem and_le_r (y z : BitVec 32) : (y &&& z).toNat ≤ z.toNat := by
+  rw [BitVec.toNat_and]
+  exact Nat.and_le_right
+
+/-- `ebx - 1` for `ebx` not 0. -/
+theorem dec64 (x : BitVec 64) (h : 1 ≤ (x.setWidth 32).toNat) :
+    ((x + 18446744073709551615#64).setWidth 32).toNat = (x.setWidth 32).toNat - 1 := by bv_omega
+
+/-- An 8-byte store into the first globals' block. -/
+theorem gw8 (x : Addr) (v : BitVec 64) (h : 7942880 ≤ x.toNat ∧ x.toNat + 8 ≤ 7942944) :
+    7942880 ≤ x.toNat ∧ x.toNat + (toBytesLE v 8).length ≤ 7942944 ∨
+      8029224 ≤ x.toNat ∧ x.toNat + (toBytesLE v 8).length ≤ 8029236 :=
+  Or.inl (by rw [toBytesLE_length]; exact h)
+
 end FV7z.C103
