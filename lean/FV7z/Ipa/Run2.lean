@@ -71,7 +71,7 @@ theorem to75 {fb : Addr} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase
   · rw [s₂, Tun.rd_Vst_self _ _ _ (toBytesLE_length _ _) (by ifd), ofBytesLE_toBytesLE (n := 8) rfl]
     try rfl
   -- 75: back from `malloc`
-  intro Z₂ t₃ V₄ A hK₃ hA₃ hr₃ hs₃ hax hbx₃ hbp₃ h12₃ h13₃ h14₃ h15₃ hA1 hA2 hAf hkeep hPa4 hKnA hAp hApf _ _
+  intro Z₂ t₃ V₄ A hK₃ hA₃ hr₃ hs₃ hax hbx₃ hbp₃ h12₃ h13₃ h14₃ h15₃ hA1 hA2 hAf hkeep hPa4 hKnA hAp hApf _ _ _
   simp only [hdi, s₂, BitVec.toNat_ofNat, Nat.reducePow, Nat.reduceMod, f96 hr0] at hA2 hAf hkeep hPa4
   refine k Z₂ t₃ V₄ A hK₃ hA₃ hr₃ (by rw [hs₃, s₂, t96p]) hax (by rw [hbx₃, hg₂, set4_rbx, hg₁])
     (by rw [hbp₃, hg₂, set4_rbp, hg₁]) (by rw [h12₃, hg₂, set4_r12, hg₁]) (by rw [h13₃, hg₂, set4_r13, hg₁])
