@@ -12,7 +12,11 @@ none.
 namespace FV7z
 open ZellicX86
 
+attribute [-simp] BitVec.getLsbD_eq_getElem
+
 namespace Strlen
+
+theorem getLsbD_zero' {w : Nat} (i : Nat) : (0 : BitVec w).getLsbD i = false := BitVec.getLsbD_zero
 
 /-- The 16 bytes at `a`, as a vector. -/
 abbrev rd16 (V : Addr → Byte) (a : Addr) : BitVec 128 := ofBytesLE 128 ((byteAddrs a 16).map V)
@@ -85,7 +89,7 @@ theorem zmask4_eq_zero (a b c d : BitVec 128) :
   constructor
   · intro h j hj
     have hb := congrArg (fun m => m.getLsbD j) h
-    simp only [getLsbD_zmask, BitVec.getLsbD_zero] at hb
+    simp only [getLsbD_zmask, getLsbD_zero'] at hb
     rw [decide_eq_true hj, Bool.true_and, decide_eq_false_iff_not, lane_pminb_eq_zero _ _ hj,
       lane_pminb_eq_zero _ _ hj, lane_pminb_eq_zero _ _ hj] at hb
     exact ⟨fun h => hb (Or.inl (Or.inl (Or.inl h))), fun h => hb (Or.inl (Or.inl (Or.inr h))),
@@ -93,7 +97,7 @@ theorem zmask4_eq_zero (a b c d : BitVec 128) :
   · intro h
     apply BitVec.eq_of_getLsbD_eq
     intro i _
-    rw [getLsbD_zmask, BitVec.getLsbD_zero]
+    rw [getLsbD_zmask, getLsbD_zero']
     by_cases hj : i < 16
     · rw [decide_eq_true hj, Bool.true_and, decide_eq_false_iff_not, lane_pminb_eq_zero _ _ hj,
         lane_pminb_eq_zero _ _ hj, lane_pminb_eq_zero _ _ hj]
@@ -158,7 +162,7 @@ theorem sar_eq_zero {Z : BitVec 64} {r : Nat} (hr : r < 64) (h0 : ∀ i, r ≤ i
     Z.sshiftRight r = 0 := by
   apply BitVec.eq_of_getLsbD_eq
   intro i _
-  rw [BitVec.getLsbD_sshiftRight, BitVec.getLsbD_zero]
+  rw [BitVec.getLsbD_sshiftRight, getLsbD_zero']
   by_cases h : r + i < 64
   · rw [if_pos h, h0 _ (by omega) h, Bool.and_false]
   · rw [if_neg h, show Z.msb = Z.getLsbD 63 from BitVec.msb_eq_getLsbD_last Z, h0 63 (by omega) (by omega),
