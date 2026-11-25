@@ -106,4 +106,71 @@ theorem path41 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e' sr2) {X : State} 
     exact tail74 c hin hK₃ hA₃ hr₃ (by rw [hg₃]; exact hkp₂) (by rw [hg₃]; exact hdi₂) hn16
       (by rw [hg₃]; exact hcx) (by rw [hg₃]; exact hdx) hnz hz hch hR
 
+/-- `and eax, 4095` of `rax = x`: `x`'s place in its page. -/
+theorem and32_4095 (x : BitVec 64) :
+    ((x.setWidth 32 &&& BitVec.ofNat 32 4095).setWidth 64).toNat = x.toNat % 4096 := by
+  rw [BitVec.toNat_setWidth, BitVec.toNat_and, BitVec.toNat_setWidth, BitVec.toNat_ofNat,
+    show 4095 % 2 ^ 32 = 2 ^ 12 - 1 by decide, Nat.and_two_pow_sub_one_eq_mod]
+  have hx := x.isLt
+  simp only [Nat.reducePow] at hx ⊢
+  omega
+
+/-- `ja` taken after `cmp a, b`. -/
+theorem ja_true {a b : BitVec 64} (h : (!(decide (a.toNat < b.toNat) || decide (a = b))) = true) :
+    b.toNat < a.toNat := by
+  by_cases h1 : a.toNat < b.toNat
+  · rw [decide_eq_true h1, Bool.true_or] at h; exact absurd h (by decide)
+  · by_cases h2 : a = b
+    · rw [decide_eq_true h2, Bool.or_true] at h; exact absurd h (by decide)
+    · have h3 : a.toNat ≠ b.toNat := fun h3 => h2 (BitVec.eq_of_toNat_eq h3)
+      omega
+
+/-- `__strrchr_sse2` from its first byte, `rdi = p`, `rsi` the character: the spread into `xmm1` and `cmp` of `p`'s
+place in its page with `4032`; above: to `+560`, else `path41`. -/
+theorem entry (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e' sr2) {X : State} {t : Nat} {g₀ : Gprs} {n : Nat}
+    (hK : KeptW Wl s₀ X) (hA : Agree F X.proc.mm.mem V) (hrip : X.cpu.rip = e'.add 0) (hkp : KpR g₀ X.cpu.gpr)
+    (hdi : X.cpu.gpr.rdi = g₀.rdi) (hsi : X.cpu.gpr.rsi = g₀.rsi) (hov : g₀.rdi.toNat + n < 2 ^ 64)
+    (hnz : ∀ k < n, V (Addr.add g₀.rdi k) ≠ 0) (hz : V (Addr.add g₀.rdi n) = 0) (hch : g₀.rsi.setWidth 8 ≠ 0#8)
+    (hft : ∀ x : Addr, g₀.rdi.toNat / 4096 ≤ x.toNat / 4096 → x.toNat / 4096 ≤ (g₀.rdi.toNat + n) / 4096 →
+      Foot F.data x)
+    (h560 : ∀ Y t', KeptW Wl s₀ Y → Agree F Y.proc.mm.mem V → Y.cpu.rip = e'.add 560 → KpR g₀ Y.cpu.gpr →
+      Y.cpu.gpr.rdi = g₀.rdi → xsOf Y.cpu.vec.zmm (xmmOf 1) = Bc g₀.rsi → 4032 < g₀.rdi.toNat % 4096 →
+      GoG prof L o gev gP gE Y t')
+    (h112 : ∀ Y t', KeptW Wl s₀ Y → Agree F Y.proc.mm.mem V → Y.cpu.rip = e'.add 112 → KpR g₀ Y.cpu.gpr →
+      Y.cpu.gpr.rdi = g₀.rdi →
+      (∀ i, Y.cpu.gpr.rcx.getLsbD i = (decide (i < 16) && decide (V (Addr.add g₀.rdi i) = g₀.rsi.setWidth 8))) →
+      xsOf Y.cpu.vec.zmm (xmmOf 1) = Bc g₀.rsi → xsOf Y.cpu.vec.zmm (xmmOf 2) = 0 → 16 ≤ n →
+      GoG prof L o gev gP gE Y t')
+    (hR : RetR prof F Wl L s₀ o gev gP gE V g₀ n) : GoG prof L o gev gP gE X t := by
+  -- `endbr64`, `movd xmm1, esi`, `mov rax, rdi`, `and eax, 4095`, `punpcklbw xmm1, xmm1`, `cmp rax, 4032`
+  refine c.s_blkV hin (b0 prof) hK hA hrip ?_
+  refine wpV_reg fun _ _ => wpV_v0 (wpV_reg fun _ _ => wpV_reg fun _ _ => wpV_v0 (wpV_reg fun fl hP => wpV_nil ?_))
+  intro Y₁ t₁ hK₁ hA₁ hr₁ hg₁ hf₁ hv₁
+  simp only [wr, gv, Src.val, set_rax, get0, get6, get7, BitVec.setWidth_eq] at hg₁ hP hv₁
+  have hkp₁ : KpR g₀ Y₁.cpu.gpr := by simp only [KpR, hg₁]; exact hkp
+  have hdi₁ : Y₁.cpu.gpr.rdi = g₀.rdi := by simp only [hg₁]; exact hdi
+  -- `punpcklwd xmm1, xmm1`, `pshufd xmm1, xmm1, 0`
+  refine c.s_blkV hin (b26 prof) hK₁ hA₁ hr₁ ?_
+  refine wpV_v0 (wpV_v0 (wpV_nil ?_))
+  intro Y₂ t₂ hK₂ hA₂ hr₂ hg₂ hf₂ hv₂
+  have hkp₂ : KpR g₀ Y₂.cpu.gpr := by simp only [KpR, hg₂]; exact hkp₁
+  have hdi₂ : Y₂.cpu.gpr.rdi = g₀.rdi := by simp only [hg₂]; exact hdi₁
+  have hx1 : xsOf Y₂.cpu.vec.zmm (xmmOf 1) = Bc g₀.rsi := by
+    rw [hv₂, hv₁, ← hsi]
+    simp (disch := decide) only [xset_same, xset_ne]
+  refine c.s_jccV hK₂ hA₂ hin (by rw [sr2_length]; omega) hr₂ (d35 prof.feat) (tgt := 560) rfl
+    (by rw [sr2_length]; omega) ?_ ?_
+  · -- crossing a page within 64 bytes
+    intro htk Y₃ t₃ hK₃ hA₃ ⟨hr₃, hg₃, hv₃⟩
+    rw [hf₂, hf₁, hP, cond_7, subF_cf, subF_zf] at htk
+    have hq := ja_true htk
+    rw [and32_4095, hdi] at hq
+    exact h560 Y₃ t₃ hK₃ hA₃ hr₃ (by rw [hg₃]; exact hkp₂) (by rw [hg₃]; exact hdi₂) (by rw [hv₃]; exact hx1) hq
+  · intro hfa Y₃ t₃ hK₃ hA₃ ⟨hr₃, hg₃, hv₃⟩
+    rw [hf₂, hf₁, hP, cond_7, subF_cf, subF_zf] at hfa
+    have hq := ja_false hfa
+    rw [and32_4095, hdi] at hq
+    exact path41 c hin hK₃ hA₃ hr₃ (by rw [hg₃]; exact hkp₂) (by rw [hg₃]; exact hdi₂) (by rw [hv₃]; exact hx1) hq
+      hov hnz hz hch hft h112 hR
+
 end FV7z.Strrchr

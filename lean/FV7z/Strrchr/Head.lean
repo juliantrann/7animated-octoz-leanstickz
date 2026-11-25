@@ -80,10 +80,12 @@ theorem addR_ofNat (a : Addr) (m : Nat) : addR (BitVec.ofNat 64 m) a = Addr.add 
 /-- `x - 1` as `x + (2^64 - 1)`, for `x ≠ 0`. -/
 theorem toNat_pred64 (x : BitVec 64) (h : x.toNat ≠ 0) :
     (x + BitVec.ofNat 64 18446744073709551615).toNat + 1 = x.toNat := by
-  have hx := x.isLt
-  simp only [Nat.reducePow] at hx
-  simp only [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.reducePow, Nat.reduceMod]
-  omega
+  have e : BitVec.ofNat 64 18446744073709551615 = -1#64 := by decide
+  have h1 : 1#64 ≤ x := by
+    rw [BitVec.le_def, BitVec.toNat_ofNat]
+    exact Nat.le_trans (Nat.mod_le 1 _) (Nat.pos_of_ne_zero h)
+  rw [e, ← BitVec.sub_eq_add_neg, BitVec.toNat_sub_of_le h1, BitVec.toNat_ofNat, show 1 % 2 ^ 64 = 1 by decide]
+  exact Nat.sub_add_cancel (Nat.pos_of_ne_zero h)
 
 /-! ## The call -/
 
@@ -183,8 +185,8 @@ theorem tail74 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e' sr2) {X : State} 
         Bool.true_and, Bool.true_and]
     · rw [decide_eq_false hi]
       by_cases hin' : i = n
-      · rw [hin', hz, decide_eq_false (fun h : (0 : Byte) = g₀.rsi.setWidth 8 => hch h.symm), Bool.and_false,
-          Bool.and_false]
+      · rw [hin', hz, decide_eq_false (fun h : (0 : Byte) = g₀.rsi.setWidth 8 => hch h.symm)]
+        simp only [Bool.and_false]
       · rw [decide_eq_false (show ¬ i ≤ n by omega), Bool.false_and, Bool.false_and]
   have hS := rok_mask (by omega) hKb
   have hc : fl.cond 4 = (Y₁.cpu.gpr.rax == 0) := by rw [cond4_mask hP]; simp only [hg₁]
