@@ -9,7 +9,8 @@ import FV7z.C103.Holds
 `__libc_csu_init`'s return address slot, and it stores only there and to the `__x86_*` words (`C103.Gw`).
 
 - `c103_runs`: `csuTg 103` for an invariant `J` that the bytes outside those two keep.
-- `c103_jg`: the same for `Jg`, with the spec `wrSpec c103Wr`.
+- `tg103`; `c103_jg`: the same for `Jg`, with the spec `wrSpec c103Wr` (it may overlap a spec before whose `post` is
+  trivial, `jg_wrkT`).
 -/
 namespace FV7z.Ctor
 set_option maxRecDepth 100000
@@ -70,6 +71,8 @@ theorem gw_out {a : Addr} (h : ¬ InR c103Wr a.toNat) : ¬ C103.Gw a := by
   unfold C103.Gw
   omega
 
+theorem tg103 : csuTg 103 = C103.c103_at := by decide +kernel
+
 /-- `c103_runs` for `Jg` and the spec `wrSpec c103Wr`. -/
 theorem c103_jg {V : Addr → Byte} {spec : Nat → CSpec} {G : Nat → (Addr → Byte) → Prop} {sp fb : Addr}
     {tg : Nat → Addr} {a₀ a₁ a₂ : BitVec 64} {m : Nat} (hCe : Glibc.CacheEnds prof) (c : Seg prof F Wl L s₀ o)
@@ -84,7 +87,8 @@ theorem c103_jg {V : Addr → Byte} {spec : Nat → CSpec} {G : Nat → (Addr �
     (hgw : ∀ x : Addr, C103.Gw x → Foot Wl x ∧ Foot F.data x)
     (hm : 3 ≤ m) (hc : calls m = []) (hspec : spec m = wrSpec c103Wr) (hD : ∀ k, (spec k).Dep)
     (hB : ∀ k, ∀ x ∈ (spec k).wr, x.2 ≤ sp.toNat - 1024)
-    (hXw : ∀ k, 3 ≤ k → k < m → ∀ x ∈ (spec k).wr, ∀ y ∈ c103Wr, x.2 ≤ y.1 ∨ y.2 ≤ x.1)
+    (hXw : ∀ k, 3 ≤ k → k < m →
+      (∀ U, (spec k).post U) ∨ ∀ x ∈ (spec k).wr, ∀ y ∈ c103Wr, x.2 ≤ y.1 ∨ y.2 ≤ x.1)
     (htb : ∀ W, G m W → List.map W (byteAddrs 0x6f2000#64 36) = hca_jt ∧
       List.map W (byteAddrs 7282852#64 156) = C103.c103_jt)
     (hG : ∀ W V', G m W →
@@ -92,7 +96,7 @@ theorem c103_jg {V : Addr → Byte} {spec : Nat → CSpec} {G : Nat → (Addr �
       G (m + 1) V') :
     Csu.Runs prof F Wl L s₀ o gev gP gE (Jg V sp.toNat spec G) sp a₀ a₁ a₂ m (csuTg m) := by
   refine c103_runs hCe c hC hin hinH hfs htg hst hld hS hcn hcnf hcna hcpu htab hgw (fun W hJ => htb W hJ.2)
-    fun W V' hJ hv => jg_wrk hm hc (by omega) hspec hD (by decide) hB hXw (fun a h1 h2 => ?_)
+    fun W V' hJ hv => jg_wrkT hm hc (by omega) hspec hD (by decide) hB hXw (fun a h1 h2 => ?_)
       (hG W V' · hv) hJ
   exact hv a (st_out h2) (gw_out h1)
 

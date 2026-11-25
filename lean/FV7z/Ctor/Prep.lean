@@ -8,7 +8,8 @@ and maybe constant tables (`Rc`), and use a stack frame below the return address
 `wrSpec (wrOf Wc)`; the frame lies in the stack's window `[sp - 1024, sp + 8)` that `Jc` leaves free.
 
 - `wrOf`, `inR_wrOf`, `Lo`: the intervals of a list of regions; regions that end at or below a bound.
-- `Jc_stk`, `jg_wrk`: `Jc_st`, `jg_wr` for a constructor that also stores into the stack's window.
+- `Jc_stk`, `jg_wrkT`, `jg_wrk`: `Jc_st`, `jg_wr` for a constructor that also stores into the stack's window
+  (`jg_wrkT`: its stores may overlap those of a constructor before whose `post` is trivial).
 - `prepK_ws`, `prepK_sub`: at a call with `rsp = D`, what the function may store, and the part of `fnK`'s
   `CallOf` about the footprint (also for a call from the middle of a constructor, `Mix.lean`).
 - `prepK_core`: a function at `e` with `ImplementsCall` of `fnK k (fun _ => Wc) (canary :: Rc)` is one as
@@ -58,7 +59,8 @@ constructors before it) and into the stack's window, keeps `Jc` when its `post` 
 theorem Jc_stk {V W W' : Addr → Byte} {sp m : Nat} {spec : Nat → CSpec} (hm : 3 ≤ m) (hc : calls m = [])
     (hS : 7991300 + 1024 ≤ sp) (hD : ∀ k, (spec k).Dep) (hT : ∀ x ∈ (spec m).wr, ∀ y ∈ tabs, x.2 ≤ y.1 ∨ y.2 ≤ x.1)
     (hB : ∀ k, ∀ x ∈ (spec k).wr, x.2 ≤ sp - 1024)
-    (hX : ∀ k, 3 ≤ k → k < m → ∀ x ∈ (spec k).wr, ∀ y ∈ (spec m).wr, x.2 ≤ y.1 ∨ y.2 ≤ x.1)
+    (hX : ∀ k, 3 ≤ k → k < m →
+      (∀ U, (spec k).post U) ∨ ∀ x ∈ (spec k).wr, ∀ y ∈ (spec m).wr, x.2 ≤ y.1 ∨ y.2 ≤ x.1)
     (hJ : Jc V sp spec m W)
     (hW : ∀ a : Addr, ¬ InR (spec m).wr a.toNat → ¬ (sp - 1024 ≤ a.toNat ∧ a.toNat < sp + 8) → W' a = W a)
     (hp : (spec m).post W') : Jc V sp spec (m + 1) W' := by
@@ -70,18 +72,19 @@ theorem Jc_stk {V W W' : Addr → Byte} {sp m : Nat} {spec : Nat → CSpec} (hm 
   · rw [hW a (h4 m hm (by omega)) h1]
     exact hK a h1 h2 h3 fun k hk hkm => h4 k hk (by omega)
   · rcases Nat.lt_or_ge k m with hlt | hge
-    · exact hD k W W' (fun a ha => hW a (InR_sep ha (hX k hk hlt)) (by have := InR_lt (hB k) ha; omega))
-        (hP k hk hlt)
+    · rcases hX k hk hlt with hX' | hX'
+      · exact hX' W'
+      · exact hD k W W' (fun a ha => hW a (InR_sep ha hX') (by have := InR_lt (hB k) ha; omega)) (hP k hk hlt)
     · obtain rfl : k = m := by omega
       exact hp
 
 /-- `Jg` from `m` to `m + 1` for `spec m = wrSpec wr`, when the constructor keeps the bytes outside `wr` and the
-stack's window, and `wr` is apart from the tables and the stores before. -/
-theorem jg_wrk {V W W' : Addr → Byte} {sp m : Nat} {spec : Nat → CSpec} {G : Nat → (Addr → Byte) → Prop}
+stack's window, and `wr` is apart from the tables and from the stores before whose `post` is not trivial. -/
+theorem jg_wrkT {V W W' : Addr → Byte} {sp m : Nat} {spec : Nat → CSpec} {G : Nat → (Addr → Byte) → Prop}
     {wr : List (Nat × Nat)} (hm : 3 ≤ m) (hc : calls m = []) (hS : 7991300 + 1024 ≤ sp)
     (hspec : spec m = wrSpec wr) (hD : ∀ k, (spec k).Dep) (hT : ∀ x ∈ wr, ∀ y ∈ tabs, x.2 ≤ y.1 ∨ y.2 ≤ x.1)
     (hB : ∀ k, ∀ x ∈ (spec k).wr, x.2 ≤ sp - 1024)
-    (hXw : ∀ k, 3 ≤ k → k < m → ∀ x ∈ (spec k).wr, ∀ y ∈ wr, x.2 ≤ y.1 ∨ y.2 ≤ x.1)
+    (hXw : ∀ k, 3 ≤ k → k < m → (∀ U, (spec k).post U) ∨ ∀ x ∈ (spec k).wr, ∀ y ∈ wr, x.2 ≤ y.1 ∨ y.2 ≤ x.1)
     (hout : ∀ a : Addr, ¬ InR wr a.toNat → ¬ (sp - 1024 ≤ a.toNat ∧ a.toNat < sp + 8) → W' a = W a)
     (hG : G m W → G (m + 1) W') (hJ : Jg V sp spec G m W) : Jg V sp spec G (m + 1) W' := by
   obtain ⟨hJc, hG'⟩ := hJ
@@ -94,6 +97,16 @@ theorem jg_wrk {V W W' : Addr → Byte} {sp m : Nat} {spec : Nat → CSpec} {G :
     exact ha
   · rw [hspec]
     trivial
+
+/-- `jg_wrkT` with `wr` apart from all the stores before. -/
+theorem jg_wrk {V W W' : Addr → Byte} {sp m : Nat} {spec : Nat → CSpec} {G : Nat → (Addr → Byte) → Prop}
+    {wr : List (Nat × Nat)} (hm : 3 ≤ m) (hc : calls m = []) (hS : 7991300 + 1024 ≤ sp)
+    (hspec : spec m = wrSpec wr) (hD : ∀ k, (spec k).Dep) (hT : ∀ x ∈ wr, ∀ y ∈ tabs, x.2 ≤ y.1 ∨ y.2 ≤ x.1)
+    (hB : ∀ k, ∀ x ∈ (spec k).wr, x.2 ≤ sp - 1024)
+    (hXw : ∀ k, 3 ≤ k → k < m → ∀ x ∈ (spec k).wr, ∀ y ∈ wr, x.2 ≤ y.1 ∨ y.2 ≤ x.1)
+    (hout : ∀ a : Addr, ¬ InR wr a.toNat → ¬ (sp - 1024 ≤ a.toNat ∧ a.toNat < sp + 8) → W' a = W a)
+    (hG : G m W → G (m + 1) W') (hJ : Jg V sp spec G m W) : Jg V sp spec G (m + 1) W' :=
+  jg_wrkT hm hc hS hspec hD hT hB (fun k hk hkm => .inr (hXw k hk hkm)) hout hG hJ
 
 /-- The canary's region. -/
 abbrev canary (s : State) : Rgn := ⟨Addr.add s.cpu.seg.fsBase 40, 8⟩
