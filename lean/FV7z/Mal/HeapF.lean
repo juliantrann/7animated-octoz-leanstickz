@@ -30,7 +30,7 @@ variable {F : Footprint} {Wl : List Rgn} {fb : Addr} {hi m : Nat} {V W : Addr �
 
 /-- `Gl` for bytes that agree on `GlF` but for the word `main_arena.top`. -/
 theorem Gl.mvF {C : Addr} (h : Gl F Wl fb C V) (hf1 : 8029928 ≤ fb.toNat) (hf2 : fb.toNat + 48 < 2 ^ 64)
-    (hc : C.toNat + 128 < 2 ^ 64)
+    (hc1 : 8029888 ≤ C.toNat) (hc : C.toNat + 128 < 2 ^ 64)
     (hW : ∀ a : Addr, GlF fb C a.toNat → ¬ (7940768 ≤ a.toNat ∧ a.toNat < 7940776) → W a = V a) :
     Gl F Wl fb C W := by
   obtain ⟨f24, -, f40⟩ := fofs fb (by omega) hf2
@@ -67,9 +67,9 @@ theorem Gl.mvF {C : Addr} (h : Gl F Wl fb C V) (hf1 : 8029928 ≤ fb.toNat) (hf2
       m3 := by rw [Rc 7942828 4 (by omega) (by omega)]; exact h.m3
       p0 := by rw [Rc 8013220 4 (by omega) (by omega)]; exact h.p0 }
 
-/-- `Hp` names its tcache `C` and top `T`, with their bounds, and holds of every byte map that agrees on
+/-- `Hp` (a budget of at least 16) names its tcache `C` and top `T`, with their bounds, and holds of every byte map that agrees on
 `HpF fb C T`. -/
-theorem Hp.cut (h : Hp F Wl fb hi m V) : ∃ C T : Addr, 8029928 ≤ fb.toNat ∧ fb.toNat + 48 ≤ T.toNat ∧
+theorem Hp.cut (h : Hp F Wl fb hi m V) (hm : 16 ≤ m) : ∃ C T : Addr, 8029928 ≤ fb.toNat ∧ fb.toNat + 48 ≤ T.toNat ∧
     8029888 ≤ C.toNat ∧ C.toNat + 128 ≤ T.toNat ∧ 8032256 ≤ T.toNat ∧ T.toNat + m ≤ hi ∧ hi < 2 ^ 64 ∧
     rdq(V, 7940768#64) = T ∧ ∀ W : Addr → Byte, (∀ a : Addr, HpF fb C T a.toNat → W a = V a) →
       Hp F Wl fb hi m W := by
@@ -79,7 +79,7 @@ theorem Hp.cut (h : Hp F Wl fb hi m V) : ∃ C T : Addr, 8029928 ≤ fb.toNat �
   have e8 : (T + 8#64).toNat = T.toNat + 8 := by rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega
   have et : (7940768#64 : Addr).toNat = 7940768 := rfl
   have es : (7942856#64 : Addr).toNat = 7942856 := rfl
-  refine ⟨C, T, szw, sm, G.mvF hf1 (by omega) (by omega) fun a ha _ => hW a (Or.inl ha), hf1, hf2, hc1, hc2, hT,
+  refine ⟨C, T, szw, sm, G.mvF hf1 (by omega) hc1 (by omega) fun a ha _ => hW a (Or.inl ha), hf1, hf2, hc1, hc2, hT,
     hTh, hhi, ?_, ?_, ?_, hle, hge, hTF⟩
   · rw [rd_eq (V := V) (x := 7940768#64) (n := 8) (by rw [et]; omega) fun a a1 a2 =>
       hW a (by unfold HpF GlF; rw [et] at a1 a2; omega)]
