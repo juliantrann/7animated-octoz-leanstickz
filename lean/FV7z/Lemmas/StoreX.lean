@@ -10,8 +10,9 @@ xmm0`; under 16 bytes it moves the low 64 bits to `rcx` (`movq rcx, xmm0`) and s
 - `movdqu_std`, `movdqu_sti`, `movdqa_std` and `Seg.s_movdqu_std`, `Seg.s_movdqu_sti`, `Seg.s_movdqa_std`: the stores,
   as steps of a run into bytes it may store into, the registers kept; `VOp.movqr`: `movq r64, xmmN`.
 - `ret_len`, `Seg.s_retL`: a `ret` of any length (`repz ret` is 2 bytes).
-- `Bc v b`: each byte of `v` is `b`; `FillP V V₂ a n b P`: the bytes `V₂` are `V` outside the `n` bytes from `a`, and
-  `b` at those of them whose offsets are in `P`; `FillP.st`: a store of bytes `b` among them adds its offsets.
+- `ByteAll v b`: each byte of `v` is `b`; `FillP V V₂ a n b P`: the bytes `V₂` are `V` outside the `n` bytes from
+  `a`, and `b` at those of them whose offsets are in `P`; `FillP.st`: a store of bytes `b` among them adds its
+  offsets.
 -/
 namespace FV7z
 open ZellicX86 Decode
@@ -70,7 +71,7 @@ theorem ret_len {ra : Addr} {len : Nat} (htf : s.cpu.rflags.tf = false) (hac : s
     (instruction prof s).runStream o t =
       (.running (upd s ra (s.cpu.gpr.set 4 (s.cpu.gpr.rsp + 8)) (rf0 s)) none, t) := by
   refine instruction_next htf hdec ?_
-  simp only [exec, Sem.ret, mk, Prog.run, bind, Prog.bind, Prog.readThread, Prog.readReg, Prog.read, pure,
+  simp only [exec, Sem.ret, Prog.run, bind, Prog.bind, Prog.readThread, Prog.readReg, Prog.read, pure,
     show (advance s len).thread.shstk = none from hsh, Bool.false_eq_true, ↓reduceIte]
   rw [checkAccess_ok (s := advance s len) hac hld]
   have hw' : ofBytesLE 64 (readBytes (advance s len).proc.mm.mem ((advance s len).cpu.gpr.get 4) 8) = ra := hw
@@ -88,23 +89,24 @@ theorem VOpI.movqr {w r n len : Nat} :
   intro s o t htf _ hdec _ _
   refine ⟨s.cpu.vec.zmm, t, instruction_next htf hdec ?_, rfl⟩
   simp only [exec, execSse, Sem.movq, moveBits, gr, bind, Prog.bind, readOp, Bool.false_eq_true, ↓reduceIte, pure,
-    Prog.run, writeOp, Prog.readZmm, VOp.movqr, xsOf, BitVec.setWidth_setWidth_of_le _ (show 64 ≤ 128 by omega)]
+    Prog.run, writeOp, Prog.readZmm, xsOf, BitVec.setWidth_setWidth_of_le _ (show 64 ≤ 128 by omega)]
   rfl
 
 /-! ## Bytes of one value -/
 
 /-- Each byte of `v` is `b`. -/
-def Bc {w : Nat} (v : BitVec w) (b : Byte) : Prop := ∀ i, 8 * i + 8 ≤ w → v.extractLsb' (8 * i) 8 = b
+def ByteAll {w : Nat} (v : BitVec w) (b : Byte) : Prop := ∀ i, 8 * i + 8 ≤ w → v.extractLsb' (8 * i) 8 = b
 
 theorem extractLsb'_setWidth' {w m : Nat} (x : BitVec w) {s l : Nat} (h : s + l ≤ m) :
     (x.setWidth m).extractLsb' s l = x.extractLsb' s l := by
   ext k hk
   simp [show s + k < m by omega]
 
-theorem Bc.setWidth {w m : Nat} {v : BitVec w} {b : Byte} (h : Bc v b) (hm : m ≤ w) : Bc (v.setWidth m) b :=
+theorem ByteAll.setWidth {w m : Nat} {v : BitVec w} {b : Byte} (h : ByteAll v b) (hm : m ≤ w) :
+    ByteAll (v.setWidth m) b :=
   fun i hi => by rw [extractLsb'_setWidth' _ hi]; exact h i (by omega)
 
-theorem Bc.bytes {w : Nat} {v : BitVec w} {b : Byte} (h : Bc v b) {n : Nat} (hn : 8 * n ≤ w) :
+theorem ByteAll.bytes {w : Nat} {v : BitVec w} {b : Byte} (h : ByteAll v b) {n : Nat} (hn : 8 * n ≤ w) :
     ∀ x ∈ toBytesLE v n, x = b := by
   intro x hx
   simp only [toBytesLE, List.mem_map, List.mem_range] at hx
@@ -114,8 +116,8 @@ theorem Bc.bytes {w : Nat} {v : BitVec w} {b : Byte} (h : Bc v b) {n : Nat} (hn 
   simp [BitVec.toNat_setWidth, BitVec.toNat_ushiftRight]
 
 /-- The spread byte. -/
-theorem Bc.bcast (c : BitVec 64) :
-    Bc (ofDwords fun j => lane 32 (ofWords (interleave 16 0
+theorem ByteAll.bcast (c : BitVec 64) :
+    ByteAll (ofDwords fun j => lane 32 (ofWords (interleave 16 0
       (ofBytes (interleave 8 0 ((c.setWidth 32).setWidth 128) ((c.setWidth 32).setWidth 128)))
       (ofBytes (interleave 8 0 ((c.setWidth 32).setWidth 128) ((c.setWidth 32).setWidth 128))))) (0 / 4 ^ j % 4))
       (c.setWidth 8) :=
