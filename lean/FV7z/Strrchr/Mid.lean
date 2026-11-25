@@ -185,11 +185,11 @@ theorem path112 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e' sr2) {X : State}
     Nat.reducePow, Nat.reduceMod] at hg₃
   have hkp₃ : KpR g₀ Y₃.cpu.gpr := by simp only [KpR, hg₃]; exact hkp₂
   have hx3₂ : xsOf Y₂.cpu.vec.zmm (xmmOf 3) = peqb (rd16 V (X.cpu.gpr.rdi + BitVec.ofNat 64 32)) (Bc g₀.rsi) := by
-    rw [hv₂, hv₁]; simp (disch := decide) only [xset_same, xset_ne] <;> rfl
+    rw [hv₂, hv₁]; simp (disch := decide) only [xset_same, xset_ne, hx1, hx2] <;> rfl
   have hx5₂ : xsOf Y₂.cpu.vec.zmm (xmmOf 5) = peqb (rd16 V (X.cpu.gpr.rdi + BitVec.ofNat 64 32)) 0 := by
-    rw [hv₂, hv₁]; simp (disch := decide) only [xset_same, xset_ne] <;> rfl
+    rw [hv₂, hv₁]; simp (disch := decide) only [xset_same, xset_ne, hx1, hx2] <;> rfl
   have hx2₂ : xsOf Y₂.cpu.vec.zmm (xmmOf 2) = peqb 0 (rd16 V (X.cpu.gpr.rdi + BitVec.ofNat 64 48)) := by
-    rw [hv₂, hv₁]; simp (disch := decide) only [xset_same, xset_ne] <;> rfl
+    rw [hv₂, hv₁]; simp (disch := decide) only [xset_same, xset_ne, hx1, hx2] <;> rfl
   have hr8₃ : R 32 48 (Fb V X.cpu.gpr.rdi (g₀.rsi.setWidth 8)) Y₃.cpu.gpr.r8 := by
     simp only [hg₃]; rw [hx3₂]; exact R_m (fun i => cbit' V X.cpu.gpr.rdi 32 i g₀.rsi) (by omega)
   have hax₃ : R 32 48 (Fb V X.cpu.gpr.rdi 0) Y₃.cpu.gpr.rax := by
@@ -225,7 +225,7 @@ theorem path112 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e' sr2) {X : State}
   have hkp₅ : KpR g₀ Y₅.cpu.gpr := by simp only [KpR, hg₅]; exact hkp₄
   have hdi₅ : Y₅.cpu.gpr.rdi = g₀.rdi := by simp only [hg₅, hg₄, hg₃, hg₂, hg₁']; exact hdi
   have hx0₄ : xsOf Y₄.cpu.vec.zmm (xmmOf 0) = peqb (rd16 V (X.cpu.gpr.rdi + BitVec.ofNat 64 48)) (Bc g₀.rsi) := by
-    rw [hv₄, hv₃, hv₂, hv₁]; simp (disch := decide) only [xset_same, xset_ne] <;> rfl
+    rw [hv₄, hv₃, hv₂, hv₁]; simp (disch := decide) only [xset_same, xset_ne, hx1, hx2] <;> rfl
   have hx1₅ : xsOf Y₅.cpu.vec.zmm (xmmOf 1) = Bc g₀.rsi := by
     rw [hv₅, hv₄, hv₃, hv₂, hv₁]; simp (disch := decide) only [xset_ne, hx1]
   have hsi₅ : R 0 64 (Fb V g₀.rdi (g₀.rsi.setWidth 8)) Y₅.cpu.gpr.rsi := by
