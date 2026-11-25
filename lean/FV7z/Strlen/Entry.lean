@@ -205,6 +205,7 @@ theorem sar_spec {V : Addr → Byte} {p B : Addr} {n r : Nat} {J : BitVec 64}
         addr_eq (a := B) (b := p) (i := i + (p.toNat - B.toNat)) (j := i) (by omega)]
       exact decide_eq_false (hnz i hi)
 
+set_option maxHeartbeats 4000000 in
 /-- From `+62`: the bits below 16 of the joined mask are clear, as the bytes there from `p` on are not 0. -/
 theorem bit3 {V : Addr → Byte} {p B : Addr} {n i : Nat} (hnz : ∀ k < n, V (Addr.add p k) ≠ 0) (h16 : 16 ≤ n)
     (hB : B.toNat = p.toNat / 16 * 16) (hri : p.toNat - B.toNat ≤ i) :
@@ -299,6 +300,7 @@ theorem pathB (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e' sl2) {X : State} {
     exact ret_at c hin (by rw [sl2_length]; omega) (d227 prof.feat) hK₄ hA₄ hr₄ hkp₄ hax₄ hR
 
 /-- From `+62`, `rax = p`, `xmm0`–`xmm3` 0, the first 16 bytes from `p` not 0, on a page with 48 more after them. -/
+set_option maxHeartbeats 4000000 in
 theorem pathA2 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e' sl2) {X : State} {t : Nat} {g₀ : Gprs} {n : Nat}
     (hK : KeptW Wl s₀ X) (hA : Agree F X.proc.mm.mem V) (hrip : X.cpu.rip = e'.add 62)
     (hax : X.cpu.gpr.rax = g₀.rdi) (hkp : Kp g₀ X.cpu.gpr) (hx : X4 (xsOf X.cpu.vec.zmm))
@@ -436,7 +438,7 @@ theorem run (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e' sl2) {X : State} {t 
   refine wpV_reg fun _ _ => wpV_v0 (wpV_v0 (wpV_v0 (wpV_v0 (wpV_reg fun _ _ => wpV_reg fun _ _ =>
     wpV_reg fun _ _ => wpV_reg fun fl hP => wpV_nil ?_))))
   intro Y₁ t₁ hK₁ hA₁ hr₁ hg₁ hf₁ hv₁
-  simp only [wr, gv, Src.val, set_rax, set_rcx, get0, get1, get7, BitVec.setWidth_eq] at hg₁ hP
+  simp only [wr, gv, Src.val, set_rax, set_rcx, get1, get7, BitVec.setWidth_eq] at hg₁ hP
   have hkp₁ : Kp g₀ Y₁.cpu.gpr := by simp only [Kp, hg₁]; exact hkp
   have hax₁ : Y₁.cpu.gpr.rax = g₀.rdi := by simp only [hg₁]; exact hkp.1
   have hx₁ : X4 (xsOf Y₁.cpu.vec.zmm) := by
