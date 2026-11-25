@@ -1,5 +1,4 @@
-import FV7z.C103.Holds
+import FV7z.Ctor.Cx103
 open FV7z
-#print axioms C103.vcAll
-#print axioms C103.c103_fnK
-#print axioms C103.rc_of
+#print axioms Ctor.c103_runs
+#print axioms Ctor.c103_jg
