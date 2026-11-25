@@ -1,6 +1,6 @@
-import FV7z.Memset.Plt
-import FV7z.Start.Reach
-open FV7z FV7z.Start
-#print axioms FV7z.Memset.setAt_plt
-#print axioms FV7z.Start.launch_reaches
-#print axioms FV7z.Start.launch_main
+import FV7z.Lemmas.RepMovsb
+open FV7z
+#print axioms FV7z.rep_movsb_exec
+#print axioms FV7z.VcopyB_in
+#print axioms FV7z.VcopyB_out
+#print axioms FV7z.Fn.Seg.s_rep_movsb
