@@ -65,8 +65,8 @@ theorem lane_ofBytes (f : Nat → BitVec 8) {j : Nat} (hj : j < 16) : lane 8 (of
   have : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7 ∨ j = 8 ∨ j = 9 ∨ j = 10 ∨ j = 11 ∨
     j = 12 ∨ j = 13 ∨ j = 14 ∨ j = 15 := by omega
   rcases this with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-  simp (disch := omega) only [lane, ofBytes, BitVec.extractLsb'_append_eq_of_le,
-    BitVec.extractLsb'_append_eq_right, BitVec.extractLsb'_eq_self, Nat.mul_zero]
+  simp (disch := omega) only [lane, ofBytes, BitVec.extractLsb'_append_eq_of_le, BitVec.extractLsb'_append_eq_right,
+    BitVec.extractLsb'_eq_self, Nat.mul_zero, Nat.reduceMul, Nat.reduceSub]
 
 theorem getLsbD_bit (c : Bool) (a i : Nat) :
     ((BitVec.ofBool c).setWidth 32 <<< a).getLsbD i = (decide (a = i) && decide (i < 32) && c) := by
