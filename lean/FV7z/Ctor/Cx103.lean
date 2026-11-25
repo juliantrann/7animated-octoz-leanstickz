@@ -12,6 +12,7 @@ import FV7z.C103.Holds
 - `c103_jg`: the same for `Jg`, with the spec `wrSpec c103Wr`.
 -/
 namespace FV7z.Ctor
+set_option maxRecDepth 100000
 open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn FV7z.Start
 open FV7z.Hca (hca hca_at hca_jt)
 
