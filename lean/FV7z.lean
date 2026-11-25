@@ -372,6 +372,10 @@ import FV7z.Strrchr.Loop
 import FV7z.Strrchr.Cross
 import FV7z.Strrchr.Run
 import FV7z.Strrchr.Plt
+import FV7z.Lemmas.RepStosb
+import FV7z.Lemmas.StoreX
+import FV7z.Memset.Code
+import FV7z.Memset.Erms
 import FV7z.Pmi.Holds
 import FV7z.Lemmas.Lock2
 import FV7z.Pml.Holds

@@ -90,7 +90,7 @@ theorem path560 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e' sr2) {g₀ : Gpr
     (wpV_v0 (wpV_v (foot16a hftA (q := 16) (by omega)) (fun h => nomatch h) (wpV_nil ?_)))
   intro Y₂ t₂ hK₂ hA₂ hr₂ hg₂ _ hv₂
   generalize hxd : xsOf Y₁.cpu.vec.zmm = x at hv₂ hx0₁ hx1₁
-  simp (disch := decide) only [eaB, get0, hax₁, xset_same, xset_ne] at hv₂
+  simp (disch := decide) only [eaB, get0, hax₁, xset_same] at hv₂
   have hg₂' : Y₂.cpu.gpr = Y₁.cpu.gpr := by simp only [hg₂]
   have hx0₂ : xsOf Y₂.cpu.vec.zmm (xmmOf 0) = 0 := by rw [hv₂]; simp (disch := decide) only [xset_ne, hx0₁]
   have hx1₂ : xsOf Y₂.cpu.vec.zmm (xmmOf 1) = Bc g₀.rsi := by rw [hv₂]; simp (disch := decide) only [xset_ne, hx1₁]
@@ -149,7 +149,7 @@ theorem path560 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e' sr2) {g₀ : Gpr
   have hx5₄ : xsOf Y₄.cpu.vec.zmm (xmmOf 5) = peqb (rd16 V (A + BitVec.ofNat 64 0)) (Bc g₀.rsi) := by
     rw [hv₄]; simp (disch := decide) only [xset_ne, hx5₃]
   have hx6₄ : xsOf Y₄.cpu.vec.zmm (xmmOf 6) = peqb (rd16 V (A + BitVec.ofNat 64 32)) 0 := by
-    rw [hv₄]; simp (disch := decide) only [xset_same, xset_ne] <;> rfl
+    rw [hv₄]; simp (disch := decide) only [xset_same] <;> rfl
   -- `pcmpeqb xmm0, xmm2`, `shl rdx, 16`, `pmovmskb r9d, xmm3`, `pmovmskb r8d, xmm6`, `pmovmskb ecx, xmm0`,
   -- `shl r9, 32`
   refine c.s_blkV hin (b634 prof) hK₄ hA₄ hr₄ ?_
@@ -182,7 +182,7 @@ theorem path560 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e' sr2) {g₀ : Gpr
   intro Y₆ t₆ hK₆ hA₆ hr₆ hg₆ _ hv₆
   generalize hxd₆ : xsOf Y₅.cpu.vec.zmm = x₆ at hg₆ hv₆ hx1₅ hx2₅ hx4₅ hx5₅
   simp (disch := decide) only [wr, gv, Src.val, set_rdx, set_r8, set_rcx, get1, get2, get6, get8,
-    BitVec.setWidth_eq, BitVec.toNat_ofNat, Nat.reducePow, Nat.reduceMod, xset_same, xset_ne, hx1₅, hx2₅,
+    BitVec.setWidth_eq, BitVec.toNat_ofNat, Nat.reducePow, Nat.reduceMod, xset_ne, hx1₅, hx2₅,
     hx5₅] at hg₆ hv₆
   have hkp₆ : KpR g₀ Y₆.cpu.gpr := by simp only [KpR, hg₆]; exact hkp₅
   have hdi₆ : Y₆.cpu.gpr.rdi = g₀.rdi := by simp only [hg₆]; exact hdi₅

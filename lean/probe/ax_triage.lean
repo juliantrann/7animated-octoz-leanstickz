@@ -1,9 +1,11 @@
-import FV7z.Strrchr.First
-import FV7z.Strrchr.Loop
-import FV7z.Strrchr.Cross
-import FV7z.Strrchr.Run
-import FV7z.Strrchr.Plt
+import FV7z.Lemmas.StoreX
+import FV7z.Memset.Code
 open FV7z
-#print axioms FV7z.Strrchr.rchrAt_sse2
-#print axioms FV7z.Strrchr.got_strrchr
-#print axioms FV7z.Strrchr.rchrAtG_plt
+#print axioms FV7z.Fn.Seg.s_movdqu_sti
+#print axioms FV7z.Fn.Seg.s_movdqa_std
+#print axioms FV7z.Fn.Seg.s_retL
+#print axioms FV7z.FillP.st
+#print axioms FV7z.VOpI.movqr
+#print axioms FV7z.Bc.bytes
+#print axioms FV7z.Memset.b293
+#print axioms FV7z.Memset.b0
