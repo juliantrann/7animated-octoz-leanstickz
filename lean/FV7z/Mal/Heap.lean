@@ -204,6 +204,7 @@ theorem mal_hp {fb : Addr} {hi m B : Nat} (c : Seg prof F Wl L s₀ o) (hfs : s�
         hi ≤ a.toNat ∧ (a.toNat + 208 < X.cpu.gpr.rsp.toNat ∨ X.cpu.gpr.rsp.toNat ≤ a.toNat) → V₂ a = V a) →
       (∀ W : Addr → Byte, (∀ a : Addr, 7940480 ≤ a.toNat → a.toNat < hi →
         (a.toNat < p.toNat ∨ p.toNat + X.cpu.gpr.rdi.toNat ≤ a.toNat) → W a = V₂ a) → Hp F Wl fb hi m W) →
+      rdq(V, 7940768#64).toNat + 16 ≤ p.toNat → p.toNat + X.cpu.gpr.rdi.toNat ≤ rdq(V₂, 7940768#64).toNat + 8 →
       GoG prof L o gev gP gE Z t') :
     GoG prof L o gev gP gE X t := by
   obtain ⟨C, T, szw, sm, G, hf1, hf2, hc1, hc2, hT, hTh, hhi', htop, hsz, hsm, hle, hge, hTF⟩ := hH
@@ -243,10 +244,17 @@ theorem mal_hp {fb : Addr} {hi m B : Nat} (c : Seg prof F Wl L s₀ o) (hfs : s�
     fun a h0 h1 h2 h3 => (hMV a (by rw [eS]; omega)).trans (VspN_out V hT16 h1 h2 h3)
   have MS : ∀ a : Addr, a.toNat < X.cpu.gpr.rsp.toNat - 208 → M a = VspN T szw nb V a :=
     fun a h0 => hMV a (by rw [eS]; omega)
+  -- the top at the return
+  have hMt : rdq(M, 7940768#64) = T + nb := by
+    have et : (7940768#64 : Addr).toNat = 7940768 := rfl
+    rw [congrArg (ofBytesLE 64) (rd_eq (V := VspN T szw nb V) (x := 7940768#64) (n := 8) (by rw [et]; omega)
+      fun a a1 a2 => MS a (by rw [et] at a2; omega))]
+    exact VspN_top V (by omega) hT16
   refine kc Z t' M (T + 16#64) hKZ hAZ hrZ (by rw [hspZ, eS8]) hax hbx hbp h12 h13 h14 h15 (by rw [e16]; omega)
     (by rw [e16]; omega) (by rw [e16]; omega)
     (fun a a1 a2 => hTF a (by rw [e16] at a1; omega) (by rw [e16] at a2; omega))
     (fun a ha => MV a (by omega) (by omega) (by rw [e16] at ha; omega) (by rw [e16] at ha; omega)) ?_
+    (by rw [htop]; omega) (by rw [hMt]; rw [eTn]; omega)
   intro W hW
   -- below the top, `W` is `V` but for the top word
   have WV : ∀ a : Addr, 7940480 ≤ a.toNat → a.toNat < T.toNat → ¬ (7940768 ≤ a.toNat ∧ a.toNat < 7940776) →

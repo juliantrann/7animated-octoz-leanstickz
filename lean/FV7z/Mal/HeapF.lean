@@ -67,8 +67,8 @@ theorem Gl.mvF {C : Addr} (h : Gl F Wl fb C V) (hf1 : 8029928 ≤ fb.toNat) (hf2
       m3 := by rw [Rc 7942828 4 (by omega) (by omega)]; exact h.m3
       p0 := by rw [Rc 8013220 4 (by omega) (by omega)]; exact h.p0 }
 
-/-- `Hp` (a budget of at least 16) names its tcache `C` and top `T`, with their bounds, and holds of every byte map that agrees on
-`HpF fb C T`. -/
+/-- `Hp` (a budget of at least 16) names its tcache `C` and top `T`, with their bounds, and holds of every byte map
+that agrees on `HpF fb C T`. -/
 theorem Hp.cut (h : Hp F Wl fb hi m V) (hm : 16 ≤ m) : ∃ C T : Addr, 8029928 ≤ fb.toNat ∧ fb.toNat + 48 ≤ T.toNat ∧
     8029888 ≤ C.toNat ∧ C.toNat + 128 ≤ T.toNat ∧ 8032256 ≤ T.toNat ∧ T.toNat + m ≤ hi ∧ hi < 2 ^ 64 ∧
     rdq(V, 7940768#64) = T ∧ ∀ W : Addr → Byte, (∀ a : Addr, HpF fb C T a.toNat → W a = V a) →
