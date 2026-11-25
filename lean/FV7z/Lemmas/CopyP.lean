@@ -6,11 +6,13 @@ import FV7z.Lemmas.StoreX
 at those of them whose offsets are in `P` the bytes of `V` as many bytes from `s` on. A copy of 16 to 32 bytes is
 two loads and two stores that overlap; each store adds its offsets (`CopyP.st`).
 
-- `map_byteAddrs_get?`, `Vst_get`: the `k`-th byte of a load; the `k`-th byte stored.
+- `byteAddrs_len`, `map_byteAddrs_get?`, `Vst_get`: the `k`-th byte of a load; the `k`-th byte stored.
 - `CopyP.start`, `CopyP.mono`, `CopyP.st`, `CopyP.ld`: the bytes loaded from `V` at `s + o`, stored at `d + o`.
 -/
 namespace FV7z
 open ZellicX86
+
+theorem byteAddrs_len (a : Addr) (n : Nat) : (byteAddrs a n).length = n := by simp [byteAddrs]
 
 theorem map_byteAddrs_get? (f : Addr → Byte) :
     ∀ (n : Nat) (a : Addr) (k : Nat), k < n → ((byteAddrs a n).map f)[k]? = some (f (a.add k))
@@ -23,7 +25,6 @@ theorem map_byteAddrs_get? (f : Addr → Byte) :
 theorem Vst_get (bs : List Byte) (V : Addr → Byte) (a : Addr) (hf : a.toNat + bs.length ≤ 2 ^ 64) {k : Nat}
     (hk : k < bs.length) : Vst V a bs (a.add k) = bs[k] := by
   have e := congrArg (·[k]?) (Vst_self bs V a hf)
-  dsimp only at e
   rw [map_byteAddrs_get? _ bs.length a k hk, List.getElem?_eq_getElem hk] at e
   exact Option.some.inj e
 
@@ -43,7 +44,7 @@ theorem CopyP.ld {V : Addr → Byte} {s : Addr} {o k : Nat} :
     ∀ j (hj : j < ((byteAddrs (s.add o) k).map V).length),
       ((byteAddrs (s.add o) k).map V)[j] = V (s.add (o + j)) := by
   intro j hj
-  have hk : j < k := by simpa using hj
+  have hk : j < k := by rw [List.length_map, byteAddrs_len] at hj; exact hj
   have e := map_byteAddrs_get? V k (s.add o) j hk
   rw [List.getElem?_eq_getElem hj, addr_add_add] at e
   exact Option.some.inj e
