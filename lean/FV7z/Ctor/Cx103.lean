@@ -62,6 +62,13 @@ theorem c103_runs {J : Nat → (Addr → Byte) → Prop} {sp fb : Addr} {tg : Na
 /-- The `__x86_*` words `init_cacheinfo` stores. -/
 def c103Wr : List (Nat × Nat) := [(7942880, 7942944), (8029224, 8029236)]
 
+theorem st_out {s n : Nat} (h : ¬ (s - 1024 ≤ n ∧ n < s + 8)) : ¬ (s - 256 ≤ n ∧ n < s - 64) := by omega
+
+theorem gw_out {a : Addr} (h : ¬ InR c103Wr a.toNat) : ¬ C103.Gw a := by
+  simp only [c103Wr, InR, or_false] at h
+  unfold C103.Gw
+  omega
+
 /-- `c103_runs` for `Jg` and the spec `wrSpec c103Wr`. -/
 theorem c103_jg {V : Addr → Byte} {spec : Nat → CSpec} {G : Nat → (Addr → Byte) → Prop} {sp fb : Addr}
     {tg : Nat → Addr} {a₀ a₁ a₂ : BitVec 64} {m : Nat} (hCe : Glibc.CacheEnds prof) (c : Seg prof F Wl L s₀ o)
@@ -86,7 +93,6 @@ theorem c103_jg {V : Addr → Byte} {spec : Nat → CSpec} {G : Nat → (Addr �
   refine c103_runs hCe c hC hin hinH hfs htg hst hld hS hcn hcnf hcna hcpu htab hgw (fun W hJ => htb W hJ.2)
     fun W V' hJ hv => jg_wrk hm hc (by omega) hspec hD (by decide) hB hXw (fun a h1 h2 => ?_)
       (hG W V' · hv) hJ
-  simp only [c103Wr, InR, or_false] at h1
-  exact hv a (by omega) (by unfold C103.Gw; omega)
+  exact hv a (st_out h2) (gw_out h1)
 
 end FV7z.Ctor
