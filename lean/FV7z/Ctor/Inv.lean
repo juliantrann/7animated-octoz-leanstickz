@@ -63,6 +63,14 @@ theorem InR_sep {n : Nat} {as : List (Nat × Nat)} (ha : InR as n) :
       omega
     · exact InR_sep ha (fun x hx y hy => hb x hx y (List.mem_cons_of_mem _ hy)) h
 
+/-- `n` in `as` is in `as ++ bs`. -/
+theorem InR_append_left {n : Nat} {bs : List (Nat × Nat)} : ∀ {as : List (Nat × Nat)}, InR as n → InR (as ++ bs) n
+  | [], h => h.elim
+  | (_, _) :: _, h => by
+    rcases h with h | h
+    · exact Or.inl h
+    · exact Or.inr (InR_append_left h)
+
 /-- The registrars' tables with their counts, `[regTab r, regCnt r + 4)` for `r = 0, 1, 2`. -/
 def tabs : List (Nat × Nat) := [(7990720, 7991300), (7981312, 7981828), (7981024, 7981284)]
 
