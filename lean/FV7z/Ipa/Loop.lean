@@ -29,7 +29,7 @@ abbrev Kab (A B : Addr) (q : Nat) (x : Addr) : Prop :=
 
 /-- The bytes the loop keeps. -/
 abbrev Kp (fb r A B : Addr) (q : Nat) (x : Addr) : Prop :=
-  x.toNat < 7940480 ∨ Mal.Kf fb x ∨ r.toNat - 80 ≤ x.toNat ∨ x.toNat + 88 ≤ r.toNat ∧ Kab A B q x
+  x.toNat < 7940480 ∨ Mal.Kf fb x ∨ r.toNat - 80 ≤ x.toNat ∨ x.toNat < r.toNat - 88 ∧ Kab A B q x
 
 /-- A load of bytes two maps agree on. -/
 theorem kr {V V₁ : Addr → Byte} {P : Addr → Prop} (h : ∀ a, P a → V a = V₁ a) {x : Addr} {n : Nat}
@@ -74,7 +74,7 @@ def Fin450 (prof : Profile) (L : List (Addr × List Byte)) (o : Oracle) (gev : L
     Y.cpu.gpr.r13 = rdq(V₁, r + 18446744073709551592#64) → Y.cpu.gpr.r14 = rdq(V₁, r + 18446744073709551600#64) →
     Y.cpu.gpr.r15 = rdq(V₁, r + 18446744073709551608#64) → Y.cpu.gpr.rbp = rdq(V₁, r) →
     (∀ x : Addr, (x.toNat < 7937712 ∨ 7937720 ≤ x.toNat ∧ x.toNat < 7940480 ∨ r.toNat - 80 ≤ x.toNat ∨
-      Mal.Kf fb x ∨ x.toNat + 88 ≤ r.toNat ∧ Kab A B q x) → V' x = V₁ x) → GoG prof L o gev gP gE Y t'
+      Mal.Kf fb x ∨ x.toNat < r.toNat - 88 ∧ Kab A B q x) → V' x = V₁ x) → GoG prof L o gev gP gE Y t'
 
 set_option maxHeartbeats 4000000 in
 /-- After the last element (`i = 3`, at 384): the ends of the lists, then the epilogue (425) to the `ret`. -/
@@ -261,7 +261,7 @@ theorem step (c : Seg prof F Wl L s₀ o) (hin : CodeIn L ipa_at ipa)
   have hk₂ : ∀ x, Kp fb r A B q x → V₂ x = V₁ x := fun x hx => by
     have hx' : x.toNat < 7940480 ∨ 7943128 ≤ x.toNat ∧ (x.toNat < 8032256 ∨ x.toNat + 40 ≤ fb.toNat ∨
         fb.toNat ≤ x.toNat ∧ x.toNat < fb.toNat + 56) ∨ r.toNat - 80 ≤ x.toNat ∨
-        x.toNat + 88 ≤ r.toNat ∧ (x.toNat < B.toNat ∨ B.toNat + 160 * q ≤ x.toNat) := by
+        x.toNat < r.toNat - 88 ∧ (x.toNat < B.toNat ∨ B.toNat + 160 * q ≤ x.toNat) := by
       rcases hx with h | h | h | h
       · exact Or.inl h
       · exact Or.inr (Or.inl (Mal.Kf.lt h))
