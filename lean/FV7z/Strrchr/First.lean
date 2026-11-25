@@ -45,7 +45,7 @@ theorem path41 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e' sr2) {X : State} 
       Y.cpu.gpr.rdi = g₀.rdi →
       (∀ i, Y.cpu.gpr.rcx.getLsbD i = (decide (i < 16) && decide (V (Addr.add g₀.rdi i) = g₀.rsi.setWidth 8))) →
       xsOf Y.cpu.vec.zmm (xmmOf 1) = Bc g₀.rsi → xsOf Y.cpu.vec.zmm (xmmOf 2) = 0 → 16 ≤ n →
-      GoG prof L o gev gP gE Y t')
+      g₀.rdi.toNat % 4096 ≤ 4032 → GoG prof L o gev gP gE Y t')
     (hR : RetR prof F Wl L s₀ o gev gP gE V g₀ n) : GoG prof L o gev gP gE X t := by
   have hp := g₀.rdi.isLt
   -- `movdqu xmm0, [rdi]`, `pxor xmm2, xmm2`, `movdqa xmm3, xmm0`, `pcmpeqb xmm0, xmm1`, `pcmpeqb xmm3, xmm2`,
@@ -88,7 +88,7 @@ theorem path41 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e' sr2) {X : State} 
       rw [h0, getLsbD_zero', decide_eq_true (show n < 16 by omega), hz] at hb
       exact absurd hb (by decide)
     refine h112 Y₃ t₃ hK₃ hA₃ hr₃ (by rw [hg₃]; exact hkp₂) (by rw [hg₃]; exact hdi₂) (by rw [hg₃]; exact hcx)
-      ?_ ?_ h16
+      ?_ ?_ h16 hq
     · rw [hv₃, hv₂, hv₁]
       simp (disch := decide) only [xset_ne, hx1]
     · rw [hv₃, hv₂, hv₁]
@@ -141,7 +141,7 @@ theorem entry (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e' sr2) {X : State} {
       Y.cpu.gpr.rdi = g₀.rdi →
       (∀ i, Y.cpu.gpr.rcx.getLsbD i = (decide (i < 16) && decide (V (Addr.add g₀.rdi i) = g₀.rsi.setWidth 8))) →
       xsOf Y.cpu.vec.zmm (xmmOf 1) = Bc g₀.rsi → xsOf Y.cpu.vec.zmm (xmmOf 2) = 0 → 16 ≤ n →
-      GoG prof L o gev gP gE Y t')
+      g₀.rdi.toNat % 4096 ≤ 4032 → GoG prof L o gev gP gE Y t')
     (hR : RetR prof F Wl L s₀ o gev gP gE V g₀ n) : GoG prof L o gev gP gE X t := by
   -- `endbr64`, `movd xmm1, esi`, `mov rax, rdi`, `and eax, 4095`, `punpcklbw xmm1, xmm1`, `cmp rax, 4032`
   refine c.s_blkV hin (b0 prof) hK hA hrip ?_
