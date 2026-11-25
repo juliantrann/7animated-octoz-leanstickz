@@ -152,6 +152,7 @@ theorem ndi_ok {pl pc ip cpy : List Byte} {Pm : (Addr → Byte) → Prop} {E : E
     (hinX : CodeIn L Mnx.mnx_at Mnx.mnx) (hinI : CodeIn L Imm.imm_at Imm.imm)
     (hinl : CodeIn L 4198664#64 sl) (hl0 : 0 < sl.length) (hlenA : Str.LenAt prof L o 4198664#64 Pk)
     (hinz : CodeIn L 4198528#64 ms) (hz0 : 0 < ms.length) (hset : Ipa.SetAt prof L o 4198528#64 Ps)
+    (hgf : Ipa.GotF F)
     (hint : CodeIn L Tgv.tgv_at Tgv.tgv)
     {hw : Addr} {cnt Ec H sz : Nat}
     (hn : hw = 2#64 ∧ cnt = 3 ∧ Ec = 8 ∧ H = 4 ∧ sz = 151 ∨ hw = 6#64 ∧ cnt = 4 ∧ Ec = 16 ∧ H = 8 ∧ sz = 320)
@@ -219,7 +220,8 @@ theorem ndi_ok {pl pc ip cpy : List Byte} {Pm : (Addr → Byte) → Prop} {E : E
     ndi_all (ip := ip) (Pa := fun k W => Hp (withNew F N) (N ++ Wl) fsb (sp.toNat - 4144) (1072 * k + 73840) W)
     (ka := 0) c mc cx hgo
     hsn htop hpw hst hsm hlo hbs hbuf hfr hpf hpn hpz hpp hof hoz hps hpre hinc hc0 hcpy h1 h2 h3 h4 h5 hK hA hrip hsp
-    ke hin hinh hcpq hinm hm0 (Mal.at_ok hinX hinI) (by omega) (fun _ _ => Iff.rfl) hinl hl0 hlenA hinz hz0 hset hint hn
+    ke hin hinh hcpq hinm hm0 (Mal.at_ok hinX hinI) (by omega) (fun _ _ => Iff.rfl) hinl hl0 hlenA hinz hz0 hset
+    hgf hint hn
     hPq
     (fun x n s Vc M g hx h2n hn4 _ hs1 hg hVc hAf W₁ hW => hpa c mc hpre hsn hlo hbs hx h2n hn4 hs1 hg hVc hAf hW)
     hPk hPs he hal hFs hpg

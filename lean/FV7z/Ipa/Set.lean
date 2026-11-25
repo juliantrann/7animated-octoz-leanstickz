@@ -11,6 +11,12 @@ does is a hypothesis here, `Pm` the state of its GOT slot; to be discharged with
 - `SetAt`: called with a return address in code, the `rdx` bytes at `rdi` to store to, apart from the return
   address: the run reaches the return address with `rax = rdi`, the registers a call keeps kept, the bytes at `rdi`
   the low byte of `rsi`, the other bytes as they were.
+
+What the bodies need besides (`Memset/Erms.lean`, `Memset/Sse2.lean`, `Memset/Plt.lean`): the GOT's slots bytes of
+the footprint's data (the PLT's `jmp` reads one; `Strlen.GotFoot`, spelt out here), `rdi + rdx` short of `2 ^ 64`
+(the SSE2 variants round it down to 64), the direction flag clear (else `rep stosb` stores downwards) and the 8 bytes
+at `rsp` short of the top of the address space. `Memset.setAt_plt` proves `SetAt` for the processors without both
+AVX and AVX2.
 -/
 open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn
 
@@ -18,18 +24,22 @@ namespace FV7z.Ipa
 
 variable {prof : Profile} {L : List (Addr × List Byte)} {o : Oracle}
 
+/-- The GOT's slots, `[0x792018, 0x792110)`, bytes of the footprint's data (`Strlen.GotFoot`). -/
+abbrev GotF (F : Footprint) : Prop := ∀ a : Addr, 0x792018 ≤ a.toNat → a.toNat < 0x792110 → Foot F.data a
+
 /-- What a call of `memset` at `e` does (assumed; see the module doc). -/
 def SetAt (prof : Profile) (L : List (Addr × List Byte)) (o : Oracle) (e : Addr) (Pm : (Addr → Byte) → Prop) :
     Prop :=
   ∀ {F : Footprint} {Wl : List Rgn} {s₀ : State} {gev : List Event} {gP : State → Nat → List Event → Prop}
     {gE : Outcome → List Event → Prop} {X : State} {t : Nat} {V : Addr → Byte} {e' : Addr} {code : List Byte}
-    {j : Nat}, Seg prof F Wl L s₀ o → KeptW Wl s₀ X → Agree F X.proc.mm.mem V → X.cpu.rip = e → Pm V →
+    {j : Nat}, Seg prof F Wl L s₀ o → GotF F → KeptW Wl s₀ X → Agree F X.proc.mm.mem V → X.cpu.rip = e → Pm V →
     CodeIn L e' code → j < code.length → rdq(V, X.cpu.gpr.rsp) = e'.add j →
     (∀ i < 8, Foot F.data (Addr.add X.cpu.gpr.rsp i)) →
     (∀ i < X.cpu.gpr.rdx.toNat, Foot Wl (Addr.add X.cpu.gpr.rdi i)) →
-    X.cpu.gpr.rdi.toNat + X.cpu.gpr.rdx.toNat ≤ 2 ^ 64 →
+    X.cpu.gpr.rdi.toNat + X.cpu.gpr.rdx.toNat < 2 ^ 64 →
     (X.cpu.gpr.rdi.toNat + X.cpu.gpr.rdx.toNat ≤ X.cpu.gpr.rsp.toNat ∨
       X.cpu.gpr.rsp.toNat + 8 ≤ X.cpu.gpr.rdi.toNat) →
+    X.cpu.rflags.df = false → X.cpu.gpr.rsp.toNat + 8 ≤ 2 ^ 64 →
     (∀ Z t' V₂, KeptW Wl s₀ Z → Agree F Z.proc.mm.mem V₂ → Z.cpu.rip = e'.add j →
       Z.cpu.gpr.rsp = X.cpu.gpr.rsp + 8 → Z.cpu.gpr.rax = X.cpu.gpr.rdi →
       Z.cpu.gpr.rbx = X.cpu.gpr.rbx → Z.cpu.gpr.rbp = X.cpu.gpr.rbp → Z.cpu.gpr.r12 = X.cpu.gpr.r12 →

@@ -189,7 +189,8 @@ set_option maxHeartbeats 4000000 in
 `b + 40 q` (`i < 3`), or to the `ret` (`i = 3`). -/
 theorem step (c : Seg prof F Wl L s₀ o) (hin : CodeIn L ipa_at ipa)
     {ms : List Byte} (hins : CodeIn L 4198528#64 ms) (hms0 : 0 < ms.length) {Ps : (Addr → Byte) → Prop}
-    (hset : SetAt prof L o 4198528#64 Ps) {V₁ : Addr → Byte} {n q i bh : Nat} {r b a A B : Addr}
+    (hset : SetAt prof L o 4198528#64 Ps)
+    (hgf : Ipa.GotF F) (hdf₀ : s₀.cpu.rflags.df = false) {V₁ : Addr → Byte} {n q i bh : Nat} {r b a A B : Addr}
     (hq : n = 8 ∧ q = 2 ∨ n = 16 ∧ q = 3) (hi : i ≤ 3)
     (hPs : ∀ W : Addr → Byte, (∀ x : Addr, x.toNat < 7940480 → W x = V₁ x) → Ps W)
     (hr : 8029560 + 88 ≤ r.toNat) (hr2 : r.toNat + 16 ≤ 2 ^ 64)
@@ -242,7 +243,7 @@ theorem step (c : Seg prof F Wl L s₀ o) (hin : CodeIn L ipa_at ipa)
   have di₂ : Y₂.cpu.gpr.rdi = b + 40#64 := by
     rw [hg₂, set4_rdi, hg₁]; show X.cpu.gpr.r15 + 40#64 = _; rw [h15]
   have dx₂ : Y₂.cpu.gpr.rdx = BitVec.ofNat 64 (4 * n) := by rw [hg₂, set4_rdx, hg₁]; exact h13
-  refine hset c hK₂ hA₂ hr₂ (hPs _ fun x hx => ?_) hin (lt_len (j := 281) (by omega)) ?_ ?_ ?_ ?_ ?_ ?_
+  refine hset c hgf hK₂ hA₂ hr₂ (hPs _ fun x hx => ?_) hin (lt_len (j := 281) (by omega)) ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_
   · rw [Tun.Vst_out _ _ _ _ (by ifd) (by ifd)]; exact hkp x (Or.inl hx)
   · rw [s₂, Tun.rd_Vst_self _ _ _ (toBytesLE_length _ _) (by ifd), ofBytesLE_toBytesLE (n := 8) rfl]
     try rfl
@@ -250,6 +251,8 @@ theorem step (c : Seg prof F Wl L s₀ o) (hin : CodeIn L ipa_at ipa)
   · rw [di₂, dx₂]; ireg hWB
   · rw [di₂, dx₂]; ipd
   · rw [di₂, dx₂, s₂]; ifd
+  · exact hK₂.df.trans hdf₀
+  · rw [s₂]; ifd
   intro Z t₃ V₂ hK₃ hA₃ hr₃ hs₃ _ hbx₃ hbp₃ h12₃ h13₃ h14₃ h15₃ _ hout₃
   have sZ : Z.cpu.gpr.rsp = r + 18446744073709551536#64 := by rw [hs₃, s₂, p88]
   have bpZ : Z.cpu.gpr.rbp = r := by rw [hbp₃, hg₂, set4_rbp, hg₁]; exact hbp
@@ -296,7 +299,8 @@ set_option maxHeartbeats 4000000 in
 the `ret`. -/
 theorem loop (c : Seg prof F Wl L s₀ o) (hin : CodeIn L ipa_at ipa)
     {ms : List Byte} (hins : CodeIn L 4198528#64 ms) (hms0 : 0 < ms.length) {Ps : (Addr → Byte) → Prop}
-    (hset : SetAt prof L o 4198528#64 Ps) {V₁ : Addr → Byte} {n q : Nat} {r A B : Addr}
+    (hset : SetAt prof L o 4198528#64 Ps)
+    (hgf : Ipa.GotF F) (hdf₀ : s₀.cpu.rflags.df = false) {V₁ : Addr → Byte} {n q : Nat} {r A B : Addr}
     (hq : n = 8 ∧ q = 2 ∨ n = 16 ∧ q = 3)
     (hPs : ∀ W : Addr → Byte, (∀ x : Addr, x.toNat < 7940480 → W x = V₁ x) → Ps W)
     (hr : 8029560 + 88 ≤ r.toNat) (hr2 : r.toNat + 16 ≤ 2 ^ 64)
@@ -336,14 +340,14 @@ theorem loop (c : Seg prof F Wl L s₀ o) (hin : CodeIn L ipa_at ipa)
     induction d with
     | zero =>
       intro i hd X t V b a hK hA hrip hsp hbp h15 hb h14 ha h12 hbx h13 hkp
-      exact step c hin hins hms0 hset (bh := B.toNat + 160 * _) hq0 (by omega) hPs hr hr2 hFs hFR hW7a hWb
+      exact step c hin hins hms0 hset hgf hdf₀ (bh := B.toNat + 160 * _) hq0 (by omega) hPs hr hr2 hFs hFR hW7a hWb
         h72 h64 h56 h80 hlen hsl (by omega) (by omega) (by omega) (fun h => absurd h (by omega)) hB2
         (fun x h1 h2 => hWB x (by omega) h2) (by omega) (by omega) (by omega)
         (fun x h1 h2 => hWA x (by omega) (by omega)) (by omega) (by omega) (by omega) (by omega) (by omega)
         (by omega) X t V hK hA hrip hsp hbp h15 h14 h12 hbx h13 hkp (fun h => absurd h (by omega)) (fun _ => kfin)
     | succ d ih =>
       intro i hd X t V b a hK hA hrip hsp hbp h15 hb h14 ha h12 hbx h13 hkp
-      exact step c hin hins hms0 hset (bh := B.toNat + 160 * _) hq0 (by omega) hPs hr hr2 hFs hFR hW7a hWb
+      exact step c hin hins hms0 hset hgf hdf₀ (bh := B.toNat + 160 * _) hq0 (by omega) hPs hr hr2 hFs hFR hW7a hWb
         h72 h64 h56 h80 hlen hsl (by omega) (by omega) (by omega) (fun _ => by omega) hB2
         (fun x h1 h2 => hWB x (by omega) h2) (by omega) (by omega) (by omega)
         (fun x h1 h2 => hWA x (by omega) (by omega)) (by omega) (by omega) (by omega) (by omega) (by omega)

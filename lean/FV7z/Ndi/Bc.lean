@@ -119,6 +119,7 @@ theorem ndi_pc {pl pc : List Byte} {Pm : (Addr → Byte) → Prop} {E : Ev} {V W
     {mb : Nat} (hmb : 16 ≤ mb) (hPaH : ∀ k W, Pa k W ↔ Mal.Hp F Wl fb hi (1072 * k + mb) W)
     (hinl : CodeIn L 4198664#64 sl) (hl0 : 0 < sl.length) (hlenA : Str.LenAt prof L o 4198664#64 Pk)
     (hinz : CodeIn L 4198528#64 ms) (hz0 : 0 < ms.length) (hset : Ipa.SetAt prof L o 4198528#64 Ps)
+    (hgf : Ipa.GotF F) (hdf₀ : s₀.cpu.rflags.df = false)
     (hint : CodeIn L Tgv.tgv_at Tgv.tgv)
     {h : Addr} {cnt Ec H s : Nat}
     (hn : h = 2#64 ∧ cnt = 3 ∧ Ec = 8 ∧ H = 4 ∧ s = 151 ∨ h = 6#64 ∧ cnt = 4 ∧ Ec = 16 ∧ H = 8 ∧ s = 320)
@@ -197,7 +198,7 @@ theorem ndi_pc {pl pc : List Byte} {Pm : (Addr → Byte) → Prop} {E : Ev} {V W
       Vst W' (sp - 8#64) (toBytesLE (ndi_at.add 2063) 8) a = V a :=
     fun a ha => vi a (.inl (by omega)) (by unfold Hv; omega)
   -- `_dl_init_paths`
-  refine Ipa.whole c hfs hin hinh hinc hc0 hcpy hinm hm0 hmal hmb hPaH hinl hl0 hlenA hinz hz0 hset hint
+  refine Ipa.whole c hfs hin hinh hinc hc0 hcpy hinm hm0 hmal hmb hPaH hinl hl0 hlenA hinz hz0 hset hgf hdf₀ hint
     (V := Vst W' (sp - 8#64) (toBytesLE (ndi_at.add 2063) 8)) (e := sp - 8#64) (p := p) hn
     (fun W hW => hPq W fun a h1 h2 h3 => (hW a h1 h2).trans (vi a (.inl (by omega)) h3))
     (fun W hW => hPa W fun a h1 h2 h3 => (hW a (bc_lt h8 h1) h2).trans (vi a (.inl (by omega)) h3))
@@ -313,6 +314,7 @@ theorem ndi_bc {pl pc : List Byte} {Pm : (Addr → Byte) → Prop} {E : Ev} {V W
     {mb : Nat} (hmb : 16 ≤ mb) (hPaH : ∀ k W, Pa k W ↔ Mal.Hp F Wl fb hi (1072 * k + mb) W)
     (hinl : CodeIn L 4198664#64 sl) (hl0 : 0 < sl.length) (hlenA : Str.LenAt prof L o 4198664#64 Pk)
     (hinz : CodeIn L 4198528#64 ms) (hz0 : 0 < ms.length) (hset : Ipa.SetAt prof L o 4198528#64 Ps)
+    (hgf : Ipa.GotF F) (hdf₀ : s₀.cpu.rflags.df = false)
     (hint : CodeIn L Tgv.tgv_at Tgv.tgv)
     {h : Addr} {cnt Ec H s : Nat}
     (hn : h = 2#64 ∧ cnt = 3 ∧ Ec = 8 ∧ H = 4 ∧ s = 151 ∨ h = 6#64 ∧ cnt = 4 ∧ Ec = 16 ∧ H = 8 ∧ s = 320)
@@ -374,7 +376,8 @@ theorem ndi_bc {pl pc : List Byte} {Pm : (Addr → Byte) → Prop} {E : Ev} {V W
   refine ndi_b (ph := 4194368#64) (pn := 8#64) c cx hin (by rw [Ipa.ipa_length]; decide) h1 hd1 hd2 h4 h5 hK hA
     hM hrip hsp ?_
   intro Z t₁ W' hKZ hAZ hMZ hrZ hspZ hdiZ h15Z
-  exact ndi_pc c cx hfs hd1 hd2 h4 h5 hin hinh hinc hc0 hcpy hinm hm0 hmal hmb hPaH hinl hl0 hlenA hinz hz0 hset hint hn
+  exact ndi_pc c cx hfs hd1 hd2 h4 h5 hin hinh hinc hc0 hcpy hinm hm0 hmal hmb hPaH hinl hl0 hlenA hinz hz0 hset
+    hgf hdf₀ hint hn
     hPq
     hPa hPk hPs he hal hFs hwl hhi hfsp
     hpg hx1 hx1z hx2 hx2z htls hU hm6 hhw hfh hfm hpl0 hf1 hf2 hWb hfN hW7a hW7b hFR hlenV hslV

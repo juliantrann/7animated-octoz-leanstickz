@@ -121,6 +121,7 @@ theorem lif_ok {pl pc ip cpy : List Byte} {Pm : (Addr → Byte) → Prop} {E : E
     (hinX : CodeIn L Mnx.mnx_at Mnx.mnx) (hinI : CodeIn L Imm.imm_at Imm.imm)
     (hinl : CodeIn L 4198664#64 sl) (hl0 : 0 < sl.length) (hlenA : Str.LenAt prof L o 4198664#64 Pk)
     (hinz : CodeIn L 4198528#64 ms) (hz0 : 0 < ms.length) (hset : Ipa.SetAt prof L o 4198528#64 Ps)
+    (hgf : Ipa.GotF F)
     (hint : CodeIn L Tgv.tgv_at Tgv.tgv)
     {hw : Addr} {cnt Ec H sz : Nat}
     (hn : hw = 2#64 ∧ cnt = 3 ∧ Ec = 8 ∧ H = 4 ∧ sz = 151 ∨ hw = 6#64 ∧ cnt = 4 ∧ Ec = 16 ∧ H = 8 ∧ sz = 320)
@@ -213,7 +214,8 @@ theorem lif_ok {pl pc ip cpy : List Byte} {Pm : (Addr → Byte) → Prop} {E : E
   refine ndi_ok (ip := ip) (X := Y) (W := W) (sp := sp) (e₂ := Lif.lif_at) (code₂ := Lif.lif) (j₂ := 70) c mc cx hgo
     hsn htop
     hpw hst hsm hlo hbs hbuf hfr hpf hpn hpz hpp hof hoz hps hpre hinc hc0 hcpy h1 h2 h3 h4 h5 hKY hAY
-    (by rw [addr_add_zero]; exact hrY) hYs ke hin hinh hcpq hinm hm0 hinX hinI hinl hl0 hlenA hinz hz0 hset hint hn
+    (by rw [addr_add_zero]; exact hrY) hYs ke hin hinh hcpq hinm hm0 hinX hinI hinl hl0 hlenA hinz hz0 hset hgf
+    hint hn
     hPq hPk hPs he hal hFs hpg hx1 hx1z hx2 hx2z htls hU hm6 hhw hfh hfm hpl0 hf1 hf2 hWb hfN hW7a hW7b hFR hlenV
     hslV hpl hid him hfp hph hpgs hla hmg hGo hGc hfit hGw hGr hcode hww hlG hl hinL
     (by rw [Lif.lif_length]; decide) (lif_ret hR hs hW) ?_
