@@ -86,9 +86,7 @@ theorem vc_3809 (hT : Te F Wl L fb g₀ V₀) (h : Ih g₀ V₀ 3809 n g V) : W_
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   obtain ⟨rfl, hm, hr⟩ := h
   try dsimp only at hr
-  have h15 : R15 r15 := by
-    rcases hr with ⟨e, -⟩ | ⟨e, -⟩
-    exacts [Or.inl e, Or.inr e]
+  have h15 : R15 r15 := hr.elim (fun h => Or.inl h.1) (fun h => Or.inr h.1)
   wpx [W_3809, W_3822, W_3828, W_4241, W_3951, o20, o21, o22, o33, o63, Op.lda, Op.sta, Op.sar64, Op.cqo, Op.not32,
     Op.setcc, Op.xor8, Op.sxr, Op.ldsx, Op.andh, Op.testmia, Op.stia, Op.ldzxa, Op.imul3ma, Op.zxr, Op.cmpmi, Op.cmpmia,
     Op.cmpmr, Op.xormf, Op.ldf, Op.shr32z]
@@ -233,8 +231,8 @@ theorem vc_4384 (h : Ih g₀ V₀ 4384 n g V) : W_4384 F Wl (Nx g₀ V₀ n) g f
   wpx [W_4384, o76, Op.lda, Op.sta, Op.sar64, Op.cqo, Op.not32, Op.setcc, Op.xor8, Op.sxr, Op.ldsx, Op.andh, Op.testmia,
     Op.stia, Op.ldzxa, Op.imul3ma, Op.zxr, Op.cmpmi, Op.cmpmia, Op.cmpmr, Op.xormf, Op.ldf, Op.shr32z]
   intro _ _
-  have r9b : ((~~~((r9.setWidth 32 ||| 4294967295#32) <<< ((((rcx.setWidth 32 + 1#32)).setWidth 8).toNat % 32)) &&&
-      (rbx + 18446744073709551615#64).setWidth 32).setWidth 64).setWidth 32 |>.toNat ≤ 1023 := by
+  have r9b : (((~~~((r9.setWidth 32 ||| 4294967295#32) <<< ((((rcx.setWidth 32 + 1#32)).setWidth 8).toNat % 32)) &&&
+      (rbx + 18446744073709551615#64).setWidth 32).setWidth 64).setWidth 32).toNat ≤ 1023 := by
     rw [sw_64_32]
     exact Nat.le_trans (and_le_r _ _) (by rw [dec64 rbx hb1]; omega)
   rcases h8 with rfl | rfl
@@ -264,8 +262,8 @@ theorem vc_4598 (h : Ih g₀ V₀ 4598 n g V) : W_4598 F Wl (Nx g₀ V₀ n) g f
     Op.stia, Op.ldzxa, Op.imul3ma, Op.zxr, Op.cmpmi, Op.cmpmia, Op.cmpmr, Op.xormf, Op.ldf, Op.shr32z]
   intro _ _
   refine Or.inl ⟨_, by c_om, rfl, hm, ⟨h15, ?_, h13, h10, Or.inl h8⟩⟩
-  show ((~~~((r9.setWidth 32 ||| 4294967295#32) <<< ((((rcx.setWidth 32 + 1#32)).setWidth 8).toNat % 32)) &&&
-      rbx.setWidth 32).setWidth 64).setWidth 32 |>.toNat ≤ 1023
+  show (((~~~((r9.setWidth 32 ||| 4294967295#32) <<< ((((rcx.setWidth 32 + 1#32)).setWidth 8).toNat % 32)) &&&
+      rbx.setWidth 32).setWidth 64).setWidth 32).toNat ≤ 1023
   rw [sw_64_32]
   exact Nat.le_trans (and_le_r _ _) (by omega)
 
