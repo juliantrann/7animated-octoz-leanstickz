@@ -1,9 +1,6 @@
-import FV7z.Ctor.Spec
+import FV7z.Ctor.HO
 open FV7z
-#print axioms FV7z.Ctor.cwS
-#print axioms FV7z.Ctor.spec_wr
-#print axioms FV7z.Ctor.spec_done
-#print axioms FV7z.Ctor.spec_X90
-#print axioms FV7z.Ctor.spec_X103
-#print axioms FV7z.Ctor.spec_Sh
-#print axioms FV7z.Ctor.spec_ShD
+#print axioms FV7z.Ctor.at_ctor_gs
+#print axioms FV7z.Ctor.hO_of
+#print axioms FV7z.Ctor.o90
+#print axioms FV7z.Ctor.o103
