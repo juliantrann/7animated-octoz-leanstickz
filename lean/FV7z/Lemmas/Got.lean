@@ -6,6 +6,7 @@ A PLT stub `jmp qword [rip + d]` reads its slot of the GOT, `[0x792018, 0x792110
 through the PLT asks that these bytes be data of the caller's footprint (`GotF`; `Strlen.GotFoot` is the same).
 -/
 namespace FV7z
+open ZellicX86 Decode FV7z.Leaf FV7z.Fn
 
 /-- The GOT's slots, `[0x792018, 0x792110)`, bytes of the footprint's data. -/
 abbrev GotF (F : Footprint) : Prop := ∀ a : Addr, 0x792018 ≤ a.toNat → a.toNat < 0x792110 → Foot F.data a
