@@ -90,6 +90,7 @@ theorem ndi_all {pl pc ip cpy : List Byte} {Pm : (Addr → Byte) → Prop} {E : 
     (hcpq : Gor.PcpyAt prof L o 4198592#64 Pq)
     (hinm : CodeIn L 6500704#64 mlc) (hm0 : 0 < mlc.length)
     (hmal : Mal.At prof (withNew F N) (N ++ Wl) L o fsb (sp.toNat - 4144) 6500704#64 Pa)
+    (hPaH : ∀ k W, Pa k W ↔ Mal.Hp (withNew F N) (N ++ Wl) fsb (sp.toNat - 4144) (1072 * k + 16) W)
     (hinl : CodeIn L 4198664#64 sl) (hl0 : 0 < sl.length) (hlenA : Str.LenAt prof L o 4198664#64 Pk)
     (hinz : CodeIn L 4198528#64 ms) (hz0 : 0 < ms.length) (hset : Ipa.SetAt prof L o 4198528#64 Ps)
     (hint : CodeIn L Tgv.tgv_at Tgv.tgv)
@@ -209,7 +210,7 @@ theorem ndi_all {pl pc ip cpy : List Byte} {Pm : (Addr → Byte) → Prop} {E : 
       (by omega)]; exact h4)
     (by rw [rd_of (V := fV W sp X.cpu.gpr) (x := 7937248) (n := 4) (by omega) fun a a1 a2 =>
       LB a (by omega)]; exact h5)
-    hin hinh hinc hc0 hcpq hinm hm0 hmal hinl hl0 hlenA hinz hz0 hset hint hn
+    hin hinh hinc hc0 hcpq hinm hm0 hmal hPaH hinl hl0 hlenA hinz hz0 hset hint hn
     (fun W₁ hW => hPq W₁ fun a a1 a2 a3 => (hW a a1 a2 a3).trans (LB a a1))
     (fun W₁ hW => hPa x n s Vc M g hx h2n hn4 h1s hs1 hg' hVc hAf W₁ fun a a1 a2 a3 a4 a5 =>
       (hW a a1 a4 a5).trans (hout a a2 a3))

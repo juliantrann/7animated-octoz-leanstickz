@@ -1,5 +1,4 @@
-import FV7z.Mal.HeapF
+import FV7z.Ndi.Hpa
 open FV7z
-#print axioms FV7z.Mal.HpR.keep
-#print axioms FV7z.Mal.HpR.mal
-#print axioms FV7z.Mal.HpR.addLo
+#print axioms FV7z.Ipa.whole
+#print axioms FV7z.Ndi.ndi_ok

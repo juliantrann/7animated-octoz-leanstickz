@@ -153,7 +153,9 @@ theorem vc_168 {g : Gprs} {f : Rflags} {V : Addr → Byte} {n q : Nat} (hq : n =
       rdq(V', g.rbp + 18446744073709551544#64) = BitVec.ofNat 64 (2 ^ 64 - 40 * q) ∧
       (∀ a : Addr, (a.toNat < 7937664 ∨ 7937720 ≤ a.toNat ∧ a.toNat < 7940480 ∨
         g.rbp.toNat - 80 ≤ a.toNat ∧ a.toNat < g.rbp.toNat - 72 ∨ g.rbp.toNat - 56 ≤ a.toNat) → V' a = V a) ∧
-      (∀ a : Addr, Mal.Kf fb a → V' a = V a)) g f V := by
+      (∀ a : Addr, Mal.Kf fb a → V' a = V a) ∧
+      (∀ a : Addr, 7940480 ≤ a.toNat ∧ a.toNat < g.rbp.toNat - 88 ∧ (a.toNat < 8029552 ∨ 8029560 ≤ a.toNat) ∧
+        (a.toNat < g.r15.toNat ∨ g.r15.toNat + 160 * q ≤ a.toNat) → V' a = V a)) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at hbx hn hr hr2 hBl hBk hBh hWB hWF hBf ⊢
   subst hbx
@@ -195,7 +197,10 @@ theorem vc_153 {g : Gprs} {f : Rflags} {V : Addr → Byte} {n q : Nat} (hq : n =
       rdq(V', g.rbp + 18446744073709551544#64) = BitVec.ofNat 64 (2 ^ 64 - 40 * q) ∧
       (∀ a : Addr, (a.toNat < 7937664 ∨ 7937720 ≤ a.toNat ∧ a.toNat < 7940480 ∨
         g.rbp.toNat - 80 ≤ a.toNat ∧ a.toNat < g.rbp.toNat - 72 ∨ g.rbp.toNat - 56 ≤ a.toNat) → V' a = V a) ∧
-      (∀ a : Addr, Mal.Kf fb a → V' a = V a)) g f V := by
+      (∀ a : Addr, Mal.Kf fb a → V' a = V a) ∧
+      (∀ a : Addr, 7940480 ≤ a.toNat ∧ a.toNat < g.rbp.toNat - 88 ∧ (a.toNat < 8029552 ∨ 8029560 ≤ a.toNat) ∧
+        (a.toNat < g.r14.toNat ∨ g.r14.toNat + 8 ≤ a.toNat) ∧
+        (a.toNat < g.rax.toNat ∨ g.rax.toNat + 160 * q ≤ a.toNat) → V' a = V a)) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at hB hbx hn hr hr2 hBl hBk hBh hAl hAk hAh hWA hWB hWF hBf hAf ⊢
   have hr0 : 96 ≤ rbp.toNat := by omega
@@ -210,9 +215,10 @@ theorem vc_153 {g : Gprs} {f : Rflags} {V : Addr → Byte} {n q : Nat} (hq : n =
     refine ⟨fun hc => ?_, fun hc => ?_⟩
     · have h281 : (281 : Nat) = 267 := (h.1 hc).1
       omega
-    obtain ⟨-, h15, h14, h12, hbx', h13, hbp, hsp, h64, h72, hk, hkn⟩ := h.2 hc
+    obtain ⟨-, h15, h14, h12, hbx', h13, hbp, hsp, h64, h72, hk, hkn, hab⟩ := h.2 hc
     exact ⟨rfl, h15, h14, h12, hbx', h13, hbp, hsp, h64, h72, fun a ha => (hk a ha).trans (by iout),
-      fun a ha => (hkn a ha).trans (by have := Mal.Kf.lt ha; iout)⟩
+      fun a ha => (hkn a ha).trans (by have := Mal.Kf.lt ha; iout),
+      fun a ha => (hab a ⟨ha.1, ha.2.1, ha.2.2.1, ha.2.2.2.2⟩).trans (by obtain ⟨-, -, -, h4, -⟩ := ha; iout)⟩
   · exact hbx
   · (try dsimp only); rw [Tun.rd_Vst _ _ _ _ _ (by ifd) (by ifd) (by ifd)]; exact hn
   all_goals ((try dsimp only) <;> assumption)
