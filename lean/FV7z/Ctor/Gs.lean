@@ -100,7 +100,7 @@ theorem Gn.kept {n K : Nat} {W W' : Addr → Byte} (h : Gn F Wl fb hi n K W) (hn
     omega
 
 /-- The `fs` block and `hi` above the tables and globals `Gn` reads. -/
-theorem Gn.hi {n K : Nat} {W : Addr → Byte} (h : Gn F Wl fb hi n K W) (hK : 16 ≤ K) :
+theorem Gn.bnd {n K : Nat} {W : Addr → Byte} (h : Gn F Wl fb hi n K W) (hK : 16 ≤ K) :
     8029928 ≤ fb.toNat ∧ fb.toNat + 64 ≤ hi ∧ hi < 2 ^ 64 :=
   h.2.2.bnd hK
 
@@ -109,9 +109,9 @@ theorem Gs.kept {m : Nat} {W W' : Addr → Byte} (h : Gs F Wl fb hi n₀ k m W) 
     (hW : ∀ a : Addr, GRd hi a.toNat → W' a = W a) : Gs F Wl fb hi n₀ k m W' :=
   Gn.kept h (Nat.lt_of_le_of_lt (nOf_le n₀ m) hn) (Nat.le_trans hk (kOf_ge k m)) hW
 
-theorem Gs.hi {m : Nat} {W : Addr → Byte} (h : Gs F Wl fb hi n₀ k m W) (hk : 16 ≤ k) :
+theorem Gs.bnd {m : Nat} {W : Addr → Byte} (h : Gs F Wl fb hi n₀ k m W) (hk : 16 ≤ k) :
     8029928 ≤ fb.toNat ∧ fb.toNat + 64 ≤ hi ∧ hi < 2 ^ 64 :=
-  Gn.hi h (Nat.le_trans hk (kOf_ge k m))
+  Gn.bnd h (Nat.le_trans hk (kOf_ge k m))
 
 /-- `Gs` before `m` from `Gn` with its counts. -/
 theorem Gs.of {m n K : Nat} {W : Addr → Byte} (e : nOf n₀ m = n ∧ kOf k m = K) (h : Gn F Wl fb hi n K W) :
@@ -187,19 +187,19 @@ theorem g97 : ∀ W, Gs F Wl fb hi n₀ k 97 W → Gs F Wl fb hi n₀ k 98 (st97
 
 theorem g82 {sp : Addr} (hsp : hi + 1024 ≤ sp.toNat) :
     ∀ W W', Gs F Wl fb hi n₀ k 82 W → C82.Out sp W W' → Gs F Wl fb hi n₀ k 83 W' :=
-  fun _ _ h ho => have := h.hi hk; Gs.step ⟨by simp [nOf], by simp [kOf]⟩ (h.kept hn hk fun a ha =>
+  fun _ _ h ho => have := h.bnd hk; Gs.step ⟨by simp [nOf], by simp [kOf]⟩ (h.kept hn hk fun a ha =>
     ho a (by unfold GRd at ha; omega) (by unfold GRd at ha; omega))
 
 theorem g17 {sp : Addr} (hsp : hi + 1024 ≤ sp.toNat) :
     ∀ W V', Gs F Wl fb hi n₀ k 17 W → (∀ a : Addr, ¬ (sp.toNat - 80 ≤ a.toNat ∧ a.toNat < sp.toNat - 64) →
       ¬ (7980992 ≤ a.toNat ∧ a.toNat < 7980996) → V' a = W a) → Gs F Wl fb hi n₀ k 18 V' :=
-  fun _ _ h ho => have := h.hi hk; Gs.step ⟨by simp [nOf], by simp [kOf]⟩ (h.kept hn hk fun a ha =>
+  fun _ _ h ho => have := h.bnd hk; Gs.step ⟨by simp [nOf], by simp [kOf]⟩ (h.kept hn hk fun a ha =>
     ho a (by unfold GRd at ha; omega) (by unfold GRd at ha; omega))
 
 theorem g103 {sp : Addr} (hsp : hi + 1024 ≤ sp.toNat) :
     ∀ W V', Gs F Wl fb hi n₀ k 103 W → (∀ a : Addr, ¬ (sp.toNat - 256 ≤ a.toNat ∧ a.toNat < sp.toNat - 64) →
       ¬ C103.Gw a → V' a = W a) → Gs F Wl fb hi n₀ k 104 V' :=
-  fun _ _ h ho => have := h.hi hk; Gs.step ⟨by simp [nOf], by simp [kOf]⟩ (h.kept hn hk fun a ha =>
+  fun _ _ h ho => have := h.bnd hk; Gs.step ⟨by simp [nOf], by simp [kOf]⟩ (h.kept hn hk fun a ha =>
     ho a (by unfold GRd at ha; omega) (by unfold C103.Gw; unfold GRd at ha; omega))
 
 end steps
