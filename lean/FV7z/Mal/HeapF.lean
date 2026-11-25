@@ -11,6 +11,9 @@ apart from what `Gl` and `Hp` read.
 - `Gl.mvF`: `Gl` for bytes that agree on `GlF` but for `main_arena.top`; `Hp.cut`: `Hp` names its tcache `C` and
   top `T` (with their bounds), and holds for every byte map that agrees on `HpF fb C T`.
 - `Hp.mono`: a smaller budget, a larger `hi`; `Gl.foot`, `Hp.foot`: larger footprints.
+- `HpR R`: `Hp`, with the bytes `R` (the blocks `malloc` gave, words of `ld.so` in `.bss`) apart from what `Gl` reads
+  and below the top's size word; `HpR.keep`: stores to `R` keep it; `HpR.mal`: after a `malloc` (the facts of
+  `Mal.At` on the top), with the new block added to `R`; `HpR.addLo`: words of `.bss` added to `R`.
 -/
 open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn FV7z.Start
 open FV7z.Sbrk (rd_eq)
@@ -71,10 +74,10 @@ theorem Gl.mvF {C : Addr} (h : Gl F Wl fb C V) (hf1 : 8029928 ≤ fb.toNat) (hf2
 that agrees on `HpF fb C T`. -/
 theorem Hp.cut (h : Hp F Wl fb hi m V) (hm : 16 ≤ m) : ∃ C T : Addr, 8029928 ≤ fb.toNat ∧ fb.toNat + 48 ≤ T.toNat ∧
     8029888 ≤ C.toNat ∧ C.toNat + 128 ≤ T.toNat ∧ 8032256 ≤ T.toNat ∧ T.toNat + m ≤ hi ∧ hi < 2 ^ 64 ∧
-    rdq(V, 7940768#64) = T ∧ ∀ W : Addr → Byte, (∀ a : Addr, HpF fb C T a.toNat → W a = V a) →
-      Hp F Wl fb hi m W := by
+    rdq(V, 7940768#64) = T ∧ rdq(V, fb + 18446744073709551576#64) = C ∧
+    ∀ W : Addr → Byte, (∀ a : Addr, HpF fb C T a.toNat → W a = V a) → Hp F Wl fb hi m W := by
   obtain ⟨C, T, szw, sm, G, hf1, hf2, hc1, hc2, hT, hTh, hhi, htop, hsz, hsm, hle, hge, hTF⟩ := h
-  refine ⟨C, T, hf1, hf2, hc1, hc2, hT, hTh, hhi, htop, fun W hW => ?_⟩
+  refine ⟨C, T, hf1, hf2, hc1, hc2, hT, hTh, hhi, htop, G.tc, fun W hW => ?_⟩
   have hTl := T.isLt
   have e8 : (T + 8#64).toNat = T.toNat + 8 := by rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega
   have et : (7940768#64 : Addr).toNat = 7940768 := rfl
@@ -116,5 +119,80 @@ theorem Hp.foot {F' : Footprint} {Wl' : List Rgn} (h : Hp F Wl fb hi m V)
   obtain ⟨C, T, szw, sm, G, hf1, hf2, hc1, hc2, hT, hTh, hhi, htop, hsz, hsm, hle, hge, hTF⟩ := h
   exact ⟨C, T, szw, sm, G.foot hF hW, hf1, hf2, hc1, hc2, hT, hTh, hhi, htop, hsz, hsm, hle, hge,
     fun a a1 a2 => ⟨hW _ (hTF a a1 a2).1, hF _ (hTF a a1 a2).2⟩⟩
+
+/-- `Hp`, and the bytes `R` apart from what `Gl` reads (its tcache the word at `fs:-0x28`) and below the top's size
+word. -/
+def HpR (F : Footprint) (Wl : List Rgn) (fb : Addr) (hi m : Nat) (R : Nat → Prop) (V : Addr → Byte) : Prop :=
+  Hp F Wl fb hi m V ∧
+    ∀ a, R a → ¬ GlF fb (rdq(V, fb + 18446744073709551576#64)) a ∧ a < (rdq(V, 7940768#64)).toNat + 8
+
+/-- Stores to `R` (and outside `[0x792980, hi)`) keep `HpR R`. -/
+theorem HpR.keep {R : Nat → Prop} (h : HpR F Wl fb hi m R V) (hm : 16 ≤ m)
+    (hW : ∀ a : Addr, 7940480 ≤ a.toNat → a.toNat < hi → ¬ R a.toNat → W a = V a) : HpR F Wl fb hi m R W := by
+  obtain ⟨hp, hR⟩ := h
+  obtain ⟨C, T, hf1, hf2, hc1, hc2, hT, hTh, hhi, htop, htc, hcut⟩ := hp.cut hm
+  have hTl := T.isLt
+  have hF : ∀ a : Addr, HpF fb C T a.toNat → W a = V a := fun a ha => by
+    apply hW a
+    · unfold HpF GlF at ha; omega
+    · unfold HpF GlF at ha; omega
+    · intro hr
+      have := hR _ hr
+      rw [htc, htop] at this
+      unfold HpF at ha
+      rcases ha with ha | ha
+      · exact this.1 ha
+      · omega
+  have et : (7940768#64 : Addr).toNat = 7940768 := rfl
+  obtain ⟨-, -, f40⟩ := fofs fb (by omega) (by omega)
+  have etop : rdq(W, 7940768#64) = rdq(V, 7940768#64) := by
+    rw [rd_eq (V := V) (x := 7940768#64) (n := 8) (by rw [et]; omega) fun a a1 a2 =>
+      hF a (by unfold HpF GlF; rw [et] at a1 a2; omega)]
+  have etc : rdq(W, fb + 18446744073709551576#64) = rdq(V, fb + 18446744073709551576#64) := by
+    rw [rd_eq (V := V) (x := fb + 18446744073709551576#64) (n := 8) (by rw [f40]; omega) fun a a1 a2 =>
+      hF a (by unfold HpF GlF; rw [f40] at a1 a2; omega)]
+  exact ⟨hcut W hF, fun a ha => by rw [etop, etc]; exact hR a ha⟩
+
+/-- After a `malloc` (the top `T` before, the block `[p, p + n)` above `T + 16` and below the new top's size word,
+the bytes below `T + 8` but `main_arena.top` kept): `HpR` with the block added. -/
+theorem HpR.mal {R : Nat → Prop} {V₂ : Addr → Byte} {m₀ : Nat} {p : Addr} {n : Nat}
+    (h : HpR F Wl fb hi m₀ R V) (hm₀ : 16 ≤ m₀) (h₂ : Hp F Wl fb hi m V₂)
+    (hp1 : rdq(V, 7940768#64).toNat + 16 ≤ p.toNat) (hp2 : p.toNat + n ≤ rdq(V₂, 7940768#64).toNat + 8)
+    (hp3 : ∀ a : Addr, a.toNat < rdq(V, 7940768#64).toNat + 8 → ¬ (7940768 ≤ a.toNat ∧ a.toNat < 7940776) →
+      V₂ a = V a) :
+    HpR F Wl fb hi m (fun a => R a ∨ p.toNat ≤ a ∧ a < p.toNat + n) V₂ := by
+  obtain ⟨hp, hR⟩ := h
+  obtain ⟨C, T, hf1, hf2, hc1, hc2, hT, hTh, hhi, htop, htc, -⟩ := hp.cut hm₀
+  obtain ⟨-, -, f40⟩ := fofs fb (by omega) (by omega)
+  rw [htop] at hp1 hp3
+  have etc : rdq(V₂, fb + 18446744073709551576#64) = C := by
+    rw [rd_eq (V := V) (x := fb + 18446744073709551576#64) (n := 8) (by rw [f40]; omega) fun a a1 a2 =>
+      hp3 a (by rw [f40] at a1 a2; omega) (by rw [f40] at a1 a2; omega)]
+    exact htc
+  refine ⟨h₂, fun a ha => ?_⟩
+  rw [etc]
+  rcases ha with ha | ⟨h1, h2⟩
+  · have := hR a ha
+    rw [htc, htop] at this
+    exact ⟨this.1, by omega⟩
+  · exact ⟨by unfold GlF; omega, by omega⟩
+
+/-- Words of `.bss` past `main_arena` and `mp_` (but `perturb_byte`, `global_max_fast`) added to `R`. -/
+theorem HpR.addLo {R S : Nat → Prop} (h : HpR F Wl fb hi m R V) (hm : 16 ≤ m)
+    (hS : ∀ a, S a → 7942880 ≤ a ∧ a < 8013220 ∨ 8013232 ≤ a ∧ a < 8029888) :
+    HpR F Wl fb hi m (fun a => R a ∨ S a) V := by
+  obtain ⟨hp, hR⟩ := h
+  obtain ⟨C, T, hf1, hf2, hc1, hc2, hT, hTh, hhi, htop, htc, -⟩ := hp.cut hm
+  refine ⟨hp, fun a ha => ?_⟩
+  rcases ha with ha | ha
+  · exact hR a ha
+  · have := hS a ha
+    rw [htc, htop]
+    exact ⟨by unfold GlF; omega, by omega⟩
+
+/-- `HpR` for fewer bytes. -/
+theorem HpR.sub {R R' : Nat → Prop} (h : HpR F Wl fb hi m R V) (hR : ∀ a, R' a → R a) :
+    HpR F Wl fb hi m R' V :=
+  ⟨h.1, fun a ha => h.2 a (hR a ha)⟩
 
 end FV7z.Mal
