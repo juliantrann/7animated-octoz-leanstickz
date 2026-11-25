@@ -205,7 +205,6 @@ theorem sar_spec {V : Addr → Byte} {p B : Addr} {n r : Nat} {J : BitVec 64}
         addr_eq (a := B) (b := p) (i := i + (p.toNat - B.toNat)) (j := i) (by omega)]
       exact decide_eq_false (hnz i hi)
 
-set_option maxHeartbeats 4000000 in
 /-- From `+62`: the bits below 16 of the joined mask are clear, as the bytes there from `p` on are not 0. -/
 theorem bit3 {V : Addr → Byte} {p B : Addr} {n i : Nat} (hnz : ∀ k < n, V (Addr.add p k) ≠ 0) (h16 : 16 ≤ n)
     (hB : B.toNat = p.toNat / 16 * 16) (hri : p.toNat - B.toNat ≤ i) :
@@ -224,6 +223,7 @@ variable {prof : Profile} {L : List (Addr × List Byte)} {s₀ : State} {o : Ora
   {gev : List Event} {gP : State → Nat → List Event → Prop} {gE : Outcome → List Event → Prop}
   {e' : Addr} {V : Addr → Byte}
 
+set_option maxHeartbeats 4000000 in
 /-- From `+144`, `rax = p`, `xmm0`–`xmm3` 0. -/
 theorem pathB (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e' sl2) {X : State} {t : Nat} {g₀ : Gprs} {n : Nat}
     (hK : KeptW Wl s₀ X) (hA : Agree F X.proc.mm.mem V) (hrip : X.cpu.rip = e'.add 144)
@@ -299,8 +299,8 @@ theorem pathB (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e' sl2) {X : State} {
     have hax₄ : Y₄.cpu.gpr.rax = BitVec.ofNat 64 n := by simp only [hg₄, set_rax, hlow]
     exact ret_at c hin (by rw [sl2_length]; omega) (d227 prof.feat) hK₄ hA₄ hr₄ hkp₄ hax₄ hR
 
-/-- From `+62`, `rax = p`, `xmm0`–`xmm3` 0, the first 16 bytes from `p` not 0, on a page with 48 more after them. -/
 set_option maxHeartbeats 4000000 in
+/-- From `+62`, `rax = p`, `xmm0`–`xmm3` 0, the first 16 bytes from `p` not 0, on a page with 48 more after them. -/
 theorem pathA2 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e' sl2) {X : State} {t : Nat} {g₀ : Gprs} {n : Nat}
     (hK : KeptW Wl s₀ X) (hA : Agree F X.proc.mm.mem V) (hrip : X.cpu.rip = e'.add 62)
     (hax : X.cpu.gpr.rax = g₀.rdi) (hkp : Kp g₀ X.cpu.gpr) (hx : X4 (xsOf X.cpu.vec.zmm))
