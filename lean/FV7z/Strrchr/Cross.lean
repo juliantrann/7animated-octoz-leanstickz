@@ -72,7 +72,7 @@ theorem path560 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e' sr2) {g₀ : Gpr
   intro Y₁ t₁ hK₁ hA₁ hr₁ hg₁ _ hv₁
   simp only [wr, gv, Src.val, set_rax, get0, get7, BitVec.setWidth_eq, hdi] at hg₁
   have hkp₁ : KpR g₀ Y₁.cpu.gpr := by simp only [KpR, hg₁]; exact hkp
-  have hdi₁ : Y₁.cpu.gpr.rdi = g₀.rdi := by simp only [hg₁]; exact hdi
+  have hdi₁ : Y₁.cpu.gpr.rdi = g₀.rdi := by simp only [hg₁]
   have hAn : Y₁.cpu.gpr.rax.toNat = g₀.rdi.toNat / 64 * 64 := by simp only [hg₁]; exact Strlen.and_m64 _
   have hx0₁ : xsOf Y₁.cpu.vec.zmm (xmmOf 0) = 0 := by rw [hv₁]; simp (disch := decide) only [xset_same, xor_self']
   have hx1₁ : xsOf Y₁.cpu.vec.zmm (xmmOf 1) = Bc g₀.rsi := by rw [hv₁]; simp (disch := decide) only [xset_ne, hx1]
@@ -110,7 +110,7 @@ theorem path560 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e' sr2) {g₀ : Gpr
   simp (disch := decide) only [eaB, get0, hax₁, set_rsi, xset_same, xset_ne, hx0₂, hx1₂, hx4₂, hx5₂, hx6₂] at hg₃ hv₃
   have hkp₃ : KpR g₀ Y₃.cpu.gpr := by simp only [KpR, hg₃]; exact hkp₁
   have hdi₃ : Y₃.cpu.gpr.rdi = g₀.rdi := by simp only [hg₃]; exact hdi₁
-  have hax₃ : Y₃.cpu.gpr.rax = A := by simp only [hg₃]; exact hax₁
+  have hax₃ : Y₃.cpu.gpr.rax = A := by simp only [hg₃]
   have hsi₃ : ∀ i, Y₃.cpu.gpr.rsi.getLsbD i = (decide (i < 16) && Fb V A 0 i) := by
     simp only [hg₃]; exact bits64 fun i => zbit' V A 0 i
   have hx0₃ : xsOf Y₃.cpu.vec.zmm (xmmOf 0) = 0 := by rw [hv₃]; simp (disch := decide) only [xset_ne, hx0₂]
