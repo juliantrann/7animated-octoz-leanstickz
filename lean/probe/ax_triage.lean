@@ -1,6 +1,5 @@
-import FV7z.Lemmas.CopyP
+import FV7z.Memcpy.Sse2
 open FV7z
-#print axioms FV7z.map_byteAddrs_get?
-#print axioms FV7z.Vst_get
-#print axioms FV7z.CopyP.ld
-#print axioms FV7z.CopyP.st
+#print axioms FV7z.Memcpy.p16
+#print axioms FV7z.Memcpy.c16_43
+#print axioms FV7z.Memcpy.c16_227
