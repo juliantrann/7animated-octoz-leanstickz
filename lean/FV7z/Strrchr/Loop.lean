@@ -554,7 +554,7 @@ theorem from256E (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e' sr2) {g₀ : Gp
     refine c.s_blkV hin (b528 prof) hK₂ hA₂ hr₂ ?_
     refine wpV_reg fun _ _ => wpV_reg fun _ _ => wpV_nil ?_
     intro Y₃ t₃ hK₃ hA₃ hr₃ hg₃ _ hv₃
-    simp only [wr, gv, Src.val, set_rsi, set_rcx, get1, BitVec.setWidth_eq, xor_self'] at hg₃
+    simp only [wr, gv, Src.val, set_rsi, set_rcx, get1, xor_self'] at hg₃
     refine c.s_jmpV hK₃ hA₃ hin (by rw [sr2_length]; omega) hr₃ (d535 prof.feat) (tgt := 268) rfl
       (by rw [sr2_length]; omega) ?_
     intro Y₄ t₄ hK₄ hA₄ ⟨hr₄, hg₄, hv₄⟩
