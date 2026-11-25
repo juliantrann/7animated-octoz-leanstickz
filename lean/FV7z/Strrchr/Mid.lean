@@ -124,7 +124,7 @@ theorem tail228 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e' sr2) {X : State}
     refine c.s_blkV hin (b248 prof) hK₃ hA₃ hr₃ ?_
     refine wpV_reg fun _ _ => wpV_nil ?_
     intro Y₄ t₄ hK₄ hA₄ hr₄ hg₄ _ _
-    simp only [wr, gv, eaG, optV, set_rax, get6, get7, BitVec.setWidth_eq, BitVec.mul_one, BitVec.add_zero] at hg₄
+    simp only [wr, eaG, optV, set_rax, get6, get7, BitVec.setWidth_eq, BitVec.mul_one, BitVec.add_zero] at hg₄
     simp only [hg₃] at hg₄
     have hkp₄ : KpR g₀ Y₄.cpu.gpr := by simp only [KpR, hg₄]; exact hkp₁
     have hax₄ : Y₄.cpu.gpr.rax = Addr.add g₀.rdi (highestSetBit Y₁.cpu.gpr.rsi) := by
@@ -158,7 +158,7 @@ theorem path112 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e' sr2) {X : State}
     (by rw [hdi]; omega)) (fun h => nomatch h) (wpV_v0 (wpV_v (foot_pg hft (B := X.cpu.gpr.rdi) (d := 32)
     (by rw [hdi]; omega) (by rw [hdi]; omega) (by rw [hdi]; omega)) (fun h => nomatch h) (wpV_v0 (wpV_v0
     (wpV_v (foot_pg hft (B := X.cpu.gpr.rdi) (d := 48) (by rw [hdi]; omega) (by rw [hdi]; omega)
-    (by rw [hdi]; omega)) (fun h => nomatch h) (wpV_nil ?_)))))))
+    (by rw [hdi]; omega)) (fun h => nomatch h) (wpV_nil ?_))))))
   intro Y₁ t₁ hK₁ hA₁ hr₁ hg₁ _ hv₁
   generalize hxd : xsOf X.cpu.vec.zmm = x at hv₁ hx1 hx2
   simp (disch := decide) only [eaB, get7, xset_same, xset_ne, hx1, hx2] at hv₁
