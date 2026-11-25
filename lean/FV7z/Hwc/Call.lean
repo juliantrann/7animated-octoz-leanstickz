@@ -71,6 +71,7 @@ set_option maxHeartbeats 4000000 in
 up), out of the reach of `malloc`. -/
 theorem from1111 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (hin : CodeIn L hwc_at hwc)
     (hinc : CodeIn L 4198592#64 cpy) (hc0 : 0 < cpy.length) (hcpy : Gor.PcpyAt prof L o 4198592#64 Pm)
+    (hgf : GotF F) (hdf₀ : s₀.cpu.rflags.df = false)
     (hinm : CodeIn L 6500704#64 mlc) (hm0 : 0 < mlc.length) (hmal : Mal.At prof F Wl L o fb hi 6500704#64 Pa)
     {V : Addr → Byte} {cnt E H s : Nat} {R bp sp Q : Addr} {ln st : Nat → Addr}
     (hPm : ∀ W : Addr → Byte, (∀ a : Addr, a.toNat < 7940480 → W a = V a) → Pm W)
@@ -86,7 +87,7 @@ theorem from1111 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (
     (hFT : ∀ a : Addr, R.toNat ≤ a.toNat → a.toNat < R.toNat + 16 * cnt → Foot F.data a)
     (hT : ∀ m < cnt, rdq(V, R + BitVec.ofNat 64 (16 * m)) = st m ∧ rdq(V, R + BitVec.ofNat 64 (16 * m + 8)) = ln m)
     (hsrc : ∀ m < cnt, ∀ i < (ln m).toNat, Foot F.data ((st m).add i))
-    (hs64 : ∀ m < cnt, (st m).toNat + (ln m).toNat ≤ 2 ^ 64)
+    (hs64 : ∀ m < cnt, (st m).toNat + (ln m).toNat < 2 ^ 64)
     (hsd : ∀ m < cnt, (st m).toNat + (ln m).toNat ≤ 7940480 ∨ sp.toNat ≤ (st m).toNat)
     (hN : rdd(V, bp + 18446744073709551520#64) = BitVec.ofNat 32 cnt)
     (hD : rdq(V, bp + 18446744073709551512#64) = R + BitVec.ofNat 64 (16 * (cnt - 1)))
@@ -151,7 +152,7 @@ theorem from1111 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (
     exact hS.rdq (by omega) (by omega) (by omega)
   have hcp : caps E (tlen V₂ R) cnt (fun _ => 0#64) = caps E (tlen V R) cnt (fun _ => 0#64) :=
     caps_congr cnt _ htl
-  refine from1116 c hfs hin hinc hc0 hcpy (V := V₂) (P := p)
+  refine from1116 c hfs hin hinc hc0 hcpy hgf hdf₀ (V := V₂) (P := p)
     (fun W hW => hPm W fun a ha => (hW a ha).trans (hV a (.inl ha))) hn hlo (by omega) hsp8 hRs hRF hfb
     (fun a h1 h2 => hWP a h1 (by omega)) hst hFr hFT (fun m hm => ?_) hsrc hs64
     (fun m hm => (hsd m hm).elim (fun h => .inl (by omega)) (fun h => .inr (by omega)))

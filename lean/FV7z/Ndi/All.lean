@@ -95,7 +95,7 @@ theorem ndi_all {pl pc ip cpy : List Byte} {Pm : (Addr → Byte) → Prop} {E : 
     (hPaH : ∀ k W, Pa k W ↔ Mal.Hp (withNew F N) (N ++ Wl) fsb (sp.toNat - 4144) (1072 * k + mb) W)
     (hinl : CodeIn L 4198664#64 sl) (hl0 : 0 < sl.length) (hlenA : Str.LenAt prof L o 4198664#64 Pk)
     (hinz : CodeIn L 4198528#64 ms) (hz0 : 0 < ms.length) (hset : Ipa.SetAt prof L o 4198528#64 Ps)
-    (hgf : Ipa.GotF F)
+    (hgf : GotF F)
     (hint : CodeIn L Tgv.tgv_at Tgv.tgv)
     {hw : Addr} {cnt Ec H sz : Nat}
     (hn : hw = 2#64 ∧ cnt = 3 ∧ Ec = 8 ∧ H = 4 ∧ sz = 151 ∨ hw = 6#64 ∧ cnt = 4 ∧ Ec = 16 ∧ H = 8 ∧ sz = 320)
@@ -173,7 +173,7 @@ theorem ndi_all {pl pc ip cpy : List Byte} {Pm : (Addr → Byte) → Prop} {E : 
   have hfb := mc.hfb
   have hown := mc.hown
   refine ndi_ab (ph := 4194368#64) (pn := 8#64) c mc cx hgo hin (by rw [Ipa.ipa_length]; decide) hsn htop hpw hst
-    hsm hlo hbs hbuf hfr hpf hpn hpz hpp hof hoz hps hpre hinc hc0 hcpy h1 h2 h3 h4 h5 hK hA hrip hsp ke ?_
+    hsm hlo hbs hbuf hfr hpf hpn hpz hpp hof hoz hps hpre hinc hc0 hcpy hgf h1 h2 h3 h4 h5 hK hA hrip hsp ke ?_
   intro x n s s₁ Vc M W' evs g Y t₁ W'' hx c₁ hB₁ h2n hn4 h1s hs1 hg' hVc hAf hnul hout LO SM hev hKY hAY hMY hrY
     hspY hdiY h15Y
   have HI : ∀ a : Addr, sp.toNat ≤ a.toNat → W' a = fV W sp X.cpu.gpr a := fun a h => SM a (.inl h)

@@ -85,6 +85,7 @@ theorem mcpy (c : Seg prof F Wl L s₀ o) (hin : CodeIn L hwc_at hwc) {j rel : N
     (hd : Dec prof.feat hwc j (FV7z.mk .call 64 [.rel rel] 5))
     (htgt : hwc_at.add (j + 5) + BitVec.ofNat 64 rel = 4198592#64)
     (hinc : CodeIn L 4198592#64 cpy) (hc0 : 0 < cpy.length) (hcpy : Gor.PcpyAt prof L o 4198592#64 Pm)
+    (hgf : GotF F) (hdf₀ : s₀.cpu.rflags.df = false)
     {V₀ : Addr → Byte} (hPm : ∀ W : Addr → Byte, (∀ a : Addr, a.toNat < 7940480 → W a = V₀ a) → Pm W)
     {A B : Nat} {sp : Addr} (hlo : 7940480 ≤ A) (hB : B ≤ sp.toNat - 8) (hsp8 : 8 ≤ sp.toNat)
     (hbuf : ∀ a : Addr, A ≤ a.toNat → a.toNat < B → Foot Wl a)
@@ -94,7 +95,7 @@ theorem mcpy (c : Seg prof F Wl L s₀ o) (hin : CodeIn L hwc_at hwc) {j rel : N
     (hsp : X.cpu.gpr.rsp = sp) (hsi : X.cpu.gpr.rsi = S) (hdx : X.cpu.gpr.rdx = Ln)
     (hp : A ≤ X.cpu.gpr.rdi.toNat) (hpe : X.cpu.gpr.rdi.toNat + Ln.toNat ≤ B)
     (hO : Outs V₀ V A X.cpu.gpr.rdi.toNat sp.toNat)
-    (hfS : ∀ i < Ln.toNat, Foot F.data (S.add i)) (hS : S.toNat + Ln.toNat ≤ 2 ^ 64)
+    (hfS : ∀ i < Ln.toNat, Foot F.data (S.add i)) (hS : S.toNat + Ln.toNat < 2 ^ 64)
     (hSd : S.toNat + Ln.toNat ≤ A ∨ B ≤ S.toNat)
     (k : ∀ Z t' W, KeptW Wl s₀ Z → Agree F Z.proc.mm.mem W → Z.cpu.rip = hwc_at.add (j + 5) →
       Z.cpu.gpr.rsp = sp → Z.cpu.gpr.rax = X.cpu.gpr.rdi + Ln → Z.cpu.gpr.rbx = X.cpu.gpr.rbx →
@@ -112,9 +113,10 @@ theorem mcpy (c : Seg prof F Wl L s₀ o) (hin : CodeIn L hwc_at hwc) {j rel : N
   have hdx₁ : Y.cpu.gpr.rdx = Ln := by rw [hg₁]; exact hdx
   have hsp₁ : Y.cpu.gpr.rsp = sp - 8 := by rw [hg₁]; rfl
   have hfit : X.cpu.gpr.rdi.toNat + Ln.toNat ≤ 2 ^ 64 := by omega
-  refine hcpy c hK₁ hA₁ hr₁ (hPm _ fun a ha => ?_) hin (j := j + 5) (lt_len (by omega)) ?_ (fun i hi => ?_)
-    (fun i hi => ?_) (fun i hi => ?_) (by rw [hsi₁, hdx₁]; exact hS) (by rw [hdi₁, hdx₁]; exact hfit)
-    (by rw [hsi₁, hdi₁, hdx₁]; omega) (by rw [hdi₁, hdx₁, hsp₁, hb8]; omega) ?_
+  refine hcpy c hgf hK₁ hA₁ hr₁ (hPm _ fun a ha => ?_) hin (j := j + 5) (lt_len (by omega)) ?_ (fun i hi => ?_)
+    (fun i hi => ?_) (fun i hi => ?_) (by rw [hsi₁, hdx₁]; exact hS) (by rw [hdi₁, hdx₁]; omega)
+    (by rw [hsi₁, hdi₁, hdx₁]; omega) (by rw [hdi₁, hdx₁, hsp₁, hb8]; omega)
+    (hK₁.df.trans hdf₀) (by rw [hsp₁, hb8]; omega) ?_
   · rw [Tun.Vst_out _ _ _ _ (by rw [toBytesLE_length, hb8]; omega) (.inl (by rw [hb8]; omega))]
     exact hO.1 a (Nat.zero_le _) (by omega)
   · rw [hsp₁, Tun.rd_Vst_self _ _ _ (toBytesLE_length _ _) (by rw [hb8]; omega), ofBytesLE_toBytesLE (n := 8) rfl]
@@ -185,6 +187,7 @@ theorem jm {m : Nat} (h : m + 1 ≤ 2) :
 /-- The bits `m, …, 1` of `n` (from 1294, at 1343 when `m = 0`): `rdi` from `p` to `pe = p + bts n m`. -/
 theorem inner (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (hin : CodeIn L hwc_at hwc)
     (hinc : CodeIn L 4198592#64 cpy) (hc0 : 0 < cpy.length) (hcpy : Gor.PcpyAt prof L o 4198592#64 Pm)
+    (hgf : GotF F) (hdf₀ : s₀.cpu.rflags.df = false)
     {V₀ : Addr → Byte} (hPm : ∀ W : Addr → Byte, (∀ a : Addr, a.toNat < 7940480 → W a = V₀ a) → Pm W)
     {A B pe cnt n : Nat} {sp R bp S0 : Addr} {ln st : Nat → Addr}
     (hc : cnt = 3 ∧ (n = 0 ∨ n = 2) ∨ cnt = 4 ∧ (n = 0 ∨ n = 2 ∨ n = 4 ∨ n = 6))
@@ -196,7 +199,7 @@ theorem inner (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (hin
     (hlm : ∀ m, 1 ≤ m → m + 2 ≤ cnt → rdq(V₀, R + BitVec.ofNat 64 (16 * m + 8)) = ln m ∧
       rdq(V₀, R + BitVec.ofNat 64 (16 * m)) = st m)
     (hsrc : ∀ m < cnt, ∀ i < (ln m).toNat, Foot F.data ((st m).add i))
-    (hs64 : ∀ m < cnt, (st m).toNat + (ln m).toNat ≤ 2 ^ 64)
+    (hs64 : ∀ m < cnt, (st m).toNat + (ln m).toNat < 2 ^ 64)
     (hsd : ∀ m < cnt, (st m).toNat + (ln m).toNat ≤ A ∨ B ≤ (st m).toNat)
     (k : ∀ Z t' W, KeptW Wl s₀ Z → Agree F Z.proc.mm.mem W → Z.cpu.rip = hwc_at.add 1343 →
       Z.cpu.gpr.rsp = sp → Z.cpu.gpr.rbx = R → Z.cpu.gpr.rbp = bp → Z.cpu.gpr.r12 = BitVec.ofNat 64 n →
@@ -248,7 +251,8 @@ theorem inner (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (hin
               (by rw [toNat_add_of_fits hi (by omega)]; omega))) ?_
       rintro j' g fl V' ⟨rfl, rfl, rfl⟩ Y t' hKY hAY hrY hgY -
       have hdi : Y.cpu.gpr.rdi = X.cpu.gpr.rdi := by rw [hgY]
-      refine mcpy c hin (j := 1325) (by omega) (call_1325 _) (by decide) hinc hc0 hcpy hPm hlo hB hsp8 hbuf hst
+      refine mcpy c hin (j := 1325) (by omega) (call_1325 _) (by decide) hinc hc0 hcpy hgf hdf₀ hPm hlo hB hsp8 hbuf
+        hst
         (S := st (m + 1)) (Ln := ln (m + 1)) hKY hAY hrY (by rw [hgY]; exact hsp) (by rw [hgY]) (by rw [hgY])
         (by rw [hdi]; exact hp) (by rw [hdi]; omega) (by rw [hdi]; exact hO) (hsrc _ (by omega))
         (hs64 _ (by omega)) (hsd _ (by omega)) ?_
@@ -306,6 +310,7 @@ theorem fo80 {r : Addr} (h : (r + 18446744073709551448#64).toNat + 176 ≤ 2 ^ 6
 `rcx = Ev`, `r12 = Cv`, `r14 = Pv` (from the frame), the bytes from `A` to `pe = p + rem (2 i + 2)` written. -/
 theorem loop (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (hin : CodeIn L hwc_at hwc)
     (hinc : CodeIn L 4198592#64 cpy) (hc0 : 0 < cpy.length) (hcpy : Gor.PcpyAt prof L o 4198592#64 Pm)
+    (hgf : GotF F) (hdf₀ : s₀.cpu.rflags.df = false)
     {V₀ : Addr → Byte} (hPm : ∀ W : Addr → Byte, (∀ a : Addr, a.toNat < 7940480 → W a = V₀ a) → Pm W)
     {A B pe cnt : Nat} {sp R bp Ev Cv Pv : Addr} {ln st : Nat → Addr} (hcn : cnt = 3 ∨ cnt = 4)
     (hlo : 7940480 ≤ A) (hB : B ≤ sp.toNat - 8) (hsp8 : 8 ≤ sp.toNat) (hpeB : pe ≤ B)
@@ -316,7 +321,7 @@ theorem loop (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (hin 
     (hlm : ∀ m, 1 ≤ m → m + 2 ≤ cnt → rdq(V₀, R + BitVec.ofNat 64 (16 * m + 8)) = ln m ∧
       rdq(V₀, R + BitVec.ofNat 64 (16 * m)) = st m)
     (hsrc : ∀ m < cnt, ∀ i < (ln m).toNat, Foot F.data ((st m).add i))
-    (hs64 : ∀ m < cnt, (st m).toNat + (ln m).toNat ≤ 2 ^ 64)
+    (hs64 : ∀ m < cnt, (st m).toNat + (ln m).toNat < 2 ^ 64)
     (hsd : ∀ m < cnt, (st m).toNat + (ln m).toNat ≤ A ∨ B ≤ (st m).toNat)
     (hsf : sp.toNat ≤ (bp + 18446744073709551448#64).toNat)
     (hfb : (bp + 18446744073709551448#64).toNat + 176 ≤ 2 ^ 64)
@@ -363,7 +368,7 @@ theorem loop (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (hin 
         (by rw [hbp]; exact hf50) (by rw [hbp]; exact hf58)) ?_
     rintro j' g fl V' ⟨rfl, rfl, rfl⟩ Y t' hKY hAY hrY hgY -
     have hdi : Y.cpu.gpr.rdi = X.cpu.gpr.rdi := by rw [hgY]
-    refine mcpy c hin (j := 1260) (by omega) (call_1260 _) (by decide) hinc hc0 hcpy hPm hlo hB hsp8 hbuf hst
+    refine mcpy c hin (j := 1260) (by omega) (call_1260 _) (by decide) hinc hc0 hcpy hgf hdf₀ hPm hlo hB hsp8 hbuf hst
       (S := st (cnt - 1)) (Ln := ln (cnt - 1)) hKY hAY hrY (by rw [hgY]; exact hsp) (by rw [hgY]) (by rw [hgY])
       (by rw [hdi]; exact hp) (by rw [hdi]; omega) (by rw [hdi]; exact hO) (hsrc _ (by omega)) (hs64 _ (by omega))
       (hsd _ (by omega)) ?_
@@ -387,7 +392,7 @@ theorem loop (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (hin 
       show (Z.cpu.gpr.rax + 1#64).toNat = _
       rw [add1 (by omega), hax]
     -- the bits, to 1343
-    refine inner c hfs hin hinc hc0 hcpy hPm (n := 2 * i) (bp := bp) (S0 := st 0)
+    refine inner c hfs hin hinc hc0 hcpy hgf hdf₀ hPm (n := 2 * i) (bp := bp) (S0 := st 0)
       (pe := X.cpu.gpr.rdi.toNat + (ln (cnt - 1)).toNat + 1 + bts ln (2 * i) (cnt - 2)) (by omega) hlo hB hsp8
       (by omega) hbuf hst hRs hRC hfR hlm hsrc hs64 hsd ?_ (cnt - 2) (by omega) U t₃ _ hKU hAU
       (by rw [hrU, if_neg (show cnt - 2 ≠ 0 by omega)]) (by rw [hgU]; exact hspZ)
@@ -403,7 +408,7 @@ theorem loop (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (hin 
         (by rw [hbp₁]; exact hf48)) ?_
     rintro j' g fl V' ⟨rfl, rfl, rfl⟩ Y₂ t₅ hKY₂ hAY₂ hrY₂ hgY₂ -
     have hdi₂ : Y₂.cpu.gpr.rdi = Z₁.cpu.gpr.rdi := by rw [hgY₂]
-    refine mcpy c hin (j := 1350) (by omega) (call_1350 _) (by decide) hinc hc0 hcpy hPm hlo hB hsp8 hbuf hst
+    refine mcpy c hin (j := 1350) (by omega) (call_1350 _) (by decide) hinc hc0 hcpy hgf hdf₀ hPm hlo hB hsp8 hbuf hst
       (S := st 0) (Ln := ln 0) hKY₂ hAY₂ hrY₂ (by rw [hgY₂]; exact hsp₁) (by rw [hgY₂]; exact h15₁) (by rw [hgY₂])
       (by rw [hdi₂, hdi₁]; omega) (by rw [hdi₂, hdi₁]; omega) (by rw [hdi₂, hdi₁]; exact hO₁) (hsrc _ (by omega))
       (hs64 _ (by omega)) (hsd _ (by omega)) ?_
