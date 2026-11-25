@@ -136,6 +136,6 @@ theorem csu_rz {K : Ctx} {V V'' : Addr → Byte} {ver : BitVec 32} {fn : BitVec 
   | 0, _ => exact hz 7991296 (by decide) (by decide)
   | 1, _ => exact hz 7981824 (by decide) (by decide)
   | 2, _ => exact hz 7981280 (by decide) (by decide)
-  | n + 3, hr => absurd hr (by omega)
+  | n + 3, hr => exact absurd hr (by omega)
 
 end FV7z.Start
