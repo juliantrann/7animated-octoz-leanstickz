@@ -217,114 +217,6 @@ theorem bit3 {V : Addr → Byte} {p B : Addr} {n i : Nat} (hnz : ∀ k < n, V (A
 /-- `xmm0`–`xmm3` are 0. -/
 abbrev X4 (x : XRegs) : Prop := x (xmmOf 0) = 0 ∧ Z3 x
 
-/-! ## The blocks at `+66` and `+148`, in three -/
-
-/-- The stretch from `148` to `184`: the four masks. -/
-def o148a : List VOp := [
-  VOp.pcmpeqb_m 0 0 0,
-  VOp.pcmpeqb_m 1 0 16,
-  VOp.pcmpeqb_m 2 0 32,
-  VOp.pcmpeqb_m 3 0 48,
-  VOp.pmovmskb 6 0,
-  VOp.pmovmskb 2 1,
-  VOp.pmovmskb 8 2,
-  VOp.pmovmskb 1 3]
-
-theorem b148a (prof : Profile) : BlkV prof sl2 148 184 o148a :=
-  .cons (d148 _) (VOpI.pcmpeqb_m) (by rw [sl2_length]; decide) <|
-  .cons (d152 _) (VOpI.pcmpeqb_m) (by rw [sl2_length]; decide) <|
-  .cons (d157 _) (VOpI.pcmpeqb_m) (by rw [sl2_length]; decide) <|
-  .cons (d162 _) (VOpI.pcmpeqb_m) (by rw [sl2_length]; decide) <|
-  .cons (d167 _) (VOpI.pmovmskb) (by rw [sl2_length]; decide) <|
-  .cons (d171 _) (VOpI.pmovmskb) (by rw [sl2_length]; decide) <|
-  .cons (d175 _) (VOpI.pmovmskb) (by rw [sl2_length]; decide) <|
-  .cons (d180 _) (VOpI.pmovmskb) (by rw [sl2_length]; decide) <|
-  .nil 184
-
-/-- The stretch from `184` to `202`. -/
-def o184 : List VOp := [
-  VOp.op (Op.shl64 2 (.i 16)),
-  VOp.op (Op.shl64 1 (.i 16)),
-  VOp.op (Op.or 64 2 (.r 6)),
-  VOp.op (Op.or 64 1 (.r 8)),
-  VOp.op (Op.shl64 1 (.i 32))]
-
-theorem b184 (prof : Profile) : BlkV prof sl2 184 202 o184 :=
-  .cons (d184 _) (OpI.shl64 (.i 16)) (by rw [sl2_length]; decide) <|
-  .cons (d188 _) (OpI.shl64 (.i 16)) (by rw [sl2_length]; decide) <|
-  .cons (d192 _) (OpI.or (.r 6) (.inr rfl)) (by rw [sl2_length]; decide) <|
-  .cons (d195 _) (OpI.or (.r 8) (.inr rfl)) (by rw [sl2_length]; decide) <|
-  .cons (d198 _) (OpI.shl64 (.i 32)) (by rw [sl2_length]; decide) <|
-  .nil 202
-
-/-- The stretch from `202` to `221`. -/
-def o202 : List VOp := [
-  VOp.op (Op.or 64 2 (.r 1)),
-  VOp.op (Op.mov 64 1 (.r 7)),
-  VOp.op (Op.xor 64 1 (.r 0)),
-  VOp.op (Op.and 64 0 (.i 18446744073709551552)),
-  VOp.op (Op.sar64 2 (.r 1)),
-  VOp.op (Op.test 64 2 (.r 2))]
-
-theorem b202 (prof : Profile) : BlkV prof sl2 202 221 o202 :=
-  .cons (d202 _) (OpI.or (.r 1) (.inr rfl)) (by rw [sl2_length]; decide) <|
-  .cons (d205 _) (OpI.mov (.r 7) (.inr rfl)) (by rw [sl2_length]; decide) <|
-  .cons (d208 _) (OpI.xor (.r 0) (.inr rfl)) (by rw [sl2_length]; decide) <|
-  .cons (d211 _) (OpI.and (.i 18446744073709551552) (.inr rfl)) (by rw [sl2_length]; decide) <|
-  .cons (d215 _) (OpI.sar64 (.r 1)) (by rw [sl2_length]; decide) <|
-  .cons (d218 _) (OpI.test (.r 2) (.inr rfl)) (by rw [sl2_length]; decide) <|
-  .nil 221
-
-/-- The stretch from `66` to `94`: three masks. -/
-def o66a : List VOp := [
-  VOp.pcmpeqb_m 1 0 16,
-  VOp.pcmpeqb_m 2 0 32,
-  VOp.pcmpeqb_m 3 0 48,
-  VOp.pmovmskb 2 1,
-  VOp.pmovmskb 8 2,
-  VOp.pmovmskb 1 3]
-
-theorem b66a (prof : Profile) : BlkV prof sl2 66 94 o66a :=
-  .cons (d66 _) (VOpI.pcmpeqb_m) (by rw [sl2_length]; decide) <|
-  .cons (d71 _) (VOpI.pcmpeqb_m) (by rw [sl2_length]; decide) <|
-  .cons (d76 _) (VOpI.pcmpeqb_m) (by rw [sl2_length]; decide) <|
-  .cons (d81 _) (VOpI.pmovmskb) (by rw [sl2_length]; decide) <|
-  .cons (d85 _) (VOpI.pmovmskb) (by rw [sl2_length]; decide) <|
-  .cons (d90 _) (VOpI.pmovmskb) (by rw [sl2_length]; decide) <|
-  .nil 94
-
-/-- The stretch from `94` to `112`. -/
-def o94 : List VOp := [
-  VOp.op (Op.shl64 2 (.i 16)),
-  VOp.op (Op.shl64 1 (.i 16)),
-  VOp.op (Op.or 64 1 (.r 8)),
-  VOp.op (Op.shl64 1 (.i 32)),
-  VOp.op (Op.or 64 2 (.r 1))]
-
-theorem b94 (prof : Profile) : BlkV prof sl2 94 112 o94 :=
-  .cons (d94 _) (OpI.shl64 (.i 16)) (by rw [sl2_length]; decide) <|
-  .cons (d98 _) (OpI.shl64 (.i 16)) (by rw [sl2_length]; decide) <|
-  .cons (d102 _) (OpI.or (.r 8) (.inr rfl)) (by rw [sl2_length]; decide) <|
-  .cons (d105 _) (OpI.shl64 (.i 32)) (by rw [sl2_length]; decide) <|
-  .cons (d109 _) (OpI.or (.r 1) (.inr rfl)) (by rw [sl2_length]; decide) <|
-  .nil 112
-
-/-- The stretch from `112` to `128`. -/
-def o112 : List VOp := [
-  VOp.op (Op.mov 64 1 (.r 7)),
-  VOp.op (Op.xor 64 1 (.r 0)),
-  VOp.op (Op.and 64 0 (.i 18446744073709551552)),
-  VOp.op (Op.sar64 2 (.r 1)),
-  VOp.op (Op.test 64 2 (.r 2))]
-
-theorem b112 (prof : Profile) : BlkV prof sl2 112 128 o112 :=
-  .cons (d112 _) (OpI.mov (.r 7) (.inr rfl)) (by rw [sl2_length]; decide) <|
-  .cons (d115 _) (OpI.xor (.r 0) (.inr rfl)) (by rw [sl2_length]; decide) <|
-  .cons (d118 _) (OpI.and (.i 18446744073709551552) (.inr rfl)) (by rw [sl2_length]; decide) <|
-  .cons (d122 _) (OpI.sar64 (.r 1)) (by rw [sl2_length]; decide) <|
-  .cons (d125 _) (OpI.test (.r 2) (.inr rfl)) (by rw [sl2_length]; decide) <|
-  .nil 128
-
 /-! ## The paths -/
 
 variable {prof : Profile} {L : List (Addr × List Byte)} {s₀ : State} {o : Oracle} {F : Footprint} {Wl : List Rgn}
@@ -354,7 +246,7 @@ theorem pathB (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e' sl2) {X : State} {
   have hF := foot64 hft (B := Y₁.cpu.gpr.rax) (by omega) (by omega) (by omega)
   have hal : ∀ d, d % 16 = 0 → true = true → (Y₁.cpu.gpr.rax + BitVec.ofNat 64 d).toNat % 16 = 0 :=
     fun d h1 _ => al16 (by omega) h1
-  refine c.s_blkV hin (b148a prof) hK₁ hA₁ hr₁ ?_
+  refine c.s_blkV hin (b148 prof) hK₁ hA₁ hr₁ ?_
   refine wpV_v (foot16 hF (d := 0) (by omega)) (hal 0 rfl)
     (wpV_v (foot16 hF (d := 16) (by omega)) (hal 16 rfl)
     (wpV_v (foot16 hF (d := 32) (by omega)) (hal 32 rfl)
@@ -442,7 +334,7 @@ theorem pathA2 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e' sl2) {X : State} 
   -- the masks of `[B + 16, B + 64)` joined, shifted right by `p - B`
   have hal : ∀ d, d % 16 = 0 → true = true → (Y₁.cpu.gpr.rax + BitVec.ofNat 64 d).toNat % 16 = 0 :=
     fun d h1 _ => al16b (by omega) h1
-  refine c.s_blkV hin (b66a prof) hK₁ hA₁ hr₁ ?_
+  refine c.s_blkV hin (b66 prof) hK₁ hA₁ hr₁ ?_
   refine wpV_v (foot_pg hft (B := Y₁.cpu.gpr.rax) (d := 16) (by omega) (by omega) (by omega)) (hal 16 rfl)
     (wpV_v (foot_pg hft (B := Y₁.cpu.gpr.rax) (d := 32) (by omega) (by omega) (by omega)) (hal 32 rfl)
     (wpV_v (foot_pg hft (B := Y₁.cpu.gpr.rax) (d := 48) (by omega) (by omega) (by omega)) (hal 48 rfl)

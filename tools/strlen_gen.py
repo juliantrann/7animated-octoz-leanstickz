@@ -14,8 +14,9 @@ N = 412
 bs, ins = parse(sys.argv[1], N)
 NEG = lambda k: 2 ** 64 - k
 # stretches: (start, end) of straight-line code; the rest (jcc, jmp, bsf, ret) are steps of their own
-BLKS = [(0, 40), (42, 56), (62, 66), (66, 128), (144, 148), (148, 221), (240, 256), (256, 286), (288, 292),
-        (292, 321), (336, 340), (340, 401), (405, 411)]
+# `66`–`128` and `148`–`221` in three: one simp over 10 or more register ops grows like a tree of their depth
+BLKS = [(0, 40), (42, 56), (62, 66), (66, 94), (94, 112), (112, 128), (144, 148), (148, 184), (184, 202),
+        (202, 221), (240, 256), (256, 286), (288, 292), (292, 321), (336, 340), (340, 401), (405, 411)]
 SINGLE = {40, 56, 58, 61, 128, 130, 134, 221, 223, 227, 286, 321, 323, 401, 411}
 
 def gpr(o):
