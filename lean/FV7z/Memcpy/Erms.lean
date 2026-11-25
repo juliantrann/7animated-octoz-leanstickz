@@ -279,7 +279,8 @@ theorem perms (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e mc2) {X : State} {t
     rw [hf₁, hc, hg] at htk
     have hdx : g₀.rdx = 0 := beq_iff_eq.1 htk
     refine ret_atC c hin (by rw [mc2_length]; omega) (d161 prof.feat) hK₂ hA₂ hr₂ (by rw [hg₂]; exact hkp₁)
-      (by simp only [hg₂, hg₁, hg, hdx, BitVec.add_zero]) (fun _ _ => rfl) (fun i hi => ?_) (fun _ _ => rfl) hR
+      (by simp only [hg₂, hg₁, hg, hdx]; exact (BitVec.add_zero _).symm)
+      (fun _ _ => rfl) (fun i hi => ?_) (fun _ _ => rfl) hR
     rw [hdx] at hi
     exact absurd hi (Nat.not_lt_zero _)
   -- `rdx ≠ 0`: `add rax, rdx`, `jmp 140`
