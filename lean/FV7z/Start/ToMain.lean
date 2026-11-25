@@ -1,5 +1,6 @@
 import FV7z.Start.ToCxa
 import FV7z.Start.CtorRet
+import FV7z.Start.CtorEnv
 /-!
 # From the launch of `7zzs` to `main` (PLAN.md G3, startup)
 
@@ -10,8 +11,9 @@ through `__libc_csu_init` (its first three calls proved, the 101 constructors by
 `rbp` (`init`) from `Osv.Back` and `Rg`.
 
 - `MainCode L`: the code of the functions called on the way and of `main`, and of the 104 functions `csuTg`.
-- `q_offs`, `s_offs`, `brk_offs`, `back_q`, `rng_at`: the offsets and footprint facts, apart from the large context.
-- `launch_to_main`: as `launch_to_cxa`, with `__cxa_atexit`'s return continued to `main` (`AtCtor`).
+- `q_offs`, `s_offs`, `brk_offs`, `back_q`: the offsets, apart from the large context (`rng_at`: `Start/CtorEnv`).
+- `launch_to_main`: as `launch_to_cxa`, with `__cxa_atexit`'s return continued through the constructors
+  (`ctor_at_lif`) to `main` (`FromMain`).
 -/
 namespace FV7z.Start
 open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn FV7z.Glibc FV7z.AuxInit
@@ -68,13 +70,6 @@ theorem back_q (Z : State) : lifSp Z + 152#64 + 8#64 = Z.cpu.gpr.rsp := by
   show Z.cpu.gpr.rsp - 8#64 + 8#64 = Z.cpu.gpr.rsp
   exact BitVec.sub_add_cancel _ _
 
-/-- `n` bytes from `x.toNat = c` in `[lo, hi)`. -/
-theorem rng_at {x : Addr} {c n lo hi : Nat} {P : Addr → Prop} (hxt : x.toNat = c) (hc : lo ≤ c) (hn : c + n ≤ hi)
-    (hhi : hi ≤ 2 ^ 64) (hP : ∀ y : Addr, lo ≤ y.toNat → y.toNat < hi → P y) : ∀ i < n, P (x.add i) :=
-  fun i hi' => by
-    have t : (x.add i).toNat = c + i := by rw [toNat_add_of_fits hi' (by omega), hxt]
-    exact hP _ (by omega) (by omega)
-
 set_option maxHeartbeats 4000000 in
 /-- From the launch of `7zzs` to the first byte of `main` (and to the branch where `readlink` of `/proc/self/exe`
 fails). -/
@@ -104,7 +99,9 @@ theorem launch_to_main {l : Launch} {n : Nat} {o : Oracle} {L : List (Addr × Li
     (hset : Ipa.SetAt l.prof L o 4198528#64 (GotOkB l.prof))
     (hrchr : Str.RchrAt l.prof L o 4198480#64 (GotOkB l.prof))
     -- `__cxa_atexit`'s code, and that of the tail of `__libc_start_main` up to `main`
-    (hX : CxaCode L) (hMn : MainCode L) :
+    (hX : CxaCode L) (hMn : MainCode L)
+    -- the constructors' code; `umask` (95) adds no event the goal minds; the CPUs' cache leaves end
+    (hCC : Ctor.CtorCode L) (hU : InsOK 95 gP gE) (hCe : Glibc.CacheEnds l.prof) :
     ∃ c, c.Valid l.prof.linux zzsPhdrs l.args l.kcfg ∧
       StackAt l.prof l.s₀ l.args (ElfHeader.read V2606.zzs.blob.bytes) zzsPhdrs c ∧
       (ctxOf l.prof l.s₀ l.args c).Ok ∧ Img (ctxOf l.prof l.s₀ l.args c).V0 ∧ Bss (ctxOf l.prof l.s₀ l.args c).V0 ∧
@@ -124,7 +121,8 @@ theorem launch_to_main {l : Launch} {n : Nat} {o : Oracle} {L : List (Addr × Li
         UtsnameOk u → KernelNew u → PtrW (ctxOf l.prof l.s₀ l.args c) W V' (brkOf l) (osVersion u) (fun _ => True) →
         rdd(TlsMem V' (brkOf l), 8029624#64) = 0 →
         -- `readlink` of `/proc/self/exe` fails
-        (∀ r Z' t', KeptW ([⟨brkOf l, 8192⟩] ++ (zzsFoot (loOf l n c) c.stackTop L).writes) s₂ Z' →
+        (∀ r, (∃ t₀, o t₀ (.readlink none Gor.pse) = r ∧ ∀ x, r = .procExe x → pathMax ≤ x.bytes.length) →
+          ∀ Z' t', KeptW ([⟨brkOf l, 8192⟩] ++ (zzsFoot (loOf l n c) c.stackTop L).writes) s₂ Z' →
           Agree (withNew (zzsFoot (loOf l n c) c.stackTop L) [⟨brkOf l, 8192⟩]) Z'.proc.mm.mem
             (Gor.frV (Ndi.nV (lifW W Z) (lifSp Z) (lifY W Z)) { lifY W Z with rsp := lifSp Z - 8#64 }) →
           Z'.cpu.rip = gor_at.add 271 → Z'.cpu.gpr.rax = 18446744073709551615#64 →
@@ -149,12 +147,17 @@ theorem launch_to_main {l : Launch} {n : Nat} {o : Oracle} {L : List (Addr × Li
           Agree (lifG (loOf l n c) c.stackTop (brkOf l) L) Z'.proc.mm.mem
             (Cti.CtMem (Lif.bcV W₂ Z₁.cpu.gpr (BitVec.ofNat 64 (stackLayout l.args l.prof.linux c).strings) s)
               (brkOf l + 2176#64) 7299392#64 7296832#64 7295296#64) →
+          Mal.Hp (withNew (withNew (zzsFoot (loOf l n c) c.stackTop L) [⟨brkOf l, 8192⟩]) (brkN (brkOf l)))
+            (brkN (brkOf l) ++ ([⟨brkOf l, 8192⟩] ++ (zzsFoot (loOf l n c) c.stackTop L).writes)) (brkOf l + 2176#64)
+            ((lifSp Z).toNat - 4144) (1072 * 0 + 73840)
+            (Cti.CtMem (Lif.bcV W₂ Z₁.cpu.gpr (BitVec.ofNat 64 (stackLayout l.args l.prof.linux c).strings) s)
+              (brkOf l + 2176#64) 7299392#64 7296832#64 7295296#64) →
           Ims.Short (lifW W Z) (BitVec.ofNat 64 (stackLayout l.args l.prof.linux c).strings) (arg0 l.args).length s →
           Z'.cpu.rip = lsm_at.add 1017 → Z'.cpu.gpr.rsp = lifSp Z + 160#64 →
           Z'.cpu.gpr.rbx = (lifY W Z).rbx → Z'.cpu.gpr.rbp = rdq(lifW W Z, lifSp Z + 128#64) →
           Z'.cpu.gpr.r12 = rdq(lifW W Z, lifSp Z + 136#64) → Z'.cpu.gpr.r13 = rdq(lifW W Z, lifSp Z + 144#64) →
           Z'.cpu.gpr.r14 = (lifY W Z).r14 → Z'.cpu.gpr.r15 = (lifY W Z).r15 →
-          -- `__cxa_atexit (fini, NULL, NULL)` returns: what the run to `main` and from it asks
+          -- `__cxa_atexit (fini, NULL, NULL)` returns, the constructors run: the run from `main` on
           ∀ (V'' : Addr → Byte) (g' : Gprs) (Z'' : State),
           KeptW (lifG (loOf l n c) c.stackTop (brkOf l) L).writes s₃ Z'' →
           Agree (lifG (loOf l n c) c.stackTop (brkOf l) L) Z''.proc.mm.mem V'' →
@@ -167,10 +170,10 @@ theorem launch_to_main {l : Launch} {n : Nat} {o : Oracle} {L : List (Addr × Li
               7295296#64, brkOf l + 2176#64 + 48#64)).rotateLeft 17) 0 0 →
           Z''.cpu.rip = lsm_at.add 1034 → Z''.cpu.gpr = g' → g'.rax = 0 →
           Osv.Back (Z'.cpu.gpr.set 4 (lifSp Z + 152#64)) g' →
-          AtCtor l.prof (lifG (loOf l n c) c.stackTop (brkOf l) L) (lifG (loOf l n c) c.stackTop (brkOf l) L).writes L
-            s₃ o (gev ++ ptrEvs l c s₂ g x1 x2 x3 d r10 r8 r9 u y1 y2 y3 y4 y5 q1 q2 q3 ++
+          FromMain l.prof (lifG (loOf l n c) c.stackTop (brkOf l) L) (lifG (loOf l n c) c.stackTop (brkOf l) L).writes
+            L s₃ o (gev ++ ptrEvs l c s₂ g x1 x2 x3 d r10 r8 r9 u y1 y2 y3 y4 y5 q1 q2 q3 ++
               [gEv { lifY W Z with rsp := lifSp Z - 8#64 } (.procExe x)] ++ evs ++ [Ndi.ndiEv]) gP gE
-            (ctxOf l.prof l.s₀ l.args c) (brkOf l + 2176#64) V'')) →
+            (ctxOf l.prof l.s₀ l.args c) V'' (brkOf l + 2176#64) ((lifSp Z).toNat - 4144) 16)) →
       GoG l.prof L o gev gP gE l.s₀ t) := by
   obtain ⟨c, hv, hst, hK, hI0, hB0, hto⟩ := launch_to_cxa (gev := gev) (gP := gP) (gE := gE) (t := t) h hroom hn hs
     hq hlu noG noA noLD hpc hch ho hvd hL hC hT hO hP hM hmg hpse hcpy hun hLC hMC hlen hcmp hpcy hset hrchr hX
@@ -180,9 +183,9 @@ theorem launch_to_main {l : Launch} {n : Nat} {o : Oracle} {L : List (Addr × Li
   obtain ⟨hke, hk⟩ := hfin s₂ Z W V' g x1 x2 x3 d r10 r8 r9 u y1 y2 y3 y4 y5 q1 q2 q3 hax hdi c₂ hB₂ hK₂ hA₂ hr₂
     hRg hdx hsi hdi' hcpu hgot hhw hpl hMB hu hnew hW hT3
   refine ⟨hke, ?_⟩
-  intro x evs s₃ Z₁ Z' s W₂ hevs c₃ hB₃ hN hz1 hzp h12' h13' hK₃ hA₃ hsh hrip hrsp hrbx hrbp hr12 hr13 hr14 hr15
+  intro x evs s₃ Z₁ Z' s W₂ hevs c₃ hB₃ hN hz1 hzp h12' h13' hK₃ hA₃ hHp hsh hrip hrsp hrbx hrbp hr12 hr13 hr14 hr15
     V'' g' Z'' t'' hK'' hA'' hReg hr'' hg'' hax' hBk
-  have hG := hk x evs s₃ Z₁ Z' s W₂ hevs c₃ hB₃ hN hz1 hzp h12' h13' hK₃ hA₃ hsh hrip hrsp hrbx hrbp hr12 hr13 hr14
+  have hG := hk x evs s₃ Z₁ Z' s W₂ hevs c₃ hB₃ hN hz1 hzp h12' h13' hK₃ hA₃ hHp hsh hrip hrsp hrbx hrbp hr12 hr13 hr14
     hr15 V'' g' Z'' hK'' hA'' hReg hr'' hg'' hax' hBk
   -- where the layout puts things
   obtain ⟨h16, hn', -, -, hlt, hlo, htop⟩ :=
@@ -261,6 +264,13 @@ theorem launch_to_main {l : Launch} {n : Nat} {o : Oracle} {L : List (Addr × Li
       tid := rng_at f720 (by omega) (by omega) (by omega) hFb,
       fe := rng_at tfe (by omega) (by omega) (by omega) hFd }
   obtain ⟨code₂, hin₂, h₂⟩ := hMn.main
+  have hE1 : Csu.Env (lifG (loOf l n c) c.stackTop (brkOf l) L) (lifG (loOf l n c) c.stackTop (brkOf l) L).writes L
+      ((ctxOf l.prof l.s₀ l.args c).bp + 112#64 - 8#64) csuTg :=
+    ⟨hMn.csu, rng_at om72 (by omega) (by omega) (by omega) hWs, by omega,
+      rng_at om8 (by omega) (by omega) (by omega) hFs, by omega, rng_at ta (by omega) (by omega) (by omega) hFr,
+      .inr (by omega), hMn.tcode, rfl⟩
+  have hAt := ctor_at_lif c₃ hE1 hCC hU hCe hpc hB₃.fsb hB₃.rseq hB₃.df hB₃.x87 hR hK hI0 hB0 hMB hW hHp hReg
+    htop (by omega) (by omega) (by omega) (by rw [tq]; omega) (by omega) (by omega) (by omega) hG
   refine cxa_ctor_at (t := t'') c₃ hB₃.fsb hC.lsm hMn.dbg hMn.sjp hMn.ssj hin₂ h₂ hB₃.df hB₃.x87 hK'' hA'' hr''
     ?_ ?_ hReg hR hK hI0 hB0 hMB hW (by omega) hgr (by omega) (by omega) (by rw [tq]; omega)
     (rng_at t0 (by omega) (by omega) (by omega) hFr) (rng_at te (by omega) (by omega) (by omega) hFd)
@@ -274,9 +284,7 @@ theorem launch_to_main {l : Launch} {n : Nat} {o : Oracle} {L : List (Addr × Li
     (fun y hy => by have := StartB.rLoaded_mem hy; exact .inl (hFw y (by omega) (by omega)))
     (rng_at hf (by omega) (by omega) (by omega) hFb) (rng_at f768 (by omega) (by omega) (by omega) hFb)
     (rng_at f760 (by omega) (by omega) (by omega) hFb) (rng_at f768 (by omega) (by omega) (by omega) hWb)
-    ⟨hMn.csu, rng_at om72 (by omega) (by omega) (by omega) hWs, by omega,
-      rng_at om8 (by omega) (by omega) (by omega) hFs, by omega, rng_at ta (by omega) (by omega) (by omega) hFr,
-      .inr (by omega), hMn.tcode, rfl⟩ hE0 hMn.ini hE2 hFr hG
+    hE1 hE0 hMn.ini hE2 hFr hAt
   · rw [hg'', hBk.1, ← hRg.1]
     exact back_q Z
   · rw [hg'', hBk.2.2.1]

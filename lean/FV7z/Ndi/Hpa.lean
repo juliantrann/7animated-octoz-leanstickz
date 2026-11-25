@@ -7,7 +7,7 @@ import FV7z.Mal.Ok
 `ndi_all` asks of its `Pa (ka + 3)` (the heap at the second `malloc`, three before the end of `_dl_init_paths`) only
 for bytes `W₁` that agree with `M` (the bytes `Mal.After` gives after the first) below the frame of `_dl_init_paths`,
 off the copied directory, the return slot of the first `malloc`, `[0x791e80, 0x791eb8)` and `Hv`. `hpa` gives it for
-`Pa k = Hp … (1072 k + 16)` and `ka = 0` (the form `Mal.Ok.at_ok` keeps): `After.hp` with the layout from `MCx`
+`Pa k = Hp … (1072 k + 73840)` and `ka = 0` (the form `Mal.Ok.at_ok` keeps): `After.hp` with the layout from `MCx`
 (`Lay`), `MPre` at the call from the one at the entry (`_dl_get_origin` writes only its frame), the budget of
 3232 bytes in the first `MORECORE` (at least 8192 bytes: `mp_.top_pad` at least 4112) after a first chunk of at most
 4112, and what `Hp` reads apart from `Hv` and the other excluded bytes (`GlR`). `ndi_ok`: `ndi_all` with
@@ -47,7 +47,7 @@ variable {prof : Profile} {F : Footprint} {Wl N : List Rgn} {L : List (Addr × L
   {gev : List Event} {gP : State → Nat → List Event → Prop} {gE : Outcome → List Event → Prop} {X : State} {t : Nat}
   {lim : Nat} {b fsb : Addr} {ks : Kst} {pad sm mx : BitVec 64}
 
-/-- `ndi_all`'s `hPa` for `Pa k = Hp (withNew F N) (N ++ Wl) fsb (sp - 4144) (1072 k + 16)` and `ka = 0`. -/
+/-- `ndi_all`'s `hPa` for `Pa k = Hp (withNew F N) (N ++ Wl) fsb (sp - 4144) (1072 k + 73840)` and `ka = 0`. -/
 theorem hpa (c : Seg prof F Wl L s₀ o) (mc : MCx prof F Wl N L s₀ o lim b fsb ks pad sm mx) {V₀ : Addr → Byte}
     {gx : Gprs} {sp : Addr} (hpre : MPre F V₀ b fsb pad sm mx) (hsn : sp.toNat + 128 ≤ 2 ^ 64)
     (hlo : 8029888 + 408 + 4144 ≤ sp.toNat) (hbs : (b + size pad 656#64).toNat + 4096 + 408 + 4144 ≤ sp.toNat)
@@ -60,12 +60,13 @@ theorem hpa (c : Seg prof F Wl L s₀ o) (mc : MCx prof F Wl N L s₀ o lim b fs
       (a.toNat < (Tp b + 16#64).toNat ∨ (Tp b + 16#64).toNat + s + 1 ≤ a.toNat) →
       (a.toNat < sp.toNat - 8 - 4144 ∨ sp.toNat - 8 - 4136 ≤ a.toNat) →
       (a.toNat < 7937664 ∨ 7937720 ≤ a.toNat) → ¬ Hv a → W₁ a = M a) :
-    Hp (withNew F N) (N ++ Wl) fsb (sp.toNat - 4144) (1072 * (0 + 3) + 16) W₁ := by
+    Hp (withNew F N) (N ++ Wl) fsb (sp.toNat - 4144) (1072 * (0 + 3) + 73840) W₁ := by
   have hbt := mc.hB.brk_lt
   have hfs := mc.hfs
   have hfb := mc.hfb
   have hbk := mc.hbk
   have hpd := mc.hpd
+  have htp := mc.htp
   have hnp := mc.hnb
   have hsl := sp.isLt
   have hb47 : b.toNat < 2 ^ 47 := by omega
@@ -100,7 +101,7 @@ theorem hpa (c : Seg prof F Wl L s₀ o) (mc : MCx prof F Wl N L s₀ o lim b fs
     fun i hi j hj => by
       rw [adn (y := b + corr b + 16#64 + BitVec.ofNat 64 (2 * i)) (j := j) (by rw [Mhi.cXn hb47 i hi]; omega),
         Mhi.cXn hb47 i hi]
-  exact After.hp (F := withNew F N) (Wl := N ++ Wl) (hi := sp.toNat - 4144) (m := 1072 * (0 + 3) + 16) (s := s + 1)
+  exact After.hp (F := withNew F N) (Wl := N ++ Wl) (hi := sp.toNat - 4144) (m := 1072 * (0 + 3) + 73840) (s := s + 1)
     hAf hL hpre' (fun i hi => D _ (mc.hW _ (by rw [hA i hi]; omega) (by rw [hA i hi]; omega)))
     (fun i hi j hj => (HH _ (by rw [hC i hi j hj]; omega) (by rw [hC i hi j hj]; omega)).2)
     (fun i hi => D _ (mc.hfm i hi)) (fun a a1 a2 => foot_append_iff.2 (.inr (mc.hW a a1 a2)))
@@ -136,7 +137,8 @@ theorem ndi_ok {pl pc ip cpy : List Byte} {Pm : (Addr → Byte) → Prop} {E : E
     (h5 : rdd(fV W sp X.cpu.gpr, 7937248#64) = 0#32)
     (hK : KeptW Wl s₀ X) (hA : Agree F X.proc.mm.mem W) (hrip : X.cpu.rip = ndi_at.add 0)
     (hsp : X.cpu.gpr.rsp = sp + 120#64)
-    (ke : ∀ r Z t', KeptW Wl s₀ Z →
+    (ke : ∀ r, (∃ t₀, o t₀ (.readlink none Gor.pse) = r ∧ ∀ x, r = .procExe x → pathMax ≤ x.bytes.length) →
+      ∀ Z t', KeptW Wl s₀ Z →
       Agree F Z.proc.mm.mem (Gor.frV (nV W sp X.cpu.gpr) { X.cpu.gpr with rsp := sp - 8#64 }) →
       Z.cpu.rip = gor_at.add 271 → Z.cpu.gpr.rax = 18446744073709551615#64 → Z.cpu.gpr.rsp = sp - 8#64 →
       Z.cpu.gpr.rbx = X.cpu.gpr.rbx → Z.cpu.gpr.rbp = X.cpu.gpr.rbp → Z.cpu.gpr.r12 = X.cpu.gpr.r12 →
@@ -206,6 +208,7 @@ theorem ndi_ok {pl pc ip cpy : List Byte} {Pm : (Addr → Byte) → Prop} {E : E
       (∀ a : Addr, (a.toNat < 7937664 ∨ 7937720 ≤ a.toNat ∧ a.toNat < 7940480 ∨ sp.toNat ≤ a.toNat ∨
         Mal.Kf fsb a) →
         U a = hV W' (Tp b + 16#64) 4194368#64 8#64 a) →
+      Hp (withNew F N) (N ++ Wl) fsb (sp.toNat - 4144) (1072 * 0 + 73840) U →
       Seg prof G Wl' L s₂ o → Base s₂ lim (b + size pad 656#64 + C2 b pad) fsb ks → KeptW Wl' s₂ Z →
       Agree G Z.proc.mm.mem W₂ → Eqo sp W₂ (lV (bV U m)) → Z.cpu.rip = e₂.add j₂ → Z.cpu.gpr.rsp = sp + 128#64 →
       Z.cpu.gpr.rbx = X.cpu.gpr.rbx → Z.cpu.gpr.rbp = X.cpu.gpr.rbp → Z.cpu.gpr.r12 = X.cpu.gpr.r12 →
@@ -213,10 +216,11 @@ theorem ndi_ok {pl pc ip cpy : List Byte} {Pm : (Addr → Byte) → Prop} {E : E
       GoG prof L o (gev ++ [gEv { X.cpu.gpr with rsp := sp - 8#64 } (.procExe x)] ++ evs ++ [ndiEv]) gP gE Z t') :
     GoG prof L o gev gP gE X t := by
   exact
-    ndi_all (ip := ip) (Pa := fun k W => Hp (withNew F N) (N ++ Wl) fsb (sp.toNat - 4144) (1072 * k + 16) W)
+    ndi_all (ip := ip) (Pa := fun k W => Hp (withNew F N) (N ++ Wl) fsb (sp.toNat - 4144) (1072 * k + 73840) W)
     (ka := 0) c mc cx hgo
     hsn htop hpw hst hsm hlo hbs hbuf hfr hpf hpn hpz hpp hof hoz hps hpre hinc hc0 hcpy h1 h2 h3 h4 h5 hK hA hrip hsp
-    ke hin hinh hcpq hinm hm0 (Mal.at_ok hinX hinI) hinl hl0 hlenA hinz hz0 hset hint hn hPq
+    ke hin hinh hcpq hinm hm0 (Mal.at_ok hinX hinI) (by omega) (fun _ _ => Iff.rfl) hinl hl0 hlenA hinz hz0 hset hint hn
+    hPq
     (fun x n s Vc M g hx h2n hn4 _ hs1 hg hVc hAf W₁ hW => hpa c mc hpre hsn hlo hbs hx h2n hn4 hs1 hg hVc hAf hW)
     hPk hPs he hal hFs hpg
     hx1 hx1z hx2 hx2z htls hU hm6 hhw hfh hfm hpl0 hf1 hf2 hWb hfN hW7a hW7b hFR hlenV hslV hpl hid him hfp hph hpgs

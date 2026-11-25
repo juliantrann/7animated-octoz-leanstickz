@@ -77,7 +77,8 @@ theorem ndi_all {pl pc ip cpy : List Byte} {Pm : (Addr → Byte) → Prop} {E : 
     (h5 : rdd(fV W sp X.cpu.gpr, 7937248#64) = 0#32)
     (hK : KeptW Wl s₀ X) (hA : Agree F X.proc.mm.mem W) (hrip : X.cpu.rip = ndi_at.add 0)
     (hsp : X.cpu.gpr.rsp = sp + 120#64)
-    (ke : ∀ r Z t', KeptW Wl s₀ Z →
+    (ke : ∀ r, (∃ t₀, o t₀ (.readlink none Gor.pse) = r ∧ ∀ x, r = .procExe x → pathMax ≤ x.bytes.length) →
+      ∀ Z t', KeptW Wl s₀ Z →
       Agree F Z.proc.mm.mem (Gor.frV (nV W sp X.cpu.gpr) { X.cpu.gpr with rsp := sp - 8#64 }) →
       Z.cpu.rip = gor_at.add 271 → Z.cpu.gpr.rax = 18446744073709551615#64 → Z.cpu.gpr.rsp = sp - 8#64 →
       Z.cpu.gpr.rbx = X.cpu.gpr.rbx → Z.cpu.gpr.rbp = X.cpu.gpr.rbp → Z.cpu.gpr.r12 = X.cpu.gpr.r12 →
@@ -90,6 +91,8 @@ theorem ndi_all {pl pc ip cpy : List Byte} {Pm : (Addr → Byte) → Prop} {E : 
     (hcpq : Gor.PcpyAt prof L o 4198592#64 Pq)
     (hinm : CodeIn L 6500704#64 mlc) (hm0 : 0 < mlc.length)
     (hmal : Mal.At prof (withNew F N) (N ++ Wl) L o fsb (sp.toNat - 4144) 6500704#64 Pa)
+    {mb : Nat} (hmb : 16 ≤ mb)
+    (hPaH : ∀ k W, Pa k W ↔ Mal.Hp (withNew F N) (N ++ Wl) fsb (sp.toNat - 4144) (1072 * k + mb) W)
     (hinl : CodeIn L 4198664#64 sl) (hl0 : 0 < sl.length) (hlenA : Str.LenAt prof L o 4198664#64 Pk)
     (hinz : CodeIn L 4198528#64 ms) (hz0 : 0 < ms.length) (hset : Ipa.SetAt prof L o 4198528#64 Ps)
     (hint : CodeIn L Tgv.tgv_at Tgv.tgv)
@@ -157,6 +160,7 @@ theorem ndi_all {pl pc ip cpy : List Byte} {Pm : (Addr → Byte) → Prop} {E : 
       (∀ a : Addr, (a.toNat < 7937664 ∨ 7937720 ≤ a.toNat ∧ a.toNat < 7940480 ∨ sp.toNat ≤ a.toNat ∨
         Mal.Kf fsb a) →
         U a = hV W' (Tp b + 16#64) 4194368#64 8#64 a) →
+      Mal.Hp (withNew F N) (N ++ Wl) fsb (sp.toNat - 4144) (1072 * ka + mb) U →
       Seg prof G Wl' L s₂ o → Base s₂ lim (b + size pad 656#64 + C2 b pad) fsb ks → KeptW Wl' s₂ Z →
       Agree G Z.proc.mm.mem W₂ → Eqo sp W₂ (lV (bV U m)) → Z.cpu.rip = e₂.add j₂ → Z.cpu.gpr.rsp = sp + 128#64 →
       Z.cpu.gpr.rbx = X.cpu.gpr.rbx → Z.cpu.gpr.rbp = X.cpu.gpr.rbp → Z.cpu.gpr.r12 = X.cpu.gpr.r12 →
@@ -209,7 +213,7 @@ theorem ndi_all {pl pc ip cpy : List Byte} {Pm : (Addr → Byte) → Prop} {E : 
       (by omega)]; exact h4)
     (by rw [rd_of (V := fV W sp X.cpu.gpr) (x := 7937248) (n := 4) (by omega) fun a a1 a2 =>
       LB a (by omega)]; exact h5)
-    hin hinh hinc hc0 hcpq hinm hm0 hmal hinl hl0 hlenA hinz hz0 hset hint hn
+    hin hinh hinc hc0 hcpq hinm hm0 hmal hmb hPaH hinl hl0 hlenA hinz hz0 hset hint hn
     (fun W₁ hW => hPq W₁ fun a a1 a2 a3 => (hW a a1 a2 a3).trans (LB a a1))
     (fun W₁ hW => hPa x n s Vc M g hx h2n hn4 h1s hs1 hg' hVc hAf W₁ fun a a1 a2 a3 a4 a5 =>
       (hW a a1 a4 a5).trans (hout a a2 a3))
@@ -248,8 +252,9 @@ theorem ndi_all {pl pc ip cpy : List Byte} {Pm : (Addr → Byte) → Prop} {E : 
     (by rw [rd_of (V := fV W sp X.cpu.gpr) (x := 7943392) (n := 8) (by omega) fun a a1 a2 => LM a (by omega)
       (by omega)]; exact hla)
     hmg hGo hGc hfit hGw hGr hcode hww hlG hl hin₂ h₂ ((RQ 120 (by omega)).trans hret) hKY hAY hMY hrY hspY hdiY
-    (fun U s₂ Z t' W₂ uv c₂ hB₂ hK₂ hA₂ hM₂ hr₂ hs₂ hbx hbp h12 h13 h14 h15 =>
-      k x n s Vc M W' evs g U s₂ Z t' W₂ hx h2n hn4 h1s hs1 hg' hVc hAf hnul hout LO SM hev uv c₂ hB₂ hK₂ hA₂ hM₂
+    (fun U s₂ Z t' W₂ uv hHp c₂ hB₂ hK₂ hA₂ hM₂ hr₂ hs₂ hbx hbp h12 h13 h14 h15 =>
+      k x n s Vc M W' evs g U s₂ Z t' W₂ hx h2n hn4 h1s hs1 hg' hVc hAf hnul hout LO SM hev uv hHp c₂ hB₂ hK₂ hA₂
+        hM₂
         hr₂ hs₂ (hbx.trans ((RQ 80 (by omega)).trans r0)) (hbp.trans ((RQ 88 (by omega)).trans r1))
         (h12.trans ((RQ 96 (by omega)).trans r2)) (h13.trans ((RQ 104 (by omega)).trans r3))
         (h14.trans ((RQ 112 (by omega)).trans r4)) (h15.trans h15Y))

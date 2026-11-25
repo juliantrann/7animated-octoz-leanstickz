@@ -412,9 +412,10 @@ def c90Wr (l : Addr) (n : Nat) : List (Nat × Nat) :=
   [(7990208, 7990248), (7990256, 7990280), (l.toNat + 16 + 32 * n, l.toNat + 16 + 32 * n + 64),
     (l.toNat + 8, l.toNat + 16), (8029184, 8029200)]
 
-/-- `c90_runs` for `Jg`, the spec `wrSpec (c90Wr l n)`, which holds the shared words (`jg_wrk`). -/
+/-- `c90_runs` for `Jg`, the spec `wrSpec (c90Wr l n ++ ex)`, which holds the shared words and any more `ex` that
+later constructors share (`jg_wrk`). -/
 theorem c90_jg {V : Addr → Byte} {spec : Nat → CSpec} {G : Nat → (Addr → Byte) → Prop} {sp fb l : Addr}
-    {tg : Nat → Addr} {a₀ a₁ a₂ : BitVec 64} {m n : Nat} (c : Seg prof F Wl L s₀ o)
+    {tg : Nat → Addr} {a₀ a₁ a₂ : BitVec 64} {m n : Nat} {ex : List (Nat × Nat)} (c : Seg prof F Wl L s₀ o)
     (hC : Csu.Env F Wl L sp tg) (hin : CodeIn L sti_at sti)
     (hfs : s₀.cpu.seg.fsBase = fb) (hinM : CodeIn L Mxs.mxs_at Mxs.mxs) (hinI : CodeIn L Mxi.mxi_at Mxi.mxi)
     (hinC : CodeIn L Cxa.cxa_at Cxa.cxa) (hinN : CodeIn L Nef.nef_at Nef.nef) (htg : csuTg m = sti_at.add 2480)
@@ -430,10 +431,10 @@ theorem c90_jg {V : Addr → Byte} {spec : Nat → CSpec} {G : Nat → (Addr →
     (hlc : l.toNat + 1040 ≤ 8029184)
     (hmw : ∀ i < 40, Foot Wl (Addr.add (BitVec.ofNat 64 7990208) i))
     (hob : ∀ i < 24, Foot Wl (Addr.add (BitVec.ofNat 64 7990256) i))
-    (hm : 3 ≤ m) (hc : calls m = []) (hspec : spec m = wrSpec (c90Wr l n)) (hD : ∀ k, (spec k).Dep)
+    (hm : 3 ≤ m) (hc : calls m = []) (hspec : spec m = wrSpec (c90Wr l n ++ ex)) (hD : ∀ k, (spec k).Dep)
     (hT : ∀ k, ∀ x ∈ (spec k).wr, ∀ y ∈ tabs, x.2 ≤ y.1 ∨ y.2 ≤ x.1)
     (hB : ∀ k, ∀ x ∈ (spec k).wr, x.2 ≤ sp.toNat - 1024)
-    (hXw : ∀ k, 3 ≤ k → k < m → ∀ x ∈ (spec k).wr, ∀ y ∈ c90Wr l n, x.2 ≤ y.1 ∨ y.2 ≤ x.1)
+    (hXw : ∀ k, 3 ≤ k → k < m → ∀ x ∈ (spec k).wr, ∀ y ∈ c90Wr l n ++ ex, x.2 ≤ y.1 ∨ y.2 ≤ x.1)
     (hGx : ∀ W, G m W → CxPre fb l n W)
     (hG : ∀ W V₁ V₂ V₃ V', G m W →
       (∀ a : Addr, ¬ (sp.toNat - 136 ≤ a.toNat ∧ a.toNat < sp.toNat - 64) → V₁ a = ob90 W a) →
@@ -454,6 +455,7 @@ theorem c90_jg {V : Addr → Byte} {spec : Nat → CSpec} {G : Nat → (Addr →
     hlc hmw hob (fun W hJ => hGx W hJ.2)
     fun W V₁ V₂ V₃ V' hJ hv hR₁ hmo hR₂ => jg_wrk hm hc (by omega) hspec hD
       (fun x hx => hT m x (by rw [hspec]; exact hx)) hB hXw (fun a h1 h2 => ?_) (hG W V₁ V₂ V₃ V' · hv hR₁ hmo hR₂) hJ
+  replace h1 : ¬ InR (c90Wr l n) a.toNat := fun h => h1 (InR_append_left h)
   rw [hR₂.out a (by rw [n64]; omega) (fun h => h1 (by simp only [c90Wr, InR]; omega))
       (fun h => h1 (by rw [ep'] at h; simp only [c90Wr, InR]; omega)) (fun h => h1 (by simp only [c90Wr, InR]; omega)),
     hmo a (by omega) (fun h => h1 (by simp only [c90Wr, InR]; omega)),

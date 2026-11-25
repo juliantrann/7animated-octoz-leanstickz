@@ -90,7 +90,8 @@ theorem launch_to_cxa {l : Launch} {n : Nat} {o : Oracle} {L : List (Addr × Lis
         UtsnameOk u → KernelNew u → PtrW (ctxOf l.prof l.s₀ l.args c) W V' (brkOf l) (osVersion u) (fun _ => True) →
         rdd(TlsMem V' (brkOf l), 8029624#64) = 0 →
         -- `readlink` of `/proc/self/exe` fails
-        (∀ r Z' t', KeptW ([⟨brkOf l, 8192⟩] ++ (zzsFoot (loOf l n c) c.stackTop L).writes) s₂ Z' →
+        (∀ r, (∃ t₀, o t₀ (.readlink none Gor.pse) = r ∧ ∀ x, r = .procExe x → pathMax ≤ x.bytes.length) →
+          ∀ Z' t', KeptW ([⟨brkOf l, 8192⟩] ++ (zzsFoot (loOf l n c) c.stackTop L).writes) s₂ Z' →
           Agree (withNew (zzsFoot (loOf l n c) c.stackTop L) [⟨brkOf l, 8192⟩]) Z'.proc.mm.mem
             (Gor.frV (Ndi.nV (lifW W Z) (lifSp Z) (lifY W Z)) { lifY W Z with rsp := lifSp Z - 8#64 }) →
           Z'.cpu.rip = gor_at.add 271 → Z'.cpu.gpr.rax = 18446744073709551615#64 →
@@ -113,6 +114,11 @@ theorem launch_to_cxa {l : Launch} {n : Nat} {o : Oracle} {L : List (Addr × Lis
           Z₁.cpu.gpr.r12 = (lifY W Z).r12 → Z₁.cpu.gpr.r13 = (lifY W Z).r13 →
           KeptW (lifG (loOf l n c) c.stackTop (brkOf l) L).writes s₃ Z' →
           Agree (lifG (loOf l n c) c.stackTop (brkOf l) L) Z'.proc.mm.mem
+            (Cti.CtMem (Lif.bcV W₂ Z₁.cpu.gpr (BitVec.ofNat 64 (stackLayout l.args l.prof.linux c).strings) s)
+              (brkOf l + 2176#64) 7299392#64 7296832#64 7295296#64) →
+          Mal.Hp (withNew (withNew (zzsFoot (loOf l n c) c.stackTop L) [⟨brkOf l, 8192⟩]) (brkN (brkOf l)))
+            (brkN (brkOf l) ++ ([⟨brkOf l, 8192⟩] ++ (zzsFoot (loOf l n c) c.stackTop L).writes)) (brkOf l + 2176#64)
+            ((lifSp Z).toNat - 4144) (1072 * 0 + 73840)
             (Cti.CtMem (Lif.bcV W₂ Z₁.cpu.gpr (BitVec.ofNat 64 (stackLayout l.args l.prof.linux c).strings) s)
               (brkOf l + 2176#64) 7299392#64 7296832#64 7295296#64) →
           Ims.Short (lifW W Z) (BitVec.ofNat 64 (stackLayout l.args l.prof.linux c).strings) (arg0 l.args).length s →
@@ -144,7 +150,7 @@ theorem launch_to_cxa {l : Launch} {n : Nat} {o : Oracle} {L : List (Addr × Lis
   obtain ⟨hke, hk⟩ := hfin s₂ Z W V' g x1 x2 x3 d r10 r8 r9 u y1 y2 y3 y4 y5 q1 q2 q3 hax hdi c₂ hB₂ hK₂ hA₂ hr₂
     hRg hdx hsi hdi' hcpu hgot hhw hpl hMB hu hnew hW hT3
   refine ⟨hke, ?_⟩
-  intro x evs s₃ Z₁ Z' t' s W₂ hevs c₃ hB₃ hN hz1 hzp h12' h13' hK₃ hA₃ hsh hrip hrsp hrbx hrbp hr12 hr13 hr14 hr15
+  intro x evs s₃ Z₁ Z' t' s W₂ hevs c₃ hB₃ hN hz1 hzp h12' h13' hK₃ hA₃ hHp hsh hrip hrsp hrbx hrbp hr12 hr13 hr14 hr15
   -- where the layout puts things
   obtain ⟨h16, hn', -, -, hlt, hlo, htop⟩ :=
     stack_room (lb := l.prof.linux) hv.stackTop hv.stackAlign (ExecStart.limits h.2.1) hroom
@@ -186,7 +192,7 @@ theorem launch_to_cxa {l : Launch} {n : Nat} {o : Oracle} {L : List (Addr × Lis
     (var_at tp (by omega) (by omega) hFd)
     (var_at ti (by omega) (by omega) hFw)
     (var_at tk (by omega) (by omega) hFw)
-    (fun V'' g' Z'' t'' a1 a2 a3 a4 a5 a6 a7 => hk x evs s₃ Z₁ Z' s W₂ hevs c₃ hB₃ hN hz1 hzp h12' h13' hK₃ hA₃ hsh
+    (fun V'' g' Z'' t'' a1 a2 a3 a4 a5 a6 a7 => hk x evs s₃ Z₁ Z' s W₂ hevs c₃ hB₃ hN hz1 hzp h12' h13' hK₃ hA₃ hHp hsh
       hrip hrsp hrbx hrbp hr12 hr13 hr14 hr15 V'' g' Z'' t'' a1 a2 a3 a4 a5 a6 a7)
 
 end FV7z.Start

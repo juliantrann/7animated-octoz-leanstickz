@@ -1,4 +1,5 @@
 import FV7z.Ipa.Run1
+import FV7z.Mal.HeapF
 /-!
 # `_dl_init_paths`: from 58 to the return of the first `malloc` (75) (PLAN.md G3, startup)
 
@@ -19,7 +20,9 @@ set_option maxHeartbeats 4000000 in
 theorem to75 {fb : Addr} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (hin : CodeIn L ipa_at ipa)
     {mlc : List Byte} {Pa : Nat → (Addr → Byte) → Prop} {hi ka : Nat}
     (hinm : CodeIn L 6500704#64 mlc) (hm0 : 0 < mlc.length)
-    (hmal : Mal.At prof F Wl L o fb hi 6500704#64 Pa) {V V₃ : Addr → Byte} {g : Gprs} {e P : Addr} {s E : Nat}
+    (hmal : Mal.At prof F Wl L o fb hi 6500704#64 Pa)
+    {mb : Nat} (hmb : 16 ≤ mb) (hPaH : ∀ k W, Pa k W ↔ Mal.Hp F Wl fb hi (1072 * k + mb) W)
+    {V V₃ : Addr → Byte} {g : Gprs} {e P : Addr} {s E : Nat}
     (he : 8388872 + 400 ≤ e.toNat) (he2 : e.toNat + 16 ≤ 2 ^ 64)
     (hFs : ∀ a : Addr, e.toNat - 400 ≤ a.toNat → a.toNat < e.toNat + 8 → Foot Wl a ∧ Foot F.data a)
     (hwl : ∀ a : Addr, hi ≤ a.toNat → a.toNat < e.toNat → Foot Wl a) (hhi : hi + 600 ≤ e.toNat)
@@ -41,8 +44,7 @@ theorem to75 {fb : Addr} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase
       (∀ a : Addr, a.toNat < 7940480 → (a.toNat < 7937680 ∨ 7937704 ≤ a.toNat) → V₄ a = V a) →
       rdq(V₄, 7937688#64) = BitVec.ofNat 64 E →
       (∀ a : Addr, e.toNat - 88 ≤ a.toNat → V₄ a = iV0 V g a) →
-      (∀ W : Addr → Byte, (∀ a : Addr, 7940480 ≤ a.toNat → a.toNat < e.toNat - 96 →
-        (a.toNat < A.toNat ∨ A.toNat + 40 ≤ a.toNat) → W a = V₄ a) → Pa ka W) →
+      Mal.HpR F Wl fb hi (1072 * ka + mb) (fun a => A.toNat ≤ a ∧ a < A.toNat + 40) V₄ →
       (∀ a : Addr, Mal.Kf fb a → V₄ a = V a) → 8032256 ≤ A.toNat → fb.toNat + 64 ≤ A.toNat →
       GoG prof L o gev gP gE Z' t') :
     GoG prof L o gev gP gE Z t := by
@@ -71,11 +73,18 @@ theorem to75 {fb : Addr} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase
   · rw [s₂, Tun.rd_Vst_self _ _ _ (toBytesLE_length _ _) (by ifd), ofBytesLE_toBytesLE (n := 8) rfl]
     try rfl
   -- 75: back from `malloc`
-  intro Z₂ t₃ V₄ A hK₃ hA₃ hr₃ hs₃ hax hbx₃ hbp₃ h12₃ h13₃ h14₃ h15₃ hA1 hA2 hAf hkeep hPa4 hKnA hAp hApf
-  simp only [hdi, s₂, BitVec.toNat_ofNat, Nat.reducePow, Nat.reduceMod, f96 hr0] at hA2 hAf hkeep hPa4
+  intro Z₂ t₃ V₄ A hK₃ hA₃ hr₃ hs₃ hax hbx₃ hbp₃ h12₃ h13₃ h14₃ h15₃ hA1 hA2 hAf hkeep hPa4 hKnA hAp hApf hT1 hT2
+    hT3
+  simp only [hdi, s₂, BitVec.toNat_ofNat, Nat.reducePow, Nat.reduceMod, f96 hr0] at hA2 hAf hkeep hPa4 hT2
+  -- the heap after `malloc (40)`, `A` given
+  have hR4 : Mal.HpR F Wl fb hi (1072 * ka + mb) (fun a => A.toNat ≤ a ∧ a < A.toNat + 40) V₄ :=
+    (Mal.HpR.mal (R := fun _ => False)
+      ⟨(hPaH _ _).1 (hPa3 _ fun a h1 h2 h3 => by
+        rw [Tun.Vst_out _ _ _ _ (by ifd) (by ifd), Tun.Vst_out _ _ _ _ (by ipd) (by ipd)]), fun _ h => h.elim⟩
+      (by omega) ((hPaH _ _).1 (hPa4 _ fun _ _ _ _ => rfl)) hT1 hT2 hT3).sub fun _ h => Or.inr h
   refine k Z₂ t₃ V₄ A hK₃ hA₃ hr₃ (by rw [hs₃, s₂, t96p]) hax (by rw [hbx₃, hg₂, set4_rbx, hg₁])
     (by rw [hbp₃, hg₂, set4_rbp, hg₁]) (by rw [h12₃, hg₂, set4_r12, hg₁]) (by rw [h13₃, hg₂, set4_r13, hg₁])
-    (by rw [h14₃, hg₂, set4_r14, hg₁]) (by rw [h15₃, hg₂, set4_r15, hg₁]) hA1 hA2 hAf ?_ ?_ ?_ hPa4 ?_ hAp hApf
+    (by rw [h14₃, hg₂, set4_r14, hg₁]) (by rw [h15₃, hg₂, set4_r15, hg₁]) hA1 hA2 hAf ?_ ?_ ?_ hR4 ?_ hAp hApf
   · intro a h1 h2
     rw [hkeep a (Or.inl h1), Tun.Vst_out _ _ _ _ (by ifd) (by ifd), Tun.Vst_out _ _ _ _ (by ipd) (by ipd),
       hlo3 a h1 (by omega)]

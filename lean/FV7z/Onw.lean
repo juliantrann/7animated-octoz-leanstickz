@@ -32,7 +32,7 @@ theorem Hp.mvR {F : Footprint} {Wl : List Rgn} {fb : Addr} {hi m : Nat} {V W : A
   have e8 : (T + 8#64).toNat = T.toNat + 8 := by rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega
   have et : (7940768#64 : Addr).toNat = 7940768 := rfl
   have es : (7942856#64 : Addr).toNat = 7942856 := rfl
-  refine ⟨C, T, szw, sm, G.mvR (E := T.toNat) hf1 hf2 hc1 hc2 (by omega) fun a ha _ => hW a (by
+  refine ⟨C, T, szw, sm, G.mvR (E := T.toNat) hf1 hf2 (by omega) hc2 (by omega) fun a ha _ => hW a (by
       unfold GlR at ha ⊢; omega), hf1, hf2, hc1, hc2, hT, hTh, hhi, ?_, ?_, ?_, hle, hge, hTF⟩
   · rw [Sbrk.rd_eq (V := V) (x := 7940768#64) (n := 8) (by rw [et]; omega) fun a a1 a2 =>
       hW a (by unfold GlR; rw [et] at a1 a2; omega)]
@@ -198,7 +198,7 @@ theorem onw_hp {fb : Addr} {hi m : Nat} (c : Seg prof F Wl L s₀ o) (hfs : s₀
   · rw [hsp4, Tun.rd_Vst_self _ (X.cpu.gpr.rsp - 8 - 8) _ (toBytesLE_length _ _) (by rw [e16]; omega),
       ofBytesLE_toBytesLE (n := 8) rfl]
     try rfl
-  intro Z t5 V₂ p hKZ hAZ hrZ hspZ haxZ hbxZ hbpZ h12Z h13Z h14Z h15Z hp1 hp2 hpn hpF hV₂ hHp
+  intro Z t5 V₂ p hKZ hAZ hrZ hspZ haxZ hbxZ hbpZ h12Z h13Z h14Z h15Z hp1 hp2 hpn hpF hV₂ hHp _ _ _
   rw [hsp4, e16] at hV₂
   rw [hdi4] at hpn hpF hHp
   have hp0 : p ≠ 0 := by rintro rfl; exact absurd hp1 (by decide)

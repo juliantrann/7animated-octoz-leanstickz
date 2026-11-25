@@ -22,7 +22,9 @@ set_option maxHeartbeats 4000000 in
 theorem to267 {fb : Addr} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (hin : CodeIn L ipa_at ipa)
     {mlc : List Byte} {Pa : Nat → (Addr → Byte) → Prop} {hi ka : Nat}
     (hinm : CodeIn L 6500704#64 mlc) (hm0 : 0 < mlc.length)
-    (hmal : Mal.At prof F Wl L o fb hi 6500704#64 Pa) {V₄ : Addr → Byte} {r A : Addr} {E q : Nat}
+    (hmal : Mal.At prof F Wl L o fb hi 6500704#64 Pa)
+    {mb : Nat} (hmb : 16 ≤ mb) (hPaH : ∀ k W, Pa k W ↔ Mal.Hp F Wl fb hi (1072 * k + mb) W)
+    {V₄ : Addr → Byte} {r A : Addr} {E q : Nat}
     (hq : E = 8 ∧ q = 2 ∨ E = 16 ∧ q = 3)
     (hr : 8029560 + 88 ≤ r.toNat) (hr2 : r.toNat + 16 ≤ 2 ^ 64)
     (hFs : ∀ a : Addr, r.toNat - 88 ≤ a.toNat → a.toNat < r.toNat + 8 → Foot Wl a ∧ Foot F.data a)
@@ -34,8 +36,7 @@ theorem to267 {fb : Addr} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBas
     (hA2 : A.toNat + 40 ≤ r.toNat - 88)
     (hAW : ∀ a : Addr, A.toNat ≤ a.toNat → a.toNat < A.toNat + 40 → Foot Wl a)
     (hN4 : rdq(V₄, 7937688#64) = BitVec.ofNat 64 E)
-    (hPa4 : ∀ W : Addr → Byte, (∀ a : Addr, 7940480 ≤ a.toNat → a.toNat < r.toNat - 88 →
-      (a.toNat < A.toNat ∨ A.toNat + 40 ≤ a.toNat) → W a = V₄ a) → Pa (ka + 1) W)
+    (hR4 : Mal.HpR F Wl fb hi (1072 * (ka + 1) + mb) (fun a => A.toNat ≤ a ∧ a < A.toNat + 40) V₄)
     (Z : State) (t : Nat) (hK : KeptW Wl s₀ Z) (hA : Agree F Z.proc.mm.mem V₄) (hrip : Z.cpu.rip = ipa_at.add 75)
     (hsp : Z.cpu.gpr.rsp = r + 18446744073709551536#64) (hax : Z.cpu.gpr.rax = A) (hbp : Z.cpu.gpr.rbp = r)
     (k : ∀ Z' t' (V₅ : Addr → Byte) (B : Addr), KeptW Wl s₀ Z' → Agree F Z'.proc.mm.mem V₅ →
@@ -50,6 +51,8 @@ theorem to267 {fb : Addr} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBas
       (∀ a : Addr, (a.toNat < 7937664 ∨ 7937720 ≤ a.toNat ∧ a.toNat < 7940480 ∨
         r.toNat - 80 ≤ a.toNat ∧ a.toNat < r.toNat - 72 ∨ r.toNat - 48 ≤ a.toNat) → V₅ a = V₄ a) →
       (∀ a : Addr, Mal.Kf fb a → V₅ a = V₄ a) → 8032256 ≤ B.toNat → fb.toNat + 64 ≤ B.toNat →
+      Mal.HpR F Wl fb hi (1072 * ka + mb) (fun a => (A.toNat ≤ a ∧ a < A.toNat + 40 ∨
+        B.toNat ≤ a ∧ a < B.toNat + 160 * q) ∨ 8029552 ≤ a ∧ a < 8029560) V₅ →
       GoG prof L o gev gP gE Z' t') :
     GoG prof L o gev gP gE Z t := by
   have hr0 : 96 ≤ r.toNat := by omega
@@ -76,7 +79,8 @@ theorem to267 {fb : Addr} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBas
   rw [hsp', hsp, u88] at hA₂
   have s₂ : Y₂.cpu.gpr.rsp = r + 18446744073709551528#64 := by rw [hg₂, set4_rsp, hsp', hsp, u88]
   have hdi₂ : Y₂.cpu.gpr.rdi = BitVec.ofNat 64 (160 * q) := by rw [hg₂, set4_rdi, hdi]
-  refine hmal c hK₂ hA₂ hr₂ (hPa4 _ fun a h1 h2 h3 => ?_) (by rw [hdi₂, hq160]; omega) hfs
+  refine hmal c hK₂ hA₂ hr₂ ((hPaH _ _).2 (hR4.keep (by omega) fun a h1 h2 _ => ?_).1)
+    (by rw [hdi₂, hq160]; omega) hfs
     (by rw [s₂, f88 hr0]; omega) (by rw [s₂, f88 hr0]; omega)
     (fun a h1 h2 => hwl a h1 (by rw [s₂, f88 hr0] at h2; omega)) hin
     (lt_len (j := 153) (by omega)) ?_ (by rw [s₂]; ireg hFD) ?_
@@ -85,8 +89,17 @@ theorem to267 {fb : Addr} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBas
   · rw [s₂, Tun.rd_Vst_self _ _ _ (toBytesLE_length _ _) (by ifd), ofBytesLE_toBytesLE (n := 8) rfl]
     try rfl
   -- 153: back from `malloc`
-  intro Z₂ t₃ V₅ B hK₃ hA₃ hr₃ hs₃ hax₃ hbx₃ hbp₃ h12₃ h13₃ h14₃ h15₃ hB1 hB2 hBf hkeep _ hKnB hBk hBfb
-  simp only [hdi₂, s₂, hq160, f88 hr0] at hB2 hBf hkeep
+  intro Z₂ t₃ V₅ B hK₃ hA₃ hr₃ hs₃ hax₃ hbx₃ hbp₃ h12₃ h13₃ h14₃ h15₃ hB1 hB2 hBf hkeep hPa5 hKnB hBk hBfb hT1 hT2
+    hT3
+  simp only [hdi₂, s₂, hq160, f88 hr0] at hB2 hBf hkeep hT2
+  -- the heap after `malloc (160 q)`: `A`, `B` and `_dl_all_dirs` apart
+  have hR5 : Mal.HpR F Wl fb hi (1072 * ka + mb) (fun a => (A.toNat ≤ a ∧ a < A.toNat + 40 ∨
+      B.toNat ≤ a ∧ a < B.toNat + 160 * q) ∨ 8029552 ≤ a ∧ a < 8029560) V₅ :=
+    (Mal.HpR.mal (hR4.keep (by omega) fun a h1 h2 _ => by
+        rw [Tun.Vst_out _ _ _ _ (by ifd) (by ifd), Tun.Vst_out _ _ _ _ (by ifd) (by ifd),
+          Tun.Vst_out _ _ _ _ (by ipd) (by ipd)])
+      (by omega) ((hPaH _ _).1 (hPa5 _ fun _ _ _ _ => rfl)) hT1 hT2 hT3).addLo (by omega)
+      fun a h => Or.inr ⟨by omega, by omega⟩
   have hbp₂ : Z₂.cpu.gpr.rbp = r := by rw [hbp₃, hg₂, set4_rbp, hbp', hbp]
   have h14₂ : Z₂.cpu.gpr.r14 = A := by rw [h14₃, hg₂, set4_r14, h14, hax]
   have hn5 : rdq(V₅, r + 18446744073709551560#64) = BitVec.ofNat 64 E := by
@@ -105,12 +118,15 @@ theorem to267 {fb : Addr} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBas
       (by rw [hax₃]; exact fun a h1 h2 => (hBf a h1 h2).1)
       (by rw [hbp₂]; exact fun a h1 h2 => hFs a (by omega) h2) hW7a hWb (by rw [hax₃]; exact hBfb)
       (by rw [h14₂]; exact hAfb)) ?_
-  rintro j' g' fl V' ⟨rfl, h15', h14', h12', hbx', h13', hbp', hsp', h64', h72', hk', hkn'⟩ Y₃ t₄ hK₄ hA₄ hr₄ hg₄ -
+  rintro j' g' fl V' ⟨rfl, h15', h14', h12', hbx', h13', hbp', hsp', h64', h72', hk', hkn', hab'⟩ Y₃ t₄ hK₄ hA₄ hr₄
+    hg₄ -
   subst hg₄
   rw [hbp₂] at h64' h72' hk'
+  rw [hbp₂, h14₂, hax₃] at hab'
+  have hR6 := hR5.keep (W := V') (by omega) fun a h1 h2 h3 => hab' a ⟨h1, by omega, by omega, by omega, by omega⟩
   refine k Y₃ t₄ V' B hK₄ hA₄ hr₄ (by rw [hsp', hs₃, s₂, u88p]) (by rw [hbp', hbp₂]) (by rw [h15', hax₃])
     (by rw [h14', h14₂]) h12' hbx' (by rw [h13', h13₃, hg₂, set4_r13, h13]) hB1 hB2
-    (fun a h1 h2 => (hBf a h1 h2).1) h64' h72' ?_ ?_ ?_ hBk hBfb
+    (fun a h1 h2 => (hBf a h1 h2).1) h64' h72' ?_ ?_ ?_ hBk hBfb hR6
   · rw [rdk hk' (lo := r.toNat - 56) (hi := 2 ^ 64) (fun a h1 _ => Or.inr (Or.inr (Or.inr h1))) (by ifd)
       (by ifd) (by ifd)]
     exact hn5

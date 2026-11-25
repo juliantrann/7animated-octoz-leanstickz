@@ -14,8 +14,8 @@ the top can be in it. `AtH` is the form that holds:
   map that agrees with the one at the return from `0x792980` to `hi` but for `[p, p + n)`.
 - `Hp.mv`: `Hp` (a top of at least 16 bytes) for bytes that agree from `0x792980` to `hi`.
 - `at_of`: `AtH` gives `Mal.At` (the form the callers in `Hwc`, `Ipa`, `Ndi` use); `at_ok`: `Mal.At` of `malloc`.
-- `at_hp`: `AtH` of `malloc` (`0x633160`) with `Pm k = Hp … (1072 k + 16)` (`mal_hp`; the 16 keep the top's
-  size word below `hi`).
+- `at_hp`: `AtH` of `malloc` (`0x633160`) with `Pm k = Hp … (1072 k + m₀)` (`mal_hp`; callers keep `16 ≤ m₀`
+  for the top's size word below `hi`).
 -/
 open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn FV7z.Start
 open FV7z.Sbrk (rd_eq)
@@ -43,6 +43,8 @@ def AtH (prof : Profile) (F : Footprint) (Wl : List Rgn) (L : List (Addr × List
         hi ≤ a.toNat ∧ (a.toNat + 208 < X.cpu.gpr.rsp.toNat ∨ X.cpu.gpr.rsp.toNat ≤ a.toNat) → V₂ a = V a) →
       (∀ W : Addr → Byte, (∀ a : Addr, 7940480 ≤ a.toNat → a.toNat < hi →
         (a.toNat < p.toNat ∨ p.toNat + X.cpu.gpr.rdi.toNat ≤ a.toNat) → W a = V₂ a) → Pm k W) →
+      rdq(V, 7940768#64).toNat + 16 ≤ p.toNat → p.toNat + X.cpu.gpr.rdi.toNat ≤ rdq(V₂, 7940768#64).toNat + 8 →
+      (∀ a : Addr, a.toNat < rdq(V, 7940768#64).toNat + 8 → ¬ (7940768 ≤ a.toNat ∧ a.toNat < 7940776) → V₂ a = V a) →
       GoG prof L o gev gP gE Z t') →
     GoG prof L o gev gP gE X t
 
@@ -54,7 +56,7 @@ theorem Hp.mv {F : Footprint} {Wl : List Rgn} {fb : Addr} {hi m : Nat} {V W : Ad
   have e8 : (T + 8#64).toNat = T.toNat + 8 := by rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega
   have et : (7940768#64 : Addr).toNat = 7940768 := rfl
   have es : (7942856#64 : Addr).toNat = 7942856 := rfl
-  refine ⟨C, T, szw, sm, G.mv (E := T.toNat) hf1 hf2 hc1 hc2 (by omega) fun a a1 a2 _ => hW a a1 (by omega),
+  refine ⟨C, T, szw, sm, G.mv (E := T.toNat) hf1 hf2 (by omega) hc2 (by omega) fun a a1 a2 _ => hW a a1 (by omega),
     hf1, hf2, hc1, hc2, hT, hTh, hhi, ?_, ?_, ?_, hle, hge, hTF⟩
   · rw [rd_eq (V := V) (x := 7940768#64) (n := 8) (by rw [et]; omega) fun a a1 a2 =>
       hW a (by rw [et] at a1; omega) (by rw [et] at a2; omega)]
@@ -66,12 +68,12 @@ theorem Hp.mv {F : Footprint} {Wl : List Rgn} {fb : Addr} {hi m : Nat} {V W : Ad
       hW a (by rw [es] at a1; omega) (by rw [es] at a2; omega)]
     exact hsm
 
-/-- `malloc` after the first call: `AtH` with `Pm k` the heap with a top of at least `1072 k + 16` bytes. -/
+/-- `malloc` after the first call: `AtH` with `Pm k` the heap with a top of at least `1072 k + m₀` bytes. -/
 theorem at_hp {prof : Profile} {F : Footprint} {Wl : List Rgn} {L : List (Addr × List Byte)} {o : Oracle}
-    {fb : Addr} {hi : Nat} (hin : CodeIn L mnx_at mnx) (hinI : CodeIn L imm_at imm) :
-    AtH prof F Wl L o fb hi mnx_at fun k W => Hp F Wl fb hi (1072 * k + 16) W := by
+    {fb : Addr} {hi m₀ : Nat} (hin : CodeIn L mnx_at mnx) (hinI : CodeIn L imm_at imm) :
+    AtH prof F Wl L o fb hi mnx_at fun k W => Hp F Wl fb hi (1072 * k + m₀) W := by
   intro s₀ gev gP gE X t V e' code j k c hfs hK hA hrip hH hn hhi hR hsw hin₂ hj hra kc
-  have e : 1072 * (k + 1) + 16 = 1072 * k + 16 + 1072 := by omega
+  have e : 1072 * (k + 1) + m₀ = 1072 * k + m₀ + 1072 := by omega
   rw [e] at hH
   exact mal_hp c hfs hin hinI hK hA hrip hH (.inl ⟨hn, rfl⟩) hhi hR hsw hin₂ hj hra kc
 
@@ -96,17 +98,17 @@ theorem at_of {prof : Profile} {F : Footprint} {Wl : List Rgn} {L : List (Addr �
       omega
     exact hwl _ (by rw [e]; omega) (by rw [e]; omega)
   refine h c hfs hK hA hrip hP hn hhi hR hsw hin₂ hj hra
-    fun Z t' V₂ p hKZ hAZ hrZ hsZ haZ hbx hbp h12 h13 h14 h15 hp hpf hpe hWP hV hPm => ?_
+    fun Z t' V₂ p hKZ hAZ hrZ hsZ haZ hbx hbp h12 h13 h14 h15 hp hpf hpe hWP hV hPm ht1 ht2 ht3 => ?_
   exact kc Z t' V₂ p hKZ hAZ hrZ hsZ haZ hbx hbp h12 h13 h14 h15 (by omega) (by omega) hWP
     (fun a ha => hV a (ha.elim (fun _ => .inl (by omega)) fun _ => .inr (.inr ⟨by omega, .inr (by omega)⟩)))
     (fun W hW => hPm W fun a h1 h2 h3 => hW a h1 (by omega) h3)
-    (kn_kept hp hpf fun a ha => hV a (ha.elim (fun h => .inl h) fun h => .inr (.inl h))) (by omega) hpf
+    (kn_kept hp hpf fun a ha => hV a (ha.elim (fun h => .inl h) fun h => .inr (.inl h))) (by omega) hpf ht1 ht2 ht3
 
 /-- `malloc` after the first call (`0x633160`) as `Mal.At`, with `Pm k` the heap with a top of at least
-`1072 k + 16` bytes. -/
+`1072 k + m₀` bytes. -/
 theorem at_ok {prof : Profile} {F : Footprint} {Wl : List Rgn} {L : List (Addr × List Byte)} {o : Oracle}
-    {fb : Addr} {hi : Nat} (hin : CodeIn L mnx_at mnx) (hinI : CodeIn L imm_at imm) :
-    At prof F Wl L o fb hi mnx_at fun k W => Hp F Wl fb hi (1072 * k + 16) W :=
-  at_of (Pm := fun k W => Hp F Wl fb hi (1072 * k + 16) W) (at_hp hin hinI)
+    {fb : Addr} {hi m₀ : Nat} (hin : CodeIn L mnx_at mnx) (hinI : CodeIn L imm_at imm) :
+    At prof F Wl L o fb hi mnx_at fun k W => Hp F Wl fb hi (1072 * k + m₀) W :=
+  at_of (Pm := fun k W => Hp F Wl fb hi (1072 * k + m₀) W) (at_hp hin hinI)
 
 end FV7z.Mal

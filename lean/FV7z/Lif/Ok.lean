@@ -41,6 +41,31 @@ theorem lif_ret {V W : Addr → Byte} {g gY : Gprs} {sp : Addr} (hR : g.rsp = sp
   rw [q, hW, e, FV7z.Sga.vs (toBytesLE_length _ _) (by omega)]
   exact ofBytesLE_toBytesLE (w := 64) (n := 8) rfl _
 
+/-- `Hp` of the bytes `U` at the end of `_dl_non_dynamic_init`'s body, on the bytes after `__libc_init_first`'s
+`__init_misc` and `__libc_init_secure`'s TLS stores: `Hp` reads below `hi`, apart from the scratch, the variables `nv`,
+`__init_misc`'s two words and the TLS words below the tcache. -/
+theorem hp_lif {F : Footprint} {Wl : List Rgn} {fb : Addr} {hi m n : Nat} {U W₂ : Addr → Byte} {sp a0 s : Addr}
+    {g : Gprs} {ca cb cc : BitVec 64} (h : Hp F Wl fb hi m U) (hm : 16 ≤ m) (hsp : hi + 72 ≤ sp.toNat)
+    (hg : g.rsp = sp + 128#64) (hs : sp.toNat + 128 < 2 ^ 64) (hE : Eqo sp W₂ (lV (bV U n))) :
+    Hp F Wl fb hi m (Cti.CtMem (Lif.bcV W₂ g a0 s) fb ca cb cc) := by
+  obtain ⟨C, T, hf1, hf2, hc1, hc2, hT, hTh, hhi, -, -, hW⟩ := h.cut hm
+  have e48 : (fb - 48#64).toNat = fb.toNat - 48 := by bv_omega
+  have e56 : (fb - 56#64).toNat = fb.toNat - 56 := by bv_omega
+  have e64 : (fb - 64#64).toNat = fb.toNat - 64 := by bv_omega
+  have hgr : g.rsp.toNat = sp.toNat + 128 := by rw [hg, BitVec.toNat_add, BitVec.toNat_ofNat]; omega
+  refine hW _ fun a ha => ?_
+  unfold Mal.HpF Mal.GlF at ha
+  unfold Cti.CtMem
+  rw [Tun.Vst_out _ _ _ _ (by rw [toBytesLE_length, e64]; omega) (by rw [toBytesLE_length, e64]; omega),
+    Tun.Vst_out _ _ _ _ (by rw [toBytesLE_length, e56]; omega) (by rw [toBytesLE_length, e56]; omega),
+    Tun.Vst_out _ _ _ _ (by rw [toBytesLE_length, e48]; omega) (by rw [toBytesLE_length, e48]; omega),
+    Lif.bcV_out (by omega) (by omega) (by omega), hE a (by unfold Scr; omega)]
+  refine lV_gk (bV_gk U n) a ?_
+  cases hv : nv a.toNat
+  · rfl
+  · simp only [nv, Bool.or_eq_true, Bool.and_eq_true, decide_eq_true_eq] at hv
+    omega
+
 variable {prof : Profile} {F : Footprint} {Wl N : List Rgn} {L : List (Addr × List Byte)} {s₀ : State} {o : Oracle}
   {gev : List Event} {gP : State → Nat → List Event → Prop} {gE : Outcome → List Event → Prop} {X : State} {t : Nat}
   {lim : Nat} {b fsb : Addr} {ks : Kst} {pad sm mx : BitVec 64}
@@ -81,7 +106,8 @@ theorem lif_ok {pl pc ip cpy : List Byte} {Pm : (Addr → Byte) → Prop} {E : E
     (h1 : rdq(fV W sp gY, 8029448#64) = 0#64) (h2 : rdq(fV W sp gY, 8029568#64) = 4194368#64)
     (h3 : rdq(fV W sp gY, 8029592#64) = 8#64) (h4 : rdq(fV W sp gY, 8029424#64) = 0#64)
     (h5 : rdd(fV W sp gY, 7937248#64) = 0#32)
-    (ke : ∀ r Z t', KeptW Wl s₀ Z →
+    (ke : ∀ r, (∃ t₀, o t₀ (.readlink none Gor.pse) = r ∧ ∀ x, r = .procExe x → pathMax ≤ x.bytes.length) →
+      ∀ Z t', KeptW Wl s₀ Z →
       Agree F Z.proc.mm.mem (Gor.frV (nV W sp gY) { gY with rsp := sp - 8#64 }) →
       Z.cpu.rip = gor_at.add 271 → Z.cpu.gpr.rax = 18446744073709551615#64 → Z.cpu.gpr.rsp = sp - 8#64 →
       Z.cpu.gpr.rbx = gY.rbx → Z.cpu.gpr.rbp = gY.rbp → Z.cpu.gpr.r12 = gY.r12 →
@@ -166,6 +192,8 @@ theorem lif_ok {pl pc ip cpy : List Byte} {Pm : (Addr → Byte) → Prop} {E : E
       Z₁.cpu.gpr.rsp = sp + 128#64 → Z₁.cpu.gpr.rbp = gY.rbp → Z₁.cpu.gpr.r12 = gY.r12 →
       Z₁.cpu.gpr.r13 = gY.r13 →
       KeptW Wl' s₂ Z → Agree G Z.proc.mm.mem (Cti.CtMem (Lif.bcV W₂ Z₁.cpu.gpr a0 s) fsb ca cb cc) →
+      Hp (withNew F N) (N ++ Wl) fsb (sp.toNat - 4144) (1072 * 0 + 73840)
+        (Cti.CtMem (Lif.bcV W₂ Z₁.cpu.gpr a0 s) fsb ca cb cc) →
       Ims.Short W a0 n s → Z.cpu.rip = e₃.add j₃ → Z.cpu.gpr.rsp = sp + 160#64 →
       Z.cpu.gpr.rbx = gY.rbx → Z.cpu.gpr.rbp = rdq(W, sp + 128#64) →
       Z.cpu.gpr.r12 = rdq(W, sp + 136#64) → Z.cpu.gpr.r13 = rdq(W, sp + 144#64) →
@@ -189,7 +217,7 @@ theorem lif_ok {pl pc ip cpy : List Byte} {Pm : (Addr → Byte) → Prop} {E : E
     hPq hPk hPs he hal hFs hpg hx1 hx1z hx2 hx2z htls hU hm6 hhw hfh hfm hpl0 hf1 hf2 hWb hfN hW7a hW7b hFR hlenV
     hslV hpl hid him hfp hph hpgs hla hmg hGo hGc hfit hGw hGr hcode hww hlG hl hinL
     (by rw [Lif.lif_length]; decide) (lif_ret hR hs hW) ?_
-  intro x nn ss Vc M W' evs gg U s₂ Z t' W₂ _ _ _ _ _ _ _ _ _ _ hLo hSame hev hUr hc₂ hB hK₂ hA₂ hE hr₂ hs₂ hbx hbp
+  intro x nn ss Vc M W' evs gg U s₂ Z t' W₂ _ _ _ _ _ _ _ _ _ _ hLo hSame hev hUr hHp hc₂ hB hK₂ hA₂ hE hr₂ hs₂ hbx hbp
     h12 h13 h14 h15
   refine Lif.lif_nb (lp := lp) (ct := ct) (a := ca) (b := cb) (cc := cc) (a0 := a0) (n := n) (g := Y.cpu.gpr) hc₂
     hB.fsb hinL hinS hci hir hr0 hrchr hK₂ hA₂ hr₂ hs₂ hE hUr hLo hSame hbk hfl hfsp hs (by rw [hs₂]; exact hst₂)
@@ -198,6 +226,7 @@ theorem lif_ok {pl pc ip cpy : List Byte} {Pm : (Addr → Byte) → Prop} {E : E
     hin₃ h₃ hra ?_
   intro Zf t'' s' hKf hAf hSh hrf hsf hbxf hbpf h12f h13f h14f h15f
   exact k x evs s₂ Z Zf t'' s' W₂ hev hc₂ hB ⟨W', U, m, Tp b + 16#64, hE, hUr, hLo, hSame⟩ hs₂ hbp h12 h13 hKf hAf
-    hSh hrf hsf (hbxf.trans hbx) hbpf h12f h13f (h14f.trans h14) (h15f.trans h15)
+    (hp_lif hHp (by omega) (by omega) hs₂ (by omega) hE) hSh hrf hsf (hbxf.trans hbx) hbpf h12f h13f
+    (h14f.trans h14) (h15f.trans h15)
 
 end FV7z.Ndi

@@ -76,7 +76,8 @@ theorem ptr_lif {prof : Profile} {L : List (Addr × List Byte)} {o : Oracle} {ge
     (nnz : ∀ k < n, lifW W Z (Addr.add a0 k) ≠ 0) (nz : lifW W Z (Addr.add a0 n) = 0)
     (ha1 : R ≤ a0.toNat) (ha2 : a0.toNat + n < top)
     -- `lif_ok`'s continuations
-    (ke : ∀ r Z' t', KeptW ([⟨B, 8192⟩] ++ (zzsFoot lo top L).writes) s₂ Z' →
+    (ke : ∀ r, (∃ t₀, o t₀ (.readlink none Gor.pse) = r ∧ ∀ x, r = .procExe x → pathMax ≤ x.bytes.length) →
+      ∀ Z' t', KeptW ([⟨B, 8192⟩] ++ (zzsFoot lo top L).writes) s₂ Z' →
       Agree (withNew (zzsFoot lo top L) [⟨B, 8192⟩]) Z'.proc.mm.mem
         (Gor.frV (Ndi.nV (lifW W Z) (lifSp Z) (lifY W Z)) { lifY W Z with rsp := lifSp Z - 8#64 }) →
       Z'.cpu.rip = gor_at.add 271 → Z'.cpu.gpr.rax = 18446744073709551615#64 →
@@ -95,6 +96,9 @@ theorem ptr_lif {prof : Profile} {L : List (Addr × List Byte)} {o : Oracle} {ge
       KeptW (lifG lo top B L).writes s₃ Z' →
       Agree (lifG lo top B L) Z'.proc.mm.mem
         (Cti.CtMem (Lif.bcV W₂ Z₁.cpu.gpr a0 s) (B + 2176#64) 7299392#64 7296832#64 7295296#64) →
+      Mal.Hp (withNew (withNew (zzsFoot lo top L) [⟨B, 8192⟩]) (brkN B))
+        (brkN B ++ ([⟨B, 8192⟩] ++ (zzsFoot lo top L).writes)) (B + 2176#64) ((lifSp Z).toNat - 4144)
+        (1072 * 0 + 73840) (Cti.CtMem (Lif.bcV W₂ Z₁.cpu.gpr a0 s) (B + 2176#64) 7299392#64 7296832#64 7295296#64) →
       Ims.Short (lifW W Z) a0 n s → Z'.cpu.rip = lsm_at.add 1017 → Z'.cpu.gpr.rsp = lifSp Z + 160#64 →
       Z'.cpu.gpr.rbx = (lifY W Z).rbx → Z'.cpu.gpr.rbp = rdq(lifW W Z, lifSp Z + 128#64) →
       Z'.cpu.gpr.r12 = rdq(lifW W Z, lifSp Z + 136#64) → Z'.cpu.gpr.r13 = rdq(lifW W Z, lifSp Z + 144#64) →

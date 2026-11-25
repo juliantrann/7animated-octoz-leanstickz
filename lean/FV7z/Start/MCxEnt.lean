@@ -107,7 +107,7 @@ theorem ent_mcx {prof : Profile} {L : List (Addr × List Byte)} {s₀ : State} {
     wv (x := 8013220) (by omega) (by omega), wv (x := 8013224) (by omega) (by omega),
     fun i hi => ?_, fun i hi => ?_, fun i hi => ?_, fun i hi => ?_, fun i hi => ?_,
     by omega, by omega, by decide, by decide, Nat.le_refl _, by decide, hmg, ?_, by omega, ?_,
-    fun a h1 h2 => ?_, rfl, by omega, fun a h1 h2 => ?_⟩
+    fun a h1 h2 => ?_, rfl, by omega, fun a h1 h2 => ?_, by decide⟩
   all_goals first
     | (apply lw_brk <;> simp only [Addr.add] <;> bv_omega)
     | (apply lf_brk <;> simp only [Addr.add] <;> bv_omega)

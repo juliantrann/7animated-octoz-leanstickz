@@ -295,45 +295,48 @@ theorem spC (hC : Glibc.CacheEnds prof) (c : Seg prof F Wl L s₀ o) (hfs : s₀
   have ha := Hca.ham_fnK c hinH
   have hl : 1280 < hca.length := by rw [hca_length]; decide
   have hl0 : 0 < hca.length := by rw [hca_length]; decide
-  unfold WtC
-  split
-  · subst ℓ; exact SpAt.idiv64 c hin (lt_len (by decide)) (dv3707 _)
-  split
-  · subst ℓ; exact SpAt.idiv64 c hin (lt_len (by decide)) (dv3981 _)
-  split
-  · subst ℓ; exact SpAt.idiv64 c hin (lt_len (by decide)) (dv4005 _)
-  split
-  · subst ℓ; exact SpAt.idiv64 c hin (lt_len (by decide)) (dv4223 _)
-  split
-  · subst ℓ; exact SpAt.bsr32 c hin (lt_len (by decide)) (bs4380 _)
-  split
-  · subst ℓ; exact SpAt.bsr32 c hin (lt_len (by decide)) (bs4454 _)
-  split
-  · subst ℓ; exact SpAt.bsr32 c hin (lt_len (by decide)) (bs4594 _)
-  split
-  · subst ℓ; exact SpAt.cpuid c hin (lt_len (by decide)) (cp3865 _)
-  split
-  · subst ℓ; exact SpAt.cpuid c hin (lt_len (by decide)) (cp4079 _)
-  split
-  · subst ℓ; exact SpAt.cpuid c hin (lt_len (by decide)) (cp4100 _)
-  split
-  · subst ℓ; exact SpAt.cpuid c hin (lt_len (by decide)) (cp4141 _)
-  split
-  · subst ℓ; exact SpAt.cpuid c hin (lt_len (by decide)) (cp4197 _)
-  split
-  · subst ℓ; exact SpAt.cpuid c hin (lt_len (by decide)) (cp4346 _)
-  split
-  · subst ℓ; exact SpAt.callKx c hin (lt_len (by decide)) (cl3758 _) hinH hl tg3758 hin_at_eq hi
-  split
-  · subst ℓ; exact SpAt.callKx c hin (lt_len (by decide)) (cl3771 _) hinH hl tg3771 hin_at_eq hi
-  split
-  · subst ℓ; exact SpAt.callKx c hin (lt_len (by decide)) (cl3784 _) hinH hl tg3784 hin_at_eq hi
-  split
-  · subst ℓ; exact SpAt.callKx c hin (lt_len (by decide)) (cl4040 _) hinH hl0 tg4040 hca_at0 ha
-  split
-  · subst ℓ; exact SpAt.callKx c hin (lt_len (by decide)) (cl4053 _) hinH hl0 tg4053 hca_at0 ha
-  split
-  · subst ℓ; exact SpAt.callKx c hin (lt_len (by decide)) (cl4066 _) hinH hl0 tg4066 hca_at0 ha
+  by_cases e3707 : ℓ = 3707
+  · subst e3707; exact SpAt.idiv64 c hin (lt_len (by decide)) (dv3707 _)
+  by_cases e3981 : ℓ = 3981
+  · subst e3981; exact SpAt.idiv64 c hin (lt_len (by decide)) (dv3981 _)
+  by_cases e4005 : ℓ = 4005
+  · subst e4005; exact SpAt.idiv64 c hin (lt_len (by decide)) (dv4005 _)
+  by_cases e4223 : ℓ = 4223
+  · subst e4223; exact SpAt.idiv64 c hin (lt_len (by decide)) (dv4223 _)
+  by_cases e4380 : ℓ = 4380
+  · subst e4380; exact SpAt.bsr32 c hin (lt_len (by decide)) (bs4380 _)
+  by_cases e4454 : ℓ = 4454
+  · subst e4454; exact SpAt.bsr32 c hin (lt_len (by decide)) (bs4454 _)
+  by_cases e4594 : ℓ = 4594
+  · subst e4594; exact SpAt.bsr32 c hin (lt_len (by decide)) (bs4594 _)
+  by_cases e3865 : ℓ = 3865
+  · subst e3865; exact SpAt.cpuid c hin (lt_len (by decide)) (cp3865 _)
+  by_cases e4079 : ℓ = 4079
+  · subst e4079; exact SpAt.cpuid c hin (lt_len (by decide)) (cp4079 _)
+  by_cases e4100 : ℓ = 4100
+  · subst e4100; exact SpAt.cpuid c hin (lt_len (by decide)) (cp4100 _)
+  by_cases e4141 : ℓ = 4141
+  · subst e4141; exact SpAt.cpuid c hin (lt_len (by decide)) (cp4141 _)
+  by_cases e4197 : ℓ = 4197
+  · subst e4197; exact SpAt.cpuid c hin (lt_len (by decide)) (cp4197 _)
+  by_cases e4346 : ℓ = 4346
+  · subst e4346; exact SpAt.cpuid c hin (lt_len (by decide)) (cp4346 _)
+  by_cases e3758 : ℓ = 3758
+  · subst e3758; exact SpAt.callKx c hin (lt_len (by decide)) (cl3758 _) hinH hl tg3758 hin_at_eq hi
+  by_cases e3771 : ℓ = 3771
+  · subst e3771; exact SpAt.callKx c hin (lt_len (by decide)) (cl3771 _) hinH hl tg3771 hin_at_eq hi
+  by_cases e3784 : ℓ = 3784
+  · subst e3784; exact SpAt.callKx c hin (lt_len (by decide)) (cl3784 _) hinH hl tg3784 hin_at_eq hi
+  by_cases e4040 : ℓ = 4040
+  · subst e4040; exact SpAt.callKx c hin (lt_len (by decide)) (cl4040 _) hinH hl0 tg4040 hca_at0 ha
+  by_cases e4053 : ℓ = 4053
+  · subst e4053; exact SpAt.callKx c hin (lt_len (by decide)) (cl4053 _) hinH hl0 tg4053 hca_at0 ha
+  by_cases e4066 : ℓ = 4066
+  · subst e4066; exact SpAt.callKx c hin (lt_len (by decide)) (cl4066 _) hinH hl0 tg4066 hca_at0 ha
+  have e : WtC prof F Wl L fb ℓ = Wt ℓ F Wl := by
+    simp only [WtC, e3707, e3981, e4005, e4223, e4380, e4454, e4594, e3865, e4079, e4100, e4141, e4197, e4346,
+      e3758, e3771, e3784, e4040, e4053, e4066, ↓reduceIte]
+  rw [e]
   exact (spAll prof ℓ).at c hin
 
 /-! ## Arithmetic -/
@@ -549,7 +552,7 @@ theorem pops (hT : Te F Wl L fb g₀ V₀) (hm : ∀ a, Out g₀.rsp a → V a =
   have e5 := p_5 _ h'
   have e6 := p_6 _ h'
   have b := fun k => ofBytesLE_toBytesLE (w := 64) (n := 8) rfl k
-  obtain ⟨-, q6, q5, q4, q3, q2, q1⟩ := q_all _ (by omega)
+  obtain ⟨-, q6, q5, q4, q3, q2, q1⟩ := q_all g₀.rsp (by omega)
   rw [q6, q5, q4, q3, q2, q1]
   rw [rdM hm (g₀.rsp - 8 - 8 - 8 - 8 - 8 - 8) 8 (by omega) (fun a h1 h2 => by unfold Out Gw; omega),
     rdM hm (g₀.rsp - 8 - 8 - 8 - 8 - 8) 8 (by omega) (fun a h1 h2 => by unfold Out Gw; omega),

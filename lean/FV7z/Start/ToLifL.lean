@@ -72,7 +72,8 @@ theorem launch_to_lif {l : Launch} {n : Nat} {o : Oracle} {L : List (Addr × Lis
         UtsnameOk u → KernelNew u → PtrW (ctxOf l.prof l.s₀ l.args c) W V' (brkOf l) (osVersion u) (fun _ => True) →
         rdd(TlsMem V' (brkOf l), 8029624#64) = 0 →
         -- `readlink` of `/proc/self/exe` fails
-        (∀ r Z' t', KeptW ([⟨brkOf l, 8192⟩] ++ (zzsFoot (loOf l n c) c.stackTop L).writes) s₂ Z' →
+        (∀ r, (∃ t₀, o t₀ (.readlink none Gor.pse) = r ∧ ∀ x, r = .procExe x → pathMax ≤ x.bytes.length) →
+          ∀ Z' t', KeptW ([⟨brkOf l, 8192⟩] ++ (zzsFoot (loOf l n c) c.stackTop L).writes) s₂ Z' →
           Agree (withNew (zzsFoot (loOf l n c) c.stackTop L) [⟨brkOf l, 8192⟩]) Z'.proc.mm.mem
             (Gor.frV (Ndi.nV (lifW W Z) (lifSp Z) (lifY W Z)) { lifY W Z with rsp := lifSp Z - 8#64 }) →
           Z'.cpu.rip = gor_at.add 271 → Z'.cpu.gpr.rax = 18446744073709551615#64 →
@@ -95,6 +96,11 @@ theorem launch_to_lif {l : Launch} {n : Nat} {o : Oracle} {L : List (Addr × Lis
           Z₁.cpu.gpr.r12 = (lifY W Z).r12 → Z₁.cpu.gpr.r13 = (lifY W Z).r13 →
           KeptW (lifG (loOf l n c) c.stackTop (brkOf l) L).writes s₃ Z' →
           Agree (lifG (loOf l n c) c.stackTop (brkOf l) L) Z'.proc.mm.mem
+            (Cti.CtMem (Lif.bcV W₂ Z₁.cpu.gpr (BitVec.ofNat 64 (stackLayout l.args l.prof.linux c).strings) s)
+              (brkOf l + 2176#64) 7299392#64 7296832#64 7295296#64) →
+          Mal.Hp (withNew (withNew (zzsFoot (loOf l n c) c.stackTop L) [⟨brkOf l, 8192⟩]) (brkN (brkOf l)))
+            (brkN (brkOf l) ++ ([⟨brkOf l, 8192⟩] ++ (zzsFoot (loOf l n c) c.stackTop L).writes)) (brkOf l + 2176#64)
+            ((lifSp Z).toNat - 4144) (1072 * 0 + 73840)
             (Cti.CtMem (Lif.bcV W₂ Z₁.cpu.gpr (BitVec.ofNat 64 (stackLayout l.args l.prof.linux c).strings) s)
               (brkOf l + 2176#64) 7299392#64 7296832#64 7295296#64) →
           Ims.Short (lifW W Z) (BitVec.ofNat 64 (stackLayout l.args l.prof.linux c).strings) (arg0 l.args).length s →
