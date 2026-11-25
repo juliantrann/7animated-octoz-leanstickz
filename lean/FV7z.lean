@@ -363,6 +363,7 @@ import FV7z.Strlen.Len
 import FV7z.Strlen.Plt
 import FV7z.Lemmas.Sse2b
 import FV7z.Lemmas.Sse2c
+import FV7z.Lemmas.CopyP
 import FV7z.Strrchr.Code
 import FV7z.Strrchr.Steps
 import FV7z.Strrchr.Mask
@@ -383,6 +384,7 @@ import FV7z.Memset.Plt
 import FV7z.Memcpy.Code
 import FV7z.Memcpy.Erms
 import FV7z.Memcpy.Plt
+import FV7z.Memcpy.Sse2
 import FV7z.Pmi.Holds
 import FV7z.Lemmas.Lock2
 import FV7z.Pml.Holds

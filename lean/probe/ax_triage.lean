@@ -1,6 +1,4 @@
-import FV7z.Lemmas.Sse2c
+import FV7z.Memcpy.Sse2
 open FV7z
-#print axioms FV7z.toBytesLE_ofBytesLE
-#print axioms FV7z.VOpI.movups_m
-#print axioms FV7z.VOpI.movups_mi
-#print axioms FV7z.Fn.Seg.s_movups_sti
+#print axioms FV7z.Memcpy.p43
+#print axioms FV7z.Memcpy.toBytesLE_load
