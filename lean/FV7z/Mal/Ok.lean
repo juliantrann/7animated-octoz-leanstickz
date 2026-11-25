@@ -56,7 +56,7 @@ theorem Hp.mv {F : Footprint} {Wl : List Rgn} {fb : Addr} {hi m : Nat} {V W : Ad
   have e8 : (T + 8#64).toNat = T.toNat + 8 := by rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega
   have et : (7940768#64 : Addr).toNat = 7940768 := rfl
   have es : (7942856#64 : Addr).toNat = 7942856 := rfl
-  refine ⟨C, T, szw, sm, G.mv (E := T.toNat) hf1 hf2 hc1 hc2 (by omega) fun a a1 a2 _ => hW a a1 (by omega),
+  refine ⟨C, T, szw, sm, G.mv (E := T.toNat) hf1 hf2 (by omega) hc2 (by omega) fun a a1 a2 _ => hW a a1 (by omega),
     hf1, hf2, hc1, hc2, hT, hTh, hhi, ?_, ?_, ?_, hle, hge, hTF⟩
   · rw [rd_eq (V := V) (x := 7940768#64) (n := 8) (by rw [et]; omega) fun a a1 a2 =>
       hW a (by rw [et] at a1; omega) (by rw [et] at a2; omega)]
