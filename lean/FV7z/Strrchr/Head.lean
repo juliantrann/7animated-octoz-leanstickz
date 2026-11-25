@@ -74,8 +74,16 @@ theorem rok_mask {V : Addr → Byte} {p : Addr} {n : Nat} {ch : Byte} {K : BitVe
 
 theorem addR_ofNat (a : Addr) (m : Nat) : addR (BitVec.ofNat 64 m) a = Addr.add a m := by
   have h0 : (BitVec.ofBool false).setWidth 64 = (0 : BitVec 64) := by decide
-  simp only [addR, h0, BitVec.add_zero, Addr.add]
+  simp only [addR, h0, add_z64, Addr.add]
   exact BitVec.add_comm _ _
+
+/-- `x - 1` as `x + (2^64 - 1)`, for `x ≠ 0`. -/
+theorem toNat_pred64 (x : BitVec 64) (h : x.toNat ≠ 0) :
+    (x + BitVec.ofNat 64 18446744073709551615).toNat + 1 = x.toNat := by
+  have hx := x.isLt
+  simp only [Nat.reducePow] at hx
+  simp only [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.reducePow, Nat.reduceMod]
+  omega
 
 /-! ## The call -/
 
@@ -154,16 +162,13 @@ theorem tail74 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e' sr2) {X : State} 
   have hZ0 : X.cpu.gpr.rdx.toNat ≠ 0 := fun h => by
     rw [← BitVec.testBit_toNat, h, Nat.zero_testBit] at h1
     exact Bool.false_ne_true h1
-  have hY : (X.cpu.gpr.rdx + BitVec.ofNat 64 18446744073709551615).toNat + 1 = X.cpu.gpr.rdx.toNat := by
-    have := X.cpu.gpr.rdx.isLt
-    simp only [BitVec.toNat_add, BitVec.toNat_ofNat]
-    omega
+  have hY := toNat_pred64 X.cpu.gpr.rdx hZ0
   -- `lea rax, [rdx - 1]`, `xor rax, rdx`, `and rax, rcx`
   refine c.s_blkV hin (b74 prof) hK hA hrip ?_
   refine wpV_reg fun _ _ => wpV_reg fun _ _ => wpV_reg fun fl hP => wpV_nil ?_
   intro Y₁ t₁ hK₁ hA₁ hr₁ hg₁ hf₁ _
-  simp only [wr, gv, Src.val, eaG, optV, set_rax, get0, get1, get2, BitVec.setWidth_eq, z_mul64, add_z64] at hg₁
-    hP
+  simp only [wr, gv, Src.val, eaG, optV, set_rax, get0, get1, get2, BitVec.setWidth_eq, z_mul64,
+    add_z64] at hg₁ hP
   have hax : Y₁.cpu.gpr.rax =
       ((X.cpu.gpr.rdx + BitVec.ofNat 64 18446744073709551615) ^^^ X.cpu.gpr.rdx) &&& X.cpu.gpr.rcx := by
     simp only [hg₁] <;> rfl
