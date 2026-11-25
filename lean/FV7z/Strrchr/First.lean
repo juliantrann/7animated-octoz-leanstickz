@@ -37,7 +37,7 @@ variable {prof : Profile} {L : List (Addr × List Byte)} {s₀ : State} {o : Ora
 theorem path41 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e' sr2) {X : State} {t : Nat} {g₀ : Gprs} {n : Nat}
     (hK : KeptW Wl s₀ X) (hA : Agree F X.proc.mm.mem V) (hrip : X.cpu.rip = e'.add 41) (hkp : KpR g₀ X.cpu.gpr)
     (hdi : X.cpu.gpr.rdi = g₀.rdi) (hx1 : xsOf X.cpu.vec.zmm (xmmOf 1) = Bc g₀.rsi)
-    (hq : g₀.rdi.toNat % 4096 ≤ 4032) (hov : g₀.rdi.toNat + n < 2 ^ 64)
+    (hq : g₀.rdi.toNat % 4096 ≤ 4032)
     (hnz : ∀ k < n, V (Addr.add g₀.rdi k) ≠ 0) (hz : V (Addr.add g₀.rdi n) = 0) (hch : g₀.rsi.setWidth 8 ≠ 0#8)
     (hft : ∀ x : Addr, g₀.rdi.toNat / 4096 ≤ x.toNat / 4096 → x.toNat / 4096 ≤ (g₀.rdi.toNat + n) / 4096 →
       Foot F.data x)
@@ -130,7 +130,7 @@ theorem ja_true {a b : BitVec 64} (h : (!(decide (a.toNat < b.toNat) || decide (
 place in its page with `4032`; above: to `+560`, else `path41`. -/
 theorem entry (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e' sr2) {X : State} {t : Nat} {g₀ : Gprs} {n : Nat}
     (hK : KeptW Wl s₀ X) (hA : Agree F X.proc.mm.mem V) (hrip : X.cpu.rip = e'.add 0) (hkp : KpR g₀ X.cpu.gpr)
-    (hdi : X.cpu.gpr.rdi = g₀.rdi) (hsi : X.cpu.gpr.rsi = g₀.rsi) (hov : g₀.rdi.toNat + n < 2 ^ 64)
+    (hdi : X.cpu.gpr.rdi = g₀.rdi) (hsi : X.cpu.gpr.rsi = g₀.rsi)
     (hnz : ∀ k < n, V (Addr.add g₀.rdi k) ≠ 0) (hz : V (Addr.add g₀.rdi n) = 0) (hch : g₀.rsi.setWidth 8 ≠ 0#8)
     (hft : ∀ x : Addr, g₀.rdi.toNat / 4096 ≤ x.toNat / 4096 → x.toNat / 4096 ≤ (g₀.rdi.toNat + n) / 4096 →
       Foot F.data x)
@@ -172,6 +172,6 @@ theorem entry (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e' sr2) {X : State} {
     have hq := ja_false hfa
     rw [and32_4095, hdi] at hq
     exact path41 c hin hK₃ hA₃ hr₃ (by rw [hg₃]; exact hkp₂) (by rw [hg₃]; exact hdi₂) (by rw [hv₃]; exact hx1) hq
-      hov hnz hz hch hft h112 hR
+      hnz hz hch hft h112 hR
 
 end FV7z.Strrchr
