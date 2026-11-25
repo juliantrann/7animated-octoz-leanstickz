@@ -85,7 +85,7 @@ theorem to267 {fb : Addr} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBas
   · rw [s₂, Tun.rd_Vst_self _ _ _ (toBytesLE_length _ _) (by ifd), ofBytesLE_toBytesLE (n := 8) rfl]
     try rfl
   -- 153: back from `malloc`
-  intro Z₂ t₃ V₅ B hK₃ hA₃ hr₃ hs₃ hax₃ hbx₃ hbp₃ h12₃ h13₃ h14₃ h15₃ hB1 hB2 hBf hkeep _ hKnB hBk hBfb
+  intro Z₂ t₃ V₅ B hK₃ hA₃ hr₃ hs₃ hax₃ hbx₃ hbp₃ h12₃ h13₃ h14₃ h15₃ hB1 hB2 hBf hkeep _ hKnB hBk hBfb _ _
   simp only [hdi₂, s₂, hq160, f88 hr0] at hB2 hBf hkeep
   have hbp₂ : Z₂.cpu.gpr.rbp = r := by rw [hbp₃, hg₂, set4_rbp, hbp', hbp]
   have h14₂ : Z₂.cpu.gpr.r14 = A := by rw [h14₃, hg₂, set4_r14, h14, hax]

@@ -198,7 +198,7 @@ theorem onw_hp {fb : Addr} {hi m : Nat} (c : Seg prof F Wl L s₀ o) (hfs : s₀
   · rw [hsp4, Tun.rd_Vst_self _ (X.cpu.gpr.rsp - 8 - 8) _ (toBytesLE_length _ _) (by rw [e16]; omega),
       ofBytesLE_toBytesLE (n := 8) rfl]
     try rfl
-  intro Z t5 V₂ p hKZ hAZ hrZ hspZ haxZ hbxZ hbpZ h12Z h13Z h14Z h15Z hp1 hp2 hpn hpF hV₂ hHp
+  intro Z t5 V₂ p hKZ hAZ hrZ hspZ haxZ hbxZ hbpZ h12Z h13Z h14Z h15Z hp1 hp2 hpn hpF hV₂ hHp _ _
   rw [hsp4, e16] at hV₂
   rw [hdi4] at hpn hpF hHp
   have hp0 : p ≠ 0 := by rintro rfl; exact absurd hp1 (by decide)
