@@ -1,8 +1,6 @@
-import FV7z.Strlen.Run
-import FV7z.Strlen.Loop
+import FV7z.Strlen.Entry
 open FV7z
-#print axioms FV7z.Strlen.exit340
-#print axioms FV7z.Strlen.chunk
-#print axioms FV7z.Strlen.loop
-#print axioms FV7z.Strlen.add64
-#print axioms FV7z.Strlen.sub128
+#print axioms FV7z.Strlen.run
+#print axioms FV7z.Strlen.pathA
+#print axioms FV7z.Strlen.pathB
+#print axioms FV7z.Strlen.peqb0_eq_zero

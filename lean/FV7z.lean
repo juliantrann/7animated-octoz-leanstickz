@@ -358,6 +358,7 @@ import FV7z.Strlen.Mask
 import FV7z.Strlen.Steps
 import FV7z.Strlen.Run
 import FV7z.Strlen.Loop
+import FV7z.Strlen.Entry
 import FV7z.Pmi.Holds
 import FV7z.Lemmas.Lock2
 import FV7z.Pml.Holds
