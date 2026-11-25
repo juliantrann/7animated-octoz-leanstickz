@@ -376,6 +376,7 @@ import FV7z.Lemmas.RepStosb
 import FV7z.Lemmas.StoreX
 import FV7z.Memset.Code
 import FV7z.Memset.Erms
+import FV7z.Memset.Sse2
 import FV7z.Pmi.Holds
 import FV7z.Lemmas.Lock2
 import FV7z.Pml.Holds
