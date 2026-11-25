@@ -8,7 +8,7 @@ import FV7z.Strlen.Plt
 returned (`GotOkB`). Without both AVX and AVX2 that is one of the three variants in `ms2` (`got_memset`):
 `__memset_erms` (`+80`), `__memset_sse2_unaligned_erms` (`+112`) or `__memset_sse2_unaligned` (`+0`); each does what
 `SetAtD` says (`Memset/Erms.lean`, `Memset/Sse2.lean`). So does a call at `0x401080`, with the GOT's slots bytes of
-the footprint's data (`setAtDG_plt`).
+the footprint's data (`setAtDG_plt`), which is `Ipa.SetAt` (`setAt_plt`).
 -/
 
 namespace FV7z.Fn.Seg
@@ -139,5 +139,13 @@ theorem setAtDG_plt {prof : Profile} {L : List (Addr × List Byte)} {o : Oracle}
     rw [← hgY] at hra hl hst hov hsp hsp8 K
     exact setAtD_sse2u (Pm := fun _ => True) hin c hKY hAY hrY trivial hin₂ hj hra hl hst hov hsp
       (hKY.df.trans hdf₀) hsp8 K
+
+/-- `Ipa.SetAt`, what `launch_to_main` assumes of `memset` through the PLT, on a processor without both AVX and
+AVX2. -/
+theorem setAt_plt {prof : Profile} {L : List (Addr × List Byte)} {o : Oracle}
+    (hb : ¬ (prof.feat.avx = true ∧ prof.feat.avx2 = true))
+    (hinP : CodeIn L 4198528#64 pltLen) (hin : CodeIn L 0x65c650#64 ms2) :
+    Ipa.SetAt prof L o 4198528#64 (GotOkB prof) :=
+  setAtDG_plt hb hinP hin
 
 end FV7z.Memset
