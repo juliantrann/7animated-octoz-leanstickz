@@ -46,6 +46,7 @@ set_option maxHeartbeats 4000000 in
 (`rbp - 0x98`, `rbp - 0x50`, `rbp - 0x48`); what is left of the frame after the `ret`, from `rbp - 0x40`, as in `V`. -/
 theorem mid1050 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (hin : CodeIn L hwc_at hwc)
     (hinc : CodeIn L 4198592#64 cpy) (hc0 : 0 < cpy.length) (hcpy : Gor.PcpyAt prof L o 4198592#64 Pm)
+    (hgf : GotF F) (hdf₀ : s₀.cpu.rflags.df = false)
     (hinm : CodeIn L 6500704#64 mlc) (hm0 : 0 < mlc.length) (hmal : Mal.At prof F Wl L o fb hi 6500704#64 Pa)
     {V V₂ : Addr → Byte} {cnt E H t s : Nat} {R bp sp Q N : Addr} {ln st : Nat → Addr}
     (hPm : ∀ W : Addr → Byte, (∀ a : Addr, a.toNat < 7940480 → (a.toNat < N.toNat ∨ N.toNat + 8 ≤ a.toNat) →
@@ -70,7 +71,7 @@ theorem mid1050 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (h
     (hT : ∀ m < cnt, rdq(V₂, R + BitVec.ofNat 64 (16 * m)) = st m ∧
       rdq(V₂, R + BitVec.ofNat 64 (16 * m + 8)) = ln m)
     (hsrc : ∀ m < cnt, ∀ i < (ln m).toNat, Foot F.data ((st m).add i))
-    (hs64 : ∀ m < cnt, (st m).toNat + (ln m).toNat ≤ 2 ^ 64)
+    (hs64 : ∀ m < cnt, (st m).toNat + (ln m).toNat < 2 ^ 64)
     (hsd : ∀ m < cnt, (st m).toNat + (ln m).toNat ≤ 7940480 ∨ sp.toNat ≤ (st m).toNat)
     (hD8 : rdq(V₂, bp + 18446744073709551464#64) = BitVec.ofNat 64 (16 * cnt))
     (hL : rdq(V₂, bp + 18446744073709551536#64) = ln (cnt - 1))
@@ -114,7 +115,7 @@ theorem mid1050 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (h
         (bp + 18446744073709551448#64).toNat + 104 ≤ x.toNat) →
       List.map V₂ (byteAddrs x n) = List.map V (byteAddrs x n) :=
     fun {x n} hx h1 h2 h3 => (hSm x.toNat (x.toNat + n) h1 h2 h3).rd (Nat.le_refl _) (Nat.le_refl _) hx
-  refine from1050 c hfs hin hinc hc0 hcpy hinm hm0 hmal (V := V₂)
+  refine from1050 c hfs hin hinc hc0 hcpy hgf hdf₀ hinm hm0 hmal (V := V₂)
     (fun W hW => hPm W fun a ha hn => (hW a ha hn).trans (hSV a (by fomega) (by fomega) (by fomega)))
     (fun W hW => hPa W fun a ha hn => (hW a ha hn).trans (hSV a (by fomega) (by fomega) (by fomega)))
     hn hlv hspl hsK hRs hRF hfb hst hwl hhi hFr hFT hT hsrc hs64 hsd
@@ -142,6 +143,7 @@ to the last two entries, the total, on to the `ret` (1681). `S0` (`x86_64`, entr
 when `cnt = 4`) in `.rodata`; `p` below `0x792980` or in the stack. -/
 theorem from682 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (hin : CodeIn L hwc_at hwc)
     (hinc : CodeIn L 4198592#64 cpy) (hc0 : 0 < cpy.length) (hcpy : Gor.PcpyAt prof L o 4198592#64 Pm)
+    (hgf : GotF F) (hdf₀ : s₀.cpu.rflags.df = false)
     (hinm : CodeIn L 6500704#64 mlc) (hm0 : 0 < mlc.length) (hmal : Mal.At prof F Wl L o fb hi 6500704#64 Pa)
     {V : Addr → Byte} {cnt E H t s : Nat} {R bp sp Q N p S0 S1 : Addr}
     (hPm : ∀ W : Addr → Byte, (∀ a : Addr, a.toNat < 7940480 → (a.toNat < N.toNat ∨ N.toNat + 8 ≤ a.toNat) →
@@ -242,7 +244,7 @@ theorem from682 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (h
         (by rw [hbxY]; exact rng hFT (by fomega) (by fomega) (by fomega))) ?_
     rintro j' g fl V' ⟨rfl, rfl, rfl⟩ Z t₂ hKZ hAZ hrZ hgZ -
     rw [hbxY, hbpY] at hAZ
-    refine mid1050 c hfs hin hinc hc0 hcpy hinm hm0 hmal (st := hl_st 3 S0 S1 p) (ln := hl_ln 3) hPm hPa
+    refine mid1050 c hfs hin hinc hc0 hcpy hgf hdf₀ hinm hm0 hmal (st := hl_st 3 S0 S1 p) (ln := hl_ln 3) hPm hPa
       (.inl ⟨rfl, rfl, rfl, rfl, rfl⟩) (.inl ⟨rfl, by decide, by decide, by decide⟩) hspl hsK hRs hRF hfb hst hwl hhi
       hFr hFT
       (fun a h1 h2 h3 => by repeat (focus (rw [Tun.Vst_out _ _ _ _ ?_ ?_]; rotate_left; iterate 2 fomega)))
@@ -259,12 +261,12 @@ theorem from682 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (h
         · exact htls i (by simp [hl_ln] at hi ⊢; omega))
       (fun m hm => by
         obtain rfl | rfl | rfl : m = 0 ∨ m = 1 ∨ m = 2 := by omega
-        · show S0.toNat + 6 ≤ 2 ^ 64
+        · show S0.toNat + 6 < 2 ^ 64
           omega
-        · show p.toNat + 0 ≤ 2 ^ 64
+        · show p.toNat + 0 < 2 ^ 64
           have := p.isLt
           omega
-        · show (7366106#64).toNat + 3 ≤ 2 ^ 64
+        · show (7366106#64).toNat + 3 < 2 ^ 64
           decide)
       (fun m hm => by
         obtain rfl | rfl | rfl : m = 0 ∨ m = 1 ∨ m = 2 := by omega
@@ -331,7 +333,7 @@ theorem from682 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (h
     refine (c_1010 prof fb).run c hfs hin _ hKZ hAZ hrZ
       (vc_1010 (by rw [hgZ]; exact h12Y) (by rw [hgZ])) ?_
     rintro j' g fl V' ⟨rfl, rfl, rfl⟩ U t₃ hKU hAU hrU hgU -
-    refine mid1050 c hfs hin hinc hc0 hcpy hinm hm0 hmal (st := hl_st 4 S0 S1 p) (ln := hl_ln 4) hPm hPa
+    refine mid1050 c hfs hin hinc hc0 hcpy hgf hdf₀ hinm hm0 hmal (st := hl_st 4 S0 S1 p) (ln := hl_ln 4) hPm hPa
       (.inr ⟨rfl, rfl, rfl, rfl, rfl⟩) (.inr ⟨rfl, by decide, by decide, by decide, by decide⟩) hspl hsK hRs hRF hfb
       hst hwl hhi hFr hFT
       (fun a h1 h2 h3 => by repeat (focus (rw [Tun.Vst_out _ _ _ _ ?_ ?_]; rotate_left; iterate 2 fomega)))
@@ -351,14 +353,14 @@ theorem from682 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (h
       (fun m hm => by
         have := hS1l rfl
         obtain rfl | rfl | rfl | rfl : m = 0 ∨ m = 1 ∨ m = 2 ∨ m = 3 := by omega
-        · show S0.toNat + 6 ≤ 2 ^ 64
+        · show S0.toNat + 6 < 2 ^ 64
           omega
-        · show S1.toNat + 8 ≤ 2 ^ 64
+        · show S1.toNat + 8 < 2 ^ 64
           omega
-        · show p.toNat + 0 ≤ 2 ^ 64
+        · show p.toNat + 0 < 2 ^ 64
           have := p.isLt
           omega
-        · show (7366106#64).toNat + 3 ≤ 2 ^ 64
+        · show (7366106#64).toNat + 3 < 2 ^ 64
           decide)
       (fun m hm => by
         have := hS1l rfl

@@ -71,7 +71,7 @@ theorem ndi_ab {pl pc ip cpy : List Byte} {Pm : (Addr → Byte) → Prop} {E : E
     (hpp : (byteAddrs 7366691#64 14).map (nV W sp X.cpu.gpr) = Gor.pse)
     (hof : ∀ i < 8, Foot F.data (Addr.add (8029440#64) i)) (hoz : rdq(nV W sp X.cpu.gpr, 8029440#64) = 0#64)
     (hps : ProcSelfExe o) (hpre : MPre F (nV W sp X.cpu.gpr) b fsb pad sm mx)
-    (hinc : CodeIn L 4198592#64 cpy) (hc0 : 0 < cpy.length) (hcpy : Gor.PcpyAt prof L o 4198592#64 Pm)
+    (hinc : CodeIn L 4198592#64 cpy) (hc0 : 0 < cpy.length) (hcpy : Gor.PcpyAt prof L o 4198592#64 Pm) (hgf : GotF F)
     (h1 : rdq(fV W sp X.cpu.gpr, 8029448#64) = 0#64) (h2 : rdq(fV W sp X.cpu.gpr, 8029568#64) = ph)
     (h3 : rdq(fV W sp X.cpu.gpr, 8029592#64) = pn) (h4 : rdq(fV W sp X.cpu.gpr, 8029424#64) = 0#64)
     (h5 : rdd(fV W sp X.cpu.gpr, 7937248#64) = 0#32)
@@ -116,7 +116,7 @@ theorem ndi_ab {pl pc ip cpy : List Byte} {Pm : (Addr → Byte) → Prop} {E : E
   refine gor_ok (V := nV W sp X.cpu.gpr) (e' := ndi_at) (code := ndi) (j := 21) c hgo mc hK₁ hA₁ (hr₁.trans rfl)
     h32 (by rw [hzn]; omega) (by rw [hzn]; omega) (by rw [hz]; exact hst) (by rw [hz]; exact hsm)
     (by rw [hzn]; omega) (by rw [hzn]; omega) (by rw [hz]; exact hbuf) (by rw [hz]; exact hfr) hpf hpn hpz hpp
-    hof hoz hps hpre hinc hc0 hcpy
+    hof hoz hps hpre hinc hc0 hcpy hgf
     (fun W₀ h => cx.hPm W₀ fun a a1 a2 => (h a a2).trans (nV_fV (by omega) hsn (.inl (by omega))))
     cx.hin (lt_len (by decide))
     (by

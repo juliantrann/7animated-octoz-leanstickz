@@ -161,6 +161,7 @@ set_option maxHeartbeats 16000000 in
 `glibc.cpu.hwcap_mask` not set (6), no vDSO; `cnt`, `E`, `H`, `s` and `temp` (`R`) as `h` gives them. -/
 theorem from0 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (hin : CodeIn L hwc_at hwc)
     (hinc : CodeIn L 4198592#64 cpy) (hc0 : 0 < cpy.length) (hcpy : Gor.PcpyAt prof L o 4198592#64 Pm)
+    (hgf : GotF F) (hdf₀ : s₀.cpu.rflags.df = false)
     (hinm : CodeIn L 6500704#64 mlc) (hm0 : 0 < mlc.length) (hmal : Mal.At prof F Wl L o fb hi 6500704#64 Pa)
     (hins : CodeIn L 4198664#64 sl) (hs0 : 0 < sl.length) (hlen : Str.LenAt prof L o 4198664#64 Pl)
     (hint : CodeIn L Tgv.tgv_at Tgv.tgv)
@@ -315,7 +316,7 @@ theorem from0 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (hin
       (fun i hi => by rw [ea]; exact rng hFW (by fomega) (by fomega) (by fomega) i hi) ?_
     rintro Y₈ t₉ hK₈ hA₈ ⟨hr₈, hg₈⟩
     rw [Gor.probe_same] at hA₈
-    refine from1778_3 c hfs hin hinc hc0 hcpy hinm hm0 hmal hins hs0 hlen (V := _)
+    refine from1778_3 c hfs hin hinc hc0 hcpy hgf hdf₀ hinm hm0 hmal hins hs0 hlen (V := _)
       (R := bp + 18446744073709551376#64) (bp := bp) (Q := Q) (N := N) (p := p)
       (fun W hW => hPm W fun a ha hn => (hW a ha hn).trans (by vout))
       (fun W hW => hPa W fun a ha hn => (hW a ha hn).trans (by vout))
@@ -423,7 +424,7 @@ theorem from0 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (hin
       (fun i hi => by rw [ea]; exact rng hFW (by fomega) (by fomega) (by fomega) i hi) ?_
     rintro Y₁₀ t₁₁ hK₁₀ hA₁₀ ⟨hr₁₀, hg₁₀⟩
     rw [Gor.probe_same] at hA₁₀
-    refine from1778_4 c hfs hin hinc hc0 hcpy hinm hm0 hmal hins hs0 hlen (V := _)
+    refine from1778_4 c hfs hin hinc hc0 hcpy hgf hdf₀ hinm hm0 hmal hins hs0 hlen (V := _)
       (R := bp + 18446744073709551360#64) (bp := bp) (Q := Q) (N := N) (p := p)
       (fun W hW => hPm W fun a ha hn => (hW a ha hn).trans (by vout))
       (fun W hW => hPa W fun a ha hn => (hW a ha hn).trans (by vout))

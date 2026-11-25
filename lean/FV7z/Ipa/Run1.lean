@@ -60,7 +60,7 @@ theorem to58 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (hin 
     (hinc : CodeIn L 4198592#64 cpy) (hc0 : 0 < cpy.length) (hcpy : Gor.PcpyAt prof L o 4198592#64 Pm)
     (hinm : CodeIn L 6500704#64 mlc) (hm0 : 0 < mlc.length) (hmal : Mal.At prof F Wl L o fb hi 6500704#64 Pa)
     (hins : CodeIn L 4198664#64 sl) (hs0 : 0 < sl.length) (hlen : Str.LenAt prof L o 4198664#64 Pl)
-    (hint : CodeIn L Tgv.tgv_at Tgv.tgv)
+    (hint : CodeIn L Tgv.tgv_at Tgv.tgv) (hgf : GotF F) (hdf₀ : s₀.cpu.rflags.df = false)
     {V : Addr → Byte} {h e p : Addr} {cnt E H s : Nat}
     (hn : h = 2#64 ∧ cnt = 3 ∧ E = 8 ∧ H = 4 ∧ s = 151 ∨ h = 6#64 ∧ cnt = 4 ∧ E = 16 ∧ H = 8 ∧ s = 320)
     (hPm : ∀ W : Addr → Byte, (∀ a : Addr, a.toNat < 7940480 → (a.toNat < 7937664 ∨ 7937720 ≤ a.toNat) →
@@ -146,7 +146,7 @@ theorem to58 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (hin 
     · refine ⟨_, ?_, ?_, Or.inr ⟨h1, h2, h3, h4, h5, rfl⟩⟩ <;>
         rw [fo (r := e + 18446744073709551512#64) 18446744073709551360 256 (by decide) (by omega), hb] <;> omega
   -- `_dl_important_hwcaps`, from its entry to its `ret`
-  refine Hwc.from0 c hfs hinh hinc hc0 hcpy hinm hm0 hmal hins hs0 hlen hint (h := h) (R := R)
+  refine Hwc.from0 c hfs hinh hinc hc0 hcpy hgf hdf₀ hinm hm0 hmal hins hs0 hlen hint (h := h) (R := R)
     (bp := e + 18446744073709551512#64) (Q := 7937680#64) (N := 7937688#64) (p := p) hn'
     (fun W hW => hPm W fun a h1 h2 => by rw [hW a h1 (by ipd), v2l a (by omega)])
     (fun W hW => hPa W fun a h1 h2 => by rw [hW a (by omega) (by ipd), v2l a (by omega)])

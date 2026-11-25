@@ -40,7 +40,7 @@ theorem whole (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (hin
     {mb : Nat} (hmb : 16 ≤ mb) (hPaH : ∀ k W, Pa k W ↔ Mal.Hp F Wl fb hi (1072 * k + mb) W)
     (hinl : CodeIn L 4198664#64 sl) (hl0 : 0 < sl.length) (hlenA : Str.LenAt prof L o 4198664#64 Pl)
     (hinz : CodeIn L 4198528#64 ms) (hz0 : 0 < ms.length) (hset : SetAt prof L o 4198528#64 Ps)
-    (hgf : Ipa.GotF F) (hdf₀ : s₀.cpu.rflags.df = false)
+    (hgf : GotF F) (hdf₀ : s₀.cpu.rflags.df = false)
     (hint : CodeIn L Tgv.tgv_at Tgv.tgv)
     {V : Addr → Byte} {h e p : Addr} {cnt E H s : Nat}
     (hn : h = 2#64 ∧ cnt = 3 ∧ E = 8 ∧ H = 4 ∧ s = 151 ∨ h = 6#64 ∧ cnt = 4 ∧ E = 16 ∧ H = 8 ∧ s = 320)
@@ -96,8 +96,8 @@ theorem whole (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (hin
     · exact ⟨3, Or.inr ⟨rfl, rfl⟩⟩
   obtain ⟨i0bp, i0r15, i0r14, i0r13, i0r12, i0bx, i0di⟩ := iV0_rd V hsp hr0 (by omega)
   -- the entry to 58
-  refine to58 (ka := ka + 2) c hfs hin hinh hinc hc0 hcpy hinm hm0 hmal hinl hl0 hlenA hint hn hPm hPa hPl he he2
-    hal hFs hwl hhi hpg
+  refine to58 (ka := ka + 2) c hfs hin hinh hinc hc0 hcpy hinm hm0 hmal hinl hl0 hlenA hint hgf hdf₀ hn hPm hPa hPl
+    he he2 hal hFs hwl hhi hpg
     hx1 hx1z hx2 hx2z htls hU hm6 hhw hfh hsm hfm hpl hpl0 hf1 hf2 hp0 hpd hWb X t hK hA hrip hsp ?_
   intro Z₁ t₁ V₃ P hK₁ hA₁ hr₁ hs₁ hbp₁ _ hbx₁ h12₁ h13₁ h14₁ h15₁ _ _ _ hlo3 hN3 hfr3 hPa3 hKn3 _
   -- 58 to 75

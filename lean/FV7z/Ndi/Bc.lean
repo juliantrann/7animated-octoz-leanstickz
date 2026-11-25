@@ -119,7 +119,7 @@ theorem ndi_pc {pl pc : List Byte} {Pm : (Addr → Byte) → Prop} {E : Ev} {V W
     {mb : Nat} (hmb : 16 ≤ mb) (hPaH : ∀ k W, Pa k W ↔ Mal.Hp F Wl fb hi (1072 * k + mb) W)
     (hinl : CodeIn L 4198664#64 sl) (hl0 : 0 < sl.length) (hlenA : Str.LenAt prof L o 4198664#64 Pk)
     (hinz : CodeIn L 4198528#64 ms) (hz0 : 0 < ms.length) (hset : Ipa.SetAt prof L o 4198528#64 Ps)
-    (hgf : Ipa.GotF F) (hdf₀ : s₀.cpu.rflags.df = false)
+    (hgf : GotF F) (hdf₀ : s₀.cpu.rflags.df = false)
     (hint : CodeIn L Tgv.tgv_at Tgv.tgv)
     {h : Addr} {cnt Ec H s : Nat}
     (hn : h = 2#64 ∧ cnt = 3 ∧ Ec = 8 ∧ H = 4 ∧ s = 151 ∨ h = 6#64 ∧ cnt = 4 ∧ Ec = 16 ∧ H = 8 ∧ s = 320)
@@ -314,7 +314,7 @@ theorem ndi_bc {pl pc : List Byte} {Pm : (Addr → Byte) → Prop} {E : Ev} {V W
     {mb : Nat} (hmb : 16 ≤ mb) (hPaH : ∀ k W, Pa k W ↔ Mal.Hp F Wl fb hi (1072 * k + mb) W)
     (hinl : CodeIn L 4198664#64 sl) (hl0 : 0 < sl.length) (hlenA : Str.LenAt prof L o 4198664#64 Pk)
     (hinz : CodeIn L 4198528#64 ms) (hz0 : 0 < ms.length) (hset : Ipa.SetAt prof L o 4198528#64 Ps)
-    (hgf : Ipa.GotF F) (hdf₀ : s₀.cpu.rflags.df = false)
+    (hgf : GotF F) (hdf₀ : s₀.cpu.rflags.df = false)
     (hint : CodeIn L Tgv.tgv_at Tgv.tgv)
     {h : Addr} {cnt Ec H s : Nat}
     (hn : h = 2#64 ∧ cnt = 3 ∧ Ec = 8 ∧ H = 4 ∧ s = 151 ∨ h = 6#64 ∧ cnt = 4 ∧ Ec = 16 ∧ H = 8 ∧ s = 320)

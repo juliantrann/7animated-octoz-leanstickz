@@ -302,6 +302,7 @@ theorem g278 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L gor_at gor)
     (hbs : (b + size pad 656#64).toNat + 4096 + 408 ≤ B.toNat)
     (hBw : ∀ i < 4096, Foot F.data (Addr.add B i)) (hf : ∀ i < 40, Foot F.data (Addr.add (B + 4104#64) i))
     (hinc : CodeIn L 4198592#64 cpy) (hc0 : 0 < cpy.length) (hcpy : PcpyAt prof L o 4198592#64 Pm)
+    (hgf : GotF F)
     (hPm : ∀ W : Addr → Byte, (∀ a : Addr, a.toNat < 7940480 → W a = Vb a) → Pm W)
     (hinr : CodeIn L e' code) (hj : j < code.length) (hra : rdq(Vb, B + 4136#64) = e'.add j)
     (k : Kd prof F Wl N L o lim b fsb ks pad sm gev gP gE Vb B e' j X.cpu.gpr.r14 X.cpu.gpr.r15) :
@@ -325,6 +326,7 @@ theorem g278 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L gor_at gor)
       (by rw [Tci.at_add _ _ (by omega), hpN]; omega))
     (fun i hi => foot_append_iff.2 (.inr (slot8 hst i hi))) (fun i hi => foot_wn mc.hown (hBw i hi))
     (fun i hi => foot_wn mc.hown (hf i hi)) hinc hc0 hcpy
+    (fun a h1 h2 => foot_wn mc.hown (hgf a h1 h2)) hB'.df
     (hPm _ fun a ha => by
       rw [Tun.Vst_out _ _ _ _ (by rw [toBytesLE_length, hb8]; omega) (.inl (by rw [hb8]; omega)),
         ML a ⟨by omega, by omega, by omega, by omega, by omega⟩]) hinr hj
