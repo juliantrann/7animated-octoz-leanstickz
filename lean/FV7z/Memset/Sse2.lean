@@ -50,7 +50,7 @@ open ZellicX86 Decode FV7z.Leaf FV7z.Fn FV7z.Strlen
 /-- An offset inside `ms2`. -/
 macro "ms2_lt" : tactic => `(tactic| (rw [ms2_length]; omega))
 /-- The stores cover every offset below `n`. -/
-macro "fill_cov" : tactic => `(tactic| (intro i hi; try dsimp only; omega))
+macro "fill_cov" : tactic => `(tactic| (intro i hi; (try dsimp only); omega))
 
 /-- What a call with registers `g₀` and bytes `V` grants the stores: `SetAtD`'s hypotheses. -/
 structure Ctx (prof : Profile) (F : Footprint) (Wl : List Rgn) (L : List (Addr × List Byte)) (s₀ : State)
@@ -107,7 +107,7 @@ theorem rcx_bytes {g : Gprs} {c : BitVec 64} (h : g.rcx = (Strrchr.Bc c).setWidt
 theorem fillG {g₀ : Gprs} {V V₁ : Addr → Byte} {P : Nat → Prop} (hF : FillG V V₁ g₀ P)
     (hov : g₀.rdi.toNat + g₀.rdx.toNat < 2 ^ 64) {o k : Nat} {bs : List Byte} (hl : bs.length = k)
     (ho : o + k ≤ g₀.rdx.toNat) (hb : ∀ x ∈ bs, x = g₀.rsi.setWidth 8) :
-    FillG V (Vst V₁ (g₀.rdi.add o) bs) g₀ fun i => P i ∨ (o ≤ i ∧ i < o + k) :=
+    FillG V (Vst V₁ (Addr.add g₀.rdi o) bs) g₀ fun i => P i ∨ (o ≤ i ∧ i < o + k) :=
   FillP.st hF (Nat.le_of_lt hov) hl ho hb
 
 /-! ## Addresses and conditions -/
@@ -124,23 +124,23 @@ theorem eaG_back {g : Gprs} {a d : Addr} (h7 : g.rdi = a) (h2 : g.rdx = d) {k D 
     (hk : k ≤ d.toNat) : eaG g (some 7) (some 2) 1 D = a.add (d.toNat - k) := by
   rw [← ea_back a d hD hk, ← h7, ← h2]
   apply BitVec.eq_of_toNat_eq
-  simp [eaG, optV, get7, get2]
+  simp [eaG, optV]
 
 theorem eaG_0 {g : Gprs} {a : Addr} (h7 : g.rdi = a) : eaG g (some 7) none 1 0 = a.add 0 := by
   rw [← h7]
   apply BitVec.eq_of_toNat_eq
-  simp [eaG, optV, get7, Addr.add]
+  simp [eaG, optV, Addr.add]
 
 theorem eaG_64 {g : Gprs} {a : Addr} (h7 : g.rdi = a) (hf : a.toNat + 64 < 2 ^ 64) :
     (eaG g (some 7) none 1 64).toNat = a.toNat + 64 := by
   have e : eaG g (some 7) none 1 64 = a.add 64 := by
     rw [← h7]
     apply BitVec.eq_of_toNat_eq
-    simp [eaG, optV, get7, Addr.add]
+    simp [eaG, optV, Addr.add]
   rw [e, toNat_add_of_fits (n := 65) (by omega) (by omega)]
 
 /-- `and r, -64` of `a + k`, `k ≥ 64`: `a` and an offset, the next multiple of 64 at or below `a + k`. -/
-theorem and_al {x a : Addr} {k : Nat} (hx : x.toNat = a.toNat + k) (hk : a.toNat + k < 2 ^ 64) (h64 : 64 ≤ k) :
+theorem and_al {x a : Addr} {k : Nat} (hx : x.toNat = a.toNat + k) (h64 : 64 ≤ k) :
     x &&& BitVec.ofNat 64 18446744073709551552 = a.add ((a.toNat + k) / 64 * 64 - a.toNat) := by
   apply BitVec.eq_of_toNat_eq
   rw [and_m64, hx]
@@ -219,7 +219,7 @@ theorem stD (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e ms2) {j len d : Nat} 
     (K : ∀ Y' t' V₂, KeptW Wl s₀ Y' → Agree F Y'.proc.mm.mem V₂ → Y'.cpu.rip = e.add (j + len) →
       Y'.cpu.gpr = Y.cpu.gpr → Inv g₀ Y' → FillG V V₂ g₀ (fun i => P i ∨ (d ≤ i ∧ i < d + 16)) →
       GoG prof L o gev gP gE Y' t') : GoG prof L o gev gP gE Y t := by
-  have he : eaD Y 7 d = g₀.rdi.add d := by
+  have he : eaD Y 7 d = Addr.add g₀.rdi d := by
     show Y.cpu.gpr.get (regOf 7) + _ = _
     rw [get7, hI.2.2.1]; rfl
   refine c.s_movdqu_std hK hA hin hj hrip hd (fun i hi => ?_) ?_
@@ -239,7 +239,7 @@ theorem stI (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e ms2) {j len D : Nat} 
       Y'.cpu.gpr = Y.cpu.gpr → Inv g₀ Y' →
       FillG V V₂ g₀ (fun i => P i ∨ (g₀.rdx.toNat - k ≤ i ∧ i < g₀.rdx.toNat - k + 16)) →
       GoG prof L o gev gP gE Y' t') : GoG prof L o gev gP gE Y t := by
-  have he : eaI Y 7 2 D = g₀.rdi.add (g₀.rdx.toNat - k) := by
+  have he : eaI Y 7 2 D = Addr.add g₀.rdi (g₀.rdx.toNat - k) := by
     show Y.cpu.gpr.get (regOf 7) + Y.cpu.gpr.get (regOf 2) + _ = _
     rw [get7, get2, hI.2.2.1, hdx]; exact ea_back _ _ hD hk
   refine c.s_movdqu_sti hK hA hin hj hrip hd (fun i hi => ?_) ?_
@@ -254,12 +254,12 @@ theorem stA (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e ms2) {j len d : Nat} 
     (hd : Dec prof.feat ms2 j (FV7z.mk (.sse .movdqa) 16 [.mem (mbd 1 d 128), .xmm 0] len)) {g₀ : Gprs}
     (C : Ctx prof F Wl L s₀ o gev gP gE V g₀) {Y : State} {t : Nat} {V₁ : Addr → Byte} {P : Nat → Prop}
     (hK : KeptW Wl s₀ Y) (hA : Agree F Y.proc.mm.mem V₁) (hrip : Y.cpu.rip = e.add j) (hI : Inv g₀ Y)
-    (hF : FillG V V₁ g₀ P) {R : Nat} (hcx : Y.cpu.gpr.rcx = g₀.rdi.add R) (hal : (g₀.rdi.toNat + R) % 16 = 0)
+    (hF : FillG V V₁ g₀ P) {R : Nat} (hcx : Y.cpu.gpr.rcx = Addr.add g₀.rdi R) (hal : (g₀.rdi.toNat + R) % 16 = 0)
     (hd16 : d % 16 = 0) (ho : R + d + 16 ≤ g₀.rdx.toNat)
     (K : ∀ Y' t' V₂, KeptW Wl s₀ Y' → Agree F Y'.proc.mm.mem V₂ → Y'.cpu.rip = e.add (j + len) →
       Y'.cpu.gpr = Y.cpu.gpr → Inv g₀ Y' → FillG V V₂ g₀ (fun i => P i ∨ (R + d ≤ i ∧ i < R + d + 16)) →
       GoG prof L o gev gP gE Y' t') : GoG prof L o gev gP gE Y t := by
-  have he : eaD Y 1 d = g₀.rdi.add (R + d) := by
+  have he : eaD Y 1 d = Addr.add g₀.rdi (R + d) := by
     show Y.cpu.gpr.get (regOf 1) + _ = _
     rw [get1, hcx, ← addr_add_add]; rfl
   refine c.s_movdqa_std hK hA hin hj hrip hd ?_ (fun i hi => ?_) ?_
@@ -412,30 +412,31 @@ theorem p16 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e ms2) {j : Nat} (hj : 
 theorem round (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e ms2) {g₀ : Gprs}
     (C : Ctx prof F Wl L s₀ o gev gP gE V g₀) {Y : State} {t : Nat} {V₁ : Addr → Byte} {R E : Nat}
     (hK : KeptW Wl s₀ Y) (hA : Agree F Y.proc.mm.mem V₁) (hrip : Y.cpu.rip = e.add 263) (hI : Inv g₀ Y)
-    (hcx : Y.cpu.gpr.rcx = g₀.rdi.add R) (hdx : Y.cpu.gpr.rdx = g₀.rdi.add E) (hal : (g₀.rdi.toNat + R) % 64 = 0)
+    (hcx : Y.cpu.gpr.rcx = Addr.add g₀.rdi R) (hdx : Y.cpu.gpr.rdx = Addr.add g₀.rdi E)
+    (hal : (g₀.rdi.toNat + R) % 64 = 0)
     (hRE : R + 64 ≤ E) (hEn : E ≤ g₀.rdx.toNat) (hF : FillG V V₁ g₀ fun i => i < R ∨ g₀.rdx.toNat - 64 ≤ i)
     (K : ∀ Y' t' V₂, KeptW Wl s₀ Y' → Agree F Y'.proc.mm.mem V₂ → Inv g₀ Y' →
-      Y'.cpu.gpr.rcx = g₀.rdi.add (R + 64) → Y'.cpu.gpr.rdx = g₀.rdi.add E →
+      Y'.cpu.gpr.rcx = Addr.add g₀.rdi (R + 64) → Y'.cpu.gpr.rdx = Addr.add g₀.rdi E →
       FillG V V₂ g₀ (fun i => i < R + 64 ∨ g₀.rdx.toNat - 64 ≤ i) →
       (Y'.cpu.rip = e.add 263 ∧ E ≠ R + 64) ∨ (Y'.cpu.rip = e.add 291 ∧ E = R + 64) →
       GoG prof L o gev gP gE Y' t') : GoG prof L o gev gP gE Y t := by
   have h16 : (g₀.rdi.toNat + R) % 16 = 0 := by omega
   refine stA c hin (by ms2_lt) (d263 prof.feat) C hK hA hrip hI hF hcx h16 (by decide) (by omega) ?_
   intro Y₁ t₁ V₂ hK₁ hA₁ hr₁ hg₁ hI₁ hF₁
-  have hcx₁ : Y₁.cpu.gpr.rcx = g₀.rdi.add R := by rw [hg₁]; exact hcx
-  have hdx₁ : Y₁.cpu.gpr.rdx = g₀.rdi.add E := by rw [hg₁]; exact hdx
+  have hcx₁ : Y₁.cpu.gpr.rcx = Addr.add g₀.rdi R := by rw [hg₁]; exact hcx
+  have hdx₁ : Y₁.cpu.gpr.rdx = Addr.add g₀.rdi E := by rw [hg₁]; exact hdx
   refine stA c hin (by ms2_lt) (d267 prof.feat) C hK₁ hA₁ hr₁ hI₁ hF₁ hcx₁ h16 (by decide) (by omega) ?_
   intro Y₂ t₂ V₃ hK₂ hA₂ hr₂ hg₂ hI₂ hF₂
-  have hcx₂ : Y₂.cpu.gpr.rcx = g₀.rdi.add R := by rw [hg₂]; exact hcx₁
-  have hdx₂ : Y₂.cpu.gpr.rdx = g₀.rdi.add E := by rw [hg₂]; exact hdx₁
+  have hcx₂ : Y₂.cpu.gpr.rcx = Addr.add g₀.rdi R := by rw [hg₂]; exact hcx₁
+  have hdx₂ : Y₂.cpu.gpr.rdx = Addr.add g₀.rdi E := by rw [hg₂]; exact hdx₁
   refine stA c hin (by ms2_lt) (d272 prof.feat) C hK₂ hA₂ hr₂ hI₂ hF₂ hcx₂ h16 (by decide) (by omega) ?_
   intro Y₃ t₃ V₄ hK₃ hA₃ hr₃ hg₃ hI₃ hF₃
-  have hcx₃ : Y₃.cpu.gpr.rcx = g₀.rdi.add R := by rw [hg₃]; exact hcx₂
-  have hdx₃ : Y₃.cpu.gpr.rdx = g₀.rdi.add E := by rw [hg₃]; exact hdx₂
+  have hcx₃ : Y₃.cpu.gpr.rcx = Addr.add g₀.rdi R := by rw [hg₃]; exact hcx₂
+  have hdx₃ : Y₃.cpu.gpr.rdx = Addr.add g₀.rdi E := by rw [hg₃]; exact hdx₂
   refine stA c hin (by ms2_lt) (d277 prof.feat) C hK₃ hA₃ hr₃ hI₃ hF₃ hcx₃ h16 (by decide) (by omega) ?_
   intro Y₄ t₄ V₅ hK₄ hA₄ hr₄ hg₄ hI₄ hF₄
-  have hcx₄ : Y₄.cpu.gpr.rcx = g₀.rdi.add R := by rw [hg₄]; exact hcx₃
-  have hdx₄ : Y₄.cpu.gpr.rdx = g₀.rdi.add E := by rw [hg₄]; exact hdx₃
+  have hcx₄ : Y₄.cpu.gpr.rcx = Addr.add g₀.rdi R := by rw [hg₄]; exact hcx₃
+  have hdx₄ : Y₄.cpu.gpr.rdx = Addr.add g₀.rdi E := by rw [hg₄]; exact hdx₃
   have hF₅ : FillG V V₅ g₀ fun i => i < R + 64 ∨ g₀.rdx.toNat - 64 ≤ i :=
     FillP.mono hF₄ fun i _ h => by omega
   -- `add rcx, 64`, `cmp rdx, rcx`
@@ -443,13 +444,13 @@ theorem round (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e ms2) {g₀ : Gprs}
   refine wpV_reg fun _ _ => wpV_reg fun fl hP => wpV_nil ?_
   intro Y₅ t₅ hK₅ hA₅ hr₅ hg₅ hf₅ hv₅
   simp only [wr, gv, Src.val, get1, get2, set_rcx, addR_eq, BitVec.setWidth_eq] at hg₅ hP
-  have hc' : Y₄.cpu.gpr.rcx + BitVec.ofNat 64 64 = g₀.rdi.add (R + 64) := by
+  have hc' : Y₄.cpu.gpr.rcx + BitVec.ofNat 64 64 = Addr.add g₀.rdi (R + 64) := by
     rw [hcx₄, ← addr_add_add]; rfl
   have hI₅ : Inv g₀ Y₅ := hI₄.rcx hg₅ hv₅
-  have hcx₅ : Y₅.cpu.gpr.rcx = g₀.rdi.add (R + 64) := by rw [hg₅]; exact hc'
-  have hdx₅ : Y₅.cpu.gpr.rdx = g₀.rdi.add E := by rw [hg₅]; exact hdx₄
-  have hz : fl.zf = decide (g₀.rdi.add E = g₀.rdi.add (R + 64)) := by
-    rw [hP, subF_zf, hdx₄]; exact congrArg (fun y => decide (g₀.rdi.add E = y)) hc'
+  have hcx₅ : Y₅.cpu.gpr.rcx = Addr.add g₀.rdi (R + 64) := by rw [hg₅]; exact hc'
+  have hdx₅ : Y₅.cpu.gpr.rdx = Addr.add g₀.rdi E := by rw [hg₅]; exact hdx₄
+  have hz : fl.zf = decide (Addr.add g₀.rdi E = Addr.add g₀.rdi (R + 64)) := by
+    rw [hP, subF_zf, hdx₄]; exact congrArg (fun y => decide (Addr.add g₀.rdi E = y)) hc'
   refine c.s_jccV hK₅ hA₅ hin (by ms2_lt) hr₅ (d289 prof.feat) (tgt := 263) rfl (by ms2_lt) ?_ ?_
   · intro htk Y₆ t₆ hK₆ hA₆ ⟨hr₆, hg₆, hv₆⟩
     rw [hf₅, cond_5, hz] at htk
@@ -468,7 +469,7 @@ theorem round (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e ms2) {g₀ : Gprs}
 theorem rounds (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e ms2) {g₀ : Gprs}
     (C : Ctx prof F Wl L s₀ o gev gP gE V g₀) (m : Nat) : ∀ {Y : State} {t : Nat} {V₁ : Addr → Byte} {R E : Nat},
     KeptW Wl s₀ Y → Agree F Y.proc.mm.mem V₁ → Y.cpu.rip = e.add 263 → Inv g₀ Y →
-    Y.cpu.gpr.rcx = g₀.rdi.add R → Y.cpu.gpr.rdx = g₀.rdi.add E → (g₀.rdi.toNat + R) % 64 = 0 →
+    Y.cpu.gpr.rcx = Addr.add g₀.rdi R → Y.cpu.gpr.rdx = Addr.add g₀.rdi E → (g₀.rdi.toNat + R) % 64 = 0 →
     E = R + 64 * (m + 1) → E ≤ g₀.rdx.toNat → g₀.rdx.toNat < E + 64 →
     FillG V V₁ g₀ (fun i => i < R ∨ g₀.rdx.toNat - 64 ≤ i) → GoG prof L o gev gP gE Y t := by
   induction m with
@@ -511,9 +512,9 @@ theorem p200 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e ms2) {g₀ : Gprs}
   simp only [wr, gv, Src.val, get1, set_rcx, BitVec.setWidth_eq] at hg₃
   have hI₃ : Inv g₀ Y₃ := hI₂.rcx hg₃ hv₃
   have hdx₃ : Y₃.cpu.gpr.rdx = g₀.rdx := by rw [hg₃]; show Y₂.cpu.gpr.rdx = _; rw [hg₂]; exact hdx₁
-  have hcx₃ : Y₃.cpu.gpr.rcx = g₀.rdi.add ((g₀.rdi.toNat + 64) / 64 * 64 - g₀.rdi.toNat) := by
+  have hcx₃ : Y₃.cpu.gpr.rcx = Addr.add g₀.rdi ((g₀.rdi.toNat + 64) / 64 * 64 - g₀.rdi.toNat) := by
     rw [hg₃]
-    exact and_al (by rw [hg₂]; exact hcx₁) (by omega) (Nat.le_refl _)
+    exact and_al (x := Y₂.cpu.gpr.rcx) (a := g₀.rdi) (by rw [hg₂]; exact hcx₁) (Nat.le_refl _)
   generalize hR0 : (g₀.rdi.toNat + 64) / 64 * 64 - g₀.rdi.toNat = R0 at hcx₃
   -- the last 64 bytes and the first 64
   refine stI c hin (by ms2_lt) (d212 prof.feat) C hK₃ hA₃ hr₃ hI₃ hF₂ hdx₃ (k := 16) rfl (by omega) (by omega) ?_
@@ -534,7 +535,7 @@ theorem p200 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e ms2) {g₀ : Gprs}
   refine stI c hin (by ms2_lt) (d245 prof.feat) C hK₉ hA₉ hr₉ hI₉ hF₉ hdx₉ (k := 64) rfl (by omega) (by omega) ?_
   intro Y₁₀ t₁₀ V₁₀ hK₁₀ hA₁₀ hr₁₀ hg₁₀ hI₁₀ hF₁₀
   have hdx₁₀ : Y₁₀.cpu.gpr.rdx = g₀.rdx := by rw [hg₁₀]; exact hdx₉
-  have hcx₁₀ : Y₁₀.cpu.gpr.rcx = g₀.rdi.add R0 := by
+  have hcx₁₀ : Y₁₀.cpu.gpr.rcx = Addr.add g₀.rdi R0 := by
     rw [hg₁₀, hg₉, hg₈, hg₇, hg₆, hg₅, hg₄]; exact hcx₃
   -- `add rdx, rdi`, `and rdx, -64`, `cmp rcx, rdx`
   refine c.s_blkV hin (b251 prof) hK₁₀ hA₁₀ hr₁₀ ?_
@@ -542,14 +543,15 @@ theorem p200 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e ms2) {g₀ : Gprs}
   intro Y₁₁ t₁₁ hK₁₁ hA₁₁ hr₁₁ hg₁₁ hf₁₁ hv₁₁
   simp only [wr, gv, Src.val, get1, get2, get7, set_rdx, addR_eq, BitVec.setWidth_eq] at hg₁₁ hP
   have hE : (Y₁₀.cpu.gpr.rdx + Y₁₀.cpu.gpr.rdi) &&& BitVec.ofNat 64 18446744073709551552 =
-      g₀.rdi.add ((g₀.rdi.toNat + g₀.rdx.toNat) / 64 * 64 - g₀.rdi.toNat) :=
-    and_al (by rw [hdx₁₀, hI₁₀.2.2.1, BitVec.toNat_add]; omega) (by omega) (by omega)
+      Addr.add g₀.rdi ((g₀.rdi.toNat + g₀.rdx.toNat) / 64 * 64 - g₀.rdi.toNat) :=
+    and_al (x := Y₁₀.cpu.gpr.rdx + Y₁₀.cpu.gpr.rdi) (a := g₀.rdi)
+      (by rw [hdx₁₀, hI₁₀.2.2.1, BitVec.toNat_add]; omega) (by omega)
   generalize hE0 : (g₀.rdi.toNat + g₀.rdx.toNat) / 64 * 64 - g₀.rdi.toNat = E at hE
   have hI₁₁ : Inv g₀ Y₁₁ := hI₁₀.rdx hg₁₁ hv₁₁
-  have hdx₁₁ : Y₁₁.cpu.gpr.rdx = g₀.rdi.add E := by rw [hg₁₁]; exact hE
-  have hcx₁₁ : Y₁₁.cpu.gpr.rcx = g₀.rdi.add R0 := by rw [hg₁₁]; exact hcx₁₀
-  have hz : fl.zf = decide (g₀.rdi.add R0 = g₀.rdi.add E) := by
-    rw [hP, subF_zf, hcx₁₀]; exact congrArg (fun y => decide (g₀.rdi.add R0 = y)) hE
+  have hdx₁₁ : Y₁₁.cpu.gpr.rdx = Addr.add g₀.rdi E := by rw [hg₁₁]; exact hE
+  have hcx₁₁ : Y₁₁.cpu.gpr.rcx = Addr.add g₀.rdi R0 := by rw [hg₁₁]; exact hcx₁₀
+  have hz : fl.zf = decide (Addr.add g₀.rdi R0 = Addr.add g₀.rdi E) := by
+    rw [hP, subF_zf, hcx₁₀]; exact congrArg (fun y => decide (Addr.add g₀.rdi R0 = y)) hE
   have hR0n : R0 < g₀.rdx.toNat + 1 := by omega
   have hEn : E < g₀.rdx.toNat + 1 := by omega
   refine c.s_jccV hK₁₁ hA₁₁ hin (by ms2_lt) hr₁₁ (d261 prof.feat) (tgt := 199) rfl (by ms2_lt) ?_ ?_
@@ -615,7 +617,7 @@ theorem head (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e ms2) {j : Nat} (hb1 
   refine c.s_blkV hin hb1 hK hA hrip ?_
   refine wpV_reg fun _ _ => wpV_v0 (wpV_reg fun _ _ => wpV_v0 (wpV_nil ?_))
   intro Y₁ t₁ hK₁ hA₁ hr₁ hg₁ _ hv₁
-  simp only [wr, gv, Src.val, set_rax, get0, get6, get7, BitVec.setWidth_eq] at hg₁ hv₁
+  simp only [wr, gv, Src.val, set_rax, get6, get7, BitVec.setWidth_eq] at hg₁ hv₁
   refine c.s_blkV hin hb2 hK₁ hA₁ hr₁ ?_
   refine wpV_v0 (wpV_v0 (wpV_reg fun fl hP => wpV_nil ?_))
   intro Y₂ t₂ hK₂ hA₂ hr₂ hg₂ hf₂ hv₂
