@@ -1,6 +1,6 @@
-import FV7z.Lemmas.Sse2c
+import FV7z.Lemmas.CopyP
 open FV7z
-#print axioms FV7z.VOpI.movups_m
-#print axioms FV7z.VOpI.movups_mi
-#print axioms FV7z.movups_sti
-#print axioms FV7z.Fn.Seg.s_movups_sti
+#print axioms FV7z.map_byteAddrs_get?
+#print axioms FV7z.Vst_get
+#print axioms FV7z.CopyP.ld
+#print axioms FV7z.CopyP.st

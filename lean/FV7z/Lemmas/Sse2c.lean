@@ -8,12 +8,27 @@ glibc's `__memmove_sse2_unaligned` copies 16 to 32 bytes with two loads and two 
 
 - `VOp.movups_m`, `VOp.movups_mi`: `movups xmmN, [b + d]` and `movups xmmN, [b + i + d]` as `VOp`s, the register's
   new low 128 bits the bytes loaded; `VOpI.movups_m`, `VOpI.movups_mi`.
+- `toBytesLE_ofBytesLE`: a register loaded from bytes and stored as many bytes stores them.
 - `movups_sti`, `Seg.s_movups_sti`: `movups xmmword [b + i + d], xmmN`, as `movups_st` and `Seg.s_movups_stv`.
 -/
 namespace FV7z
 open ZellicX86 Decode
 
 variable {prof : Profile} {o : Oracle} {t : Nat} {s : State}
+
+/-- A store of a load of as many bytes: the bytes. -/
+theorem toBytesLE_ofBytesLE {w : Nat} {bs : List Byte} (hw : w = 8 * bs.length) :
+    toBytesLE (ofBytesLE w bs) bs.length = bs := by
+  apply List.ext_getElem (by simp)
+  intro k h1 h2
+  simp only [toBytesLE, List.getElem_map, List.getElem_range]
+  apply BitVec.eq_of_getLsbD_eq
+  intro i hi
+  rw [BitVec.getLsbD_setWidth, BitVec.getLsbD_ushiftRight, getLsbD_ofBytesLE]
+  have h3 : (8 * k + i) / 8 = k := by omega
+  have h4 : (8 * k + i) % 8 = i := by omega
+  rw [h3, h4, List.getD_eq_getElem?_getD, List.getElem?_eq_getElem h2]
+  simp [hi, h2, show 8 * k + i < w by omega]
 
 namespace VOp
 
@@ -36,7 +51,7 @@ theorem VOpI.movups_m {w n b d len : Nat} :
   refine ⟨withZmm s.cpu.vec.zmm (xmmOf n) ((s.cpu.vec.zmm (xmmOf n)).extractLsb' 128 384 ++
     ofBytesLE 128 (readBytes s.proc.mm.mem (eaD s b d) 16)),
     t, instruction_next htf hdec ?_, xsOf_with _ _ _ _⟩
-  simp only [exec, execSse, Sem.movups, moveBits, mk, mbd, bind, Prog.bind, readOp, Bool.false_eq_true, ↓reduceIte,
+  simp only [exec, execSse, Sem.movups, moveBits, mbd, bind, Prog.bind, readOp, Bool.false_eq_true, ↓reduceIte,
     memRef, effOffset, pure, Prog.readReg, Prog.read, Prog.run, BitVec.mul_one, writeOp, Prog.readZmm]
   rw [eaD_adv, checkAccess_ok (s := advance s len) hac hld]
   rfl
@@ -47,7 +62,7 @@ theorem VOpI.movups_mi {w n b i d len : Nat} :
   refine ⟨withZmm s.cpu.vec.zmm (xmmOf n) ((s.cpu.vec.zmm (xmmOf n)).extractLsb' 128 384 ++
     ofBytesLE 128 (readBytes s.proc.mm.mem (eaI s b i d) 16)),
     t, instruction_next htf hdec ?_, xsOf_with _ _ _ _⟩
-  simp only [exec, execSse, Sem.movups, moveBits, mk, mbi, bind, Prog.bind, readOp, Bool.false_eq_true, ↓reduceIte,
+  simp only [exec, execSse, Sem.movups, moveBits, mbi, bind, Prog.bind, readOp, Bool.false_eq_true, ↓reduceIte,
     memRef, effOffset, pure, Prog.readReg, Prog.read, Prog.run, BitVec.mul_one, writeOp, Prog.readZmm]
   rw [checkAccess_ok (s := advance s len) hac hld]
   rfl
