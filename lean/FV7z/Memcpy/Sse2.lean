@@ -59,14 +59,14 @@ theorem p16 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e mc2) {j : Nat} (hc : 
     (hsp : g₀.rdi.toNat + g₀.rdx.toNat ≤ g₀.rsp.toNat ∨ g₀.rsp.toNat + 8 ≤ g₀.rdi.toNat)
     (hsp8 : g₀.rsp.toNat + 8 ≤ 2 ^ 64)
     (hR : RetC prof F Wl L s₀ o gev gP gE V g₀ r) : GoG prof L o gev gP gE X t := by
-  have hea1 : eaB X.cpu.gpr 6 0 = g₀.rsi.add 0 := by
+  have hea1 : eaB X.cpu.gpr 6 0 = Addr.add g₀.rsi 0 := by
     show X.cpu.gpr.get (regOf 6) + BitVec.ofNat 64 0 = _
     rw [get6, hsi]
     rfl
-  have hea2 : eaBI X.cpu.gpr 6 2 18446744073709551600 = g₀.rsi.add (g₀.rdx.toNat - 16) := by
+  have hea2 : VOp.eaBI X.cpu.gpr 6 2 18446744073709551600 = Addr.add g₀.rsi (g₀.rdx.toNat - 16) := by
     show X.cpu.gpr.get (regOf 6) + X.cpu.gpr.get (regOf 2) + BitVec.ofNat 64 18446744073709551600 = _
     rw [get6, get2, hsi, hdx]
-    exact ea_back g₀.rsi g₀.rdx rfl h16
+    exact ea_back (D := 18446744073709551600) (k := 16) g₀.rsi g₀.rdx (by decide) h16
   have hlt := hc.lt
   refine c.s_blkV hin (bL16 hc) hK hA hrip ?_
   dsimp only [wpV, VOp.movups_m, VOp.movups_mi]
@@ -77,14 +77,14 @@ theorem p16 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e mc2) {j : Nat} (hc : 
   · rw [hea2, addr_add_add]
     exact hsrc _ (by omega)
   intro Y t₁ hK₁ hA₁ hr₁ hg₁ _ hx₁
-  simp only [hea1, hea2] at hx₁
-  have hx0 : xlo Y 0 = ofBytesLE 128 ((byteAddrs (g₀.rsi.add 0) 16).map V) := by
+  rw [hea1, hea2] at hx₁
+  have hx0 : xlo Y 0 = ofBytesLE 128 ((byteAddrs (Addr.add g₀.rsi 0) 16).map V) := by
     show xsOf Y.cpu.vec.zmm (xmmOf 0) = _
     rw [hx₁, xset_ne _ _ (by decide), xset_same]
-  have hx1 : xlo Y 1 = ofBytesLE 128 ((byteAddrs (g₀.rsi.add (g₀.rdx.toNat - 16)) 16).map V) := by
+  have hx1 : xlo Y 1 = ofBytesLE 128 ((byteAddrs (Addr.add g₀.rsi (g₀.rdx.toNat - 16)) 16).map V) := by
     show xsOf Y.cpu.vec.zmm (xmmOf 1) = _
     rw [hx₁, xset_same]
-  have he1 : eaD Y 7 0 = g₀.rdi.add 0 := by
+  have he1 : eaD Y 7 0 = Addr.add g₀.rdi 0 := by
     show Y.cpu.gpr.get (regOf 7) + BitVec.ofNat 64 0 = _
     rw [get7, hg₁, hdi]
     rfl
@@ -92,10 +92,10 @@ theorem p16 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e mc2) {j : Nat} (hc : 
   · rw [he1, addr_add_add]
     exact hst _ (by omega)
   rintro Y₂ t₂ hK₂ hA₂ ⟨hr₂, hg₂, hv₂⟩
-  have he2 : eaI Y₂ 7 2 18446744073709551600 = g₀.rdi.add (g₀.rdx.toNat - 16) := by
+  have he2 : eaI Y₂ 7 2 18446744073709551600 = Addr.add g₀.rdi (g₀.rdx.toNat - 16) := by
     show Y₂.cpu.gpr.get (regOf 7) + Y₂.cpu.gpr.get (regOf 2) + BitVec.ofNat 64 18446744073709551600 = _
     rw [get7, get2, hg₂, hg₁, hdi, hdx]
-    exact ea_back g₀.rdi g₀.rdx rfl h16
+    exact ea_back (D := 18446744073709551600) (k := 16) g₀.rdi g₀.rdx (by decide) h16
   have hx1' : xlo Y₂ 1 = xlo Y 1 := by
     show (Y₂.cpu.vec.zmm (xmmOf 1)).setWidth 128 = _
     rw [hv₂]
