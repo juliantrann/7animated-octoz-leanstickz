@@ -70,7 +70,6 @@ theorem back_q (Z : State) : lifSp Z + 152#64 + 8#64 = Z.cpu.gpr.rsp := by
   show Z.cpu.gpr.rsp - 8#64 + 8#64 = Z.cpu.gpr.rsp
   exact BitVec.sub_add_cancel _ _
 
-/-- `n` bytes from `x.toNat = c` in `[lo, hi)`. -/
 set_option maxHeartbeats 4000000 in
 /-- From the launch of `7zzs` to the first byte of `main` (and to the branch where `readlink` of `/proc/self/exe`
 fails). -/
