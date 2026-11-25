@@ -88,9 +88,9 @@ theorem msb_peqb (a b : BitVec 128) {j : Nat} (hj : j < 16) :
     (lane 8 (peqb a b) j).msb = decide (lane 8 a j = lane 8 b j) := by
   rw [peqb, lane_ofBytes _ hj]
   by_cases h : lane 8 a j = lane 8 b j
-  · rw [if_pos h, decide_eq_true h]
+  · rw [ite_eq_left h, decide_eq_true h]
     exact BitVec.msb_allOnes (by decide)
-  · rw [if_neg h, decide_eq_false h]
+  · rw [ite_eq_right h, decide_eq_false h]
     decide
 
 /-- Bit `i` of the mask of a vector compared with the spread character `c`. -/
