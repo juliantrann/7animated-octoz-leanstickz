@@ -1,15 +1,10 @@
-import FV7z.Ctor.Gs
-import FV7z.Ctor.GsC
+import FV7z.Ctor.Spec
 open FV7z
-#print axioms FV7z.Ctor.g17
-#print axioms FV7z.Ctor.g103
-#print axioms FV7z.Ctor.g37
-#print axioms FV7z.Ctor.g67
-#print axioms FV7z.Ctor.g77
-#print axioms FV7z.Ctor.Gn.reg
-#print axioms FV7z.Ctor.g90
-#print axioms FV7z.Ctor.g94
-#print axioms FV7z.Ctor.g95
-#print axioms FV7z.Ctor.gmc
-#print axioms FV7z.Ctor.g98
-#print axioms FV7z.Ctor.g102
+#print axioms FV7z.Ctor.cwS
+#print axioms FV7z.Ctor.cwX
+#print axioms FV7z.Ctor.spec_wr
+#print axioms FV7z.Ctor.spec_done
+#print axioms FV7z.Ctor.spec_X90
+#print axioms FV7z.Ctor.spec_X103
+#print axioms FV7z.Ctor.spec_Sh
+#print axioms FV7z.Ctor.spec_ShD
