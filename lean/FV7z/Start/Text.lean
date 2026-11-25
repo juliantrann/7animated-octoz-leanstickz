@@ -18,12 +18,16 @@ all: each function's bytes (`*_pin`) are a stretch of it, since no other loadabl
 -/
 namespace FV7z.Start
 open ZellicX86 FV7z
+set_option maxRecDepth 100000
 
 /-- The file part of the executable segment of `7zzs`: `0x2d667d` bytes from the file's offset `0x1000`. -/
-noncomputable def textB : List Byte := (List.range 0x2d667d).map fun i => V2606.zzs.blob.bytes (0x1000 + i)
+@[irreducible] noncomputable def textB : List Byte :=
+  (List.range 0x2d667d).map fun i => V2606.zzs.blob.bytes (0x1000 + i)
 
 /-- The code list of one segment, `textB` at `0x401000`. -/
 noncomputable def textL : List (Addr × List Byte) := [(0x401000#64, textB)]
+
+theorem mem_textL : (0x401000#64, textB) ∈ textL := List.mem_singleton_self _
 
 theorem textB_length : textB.length = 0x2d667d := by
   simp only [textB, List.length_map, List.length_range]
@@ -50,8 +54,8 @@ theorem text_at {a n : Nat} {bs : List Byte} (h : Exe.bytesAt V2606.zzs.blob a n
     · simp only [List.length_map, List.length_range, List.length_take, List.length_drop, textB_length]
       omega
     · intro i h1 h2
-      simp only [List.getElem_map, List.getElem_range, List.getElem_take, List.getElem_drop, textB, hv, ho] <;>
-        congr 1 <;> omega
+      simp only [List.getElem_map, List.getElem_range, List.getElem_take, List.getElem_drop, textB, hv, ho,
+        Nat.add_assoc]
   · omega
   · omega
 
@@ -80,10 +84,15 @@ theorem text_hL : ∀ p ∈ textL, ∃ a, p.1 = BitVec.ofNat 64 a ∧ 0x401000 �
   exact ⟨0x401000, rfl, Nat.le_refl _, text_len, text_pin'⟩
 
 theorem text_addr {x : Addr} (ha : 0x401000 ≤ x.toNat) : x = Addr.add 0x401000#64 (x.toNat - 0x401000) := by
-  apply BitVec.eq_of_toNat_eq
-  simp only [Addr.add, BitVec.toNat_add, BitVec.toNat_ofNat]
+  have t : (0x401000#64 : Addr).toNat = 0x401000 := by decide
   have := x.isLt
-  omega
+  have e : Addr.add 0x401000#64 (x.toNat - (0x401000#64 : Addr).toNat) = x := by
+    apply BitVec.eq_of_toNat_eq
+    simp only [Addr.add]
+    rw [BitVec.toNat_add, BitVec.toNat_ofNat]
+    omega
+  rw [t] at e
+  exact e.symm
 
 theorem nat_text {a : Nat} (h : 0x401000 ≤ a ∧ a < 0x6d767d) :
     0x401000 ≤ (BitVec.ofNat 64 a).toNat ∧ (BitVec.ofNat 64 a).toNat < 0x6d767d := by
@@ -99,12 +108,12 @@ theorem codeIn_text {a n : Nat} {bs : List Byte} (h : Exe.bytesAt V2606.zzs.blob
   have ea : BitVec.ofNat 64 a = Addr.add 0x401000#64 (a - 0x401000) := by
     have := text_addr (x := BitVec.ofNat 64 a) (by rw [t]; exact ha)
     rwa [t] at this
-  exact ⟨_, List.mem_singleton_self _, a - 0x401000, ea, List.take_prefix _ _⟩
+  exact ⟨(0x401000#64, textB), mem_textL, a - 0x401000, ea, List.take_prefix _ _⟩
 
 /-- Some byte at each address of the executable segment is code of `textL`. -/
 theorem text_any {x : Addr} (ha : 0x401000 ≤ x.toNat) (ha' : x.toNat < 0x6d767d) :
     ∃ c, CodeIn textL x c ∧ 0 < c.length := by
-  refine ⟨(textB.drop (x.toNat - 0x401000)).take 1, ⟨_, List.mem_singleton_self _, x.toNat - 0x401000,
+  refine ⟨(textB.drop (x.toNat - 0x401000)).take 1, ⟨(0x401000#64, textB), mem_textL, x.toNat - 0x401000,
     text_addr ha, List.take_prefix _ _⟩, ?_⟩
   simp only [List.length_take, List.length_drop, textB_length]
   omega
