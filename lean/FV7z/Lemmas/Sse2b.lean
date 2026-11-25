@@ -4,7 +4,7 @@ import FV7z.Lemmas.Sse2
 
 `__strrchr_sse2` spreads the byte it looks for over the 16 bytes of `xmm1` (`movd xmm1, esi`, `punpcklbw xmm1, xmm1`,
 `punpcklwd xmm1, xmm1`, `pshufd xmm1, xmm1, 0`), and copies and folds vectors between registers (`movdqa xmmN, xmmM`,
-`pminub xmmN, xmmM`). Their `VOp`s and `VOpI`s, as `Lemmas/Sse2.lean`'s.
+`pminub xmmN, xmmM`). Their `VOp`s and `VOpI`s, as `Lemmas/Sse2.lean`'s, and the spread's bytes (`lane_bcast`).
 -/
 namespace FV7z
 open ZellicX86 Decode
@@ -43,7 +43,7 @@ theorem VOpI.movd {w n r len : Nat} :
   intro s o t htf _ hdec _ _
   refine ⟨withZmm s.cpu.vec.zmm (xmmOf n) ((s.cpu.vec.zmm (xmmOf n)).extractLsb' 128 384 ++
     ((s.cpu.gpr.get (regOf r)).setWidth 32).setWidth 128), t, instruction_next htf hdec ?_, xsOf_with _ _ _ _⟩
-  simp only [exec, execSse, Sem.movd, moveBits, mk, gr, bind, Prog.bind, readOp, Bool.false_eq_true, ↓reduceIte,
+  simp only [exec, execSse, Sem.movd, moveBits, gr, bind, Prog.bind, readOp, Bool.false_eq_true, ↓reduceIte,
     pure, Prog.readReg, Prog.run, writeOp, Prog.readZmm]
   rfl
 
@@ -88,8 +88,60 @@ theorem VOpI.pminub {w n m len : Nat} :
   intro s o t htf _ hdec _ _
   refine ⟨withZmm s.cpu.vec.zmm (xmmOf n) ((s.cpu.vec.zmm (xmmOf n)).extractLsb' 128 384 ++
     pminb (xlo s n) (xlo s m)), t, instruction_next htf hdec ?_, xsOf_with _ _ _ _⟩
-  simp only [exec, execSse, Sem.pminu, if_pos (show (8 : Nat) = 8 from rfl), packedOp, packed, aligned16, bind,
+  simp only [exec, execSse, Sem.pminu, packedOp, packed, aligned16, bind,
     Prog.bind, readOp, Bool.false_eq_true, ↓reduceIte, pure, Prog.run, writeOp, Prog.readZmm]
   rfl
+
+/-! ## The spread byte -/
+
+theorem extractLsb'_extractLsb'' {w s l s' l' : Nat} (x : BitVec w) (h : s' + l' ≤ l) :
+    (x.extractLsb' s l).extractLsb' s' l' = x.extractLsb' (s + s') l' := by
+  ext k hk
+  simp [show s' + k < l by omega, Nat.add_assoc]
+
+/-- A lane of `k` bits inside a lane of `K` bits. -/
+theorem lane_in {k K : Nat} (x : BitVec 128) (i q r : Nat) (hr : k * r + k ≤ K) (hi : k * i = K * q + k * r) :
+    lane k x i = (lane K x q).extractLsb' (k * r) k := by
+  unfold lane
+  rw [extractLsb'_extractLsb'' _ hr, hi]
+
+theorem lane_ofWords (f : Nat → BitVec 16) {j : Nat} (hj : j < 8) : lane 16 (ofWords f) j = f j := by
+  have : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7 := by omega
+  rcases this with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
+  simp (disch := omega) only [lane, ofWords, BitVec.extractLsb'_append_eq_of_le, BitVec.extractLsb'_append_eq_right,
+    BitVec.extractLsb'_eq_self, Nat.mul_zero, Nat.reduceMul, Nat.reduceSub]
+
+theorem lane_ofDwords (f : Nat → BitVec 32) {j : Nat} (hj : j < 4) : lane 32 (ofDwords f) j = f j := by
+  have : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 := by omega
+  rcases this with rfl | rfl | rfl | rfl <;>
+  simp (disch := omega) only [lane, ofDwords, BitVec.extractLsb'_append_eq_of_le, BitVec.extractLsb'_append_eq_right,
+    BitVec.extractLsb'_eq_self, Nat.mul_zero, Nat.reduceMul, Nat.reduceSub]
+
+theorem interleave_self (k h : Nat) (a : BitVec 128) (j : Nat) : interleave k h a a j = lane k a (h + j / 2) := by
+  simp only [interleave, ite_self]
+
+/-- `movd`, `punpcklbw`, `punpcklwd`, `pshufd 0` of one register: each byte the source's low byte. -/
+theorem lane_bcast (c : BitVec 64) {i : Nat} (hi : i < 16) :
+    lane 8 (ofDwords fun j => lane 32 (ofWords (interleave 16 0
+      (ofBytes (interleave 8 0 ((c.setWidth 32).setWidth 128) ((c.setWidth 32).setWidth 128)))
+      (ofBytes (interleave 8 0 ((c.setWidth 32).setWidth 128) ((c.setWidth 32).setWidth 128))))) (0 / 4 ^ j % 4)) i =
+      c.setWidth 8 := by
+  generalize hX : (c.setWidth 32).setWidth 128 = X
+  generalize hB : ofBytes (interleave 8 0 X X) = B
+  generalize hW : ofWords (interleave 16 0 B B) = W
+  have h1 : lane 8 (ofDwords fun j => lane 32 W (0 / 4 ^ j % 4)) i = (lane 32 W 0).extractLsb' (8 * (i % 4)) 8 := by
+    rw [lane_in (k := 8) (K := 32) _ i (i / 4) (i % 4) (by omega) (by omega), lane_ofDwords (j := i / 4) _ (by omega)]
+    simp only [Nat.zero_div, Nat.zero_mod]
+  have h2 : (lane 32 W 0).extractLsb' (8 * (i % 4)) 8 = lane 8 W (i % 4) :=
+    (lane_in (k := 8) (K := 32) W (i % 4) 0 (i % 4) (by omega) (by omega)).symm
+  have h3 : lane 8 W (i % 4) = (lane 16 B 0).extractLsb' (8 * (i % 2)) 8 := by
+    rw [lane_in (k := 8) (K := 16) W (i % 4) (i % 4 / 2) (i % 2) (by omega) (by omega), ← hW,
+      lane_ofWords (j := i % 4 / 2) _ (by omega), interleave_self, show 0 + i % 4 / 2 / 2 = 0 by omega]
+  have h4 : (lane 16 B 0).extractLsb' (8 * (i % 2)) 8 = lane 8 X 0 := by
+    rw [← lane_in (k := 8) (K := 16) B (i % 2) 0 (i % 2) (by omega) (by omega), ← hB,
+      lane_ofBytes (j := i % 2) _ (by omega), interleave_self, show 0 + i % 2 / 2 = 0 by omega]
+  rw [h1, h2, h3, h4, ← hX]
+  ext k hk
+  simp [lane, show k < 32 by omega, show k < 128 by omega]
 
 end FV7z
