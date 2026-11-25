@@ -10,7 +10,7 @@ all: each function's bytes (`*_pin`) are a stretch of it, since no other loadabl
 `0x401000` to `0x6d767d` (`text_only`).
 
 - `textB`, `textL`: the segment's bytes and the list.
-- `text_at`: bytes `Exe.bytesAt` reads at an address of the segment are its bytes from there.
+- `text_at`: bytes `Exe.bytesAt` reads at an address of the segment are `textB`'s from there.
 - `text_pin`: `textL`'s segment is the file's (`hL`).
 - `codeIn_text`, `text_any`: so `CodeIn textL` holds of each function's pinned bytes, and of some byte at each
   address of the segment.
@@ -34,20 +34,24 @@ theorem text_only : zzsPhdrs.all (fun p => p.type != PT_LOAD ||
     (p.vaddr == 0x401000 && p.offset == 0x1000 && p.filesz == 0x2d667d) ||
     decide (p.vaddr + p.filesz ≤ 0x401000) || decide (0x6d767d ≤ p.vaddr)) = true := by decide +kernel
 
-/-- What `Exe.bytesAt` reads at an address of the executable segment is the file's bytes at the segment's offset
-plus the address's distance from `0x401000`, and ends in the segment. -/
+/-- What `Exe.bytesAt` reads at an address of the executable segment is `textB` from the address's distance from
+`0x401000` on, and ends in the segment. -/
 theorem text_at {a n : Nat} {bs : List Byte} (h : Exe.bytesAt V2606.zzs.blob a n = some bs)
     (ha : 0x401000 ≤ a) (ha' : a < 0x6d767d) :
-    a + n ≤ 0x6d767d ∧ bs = (List.range n).map fun i => V2606.zzs.blob.bytes (0x1000 + (a - 0x401000) + i) := by
+    a + n ≤ 0x6d767d ∧ bs = (textB.drop (a - 0x401000)).take n := by
   obtain ⟨p, hp, hty, hlo, hhi, rfl⟩ := bytesAt_some h
   rcases Nat.eq_zero_or_pos n with rfl | hn
-  · exact ⟨by omega, by simp only [List.range_zero, List.map_nil]⟩
+  · exact ⟨by omega, by simp only [List.range_zero, List.map_nil, List.take_zero]⟩
   have hq := List.all_eq_true.1 text_only p hp
   simp only [hty, bne_self_eq_false, Bool.false_or, Bool.or_eq_true, Bool.and_eq_true, beq_iff_eq,
     decide_eq_true_eq] at hq
   rcases hq with (⟨⟨hv, ho⟩, hf⟩ | h1) | h2
-  · rw [hv, ho]
-    exact ⟨by omega, rfl⟩
+  · refine ⟨by omega, List.ext_getElem ?_ ?_⟩
+    · simp only [List.length_map, List.length_range, List.length_take, List.length_drop, textB_length]
+      omega
+    · intro i h1 h2
+      simp only [List.getElem_map, List.getElem_range, List.getElem_take, List.getElem_drop, textB, hv, ho] <;>
+        congr 1 <;> omega
   · omega
   · omega
 
@@ -56,43 +60,46 @@ theorem text_some : (Exe.bytesAt V2606.zzs.blob 0x401000 0x2d667d).isSome = true
 
 theorem text_pin : Exe.bytesAt V2606.zzs.blob 0x401000 0x2d667d = some textB := by
   obtain ⟨bs, hb⟩ := Option.isSome_iff_exists.1 text_some
-  obtain ⟨-, rfl⟩ := text_at hb (by decide) (by decide)
-  exact hb
+  have e := (text_at hb (by decide) (by decide)).2
+  rw [Nat.sub_self, List.drop_zero, List.take_of_length_le (Nat.le_of_eq textB_length)] at e
+  rw [hb, e]
+
+theorem text_len : 0x401000 + textB.length ≤ 0x6d8000 := by
+  rw [textB_length]
+  omega
+
+theorem text_pin' : Exe.bytesAt V2606.zzs.blob 0x401000 textB.length = some textB := by
+  rw [textB_length]
+  exact text_pin
 
 theorem text_hL : ∀ p ∈ textL, ∃ a, p.1 = BitVec.ofNat 64 a ∧ 0x401000 ≤ a ∧ a + p.2.length ≤ 0x6d8000 ∧
     Exe.bytesAt V2606.zzs.blob a p.2.length = some p.2 := by
   intro p hp
   simp only [textL, List.mem_singleton] at hp
   subst hp
-  exact ⟨0x401000, rfl, by decide, by rw [textB_length]; decide, by rw [textB_length]; exact text_pin⟩
+  exact ⟨0x401000, rfl, Nat.le_refl _, text_len, text_pin'⟩
 
-theorem text_addr {x : Addr} (ha : 0x401000 ≤ x.toNat) : x = (0x401000#64 : Addr).add (x.toNat - 0x401000) := by
+theorem text_addr {x : Addr} (ha : 0x401000 ≤ x.toNat) : x = Addr.add 0x401000#64 (x.toNat - 0x401000) := by
   apply BitVec.eq_of_toNat_eq
   simp only [Addr.add, BitVec.toNat_add, BitVec.toNat_ofNat]
   have := x.isLt
   omega
 
+theorem nat_text {a : Nat} (h : 0x401000 ≤ a ∧ a < 0x6d767d) :
+    0x401000 ≤ (BitVec.ofNat 64 a).toNat ∧ (BitVec.ofNat 64 a).toNat < 0x6d767d := by
+  rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (Nat.lt_trans h.2 (by decide))]
+  exact h
+
 /-- The bytes `Exe.bytesAt` reads at an address of the executable segment are code of `textL`. -/
 theorem codeIn_text {a n : Nat} {bs : List Byte} (h : Exe.bytesAt V2606.zzs.blob a n = some bs)
     (ha : 0x401000 ≤ a) (ha' : a < 0x6d767d) : CodeIn textL (BitVec.ofNat 64 a) bs := by
-  obtain ⟨hn, rfl⟩ := text_at h ha ha'
+  obtain ⟨-, rfl⟩ := text_at h ha ha'
   have t : (BitVec.ofNat 64 a).toNat = a := by
-    simp only [BitVec.toNat_ofNat]
-    omega
-  have ea : BitVec.ofNat 64 a = (0x401000#64 : Addr).add (a - 0x401000) := by
-    have := text_addr (x := BitVec.ofNat 64 a) (by omega)
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (Nat.lt_trans ha' (by decide))]
+  have ea : BitVec.ofNat 64 a = Addr.add 0x401000#64 (a - 0x401000) := by
+    have := text_addr (x := BitVec.ofNat 64 a) (by rw [t]; exact ha)
     rwa [t] at this
-  refine ⟨_, List.mem_singleton_self _, a - 0x401000, ea, ?_⟩
-  have e : (List.range n).map (fun i => V2606.zzs.blob.bytes (0x1000 + (a - 0x401000) + i)) =
-      (textB.drop (a - 0x401000)).take n := by
-    apply List.ext_getElem
-    · simp only [List.length_map, List.length_range, List.length_take, List.length_drop, textB_length]
-      omega
-    · intro i h1 h2
-      simp only [List.getElem_map, List.getElem_range, List.getElem_take, List.getElem_drop, textB] <;>
-        congr 1 <;> omega
-  rw [e]
-  exact List.take_prefix _ _
+  exact ⟨_, List.mem_singleton_self _, a - 0x401000, ea, List.take_prefix _ _⟩
 
 /-- Some byte at each address of the executable segment is code of `textL`. -/
 theorem text_any {x : Addr} (ha : 0x401000 ≤ x.toNat) (ha' : x.toNat < 0x6d767d) :
@@ -104,7 +111,7 @@ theorem text_any {x : Addr} (ha : 0x401000 ≤ x.toNat) (ha' : x.toNat < 0x6d767
 
 /-! ## The bundles -/
 
-theorem res_text : ∀ r ∈ V2606.resolvers, 0x401000 ≤ r.1 ∧ r.1 < 0x6d767d := by decide +kernel
+theorem res_text : ∀ r ∈ Glibc.V2606.resolvers, 0x401000 ≤ r.1 ∧ r.1 < 0x6d767d := by decide +kernel
 
 theorem plt_text : ∀ a ∈ lifPlt, 0x401000 ≤ a ∧ a < 0x6d767d := by decide +kernel
 
@@ -162,8 +169,7 @@ theorem lif_text : LifCode textL where
   mpr := codeIn_text Mpr.mpr_pin (by decide) (by decide)
   ims := codeIn_text Ims.ims_pin (by decide) (by decide)
   cti := codeIn_text Cti.cti_pin (by decide) (by decide)
-  plt := fun a ha => text_any (by simp only [BitVec.toNat_ofNat]; have := (plt_text a ha).1; omega)
-    (by simp only [BitVec.toNat_ofNat]; have := (plt_text a ha).2; omega)
+  plt := fun a ha => text_any (nat_text (plt_text a ha)).1 (nat_text (plt_text a ha)).2
 
 theorem mal_text : MalCode textL where
   mal := codeIn_text Mal.mal_pin (by decide) (by decide)
