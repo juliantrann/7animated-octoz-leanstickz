@@ -1,5 +1,3 @@
-import FV7z.Memcpy.Sse2
+import FV7z.Memcpy.Sse2c
 open FV7z
-#print axioms FV7z.Memcpy.p16
-#print axioms FV7z.Memcpy.c16_43
-#print axioms FV7z.Memcpy.c16_227
+#print axioms FV7z.Memcpy.p377
