@@ -1,4 +1,6 @@
 import FV7z.Start.RegZ
+import FV7z.Start.ToCxa
+import FV7z.Ctor.HO
 /-!
 # `CEnv` at the call of `__libc_csu_init` (PLAN.md §M, `launch_to_main`)
 
@@ -8,8 +10,10 @@ footprint `lifG` of the start after `__libc_init_first`, from the layout: the TC
 pages, the heap's top `hi` above it, the stack from `lo` to `top` with `sp` in it.
 
 - `Ctor.CtorCode`: the code `CEnv` asks for.
-- `gr_ro`: `.rodata` is read by `lifG`; `reg_var`: the registrars' tables and counts are in `.data`/`.bss`.
+- `rng_at`: bytes from an address in a range; `gr_ro`: `.rodata` is read by `lifG`; `reg_var`: the registrars'
+  tables and counts are in `.data`/`.bss`.
 - `ctor_env`: `CEnv` for `lifG`.
+- `FromMain`: what the run from `main` on asks; `ctor_at_lif`: `AtCtor` for `lifG` from it (`Ctor.at_ctor_gs`).
 -/
 namespace FV7z.Ctor
 open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn FV7z.Start FV7z.Mal FV7z.Prepare
@@ -65,6 +69,13 @@ namespace FV7z.Start
 open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn
 
 variable {lo top : Nat} {B : Addr} {L : List (Addr × List Byte)} {y : Addr}
+
+/-- `n` bytes from `x` (at `c`) in a range where `P` holds. -/
+theorem rng_at {x : Addr} {c n lo hi : Nat} {P : Addr → Prop} (hxt : x.toNat = c) (hc : lo ≤ c) (hn : c + n ≤ hi)
+    (hhi : hi ≤ 2 ^ 64) (hP : ∀ y : Addr, lo ≤ y.toNat → y.toNat < hi → P y) : ∀ i < n, P (x.add i) :=
+  fun i hi' => by
+    have t : (x.add i).toNat = c + i := by rw [toNat_add_of_fits hi' (by omega), hxt]
+    exact hP _ (by omega) (by omega)
 
 /-- `.rodata` (`[0x6d8000, 0x776000)`) is read by `lifG`. -/
 theorem gr_ro (h1 : 0x6d8000 ≤ y.toNat) (h2 : y.toNat < 0x776000) : Foot (lifG lo top B L).reads y :=
@@ -173,5 +184,57 @@ theorem ctor_env {prof : Profile} {s : State} {o : Oracle} {gP : State → Nat �
       iMnx := cc.iMnx,
       iImm := cc.iImm,
       iHca := cc.iHca }
+
+/-- The stack offsets at `0x61344a`: `main`'s return address below `q = K.bp + 112`, the frame's alignment. -/
+theorem q_offs8 {q : Addr} (h : 128 ≤ q.toNat) (h16 : q.toNat % 16 = 0) :
+    (q - 8#64).toNat = q.toNat - 8 ∧ (q - 8#64 - 64#64 + 8).toNat % 16 = 0 := by
+  constructor <;> bv_omega
+
+/-- What the run from `main` on asks once the constructors are done (`Ctor.at_ctor_gs`'s last hypothesis): from a
+state at `main` with the bytes `Vm`, those of the invariant `Ctor.JG` at the end but on the stack's frame, `atexit`'s
+word and the TCB's `768`. -/
+def FromMain (prof : Profile) (F : Footprint) (Wl : List Rgn) (L : List (Addr × List Byte)) (s₀ : State)
+    (o : Oracle) (gev : List Event) (gP : State → Nat → List Event → Prop) (gE : Outcome → List Event → Prop)
+    (K : Ctx) (V : Addr → Byte) (fb : Addr) (hi k : Nat) : Prop :=
+  ∀ (Vm V₁ : Addr → Byte) (Z' : State) (t' : Nat), KeptW Wl s₀ Z' → Agree F Z'.proc.mm.mem Vm →
+    Ctor.JG V (K.bp + 112#64 - 8#64) F Wl fb hi k 104 V₁ →
+    (∀ a : Addr, ¬ ((K.bp + 112#64).toNat - 16 ≤ a.toNat ∧ a.toNat < (K.bp + 112#64).toNat) →
+      ¬ ((K.bp + 112#64).toNat + 112 ≤ a.toNat ∧ a.toNat < (K.bp + 112#64).toNat + 208) →
+      ¬ (0x7a84c0 ≤ a.toNat ∧ a.toNat < 0x7a84e8) → ¬ (fb.toNat + 768 ≤ a.toNat ∧ a.toNat < fb.toNat + 776) →
+      Vm a = V₁ a) →
+    rdq(Vm, K.bp + 112#64 - 8#64) = lsm_at.add 1168 →
+    Z'.cpu.rip = K.main → Z'.cpu.gpr.rsp = K.bp + 112#64 - 8#64 → Z'.cpu.gpr.rdi = K.argc.setWidth 64 →
+    Z'.cpu.gpr.rsi = K.argv → Z'.cpu.gpr.rdx = rdq(V, 8013720#64) → GoG prof L o gev gP gE Z' t'
+
+/-- `AtCtor` after `__cxa_atexit (fini, NULL, NULL)` returns, for the footprint `lifG`: `Ctor.at_ctor_gs` with
+`ctor_env`, `csu_rz` and `csu_gs`, from the run from `main` on. -/
+theorem ctor_at_lif {prof : Profile} {s : State} {o : Oracle} {gev : List Event}
+    {gP : State → Nat → List Event → Prop} {gE : Outcome → List Event → Prop} {K : Ctx} {V V'' W W₂ : Addr → Byte}
+    {Z : State} {g : Gprs} {a0 s' : Addr} {a1 a2 a3 : BitVec 64} {ver : BitVec 32} {fn : BitVec 64}
+    (c : Seg prof (lifG lo top B L) (lifG lo top B L).writes L s o)
+    (hC : Csu.Env (lifG lo top B L) (lifG lo top B L).writes L (K.bp + 112#64 - 8#64) csuTg)
+    (cc : Ctor.CtorCode L) (hU : InsOK 95 gP gE) (hCe : Glibc.CacheEnds prof) (hpc : prof.Consistent)
+    (hfs : s.cpu.seg.fsBase = B + 2176#64) (hrs : s.thread.rseq = none) (hdf : s.cpu.rflags.df = false)
+    (hx87 : s.cpu.x87.full = 0) (h : RetAt W W₂ Z B g) (hKo : K.Ok) (hI : Img K.V0) (hB : Bss K.V0)
+    (hM : MB K V) (hW : PtrW K W V B ver (fun _ => True))
+    (hHp : Mal.Hp (withNew (withNew (zzsFoot lo top L) [⟨B, 8192⟩]) (brkN B))
+      (brkN B ++ ([⟨B, 8192⟩] ++ (zzsFoot lo top L).writes)) (B + 2176#64) ((lifSp Z).toNat - 4144)
+      (1072 * 0 + 73840) (Cti.CtMem (Lif.bcV W₂ g a0 s') (B + 2176#64) a1 a2 a3))
+    (hR : Cxa.Reg (Vst (Cti.CtMem (Lif.bcV W₂ g a0 s') (B + 2176#64) a1 a2 a3) (lifSp Z + 152#64)
+      (toBytesLE (lsm_at.add 1034) 8)) V'' (lifSp Z + 152#64) 8010400#64 8010416#64 0 fn 0 0)
+    (htop : top ≤ 2 ^ 47) (hlo : lo + 4144 ≤ (lifSp Z).toNat) (hbt : B.toNat + 0x23000 ≤ 2 ^ 47)
+    (hq : (K.bp + 112#64).toNat = (lifSp Z).toNat + 160) (hq16 : (K.bp + 112#64).toNat % 16 = 0)
+    (hqt : (K.bp + 112#64).toNat ≤ top) (hbp : K.bp.toNat + 392 ≤ 2 ^ 64)
+    (hbB : B.toNat + 8192 + 448 < K.bp.toNat)
+    (hmain : FromMain prof (lifG lo top B L) (lifG lo top B L).writes L s o gev gP gE K V'' (B + 2176#64)
+      ((lifSp Z).toNat - 4144) 16) :
+    AtCtor prof (lifG lo top B L) (lifG lo top B L).writes L s o gev gP gE K (B + 2176#64) V'' := by
+  have := h.hb; have := h.hb'; have := h.hsp
+  obtain ⟨e8, eal⟩ := q_offs8 (q := K.bp + 112#64) (by omega) hq16
+  obtain ⟨-, hT82, hT87⟩ := csu_tabs h hKo hI hM hW hR
+  have E := ctor_env (V := V'') (hi := (lifSp Z).toNat - 4144) c hC cc hU hCe hpc hfs hrs hdf hx87 h.hb h.hb' htop
+    (by omega) (by omega) (by omega) (by omega) eal hT82 hT87
+  exact Ctor.at_ctor_gs rfl E (Nat.le_refl 16) cc.hinN E.hst80 hbp (csu_rz h hKo hB hM hW hR)
+    (csu_gs h hKo hI hB hM hW hbB htop (by omega) hbt hHp hR) hmain
 
 end FV7z.Start
