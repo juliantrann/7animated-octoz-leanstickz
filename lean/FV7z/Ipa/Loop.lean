@@ -190,7 +190,7 @@ set_option maxHeartbeats 4000000 in
 theorem step (c : Seg prof F Wl L s₀ o) (hin : CodeIn L ipa_at ipa)
     {ms : List Byte} (hins : CodeIn L 4198528#64 ms) (hms0 : 0 < ms.length) {Ps : (Addr → Byte) → Prop}
     (hset : SetAt prof L o 4198528#64 Ps)
-    (hgf : Ipa.GotF F) (hdf₀ : s₀.cpu.rflags.df = false) {V₁ : Addr → Byte} {n q i bh : Nat} {r b a A B : Addr}
+    (hgf : GotF F) (hdf₀ : s₀.cpu.rflags.df = false) {V₁ : Addr → Byte} {n q i bh : Nat} {r b a A B : Addr}
     (hq : n = 8 ∧ q = 2 ∨ n = 16 ∧ q = 3) (hi : i ≤ 3)
     (hPs : ∀ W : Addr → Byte, (∀ x : Addr, x.toNat < 7940480 → W x = V₁ x) → Ps W)
     (hr : 8029560 + 88 ≤ r.toNat) (hr2 : r.toNat + 16 ≤ 2 ^ 64)
@@ -300,7 +300,7 @@ the `ret`. -/
 theorem loop (c : Seg prof F Wl L s₀ o) (hin : CodeIn L ipa_at ipa)
     {ms : List Byte} (hins : CodeIn L 4198528#64 ms) (hms0 : 0 < ms.length) {Ps : (Addr → Byte) → Prop}
     (hset : SetAt prof L o 4198528#64 Ps)
-    (hgf : Ipa.GotF F) (hdf₀ : s₀.cpu.rflags.df = false) {V₁ : Addr → Byte} {n q : Nat} {r A B : Addr}
+    (hgf : GotF F) (hdf₀ : s₀.cpu.rflags.df = false) {V₁ : Addr → Byte} {n q : Nat} {r A B : Addr}
     (hq : n = 8 ∧ q = 2 ∨ n = 16 ∧ q = 3)
     (hPs : ∀ W : Addr → Byte, (∀ x : Addr, x.toNat < 7940480 → W x = V₁ x) → Ps W)
     (hr : 8029560 + 88 ≤ r.toNat) (hr2 : r.toNat + 16 ≤ 2 ^ 64)

@@ -1,4 +1,5 @@
 import FV7z.Tls.Mem
+import FV7z.Lemmas.Got
 /-!
 # `__libc_setup_tls` sets up the thread control block (PLAN.md G3, startup)
 
@@ -27,22 +28,24 @@ variable {prof : Profile} {L : List (Addr × List Byte)} {s₀ : State} {o : Ora
 
 /-- What a call of `memcpy` at `e` does, the bytes at the call with `Pm`: called with a return address in code of
 the list, the `rdx` bytes at `rsi` to read, those at `rdi` to store to, the two apart and those at `rdi` apart from
-the return address, the run reaches the return address with `rax` the `rdi` of the call, the registers a call
+the return address, the two ranges short of `2 ^ 64`, the direction flag clear and the 8 bytes at `rsp` short of
+the top of the address space, the GOT's slots data of the footprint (`GotF`: the PLT's `jmp` reads one), the run
+reaches the return address with `rax` the `rdi` of the call, the registers a call
 keeps kept, the bytes at `rdi` those at `rsi`, and the other bytes as they were. -/
 def CpyAt (prof : Profile) (L : List (Addr × List Byte)) (o : Oracle) (e : Addr) (Pm : (Addr → Byte) → Prop) :
     Prop :=
   ∀ {F : Footprint} {Wl : List Rgn} {s₀ : State} {gev : List Event} {gP : State → Nat → List Event → Prop}
     {gE : Outcome → List Event → Prop} {X : State} {t : Nat} {V : Addr → Byte} {e' : Addr} {code : List Byte}
-    {j : Nat}, Seg prof F Wl L s₀ o → KeptW Wl s₀ X → Agree F X.proc.mm.mem V → X.cpu.rip = e → Pm V →
-    CodeIn L e' code → j < code.length → rdq(V, X.cpu.gpr.rsp) = e'.add j →
+    {j : Nat}, Seg prof F Wl L s₀ o → GotF F → KeptW Wl s₀ X → Agree F X.proc.mm.mem V → X.cpu.rip = e →
+    Pm V → CodeIn L e' code → j < code.length → rdq(V, X.cpu.gpr.rsp) = e'.add j →
     (∀ i < 8, Foot F.data (Addr.add X.cpu.gpr.rsp i)) →
     (∀ i < X.cpu.gpr.rdx.toNat, Foot F.data (Addr.add X.cpu.gpr.rsi i)) →
     (∀ i < X.cpu.gpr.rdx.toNat, Foot Wl (Addr.add X.cpu.gpr.rdi i)) →
-    X.cpu.gpr.rsi.toNat + X.cpu.gpr.rdx.toNat ≤ 2 ^ 64 → X.cpu.gpr.rdi.toNat + X.cpu.gpr.rdx.toNat ≤ 2 ^ 64 →
+    X.cpu.gpr.rsi.toNat + X.cpu.gpr.rdx.toNat < 2 ^ 64 → X.cpu.gpr.rdi.toNat + X.cpu.gpr.rdx.toNat < 2 ^ 64 →
     (X.cpu.gpr.rsi.toNat + X.cpu.gpr.rdx.toNat ≤ X.cpu.gpr.rdi.toNat ∨
       X.cpu.gpr.rdi.toNat + X.cpu.gpr.rdx.toNat ≤ X.cpu.gpr.rsi.toNat) →
     (X.cpu.gpr.rdi.toNat + X.cpu.gpr.rdx.toNat ≤ X.cpu.gpr.rsp.toNat ∨
-      X.cpu.gpr.rsp.toNat + 8 ≤ X.cpu.gpr.rdi.toNat) →
+      X.cpu.gpr.rsp.toNat + 8 ≤ X.cpu.gpr.rdi.toNat) → X.cpu.rflags.df = false → X.cpu.gpr.rsp.toNat + 8 ≤ 2 ^ 64 →
     (∀ Z t' V₂, KeptW Wl s₀ Z → Agree F Z.proc.mm.mem V₂ → Z.cpu.rip = e'.add j →
       Z.cpu.gpr.rsp = X.cpu.gpr.rsp + 8 → Z.cpu.gpr.rax = X.cpu.gpr.rdi → Z.cpu.gpr.rbx = X.cpu.gpr.rbx →
       Z.cpu.gpr.rbp = X.cpu.gpr.rbp → Z.cpu.gpr.r12 = X.cpu.gpr.r12 → Z.cpu.gpr.r13 = X.cpu.gpr.r13 →
@@ -224,9 +227,11 @@ theorem setup_tls {lim : Nat} {b fsb : Addr} {ks : Kst} {Pm : (Addr → Byte) �
   have hsi₅ : Y₅.cpu.gpr.rsi = 7829360#64 := by rw [hg₅]; exact hsi₄
   have hdx₅ : Y₅.cpu.gpr.rdx = 40#64 := by rw [hg₅]; exact hdx₄
   have hsp₅ : Y₅.cpu.gpr.rsp = q - 8 := by rw [hg₅]; rfl
-  refine hcpy c₁ hK₅ hA₅ hr₅ (hPm _ h5) hin (j := 304) (lt_len (by decide)) ?_ (fun i hi => ?_) (fun i hi => ?_)
+  refine hcpy c₁ (fun a h1 h2 => c₁.hws _ (foot_append_iff.2 (.inr (hgl a (by omega) (by omega))))) hK₅ hA₅ hr₅
+    (hPm _ h5) hin (j := 304) (lt_len (by decide)) ?_ (fun i hi => ?_) (fun i hi => ?_)
     (fun i hi => ?_) (by rw [hsi₅, hdx₅]; decide) (by rw [hdi₅, hdx₅]; bv_omega)
-    (by rw [hsi₅, hdi₅, hdx₅]; left; bv_omega) (by rw [hdi₅, hdx₅, hsp₅]; left; bv_omega) ?_
+    (by rw [hsi₅, hdi₅, hdx₅]; left; bv_omega) (by rw [hdi₅, hdx₅, hsp₅]; left; bv_omega) (hK₅.df.trans hB₁.df)
+    (by rw [hsp₅]; bv_omega) ?_
   · rw [hsp₅, rd_Vst_self, ofBytesLE_toBytesLE (n := 8) rfl]
     all_goals sd
   · rw [hsp₅]

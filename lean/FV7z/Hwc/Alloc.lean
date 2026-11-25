@@ -118,6 +118,7 @@ set_option maxHeartbeats 4000000 in
 this frame. -/
 theorem from1050 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (hin : CodeIn L hwc_at hwc)
     (hinc : CodeIn L 4198592#64 cpy) (hc0 : 0 < cpy.length) (hcpy : Gor.PcpyAt prof L o 4198592#64 Pm)
+    (hgf : GotF F) (hdf₀ : s₀.cpu.rflags.df = false)
     (hinm : CodeIn L 6500704#64 mlc) (hm0 : 0 < mlc.length) (hmal : Mal.At prof F Wl L o fb hi 6500704#64 Pa)
     {V : Addr → Byte} {cnt E H t s : Nat} {R bp sp Q N : Addr} {ln st : Nat → Addr}
     (hPm : ∀ W : Addr → Byte, (∀ a : Addr, a.toNat < 7940480 → (a.toNat < N.toNat ∨ N.toNat + 8 ≤ a.toNat) →
@@ -137,7 +138,7 @@ theorem from1050 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (
     (hFT : ∀ a : Addr, R.toNat ≤ a.toNat → a.toNat < R.toNat + 16 * cnt → Foot F.data a)
     (hT : ∀ m < cnt, rdq(V, R + BitVec.ofNat 64 (16 * m)) = st m ∧ rdq(V, R + BitVec.ofNat 64 (16 * m + 8)) = ln m)
     (hsrc : ∀ m < cnt, ∀ i < (ln m).toNat, Foot F.data ((st m).add i))
-    (hs64 : ∀ m < cnt, (st m).toNat + (ln m).toNat ≤ 2 ^ 64)
+    (hs64 : ∀ m < cnt, (st m).toNat + (ln m).toNat < 2 ^ 64)
     (hsd : ∀ m < cnt, (st m).toNat + (ln m).toNat ≤ 7940480 ∨ sp.toNat ≤ (st m).toNat)
     (hNv : rdq(V, bp + 18446744073709551528#64) = N)
     (hND : N.toNat + 8 ≤ 7940480 ∨ (bp + 18446744073709551448#64).toNat + 176 ≤ N.toNat)
@@ -210,7 +211,8 @@ theorem from1050 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (
       List.map (M5 V bp (R + BitVec.ofNat 64 (16 * (cnt - 1))) N cnt) (byteAddrs x n) =
         List.map V (byteAddrs x n) :=
     fun {x n} hx h1 h2 => (hSm (lo := x.toNat) (hi := x.toNat + n) h1 h2).rd (Nat.le_refl _) (Nat.le_refl _) hx
-  refine from1111 c hfs hin hinc hc0 hcpy hinm hm0 hmal (V := M5 V bp (R + BitVec.ofNat 64 (16 * (cnt - 1))) N cnt)
+  refine from1111 c hfs hin hinc hc0 hcpy hgf hdf₀ hinm hm0 hmal
+    (V := M5 V bp (R + BitVec.ofNat 64 (16 * (cnt - 1))) N cnt)
     (fun W hW => hPm W fun a ha hn => (hW a ha).trans (hSm (lo := a.toNat) (hi := a.toNat + 1) (by fomega)
       (by fomega) a (Nat.le_refl _) (by omega)))
     (fun W hW => hPa W fun a ha hn => (hW a ha).trans (hSm (lo := a.toNat) (hi := a.toNat + 1) (by fomega)

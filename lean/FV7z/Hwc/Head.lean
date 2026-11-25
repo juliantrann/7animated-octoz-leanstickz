@@ -75,6 +75,7 @@ set_option maxHeartbeats 8000000 in
 and the `ret`. -/
 theorem from1778_3 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (hin : CodeIn L hwc_at hwc)
     (hinc : CodeIn L 4198592#64 cpy) (hc0 : 0 < cpy.length) (hcpy : Gor.PcpyAt prof L o 4198592#64 Pm)
+    (hgf : GotF F) (hdf₀ : s₀.cpu.rflags.df = false)
     (hinm : CodeIn L 6500704#64 mlc) (hm0 : 0 < mlc.length) (hmal : Mal.At prof F Wl L o fb hi 6500704#64 Pa)
     (hins : CodeIn L 4198664#64 sl) (hs0 : 0 < sl.length) (hlen : Str.LenAt prof L o 4198664#64 Pl)
     {V : Addr → Byte} {R bp Q N p : Addr}
@@ -209,7 +210,8 @@ theorem from1778_3 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb)
   · exact (hne (by decide)).elim
   rw [r12₅, hax₅] at hA₆
   -- 682 on
-  refine from682 (V := _) c hfs hin hinc hc0 hcpy hinm hm0 hmal (cnt := 3) (E := 8) (H := 4) (t := 23) (s := 151)
+  refine from682 (V := _) c hfs hin hinc hc0 hcpy hgf hdf₀ hinm hm0 hmal (cnt := 3) (E := 8) (H := 4) (t := 23)
+    (s := 151)
     (R := R) (bp := bp) (sp := R) (Q := Q) (N := N) (p := p) (S0 := 7288953#64) (S1 := 0#64)
     (fun W hW => hPm W fun a ha hn => (hW a ha hn).trans (by vout))
     (fun W hW => hPa W fun a ha hn => (hW a ha hn).trans (by vout))
@@ -250,6 +252,7 @@ set_option maxHeartbeats 16000000 in
 (length 8) to entry 1, on to 682 and the `ret`. -/
 theorem from1778_4 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (hin : CodeIn L hwc_at hwc)
     (hinc : CodeIn L 4198592#64 cpy) (hc0 : 0 < cpy.length) (hcpy : Gor.PcpyAt prof L o 4198592#64 Pm)
+    (hgf : GotF F) (hdf₀ : s₀.cpu.rflags.df = false)
     (hinm : CodeIn L 6500704#64 mlc) (hm0 : 0 < mlc.length) (hmal : Mal.At prof F Wl L o fb hi 6500704#64 Pa)
     (hins : CodeIn L 4198664#64 sl) (hs0 : 0 < sl.length) (hlen : Str.LenAt prof L o 4198664#64 Pl)
     {V : Addr → Byte} {R bp Q N p : Addr}
@@ -464,7 +467,7 @@ theorem from1778_4 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb)
   · exact (hne (by decide)).elim
   rw [r12₉, hax₉, r168] at hA₁₀
   -- 682 on
-  refine from682 (V := _) c hfs hin hinc hc0 hcpy hinm hm0 hmal (cnt := 4) (E := 16) (H := 8) (t := 32)
+  refine from682 (V := _) c hfs hin hinc hc0 hcpy hgf hdf₀ hinm hm0 hmal (cnt := 4) (E := 16) (H := 8) (t := 32)
     (s := 320) (R := R) (bp := bp) (sp := R) (Q := Q) (N := N) (p := p) (S0 := 7288953#64) (S1 := 7288962#64)
     (fun W hW => hPm W fun a ha hn => (hW a ha hn).trans (by vout))
     (fun W hW => hPa W fun a ha hn => (hW a ha hn).trans (by vout))

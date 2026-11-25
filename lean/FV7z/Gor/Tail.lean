@@ -109,6 +109,7 @@ theorem t283 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L gor_at gor) {X : State
     (hw : ∀ i < s + 1, Foot Wl (Addr.add p i)) (hst : ∀ i < 8, Foot Wl (Addr.add (B - 8) i))
     (hB : ∀ i < 4096, Foot F.data (Addr.add B i)) (hf : ∀ i < 40, Foot F.data (Addr.add (B + 4104#64) i))
     (hinc : CodeIn L 4198592#64 cpy) (hc0 : 0 < cpy.length) (hcpy : PcpyAt prof L o 4198592#64 Pm)
+    (hgf : GotF F) (hdf₀ : s₀.cpu.rflags.df = false)
     (hPm : Pm (Vst V (B - 8) (toBytesLE (gor_at.add (300 + 5)) 8)))
     (hinr : CodeIn L e' code) (hj : j < code.length) (hra : rdq(V, B + 4136#64) = e'.add j)
     (k : ∀ Z t' W, KeptW Wl s₀ Z → Agree F Z.proc.mm.mem W →
@@ -138,9 +139,10 @@ theorem t283 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L gor_at gor) {X : State
   have hsi₅ : Y₅.cpu.gpr.rsi = B := by rw [hg₅]; exact hsi
   have hdx₅ : Y₅.cpu.gpr.rdx = BitVec.ofNat 64 s := by rw [hg₅]; exact hdx
   have hsp₅ : Y₅.cpu.gpr.rsp = B - 8 := by rw [hg₅]; rfl
-  refine hcpy c hK₅ hA₅ hr₅ hPm hin (j := 305) (lt_len (by decide)) ?_ (fun i hi => ?_) (fun i hi => ?_)
+  refine hcpy c hgf hK₅ hA₅ hr₅ hPm hin (j := 305) (lt_len (by decide)) ?_ (fun i hi => ?_) (fun i hi => ?_)
     (fun i hi => ?_) (by rw [hsi₅, hdx₅, hs64]; omega) (by rw [hdi₅, hdx₅, hs64]; omega)
-    (by rw [hsi₅, hdi₅, hdx₅, hs64]; omega) (by rw [hdi₅, hdx₅, hsp₅, hs64, hb8]; omega) ?_
+    (by rw [hsi₅, hdi₅, hdx₅, hs64]; omega) (by rw [hdi₅, hdx₅, hsp₅, hs64, hb8]; omega)
+    (hK₅.df.trans hdf₀) (by rw [hsp₅, hb8]; omega) ?_
   · rw [hsp₅, Tun.rd_Vst_self _ _ _ (toBytesLE_length _ _) (by rw [hb8]; omega), ofBytesLE_toBytesLE (n := 8) rfl]
     try rfl
   · rw [hsp₅]

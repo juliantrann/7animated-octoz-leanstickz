@@ -13,7 +13,7 @@ does is a hypothesis here, `Pm` the state of its GOT slot; to be discharged with
   the low byte of `rsi`, the other bytes as they were.
 
 What the bodies need besides (`Memset/Erms.lean`, `Memset/Sse2.lean`, `Memset/Plt.lean`): the GOT's slots bytes of
-the footprint's data (the PLT's `jmp` reads one; `Strlen.GotFoot`, spelt out here), `rdi + rdx` short of `2 ^ 64`
+the footprint's data (the PLT's `jmp` reads one; `GotF`), `rdi + rdx` short of `2 ^ 64`
 (the SSE2 variants round it down to 64), the direction flag clear (else `rep stosb` stores downwards) and the 8 bytes
 at `rsp` short of the top of the address space. `Memset.setAt_plt` proves `SetAt` for the processors without both
 AVX and AVX2.
@@ -23,9 +23,6 @@ open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn
 namespace FV7z.Ipa
 
 variable {prof : Profile} {L : List (Addr × List Byte)} {o : Oracle}
-
-/-- The GOT's slots, `[0x792018, 0x792110)`, bytes of the footprint's data (`Strlen.GotFoot`). -/
-abbrev GotF (F : Footprint) : Prop := ∀ a : Addr, 0x792018 ≤ a.toNat → a.toNat < 0x792110 → Foot F.data a
 
 /-- What a call of `memset` at `e` does (assumed; see the module doc). -/
 def SetAt (prof : Profile) (L : List (Addr × List Byte)) (o : Oracle) (e : Addr) (Pm : (Addr → Byte) → Prop) :

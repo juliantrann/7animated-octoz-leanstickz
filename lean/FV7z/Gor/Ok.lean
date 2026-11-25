@@ -54,7 +54,7 @@ theorem gor_ok (c : Seg prof F Wl L s₀ o) (hin : CodeIn L gor_at gor)
     (hpz : V (Addr.add 7366691#64 14) = 0) (hpp : (byteAddrs 7366691#64 14).map V = pse)
     (hof : ∀ i < 8, Foot F.data (Addr.add (8029440#64) i)) (hoz : rdq(V, 8029440#64) = 0#64)
     (hps : ProcSelfExe o) (hpre : MPre F V b fsb pad sm mx)
-    (hinc : CodeIn L 4198592#64 cpy) (hc0 : 0 < cpy.length) (hcpy : PcpyAt prof L o 4198592#64 Pm)
+    (hinc : CodeIn L 4198592#64 cpy) (hc0 : 0 < cpy.length) (hcpy : PcpyAt prof L o 4198592#64 Pm) (hgf : GotF F)
     (hPm : ∀ W : Addr → Byte, (∀ a : Addr, a.toNat < 7940480 → W a = V a) → Pm W)
     (hinr : CodeIn L e' code) (hj : j < code.length) (hra : rdq(V, X.cpu.gpr.rsp) = e'.add j)
     (ke : ∀ r, (∃ t₀, o t₀ (.readlink none Gor.pse) = r ∧ ∀ x, r = .procExe x → pathMax ≤ x.bytes.length) →
@@ -132,7 +132,7 @@ theorem gor_ok (c : Seg prof F Wl L s₀ o) (hin : CodeIn L gor_at gor)
       · rw [h]; show 0 < 4096; omega
     refine g278 c hin mc hKZ hAZ hrZ hdi hbx hs1 hs hsp hbp
       (hpre.lo mc.hfs mc.hfb fun a ha => Vg_lo h32 hl (by omega)) hsm (by rw [hB]; omega) (by rw [hB]; omega)
-      (by rw [hB]; omega) hbuf (fun i hi => by rw [eB]; exact hfr i hi) hinc hc0 hcpy
+      (by rw [hB]; omega) hbuf (fun i hi => by rw [eB]; exact hfr i hi) hinc hc0 hcpy hgf
       (fun W hW => hPm W fun a ha => (hW a ha).trans (Vg_lo h32 hl (by omega))) hinr hj r5 ?_
     intro n s s₁ Vc M W evs Z₁ t₁ g hc hB' hK₁ hA₁ hn2 hn hs1' hsn hg hVc hAf MV ML hnul hout hr hax
       hsp₁ hbx₁ hbp₁ h12 h13 h14₁ h15₁ hev

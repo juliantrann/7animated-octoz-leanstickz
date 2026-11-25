@@ -213,6 +213,7 @@ set_option maxHeartbeats 4000000 in
 string `P + 16 E`, the lengths `caps`), the strings above it, `*Q`, to the `ret` (1681). -/
 theorem from1116 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (hin : CodeIn L hwc_at hwc)
     (hinc : CodeIn L 4198592#64 cpy) (hc0 : 0 < cpy.length) (hcpy : Gor.PcpyAt prof L o 4198592#64 Pm)
+    (hgf : GotF F) (hdf₀ : s₀.cpu.rflags.df = false)
     {V : Addr → Byte} (hPm : ∀ W : Addr → Byte, (∀ a : Addr, a.toNat < 7940480 → W a = V a) → Pm W)
     {cnt E H : Nat} {P R bp sp Q : Addr} {ln st : Nat → Addr}
     (hn : cnt = 3 ∧ E = 8 ∧ H = 4 ∨ cnt = 4 ∧ E = 16 ∧ H = 8)
@@ -226,7 +227,7 @@ theorem from1116 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (
     (hFT : ∀ a : Addr, R.toNat ≤ a.toNat → a.toNat < R.toNat + 16 * cnt → Foot F.data a)
     (hT : ∀ m < cnt, rdq(V, R + BitVec.ofNat 64 (16 * m)) = st m ∧ rdq(V, R + BitVec.ofNat 64 (16 * m + 8)) = ln m)
     (hsrc : ∀ m < cnt, ∀ i < (ln m).toNat, Foot F.data ((st m).add i))
-    (hs64 : ∀ m < cnt, (st m).toNat + (ln m).toNat ≤ 2 ^ 64)
+    (hs64 : ∀ m < cnt, (st m).toNat + (ln m).toNat < 2 ^ 64)
     (hsd : ∀ m < cnt, (st m).toNat + (ln m).toNat ≤ P.toNat + 16 * E ∨
       P.toNat + 16 * E + rem cnt ln H ≤ (st m).toNat)
     (hN : rdd(V, bp + 18446744073709551520#64) = BitVec.ofNat 32 cnt)
@@ -347,7 +348,8 @@ theorem from1116 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (
     (msame (lo := 0) (hi := P.toNat) (by fomega) a (Nat.zero_le _)
       (by fomega))
   -- 1248 → 1392: the strings
-  refine loop c hfs hin hinc hc0 hcpy (V₀ := M16 V bp P cnt E H (st (cnt - 1))) hPm' (A := P.toNat + 16 * E)
+  refine loop c hfs hin hinc hc0 hcpy hgf hdf₀ (V₀ := M16 V bp P cnt E H (st (cnt - 1))) hPm'
+    (A := P.toNat + 16 * E)
     (B := P.toNat + 16 * E + rem cnt ln H) (pe := P.toNat + 16 * E + rem cnt ln H) (sp := sp) (R := R) (bp := bp)
     (Ev := BitVec.ofNat 64 E) (Cv := BitVec.ofNat 64 cnt) (Pv := P) (ln := ln) (st := st) hcn (by fomega) hbuf
     hsp8 (Nat.le_refl _) (fun a h1 h2 => hWPW a (by fomega) h2) hst hRs (by fomega) hFT
