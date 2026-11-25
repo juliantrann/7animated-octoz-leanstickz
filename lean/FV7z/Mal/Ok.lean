@@ -44,6 +44,7 @@ def AtH (prof : Profile) (F : Footprint) (Wl : List Rgn) (L : List (Addr × List
       (∀ W : Addr → Byte, (∀ a : Addr, 7940480 ≤ a.toNat → a.toNat < hi →
         (a.toNat < p.toNat ∨ p.toNat + X.cpu.gpr.rdi.toNat ≤ a.toNat) → W a = V₂ a) → Pm k W) →
       rdq(V, 7940768#64).toNat + 16 ≤ p.toNat → p.toNat + X.cpu.gpr.rdi.toNat ≤ rdq(V₂, 7940768#64).toNat + 8 →
+      (∀ a : Addr, a.toNat < rdq(V, 7940768#64).toNat + 8 → ¬ (7940768 ≤ a.toNat ∧ a.toNat < 7940776) → V₂ a = V a) →
       GoG prof L o gev gP gE Z t') →
     GoG prof L o gev gP gE X t
 
@@ -97,11 +98,11 @@ theorem at_of {prof : Profile} {F : Footprint} {Wl : List Rgn} {L : List (Addr �
       omega
     exact hwl _ (by rw [e]; omega) (by rw [e]; omega)
   refine h c hfs hK hA hrip hP hn hhi hR hsw hin₂ hj hra
-    fun Z t' V₂ p hKZ hAZ hrZ hsZ haZ hbx hbp h12 h13 h14 h15 hp hpf hpe hWP hV hPm ht1 ht2 => ?_
+    fun Z t' V₂ p hKZ hAZ hrZ hsZ haZ hbx hbp h12 h13 h14 h15 hp hpf hpe hWP hV hPm ht1 ht2 ht3 => ?_
   exact kc Z t' V₂ p hKZ hAZ hrZ hsZ haZ hbx hbp h12 h13 h14 h15 (by omega) (by omega) hWP
     (fun a ha => hV a (ha.elim (fun _ => .inl (by omega)) fun _ => .inr (.inr ⟨by omega, .inr (by omega)⟩)))
     (fun W hW => hPm W fun a h1 h2 h3 => hW a h1 (by omega) h3)
-    (kn_kept hp hpf fun a ha => hV a (ha.elim (fun h => .inl h) fun h => .inr (.inl h))) (by omega) hpf ht1 ht2
+    (kn_kept hp hpf fun a ha => hV a (ha.elim (fun h => .inl h) fun h => .inr (.inl h))) (by omega) hpf ht1 ht2 ht3
 
 /-- `malloc` after the first call (`0x633160`) as `Mal.At`, with `Pm k` the heap with a top of at least
 `1072 k + 16` bytes. -/

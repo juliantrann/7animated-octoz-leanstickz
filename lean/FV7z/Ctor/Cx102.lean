@@ -287,7 +287,7 @@ theorem c102_runs {J : Nat → (Addr → Byte) → Prop} {sp fb : Addr} {tg : Na
     hin (j := 3429 + 5) (sti_lt (by decide)) ?_ ?_
   · rw [hsp₂, Sga.vs (a := sp - 80#64) (n := 8) (toBytesLE_length _ _) (by rw [n80]; omega)]
     exact ofBytesLE_toBytesLE (n := 8) rfl _
-  intro Z t₃ V₂ p hKZ hAZ hrZ hspZ haxZ hbxZ hbpZ h12Z h13Z h14Z h15Z hp1 hp2 hpn hpF hV₂ hHp _ _
+  intro Z t₃ V₂ p hKZ hAZ hrZ hspZ haxZ hbxZ hbpZ h12Z h13Z h14Z h15Z hp1 hp2 hpn hpF hV₂ hHp _ _ _
   have e7 : (72704#64 : Addr).toNat = 72704 := rfl
   rw [hdi₂, e7] at hpn hpF hHp
   rw [hsp₂, n80] at hV₂

@@ -42,6 +42,7 @@ def At (prof : Profile) (F : Footprint) (Wl : List Rgn) (L : List (Addr × List 
         (a.toNat < p.toNat ∨ p.toNat + X.cpu.gpr.rdi.toNat ≤ a.toNat) → W a = V₂ a) → Pm k W) →
       (∀ a : Addr, Kf fb a → V₂ a = V a) → 8032256 ≤ p.toNat → fb.toNat + 64 ≤ p.toNat →
       rdq(V, 7940768#64).toNat + 16 ≤ p.toNat → p.toNat + X.cpu.gpr.rdi.toNat ≤ rdq(V₂, 7940768#64).toNat + 8 →
+      (∀ a : Addr, a.toNat < rdq(V, 7940768#64).toNat + 8 → ¬ (7940768 ≤ a.toNat ∧ a.toNat < 7940776) → V₂ a = V a) →
       GoG prof L o gev gP gE Z t') →
     GoG prof L o gev gP gE X t
 
@@ -135,7 +136,7 @@ theorem from1111 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (
     try rfl
   · rw [hsp₁]
     exact c.hws _ (hst i hi)
-  intro Z t₂ V₂ p hK₂ hA₂ hr₂ hsp₂ hax₂ hbx₂ hbp₂ h12₂ h13₂ _ _ hlo hpe hWP hV₂ hPa₂ hKn₂ hph₂ hpf₂ _ _
+  intro Z t₂ V₂ p hK₂ hA₂ hr₂ hsp₂ hax₂ hbx₂ hbp₂ h12₂ h13₂ _ _ hlo hpe hWP hV₂ hPa₂ hKn₂ hph₂ hpf₂ _ _ _
   rw [hdi₁, es, hsp₁, hb8] at hPa₂
   rw [hdi₁, es] at hpe hWP
   rw [hsp₁, hb8] at hpe

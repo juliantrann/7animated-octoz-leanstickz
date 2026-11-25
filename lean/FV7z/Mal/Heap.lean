@@ -205,6 +205,7 @@ theorem mal_hp {fb : Addr} {hi m B : Nat} (c : Seg prof F Wl L s₀ o) (hfs : s�
       (∀ W : Addr → Byte, (∀ a : Addr, 7940480 ≤ a.toNat → a.toNat < hi →
         (a.toNat < p.toNat ∨ p.toNat + X.cpu.gpr.rdi.toNat ≤ a.toNat) → W a = V₂ a) → Hp F Wl fb hi m W) →
       rdq(V, 7940768#64).toNat + 16 ≤ p.toNat → p.toNat + X.cpu.gpr.rdi.toNat ≤ rdq(V₂, 7940768#64).toNat + 8 →
+      (∀ a : Addr, a.toNat < rdq(V, 7940768#64).toNat + 8 → ¬ (7940768 ≤ a.toNat ∧ a.toNat < 7940776) → V₂ a = V a) →
       GoG prof L o gev gP gE Z t') :
     GoG prof L o gev gP gE X t := by
   obtain ⟨C, T, szw, sm, G, hf1, hf2, hc1, hc2, hT, hTh, hhi', htop, hsz, hsm, hle, hge, hTF⟩ := hH
@@ -255,6 +256,7 @@ theorem mal_hp {fb : Addr} {hi m B : Nat} (c : Seg prof F Wl L s₀ o) (hfs : s�
     (fun a a1 a2 => hTF a (by rw [e16] at a1; omega) (by rw [e16] at a2; omega))
     (fun a ha => MV a (by omega) (by omega) (by rw [e16] at ha; omega) (by rw [e16] at ha; omega)) ?_
     (by rw [htop]; omega) (by rw [hMt]; rw [eTn]; omega)
+    (fun a h1 h2 => by rw [htop] at h1; exact MV a (by omega) h2 (by omega) (by omega))
   intro W hW
   -- below the top, `W` is `V` but for the top word
   have WV : ∀ a : Addr, 7940480 ≤ a.toNat → a.toNat < T.toNat → ¬ (7940768 ≤ a.toNat ∧ a.toNat < 7940776) →
