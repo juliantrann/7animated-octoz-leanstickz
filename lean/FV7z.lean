@@ -328,6 +328,11 @@ import FV7z.Icw.Inv
 import FV7z.Icw.VcA
 import FV7z.Icw.VcB
 import FV7z.Icw.Holds
+import FV7z.Lemmas.SpCallKx
+import FV7z.Hin.Inv
+import FV7z.Hin.VcA
+import FV7z.Hin.VcB
+import FV7z.Hin.Holds
 import FV7z.Ctor.Cx95
 import FV7z.Lemmas.CallX
 import FV7z.Csu.Holds
