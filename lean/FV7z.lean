@@ -371,6 +371,7 @@ import FV7z.Strrchr.Mid
 import FV7z.Strrchr.Loop
 import FV7z.Strrchr.Cross
 import FV7z.Strrchr.Run
+import FV7z.Strrchr.Plt
 import FV7z.Pmi.Holds
 import FV7z.Lemmas.Lock2
 import FV7z.Pml.Holds
