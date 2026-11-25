@@ -1,6 +1,6 @@
-import FV7z.Start.ToMain
+import FV7z.Start.GsMain
 open FV7z FV7z.Start
-#print axioms FV7z.Ndi.lif_ok
-#print axioms FV7z.Ndi.hp_lif
-#print axioms FV7z.Mal.HpR.addTls
-#print axioms FV7z.Start.launch_to_main
+#print axioms FV7z.Start.csu_cx_hp
+#print axioms FV7z.Mal.Hp.footHi
+#print axioms FV7z.Start.lif_hpF
+#print axioms FV7z.Start.lif_hpW
