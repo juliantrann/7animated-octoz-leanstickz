@@ -496,8 +496,8 @@ theorem loop (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e' sr2) {g₀ : Gprs} 
 
 /-! ## Into the loop -/
 
-/-- From `+268`, the 64 bytes from `p` looked at, `rcx + bsr rsi` their last match or null: `add rdi, 64`,
-`pxor xmm7, xmm7`, `and rdi, -64`, `jmp +303`, the loop. -/
+/-- From `+268`, the `E` bytes from `p` looked at, up to the 64-aligned address after `p` or past it, `rcx + bsr rsi`
+their last match or null: `add rdi, 64`, `pxor xmm7, xmm7`, `and rdi, -64`, `jmp +303`, the loop. -/
 theorem at268 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e' sr2) {X : State} {t : Nat} {g₀ : Gprs} {n : Nat}
     (hov : g₀.rdi.toNat + n < 2 ^ 64)
     (hnz : ∀ k < n, V (Addr.add g₀.rdi k) ≠ 0) (hz : V (Addr.add g₀.rdi n) = 0) (hch : g₀.rsi.setWidth 8 ≠ 0#8)
@@ -505,9 +505,9 @@ theorem at268 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e' sr2) {X : State} {
       Foot F.data x)
     (hR : RetR prof F Wl L s₀ o gev gP gE V g₀ n)
     (hK : KeptW Wl s₀ X) (hA : Agree F X.proc.mm.mem V) (hrip : X.cpu.rip = e'.add 268) (hkp : KpR g₀ X.cpu.gpr)
-    (hdi : X.cpu.gpr.rdi = g₀.rdi) (hx1 : xsOf X.cpu.vec.zmm (xmmOf 1) = Bc g₀.rsi) (h64 : 64 ≤ n)
-    (hsi0 : X.cpu.gpr.rsi ≠ 0)
-    (hok : ROk V g₀.rdi 64 (g₀.rsi.setWidth 8) (Addr.add X.cpu.gpr.rcx (highestSetBit X.cpu.gpr.rsi))) :
+    (hdi : X.cpu.gpr.rdi = g₀.rdi) (hx1 : xsOf X.cpu.vec.zmm (xmmOf 1) = Bc g₀.rsi) {E : Nat} (hEn : E ≤ n)
+    (hE1 : (g₀.rdi.toNat + 64) / 64 * 64 ≤ g₀.rdi.toNat + E) (hE2 : E ≤ 64) (hsi0 : X.cpu.gpr.rsi ≠ 0)
+    (hok : ROk V g₀.rdi E (g₀.rsi.setWidth 8) (Addr.add X.cpu.gpr.rcx (highestSetBit X.cpu.gpr.rsi))) :
     GoG prof L o gev gP gE X t := by
   refine c.s_blkV hin (b268 prof) hK hA hrip ?_
   refine wpV_reg fun _ _ => wpV_v0 (wpV_reg fun _ _ => wpV_nil ?_)
@@ -519,25 +519,27 @@ theorem at268 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e' sr2) {X : State} {
   refine c.s_jmpV hK₁ hA₁ hin (by rw [sr2_length]; omega) hr₁ (d280 prof.feat) (tgt := 303) rfl
     (by rw [sr2_length]; omega) ?_
   intro Y₂ t₂ hK₂ hA₂ ⟨hr₂, hg₂, hv₂⟩
-  refine loop c hin hov hnz hz hch hft hR _ Y₂ t₂ Y₁.cpu.gpr.rdi 64 (Nat.lt_succ_self _) hK₂ hA₂ hr₂
+  refine loop c hin hov hnz hz hch hft hR _ Y₂ t₂ Y₁.cpu.gpr.rdi E (Nat.lt_succ_self _) hK₂ hA₂ hr₂
     (by rw [hg₂]) (by rw [hg₂]; simp only [KpR, hg₁]; exact hkp)
     (by rw [hv₂, hv₁]; simp (disch := decide) only [xset_ne, hx1])
     (by rw [hv₂, hv₁]; simp (disch := decide) only [xset_same, xor_self']) (by omega) (by omega) (by omega)
-    (by omega) h64 (by rw [hg₂]; simp only [hg₁]; exact hsi0) (by rw [hg₂]; simp only [hg₁]; exact hok)
+    (by omega) hEn (by rw [hg₂]; simp only [hg₁]; exact hsi0) (by rw [hg₂]; simp only [hg₁]; exact hok)
 
-/-- From `+256`, no 0 among the 64 bytes from `p`, `rsi` their matches: `test rsi, rsi`, `mov rcx, rdi`; none:
+/-- From `+256`, no 0 among the `E` bytes from `p`, `rsi` their matches: `test rsi, rsi`, `mov rcx, rdi`; none:
 `je +528`, `mov esi, 1`, `xor ecx, ecx`, `jmp +268`; then `at268`. -/
-theorem from256 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e' sr2) {g₀ : Gprs} {n : Nat}
+theorem from256E (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e' sr2) {g₀ : Gprs} {n : Nat}
     (hov : g₀.rdi.toNat + n < 2 ^ 64)
     (hnz : ∀ k < n, V (Addr.add g₀.rdi k) ≠ 0) (hz : V (Addr.add g₀.rdi n) = 0) (hch : g₀.rsi.setWidth 8 ≠ 0#8)
     (hft : ∀ x : Addr, g₀.rdi.toNat / 4096 ≤ x.toNat / 4096 → x.toNat / 4096 ≤ (g₀.rdi.toNat + n) / 4096 →
       Foot F.data x)
     (hR : RetR prof F Wl L s₀ o gev gP gE V g₀ n) :
     ∀ Y t', KeptW Wl s₀ Y → Agree F Y.proc.mm.mem V → Y.cpu.rip = e'.add 256 → KpR g₀ Y.cpu.gpr →
-      Y.cpu.gpr.rdi = g₀.rdi → R 0 64 (Fb V g₀.rdi (g₀.rsi.setWidth 8)) Y.cpu.gpr.rsi →
-      xsOf Y.cpu.vec.zmm (xmmOf 1) = Bc g₀.rsi → 64 ≤ n → GoG prof L o gev gP gE Y t' := by
-  intro Y t hK hA hrip hkp hdi hsi hx1 h64
-  have hS := rok_mask (Nat.le_refl 64) (R_full hsi)
+      Y.cpu.gpr.rdi = g₀.rdi → ∀ E,
+      (∀ i, Y.cpu.gpr.rsi.getLsbD i = (decide (i < E) && Fb V g₀.rdi (g₀.rsi.setWidth 8) i)) →
+      xsOf Y.cpu.vec.zmm (xmmOf 1) = Bc g₀.rsi → E ≤ n → (g₀.rdi.toNat + 64) / 64 * 64 ≤ g₀.rdi.toNat + E →
+      E ≤ 64 → GoG prof L o gev gP gE Y t' := by
+  intro Y t hK hA hrip hkp hdi E hsi hx1 hEn hE1 hE2
+  have hS := rok_mask hE2 hsi
   refine c.s_blkV hin (b256 prof) hK hA hrip ?_
   refine wpV_reg fun fl hP => wpV_reg fun fl₂ hP₂ => wpV_nil ?_
   intro Y₁ t₁ hK₁ hA₁ hr₁ hg₁ hf₁ hv₁
@@ -560,14 +562,27 @@ theorem from256 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e' sr2) {g₀ : Gpr
     have hcx₄ : Y₄.cpu.gpr.rcx = 0 := by rw [hg₄]; simp only [hg₃] <;> decide
     exact at268 c hin hov hnz hz hch hft hR hK₄ hA₄ hr₄
       (by rw [hg₄]; simp only [KpR, hg₃, hg₂, hg₁]; exact hkp) (by rw [hg₄]; simp only [hg₃, hg₂, hg₁]; exact hdi)
-      (by rw [hv₄, hv₃, hv₂, hv₁]; exact hx1) h64 (by rw [hsi₄]; decide)
+      (by rw [hv₄, hv₃, hv₂, hv₁]; exact hx1) hEn hE1 hE2 (by rw [hsi₄]; decide)
       (by rw [hsi₄, hcx₄, hsb_one, addr_add_zero]; exact rok_none (hS.1.1 h0))
   · -- `rcx = p`
     intro hfa Y₂ t₂ hK₂ hA₂ ⟨hr₂, hg₂, hv₂⟩
     rw [hc] at hfa
     have hne := ne_of_beq_false hfa
     exact at268 c hin hov hnz hz hch hft hR hK₂ hA₂ hr₂ (by rw [hg₂]; simp only [KpR, hg₁]; exact hkp)
-      (by rw [hg₂]; simp only [hg₁]; exact hdi) (by rw [hv₂, hv₁]; exact hx1) h64
+      (by rw [hg₂]; simp only [hg₁]; exact hdi) (by rw [hv₂, hv₁]; exact hx1) hEn hE1 hE2
       (by rw [hg₂]; simp only [hg₁]; exact hne) (by rw [hg₂]; simp only [hg₁]; rw [hdi]; exact hS.2 hne)
+
+/-- `from256E` for all 64 bytes from `p`. -/
+theorem from256 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e' sr2) {g₀ : Gprs} {n : Nat}
+    (hov : g₀.rdi.toNat + n < 2 ^ 64)
+    (hnz : ∀ k < n, V (Addr.add g₀.rdi k) ≠ 0) (hz : V (Addr.add g₀.rdi n) = 0) (hch : g₀.rsi.setWidth 8 ≠ 0#8)
+    (hft : ∀ x : Addr, g₀.rdi.toNat / 4096 ≤ x.toNat / 4096 → x.toNat / 4096 ≤ (g₀.rdi.toNat + n) / 4096 →
+      Foot F.data x)
+    (hR : RetR prof F Wl L s₀ o gev gP gE V g₀ n) :
+    ∀ Y t', KeptW Wl s₀ Y → Agree F Y.proc.mm.mem V → Y.cpu.rip = e'.add 256 → KpR g₀ Y.cpu.gpr →
+      Y.cpu.gpr.rdi = g₀.rdi → R 0 64 (Fb V g₀.rdi (g₀.rsi.setWidth 8)) Y.cpu.gpr.rsi →
+      xsOf Y.cpu.vec.zmm (xmmOf 1) = Bc g₀.rsi → 64 ≤ n → GoG prof L o gev gP gE Y t' :=
+  fun Y t hK hA hrip hkp hdi hsi hx1 h64 => from256E c hin hov hnz hz hch hft hR Y t hK hA hrip hkp hdi 64
+    (R_full hsi) hx1 h64 (by omega) (Nat.le_refl 64)
 
 end FV7z.Strrchr
