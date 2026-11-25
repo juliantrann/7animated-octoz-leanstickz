@@ -1,5 +1,5 @@
-import FV7z.Strrchr.Mask
+import FV7z.Strrchr.Head
 open FV7z
-#print axioms FV7z.Strrchr.getLsbD_blsmsk
-#print axioms FV7z.Strrchr.highestSetBit_eq
-#print axioms FV7z.Strrchr.getLsbD_cmask
+#print axioms FV7z.Strrchr.rok_mask
+#print axioms FV7z.Strrchr.ret544
+#print axioms FV7z.Strrchr.tail74
