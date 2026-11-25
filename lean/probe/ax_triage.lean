@@ -1,4 +1,3 @@
-import FV7z.C103.Lem
 import FV7z.C103.VcB
 open FV7z
 #print axioms C103.vc_3867
