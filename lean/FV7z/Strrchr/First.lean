@@ -61,7 +61,7 @@ theorem path41 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e' sr2) {X : State} 
   refine wpV_v0 (wpV_reg fun fl hP => wpV_nil ?_)
   intro Y₂ t₂ hK₂ hA₂ hr₂ hg₂ hf₂ hv₂
   rw [hv₁] at hg₂
-  simp (disch := decide) only [gv, Src.val, set_rdx, get2, xset_same, xset_ne, BitVec.setWidth_eq,
+  simp (disch := decide) only [gv, Src.val, set_rdx, get2, xset_same, BitVec.setWidth_eq,
     BitVec.and_self] at hg₂ hP
   simp only [hg₁] at hg₂
   have hkp₂ : KpR g₀ Y₂.cpu.gpr := by simp only [KpR, hg₂]; exact hkp
@@ -75,7 +75,8 @@ theorem path41 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e' sr2) {X : State} 
     intro i
     simp only [hg₂]
     rw [bits64 (fun i => zbit' V X.cpu.gpr.rdi 0 i) i, Nat.add_zero, hdi]
-  have hc : fl.cond 4 = (Y₂.cpu.gpr.rdx == 0) := by rw [cond4_mask hP]; simp only [hg₂]
+  have hc : fl.cond 4 = (Y₂.cpu.gpr.rdx == 0) := by
+    rw [cond4_mask hP]; simp (disch := decide) only [hg₂, hv₁, xset_same]
   refine c.s_jccV hK₂ hA₂ hin (by rw [sr2_length]; omega) hr₂ (d72 prof.feat) (tgt := 112) rfl
     (by rw [sr2_length]; omega) ?_ ?_
   · -- no 0 in the 16 bytes
@@ -88,10 +89,10 @@ theorem path41 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e' sr2) {X : State} 
       exact absurd hb (by decide)
     refine h112 Y₃ t₃ hK₃ hA₃ hr₃ (by rw [hg₃]; exact hkp₂) (by rw [hg₃]; exact hdi₂) (by rw [hg₃]; exact hcx)
       ?_ ?_ h16
-    · rw [hv₃, ← hv₂, hv₁]
+    · rw [hv₃, hv₂, hv₁]
       simp (disch := decide) only [xset_ne, hx1]
-    · rw [hv₃, ← hv₂, hv₁]
-      simp (disch := decide) only [xset_same, xset_ne, xor_self']
+    · rw [hv₃, hv₂, hv₁]
+      simp (disch := decide) only [xset_same, xset_ne]
   · -- a 0: `tail74`
     intro hfa Y₃ t₃ hK₃ hA₃ ⟨hr₃, hg₃, _⟩
     rw [hf₂, hc] at hfa
@@ -157,7 +158,7 @@ theorem entry (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e' sr2) {X : State} {
   have hdi₂ : Y₂.cpu.gpr.rdi = g₀.rdi := by simp only [hg₂]; exact hdi₁
   have hx1 : xsOf Y₂.cpu.vec.zmm (xmmOf 1) = Bc g₀.rsi := by
     rw [hv₂, hv₁, ← hsi]
-    simp (disch := decide) only [xset_same, xset_ne]
+    simp (disch := decide) only [xset_same]
   refine c.s_jccV hK₂ hA₂ hin (by rw [sr2_length]; omega) hr₂ (d35 prof.feat) (tgt := 560) rfl
     (by rw [sr2_length]; omega) ?_ ?_
   · -- crossing a page within 64 bytes
