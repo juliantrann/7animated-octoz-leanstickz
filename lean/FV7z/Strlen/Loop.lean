@@ -102,15 +102,15 @@ theorem all_nz {V : Addr → Byte} {p C : Addr} {n d : Nat} (hz : V (Addr.add p 
   exact hz
 
 theorem add64 {A : Addr} (h : A.toNat + 64 < 2 ^ 64) : (addR A (BitVec.ofNat 64 64)).toNat = A.toNat + 64 := by
-  have h0 : (BitVec.ofBool false).setWidth 64 = (0 : BitVec 64) := by decide
-  simp only [addR, h0, BitVec.add_zero, BitVec.toNat_add, BitVec.toNat_ofNat]
+  have h0 : ((BitVec.ofBool false).setWidth 64).toNat = 0 := by decide
+  simp only [addR, BitVec.toNat_add, BitVec.toNat_ofNat, h0]
   omega
 
 theorem sub128 {A : Addr} (h : A.toNat + 128 < 2 ^ 64) :
     (subR A (BitVec.ofNat 64 18446744073709551488)).toNat = A.toNat + 128 := by
-  have h0 : (BitVec.ofBool false).setWidth 64 = (0 : BitVec 64) := by decide
+  have h0 : ((BitVec.ofBool false).setWidth 64).toNat = 0 := by decide
   have := A.isLt
-  simp only [subR, h0, BitVec.sub_zero, BitVec.toNat_sub, BitVec.toNat_ofNat]
+  simp only [subR, BitVec.toNat_sub, BitVec.toNat_ofNat, h0]
   omega
 
 /-! ## A chunk -/
