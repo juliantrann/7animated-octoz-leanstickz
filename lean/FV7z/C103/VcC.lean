@@ -196,7 +196,7 @@ theorem vc_3710 (hT : Te F Wl L fb g₀ V₀) (h : Ih g₀ V₀ 3710 n g V) : W_
   subst hs
   have lo := hT.lo
   have hi := hT.hi
-  have e0 := t_fr _ (by omega)
+  have e0 := t_fr g₀.rsp (by omega)
   have a0 := tc 8 e0 (by omega)
   have a1 := t8 a0 (by omega)
   have a2 := t8 a1 (by omega)
@@ -310,7 +310,9 @@ theorem vc_4409 (h : Ih g₀ V₀ 4409 n g V) : W_4409 F Wl (Nx g₀ V₀ n) g f
 theorem vc_4502 (hT : Te F Wl L fb g₀ V₀) (h : Ih g₀ V₀ 4502 n g V) : W_4502 F Wl (Nx g₀ V₀ n) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   obtain ⟨rfl, ⟨hs, hm⟩, h9⟩ := h
-  try dsimp only at hs h9
+  try dsimp only at hs
+  -- `N9` on `r9` alone: unifying the whole register file would compute the jump table's read
+  have h9 : (r9.setWidth 32).toNat ≤ 1024 := h9
   wpx [W_4502, W_4580, W_4589, W_4519, W_4532, W_4541, W_4553, o85, o37, o86, o87, o88, o89, Op.lda, Op.sta, Op.sar64,
     Op.cqo, Op.not32, Op.setcc, Op.xor8, Op.sxr, Op.ldsx, Op.andh, Op.testmia, Op.stia, Op.ldzxa, Op.imul3ma, Op.zxr,
     Op.cmpmi, Op.cmpmia, Op.cmpmr, Op.xormf, Op.ldf, Op.shr32z]
