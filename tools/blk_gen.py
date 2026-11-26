@@ -604,6 +604,11 @@ FNS = {
     "acc": dict(grp="Acc", cn="AString::AString (const char *)", a=0x44c3c0, n=86, pos=True, stops=(0x55,),
                 calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip's `AString (const char *)` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
+    # `AString::operator= (const char *s)`: the length loop (32), `ReAlloc` inline (96) through `operator new []`
+    # (100) and `operator delete []` (117) when the limit is below the length, then the copy loop (64) through the 0.
+    "aac": dict(grp="Aac", cn="AString::operator= (const char *)", a=0x44c4c0, n=132, pos=True, stops=(0x5e,),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip's `AString::operator= (const char *)` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
     "asl": dict(grp="Asl", cn="AString::SetStartLen", a=0x44c060, n=50, pos=True, stops=(0x31,), calls=True,
                 tag="PLAN.md §M, M1", src="7-Zip's `AString::SetStartLen` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
     # `UString::UString ()`: `_chars` = NULL, then `_chars` = `new wchar_t[4]` (the `call` at 0x14), `_len` = 0,
