@@ -299,10 +299,6 @@ theorem mI_eq {x : BitVec 32} {n : Nat} (hx : x.toNat = n) (hn : 0 < n) : mI x =
   simp only [BitVec.toNat_setWidth, BitVec.toNat_sub, BitVec.toNat_ofNat, Nat.reducePow, Nat.reduceMod]
   omega
 
-/-- A probe: `mI_eq` by `bv_omega`. -/
-theorem mI_eqA {x : BitVec 32} (hn : 0 < x.toNat) : mI x = BitVec.ofNat 64 (x.toNat - 1) := by
-  bv_omega
-
 theorem ofNat_ne {i j : Nat} (hi : i < 2 ^ 64) (hj : j < 2 ^ 64) (h : i ≠ j) :
     ¬BitVec.ofNat 64 i = BitVec.ofNat 64 j := fun e => by
   have := congrArg BitVec.toNat e
