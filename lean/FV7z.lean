@@ -245,6 +245,7 @@ import FV7z.Start.PlEnt
 import FV7z.Start.Phd
 import FV7z.Start.Sdso
 import FV7z.Start.Lw
+import FV7z.Start.LwTab
 import FV7z.Start.Nm
 import FV7z.Start.EvEnt
 import FV7z.Start.LifFoot
@@ -265,6 +266,7 @@ import FV7z.Start.PtrAll
 import FV7z.Start.LifNums
 import FV7z.Start.ToLif
 import FV7z.Start.LifL
+import FV7z.Start.PmMono
 import FV7z.Start.ToLifL
 import FV7z.Start.CxaCall
 import FV7z.Ndi.Exit
