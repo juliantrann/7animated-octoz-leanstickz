@@ -225,6 +225,10 @@ FNS = {
     # id and type from the tables and `name` = NULL. Stops: the two `ret`s (48, 61).
     "gpi": dict(grp="Gpi", cn="CHandler::GetArchivePropertyInfo", a=0x49e900, n=62, pos=True, stops=(48, 61),
                 tag="PLAN.md §M, M1", src="7-Zip 26.06's `GetArchivePropertyInfo` (`Base64Handler.cpp`; `objdump -d`)"),
+    # 7-Zip's CPP/7zip/UI/Common/DirItem.h `CDirItems::CDirItems ()`: 0 in the object's fields (24 qword stores, a
+    # dword at 64, bytes at 68 and 184). Stop: the `ret` (229).
+    "cdi": dict(grp="Cdi", cn="CDirItems::CDirItems", a=0x5c0830, n=230, pos=True, stops=(229,),
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `CDirItems` constructor (`DirItem.h`; `objdump -d`)"),
     # 7-Zip's CPP/7zip/Common/ProgressUtils.cpp `CLocalProgress::CLocalProgress ()`: the vtable pointer at 0, 0 in
     # the 4 bytes at 8 and the 8 bytes at 16, 24, 32, 40, 48, 1 in the bytes at 12 and 13. Stop: the `ret` (74).
     "lpc": dict(grp="Lpc", cn="CLocalProgress::CLocalProgress", a=0x461fa0, n=75, pos=True, stops=(74,),
