@@ -1,5 +1,6 @@
 import FV7z.Spec.Glibc
 import FV7z.Spec.Cache
+import ZellicX86.Spec.Process
 /-!
 # A processor for the theorem against vacuity (PLAN.md §M)
 
@@ -106,7 +107,7 @@ theorem consistent0 : prof0.Consistent where
 
 theorem chain0 : Chain prof0 := ⟨id, id, id, id⟩
 
-theorem cacheEnds0 : CacheEnds prof0 := ⟨fun _ _ _ _ => rfl, fun _ _ _ _ => rfl⟩
+theorem cacheEnds0 : CacheEnds prof0 := ⟨fun _ _ _ _ => BitVec.zero_and, fun _ _ _ _ => BitVec.zero_and⟩
 
 theorem modest0 : prof0.linux.Modest := ⟨by decide, by decide⟩
 
