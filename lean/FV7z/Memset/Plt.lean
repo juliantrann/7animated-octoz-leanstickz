@@ -146,6 +146,6 @@ theorem setAt_plt {prof : Profile} {L : List (Addr × List Byte)} {o : Oracle}
     (hb : ¬ (prof.feat.avx = true ∧ prof.feat.avx2 = true))
     (hinP : CodeIn L 4198528#64 pltLen) (hin : CodeIn L 0x65c650#64 ms2) :
     Ipa.SetAt prof L o 4198528#64 (GotOkB prof) :=
-  setAtDG_plt hb hinP hin
+  fun c hgf => setAtDG_plt hb hinP hin c hgf.got
 
 end FV7z.Memset

@@ -215,7 +215,8 @@ theorem ndi_all {pl pc ip cpy : List Byte} {Pm : (Addr → Byte) → Prop} {E : 
     (by rw [rd_of (V := fV W sp X.cpu.gpr) (x := 7937248) (n := 4) (by omega) fun a a1 a2 =>
       LB a (by omega)]; exact h5)
     hin hinh hinc hc0 hcpq hinm hm0 hmal hmb hPaH hinl hl0 hlenA hinz hz0 hset
-      (fun a h1 h2 => withNew_data hown (hgf a h1 h2)) hB₁.df hint hn
+      ⟨fun a h1 h2 => withNew_data hown (hgf.got a h1 h2), fun a h1 h2 => withNew_data hown (hgf.thr a h1 h2)⟩
+      hB₁.df hint hn
     (fun W₁ hW => hPq W₁ fun a a1 a2 a3 => (hW a a1 a2 a3).trans (LB a a1))
     (fun W₁ hW => hPa x n s Vc M g hx h2n hn4 h1s hs1 hg' hVc hAf W₁ fun a a1 a2 a3 a4 a5 =>
       (hW a a1 a4 a5).trans (hout a a2 a3))
