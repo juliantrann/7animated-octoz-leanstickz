@@ -1,5 +1,5 @@
-import FV7z.Lemmas.Rmw8
-import FV7z.Sfn.Cuts
+import FV7z.Sfn.Mem
 open FV7z
-#print axioms FV7z.Fn.Seg.s_sub_mi64
-#print axioms FV7z.Sfn.spAll
+#print axioms FV7z.Sfn.Mk.call
+#print axioms FV7z.Sfn.Mk.st_B
+#print axioms FV7z.Sfn.Env.wE
