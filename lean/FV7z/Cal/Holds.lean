@@ -327,8 +327,8 @@ theorem inl (c : Seg prof F Wl L s₀ o) (hin : CodeIn L cal_at cal) {X : State}
   rintro Y12 t12 hK12 hA12 ⟨hr12, hg12, -⟩
   rw [ea 56 hg11', hz11] at hA12
   have hF12 := hF9.st hf (toBytesLE_length _ _) (by omega) z16 (o := 56)
-  refine c.s_jmpV hK12 hA12 hin (lt_len (by decide)) hr12 (Dec.shift (j17_0 _) wj_301 (by decide)) (tgt := 196)
-    (by decide) (lt_len (by decide)) ?_
+  refine c.s_jmpV (j := 301) hK12 hA12 hin (lt_len (by decide)) hr12 (Dec.shift (j17_0 _) wj_301 (by decide))
+    (tgt := 196) (by decide) (lt_len (by decide)) ?_
   rintro Y13 t13 hK13 hA13 ⟨hr13, hg13, -⟩
   exact k Y13 t13 _ hK13 hA13 hr13 (hg13.trans (hg12.trans hg11'))
     (hF12.mono fun i hi hc' => by
@@ -432,12 +432,14 @@ theorem cal_ok {fb T : Addr} {hi k : Nat} {pm ps : List Byte} {Ps : (Addr → By
   refine (c_128 prof fb).run c hfs hin _ hKm hAm hrm
     (vc_128 (by rw [haxm]; exact hp0) (by rw [haxm]; exact hZs) hb2 hb4 (by rw [hbpm, hg₂, hg₁]; exact hbp)
       (by rw [haxm]; exact hfz)) ?_
-  rintro j' g₂ fl V' ⟨rfl, rfl, rfl⟩ Y₃ t₃ hK₃ hA₃ hr₃ hg₃ -
+  rintro j' g₂ fl V' ⟨rfl, rfl, hVV⟩ Y₃ t₃ hK₃ hA₃ hr₃ hg₃ -
+  subst V'
   have r8₃ : Y₃.cpu.gpr.r8 = p := by rw [hg₃]; exact haxm
   -- to 228
   refine (c_148 prof fb).run c hfs hin _ hK₃ hA₃ hr₃
     (vc_148 (by rw [r8₃]; exact hp0) hmt₂ (by rw [r8₃]; exact hZs) hb2 hpt₂ f3 (by rw [r8₃]; exact hfz) f6) ?_
-  rintro j' g₄ fl V' ⟨rfl, rfl, hdx4, hsp4, hr84, -, -, -, -, h144, h154⟩ Y₄ t₄ hK₄ hA₄ hr₄ hg₄ -
+  rintro j' g₄ fl V' ⟨rfl, hVV, hdx4, hsp4, hr84, -, -, -, -, h144, h154⟩ Y₄ t₄ hK₄ hA₄ hr₄ hg₄ -
+  subst V'
   have r13₃ : Y₃.cpu.gpr.r13 = T := by rw [hg₃]; show Zm.cpu.gpr.r13 = T; rw [h13m, hg₂, hg₁]; exact h13
   have rbx₃ : Y₃.cpu.gpr.rbx = rdq(V, T + 8#64) &&& 18446744073709551608#64 := by
     rw [hg₃]; show Zm.cpu.gpr.rbx = _; rw [hbxm, hg₂, hg₁]; exact hbx
@@ -482,7 +484,8 @@ theorem cal_ok {fb T : Addr} {hi k : Nat} {pm ps : List Byte} {Ps : (Addr → By
     · rw [hspY, a5s, a4s]; exact c.hws _ (slot hstk (by rw [e3]; omega) (by rw [e3]; omega) i hi)
     · rw [hspY, a5s, a4s, a3s]; exact c.hws _ (slot hstk (by rw [e2]; omega) (by rw [e2]; omega) i hi)
     · rw [hspY, a5s, a4s, a3s, a2s]; exact c.hws _ (slot hstk (by rw [e1]; omega) (by rw [e1]; omega) i hi)
-    rintro j' g₉ fl V' ⟨rfl, rfl, hax9, hsp9, hbx9, hbp9, h129, h139, h149, h159⟩ Y₉ t₉ hK₉ hA₉ hr₉ hg₉ -
+    rintro j' g₉ fl V' ⟨rfl, hVV, hax9, hsp9, hbx9, hbp9, h129, h139, h149, h159⟩ Y₉ t₉ hK₉ hA₉ hr₉ hg₉ -
+    subst V'
     have hsp₉ : Y₉.cpu.gpr.rsp = X.cpu.gpr.rsp := by rw [hg₉, hsp9, hspY, a5s, a4s, a3s, a2s, a1s]
     have rdS : ∀ x : Addr, X.cpu.gpr.rsp.toNat - 40 ≤ x.toNat → x.toNat + 8 ≤ 2 ^ 64 →
         rdq(W, x) = rdq(fr4 V X.cpu.gpr.rsp X.cpu.gpr.r13 X.cpu.gpr.r12 X.cpu.gpr.rbp X.cpu.gpr.rbx, x) :=
@@ -522,7 +525,8 @@ theorem cal_ok {fb T : Addr} {hi k : Nat} {pm ps : List Byte} {Ps : (Addr → By
   · -- more than 79 bytes: `memset (p, 0, clr)`
     refine (c_228 prof fb).run c hfs hin _ hK₄ hA₄ hr₄
       (vc_228m (by rw [hdx]; omega) (by rw [hdx]; unfold clr at hbig; omega)) ?_
-    rintro j' g₅ fl V' ⟨rfl, rfl, rfl⟩ Y₅ t₅ hK₅ hA₅ hr₅ hg₅ -
+    rintro j' g₅ fl V' ⟨rfl, hVV, rfl⟩ Y₅ t₅ hK₅ hA₅ hr₅ hg₅ -
+    subst V'
     have hsp₅ : Y₅.cpu.gpr.rsp = X.cpu.gpr.rsp - 8 - 8 - 8 - 8 - 8#64 := by rw [hg₅]; exact hsp₄
     refine c.s_call hK₅ hA₅ hin (lt_len (by decide)) hr₅ (call_717 _) his hs0 tgt_717 (fun i hi => ?_) ?_
     · rw [hsp₅]; exact slot hstk (by rw [e6]; omega) (by rw [e6]; omega) i hi
@@ -545,9 +549,10 @@ theorem cal_ok {fb T : Addr} {hi k : Nat} {pm ps : List Byte} {Ps : (Addr → By
     · rw [rdx₆] at hi
       rw [rdi₆]
       exact hdst i hi
-    intro Z₇ t₇ V₃ hK₇ hA₇ hr₇ hsp₇ hax₇ - - - - h14₇ h15₇ hset₇ hout₇
+    rintro Z₇ t₇ V₃ hK₇ hA₇ hr₇ hsp₇ hax₇ - - - - h14₇ h15₇ hset₇ hout₇
     refine (c_722 prof fb).run c hfs hin _ hK₇ hA₇ hr₇ vc_722 ?_
-    rintro j' g₈ fl V' ⟨rfl, rfl, rfl⟩ Y₈ t₈ hK₈ hA₈ hr₈ hg₈ -
+    rintro j' g₈ fl V' ⟨rfl, hVV, rfl⟩ Y₈ t₈ hK₈ hA₈ hr₈ hg₈ -
+    subst V'
     refine k196 Y₈ t₈ V₃ hK₈ hA₈ hr₈ ?_ ?_ ?_ ?_ (fun i hi => ?_) (fun a h1 h2 => ?_)
     · rw [hg₈]; show Z₇.cpu.gpr.rsp = _; rw [hsp₇, hsp₆]; exact BitVec.sub_add_cancel _ _
     · rw [hg₈]; show Z₇.cpu.gpr.rax = p; rw [hax₇, rdi₆]
@@ -563,7 +568,8 @@ theorem cal_ok {fb T : Addr} {hi k : Nat} {pm ps : List Byte} {Ps : (Addr → By
     refine (c_228 prof fb).run c hfs hin _ hK₄ hA₄ hr₄
       (vc_228i (by rw [hdx]; omega) (by rw [hdx]; unfold clr at hcl1; omega)
         (by rw [hdx]; unfold clr at hbig; omega)) ?_
-    rintro j' g₅ fl V' ⟨rfl, rfl, rfl⟩ Y₅ t₅ hK₅ hA₅ hr₅ hg₅ -
+    rintro j' g₅ fl V' ⟨rfl, hVV, rfl⟩ Y₅ t₅ hK₅ hA₅ hr₅ hg₅ -
+    subst V'
     refine inl c hin hK₅ hA₅ hr₅ (p := p) (by rw [hg₅]; exact r8₄) (by rw [hg₅]; exact hcl) hcl1 (by omega)
       (by omega) hdst ?_
     intro Y₆ t₆ W hK₆ hA₆ hr₆ hg₆ hF
