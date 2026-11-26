@@ -295,7 +295,8 @@ theorem sdp_ok {fb : Addr} {hi k n : Nat} {pl pm pc : List Byte} {Pl Pc : (Addr 
     exact c.hws _ (sdSlot hstk (by rw [h16]; omega) (by rw [h16]; omega) i hi)
   · rw [espm, sdA8]
     exact c.hws _ (sdSlot hstk (by rw [h8]; omega) (by rw [h8]; omega) i hi)
-  rintro j' g₅ fl V₆ ⟨rfl, rfl, rfl⟩ Y₅ t₇ hK₅ hA₅ hr₅ hg₅ -
+  rintro j' g₅ fl V₆ ⟨rfl, rfl, hV₆⟩ Y₅ t₇ hK₅ hA₅ hr₅ hg₅ -
+  subst V₆
   refine c.s_jmp_x hK₅ hA₅ hin (lt_len (by decide)) hr₅ (jmp_52 _) hic (tgt := 0) hc0 (by decide) ?_
   rintro Y₆ t₈ hK₆ hA₆ ⟨hr₆, hg₆⟩
   have g6 := hg₆.trans hg₅
