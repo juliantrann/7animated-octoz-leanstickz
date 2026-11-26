@@ -543,6 +543,22 @@ FNS = {
     # `UString::SetStartLen (len)`: as `AString`'s, `new wchar_t[len + 1]` (the `call` at 0x21). Stop: the `ret` (0x35).
     "usl": dict(grp="Usl", cn="UString::SetStartLen", a=0x44d060, n=54, pos=True, stops=(0x35,), calls=True,
                 tag="PLAN.md §M, M1", src="7-Zip's `UString::SetStartLen` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
+    # `UString::UString (const UString &s)`: `SetStartLen (s._len)` (the `call` at 0x13 to `usl`), then a tail jump
+    # (0x2b) to `wmemcpy (_chars, s._chars, s._len + 1)`.
+    "ucc": dict(grp="Ucc", cn="UString::UString(const UString&)", a=0x44d5d0, n=48, pos=True, stops=(0x2b,),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip's `UString::UString (const UString &)` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
+    # `UString::ReAlloc (newLimit)`: `newBuf = new wchar_t[newLimit + 1]` (the `call` at 0x18), `wmemcpy (newBuf,
+    # _chars, _len + 1)` (0x2c), `delete [] _chars` unless null (0x39), `_chars = newBuf`, `_limit = newLimit`. Stop:
+    # the `ret` (0x48).
+    "ura": dict(grp="Ura", cn="UString::ReAlloc", a=0x44cfc0, n=73, pos=True, stops=(0x48,), calls=True,
+                tag="PLAN.md §M, M1", src="7-Zip's `UString::ReAlloc` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
+    # `UString::ReAlloc2 (newLimit)`: above `0x3ffffffe` a jump to the throw stub (0xe, `0x4013c2`, by hand); else
+    # `newBuf = new wchar_t[newLimit + 1]` (0x23), `newBuf[0] = 0`, `delete [] _chars` unless null (0x39), `_chars =
+    # newBuf`, `_limit = newLimit`, `_len = 0`. Stop: the `ret` (0x4f).
+    "ur2": dict(grp="Ur2", cn="UString::ReAlloc2", a=0x44d010, n=80, pos=True, stops=(0x4f,), calls=True,
+                hand=(0xe,),
+                tag="PLAN.md §M, M1", src="7-Zip's `UString::ReAlloc2` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
     # CPP/UI/Common/EnumDirItems.cpp `CDirItems::ScanProgress (dirPath)`: without a `Callback` (at 0xc0) 0, else a tail
     # jump to `Callback->ScanProgress (Stat, false, dirPath)` (`Stat` at 0x48), its vtable's second entry. Stops: the
     # `jmp rax` (0x26) and the `ret` (0x32).
