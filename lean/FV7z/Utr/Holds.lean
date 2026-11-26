@@ -48,18 +48,21 @@ theorem swl (x : BitVec 32) : BitVec.setWidth 32 (BitVec.setWidth 64 x) = BitVec
   simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
   omega
 
+theorem o4s (m : Nat) : BitVec.ofNat 64 (4 * (m + 1)) = BitVec.ofNat 64 (4 * m) + 4#64 := by
+  apply BitVec.eq_of_toNat_eq
+  simp only [BitVec.toNat_add, BitVec.toNat_ofNat]
+  omega
+
 /-- The address of the character `m`, `rax` = 4 (`m` + 1). -/
 theorem ldA (C : Addr) {a : BitVec 64} {m : Nat} (ha : a = BitVec.ofNat 64 (4 * (m + 1))) :
     C + a + 18446744073709551612#64 = Addr.add C (4 * m) := by
   subst ha
-  apply BitVec.eq_of_toNat_eq
-  simp only [Addr.add, BitVec.toNat_add, BitVec.toNat_ofNat]
-  omega
+  rw [o4s, BitVec.add_assoc, BitVec.add_assoc, show (4#64 : BitVec 64) + 18446744073709551612#64 = 0#64 by decide,
+    BitVec.add_zero]
+  first | rfl | simp only [Addr.add]
 
 theorem sub4 (m : Nat) : BitVec.ofNat 64 (4 * (m + 1)) - 4#64 = BitVec.ofNat 64 (4 * m) := by
-  apply BitVec.eq_of_toNat_eq
-  simp only [BitVec.toNat_sub, BitVec.toNat_ofNat]
-  omega
+  rw [o4s, BitVec.add_sub_cancel]
 
 theorem dec32 {m : Nat} (h : m + 1 < 2 ^ 32) :
     BitVec.setWidth 32 (BitVec.setWidth 64 (BitVec.ofNat 32 (m + 1) - 1#32)) = BitVec.ofNat 32 m := by
@@ -100,7 +103,7 @@ def Tail (V : Addr → Byte) (p : Addr) (k : Nat) : Prop := ∀ j < (len V p).to
 /-- The registers in the loop, `n` characters left. -/
 def Sh (g₀ : Gprs) (V₀ : Addr → Byte) (n : Nat) (g : Gprs) : Prop :=
   ∃ a c d s, g = { g₀ with rax := a, rcx := c, rdx := d, rsi := s, r8 := chs V₀ g₀.rdi,
-      r9 := BitVec.setWidth 64 (len V₀ g₀.rdi) } ∧
+                           r9 := BitVec.setWidth 64 (len V₀ g₀.rdi) } ∧
     a = BitVec.ofNat 64 (4 * n) ∧ BitVec.setWidth 32 d = BitVec.ofNat 32 n
 
 /-- At the loop's head: `n` characters left, those after them blank. -/
@@ -113,7 +116,7 @@ def I50 (g₀ : Gprs) (V₀ : Addr → Byte) (n : Nat) (g : Gprs) : Prop :=
 def I59 (g₀ : Gprs) (V₀ : Addr → Byte) (g : Gprs) : Prop :=
   ∃ k < (len V₀ g₀.rdi).toNat, Tail V₀ g₀.rdi k ∧ (k = 0 ∨ ¬ Ws (ch V₀ g₀.rdi (k - 1))) ∧
     ∃ a c d s, g = { g₀ with rax := a, rcx := c, rdx := d, rsi := s, r8 := Addr.add (chs V₀ g₀.rdi) (4 * k),
-      r9 := BitVec.setWidth 64 (len V₀ g₀.rdi) } ∧ BitVec.setWidth 32 d = BitVec.ofNat 32 k
+                             r9 := BitVec.setWidth 64 (len V₀ g₀.rdi) } ∧ BitVec.setWidth 32 d = BitVec.ofNat 32 k
 
 /-- The invariant at the cut points. -/
 def Inv (g₀ : Gprs) (V₀ : Addr → Byte) (ℓ m : Nat) (g : Gprs) (V : Addr → Byte) : Prop :=
@@ -140,21 +143,21 @@ variable {g₀ : Gprs} {V₀ : Addr → Byte}
 theorem x32 {m n : Nat} (h1 : 1 ≤ n) (hn : n ≤ (len V₀ g₀.rdi).toNat) (ht : Tail V₀ g₀.rdi n) (hm : 2 * n < m)
     {a c d s : BitVec 64} (ha : a = BitVec.ofNat 64 (4 * n)) (hd : BitVec.setWidth 32 d = BitVec.ofNat 32 n)
     {g : Gprs} {fl : Rflags} (hg : g = { g₀ with rax := a, rcx := c, rdx := d, rsi := s, r8 := chs V₀ g₀.rdi,
-      r9 := BitVec.setWidth 64 (len V₀ g₀.rdi) }) : Nx g₀ V₀ m 32 g fl V₀ :=
+                                                 r9 := BitVec.setWidth 64 (len V₀ g₀.rdi) }) : Nx g₀ V₀ m 32 g fl V₀ :=
   Or.inl ⟨2 * n, hm, rfl, Or.inr (Or.inl ⟨rfl, n, rfl, h1, hn, ht, a, c, d, s, hg, ha, hd⟩)⟩
 
 theorem x50 {m n : Nat} (h1 : 1 ≤ n) (hn : n ≤ (len V₀ g₀.rdi).toNat) (ht : Tail V₀ g₀.rdi (n - 1))
     (hm : 2 * n - 1 < m) {a c d s : BitVec 64} (ha : a = BitVec.ofNat 64 (4 * n))
     (hd : BitVec.setWidth 32 d = BitVec.ofNat 32 n) {g : Gprs} {fl : Rflags}
     (hg : g = { g₀ with rax := a, rcx := c, rdx := d, rsi := s, r8 := chs V₀ g₀.rdi,
-      r9 := BitVec.setWidth 64 (len V₀ g₀.rdi) }) : Nx g₀ V₀ m 50 g fl V₀ :=
+                        r9 := BitVec.setWidth 64 (len V₀ g₀.rdi) }) : Nx g₀ V₀ m 50 g fl V₀ :=
   Or.inl ⟨2 * n - 1, hm, rfl, Or.inr (Or.inr (Or.inl ⟨rfl, n, rfl, h1, hn, ht, a, c, d, s, hg, ha, hd⟩))⟩
 
 theorem x59 {m k : Nat} (hm : 0 < m) (hk : k < (len V₀ g₀.rdi).toNat) (ht : Tail V₀ g₀.rdi k)
     (hb : k = 0 ∨ ¬ Ws (ch V₀ g₀.rdi (k - 1))) {a c d s r : BitVec 64} (hr : r = Addr.add (chs V₀ g₀.rdi) (4 * k))
     (hd : BitVec.setWidth 32 d = BitVec.ofNat 32 k) {g : Gprs} {fl : Rflags}
     (hg : g = { g₀ with rax := a, rcx := c, rdx := d, rsi := s, r8 := r,
-      r9 := BitVec.setWidth 64 (len V₀ g₀.rdi) }) : Nx g₀ V₀ m 59 g fl V₀ := by
+                        r9 := BitVec.setWidth 64 (len V₀ g₀.rdi) }) : Nx g₀ V₀ m 59 g fl V₀ := by
   subst hr
   exact Or.inl ⟨0, hm, rfl, Or.inr (Or.inr (Or.inr ⟨rfl, rfl, k, hk, ht, hb, a, c, d, s, hg, hd⟩))⟩
 
@@ -168,6 +171,9 @@ theorem xFin {m k : Nat} {V : Addr → Byte} (hk : k ≤ (len V₀ g₀.rdi).toN
 
 variable {F : Footprint} {Wl : List Rgn}
 
+/-- `omega` past the projections of the registers. -/
+local macro "om" : tactic => `(tactic| ((try dsimp only); omega))
+
 /-- The entry: the `ret` for the length 0, else the loop's head with all characters left. -/
 theorem vc_0 {f : Rflags} (hF : Fp F V₀ g₀.rdi) :
     W_0 F Wl (Nx g₀ V₀ (2 * (len V₀ g₀.rdi).toNat + 1)) g₀ f V₀ := by
@@ -178,11 +184,12 @@ theorem vc_0 {f : Rflags} (hF : Fp F V₀ g₀.rdi) :
   refine ⟨f8, f0, fun _ => ⟨fun hb => ?_, fun hb _ => ?_⟩⟩
   · have hz : len V₀ rdi = 0 := beq_iff_eq.mp hb
     have hz' : (len V₀ rdi).toNat = 0 := by rw [hz]; rfl
-    exact xFin (k := 0) (Nat.zero_le _) (fun j hj _ => absurd hj (by omega)) (Or.inl rfl)
-      (Or.inl ⟨hz'.symm, rfl⟩) rfl
+    exact xFin (k := 0) (by exact Nat.zero_le _) (by exact fun j hj _ => absurd hj (by omega))
+      (by exact Or.inl rfl) (by exact Or.inl ⟨hz'.symm, rfl⟩) rfl
   · have hz : len V₀ rdi ≠ 0 := beq_eq_false_iff_ne.mp hb
     have hz' : (len V₀ rdi).toNat ≠ 0 := fun e => hz (BitVec.eq_of_toNat_eq (by rw [e]; rfl))
-    exact x32 (by omega) (Nat.le_refl _) (fun j hj h => absurd hj (by omega)) (by omega) (shl4 _) (swl _) rfl
+    exact x32 (n := (len V₀ rdi).toNat) (by om) (by exact Nat.le_refl _)
+      (by exact fun j hj h => absurd hj (by omega)) (by om) (by exact shl4 _) (by exact swl _) rfl
 
 /-- The loop's head, the character `m` blank: the step back. -/
 theorem vc_32w {m : Nat} {g : Gprs} {f : Rflags} {cv : BitVec 32} (hF : Fp F V₀ g₀.rdi)
@@ -204,15 +211,16 @@ theorem vc_32w {m : Nat} {g : Gprs} {f : Rflags} {cv : BitVec 32} (hF : Fp F V�
   dsimp only [chs] at hA'
   have hc1 : rdd(V₀, Addr.add (chs V₀ rdi) (4 * m)) = cv := hc
   have hc2 : rdd(V₀, Addr.add (rdq(V₀, rdi)) (4 * m)) = cv := hc
-  rcases hw with rfl | rfl | rfl <;>
-  · wpx [W_32, W_45, W_80, W_85, o2, o3, o6, o7, hA, hA', hc1, hc2, eq_self_iff_true, decide_true, decide_false,
+  rcases hw with rfl | rfl | rfl
+  all_goals
+    wpx [W_32, W_45, W_80, W_85, o2, o3, o6, o7, hA, hA', hc1, hc2, eq_self_iff_true, decide_true, decide_false,
       Bool.not_true, Bool.not_false, Bool.true_eq_false, Bool.false_eq_true, Bool.true_or, Bool.false_or,
       false_implies, true_implies, true_and, and_true, implies_true]
     all_goals repeat' (first
       | with_reducible exact fm
       | apply And.intro
       | intro)
-    all_goals exact x50 (by omega) hn ht' (by omega) ha hd rfl
+    all_goals exact x50 (n := m + 1) (by om) (by exact hn) (by exact ht') (by om) (by exact ha) (by exact hd) rfl
 
 /-- The loop's head, the character `m` not blank: the `ret` if none was passed, else the stores. -/
 theorem vc_32n {m : Nat} {g : Gprs} {f : Rflags} (hF : Fp F V₀ g₀.rdi) (h : I32 g₀ V₀ (m + 1) g)
@@ -247,7 +255,8 @@ theorem vc_32n {m : Nat} {g : Gprs} {f : Rflags} (hF : Fp F V₀ g₀.rdi) (h : 
       | with_reducible exact fm
       | apply And.intro
       | intro)
-    all_goals exact xFin (Nat.le_of_eq hL.symm) ht hb (Or.inl ⟨hL.symm, rfl⟩) rfl
+    all_goals exact xFin (k := m + 1) (by exact Nat.le_of_eq hL.symm) (by exact ht) (by exact hb)
+      (by exact Or.inl ⟨hL.symm, rfl⟩) rfl
   · have e1 := neL hL (by omega)
     have e2 : decide (rdd(V₀, rdi + 8#64) = BitVec.ofNat 32 (m + 1)) = false := e1
     wpx [W_32, W_45, W_80, W_85, o2, o3, o6, o7, hA, hA', hb1, hb1', h32, h32', hd, e1, e2, eq_self_iff_true,
@@ -257,7 +266,8 @@ theorem vc_32n {m : Nat} {g : Gprs} {f : Rflags} (hF : Fp F V₀ g₀.rdi) (h : 
       | with_reducible exact fm
       | apply And.intro
       | intro)
-    all_goals exact x59 (by omega) (by omega) ht hb (by rw [ha]; rfl) hd rfl
+    all_goals exact x59 (k := m + 1) (by om) (by om) (by exact ht) (by exact hb) (by rw [ha]; rfl) (by exact hd)
+      rfl
 
 /-- The step back: the stores with the length 0 when no character is left, else the loop's head. -/
 theorem vc_50 {m : Nat} {g : Gprs} {f : Rflags} (h : I50 g₀ V₀ (m + 1) g) :
@@ -275,14 +285,15 @@ theorem vc_50 {m : Nat} {g : Gprs} {f : Rflags} (h : I50 g₀ V₀ (m + 1) g) :
     all_goals repeat' (first
       | apply And.intro
       | intro)
-    all_goals exact x59 (k := 0) (by omega) (by omega) ht0 (Or.inl rfl) (addr_add_zero _).symm
-      (by first | decide | (simp only [hd]; decide)) rfl
+    all_goals exact x59 (k := 0) (by om) (by om) (by exact ht0) (by exact Or.inl rfl)
+      (by exact (addr_add_zero _).symm) (by decide) rfl
   · wpx [W_50, o4, hd, ne1 hm (by omega), Bool.not_false, Bool.true_eq_false, Bool.false_eq_true, false_implies,
       true_implies, true_and, and_true, implies_true]
     all_goals repeat' (first
       | apply And.intro
       | intro)
-    all_goals exact x32 hm (by omega) ht0 (by omega) (by rw [ha]; exact sub4 m) (by exact dec32 (by omega)) rfl
+    all_goals exact x32 (n := m) (by om) (by om) (by exact ht0) (by om) (by rw [ha]; exact sub4 m)
+      (by exact dec32 (by omega)) rfl
 
 /-- The stores: the 0 at the index `k`, the length `k`; the `ret`. -/
 theorem vc_59 {g : Gprs} {f : Rflags} (h : I59 g₀ V₀ g)
@@ -294,7 +305,8 @@ theorem vc_59 {g : Gprs} {f : Rflags} (h : I59 g₀ V₀ g)
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g₀
   dsimp only at hk ht hb w1 hw2 ⊢
   wpx [W_59, o5, hd]
-  exact ⟨w1, hw2, xFin (Nat.le_of_lt hk) ht hb (Or.inr ⟨hk, rfl⟩) rfl⟩
+  exact ⟨w1, hw2, xFin (k := k) (by exact Nat.le_of_lt hk) (by exact ht) (by exact hb) (by exact Or.inr ⟨hk, rfl⟩)
+    rfl⟩
 
 theorem vc_32 {m : Nat} {g : Gprs} {f : Rflags} (hF : Fp F V₀ g₀.rdi) (h : I32 g₀ V₀ (m + 1) g) :
     W_32 F Wl (Nx g₀ V₀ (2 * (m + 1))) g f V₀ := by
@@ -338,7 +350,7 @@ theorem utr_ok (c : Seg prof F Wl L s₀ o) (hin : CodeIn L utr_at utr) (hK : Ke
       Z.cpu.rip = e₂.add j₂ → n ≤ (len V X.cpu.gpr.rdi).toNat → Tail V X.cpu.gpr.rdi n →
       (n = 0 ∨ ¬ Ws (ch V X.cpu.gpr.rdi (n - 1))) → Out X.cpu.gpr V n V' →
       (∃ a c d s r8 r9, Z.cpu.gpr = { X.cpu.gpr with rax := a, rcx := c, rdx := d, rsi := s, r8 := r8,
-        r9 := r9 }.set 4 (X.cpu.gpr.rsp + 8)) →
+                                                     r9 := r9 }.set 4 (X.cpu.gpr.rsp + 8)) →
       GoG prof L o gev gP gE Z t') :
     GoG prof L o gev gP gE X t := by
   refine c.cfg hin (fun ℓ => spAll prof ℓ) (fun ℓ m g _ V' => Inv X.cpu.gpr V ℓ m g V')
