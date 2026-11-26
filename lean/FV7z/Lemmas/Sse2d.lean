@@ -117,7 +117,7 @@ theorem VOpI.movdqa_mi {w n b i len : Nat} :
   refine ⟨withZmm s.cpu.vec.zmm (xmmOf n) ((s.cpu.vec.zmm (xmmOf n)).extractLsb' 128 384 ++
     ofBytesLE 128 (readBytes s.proc.mm.mem (eaI s b i 0) 16)),
     t, instruction_next htf hdec ?_, xsOf_with _ _ _ _⟩
-  simp only [exec, execSse, Sem.movdqa, moveAligned, aligned16, Prog.alignedTo, mk, mbi, bind, Prog.bind, readOp,
+  simp only [exec, execSse, Sem.movdqa, moveAligned, aligned16, Prog.alignedTo, mbi, bind, Prog.bind, readOp,
     Bool.false_eq_true, ↓reduceIte, memRef, effOffset, pure, Prog.readReg, Prog.read, Prog.run, BitVec.mul_one,
     writeOp, Prog.readZmm, eaI_adv, hal', true_or]
   rw [checkAccess_ok (s := advance s len) hac hld]
