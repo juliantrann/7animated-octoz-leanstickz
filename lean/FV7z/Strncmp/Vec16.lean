@@ -18,20 +18,15 @@ namespace Strncmp
 /-- Byte `j` of two halves. -/
 theorem lane_app (A B : BitVec 64) {j : Nat} (hj : j < 16) :
     lane 8 (A ++ B) j = if j < 8 then elem 8 B j else elem 8 A (j - 8) := by
-  apply BitVec.eq_of_getLsbD_eq
-  intro i hi
   unfold lane elem
   split
-  · simp [BitVec.getLsbD_extractLsb', BitVec.getLsbD_append, hi, show 8 * j + i < 64 by omega]
-  · simp [BitVec.getLsbD_extractLsb', BitVec.getLsbD_append, hi, show ¬ 8 * j + i < 64 by omega,
-      show 8 * j + i - 64 = 8 * (j - 8) + i by omega]
+  · simp (disch := omega) only [BitVec.extractLsb'_append_eq_right]
+  · rw [show 8 * (j - 8) = 8 * j - 64 by omega]
+    simp (disch := omega) only [BitVec.extractLsb'_append_eq_of_le]
 
 /-- The low half of two halves. -/
 theorem lane64_app (A B : BitVec 64) : lane 64 (A ++ B) 0 = B := by
-  apply BitVec.eq_of_getLsbD_eq
-  intro i hi
-  unfold lane
-  simp [BitVec.getLsbD_extractLsb', BitVec.getLsbD_append, hi]
+  simp (disch := omega) only [lane, BitVec.extractLsb'_append_eq_right, BitVec.extractLsb'_eq_self, Nat.mul_zero]
 
 /-- Byte `j` of 8 bytes at `a`. -/
 theorem elem8 (V : Addr → Byte) (a : Addr) {j : Nat} (hj : j < 8) :
