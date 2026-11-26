@@ -244,7 +244,7 @@ theorem ldf_ok {Pc1 Pc2 : State → (Addr → Byte) → Prop} (c : Seg prof F Wl
         g' = { Z'.cpu.gpr with
           rsi := rdq(Vst V' (X.cpu.gpr.rdi + 8#64) (toBytesLE 0#64 8), X.cpu.gpr.rdi + 24#64),
           rdi := X.cpu.gpr.rsi } ∧ V'' = Vst V' (X.cpu.gpr.rdi + 8#64) (toBytesLE 0#64 8)) hKZ' hAZ' hrZ'
-      (vc_21 (by rw [hz'b]; exact fun i hi => c.hws _ (fw24 i hi)) fun _ => ⟨rfl, by rw [hz'b, hz'p], rfl⟩) ?_
+      (vc_21 (by rw [hz'b]; exact fun i hi => c.hws _ (fw24 i hi)) fun _ => ⟨rfl, by simp only [hz'b, hz'p], rfl⟩) ?_
     rintro j' g fl V₂ ⟨rfl, rfl, rfl⟩ U t₄ hKU hAU hrU hgU -
     have hsU : U.cpu.gpr.rsp = X.cpu.gpr.rsp - 24 := by rw [hgU]; exact hz's
     have he : eaD U 5 8 = X.cpu.gpr.rsi + 8#64 := by
