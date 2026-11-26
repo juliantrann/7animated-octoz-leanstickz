@@ -284,6 +284,12 @@ FNS = {
     # `ret`s (42, 64).
     "fni": dict(grp="Fni", cn="fini", a=0x41c0f0, n=65, pos=True, stops=(42, 64), calls=True, hand=(31,),
                 tag="PLAN.md §M, M1", src="glibc 2.31's `fini` (`dlfcn/dlerror.c`; `objdump -d`)"),
+    # 7-Zip's `Correct_PathPart (s)` (`CPP/7zip/UI/Common/ExtractingFilePath.cpp`, static): "." and ".." emptied,
+    # else each '/' of the `wchar_t`s made '_' and, when the byte at 0x79eda0 is set, the trailing '.' and ' ' too.
+    # Stops: the `ret`s (0x1e, 0x65, 0x8e); the loops' heads are cuts (0x42, 0x82).
+    "cpp": dict(grp="Cpp", cn="Correct_PathPart", a=0x5c6ee0, n=156, pos=True, stops=(0x1e, 0x65, 0x8e),
+                tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `Correct_PathPart` (`CPP/7zip/UI/Common/ExtractingFilePath.cpp`; `objdump -d`)"),
     # 7-Zip's C/Alloc.c `MyAlloc (size)`: 0 for size 0, else a tail jump to `malloc`. Stops: the jump (9), the `ret`
     # (18).
     "mya": dict(grp="Mya", cn="MyAlloc", a=0x41f3c0, n=19, pos=True, stops=(9, 18),
