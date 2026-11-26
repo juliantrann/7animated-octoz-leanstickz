@@ -382,6 +382,9 @@ import FV7z.Lfp.Holds
 import FV7z.Ldf.Blocks
 import FV7z.Ldf.Cuts
 import FV7z.Ldf.Holds
+import FV7z.Lap.Blocks
+import FV7z.Lap.Cuts
+import FV7z.Lap.Holds
 import FV7z.Lid.Blocks
 import FV7z.Lid.Cuts
 import FV7z.Lid.Holds
