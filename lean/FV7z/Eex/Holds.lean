@@ -286,11 +286,22 @@ theorem vc_121 {g : Gprs} {f : Rflags} {V : Addr → Byte}
 
 /-! ## Arithmetic -/
 
+/-- The low half of `setWidth 64 x - 1`. -/
+theorem lo_dec (x : BitVec 32) :
+    BitVec.setWidth 32 (BitVec.setWidth 64 x + 18446744073709551615#64) = x - 1#32 := by
+  bv_omega
+
 theorem mI_eq {x : BitVec 32} {n : Nat} (hx : x.toNat = n) (hn : 0 < n) : mI x = BitVec.ofNat 64 (n - 1) := by
   have := x.isLt
+  show BitVec.setWidth 64 (BitVec.setWidth 32 (BitVec.setWidth 64 x + 18446744073709551615#64)) = _
+  rw [lo_dec]
   apply BitVec.eq_of_toNat_eq
-  simp only [mI, BitVec.toNat_setWidth, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.reducePow, Nat.reduceMod]
+  simp only [BitVec.toNat_setWidth, BitVec.toNat_sub, BitVec.toNat_ofNat, Nat.reducePow, Nat.reduceMod]
   omega
+
+/-- A probe: `mI_eq` by `bv_omega`. -/
+theorem mI_eqA {x : BitVec 32} (hn : 0 < x.toNat) : mI x = BitVec.ofNat 64 (x.toNat - 1) := by
+  bv_omega
 
 theorem ofNat_ne {i j : Nat} (hi : i < 2 ^ 64) (hj : j < 2 ^ 64) (h : i ≠ j) :
     ¬BitVec.ofNat 64 i = BitVec.ofNat 64 j := fun e => by
@@ -298,7 +309,7 @@ theorem ofNat_ne {i j : Nat} (hi : i < 2 ^ 64) (hj : j < 2 ^ 64) (h : i ≠ j) :
   simp only [BitVec.toNat_ofNat, Nat.reducePow] at this
   omega
 
-theorem add1 {i : Nat} (h : i + 1 < 2 ^ 64) : BitVec.ofNat 64 i + 1#64 = BitVec.ofNat 64 (i + 1) := by
+theorem add1 (i : Nat) : BitVec.ofNat 64 i + 1#64 = BitVec.ofNat 64 (i + 1) := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.reducePow, Nat.reduceMod]
   omega
@@ -713,7 +724,7 @@ theorem lp1Head {i : Nat} (c : Seg prof F Wl L s₀ o) (hE : Env F Wl L V₀ g�
     have hax : (gL Y.cpu.gpr).rax = BitVec.ofNat 64 (i + 1) := by
       show Y.cpu.gpr.rax + 1#64 = _
       rw [hR.rax]
-      exact add1 (by omega)
+      exact add1 i
     refine kn hlt Y₁ t₁ V hK₁ hA₁ hI hL hr₁ ?_ ?_
     · rw [hg₁]
       exact ⟨hR.rsp, hax, hR.rcx, hR.rsi, hR.rdi, hR.r12, hR.r14, hR.r15⟩
