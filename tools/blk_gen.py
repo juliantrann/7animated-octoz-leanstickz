@@ -151,6 +151,24 @@ FNS = {
     # free through `alloc->Free` (`call [rax + 8]`, 18; a cut after it). Stop: the `ret` (30).
     "lfp": dict(grp="Lfp", cn="LzmaDec_FreeProbs", a=0x42bde0, n=31, pos=True, stops=(30,), calls=True,
                 tag="PLAN.md §M, M1", src="7-Zip 26.06's `LzmaDec_FreeProbs` (`C/LzmaDec.c`; `objdump -d`)"),
+    # 7-Zip's C/LzmaDec.c `LzmaDec_InitDicAndState (p, initDic, initState)`: `remainLen` = kMatchSpecLenStart + 1,
+    # `tempBufSize` = 0, and with `initDic` `processedPos` = `checkDicSize` = 0 and `remainLen` + 1; with `initState`
+    # `remainLen` + 1. Stop: the `ret` (48).
+    "lid": dict(grp="Lid", cn="LzmaDec_InitDicAndState", a=0x42b600, n=49, pos=True, stops=(48,),
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `LzmaDec_InitDicAndState` (`C/LzmaDec.c`; `objdump -d`)"),
+    # 7-Zip's CPP/7zip/UI/Common/OpenArchive.h `CArcErrorInfo::ClearErrors ()`: the flags and the tail size 0, the
+    # two `UString`s emptied (length 0, first character 0). Stop: the `ret` (60).
+    "cle": dict(grp="Cle", cn="CArcErrorInfo::ClearErrors", a=0x5d2b40, n=61, pos=True, stops=(60,),
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `CArcErrorInfo::ClearErrors` (`OpenArchive.h`; `objdump -d`)"),
+    # 7-Zip's CPP/7zip/Archive/Base64Handler.cpp (by the symbol table `NArchive::NGz::CHandler`)
+    # `GetArchivePropertyInfo (index, name, propID, varType)`: E_INVALIDARG for an index past 1, else the property's
+    # id and type from the tables and `name` = NULL. Stops: the two `ret`s (48, 61).
+    "gpi": dict(grp="Gpi", cn="CHandler::GetArchivePropertyInfo", a=0x49e900, n=62, pos=True, stops=(48, 61),
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `GetArchivePropertyInfo` (`Base64Handler.cpp`; `objdump -d`)"),
+    # 7-Zip's CPP/7zip/Common/ProgressUtils.cpp `CLocalProgress::CLocalProgress ()`: the vtable pointer at 0, 0 in
+    # the 4 bytes at 8 and the 8 bytes at 16, 24, 32, 40, 48, 1 in the bytes at 12 and 13. Stop: the `ret` (74).
+    "lpc": dict(grp="Lpc", cn="CLocalProgress::CLocalProgress", a=0x461fa0, n=75, pos=True, stops=(74,),
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `CLocalProgress` constructor (`ProgressUtils.cpp`; `objdump -d`)"),
     # 7-Zip's C/Alloc.c `MyAlloc (size)`: 0 for size 0, else a tail jump to `malloc`. Stops: the jump (9), the `ret`
     # (18).
     "mya": dict(grp="Mya", cn="MyAlloc", a=0x41f3c0, n=19, pos=True, stops=(9, 18),

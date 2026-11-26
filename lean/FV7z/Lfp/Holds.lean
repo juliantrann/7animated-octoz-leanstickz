@@ -92,7 +92,6 @@ theorem lfp_ok {Pc : State → (Addr → Byte) → Prop} (c : Seg prof F Wl L s�
     {eF : Addr} {codeF : List Byte} (hinF : CodeIn L eF codeF) (hF0 : 0 < codeF.length)
     (htgt : rdq(V, X.cpu.gpr.rsi + 8#64) = eF)
     {e₂ : Addr} {code₂ : List Byte} (hin₂ : CodeIn L e₂ code₂) {j₂ : Nat} (h₂ : j₂ < code₂.length)
-    (hra : rdq(V, X.cpu.gpr.rsp) = e₂.add j₂)
     (kf : ∀ (Y : State) (t' : Nat), KeptW Wl s₀ Y →
       Agree F Y.proc.mm.mem (Vst (Vst V (X.cpu.gpr.rsp - 8) (toBytesLE X.cpu.gpr.rbx 8)) (X.cpu.gpr.rsp - 16)
         (toBytesLE (lfp_at.add 21) 8)) →
