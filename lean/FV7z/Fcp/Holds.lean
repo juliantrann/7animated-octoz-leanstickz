@@ -52,8 +52,9 @@ theorem vc_0e {g : Gprs} {f : Rflags} {V : Addr → Byte}
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at h hf ⊢
   have d := decide_eq_true h
-  wpx [W_0, W_17, W_51, o0, o5, Tun.rd1, d, Bool.not_true, Bool.not_false, Bool.false_eq_true, false_implies,
-    true_implies, implies_true, eq_self_iff_true]
+  wpx [W_0, W_17, W_51, o0, o5, Tun.rd1, d, Bool.not_true, Bool.not_false, Bool.false_eq_true,
+    Bool.true_eq_false, false_implies,
+    true_implies, implies_true, eq_self_iff_true, and_true]
   all_goals first | exact hf | exact ⟨hf, fun _ => trivial⟩ | exact ⟨hf, trivial⟩ |
     exact ⟨hf, fun _ => ⟨rfl, rfl, rfl⟩⟩ | done
 
@@ -67,8 +68,9 @@ theorem vc_0n {g : Gprs} {f : Rflags} {V : Addr → Byte}
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at h hf ⊢
   have d := decide_eq_false h
-  wpx [W_0, W_17, W_51, o0, o5, Tun.rd1, d, Bool.not_true, Bool.not_false, Bool.false_eq_true, false_implies,
-    true_implies, implies_true, eq_self_iff_true]
+  wpx [W_0, W_17, W_51, o0, o5, Tun.rd1, d, Bool.not_true, Bool.not_false, Bool.false_eq_true,
+    Bool.true_eq_false, false_implies,
+    true_implies, implies_true, eq_self_iff_true, and_true]
   all_goals first | exact hf | exact ⟨hf, trivial⟩ | exact ⟨hf, ⟨rfl, rfl, rfl⟩⟩ | exact ⟨hf, rfl, rfl, rfl⟩ | done
 
 /-- The loop at the 0: to the `ret` at 45 with `eax` -1. -/
@@ -78,7 +80,7 @@ theorem vc_36z {g : Gprs} {f : Rflags} {V : Addr → Byte} (hz : (BitVec.setWidt
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at hz ⊢
   wpx [W_36, W_24, W_48, W_40, o1, o2, o3, o4, Tun.rd1, BitVec.and_self, hz, Bool.not_true, Bool.not_false,
-    Bool.false_eq_true, false_implies, true_implies, implies_true, eq_self_iff_true]
+    Bool.false_eq_true, Bool.true_eq_false, false_implies, true_implies, implies_true, eq_self_iff_true, and_true]
   all_goals first | trivial | exact fun _ => trivial | exact fun _ => ⟨rfl, rfl, rfl⟩ | done
 
 /-- The loop, the next byte `c`: to the `ret` at 50 with its index. -/
@@ -92,7 +94,7 @@ theorem vc_36e {g : Gprs} {f : Rflags} {V : Addr → Byte} (hz : (BitVec.setWidt
   dsimp only at hz hf h ⊢
   have d := decide_eq_true h
   wpx [W_36, W_24, W_48, W_40, o1, o2, o3, o4, Tun.rd1, BitVec.and_self, hz, d, Bool.not_true, Bool.not_false,
-    Bool.false_eq_true, false_implies, true_implies, implies_true, eq_self_iff_true]
+    Bool.false_eq_true, Bool.true_eq_false, false_implies, true_implies, implies_true, eq_self_iff_true, and_true]
   all_goals first | exact fun _ => hf | exact fun _ => ⟨hf, trivial⟩ | exact hf |
     exact fun _ => ⟨hf, fun _ => trivial⟩ |
     exact fun _ => ⟨hf, ⟨rfl, rfl, rfl⟩⟩ | done
@@ -108,7 +110,7 @@ theorem vc_36n {g : Gprs} {f : Rflags} {V : Addr → Byte} (hz : (BitVec.setWidt
   dsimp only at hz hf h ⊢
   have d := decide_eq_false h
   wpx [W_36, W_24, W_48, W_40, o1, o2, o3, o4, Tun.rd1, BitVec.and_self, hz, d, Bool.not_true, Bool.not_false,
-    Bool.false_eq_true, false_implies, true_implies, implies_true, eq_self_iff_true]
+    Bool.false_eq_true, Bool.true_eq_false, false_implies, true_implies, implies_true, eq_self_iff_true, and_true]
   all_goals first | exact fun _ => hf | exact fun _ => ⟨hf, trivial⟩ | exact hf |
     exact fun _ => ⟨hf, fun _ => trivial⟩ |
     exact fun _ => ⟨hf, ⟨rfl, rfl, rfl⟩⟩ | done
@@ -169,7 +171,7 @@ theorem loop (c : Seg prof F Wl L s₀ o) (hin : CodeIn L fcp_at fcp) {V : Addr 
       refine ih (j + 1) (by omega) Y t₁ hKY hAY hrY (by rw [hgY]; exact ea) (by rw [hgY]; exact hdi) ?_
         (by rw [hgY]; exact hcx) (fun i hi => ?_) (hkp.trans (kp_w hgY))
       · rw [hgY]
-        show BitVec.setWidth 8 (BitVec.setWidth 64 (BitVec.setWidth 32 (V (X.cpu.gpr.rax + 1#64)))) = _
+        show BitVec.setWidth 8 (BitVec.setWidth 64 (BitVec.setWidth 32 (_ (X.cpu.gpr.rax + 1#64)))) = _
         rw [sw8b, ea]
       · rcases Nat.lt_or_ge i (j + 1) with h | h
         · exact hne i (by omega)
@@ -181,8 +183,8 @@ bytes data of the footprint: at the return address with `rax` the answer (`Pos`,
 registers a call keeps (`Str.Back`), the bytes as they were. -/
 theorem fcp_ok (c : Seg prof F Wl L s₀ o) (hin : CodeIn L fcp_at fcp) {X : State} {t : Nat} {V : Addr → Byte}
     (hK : KeptW Wl s₀ X) (hA : Agree F X.proc.mm.mem V) (hrip : X.cpu.rip = fcp_at) {n : Nat} (hn : n < 2 ^ 31)
-    (hnz : ∀ i < n, V (X.cpu.gpr.rdi.add i) ≠ 0) (hz : V (X.cpu.gpr.rdi.add n) = 0)
-    (hf : ∀ i, i ≤ n → Foot F.data (X.cpu.gpr.rdi.add i))
+    (hnz : ∀ i < n, V (Addr.add X.cpu.gpr.rdi i) ≠ 0) (hz : V (Addr.add X.cpu.gpr.rdi n) = 0)
+    (hf : ∀ i, i ≤ n → Foot F.data (Addr.add X.cpu.gpr.rdi i))
     (hl : ∀ i < 8, Foot F.data (Addr.add X.cpu.gpr.rsp i))
     {e₂ : Addr} {code₂ : List Byte} {j₂ : Nat} (hin₂ : CodeIn L e₂ code₂) (h₂ : j₂ < code₂.length)
     (hra : rdq(V, X.cpu.gpr.rsp) = e₂.add j₂)
@@ -199,9 +201,9 @@ theorem fcp_ok (c : Seg prof F Wl L s₀ o) (hin : CodeIn L fcp_at fcp) {X : Sta
   have hf0 : ∀ i < 1, Foot F.data (Addr.add X.cpu.gpr.rdi i) := fun i hi => by
     obtain rfl : i = 0 := by omega
     exact hf 0 (Nat.zero_le _)
-  have hb0 : BitVec.setWidth 8 (BitVec.setWidth 32 (V X.cpu.gpr.rdi)) = V (X.cpu.gpr.rdi.add 0) := by
+  have hb0 : BitVec.setWidth 8 (BitVec.setWidth 32 (V X.cpu.gpr.rdi)) = V (Addr.add X.cpu.gpr.rdi 0) := by
     rw [sw8a, addr_add_zero]
-  by_cases he : V (X.cpu.gpr.rdi.add 0) = BitVec.setWidth 8 X.cpu.gpr.rsi
+  by_cases he : V (Addr.add X.cpu.gpr.rdi 0) = BitVec.setWidth 8 X.cpu.gpr.rsi
   · refine (c_0 prof).run c hin _ hK hA (by rw [addr_add_zero]; exact hrip) (vc_0e (by rw [hb0, he]) hf0) ?_
     rintro j' g fl V₁ ⟨rfl, rfl, rfl⟩ Y t₁ hKY hAY hrY hgY -
     refine kr Y t₁ 53 hKY hAY hrY (.inr (.inr rfl)) (kp_w hgY)
@@ -215,7 +217,7 @@ theorem fcp_ok (c : Seg prof F Wl L s₀ o) (hin : CodeIn L fcp_at fcp) {X : Sta
       (by rw [hgY]; exact (addr_add_zero _).symm) (by rw [hgY]; try rfl) ?_ (by rw [hgY]; exact sw8x _) (fun i hi => ?_)
       (kp_w hgY)
     · rw [hgY]
-      show BitVec.setWidth 8 (BitVec.setWidth 64 (BitVec.setWidth 32 (V X.cpu.gpr.rdi))) = _
+      show BitVec.setWidth 8 (BitVec.setWidth 64 (BitVec.setWidth 32 (_ X.cpu.gpr.rdi))) = _
       rw [sw8b, addr_add_zero]
     · obtain rfl : i = 0 := by omega
       exact he
