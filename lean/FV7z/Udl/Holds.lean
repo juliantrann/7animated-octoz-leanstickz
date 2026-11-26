@@ -107,8 +107,8 @@ theorem vc_z {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post} (hz : (cnt V
     W_0 F Wl Q g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only [cnt, ln, A] at hz hs1 hs2 fl hl1 hl2 hx h ⊢
-  wpx [W_0, W_31, W_48, o0, o1, o2, hx, BitVec.and_self, hz, Bool.true_eq_false, Bool.false_eq_true,
-      false_implies, true_implies, and_true, true_and, implies_true]
+  wpx [W_0, W_31, W_48, o0, o1, o2, Op.shl64, hx, BitVec.and_self, hz, Bool.not_true, Bool.not_false,
+      Bool.true_eq_false, Bool.false_eq_true, false_implies, true_implies, and_true, true_and, implies_true]
   all_goals repeat'
     first
     | exact h _
@@ -129,8 +129,8 @@ theorem vc_nz {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post} (hz : (cnt 
     W_0 F Wl Q g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only [gM, ix, cnt, ln, A] at hz hs1 hs2 fl fa hx hx2 h ⊢
-  wpx [W_0, W_31, W_48, o0, o1, o2, hx, hx2, BitVec.and_self, hz, Bool.true_eq_false, Bool.false_eq_true,
-      false_implies, true_implies, and_true, true_and, implies_true]
+  wpx [W_0, W_31, W_48, o0, o1, o2, Op.shl64, hx, hx2, BitVec.and_self, hz, Bool.not_true, Bool.not_false,
+      Bool.true_eq_false, Bool.false_eq_true, false_implies, true_implies, and_true, true_and, implies_true]
   all_goals repeat'
     first
     | exact h _
@@ -255,14 +255,15 @@ theorem udl_ok {Pc : State → (Addr → Byte) → Prop} (c : Seg prof F Wl L s�
     have hb1 : rdq(V0 V X.cpu.gpr, X.cpu.gpr.rsp - 16) = X.cpu.gpr.rbx := by
       dsimp only [V0]
       rw [e16, Tun.rd_Vst_self (Vst V (X.cpu.gpr.rsp - 8) (toBytesLE X.cpu.gpr.rbp 8)) (X.cpu.gpr.rsp - 16)
-        (toBytesLE X.cpu.gpr.rbx 8) (toBytesLE_length _ _) (by rw [tn16]; omega), ofBytesLE_toBytesLE rfl]
+        (toBytesLE X.cpu.gpr.rbx 8) (toBytesLE_length _ _) (by rw [tn16]; omega),
+        ofBytesLE_toBytesLE (w := 64) (n := 8) rfl]
     have hb2 : rdq(V0 V X.cpu.gpr, X.cpu.gpr.rsp - 8) = X.cpu.gpr.rbp := by
       dsimp only [V0]
       rw [Tun.rd_Vst (Vst V (X.cpu.gpr.rsp - 8) (toBytesLE X.cpu.gpr.rbp 8)) (X.cpu.gpr.rsp - 8 - 8)
           (toBytesLE X.cpu.gpr.rbx 8) (X.cpu.gpr.rsp - 8) 8 (by rw [toBytesLE_length, e16, tn16]; omega)
           (by rw [tn8]; omega) (by rw [toBytesLE_length, e16, tn16, tn8]; omega),
         Tun.rd_Vst_self V (X.cpu.gpr.rsp - 8) (toBytesLE X.cpu.gpr.rbp 8) (toBytesLE_length _ _)
-          (by rw [tn8]; omega), ofBytesLE_toBytesLE rfl]
+          (by rw [tn8]; omega), ofBytesLE_toBytesLE (w := 64) (n := 8) rfl]
     refine (c_0 prof).run c hin (fun j' g' _ V' => j' = 37 ∧
         g' = { X.cpu.gpr with
           rax := BitVec.setWidth 64 (ln V X.cpu.gpr - BitVec.setWidth 32 X.cpu.gpr.rsi),

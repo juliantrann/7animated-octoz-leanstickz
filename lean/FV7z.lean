@@ -819,3 +819,6 @@ import FV7z.Lemmas.SubMr
 import FV7z.Udl.Blocks
 import FV7z.Udl.Cuts
 import FV7z.Udl.Holds
+import FV7z.Isp.Blocks
+import FV7z.Isp.Cuts
+import FV7z.Isp.Holds
