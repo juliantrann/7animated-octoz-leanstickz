@@ -345,8 +345,7 @@ theorem aac_ok {P1 P2 : State → (Addr → Byte) → Prop} {n : Nat} (c : Seg p
     rw [Tun.Vst_out _ (X.cpu.gpr.rdi + 12#64) (toBytesLE v 4) (Addr.add X.cpu.gpr.rsi i)
         (by rw [toBytesLE_length, t12]; omega)
         (by rw [toBytesLE_length, t12, tp i hi]; omega),
-      vq _ X.cpu.gpr.rdi _ (Addr.add X.cpu.gpr.rsi i) (by omega)
-        (by rw [toBytesLE_length, tp i hi]; omega)]
+      vq _ X.cpu.gpr.rdi _ (Addr.add X.cpu.gpr.rsi i) (by omega) (by rw [tp i hi]; omega)]
   -- from 55: `_len` = `n`, the copy loop, the `pop`s and the `ret`
   have fin : ∀ (U : State) (M : Addr → Byte) (d : Addr) (t' : Nat), KeptW Wl s₀ U → Agree F U.proc.mm.mem M →
       U.cpu.rip = aac_at.add 55 → U.cpu.gpr.rsp = X.cpu.gpr.rsp - 40 → U.cpu.gpr.rbx = BitVec.ofNat 64 n →
@@ -484,9 +483,10 @@ theorem aac_ok {P1 P2 : State → (Addr → Byte) → Prop} {n : Nat} (c : Seg p
         g' = { Z.cpu.gpr with rdi := rdq(V', X.cpu.gpr.rdi), r12 := Z.cpu.gpr.rax } ∧ V'' = V' ∧
         ((j' = 122 ∧ rdq(V', X.cpu.gpr.rdi) = 0) ∨ (j' = 117 ∧ rdq(V', X.cpu.gpr.rdi) ≠ 0))) hKZ hAZ hrZ
       (vc_105 (by rw [hz13]; exact fun i hi => c.hws _ (fw0 i hi))
-        (fun h0 _ => ⟨by rw [hz13], rfl, .inl ⟨rfl, by rw [← hz13]; exact h0⟩⟩)
-        (fun h0 _ => ⟨by rw [hz13], rfl, .inr ⟨rfl, by rw [← hz13]; exact h0⟩⟩)) ?_
-    rintro j' g fl V₃ ⟨rfl, rfl, h⟩ Y₄ t₆ hK₄ hA₄ hr₄ hg₄ -
+        (fun h0 _ => ⟨by simp only [hz13], rfl, .inl ⟨rfl, by rw [← hz13]; exact h0⟩⟩)
+        (fun h0 _ => ⟨by simp only [hz13], rfl, .inr ⟨rfl, by rw [← hz13]; exact h0⟩⟩)) ?_
+    rintro j' g fl V₃ ⟨rfl, hV₃, h⟩ Y₄ t₆ hK₄ hA₄ hr₄ hg₄ -
+    subst V₃
     rcases h with ⟨rfl, h0⟩ | ⟨rfl, h0⟩
     · -- `_chars` null
       exact h122 Y₄ V' t₆ hK₄ hA₄ hr₄ (by rw [hg₄]; exact hzs) (by rw [hg₄]; exact hzb) (by rw [hg₄]; exact hzp)
