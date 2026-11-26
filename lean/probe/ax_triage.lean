@@ -1,5 +1,6 @@
-import FV7z.Utr.Holds
-import FV7z.Cpc.Holds
+import FV7z.Fni.Holds
+import FV7z.Lemmas.RepCmpsb
 open FV7z
-#print axioms FV7z.Utr.utr_ok
-#print axioms FV7z.Cpc.cpc_ok
+#print axioms FV7z.Fni.fni_ok
+#print axioms FV7z.Fni.fni_ret
+#print axioms FV7z.Fn.Seg.s_repz_cmpsb
