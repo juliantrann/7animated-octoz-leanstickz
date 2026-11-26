@@ -50,7 +50,6 @@ theorem and63 (b : BitVec 64) :
   rw [BitVec.toNat_and, BitVec.toNat_setWidth, BitVec.toNat_setWidth, Nat.mod_eq_of_lt h1, BitVec.toNat_ofNat,
     BitVec.toNat_ofNat, Nat.mod_eq_of_lt h2, show 63 % 2 ^ 64 = 2 ^ 6 - 1 from rfl, Nat.and_two_pow_sub_one_eq_mod,
     Nat.mod_mod_of_dvd _ (by decide : 2 ^ 6 ∣ 2 ^ 32)]
-  rfl
 
 theorem off64_lt (a : Addr) : a.toNat % 64 < 2 ^ 32 := Nat.lt_trans (Nat.mod_lt _ (by decide)) (by decide)
 
@@ -366,9 +365,7 @@ theorem head (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e' scm) {Y : State} {t
     hsi, hdi, hdx, and63] at hg₅
   have hg128 : At128 g₀ Y₅.cpu.gpr a b n 0 := by
     refine ⟨?_, ?_, ?_, ?_, ?_, ?_⟩ <;> simp only [hg₅, KpN, addr_add_zero, Nat.sub_zero]
-    · exact hkp
-    · exact hdi
-    · exact hsi
+    exact hkp
   -- `ja 128`
   refine c.s_jcc (tgt := 128) hK₅ hA₅ hin (lt_scm (by decide)) hr₅ (d41 prof.feat) (by decide)
     (lt_scm (by decide)) ?_ ?_
