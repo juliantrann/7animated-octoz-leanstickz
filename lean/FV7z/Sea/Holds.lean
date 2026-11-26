@@ -230,7 +230,7 @@ theorem sea_ok (c : Seg prof F Wl L s₀ o) (hin : CodeIn L sea_at sea) {X : Sta
     rintro j' g fl V₁ ⟨rfl, hax', hdx', hsi', hdi', hkp', rfl⟩ Y t₁ hKY hAY hrY hgY -
     refine loop c hin hna hnz hz hf kr na 0 (Nat.zero_add na) Y t₁ hKY hAY hrY ?_ (by rw [hgY, hsi'])
       (by rw [hgY, hdi']) ?_ (fun i hi => ?_) (Kp.of_eq hgY hkp')
-    · rw [hgY, hax', lf_xz]
+    · rw [hgY, hax', BitVec.xor_self]
       all_goals rfl
     · rw [hgY, hdx', sw8b, a0]
     · obtain rfl : i = 0 := by omega

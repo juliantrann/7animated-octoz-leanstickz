@@ -82,7 +82,7 @@ theorem vc_0e {g : Gprs} {f : Rflags} {V : Addr → Byte} (hz : (rdd(V, g.rdi + 
   wpx [W_0, W_11, W_24, o0, o1, Op.cmpmi, Tun.rd1, BitVec.and_self, hz, d, Kp, Bool.not_true, Bool.not_false,
     Bool.false_eq_true, Bool.true_eq_false, false_implies, true_implies, implies_true, eq_self_iff_true, and_self,
     and_true]
-  all_goals first | exact ⟨hh4, fun _ => ⟨hh8, hp⟩⟩ | exact ⟨hh4, fun _ => ⟨hh8, hp, trivial⟩⟩ | done
+  exact ⟨hh4, hh8, hp, fun e => absurd h (of_decide_eq_false ((Bool.not_eq_true' _).mp e))⟩
 
 /-- From the entry: the last byte not `'/'`, to 41 with `rax` at it and `rdx` `_chars`. -/
 theorem vc_0n {g : Gprs} {f : Rflags} {V : Addr → Byte} (hz : (rdd(V, g.rdi + 8#64) == 0) = false)
@@ -96,7 +96,7 @@ theorem vc_0n {g : Gprs} {f : Rflags} {V : Addr → Byte} (hz : (rdd(V, g.rdi + 
   wpx [W_0, W_11, W_24, o0, o1, Op.cmpmi, Tun.rd1, BitVec.and_self, hz, d, Kp, Bool.not_true, Bool.not_false,
     Bool.false_eq_true, Bool.true_eq_false, false_implies, true_implies, implies_true, eq_self_iff_true, and_self,
     and_true]
-  all_goals first | exact ⟨hh4, fun _ => ⟨hh8, hp⟩⟩ | exact ⟨hh4, fun _ => ⟨hh8, hp, trivial⟩⟩ | done
+  exact ⟨hh4, hh8, hp, fun e => h (of_decide_eq_true ((Bool.not_eq_false' _).mp e))⟩
 
 /-- The loop at `_chars`: to 46. -/
 theorem vc_41z {g : Gprs} {f : Rflags} {V : Addr → Byte} (h : g.rdx = g.rax) :
@@ -118,7 +118,7 @@ theorem vc_41e {g : Gprs} {f : Rflags} {V : Addr → Byte} (h : ¬ g.rdx = g.rax
   have ds := decide_eq_true hs
   wpx [W_41, W_32, o2, o3, Op.cmpmi, Tun.rd1, d, ds, Kp, Bool.not_true, Bool.not_false, Bool.false_eq_true,
     Bool.true_eq_false, false_implies, true_implies, implies_true, eq_self_iff_true, and_self, and_true]
-  all_goals first | exact hf | exact fun _ => hf | exact ⟨hf, trivial⟩ | done
+  exact ⟨hf, fun e => absurd hs (of_decide_eq_false e)⟩
 
 /-- The loop, the byte before not `'/'`: back to 41 with `rax` one back. -/
 theorem vc_41n {g : Gprs} {f : Rflags} {V : Addr → Byte} (h : ¬ g.rdx = g.rax)
@@ -130,7 +130,7 @@ theorem vc_41n {g : Gprs} {f : Rflags} {V : Addr → Byte} (h : ¬ g.rdx = g.rax
   have ds := decide_eq_false hs
   wpx [W_41, W_32, o2, o3, Op.cmpmi, Tun.rd1, d, ds, Kp, Bool.not_true, Bool.not_false, Bool.false_eq_true,
     Bool.true_eq_false, false_implies, true_implies, implies_true, eq_self_iff_true, and_self, and_true]
-  all_goals first | exact hf | exact fun _ => hf | exact ⟨hf, trivial⟩ | done
+  exact ⟨hf, fun e => hs (of_decide_eq_true e)⟩
 
 /-- At 46: `eax` -1, to the `ret` at 51. -/
 theorem vc_46 {g : Gprs} {f : Rflags} {V : Addr → Byte} :
