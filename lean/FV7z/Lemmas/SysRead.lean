@@ -122,18 +122,18 @@ theorem sysRead_ok (hw : Writable prof s s.cpu.gpr.rsi s.cpu.gpr.rdx.toNat) :
     cases f.readable
     · rfl
     · cases accessOk prof.feat s.cpu.gpr.rsi s.cpu.gpr.rdx.toNat
-      · rw [if_neg nt, if_neg nt]
+      · rw [ite_eq_right nt, ite_eq_right nt]
         all_goals rfl
-      · rw [if_neg nt, if_neg nt, if_neg nt, if_neg nt]
+      · rw [ite_eq_right nt, ite_eq_right nt, ite_eq_right nt, ite_eq_right nt]
         cases f.map with
         | pages id =>
           try dsimp only
           unfold readPages readPagesAt
           try dsimp only
           by_cases h63 : 2 ^ 63 ≤ (s.proc.opens.pos f).offset + s.cpu.gpr.rdx.toNat
-          · rw [if_pos h63, if_pos h63]
+          · rw [ite_eq_left h63, ite_eq_left h63]
             all_goals rfl
-          · rw [if_neg h63, if_neg h63, req_ask_run]
+          · rw [ite_eq_right h63, ite_eq_right h63, req_ask_run]
             try dsimp only
             cases o t (Request.readFail f.id (min (min s.cpu.gpr.rdx.toNat maxRwCount)
                 (s.proc.mm.mem.files.size id - (s.proc.opens.pos f).offset))) with
@@ -147,9 +147,9 @@ theorem sysRead_ok (hw : Writable prof s s.cpu.gpr.rsi s.cpu.gpr.rdx.toNat) :
               obtain ⟨e, k⟩ := ek
               try dsimp only
               by_cases hk : k.val = 0
-              · rw [if_pos hk, if_pos hk]
+              · rw [ite_eq_left hk, ite_eq_left hk]
                 all_goals rfl
-              · rw [if_neg hk, if_neg hk, D]
+              · rw [ite_eq_right hk, ite_eq_right hk, D]
                 · rfl
                 · simp only [Files.bytes, List.length_map, List.length_range]
                   have := k.isLt
