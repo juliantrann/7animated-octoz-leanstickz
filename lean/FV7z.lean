@@ -438,6 +438,9 @@ import FV7z.Sgw.Holds
 import FV7z.Fxs.Holds
 import FV7z.Xst.Holds
 import FV7z.Wmc.Holds
+import FV7z.Tiny.Plt
+import FV7z.Tiny.Tj
+import FV7z.Tiny.Leaf
 import FV7z.Ifr.Code
 import FV7z.Fre.Holds
 import FV7z.Lemmas.SysWrite
