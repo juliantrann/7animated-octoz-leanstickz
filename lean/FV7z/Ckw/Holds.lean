@@ -41,8 +41,8 @@ abbrev ckV (W : Addr → Byte) (p : Addr) (b1 b2 b3 b4 b5 : List Byte) : Addr �
 /-- The registers at the `call`: `rdx` = the size, `rbx` = `this`, `rbx` pushed, `rdi` = the password's bytes,
 `rsi` = 0. -/
 abbrev gN (V : Addr → Byte) (g : Gprs) : Gprs :=
-  { g with rdx := rdq(V, g.rdi + 80#64), rbx := g.rdi, rsp := g.rsp - 8, rdi := rdq(V, g.rdi + 72#64),
-    rsi := 0#64 }
+  { g with
+    rdx := rdq(V, g.rdi + 80#64), rbx := g.rdi, rsp := g.rsp - 8, rdi := rdq(V, g.rdi + 72#64), rsi := 0#64 }
 
 variable {F : Footprint} {Wl : List Rgn}
 
@@ -172,7 +172,7 @@ theorem ckw_ok {Pc : State → (Addr → Byte) → Prop} (c : Seg prof F Wl L s�
     simp <;> omega
   have e8 : X.cpu.gpr.rsp - 8 + 8 = X.cpu.gpr.rsp := BitVec.sub_add_cancel _ _
   have hq8 : (X.cpu.gpr.rsp - 8).toNat + 8 ≤ 2 ^ 64 := by rw [tn8]; omega
-  have tk : ∀ k : Nat, k ≤ 112 → (X.cpu.gpr.rdi + BitVec.ofNat 64 k).toNat = X.cpu.gpr.rdi.toNat + k := by
+  have tk : ∀ k : Nat, k < 112 → (X.cpu.gpr.rdi + BitVec.ofNat 64 k).toNat = X.cpu.gpr.rdi.toNat + k := by
     intro k hk
     rw [BitVec.toNat_add, BitVec.toNat_ofNat]
     omega
