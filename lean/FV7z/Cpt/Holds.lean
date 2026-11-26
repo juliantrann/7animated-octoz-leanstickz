@@ -96,6 +96,7 @@ theorem vc_0n {g : Gprs} {f : Rflags} {V : Addr → Byte} {v : Addr}
       | assumption
       | exact trivial
       | (intro hh; exact absurd hh h)
+      | (intro hh; exact absurd (by simpa using hh) h)
       | (intro hh; exact absurd hh (by decide))
       | apply And.intro
       | intro _)
@@ -110,6 +111,7 @@ theorem vc_0n {g : Gprs} {f : Rflags} {V : Addr → Byte} {v : Addr}
       | assumption
       | exact trivial
       | (intro hh; exact absurd hh h)
+      | (intro hh; exact absurd (by simpa using hh) h)
       | (intro hh; exact absurd hh hs)
       | (intro hh; exact absurd hh (by decide))
       | apply And.intro
