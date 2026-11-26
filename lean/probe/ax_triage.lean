@@ -1,2 +1,2 @@
-import FV7z.Strncmp.Vec16
+import FV7z.Strncmp.Head
 open FV7z
