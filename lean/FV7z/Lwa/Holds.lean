@@ -36,16 +36,18 @@ theorem lwa_byte (b : Byte) :
             (BitVec.setWidth 64 (BitVec.setWidth 32 b) + 18446744073709551551#64))).toNat < 26) = true then
         BitVec.setWidth 32 (BitVec.setWidth 64 (BitVec.setWidth 32 b) + 32#64)
       else BitVec.setWidth 32 b) = lo8 b := by
-  have hb := b.isLt
-  have hc : (BitVec.setWidth 8 (BitVec.setWidth 32
-      (BitVec.setWidth 64 (BitVec.setWidth 32 b) + 18446744073709551551#64))).toNat = (b + 191#8).toNat := by
-    simp only [BitVec.toNat_setWidth, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.reducePow]
-    omega
+  have e8 : ∀ y : BitVec 64, BitVec.setWidth 8 (BitVec.setWidth 32 y) = BitVec.setWidth 8 y :=
+    fun y => BitVec.setWidth_setWidth_of_le y (by decide)
+  have sa : ∀ x y : BitVec 64, BitVec.setWidth 8 (x + y) = BitVec.setWidth 8 x + BitVec.setWidth 8 y :=
+    fun x y => BitVec.setWidth_add x y (by decide)
+  have k1 : BitVec.setWidth 8 18446744073709551551#64 = 191#8 := by decide
+  have k2 : BitVec.setWidth 8 32#64 = 32#8 := by decide
+  have hc : BitVec.setWidth 8 (BitVec.setWidth 32
+      (BitVec.setWidth 64 (BitVec.setWidth 32 b) + 18446744073709551551#64)) = b + 191#8 := by
+    rw [e8, sa, k1, sw8b]
   have ha : BitVec.setWidth 8 (BitVec.setWidth 32 (BitVec.setWidth 64 (BitVec.setWidth 32 b) + 32#64)) =
       b + 32#8 := by
-    apply BitVec.eq_of_toNat_eq
-    simp only [BitVec.toNat_setWidth, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.reducePow]
-    omega
+    rw [e8, sa, k2, sw8b]
   unfold lo8
   rw [hc]
   by_cases h : (b + 191#8).toNat < 26
@@ -56,10 +58,7 @@ theorem lwa_byte (b : Byte) :
 
 /-- `rdi + 1 - 1`. -/
 theorem p1m1 (x : BitVec 64) : x + 1#64 + 18446744073709551615#64 = x := by
-  have hx : x.toNat < 18446744073709551616 := x.isLt
-  apply BitVec.eq_of_toNat_eq
-  simp only [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.reducePow]
-  omega
+  rw [BitVec.add_assoc, show (1#64 : BitVec 64) + 18446744073709551615#64 = 0#64 by decide, BitVec.add_zero]
 
 /-- The bytes `V` after the first `k` bytes at `s` were made lower case (`lo8`), one by one as the code stores
 them. -/
@@ -80,7 +79,7 @@ theorem Lw_out (V : Addr → Byte) (s : Addr) : ∀ (k : Nat) (x : Addr), (∀ i
 
 /-- The `k`-th byte while the first `k` are being made lower case: as it was. -/
 theorem Lw_self (V : Addr → Byte) (s : Addr) {k : Nat} (hk : k < 2 ^ 64) : Lw V s k (s.add k) = V (s.add k) :=
-  Lw_out V s k _ fun i hi => add_ne' s (by omega) (by omega) hk
+  Lw_out V s k _ fun i hi => add_ne' s (by omega) hk (by omega)
 
 /-- One of the first `k` bytes: made lower case. -/
 theorem Lw_at (V : Addr → Byte) (s : Addr) : ∀ (k : Nat), k ≤ 2 ^ 64 → ∀ i < k, Lw V s k (s.add i) = lo8 (V (s.add i))
@@ -138,7 +137,8 @@ theorem vc_35n {g : Gprs} {f : Rflags} {V : Addr → Byte}
     Bool.not_false, Bool.false_eq_true,
     Bool.true_eq_false, false_implies, true_implies, implies_true, eq_self_iff_true, and_self,
     and_true]
-  all_goals first | exact ⟨hf, fun _ => hw⟩ | exact ⟨hf, fun _ => ⟨hw, trivial⟩⟩ |
+  all_goals first | exact ⟨hf, fun _ => hw⟩ | exact ⟨hf, fun _ => ⟨hw, trivial⟩⟩ | exact ⟨hf, rfl, hw⟩ |
+    exact ⟨hf, fun _ => ⟨rfl, hw⟩⟩ |
     exact ⟨hf, fun _ => ⟨hw, rfl, rfl, ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩, rfl⟩⟩ | done
 
 variable {prof : Profile} {L : List (Addr × List Byte)} {s₀ : State} {o : Oracle}
