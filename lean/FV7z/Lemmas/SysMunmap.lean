@@ -57,12 +57,12 @@ theorem syscall_munmap {len : Nat} (htf : s.cpu.rflags.tf = false)
           unfold cutError
           rw [runStream_req_bind]
           split
-          · rename_i e _
+          · rename_i e _ _
             exact h0 (errRet e.val) (t + 1) (errRet_err e.property.1 e.property.2)
           · exact h0 (errRet EINVAL) (t + 1) (errRet_err (by decide) (by decide))
         · rw [runStream_req_bind]
           split
-          · rename_i e _
+          · rename_i e _ _
             exact h0 (errRet e.val) (t + 1) (errRet_err e.property.1 e.property.2)
           · exact h2 (t + 1)
 
