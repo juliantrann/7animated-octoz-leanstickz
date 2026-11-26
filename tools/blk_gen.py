@@ -184,6 +184,16 @@ FNS = {
     # `IncludeItems` (the count at 8). Stops: the `ret`s (63, 73).
     "ncs": dict(grp="Ncs", cn="CCensorNode::NeedCheckSubDirs", a=0x452fa0, n=79, pos=True, stops=(63, 73),
                 tag="PLAN.md §M, M1", src="7-Zip 26.06's `CCensorNode::NeedCheckSubDirs` (`Wildcard.cpp`; `objdump -d`)"),
+    # 7-Zip's CPP/Common/MyString.cpp `UString::ReverseFind (c)`: from the end of the characters (at `this`, the
+    # length at `this + 8`) back to the first, the index of the last 4-byte character equal to `c` (`esi`), else -1.
+    # Stops: the `ret`s (44, 53).
+    "rfw": dict(grp="Rfw", cn="UString::ReverseFind", a=0x44dd40, n=54, pos=True, stops=(44, 53),
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `UString::ReverseFind` (`MyString.cpp`; `objdump -d`)"),
+    # 7-Zip's CPP/Common/MyString.cpp `UString::ReverseFind_PathSepar ()`: as `ReverseFind ('/')`. Stops: the `ret`s
+    # (35, 47).
+    "rpp": dict(grp="Rpp", cn="UString::ReverseFind_PathSepar", a=0x44dd80, n=48, pos=True, stops=(35, 47),
+                tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `UString::ReverseFind_PathSepar` (`MyString.cpp`; `objdump -d`)"),
     # 7-Zip's C/Alloc.c `MyAlloc (size)`: 0 for size 0, else a tail jump to `malloc`. Stops: the jump (9), the `ret`
     # (18).
     "mya": dict(grp="Mya", cn="MyAlloc", a=0x41f3c0, n=19, pos=True, stops=(9, 18),
