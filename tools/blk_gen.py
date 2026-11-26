@@ -218,6 +218,22 @@ FNS = {
     # Stops: the `ret`s (42, 64), the call of `free` (47).
     "fni": dict(grp="Fni", cn="fini", a=0x41c0f0, n=65, pos=True, stops=(42, 64), calls=True,
                 tag="PLAN.md §M, M1", src="glibc 2.31's `fini` (`dlfcn/dlerror.c`; `objdump -d`)"),
+    # 7-Zip's CPP/Common/MyString.cpp `AString::ReverseFind_PathSepar () const`: the index of the last '/', else -1.
+    # Stops: the `ret`s (51, 58).
+    "arp": dict(grp="Arp", cn="AString::ReverseFind_PathSepar", a=0x44cb50, n=59, pos=True, stops=(51, 58),
+                tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `AString::ReverseFind_PathSepar` (`MyString.cpp`; `objdump -d`)"),
+    # 7-Zip's CPP/Common/MyString.cpp `FindCharPosInString (s, c)` for `char`: the index of the first `c` before the
+    # NUL, else -1. Stops: the `ret`s (45, 50, 53).
+    "fcc": dict(grp="Fcc", cn="FindCharPosInString (char)", a=0x44b960, n=54, pos=True, stops=(45, 50, 53),
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `FindCharPosInString` (`MyString.cpp`; `objdump -d`)"),
+    # The same for `wchar_t` (4 bytes). Stops: the `ret`s (36, 47, 50).
+    "fcw": dict(grp="Fcw", cn="FindCharPosInString (wchar_t)", a=0x44b9a0, n=51, pos=True, stops=(36, 47, 50),
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `FindCharPosInString` (`MyString.cpp`; `objdump -d`)"),
+    # 7-Zip's CPP/Common/MyString.cpp `StringsAreEqual_Ascii (u, a)`: the `wchar_t` string at `u` and the `char`
+    # string at `a` equal (each `wchar_t` the zero-extended `char`) up to and with the NUL. Stops: the `ret`s (49, 58).
+    "sea": dict(grp="Sea", cn="StringsAreEqual_Ascii", a=0x44bb60, n=59, pos=True, stops=(49, 58),
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `StringsAreEqual_Ascii` (`MyString.cpp`; `objdump -d`)"),
     # 7-Zip's C/Alloc.c `MyAlloc (size)`: 0 for size 0, else a tail jump to `malloc`. Stops: the jump (9), the `ret`
     # (18).
     "mya": dict(grp="Mya", cn="MyAlloc", a=0x41f3c0, n=19, pos=True, stops=(9, 18),
