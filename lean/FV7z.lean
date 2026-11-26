@@ -496,6 +496,7 @@ import FV7z.Opd.Ok
 import FV7z.Rdd.Blocks
 import FV7z.Rdd.Cuts
 import FV7z.Rdd.Ch
+import FV7z.Rdd.Holds
 import FV7z.Wmc.Holds
 import FV7z.Tiny.Plt
 import FV7z.Tiny.Tj
