@@ -390,6 +390,10 @@ import FV7z.Imb.Holds
 import FV7z.Sfs.Blocks
 import FV7z.Sfs.Cuts
 import FV7z.Sfs.Holds
+import FV7z.Lemmas.BlkOps23
+import FV7z.Dnw.Blocks
+import FV7z.Dnw.Cuts
+import FV7z.Dnw.Holds
 import FV7z.Fno.Holds
 import FV7z.Pmd.Holds
 import FV7z.Sgw.Holds
@@ -404,6 +408,15 @@ import FV7z.Lemmas.SysOpen
 import FV7z.Onc.Blocks
 import FV7z.Onc.Cuts
 import FV7z.Onc.Holds
+import FV7z.Lemmas.CmovLd
+import FV7z.Mun.Cuts
+import FV7z.Mun.Holds
+import FV7z.Mmp.Cuts
+import FV7z.Mmp.Holds
+import FV7z.Gdt.Cuts
+import FV7z.Gdt.Holds
+import FV7z.Tcg.Cuts
+import FV7z.Tcg.Holds
 import FV7z.Statement.Examples
 import FV7z.Lemmas.BlkOps7
 import FV7z.Gts.Holds
