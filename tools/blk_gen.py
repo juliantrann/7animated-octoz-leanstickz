@@ -575,6 +575,12 @@ FNS = {
     "ucw": dict(grp="Ucw", cn="UString::UString(const wchar_t*)", a=0x44d480, n=90, pos=True, stops=(0x49,),
                 calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip's `UString::UString (const wchar_t *)` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
+    # `UString::operator= (const UString &s)`: nothing for `&s` = `this` (0x14); for `s._len` above `_limit` (0x1f)
+    # `newBuf = new wchar_t[s._len + 1]` (0x52), `delete [] _chars` unless null (0x63), `_chars = newBuf`, `_limit =
+    # s._len`; then `_len = s._len`, `wmemcpy (_chars, s._chars, s._len + 1)` (0x32). Stop: the `ret` (0x44).
+    "uau": dict(grp="Uau", cn="UString::operator=(const UString&)", a=0x44d710, n=115, pos=True, stops=(0x44,),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip's `UString::operator= (const UString &)` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
     # CPP/UI/Common/EnumDirItems.cpp `CDirItems::ScanProgress (dirPath)`: without a `Callback` (at 0xc0) 0, else a tail
     # jump to `Callback->ScanProgress (Stat, false, dirPath)` (`Stat` at 0x48), its vtable's second entry. Stops: the
     # `jmp rax` (0x26) and the `ret` (0x32).
