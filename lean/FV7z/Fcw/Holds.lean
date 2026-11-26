@@ -103,16 +103,16 @@ theorem vc_0 {N : Nat} {f : Rflags} (hF : ∀ k ≤ N, ∀ j < 4, Foot F.data (A
   rw [Nat.mul_zero, addr_add_zero] at h0
   wpx [W_0, W_13, W_48, o0, o5, BitVec.xor_self, sw_64_32]
   refine ⟨h0, fun h => ?_, fun h af => ?_⟩
-  · have hc : ch V₀ rdi 0 ≠ rsi.setWidth 32 := by
-      simp only [ch, Nat.mul_zero, addr_add_zero]
+  · refine e27 (i := 0) (Nat.zero_le _) (by omega) ?_ ?_ ?_
+    · simp only [ch, Nat.mul_zero, addr_add_zero]
       exact fun e => nb_t h e.symm
-    exact e27 (Nat.zero_le _) (by omega) hc (fun k hk => absurd hk (Nat.not_lt_zero _))
-      (by simp only [G27, ch, Nat.mul_zero, addr_add_zero])
+    · exact fun k hk => absurd hk (Nat.not_lt_zero _)
+    · simp only [G27, ch, Nat.mul_zero, addr_add_zero]
   · have hc : ch V₀ rdi 0 = rsi.setWidth 32 := by
       simp only [ch, Nat.mul_zero, addr_add_zero]
       exact (nb_f h).symm
-    exact eFin (Or.inr (Or.inr rfl)) (by exact ⟨0, fun k hk => absurd hk (Nat.not_lt_zero _), Or.inl ⟨hc, by simp⟩⟩)
-      rfl
+    refine eFin (Or.inr (Or.inr rfl)) ?_ rfl
+    exact ⟨0, fun k hk => absurd hk (Nat.not_lt_zero _), Or.inl ⟨by simpa only using hc, by simp⟩⟩
 
 set_option maxHeartbeats 1000000 in
 /-- The loop's head, character `i`: 0, -1 at 36; else character `i + 1` `c`, `i + 1` at 47; else the head with
@@ -136,15 +136,20 @@ theorem vc_27 {N n : Nat} {g : Gprs} {f : Rflags} (hN32 : N < 2 ^ 32)
         have e := of_decide_eq_true h2
         rw [← add4] at e
         exact e
-      exact eFin (Or.inr (Or.inl rfl))
-        (by rw [← add4]; exact ⟨i + 1, hok', Or.inl ⟨hc, sar4 _ (by omega)⟩⟩) rfl
+      refine eFin (Or.inr (Or.inl rfl)) ?_ rfl
+      rw [← add4]
+      exact ⟨i + 1, by simpa only using hok', Or.inl ⟨by simpa only using hc, sar4 _ (by omega)⟩⟩
     · have hc : ch V₀ rdi (i + 1) ≠ rsi.setWidth 32 := by
         have e := of_decide_eq_false h2
         rw [← add4] at e
         exact e
-      exact e27 hi1 (by omega) hc hok' (by simp only [G27, ch, add4])
+      refine e27 (i := i + 1) hi1 (by omega) ?_ ?_ ?_
+      · simpa only using hc
+      · simpa only using hok'
+      · simp only [G27, ch, add4]
   · have hz : ch V₀ rdi i = 0 := tz_f h1
-    exact eFin (Or.inl rfl) (by exact ⟨i, hok, Or.inr ⟨hne, hz, rfl⟩⟩) rfl
+    refine eFin (Or.inl rfl) ?_ rfl
+    exact ⟨i, by simpa only using hok, Or.inr ⟨by simpa only using hne, by simpa only using hz, rfl⟩⟩
 
 theorem vcAll {N : Nat} (hN32 : N < 2 ^ 32)
     (hF : ∀ k ≤ N, ∀ j < 4, Foot F.data (Addr.add (Addr.add g₀.rdi (4 * k)) j)) (hN : ch V₀ g₀.rdi N = 0)
