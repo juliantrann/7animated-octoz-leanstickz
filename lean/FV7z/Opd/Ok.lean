@@ -607,4 +607,446 @@ theorem opd_r337 {fb : Addr} {g : Gprs} {Pe : List Event → Prop} {S Y : State}
       (by rw [hg₂, hg₁]; exact h15) (Kp_Vd hkp _ _ _ hd1 hd2) hin₂ h₂ hra hT
       (Or.inr ⟨W, Y.cpu.gpr.rbp, Y.cpu.gpr.rbx, by rw [hg₂, h12]⟩) K
 
+/-! ## `malloc`, the open and `fstat`: to the end from the entry -/
+
+theorem Kp_refl (g : Gprs) (fb : Addr) (V₀ : Addr → Byte) : Kp g fb V₀ V₀ := fun _ _ _ => rfl
+
+theorem Kq_refl (g : Gprs) (fb : Addr) (V : Addr → Byte) : Kq g fb V V := fun _ _ _ => rfl
+
+/-- A store in the frame below the stack guard's slot keeps `Kp`. -/
+theorem Kp_fs {g : Gprs} {fb : Addr} {V₀ W : Addr → Byte} (fr : OFr F Wl g fb) (h : Kp g fb V₀ W) (a : Addr)
+    (bs : List Byte) (h1 : g.rsp.toNat - 296 ≤ a.toNat) (h2 : a.toNat + bs.length ≤ g.rsp.toNat - 48) :
+    Kp g fb V₀ (Vst W a bs) :=
+  Kp_st h a bs h2 (by have := fr.hcd; omega)
+
+/-- A store in the frame below the stack guard's slot keeps `Kq`. -/
+theorem Kq_fs {g : Gprs} {fb : Addr} {V W : Addr → Byte} (fr : OFr F Wl g fb) (h : Kq g fb V W) (a : Addr)
+    (bs : List Byte) (h1 : g.rsp.toNat - 296 ≤ a.toNat) (h2 : a.toNat + bs.length ≤ g.rsp.toNat - 48) :
+    Kq g fb V (Vst W a bs) :=
+  Kq_st h a bs h1 (by omega) fr.hsb
+
+theorem rd_ret (W : Addr → Byte) (a e : Addr) (ha : a.toNat + 8 ≤ 2 ^ 64) :
+    rdq(Vst W a (toBytesLE e 8), a) = e := by
+  rw [rd_Vst_self W a (toBytesLE e 8) (toBytesLE_length _ _) ha, ofBytesLE_toBytesLE (by rfl : (64 : Nat) = 8 * 8)]
+
+theorem set4K (G : Gprs) (v : BitVec 64) : Keeps G (G.set 4 v) := by
+  unfold Keeps
+  cases G
+  exact ⟨rfl, rfl, rfl, rfl, rfl, rfl⟩
+
+theorem bsz_le (x : BitVec 64) : 32768 ≤ (bsz x).toNat ∧ (bsz x).toNat ≤ 1048576 := by
+  unfold bsz
+  split
+  · exact ⟨by decide, by decide⟩
+  · split
+    · exact ⟨by decide, by decide⟩
+    · rename_i h1 h2
+      exact ⟨by omega, by omega⟩
+
+/-- What `__opendir` takes of `malloc (n)` (`n` = `rdi`) as a hypothesis (`Mal.mal_hp` covers `n` up to 1024 only;
+`__opendir` asks for at least 32 KiB + 48, then 0x2030): from its entry with the bytes `V` keeping the heap's
+invariant `Pm`, the `Nm` bytes below the return address in what the run may store into (and in the footprint's data
+with it), the run goes on from a state `S` after it, its own start, at the return address with the return address
+popped, the registers a call keeps as at the entry, the events `ev` (`Pe`), the invariant kept, the bytes from the
+return address up and the stack guard as at the entry but `errno`'s, and the block in `rax`, if not null, `n` bytes in
+what the run may store into, below the frame and apart from the stack guard. -/
+def MalH (prof : Profile) (F : Footprint) (Wl : List Rgn) (L : List (Addr × List Byte)) (o : Oracle)
+    (gP : State → Nat → List Event → Prop) (gE : Outcome → List Event → Prop) (fb : Addr) (Nm : Nat)
+    (Pm : (Addr → Byte) → Prop) (Pe : List Event → Prop) : Prop :=
+  ∀ (s₀ X : State) (gev : List Event) (V : Addr → Byte) (t : Nat) (e' : Addr) (code : List Byte) (j : Nat),
+    Seg prof F Wl L s₀ o → s₀.cpu.seg.fsBase = fb → s₀.thread.rseq = none → KeptW Wl s₀ X →
+    Agree F X.proc.mm.mem V → X.cpu.rip = Mal.mal_at → Pm V → Nm ≤ X.cpu.gpr.rsp.toNat →
+    X.cpu.gpr.rsp.toNat + 8 ≤ 2 ^ 64 → (∀ i < Nm, Foot Wl (Addr.add (X.cpu.gpr.rsp - BitVec.ofNat 64 Nm) i)) →
+    (∀ i < Nm + 8, Foot F.data (Addr.add (X.cpu.gpr.rsp - BitVec.ofNat 64 Nm) i)) →
+    CodeIn L e' code → j < code.length → rdq(V, X.cpu.gpr.rsp) = e'.add j →
+    (∀ (S Z : State) (ev : List Event) (V₂ : Addr → Byte) (t' : Nat), Seg prof F Wl L S o →
+      S.cpu.seg.fsBase = fb → S.thread.rseq = none → KeptW Wl S Z → Agree F Z.proc.mm.mem V₂ →
+      Z.cpu.rip = e'.add j → Pe ev → Pm V₂ → Z.cpu.gpr.rsp = X.cpu.gpr.rsp + 8#64 →
+      Keeps X.cpu.gpr Z.cpu.gpr →
+      (∀ a : Addr,
+        X.cpu.gpr.rsp.toNat ≤ a.toNat ∨ ((fb + 40#64).toNat ≤ a.toNat ∧ a.toNat < (fb + 40#64).toNat + 8) →
+        ¬ ER fb a → V₂ a = V a) →
+      (Z.cpu.gpr.rax ≠ 0#64 → (∀ i < X.cpu.gpr.rdi.toNat, Foot Wl (Addr.add Z.cpu.gpr.rax i)) ∧
+        Z.cpu.gpr.rax.toNat + X.cpu.gpr.rdi.toNat ≤ X.cpu.gpr.rsp.toNat - Nm ∧
+        (Z.cpu.gpr.rax.toNat + X.cpu.gpr.rdi.toNat ≤ (fb + 40#64).toNat ∨
+          (fb + 40#64).toNat + 8 ≤ Z.cpu.gpr.rax.toNat)) →
+      GoG prof L o (gev ++ ev) gP gE Z t') →
+    GoG prof L o gev gP gE X t
+
+/-- `malloc`'s side of `__opendir` (registers `g`, bytes `V` at its entry): `MalH`, the heap's invariant `Pm` at the
+entry and kept by any change of the frame and `errno`, the `Nm` bytes below `malloc`'s return address (`S - 208`). -/
+structure OMal (prof : Profile) (F : Footprint) (Wl : List Rgn) (L : List (Addr × List Byte)) (o : Oracle)
+    (gP : State → Nat → List Event → Prop) (gE : Outcome → List Event → Prop) (fb : Addr) (g : Gprs)
+    (V : Addr → Byte) (Nm : Nat) (Pm : (Addr → Byte) → Prop) (Pe : List Event → Prop) : Prop where
+  mh : MalH prof F Wl L o gP gE fb Nm Pm Pe
+  hP0 : Pm V
+  hPS : ∀ W W', Pm W → Kq g fb W W' → Pm W'
+  hNm : Nm + 208 ≤ g.rsp.toNat
+  hmw : ∀ i < Nm, Foot Wl (Addr.add (aQ g.rsp - 8 - BitVec.ofNat 64 Nm) i)
+  hmd : ∀ i < Nm + 8, Foot F.data (Addr.add (aQ g.rsp - 8 - BitVec.ofNat 64 Nm) i)
+
+/-- The `name` (`rdi`, `m` bytes not 0, then a 0) for `__open_nocancel`: its 8-byte words in the footprint's data and
+below the end of the user address space, apart from the frame. -/
+structure ONm (prof : Profile) (F : Footprint) (g : Gprs) (V : Addr → Byte) (m : Nat) : Prop where
+  hm : m < pathMax
+  htop : g.rdi.toNat + 8 * (m / 8 + 1) ≤ userPtrMax prof.feat
+  hpl : ∀ i < 8 * (m / 8 + 1), Foot F.data (g.rdi.add i)
+  hpd : g.rdi.toNat + 8 * (m / 8 + 1) ≤ g.rsp.toNat - 296 ∨ g.rsp.toNat + 8 ≤ g.rdi.toNat
+  hnz : ∀ i < m, V (g.rdi.add i) ≠ 0
+  hz : V (g.rdi.add m) = 0
+
+theorem OT_f {Pe : List Event → Prop} {gev e : List Event} {G G' : Gprs} {r : BitVec 64} {bs : List Byte}
+    {r' : FsOut} (h : OEnd Pe e) : OT Pe gev (gev ++ ([Onc.oncEv G r bs] ++ ([fsEv G' r'] ++ e))) :=
+  ⟨[Onc.oncEv G r bs, fsEv G' r'] ++ e, by simp, Or.inr (Or.inr ⟨G, r, bs, G', r', e, rfl, h⟩)⟩
+
+/-- From a `call malloc` at `j` (`rsp` the frame), the bytes keeping the heap's invariant: the run goes on from a
+state after it, its own start, at `j + 5` with `rsp` the frame, the registers a call keeps as at `j`, the bytes
+keeping `Kp` and the invariant, the block as `MalH` gives it (`n` = `rdi` at `j`). -/
+theorem opd_mal {fb : Addr} {g : Gprs} {V₀ : Addr → Byte} {Nm : Nat} {Pm : (Addr → Byte) → Prop}
+    {Pe : List Event → Prop} {S Y : State} {W : Addr → Byte} {j rel : Nat}
+    (c : Seg prof F Wl L S o) (hfs : S.cpu.seg.fsBase = fb) (hrs : S.thread.rseq = none)
+    (hin : CodeIn L opd_at opd) (hinM : CodeIn L Mal.mal_at Mal.mal) (fr : OFr F Wl g fb)
+    (om : OMal prof F Wl L o gP gE fb g V Nm Pm Pe) (hK : KeptW Wl S Y) (hA : Agree F Y.proc.mm.mem W)
+    (hj : j + 5 < 380) (hrip : Y.cpu.rip = opd_at.add j) (hd : Dec prof.feat opd j (FV7z.mk .call 64 [.rel rel] 5))
+    (htgt : opd_at.add (j + 5) + BitVec.ofNat 64 rel = Mal.mal_at) (hsp : Y.cpu.gpr.rsp = aQ g.rsp)
+    (hkp : Kp g fb V₀ W) (hPm : Pm W)
+    (k : ∀ (S' Z : State) (ev : List Event) (W' : Addr → Byte) (t' : Nat), Seg prof F Wl L S' o →
+      S'.cpu.seg.fsBase = fb → S'.thread.rseq = none → KeptW Wl S' Z → Agree F Z.proc.mm.mem W' →
+      Z.cpu.rip = opd_at.add (j + 5) → Pe ev → Pm W' → Kp g fb V₀ W' → Z.cpu.gpr.rsp = aQ g.rsp →
+      Keeps Y.cpu.gpr Z.cpu.gpr →
+      (Z.cpu.gpr.rax ≠ 0#64 → (∀ i < Y.cpu.gpr.rdi.toNat, Foot Wl (Addr.add Z.cpu.gpr.rax i)) ∧
+        Z.cpu.gpr.rax.toNat + Y.cpu.gpr.rdi.toNat ≤ g.rsp.toNat - 208 - Nm ∧
+        (Z.cpu.gpr.rax.toNat + Y.cpu.gpr.rdi.toNat ≤ (fb + 40#64).toNat ∨
+          (fb + 40#64).toNat + 8 ≤ Z.cpu.gpr.rax.toNat)) →
+      GoG prof L o (gev ++ ev) gP gE Z t') :
+    GoG prof L o gev gP gE Y t := by
+  have h296 := fr.h296
+  have hlt := g.rsp.isLt
+  have hNm := om.hNm
+  obtain ⟨-, -, -, -, -, -, e7, -⟩ := stA g.rsp (by omega)
+  have t296 : (g.rsp - 296#64).toNat = g.rsp.toNat - 296 := tSub _ 296 (by omega)
+  have hY8 : (Y.cpu.gpr.rsp - 8).toNat = g.rsp.toNat - 208 := by rw [hsp]; exact e7
+  have hx : Y.cpu.gpr.rsp - 8 = Addr.add (g.rsp - 296#64) 88 := fa (by omega) (by rw [hY8, t296]; omega)
+  refine c.s_call hK hA hin (lt_len (by omega)) hrip hd hinM (Mal.lt_len (j := 0) (by decide)) htgt
+    (frw fr.hfw hx (by decide)) ?_
+  rintro Y₂ t₂ hK₂ hA₂ ⟨hr₂, hg₂⟩
+  have hs₂ : Y₂.cpu.gpr.rsp = Y.cpu.gpr.rsp - 8 := by rw [hg₂]; exact set4_rsp _ _
+  have hsY : Y₂.cpu.gpr.rsp = aQ g.rsp - 8 := by rw [hs₂, hsp]
+  have hYt : Y₂.cpu.gpr.rsp.toNat = g.rsp.toNat - 208 := by rw [hs₂]; exact hY8
+  have hd₂ : Y₂.cpu.gpr.rdi = Y.cpu.gpr.rdi := by rw [hg₂] <;> rfl
+  have hKY : Keeps Y.cpu.gpr Y₂.cpu.gpr := by rw [hg₂]; exact set4K _ _
+  have hp₁ := Kp_fs fr hkp (Y.cpu.gpr.rsp - 8) (toBytesLE (opd_at.add (j + 5)) 8) (by rw [hY8]; omega)
+    (by rw [toBytesLE_length, hY8]; omega)
+  have hq : Kq g fb W (Vst W (Y.cpu.gpr.rsp - 8) (toBytesLE (opd_at.add (j + 5)) 8)) :=
+    Kq_fs fr (Kq_refl g fb W) _ _ (by rw [hY8]; omega) (by rw [toBytesLE_length, hY8]; omega)
+  refine om.mh S Y₂ gev _ t₂ opd_at opd (j + 5) c hfs hrs hK₂ hA₂ hr₂ (om.hPS _ _ hPm hq) (by rw [hYt]; omega)
+    (by rw [hYt]; omega) (by rw [hsY]; exact om.hmw) (by rw [hsY]; exact om.hmd) hin (lt_len hj)
+    (by rw [hs₂]; exact rd_ret W _ _ (by rw [hY8]; omega)) ?_
+  intro S' Z ev V₂ t' c' hfs' hrs' hKZ hAZ hrZ hPe hPm' zsp zk hkeep hblk
+  refine k S' Z ev V₂ t' c' hfs' hrs' hKZ hAZ hrZ hPe hPm' ?_ ?_ (hKY.trans zk) ?_
+  · intro a ha he
+    rw [hkeep a (by rcases ha with ha | ha; · exact Or.inl (by rw [hYt]; omega); · exact Or.inr ha) he]
+    exact hp₁ a ha he
+  · rw [zsp, hsY]
+    exact BitVec.sub_add_cancel _ _
+  · intro hz
+    obtain ⟨b1, b2, b3⟩ := hblk hz
+    rw [hd₂] at b1 b2 b3
+    rw [hYt] at b2
+    exact ⟨b1, by omega, b3⟩
+
+/-- From the return of the first `malloc` (153): its block not null, the `DIR`'s fields stored, to the end with the
+block; null, `malloc (0x2030)`, then from its return (`opd_r337`). -/
+theorem opd_m1 {fb : Addr} {g : Gprs} {Nm : Nat} {Pm : (Addr → Byte) → Prop} {Pe : List Event → Prop}
+    {S Y : State} {W : Addr → Byte} {tr : List Event} {e₂ : Addr} {code₂ : List Byte} {j₂ : Nat}
+    (c : Seg prof F Wl L S o) (hfs : S.cpu.seg.fsBase = fb) (hrs : S.thread.rseq = none)
+    (hin : CodeIn L opd_at opd) (hinC : CodeIn L Cnc.cnc_at Cnc.cnc) (hinM : CodeIn L Mal.mal_at Mal.mal)
+    (fr : OFr F Wl g fb) (om : OMal prof F Wl L o gP gE fb g V Nm Pm Pe) (hK : KeptW Wl S Y)
+    (hA : Agree F Y.proc.mm.mem W) (hrip : Y.cpu.rip = opd_at.add 153) (hsp : Y.cpu.gpr.rsp = aQ g.rsp)
+    (h14 : Y.cpu.gpr.r14 = g.r14) (h15 : Y.cpu.gpr.r15 = g.r15) (hkp : Kp g fb (Vo g rdq(V, fb + 40#64) V) W)
+    (hPm : Pm W)
+    (hblk : Y.cpu.gpr.rax ≠ 0#64 → (∀ i < 44, Foot Wl (Addr.add Y.cpu.gpr.rax i)) ∧
+      Y.cpu.gpr.rax.toNat + 44 ≤ g.rsp.toNat - 48 ∧
+      (Y.cpu.gpr.rax.toNat + 44 ≤ (fb + 40#64).toNat ∨ (fb + 40#64).toNat + 8 ≤ Y.cpu.gpr.rax.toNat))
+    (hin₂ : CodeIn L e₂ code₂) (h₂ : j₂ < code₂.length) (hra : rdq(V, g.rsp) = e₂.add j₂)
+    (hT : OT Pe gev tr) (hT2 : ∀ e, Pe e → OT Pe gev (tr ++ e) ∧ ∀ G r, OT Pe gev (tr ++ e ++ [clsEv G r]))
+    (K : OpdK prof F Wl L o gP gE fb g V e₂ j₂ gev Pe) : GoG prof L o tr gP gE Y t := by
+  have hlt := g.rsp.isLt
+  by_cases hz : Y.cpu.gpr.rax = 0#64
+  · refine (c_153 prof fb).run c hfs hin _ hK hA hrip (vc_153z (g := Y.cpu.gpr) hz) ?_
+    rintro j' g' fl V₁ ⟨rfl, rfl, hV⟩ Y₁ t₁ hK₁ hA₁ hr₁ hg₁ -
+    subst V₁
+    refine (c_322 prof fb).run c hfs hin _ hK₁ hA₁ hr₁ (vc_322 (g := Y₁.cpu.gpr)) ?_
+    rintro j' g' fl V₂ ⟨rfl, rfl, hV⟩ Y₂ t₂ hK₂ hA₂ hr₂ hg₂ -
+    subst V₂
+    have hdi : Y₂.cpu.gpr.rdi = 8240#64 := by rw [hg₂]
+    have t8 : (8240#64 : BitVec 64).toNat = 8240 := rfl
+    refine opd_mal c hfs hrs hin hinM fr om hK₂ hA₂ (by decide) hr₂ (call_332 _) (by decide)
+      (by rw [hg₂, hg₁, hsp]) hkp hPm ?_
+    intro S' Z ev W' t' c' hfs' hrs' hKZ hAZ hrZ hPe hPm' hkp' zs zk hb
+    obtain ⟨-, -, -, -, z14, z15⟩ := zk
+    rw [hdi, t8] at hb
+    exact opd_r337 c' hfs' hrs' hin hinC fr hKZ hAZ hrZ zs (by rw [z14, hg₂, hg₁] <;> exact h14)
+      (by rw [z15, hg₂, hg₁] <;> exact h15) hkp'
+      (fun hz' => by obtain ⟨b1, b2, b3⟩ := hb hz'; exact ⟨fun i hi => b1 i (by omega), by omega, by omega⟩)
+      hin₂ h₂ hra (hT2 ev hPe).1 (hT2 ev hPe).2 K
+  · obtain ⟨hdw, hd1, hd2⟩ := hblk hz
+    refine opd_dir c hfs hin hK hA hrip hz hdw (by omega) ?_
+    intro Y₁ t₁ hK₁ hA₁ hr₁ hg₁
+    exact opd_fin c hfs hrs hin fr hK₁ hA₁ hr₁ (by rw [hg₁, hsp]) (by rw [hg₁] <;> exact h14)
+      (by rw [hg₁] <;> exact h15) (Kp_Vd hkp _ _ _ hd1 hd2) hin₂ h₂ hra hT
+      (Or.inr ⟨W, Y.cpu.gpr.rbp, Y.cpu.gpr.rbx, by rw [hg₁]⟩) K
+
+/-- From the return of `__fxstat` (80), `rsp` the frame: its answer negative, or not a directory, `__close_nocancel`
+and null (`opd_e270`); a directory, `malloc (bsz (st_blksize) + 48)`, then from its return (`opd_m1`). -/
+theorem opd_s80 {fb : Addr} {g : Gprs} {Nm : Nat} {Pm : (Addr → Byte) → Prop} {Pe : List Event → Prop}
+    {S Y : State} {W : Addr → Byte} {tr : List Event} {e₂ : Addr} {code₂ : List Byte} {j₂ : Nat}
+    (c : Seg prof F Wl L S o) (hfs : S.cpu.seg.fsBase = fb) (hrs : S.thread.rseq = none)
+    (hin : CodeIn L opd_at opd) (hinC : CodeIn L Cnc.cnc_at Cnc.cnc) (hinM : CodeIn L Mal.mal_at Mal.mal)
+    (fr : OFr F Wl g fb) (om : OMal prof F Wl L o gP gE fb g V Nm Pm Pe) (hK : KeptW Wl S Y)
+    (hA : Agree F Y.proc.mm.mem W) (hrip : Y.cpu.rip = opd_at.add 80) (hsp : Y.cpu.gpr.rsp = aQ g.rsp)
+    (h14 : Y.cpu.gpr.r14 = g.r14) (h15 : Y.cpu.gpr.r15 = g.r15) (hkp : Kp g fb (Vo g rdq(V, fb + 40#64) V) W)
+    (hkq : Kq g fb V W) (hin₂ : CodeIn L e₂ code₂) (h₂ : j₂ < code₂.length)
+    (hra : rdq(V, g.rsp) = e₂.add j₂) (hTc : ∀ G r, OT Pe gev (tr ++ [clsEv G r]))
+    (hT1 : ∀ e, Pe e → OT Pe gev (tr ++ e) ∧
+      ∀ e', Pe e' → OT Pe gev (tr ++ e ++ e') ∧ ∀ G r, OT Pe gev (tr ++ e ++ e' ++ [clsEv G r]))
+    (K : OpdK prof F Wl L o gP gE fb g V e₂ j₂ gev Pe) : GoG prof L o tr gP gE Y t := by
+  have h296 := fr.h296
+  have hlt := g.rsp.isLt
+  have hNm := om.hNm
+  obtain ⟨-, -, -, -, e5, -⟩ := stA g.rsp (by omega)
+  have t296 : (g.rsp - 296#64).toNat = g.rsp.toNat - 296 := tSub _ 296 (by omega)
+  have q24 : Y.cpu.gpr.rsp + 24#64 = Addr.add (g.rsp - 296#64) 120 :=
+    fa (by omega) (by rw [hsp, tAdd _ 24 (by rw [e5]; omega), e5, t296]; omega)
+  have q56 : Y.cpu.gpr.rsp + 56#64 = Addr.add (g.rsp - 296#64) 152 :=
+    fa (by omega) (by rw [hsp, tAdd _ 56 (by rw [e5]; omega), e5, t296]; omega)
+  cases hs : (BitVec.setWidth 32 Y.cpu.gpr.rax).msb
+  · by_cases hm : ofBytesLE 32 ((byteAddrs (Y.cpu.gpr.rsp + 24#64) 4).map W) &&& 61440#32 = 16384#32
+    · refine (c_80 prof fb).run c hfs hin _ hK hA hrip
+        (vc_80 hs hm (frw fr.hfd q24 (by decide)) (frw fr.hfd q56 (by decide))) ?_
+      rintro j' g' fl V₁ ⟨rfl, rfl, hV⟩ Y₁ t₁ hK₁ hA₁ hr₁ hg₁ -
+      subst V₁
+      have hdi : Y₁.cpu.gpr.rdi = bsz rdq(W, Y.cpu.gpr.rsp + 56#64) + 48#64 := by rw [hg₁]
+      obtain ⟨b1, b2⟩ := bsz_le rdq(W, Y.cpu.gpr.rsp + 56#64)
+      have t48 : (bsz rdq(W, Y.cpu.gpr.rsp + 56#64) + 48#64).toNat =
+          (bsz rdq(W, Y.cpu.gpr.rsp + 56#64)).toNat + 48 := tAdd _ 48 (by omega)
+      refine opd_mal c hfs hrs hin hinM fr om hK₁ hA₁ (by decide) hr₁ (call_148 _) (by decide)
+        (by rw [hg₁, hsp]) hkp (om.hPS _ _ om.hP0 hkq) ?_
+      intro S' Z ev W' t' c' hfs' hrs' hKZ hAZ hrZ hPe hPm' hkp' zs zk hb
+      obtain ⟨-, -, -, -, z14, z15⟩ := zk
+      rw [hdi, t48] at hb
+      exact opd_m1 c' hfs' hrs' hin hinC hinM fr om hKZ hAZ hrZ zs (by rw [z14, hg₁] <;> exact h14)
+        (by rw [z15, hg₁] <;> exact h15) hkp' hPm'
+        (fun hz => by obtain ⟨d1, d2, d3⟩ := hb hz; exact ⟨fun i hi => d1 i (by omega), by omega, by omega⟩)
+        hin₂ h₂ hra (hT1 ev hPe).1 (fun e he => (hT1 ev hPe).2 e he) K
+    · refine (c_80 prof fb).run c hfs hin _ hK hA hrip (vc_80d hs hm (frw fr.hfd q24 (by decide)) fr.fe) ?_
+      rintro j' g' fl V₁ ⟨rfl, rfl, hV⟩ Y₁ t₁ hK₁ hA₁ hr₁ hg₁ -
+      subst V₁
+      exact opd_e270 c hfs hrs hin hinC fr hK₁ hA₁ hr₁ (by rw [hg₁, hsp]) (by rw [hg₁] <;> exact h14)
+        (by rw [hg₁] <;> exact h15) (Kp_e hkp _ (toBytesLE_length _ _) fr.hfe) hin₂ h₂ hra hTc K
+  · refine (c_80 prof fb).run c hfs hin _ hK hA hrip (vc_80n hs) ?_
+    rintro j' g' fl V₁ ⟨rfl, rfl, hV⟩ Y₁ t₁ hK₁ hA₁ hr₁ hg₁ -
+    subst V₁
+    exact opd_e270 c hfs hrs hin hinC fr hK₁ hA₁ hr₁ (by rw [hg₁, hsp]) (by rw [hg₁] <;> exact h14)
+      (by rw [hg₁] <;> exact h15) hkp hin₂ h₂ hra hTc K
+
+/-- From the return of `__open_nocancel` (55), `rsp` the frame: its answer (`eax`) negative, null; else
+`__fxstat (1, fd, rsp)`, then from its return (`opd_s80`). -/
+theorem opd_s55 {fb : Addr} {g : Gprs} {Nm : Nat} {Pm : (Addr → Byte) → Prop} {Pe : List Event → Prop}
+    {S Y : State} {W : Addr → Byte} {G0 : Gprs} {r0 : BitVec 64} {bs0 : List Byte} {e₂ : Addr}
+    {code₂ : List Byte} {j₂ : Nat}
+    (c : Seg prof F Wl L S o) (hfs : S.cpu.seg.fsBase = fb) (hrs : S.thread.rseq = none)
+    (hin : CodeIn L opd_at opd) (hinX : CodeIn L Fxs.fxs_at Fxs.fxs) (hinC : CodeIn L Cnc.cnc_at Cnc.cnc)
+    (hinM : CodeIn L Mal.mal_at Mal.mal) (fr : OFr F Wl g fb) (om : OMal prof F Wl L o gP gE fb g V Nm Pm Pe)
+    (hup : g.rsp.toNat ≤ userPtrMax prof.feat) (hK : KeptW Wl S Y) (hA : Agree F Y.proc.mm.mem W)
+    (hrip : Y.cpu.rip = opd_at.add 55) (hsp : Y.cpu.gpr.rsp = aQ g.rsp) (h14 : Y.cpu.gpr.r14 = g.r14)
+    (h15 : Y.cpu.gpr.r15 = g.r15) (hkp : Kp g fb (Vo g rdq(V, fb + 40#64) V) W) (hkq : Kq g fb V W)
+    (hin₂ : CodeIn L e₂ code₂) (h₂ : j₂ < code₂.length) (hra : rdq(V, g.rsp) = e₂.add j₂)
+    (K : OpdK prof F Wl L o gP gE fb g V e₂ j₂ gev Pe) :
+    GoG prof L o (gev ++ [Onc.oncEv G0 r0 bs0]) gP gE Y t := by
+  have h296 := fr.h296
+  have hlt := g.rsp.isLt
+  obtain ⟨-, -, -, -, e5, -, e7, -⟩ := stA g.rsp (by omega)
+  have t296 : (g.rsp - 296#64).toNat = g.rsp.toNat - 296 := tSub _ 296 (by omega)
+  have hY8 : (Y.cpu.gpr.rsp - 8).toNat = g.rsp.toNat - 208 := by rw [hsp]; exact e7
+  have hx : Y.cpu.gpr.rsp - 8 = Addr.add (g.rsp - 296#64) 88 := fa (by omega) (by rw [hY8, t296]; omega)
+  cases hs : (BitVec.setWidth 32 Y.cpu.gpr.rax).msb
+  · refine opd_stat c hfs hin hinX hK hA hrip hs (frw fr.hfw hx (by decide)) ?_
+    intro Y₁ t₁ hK₁ hA₁ hr₁ hg₁
+    have hs₁ : Y₁.cpu.gpr.rsp = Y.cpu.gpr.rsp - 8 := by rw [hg₁]; exact set4_rsp _ _
+    have hdx : Y₁.cpu.gpr.rdx = aQ g.rsp := by rw [← hsp, hg₁] <;> rfl
+    have hdi1 : Y₁.cpu.gpr.rdi = 1#64 := by rw [hg₁] <;> rfl
+    have hr14 : Y₁.cpu.gpr.r14 = g.r14 := by rw [hg₁] <;> exact h14
+    have hr15 : Y₁.cpu.gpr.r15 = g.r15 := by rw [hg₁] <;> exact h15
+    refine Fxs.fxs_ok c hfs hinX hK₁ hA₁ hr₁ fr.fe fr.hfe (by rw [hs₁]; exact frw fr.hfd hx (by decide))
+      (by rw [hs₁, hY8]; omega) (by rw [hs₁, hY8]; rcases fr.hed with h | h <;> omega) (by rw [hdx, e5]; omega)
+      (by rw [hdx]; exact frw fr.hfw (fa (d := 96) (by omega) (by rw [e5, t296]; omega)) (by decide))
+      (by rw [hdx, hs₁, hY8, e5]; omega) hin (lt_len (by decide))
+      (by rw [hs₁]; exact rd_ret _ _ _ (by rw [hY8]; omega)) (fun hv => absurd hv (by rw [hdi1]; decide)) ?_
+    intro _ Y' Z r t' hgY' _ hok hKZ hrZ hsucc herr
+    have hlen : r.bs.length ≤ 144 := by
+      rcases hok with ⟨-, h⟩ | ⟨h, -⟩
+      · omega
+      · rw [h]
+        exact Nat.zero_le _
+    have hp1 := Kp_fs fr hkp (Y.cpu.gpr.rsp - 8) (toBytesLE (opd_at.add 80) 8) (by rw [hY8]; omega)
+      (by rw [toBytesLE_length, hY8]; omega)
+    have hq1 := Kq_fs fr hkq (Y.cpu.gpr.rsp - 8) (toBytesLE (opd_at.add 80) 8) (by rw [hY8]; omega)
+      (by rw [toBytesLE_length, hY8]; omega)
+    have hp2 := Kp_fs fr hp1 Y₁.cpu.gpr.rdx r.bs (by rw [hdx, e5]; omega) (by rw [hdx, e5]; omega)
+    have hq2 := Kq_fs fr hq1 Y₁.cpu.gpr.rdx r.bs (by rw [hdx, e5]; omega) (by rw [hdx, e5]; omega)
+    obtain ⟨s1, s2, s3, s4⟩ := sysK Y' r.ret (Y₁.cpu.gpr.rsp + 8)
+    have k14 : Y'.cpu.gpr.r14 = g.r14 := by rw [hgY'] <;> exact hr14
+    have k15 : Y'.cpu.gpr.r15 = g.r15 := by rw [hgY'] <;> exact hr15
+    have hZs : Y₁.cpu.gpr.rsp + 8 = aQ g.rsp := by rw [hs₁, hsp]; exact BitVec.sub_add_cancel _ _
+    have hT : ∀ e, OEnd Pe e →
+        OT Pe gev (gev ++ [Onc.oncEv G0 r0 bs0] ++ [fsEv (Fxs.fxG Y₁.cpu.gpr) r] ++ e) := fun e h => by
+      simp only [List.append_assoc]
+      exact OT_f h
+    have hTc : ∀ G r', OT Pe gev (gev ++ [Onc.oncEv G0 r0 bs0] ++ [fsEv (Fxs.fxG Y₁.cpu.gpr) r] ++
+        [clsEv G r']) := fun G r' => hT _ (Or.inl ⟨G, r', rfl⟩)
+    have hT1 : ∀ e, Pe e → OT Pe gev (gev ++ [Onc.oncEv G0 r0 bs0] ++ [fsEv (Fxs.fxG Y₁.cpu.gpr) r] ++ e) ∧
+        ∀ e', Pe e' → OT Pe gev (gev ++ [Onc.oncEv G0 r0 bs0] ++ [fsEv (Fxs.fxG Y₁.cpu.gpr) r] ++ e ++ e') ∧
+          ∀ G r', OT Pe gev (gev ++ [Onc.oncEv G0 r0 bs0] ++ [fsEv (Fxs.fxG Y₁.cpu.gpr) r] ++ e ++ e' ++
+            [clsEv G r']) := fun e he =>
+      ⟨hT e (Or.inr (Or.inl he)), fun e' he' =>
+        ⟨by
+          have h := hT (e ++ e') (Or.inr (Or.inr (Or.inl ⟨e, e', rfl, he, he'⟩)))
+          simp only [List.append_assoc] at h ⊢
+          exact h,
+        fun G r' => by
+          have h := hT (e ++ (e' ++ [clsEv G r'])) (Or.inr (Or.inr (Or.inr ⟨e, e', G, r', rfl, he, he'⟩)))
+          simp only [List.append_assoc] at h ⊢
+          exact h⟩⟩
+    by_cases he : CloseErr r.ret
+    · obtain ⟨hAZ, hgZ⟩ := herr he
+      exact opd_s80 c hfs hrs hin hinC hinM fr om hKZ hAZ hrZ (by rw [hgZ, s3, hZs])
+        (by rw [hgZ, ← k14]; exact s4.2.2.2.2.1) (by rw [hgZ, ← k15]; exact s4.2.2.2.2.2)
+        (Kp_e hp1 _ (toBytesLE_length _ _) fr.hfe) (Kq_e hq1 _ (toBytesLE_length _ _) fr.hfe) hin₂ h₂ hra
+        hTc hT1 K
+    · obtain ⟨hAZ, hgZ⟩ := hsucc he
+      exact opd_s80 c hfs hrs hin hinC hinM fr om hKZ hAZ hrZ (by rw [hgZ, s1, hZs])
+        (by rw [hgZ, ← k14]; exact s2.2.2.2.2.1) (by rw [hgZ, ← k15]; exact s2.2.2.2.2.2) hp2 hq2 hin₂ h₂ hra
+        hTc hT1 K
+  · refine (c_55 prof fb).run c hfs hin _ hK hA hrip (vc_55n hs) ?_
+    rintro j' g' fl V₁ ⟨rfl, rfl, hV⟩ Y₁ t₁ hK₁ hA₁ hr₁ hg₁ -
+    subst V₁
+    exact opd_fin c hfs hrs hin fr hK₁ hA₁ hr₁ (by rw [hg₁, hsp]) (by rw [hg₁] <;> exact h14)
+      (by rw [hg₁] <;> exact h15) hkp hin₂ h₂ hra
+      ⟨[Onc.oncEv G0 r0 bs0], rfl, Or.inr (Or.inl ⟨G0, r0, bs0, rfl⟩)⟩ (Or.inl (by rw [hg₁])) K
+
+/-- `__opendir (name)` from its entry to its return: with the frame (`OFr`), `malloc`'s side (`OMal`) and the `name`
+(`ONm`, `m` bytes before its 0), the run reaches the return address with `rsp` 8 above, the registers a call keeps as
+at the entry, the bytes from `rsp` up but `errno`'s as at the entry, the events `OT` and the answer null or a `DIR`
+(`ORes`), perhaps from a new start after the system calls (`OpdK`). -/
+theorem opd_ok {fb : Addr} {X : State} {Nm : Nat} {Pm : (Addr → Byte) → Prop} {Pe : List Event → Prop} {m : Nat}
+    {e₂ : Addr} {code₂ : List Byte} {j₂ : Nat}
+    (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (hrs : s₀.thread.rseq = none)
+    (hin : CodeIn L opd_at opd) (hinO : CodeIn L Onc.onc_at Onc.onc) (hinX : CodeIn L Fxs.fxs_at Fxs.fxs)
+    (hinC : CodeIn L Cnc.cnc_at Cnc.cnc) (hinM : CodeIn L Mal.mal_at Mal.mal) (hK : KeptW Wl s₀ X)
+    (hA : Agree F X.proc.mm.mem V) (hrip : X.cpu.rip = opd_at) (fr : OFr F Wl X.cpu.gpr fb)
+    (om : OMal prof F Wl L o gP gE fb X.cpu.gpr V Nm Pm Pe) (nm : ONm prof F X.cpu.gpr V m)
+    (hup : X.cpu.gpr.rsp.toNat ≤ userPtrMax prof.feat)
+    (hin₂ : CodeIn L e₂ code₂) (h₂ : j₂ < code₂.length) (hra : rdq(V, X.cpu.gpr.rsp) = e₂.add j₂)
+    (K : OpdK prof F Wl L o gP gE fb X.cpu.gpr V e₂ j₂ gev Pe) : GoG prof L o gev gP gE X t := by
+  have h296 := fr.h296
+  have hlt := X.cpu.gpr.rsp.isLt
+  have hpd := nm.hpd
+  have hum : userPtrMax prof.feat ≤ 2 ^ 64 := by unfold userPtrMax; split <;> decide
+  have htop := nm.htop
+  obtain ⟨e1, e2, e3, e4, -, e6, e7, e8⟩ := stA X.cpu.gpr.rsp (by omega)
+  have t296 : (X.cpu.gpr.rsp - 296#64).toNat = X.cpu.gpr.rsp.toNat - 296 := tSub _ 296 (by omega)
+  have hcn : rdq(P4 V X.cpu.gpr, fb + 40#64) = rdq(V, fb + 40#64) :=
+    congrArg (ofBytesLE 64) (P4_rd V X.cpu.gpr (by omega) fr.hcb (by have := fr.hcd; omega))
+  rcases Nat.eq_zero_or_pos m with hm0 | hm0
+  · subst hm0
+    have hz0 := nm.hz
+    rw [addr_add_zero] at hz0
+    refine (c_0 prof fb).run c hfs hin _ hK hA (by rw [addr_add_zero]; exact hrip)
+      (vc_0z hcn (by rw [Vo_rd X.cpu.gpr _ V (by omega) (by omega) (by omega), rd1]; exact hz0)
+        (frw fr.hfw (fa (d := 288) (by omega) (by rw [e1, t296]; omega)) (by decide))
+        (frw fr.hfw (fa (d := 280) (by omega) (by rw [e2, t296]; omega)) (by decide))
+        (frw fr.hfw (fa (d := 272) (by omega) (by rw [e3, t296]; omega)) (by decide))
+        (frw fr.hfw (fa (d := 264) (by omega) (by rw [e4, t296]; omega)) (by decide)) fr.hcl
+        (frw fr.hfw (fa (d := 248) (by omega) (by rw [e6, t296]; omega)) (by decide))
+        (fun i hi => nm.hpl i (by omega)) fr.fe) ?_
+    rintro j' g' fl V₁ ⟨rfl, rfl, hV⟩ Y₁ t₁ hK₁ hA₁ hr₁ hg₁ -
+    subst V₁
+    exact opd_fin c hfs hrs hin fr hK₁ hA₁ hr₁ (by rw [hg₁]) (by rw [hg₁]) (by rw [hg₁])
+      (Kp_e (Kp_refl _ _ _) _ (toBytesLE_length _ _) fr.hfe) hin₂ h₂ hra ⟨[], by simp, Or.inl rfl⟩
+      (Or.inl (by rw [hg₁])) K
+  · have hne : ofBytesLE 8 ((byteAddrs X.cpu.gpr.rdi 1).map V) ≠ 0#8 := by
+      rw [rd1]
+      have h := nm.hnz 0 hm0
+      rw [addr_add_zero] at h
+      exact h
+    refine opd_open c hfs hin hinO hK hA hrip (by omega)
+      (frw fr.hfw (fa (d := 88) (by omega) (by rw [e8, t296]; omega)) (by decide)) fr.hcl fr.hcb
+      (by have := fr.hcd; omega) (fun i hi => nm.hpl i (by omega)) (by omega) hne ?_
+    intro Y t₁ hKY hAY hrY hgY
+    have hsY : Y.cpu.gpr.rsp = aQ X.cpu.gpr.rsp - 8 := by rw [hgY]; exact set4_rsp _ _
+    have hY8 : Y.cpu.gpr.rsp.toNat = X.cpu.gpr.rsp.toNat - 208 := by rw [hsY]; exact e7
+    have hdY : Y.cpu.gpr.rdi = X.cpu.gpr.rdi := by rw [hgY] <;> rfl
+    have hsiY : Y.cpu.gpr.rsi = 591872#64 := by rw [hgY] <;> rfl
+    have y14 : Y.cpu.gpr.r14 = X.cpu.gpr.r14 := by rw [hgY] <;> rfl
+    have y15 : Y.cpu.gpr.r15 = X.cpu.gpr.r15 := by rw [hgY] <;> rfl
+    have q88 : Y.cpu.gpr.rsp - 88#64 = Addr.add (X.cpu.gpr.rsp - 296#64) 0 :=
+      fa (by omega) (by rw [tSub _ 88 (by omega), hY8, t296]; omega)
+    have qY : Y.cpu.gpr.rsp = Addr.add (X.cpu.gpr.rsp - 296#64) 88 := fa (by omega) (by rw [hY8, t296]; omega)
+    have vn : ∀ i ≤ m, Vst (Vo X.cpu.gpr rdq(V, fb + 40#64) V) (aQ X.cpu.gpr.rsp - 8)
+        (toBytesLE (opd_at.add 55) 8) (X.cpu.gpr.rdi.add i) = V (X.cpu.gpr.rdi.add i) := by
+      intro i hi
+      have e : (X.cpu.gpr.rdi.add i).toNat = X.cpu.gpr.rdi.toNat + i :=
+        toNat_add_of_fits (n := 8 * (m / 8 + 1)) (by omega) (by omega)
+      rw [Vst_out _ _ _ _ (by rw [toBytesLE_length, e7]; omega) (by rw [toBytesLE_length, e7, e]; omega)]
+      exact Vo_out X.cpu.gpr _ V (by omega) _ (by rw [e]; omega)
+    refine Onc.onc_ok c hfs hrs hinO hKY hAY hrY (by rw [hsiY]; decide) (by rw [hY8]; omega) (by rw [hY8]; omega)
+      (frw fr.hfw q88 (by decide)) (frw fr.hfd q88 (by decide)) (frw fr.hfd qY (by decide)) fr.hcl fr.hcb
+      (by rw [hY8]; have := fr.hcd; omega) fr.fe fr.hfe (by rw [hY8]; have := fr.hed; omega) fr.hec nm.hm
+      (by rw [hdY]; exact htop) (by rw [hdY]; exact nm.hpl) (by rw [hdY, hY8]; omega)
+      (by rw [hdY]; exact fun i hi => by rw [vn i (by omega)]; exact nm.hnz i hi)
+      (by rw [hdY, vn m (Nat.le_refl _)]; exact nm.hz) hin (lt_len (by decide))
+      (by rw [hsY]; exact rd_ret _ _ _ (by rw [e7]; omega)) ?_
+    intro Y' S' Z r bs t' hKY' _ _ _ hcpu _ c' hrs' hKZ hrZ hregs hok herr
+    obtain ⟨zsp, -, -, -, -, z14, z15⟩ := hregs
+    have hfs' : S'.cpu.seg.fsBase = fb := by
+      have h1 : S'.cpu.seg = (sysSt Y' 2 r).cpu.seg := by rw [hcpu]
+      rw [h1]
+      show Y'.cpu.seg.fsBase = fb
+      rw [hKY'.seg]
+      exact hfs
+    have a88 : (Y.cpu.gpr.rsp - 88#64).toNat = X.cpu.gpr.rsp.toNat - 296 := by
+      rw [tSub _ 88 (by omega), hY8]
+      omega
+    have a48 : (Y.cpu.gpr.rsp - 88#64 + 48#64).toNat = X.cpu.gpr.rsp.toNat - 248 := by
+      rw [tAdd _ 48 (by omega), a88]
+      omega
+    have a24 : (Y.cpu.gpr.rsp - 88#64 + 24#64).toNat = X.cpu.gpr.rsp.toNat - 272 := by
+      rw [tAdd _ 24 (by omega), a88]
+      omega
+    have hp0 := Kp_fs fr (Kp_refl X.cpu.gpr fb (Vo X.cpu.gpr rdq(V, fb + 40#64) V)) (aQ X.cpu.gpr.rsp - 8)
+      (toBytesLE (opd_at.add 55) 8) (by rw [e7]; omega) (by rw [toBytesLE_length, e7]; omega)
+    have hq0 := Kq_fs fr (Kq_Vo X.cpu.gpr rdq(V, fb + 40#64) V fb (by omega)) (aQ X.cpu.gpr.rsp - 8)
+      (toBytesLE (opd_at.add 55) 8) (by rw [e7]; omega) (by rw [toBytesLE_length, e7]; omega)
+    have hpO : Kp X.cpu.gpr fb (Vo X.cpu.gpr rdq(V, fb + 40#64) V)
+        (Onc.oV (Vst (Vo X.cpu.gpr rdq(V, fb + 40#64) V) (aQ X.cpu.gpr.rsp - 8) (toBytesLE (opd_at.add 55) 8))
+          Y.cpu.gpr fb) := by
+      unfold Onc.oV
+      exact Kp_fs fr (Kp_fs fr hp0 _ _ (by rw [a48]; omega) (by rw [toBytesLE_length, a48]; omega)) _ _
+        (by rw [a24]; omega) (by rw [toBytesLE_length, a24]; omega)
+    have hqO : Kq X.cpu.gpr fb V
+        (Onc.oV (Vst (Vo X.cpu.gpr rdq(V, fb + 40#64) V) (aQ X.cpu.gpr.rsp - 8) (toBytesLE (opd_at.add 55) 8))
+          Y.cpu.gpr fb) := by
+      unfold Onc.oV
+      exact Kq_fs fr (Kq_fs fr hq0 _ _ (by rw [a48]; omega) (by rw [toBytesLE_length, a48]; omega)) _ _
+        (by rw [a24]; omega) (by rw [toBytesLE_length, a24]; omega)
+    obtain ⟨W₁, hA₁, hp₁, hq₁⟩ : ∃ W₁, Agree F Z.proc.mm.mem W₁ ∧
+        Kp X.cpu.gpr fb (Vo X.cpu.gpr rdq(V, fb + 40#64) V) W₁ ∧ Kq X.cpu.gpr fb V W₁ := by
+      by_cases he : Write.WrErr r
+      · exact ⟨_, (herr he).1, Kp_e hpO _ (toBytesLE_length _ _) fr.hfe, Kq_e hqO _ (toBytesLE_length _ _) fr.hfe⟩
+      · exact ⟨_, (hok he).1, hpO, hqO⟩
+    exact opd_s55 c' hfs' hrs' hin hinX hinC hinM fr om hup hKZ hA₁ hrZ
+      (by rw [zsp, hsY]; exact BitVec.sub_add_cancel _ _) (by rw [z14, y14]) (by rw [z15, y15]) hp₁ hq₁
+      hin₂ h₂ hra K
+
 end FV7z.Opd
