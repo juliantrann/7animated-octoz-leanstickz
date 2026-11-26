@@ -91,7 +91,7 @@ variable {F : Footprint} {Wl : List Rgn}
 /-- What is left of a piece's condition: its footprint facts, equations, cases that cannot be. -/
 local macro "vfin" : tactic =>
   `(tactic| repeat' (first | (with_reducible rfl) | (with_reducible assumption) | exact True.intro |
-    (intro h; exact absurd h (by omega)) | apply And.intro | assumption | rfl | intro _))
+    (intro h; exact absurd h (by omega)) | contradiction | apply And.intro | assumption | rfl | intro _))
 
 theorem s0 : BitVec.setWidth 64 0#32 = 0#64 := by decide
 theorem s1 : BitVec.setWidth 64 1#32 = 1#64 := by decide
@@ -171,7 +171,8 @@ theorem vc_80z {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (hz : rdq
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only [gB, VB, rcl] at hz f0 f8 f16 w24 w32 ⊢
   have hd : decide (rdq(V, r8 + r14) = 0#64) = true := decide_eq_true hz
-  wpx [W_80, o3, Op.cmpmi, hd, Bool.not_true, Bool.false_eq_true, false_implies, eq_self_iff_true, true_implies]
+  wpx [W_80, o3, Op.cmpmi, hd, Bool.not_true, Bool.false_eq_true, Bool.true_eq_false,
+    false_implies, eq_self_iff_true, true_implies]
   all_goals vfin
 
 /-- The entry at 80 with `d_ino` not 0: to 176. -/
@@ -184,7 +185,8 @@ theorem vc_80n {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (hz : rdq
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only [gB, VB, rcl] at hz f0 f8 f16 w24 w32 ⊢
   have hd : decide (rdq(V, r8 + r14) = 0#64) = false := decide_eq_false hz
-  wpx [W_80, o3, Op.cmpmi, hd, Bool.not_false, Bool.false_eq_true, false_implies, eq_self_iff_true, true_implies]
+  wpx [W_80, o3, Op.cmpmi, hd, Bool.not_false, Bool.false_eq_true, Bool.true_eq_false,
+    false_implies, eq_self_iff_true, true_implies]
   all_goals vfin
 
 /-- At 109, the offset below the size: to 80, `r8` the offset plus 48. -/
@@ -193,19 +195,25 @@ theorem vc_109l {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (hl : g.
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at hl ⊢
   have hd : decide (rdx.toNat < rax.toNat) = true := decide_eq_true hl
-  wpx [W_109, o4, hd, Bool.false_eq_true, false_implies, eq_self_iff_true, true_implies]
+  wpx [W_109, o4, hd, Bool.false_eq_true, Bool.true_eq_false, false_implies, eq_self_iff_true, true_implies]
   all_goals vfin
+
+/-- At the `call __getdents`: `edi` the descriptor, `rsi` the buffer, `rdx` the allocation. -/
+abbrev gG (V : Addr → Byte) (g : Gprs) : Gprs :=
+  { g with
+    r8 := g.rdx + 48#64
+    rdx := rdq(V, g.r14 + 8#64)
+    rdi := BitVec.setWidth 64 rdd(V, g.r14)
+    rsi := g.rbx }
 
 /-- At 109, the buffer used up: to the `call __getdents (fd, buf, allocation)`. -/
 theorem vc_109g {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (hl : ¬ g.rdx.toNat < g.rax.toNat)
     (f8 : ∀ i < 8, Foot F.data (Addr.add (g.r14 + 8#64) i)) (f0 : ∀ i < 4, Foot F.data (Addr.add g.r14 i)) :
-    W_109 fb F Wl (fun j' g' _ V' => j' = 128 ∧
-      g' = { g with r8 := g.rdx + 48#64, rdx := rdq(V, g.r14 + 8#64), rdi := BitVec.setWidth 64 rdd(V, g.r14),
-        rsi := g.rbx } ∧ V' = V) g f V := by
+    W_109 fb F Wl (fun j' g' _ V' => j' = 128 ∧ g' = gG V g ∧ V' = V) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
-  dsimp only at hl f8 f0 ⊢
+  dsimp only [gG] at hl f8 f0 ⊢
   have hd : decide (rdx.toNat < rax.toNat) = false := decide_eq_false hl
-  wpx [W_109, W_118, o4, o5, hd, Bool.false_eq_true, false_implies, eq_self_iff_true, true_implies]
+  wpx [W_109, W_118, o4, o5, hd, Bool.false_eq_true, Bool.true_eq_false, false_implies, eq_self_iff_true, true_implies]
   all_goals vfin
 
 /-- `getdents64`'s answer positive: the new size stored, to 80 with the offset 0. -/
@@ -217,7 +225,7 @@ theorem vc_133p {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (hnz : g
   dsimp only at hnz hs w16 ⊢
   have hb0 : (rax == 0) = false := beq_false_of_ne hnz
   wpx [W_133, W_138, Sbrk.cond_14, Sbrk.rfz_of, Sbrk.arith_of, o6, o7, BitVec.and_self, hb0, hs, xz, s48,
-    Bool.false_or, Bool.or_false, ffb, Bool.false_eq_true, false_implies, eq_self_iff_true,
+    Bool.false_or, Bool.or_false, ffb, Bool.false_eq_true, Bool.true_eq_false, false_implies, eq_self_iff_true,
     true_implies]
   all_goals vfin
 
@@ -228,7 +236,7 @@ theorem vc_133z {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (hz : g.
   dsimp only at hz ⊢
   subst hz
   wpx [W_133, W_160, Sbrk.cond_14, Sbrk.rfz_of, Sbrk.arith_of, o6, BitVec.and_self, z64, Bool.true_or,
-    Bool.not_true, Bool.false_eq_true, false_implies, eq_self_iff_true, true_implies]
+    Bool.not_true, Bool.false_eq_true, Bool.true_eq_false, false_implies, eq_self_iff_true, true_implies]
   all_goals vfin
 
 /-- An error, `errno` `ENOENT`: to 162, `r8` 0. -/
@@ -258,9 +266,11 @@ theorem vc_133o {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (hs : g.
   have hb0 : (rax == 0) = false := beq_false_of_ne hnz
   have hd : decide (rdd(V, fb + 18446744073709551544#64) = 2#32) = false := decide_eq_false he
   wpx [W_133, W_160, W_205, W_215, Sbrk.cond_14, Sbrk.rfz_of, Sbrk.arith_of, o6, o11, Op.cmpmif, BitVec.and_self,
-    hb0, hs, hd, xz, tbf, Bool.false_or, Bool.not_false, Bool.not_true, Bool.true_eq_false,
+    hb0, hs, hd, he, decide_false, xz, tbf, Bool.false_or, Bool.not_false, Bool.not_true, Bool.true_eq_false,
     not_false_eq_true, decide_true, Bool.false_eq_true, false_implies, eq_self_iff_true, true_implies]
   all_goals vfin
+  -- the `jne` sees `2` as a literal, not `2#32`: the taken branch by `he`
+  all_goals (rename_i hx; rw [Bool.not_eq_false', decide_eq_true_eq] at hx; exact absurd hx he)
 
 /-- `errno` restored from `r13d`, `r8` 0: to 176. -/
 theorem vc_162 {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (hbp : g.rbp = 18446744073709551544#64)
@@ -279,8 +289,8 @@ theorem vc_176 {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (hmt : rd
     W_176 fb F Wl (fun j' g' _ V' => j' = 188 ∧ g' = { g with rax := 0#64 } ∧ V' = V) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at fm ⊢
-  wpx [W_176, o9, Op.ldf, hmt, BitVec.and_self, z0, s0, sz, Bool.not_true, Bool.false_eq_true, false_implies,
-    eq_self_iff_true, true_implies]
+  wpx [W_176, o9, Op.ldf, hmt, BitVec.and_self, z0, s0, sz, Bool.not_true, Bool.false_eq_true, Bool.true_eq_false,
+    false_implies, eq_self_iff_true, true_implies]
   all_goals vfin
 
 /-- The pops, `rax` the result (`r8`): to the `ret`. -/
