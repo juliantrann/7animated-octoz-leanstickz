@@ -75,7 +75,9 @@ theorem vc_0 {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (hfk : rdq(
   wpx [W_0, W_24, W_29, W_41, o0, o1, o2, o3, Op.lda, Op.cmpmif, BitVec.and_self, hfk, hz, hd, hm2,
       BitVec.reduceBEq, BitVec.reduceAnd, decide_false, decide_true, Bool.not_true, Bool.not_false,
       Bool.false_eq_true, false_implies, true_implies, and_true, true_and, implies_true]
-  all_goals repeat' first | assumption | rfl | trivial | apply And.intro | intro _
+  trace_state
+  all_goals iterate 8 (first | assumption | apply And.intro | intro _)
+  all_goals first | rfl | trivial
 
 /-- From the arena to 80: a chunk of the main arena (bit 2 of the size word, in `al`, clear). -/
 theorem vc_57 {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte}
@@ -114,8 +116,10 @@ theorem fre_ok {fb : Addr} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBa
       GoG prof L o gev gP gE Z t')
     (kf : X.cpu.gpr.rdi ≠ 0#64 → ∀ (Y : State) (t' : Nat), KeptW Wl s₀ Y → Agree F Y.proc.mm.mem V →
       Y.cpu.rip = Ifr.ifr_at →
-      Y.cpu.gpr = { X.cpu.gpr with rax := szw V X.cpu.gpr.rdi, rsi := X.cpu.gpr.rdi + 18446744073709551600#64,
-        rdi := 7940672#64, rdx := 0#64 } →
+      Y.cpu.gpr =
+        { X.cpu.gpr with
+          rax := szw V X.cpu.gpr.rdi, rsi := X.cpu.gpr.rdi + 18446744073709551600#64, rdi := 7940672#64,
+          rdx := 0#64 } →
       GoG prof L o gev gP gE Y t') :
     GoG prof L o gev gP gE X t := by
   by_cases h0 : X.cpu.gpr.rdi = 0#64
@@ -133,8 +137,10 @@ theorem fre_ok {fb : Addr} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBa
   · have h := hok h0
     obtain ⟨-, hm4, -⟩ := hok h0
     refine (c_0 prof fb).run c hfs hin
-      (fun j' g' _ V' => j' = 57 ∧ g' = { X.cpu.gpr with rax := szw V X.cpu.gpr.rdi,
-        rsi := X.cpu.gpr.rdi + 18446744073709551600#64, rsp := X.cpu.gpr.rsp - 24#64 } ∧ V' = V) hK hA
+      (fun j' g' _ V' => j' = 57 ∧
+        g' = { X.cpu.gpr with
+               rax := szw V X.cpu.gpr.rdi, rsi := X.cpu.gpr.rdi + 18446744073709551600#64,
+               rsp := X.cpu.gpr.rsp - 24#64 } ∧ V' = V) hK hA
       (by rw [addr_add_zero]; exact hrip) (vc_0 hfk fh h0 h) ?_
     rintro j' g fl V₁ ⟨rfl, rfl, hV₁⟩ Y t₁ hKY hAY hrY hgY -
     subst V₁
