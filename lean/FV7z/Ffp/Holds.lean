@@ -202,8 +202,7 @@ theorem inc32 {i : Nat} (h : i + 1 < 2 ^ 32) :
     BitVec.setWidth 64 (BitVec.setWidth 32 (BitVec.ofNat 64 i) + 1#32) = BitVec.ofNat 64 (i + 1) := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_setWidth, e32 h]
-  simp only [BitVec.toNat_ofNat, Nat.reducePow]
-  omega
+  simp only [BitVec.toNat_ofNat, Nat.reducePow] <;> omega
 
 /-- `i + 1` below the count `x`: `jbe` not taken. -/
 theorem cmp_lt {x : BitVec 32} {i : Nat} (h : i + 1 < x.toNat) :
@@ -496,14 +495,17 @@ theorem lpHead {i : Nat} (c : Seg prof F Wl L s₀ o) (hE : Env F Wl L V₀ g₀
       (vc_62z (hsame.2 hS) (by rw [zs]; exact q0) (by rw [zs]; exact q8) (by rw [zs]; exact q16)) ?_
     rintro j' g fl V₂ ⟨rfl, rfl, hV₂⟩ Y₃ t₃ hK₃ hA₃ hr₃ hg₃ -
     subst V₂
+    have hrx : (gZ V' Z.cpu.gpr).rax = BitVec.ofNat 64 i := by
+      show BitVec.setWidth 64 (BitVec.setWidth 32 Z.cpu.gpr.rbx) = _
+      rw [zb]
+      exact sw32 (by omega)
     exact fin c hE hin₂ h₂ kE (by decide) (ret_72 _) hK₃ hA₃ hI'.d hI'.ra hr₃
       (by rw [hg₃]; show Z.cpu.gpr.rsp + 8 + 8 + 8 = _; rw [zs]; exact p0)
       (by rw [hg₃]; show rdq(V', Z.cpu.gpr.rsp) = _; rw [zs]; exact hI'.rbx)
       (by rw [hg₃]; show rdq(V', Z.cpu.gpr.rsp + 8) = _; rw [zs, p16]; exact hI'.rbp)
       (by rw [hg₃]; show rdq(V', Z.cpu.gpr.rsp + 8 + 8) = _; rw [zs, p8]; exact hI'.r12)
       (by rw [hg₃]; exact z13) (by rw [hg₃]; exact z14) (by rw [hg₃]; exact z15)
-      (Or.inl ⟨i, hi, by rw [hg₃]; show BitVec.setWidth 64 (BitVec.setWidth 32 Z.cpu.gpr.rbx) = _; rw [zb];
-        exact sw32 (by omega), hS, hno⟩)
+      (Or.inl ⟨i, hi, by rw [hg₃]; exact hrx, hS, hno⟩)
   have hz : ¬BitVec.setWidth 32 Z.cpu.gpr.rax = 0 := fun h => hS (hsame.1 h)
   by_cases hlt : i + 1 < nP V₀ g₀
   · -- the next pair
@@ -511,10 +513,13 @@ theorem lpHead {i : Nat} (c : Seg prof F Wl L s₀ o) (hE : Env F Wl L V₀ g₀
       (vc_62n hz (by rw [zp]; exact hE.n8.ft) (by rw [zp, zb, hI'.d.n]; exact cmp_lt hlt)) ?_
     rintro j' g fl V₂ ⟨rfl, rfl, hV₂⟩ Y₃ t₃ hK₃ hA₃ hr₃ hg₃ -
     subst V₂
+    have hbx : (gN Z.cpu.gpr).rbx = BitVec.ofNat 64 (i + 1) := by
+      show BitVec.setWidth 64 (BitVec.setWidth 32 Z.cpu.gpr.rbx + 1#32) = _
+      rw [zb]
+      exact inc32 (by omega)
     refine kn hlt Y₃ t₃ V' hK₃ hA₃ hI' hr₃ ?_ ?_
     · rw [hg₃]
-      exact ⟨zs, by show BitVec.setWidth 64 (BitVec.setWidth 32 Z.cpu.gpr.rbx + 1#32) = _; rw [zb];
-        exact inc32 (by omega), zp, z12, z13, z14, z15⟩
+      exact ⟨zs, hbx, zp, z12, z13, z14, z15⟩
     · intro k hk
       rcases Nat.lt_succ_iff_lt_or_eq.1 hk with hk | rfl
       · exact hno k hk
@@ -578,10 +583,11 @@ theorem ffp_ok (c : Seg prof F Wl L s₀ o) {V : Addr → Byte} (hE : Env F Wl L
     subst V₁
     have hn : 0 < nP V X.cpu.gpr := by
       have : rdd(V, X.cpu.gpr.rdi + 8#64).toNat ≠ 0 := fun h => h0 (BitVec.eq_of_toNat_eq h)
+      show 0 < rdd(V, X.cpu.gpr.rdi + 8#64).toNat
       omega
     exact lpAll c hE hin₂ h₂ hcmp kE (nP V X.cpu.gpr - 1) 0 (by omega) Y t₁ _ hKY hAY
       (inv1 V X.cpu.gpr hE.s0 hE.s8 hE.n8 hE.it hE.pf hE.sl hE.nm hra) hrY
-      ⟨by rw [hgY]; exact x24, by rw [hgY]; rfl, by rw [hgY], by rw [hgY], by rw [hgY], by rw [hgY], by rw [hgY]⟩
+      ⟨by rw [hgY]; exact x24, by rw [hgY], by rw [hgY], by rw [hgY], by rw [hgY], by rw [hgY], by rw [hgY]⟩
       (fun k hk => absurd hk (Nat.not_lt_zero k))
 
 end FV7z.Ffp
