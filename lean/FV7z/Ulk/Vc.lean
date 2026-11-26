@@ -1,5 +1,6 @@
 import FV7z.Ulk.Steps
 import FV7z.Lemmas.CmpImm
+import FV7z.Tun.Inv
 /-!
 # `unlink_chunk`: the straight pieces (PLAN.md §M, M1)
 
