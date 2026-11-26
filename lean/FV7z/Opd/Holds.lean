@@ -310,7 +310,8 @@ theorem vc_219 {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte}
     W_219 fb F Wl (fun j' g' _ V' => j' = 254 ∧ g' = dG V g ∧ V' = V) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at hc f152 p1 p2 p3 p4 ⊢
-  wpx [W_219, W_238, o9, o10, Op.xormf, hc, BitVec.xor_self, decide_true, Bool.not_true, Bool.false_eq_true,
+  have z0 : ((0#64 : BitVec 64) == 0) = true := by decide
+  wpx [W_219, W_238, o9, o10, Op.xormf, hc, BitVec.xor_self, z0, decide_true, Bool.not_true, Bool.false_eq_true,
     false_implies, eq_self_iff_true, true_implies]
   all_goals vfin
 
