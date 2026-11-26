@@ -28,7 +28,13 @@ theorem ret_69 (feat : Features) : Dec feat utr 69 (FV7z.mk .ret 64 [] 1) :=
 
 /-! ## Arithmetic -/
 
-/-- `lea esi, [rcx - 9]; cmp esi, 1; jbe` not taken for a character other than 9 and 10. -/
+/-- `lea esi, [rcx - 9]; cmp esi, 1; jbe` taken for 9 and 10. -/
+theorem b1t {c : BitVec 32} (h : c = 9#32 ∨ c = 10#32) :
+    (decide ((BitVec.setWidth 32 (BitVec.setWidth 64 c + 18446744073709551607#64)).toNat < 1) ||
+      decide (BitVec.setWidth 32 (BitVec.setWidth 64 c + 18446744073709551607#64) = 1#32)) = true := by
+  rcases h with rfl | rfl <;> decide
+
+/-- Not taken for a character other than 9 and 10. -/
 theorem b1f {c : BitVec 32} (h1 : c ≠ 9#32) (h2 : c ≠ 10#32) :
     (decide ((BitVec.setWidth 32 (BitVec.setWidth 64 c + 18446744073709551607#64)).toNat < 1) ||
       decide (BitVec.setWidth 32 (BitVec.setWidth 64 c + 18446744073709551607#64) = 1#32)) = false := by
@@ -192,16 +198,16 @@ theorem vc_0 {f : Rflags} (hF : Fp F V₀ g₀.rdi) :
     exact x32 (n := (len V₀ rdi).toNat) (by om) (by exact Nat.le_refl _)
       (by exact fun j hj h => absurd hj (by om)) (by om) (by exact shl4 _) (by exact swl _) rfl
 
-set_option maxHeartbeats 3000000 in
-/-- The loop's head, the character `m` blank: the step back. -/
-theorem vc_32w {m : Nat} {g : Gprs} {f : Rflags} {cv : BitVec 32} (hF : Fp F V₀ g₀.rdi)
-    (h : I32 g₀ V₀ (m + 1) g) (hc : ch V₀ g₀.rdi m = cv) (hw : Ws cv) :
+set_option maxHeartbeats 2000000 in
+/-- The loop's head, the character `m` 9 or 10: the step back. -/
+theorem vc_32a {m : Nat} {g : Gprs} {f : Rflags} (hF : Fp F V₀ g₀.rdi) (h : I32 g₀ V₀ (m + 1) g)
+    (hc : ch V₀ g₀.rdi m = 9#32 ∨ ch V₀ g₀.rdi m = 10#32) :
     W_32 F Wl (Nx g₀ V₀ (2 * (m + 1))) g f V₀ := by
+  have hw : Ws (ch V₀ g₀.rdi m) := hc.elim Or.inl (fun e => Or.inr (Or.inl e))
   obtain ⟨-, hn, ht, a, c, d, s, rfl, ha, hd⟩ := h
   have ht' : Tail V₀ g₀.rdi (m + 1 - 1) := fun j hj hk => by
     by_cases e : j = m
     · subst e
-      rw [hc]
       exact hw
     · exact ht j hj (by omega)
   have hA := ldA (chs V₀ g₀.rdi) ha
@@ -211,18 +217,47 @@ theorem vc_32w {m : Nat} {g : Gprs} {f : Rflags} {cv : BitVec 32} (hF : Fp F V�
   dsimp only at hn ht' fm hc hA ⊢
   have hA' := hA
   dsimp only [chs] at hA'
-  have hc1 : rdd(V₀, Addr.add (chs V₀ rdi) (4 * m)) = cv := hc
-  have hc2 : rdd(V₀, Addr.add (rdq(V₀, rdi)) (4 * m)) = cv := hc
-  rcases hw with rfl | rfl | rfl
-  all_goals
-    wpx [W_32, W_45, W_80, W_85, o2, o3, o6, o7, hA, hA', hc1, hc2, eq_self_iff_true, decide_true, decide_false,
-      Bool.not_true, Bool.not_false, Bool.true_eq_false, Bool.false_eq_true, Bool.true_or, Bool.false_or,
-      false_implies, true_implies, true_and, and_true, implies_true]
-    all_goals repeat' (first
-      | with_reducible exact fm
-      | apply And.intro
-      | intro)
-    all_goals exact x50 (n := m + 1) (by om) (by exact hn) (by exact ht') (by om) (by exact ha) (by exact hd) rfl
+  have hb1 := b1t (c := rdd(V₀, Addr.add (chs V₀ rdi) (4 * m))) hc
+  have hb1' : (decide ((BitVec.setWidth 32 (BitVec.setWidth 64 rdd(V₀, Addr.add (rdq(V₀, rdi)) (4 * m)) +
+      18446744073709551607#64)).toNat < 1) || decide (BitVec.setWidth 32 (BitVec.setWidth 64
+      rdd(V₀, Addr.add (rdq(V₀, rdi)) (4 * m)) + 18446744073709551607#64) = 1#32)) = true := hb1
+  wpx [W_32, W_45, W_80, W_85, o2, o3, o6, o7, hA, hA', hb1, hb1', eq_self_iff_true, Bool.true_eq_false,
+    false_implies, true_implies, true_and, and_true, implies_true]
+  all_goals repeat' (first
+    | with_reducible exact fm
+    | apply And.intro
+    | intro)
+  all_goals exact x50 (n := m + 1) (by om) (by exact hn) (by exact ht') (by om) (by exact ha) (by exact hd) rfl
+
+set_option maxHeartbeats 2000000 in
+/-- The loop's head, the character `m` a ' ': the step back. -/
+theorem vc_32b {m : Nat} {g : Gprs} {f : Rflags} (hF : Fp F V₀ g₀.rdi) (h : I32 g₀ V₀ (m + 1) g)
+    (hc : ch V₀ g₀.rdi m = 32#32) :
+    W_32 F Wl (Nx g₀ V₀ (2 * (m + 1))) g f V₀ := by
+  have hw : Ws (ch V₀ g₀.rdi m) := Or.inr (Or.inr hc)
+  obtain ⟨-, hn, ht, a, c, d, s, rfl, ha, hd⟩ := h
+  have ht' : Tail V₀ g₀.rdi (m + 1 - 1) := fun j hj hk => by
+    by_cases e : j = m
+    · subst e
+      exact hw
+    · exact ht j hj (by omega)
+  have hA := ldA (chs V₀ g₀.rdi) ha
+  obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g₀
+  obtain ⟨-, -, fk⟩ := hF
+  have fm := fk m (by omega)
+  dsimp only at hn ht' fm hc hA ⊢
+  have hA' := hA
+  dsimp only [chs] at hA'
+  have hc1 : rdd(V₀, Addr.add (chs V₀ rdi) (4 * m)) = 32#32 := hc
+  have hc2 : rdd(V₀, Addr.add (rdq(V₀, rdi)) (4 * m)) = 32#32 := hc
+  wpx [W_32, W_45, W_80, W_85, o2, o3, o6, o7, hA, hA', hc1, hc2, eq_self_iff_true, decide_true, decide_false,
+    Bool.not_true, Bool.not_false, Bool.true_eq_false, Bool.false_eq_true, Bool.true_or, Bool.false_or,
+    false_implies, true_implies, true_and, and_true, implies_true]
+  all_goals repeat' (first
+    | with_reducible exact fm
+    | apply And.intro
+    | intro)
+  all_goals exact x50 (n := m + 1) (by om) (by exact hn) (by exact ht') (by om) (by exact ha) (by exact hd) rfl
 
 set_option maxHeartbeats 2000000 in
 /-- The loop's head, the character `m` not blank: the `ret` if none was passed, else the stores. -/
@@ -316,7 +351,10 @@ theorem vc_59 {g : Gprs} {f : Rflags} (h : I59 g₀ V₀ g)
 theorem vc_32 {m : Nat} {g : Gprs} {f : Rflags} (hF : Fp F V₀ g₀.rdi) (h : I32 g₀ V₀ (m + 1) g) :
     W_32 F Wl (Nx g₀ V₀ (2 * (m + 1))) g f V₀ := by
   by_cases hw : Ws (ch V₀ g₀.rdi m)
-  · exact vc_32w hF h rfl hw
+  · rcases hw with e | e | e
+    · exact vc_32a hF h (Or.inl e)
+    · exact vc_32a hF h (Or.inr e)
+    · exact vc_32b hF h e
   · exact vc_32n hF h hw
 
 theorem vcAll (hF : Fp F V₀ g₀.rdi)
