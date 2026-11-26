@@ -427,11 +427,6 @@ theorem e166 (hFr : Fr g₀ V₀ fb V) (hax : g.rax = 0 ∨ g.rax = 1) (hs : g.r
 local macro "vc_fin" : tactic =>
   `(tactic| repeat' (first | rfl | assumption | (intro h; exact absurd h (by decide)) | constructor | intro _))
 
-/-- `Rk` as equations substituted. -/
-local macro "kept" h:ident : tactic =>
-  `(tactic| (obtain ⟨hb, hp, hs, h12, h13, h14, h15⟩ := $h:ident; dsimp only at hb hp hs h12 h13 h14 h15;
-    subst hb hp hs h12 h13 h14 h15))
-
 /-- `Rk` of the registers after the substitution. -/
 local macro "rR" : term => `(⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩)
 
@@ -462,7 +457,9 @@ theorem vc_47 (hP : Pe F Wl fb n g₀ V₀) (hR : Rk g₀ g) (hFr : Fr g₀ V₀
     exact (hP.cn fun h0 => h (hcv.trans h0)).2
   have hjv := jt_V hP hFr
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
-  kept hR
+  obtain ⟨hb, hp, hs, h12, h13, h14, h15⟩ := hR
+  dsimp only at hb hp hs h12 h13 h14 h15
+  subst hb hp hs h12 h13 h14 h15
   wpx -implicitDefEqProofs [W_47, W_56, W_65, W_74, W_94, o1, o2, o3, o4, o5, Op.ldsx]
   generalize ofBytesLE 64 (List.map V (byteAddrs (fsp g₀) 8)) = E at hE ⊢
   refine ⟨f0, fun _ => eC (by decide) rR hFr (by decide), fun h1 => ?_⟩
@@ -476,32 +473,42 @@ theorem vc_47 (hP : Pe F Wl fb n g₀ V₀) (hR : Rk g₀ g) (hFr : Fr g₀ V₀
 /-- 112: the shift for `b`, to 122. -/
 theorem vc_112 (hR : Rk g₀ g) (hFr : Fr g₀ V₀ fb V) : W_112 fb F Wl (Nx g₀ V₀ fb n 3) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
-  kept hR
+  obtain ⟨hb, hp, hs, h12, h13, h14, h15⟩ := hR
+  dsimp only at hb hp hs h12 h13 h14 h15
+  subst hb hp hs h12 h13 h14 h15
   wpx [W_112, o6]
   exact e122 rR hFr (by decide)
 
 theorem vc_200 (hR : Rk g₀ g) (hFr : Fr g₀ V₀ fb V) : W_200 fb F Wl (Nx g₀ V₀ fb n 3) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
-  kept hR
+  obtain ⟨hb, hp, hs, h12, h13, h14, h15⟩ := hR
+  dsimp only at hb hp hs h12 h13 h14 h15
+  subst hb hp hs h12 h13 h14 h15
   wpx [W_200, o13]
   exact e122 rR hFr (by decide)
 
 theorem vc_224 (hR : Rk g₀ g) (hFr : Fr g₀ V₀ fb V) : W_224 fb F Wl (Nx g₀ V₀ fb n 3) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
-  kept hR
+  obtain ⟨hb, hp, hs, h12, h13, h14, h15⟩ := hR
+  dsimp only at hb hp hs h12 h13 h14 h15
+  subst hb hp hs h12 h13 h14 h15
   wpx [W_224, o14]
   exact e122 rR hFr (by decide)
 
 theorem vc_248 (hR : Rk g₀ g) (hFr : Fr g₀ V₀ fb V) : W_248 fb F Wl (Nx g₀ V₀ fb n 3) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
-  kept hR
+  obtain ⟨hb, hp, hs, h12, h13, h14, h15⟩ := hR
+  dsimp only at hb hp hs h12 h13 h14 h15
+  subst hb hp hs h12 h13 h14 h15
   wpx [W_248, o15]
   exact e122 rR hFr (by decide)
 
 /-- 176: `rax` = 0, to the check. -/
 theorem vc_176 (hR : Rk g₀ g) (hFr : Fr g₀ V₀ fb V) : W_176 fb F Wl (Nx g₀ V₀ fb n 3) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
-  kept hR
+  obtain ⟨hb, hp, hs, h12, h13, h14, h15⟩ := hR
+  dsimp only at hb hp hs h12 h13 h14 h15
+  subst hb hp hs h12 h13 h14 h15
   wpx [W_176, o11]
   exact fun _ => e144 rR hFr (by decide) (Or.inl (lf_xz _))
 
@@ -509,7 +516,9 @@ theorem vc_176 (hR : Rk g₀ g) (hFr : Fr g₀ V₀ fb V) : W_176 fb F Wl (Nx g�
 theorem vc_184 (hP : Pe F Wl fb n g₀ V₀) (hR : Rk g₀ g) (hFr : Fr g₀ V₀ fb V) :
     W_184 fb F Wl (Nx g₀ V₀ fb n 3) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
-  kept hR
+  obtain ⟨hb, hp, hs, h12, h13, h14, h15⟩ := hR
+  dsimp only at hb hp hs h12 h13 h14 h15
+  subst hb hp hs h12 h13 h14 h15
   wpx [W_184, o12]
   exact ⟨hP.wr, e144 rR (fr_st hP hFr _) (by decide) (Or.inr sw1)⟩
 
@@ -517,7 +526,9 @@ theorem vc_184 (hP : Pe F Wl fb n g₀ V₀) (hR : Rk g₀ g) (hFr : Fr g₀ V�
 theorem vc_122 (hP : Pe F Wl fb n g₀ V₀) (hR : Rk g₀ g) (hFr : Fr g₀ V₀ fb V) :
     W_122 fb F Wl (Nx g₀ V₀ fb n 2) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
-  kept hR
+  obtain ⟨hb, hp, hs, h12, h13, h14, h15⟩ := hR
+  dsimp only at hb hp hs h12 h13 h14 h15
+  subst hb hp hs h12 h13 h14 h15
   wpx [W_122, W_129, o7, o8, Op.shl64]
   exact fun _ => ⟨fun _ => e144 rR hFr (by decide) (Or.inl (lf_xz _)),
     fun _ _ => ⟨hP.wr, e144 rR (fr_st hP hFr _) (by decide) (Or.inr sw1)⟩⟩
@@ -537,7 +548,9 @@ theorem vc_144 (hP : Pe F Wl fb n g₀ V₀) (hR : Rk g₀ g) (hFr : Fr g₀ V�
   have hcl := hP.cl
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at hax
-  kept hR
+  obtain ⟨hb, hp, hs, h12, h13, h14, h15⟩ := hR
+  dsimp only at hb hp hs h12 h13 h14 h15
+  subst hb hp hs h12 h13 h14 h15
   wpx [W_144, W_160, o9, o10, Op.xormf, hc, BitVec.xor_self]
   repeat' (first | exact f8 | exact hcl | exact f24 | exact f32 | exact e166 hFr hax rfl rfl rfl rfl rfl rfl rfl |
     (intro h; exact absurd h (by decide)) | apply And.intro | intro _)
