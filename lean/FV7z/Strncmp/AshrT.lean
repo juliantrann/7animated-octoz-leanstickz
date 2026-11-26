@@ -1,4 +1,5 @@
 import FV7z.Strncmp.Code
+import FV7z.Lemmas.Sse2b
 /-!
 # The shifted loops of `__strncmp_sse2` (PLAN.md G3, `strncmp`)
 
