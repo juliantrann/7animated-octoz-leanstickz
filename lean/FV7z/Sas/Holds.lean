@@ -329,13 +329,14 @@ theorem sas_z (c : Seg prof F Wl L s₀ o) (hin : CodeIn L sas_at sas) {Z : Stat
         r12 := rdq(V, Z.cpu.gpr.rsp + 8 + 8), rsp := Z.cpu.gpr.rsp + 8 + 8 + 8 } ∧ V' = V) hK hA hrip
     (vc_96 (by rw [hr]; exact fun i hi => hl i (by omega)) (by rw [hr]; exact ft hl 8 8 (by decide))
       (by rw [hr, p16]; exact ft hl 16 8 (by decide))) ?_
-  rintro j' g fl V₁ ⟨rfl, rfl, rfl⟩ Y t₁ hKY hAY hrY hgY -
+  rintro j' g fl V₁ ⟨rfl, rfl, hV⟩ Y t₁ hKY hAY hrY hgY -
+  subst V₁
   have hsY : Y.cpu.gpr.rsp = r + 24 := by rw [hgY, hr]; exact p24 r
   refine c.s_ret hKY hAY hin (lt_len (by decide)) hrY (ret_106 _) (by rw [hsY]; exact ft hl 24 8 (by decide))
     hin₂ h₂ (by rw [hsY]; exact hra) ?_
   rintro Z' t₂ hKZ hAZ ⟨hrZ, hgZ⟩
   refine k Z' t₂ hKZ hAZ hrZ ?_
-  rw [hgZ, hsY, hgY, hr, p16, hb0, hb1, hb2, q32, hrf]
+  rw [hgZ, hsY, hgY, hr, p16 r, hb0, hb1, hb2, q32, hrf]
   try rfl
 
 /-- From 73 to the return address, for the frame at `r` and the terminator at `q`: `rax` = `r8`, the saved registers
@@ -362,7 +363,8 @@ theorem sas_t (c : Seg prof F Wl L s₀ o) (hin : CodeIn L sas_at sas) {Z : Stat
       V' = Vz V Z.cpu.gpr) hK hA hrip
     (vc_73 (by rw [hqe]; exact hw) (by rw [hr]; exact fun i hi => hl i (by omega))
       (by rw [hr]; exact ft hl 8 8 (by decide)) (by rw [hr, p16]; exact ft hl 16 8 (by decide))) ?_
-  rintro j' g fl V₁ ⟨rfl, rfl, rfl⟩ Y t₁ hKY hAY hrY hgY -
+  rintro j' g fl V₁ ⟨rfl, rfl, hV⟩ Y t₁ hKY hAY hrY hgY -
+  subst V₁
   have hVz : Vz V Z.cpu.gpr = Vst V q (toBytesLE 0#32 4) := by
     show Vst V (Z.cpu.gpr.r8 + Z.cpu.gpr.rbx * 4#64) (toBytesLE 0#32 4) = _
     rw [hqe]
@@ -372,7 +374,7 @@ theorem sas_t (c : Seg prof F Wl L s₀ o) (hin : CodeIn L sas_at sas) {Z : Stat
     hin₂ h₂ (by rw [hsY, r3]; exact hra) ?_
   rintro Z' t₂ hKZ hAZ ⟨hrZ, hgZ⟩
   refine k Z' t₂ hKZ hAZ hrZ ?_
-  rw [hgZ, hsY, hgY, hVz, hr, p16, r0, r1, r2, hb0, hb1, hb2, q32, hrf]
+  rw [hgZ, hsY, hgY, hVz, hr, p16 r, r0, r1, r2, hb0, hb1, hb2, q32, hrf]
   try rfl
 
 /-- From the return of `malloc` (39) to the return address, for the frame at `r`: a null result (`kz`); else the
@@ -417,7 +419,8 @@ theorem sas_m {Pc : State → (Addr → Byte) → Prop} (c : Seg prof F Wl L s�
   by_cases h0 : Z.cpu.gpr.rax = 0
   · -- a null result
     refine (c_39 prof).run c hin (fun j' g' _ V' => j' = 96 ∧ g' = Z.cpu.gpr ∧ V' = V) hK hA hrip (vc_39z h0) ?_
-    rintro j' g fl V₁ ⟨rfl, rfl, rfl⟩ Y t₁ hKY hAY hrY hgY -
+    rintro j' g fl V₁ ⟨rfl, rfl, hV⟩ Y t₁ hKY hAY hrY hgY -
+    subst V₁
     exact sas_z c hin hKY hAY hrY (hgY ▸ hr) hrf hl hb0 hb1 hb2 hin₂ h₂ hra fun Z' t' hKZ hAZ hrZ hgZ =>
       kz h0 Z' t' hKZ hAZ hrZ (by rw [hgZ, hgY] <;> rfl)
   obtain ⟨hw, ha, hda, hwq, hq, hdq⟩ := hnz h0
@@ -426,14 +429,16 @@ theorem sas_m {Pc : State → (Addr → Byte) → Prop} (c : Seg prof F Wl L s�
   · -- `s` null
     refine (c_39 prof).run c hin (fun j' g' _ V' => j' = 73 ∧ g' = { Z.cpu.gpr with r8 := Z.cpu.gpr.rax + 4#64 } ∧
         V' = Va V Z.cpu.gpr) hK hA hrip (vc_4z h0 hb hw) ?_
-    rintro j' g fl V₁ ⟨rfl, rfl, rfl⟩ Y t₁ hKY hAY hrY hgY -
+    rintro j' g fl V₁ ⟨rfl, rfl, hV⟩ Y t₁ hKY hAY hrY hgY -
+    subst V₁
     exact sas_t c hin hKY hAY hrY (by rw [hgY]; exact hr) hrf (by rw [hgY] <;> rfl) hp hl hwq hq hdq
       (r0.trans hb0) (r1.trans hb1) (r2.trans hb2) hin₂ h₂ (r3.trans hra) fun Z' t' hKZ hAZ hrZ hgZ =>
       k0 h0 hb Z' t' hKZ hAZ hrZ (by rw [hgZ, hgY] <;> rfl)
   · -- through `memcpy`
     refine (c_39 prof).run c hin (fun j' g' _ V' => j' = 65 ∧ g' = gC Z.cpu.gpr ∧ V' = Va V Z.cpu.gpr) hK hA hrip
       (vc_4n h0 hb hw) ?_
-    rintro j' g fl V₁ ⟨rfl, rfl, rfl⟩ Y t₁ hKY hAY hrY hgY -
+    rintro j' g fl V₁ ⟨rfl, rfl, hV⟩ Y t₁ hKY hAY hrY hgY -
+    subst V₁
     have hsY : Y.cpu.gpr.rsp = r := by rw [hgY]; exact hr
     refine c.s_call hKY hAY hin (lt_len (by decide)) hrY (call_65 _) hinC hC (by decide) (by rw [hsY]; exact hs) ?_
     rintro Y₂ t₂ hK₂ hA₂ ⟨hr₂, hg₂⟩
@@ -444,7 +449,8 @@ theorem sas_m {Pc : State → (Addr → Byte) → Prop} (c : Seg prof F Wl L s�
     intro Z₂ V₂ t'' hKZ hAZ hrZ hzs hzb hza h0' h1' h2' h3' hPc
     refine (c_70 prof).run c hin (fun j' g' _ V' => j' = 73 ∧ g' = { Z₂.cpu.gpr with r8 := Z₂.cpu.gpr.rax } ∧
         V' = V₂) hKZ hAZ hrZ vc_70 ?_
-    rintro j' g fl V₃ ⟨rfl, rfl, rfl⟩ U t₃ hKU hAU hrU hgU -
+    rintro j' g fl V₃ ⟨rfl, rfl, hV⟩ U t₃ hKU hAU hrU hgU -
+    subst V₃
     exact sas_t c hin hKU hAU hrU (by rw [hgU]; exact hzs) hrf
       (by rw [hgU]; show Z₂.cpu.gpr.rax + Z₂.cpu.gpr.rbx * 4#64 = qq Z.cpu.gpr; rw [hza, hzb])
       hp hl hwq hq hdq h0' h1' h2' hin₂ h₂ h3' fun Z' t' hKZ' hAZ' hrZ' hgZ' =>
@@ -530,7 +536,8 @@ theorem sas_ok {Pm Pc : State → (Addr → Byte) → Prop} (c : Seg prof F Wl L
   · -- to the `call` of `malloc`
     refine (c_0 prof).run c hin (fun j' g' _ V' => j' = 34 ∧ g' = gM X.cpu.gpr ∧ V' = Vp V X.cpu.gpr) hK hA hrip'
       (vc_s h1 h2 h3 (by rw [cnd]; exact decide_eq_true hsm)) ?_
-    rintro j' g fl V₁ ⟨rfl, rfl, rfl⟩ Y t₁ hKY hAY hrY hgY -
+    rintro j' g fl V₁ ⟨rfl, rfl, hV⟩ Y t₁ hKY hAY hrY hgY -
+    subst V₁
     have hsY : Y.cpu.gpr.rsp = X.cpu.gpr.rsp - 24 := by rw [hgY]; exact s24 _
     refine c.s_call hKY hAY hin (lt_len (by decide)) hrY (call_34 _) hinM hM (by decide)
       (by rw [hsY, s32]; exact fun i hi => hs i (by omega)) ?_
@@ -556,7 +563,8 @@ theorem sas_ok {Pm Pc : State → (Addr → Byte) → Prop} (c : Seg prof F Wl L
     refine (c_0 prof).run c hin (fun j' g' _ V' => j' = 96 ∧
         g' = { X.cpu.gpr with rbx := nn X.cpu.gpr, rsp := X.cpu.gpr.rsp - 8 - 8 - 8 } ∧ V' = Vp V X.cpu.gpr)
       hK hA hrip' (vc_b h1 h2 h3 (by rw [cnd]; exact decide_eq_false hsm)) ?_
-    rintro j' g fl V₁ ⟨rfl, rfl, rfl⟩ Y t₁ hKY hAY hrY hgY -
+    rintro j' g fl V₁ ⟨rfl, rfl, hV⟩ Y t₁ hKY hAY hrY hgY -
+    subst V₁
     obtain ⟨r0, r1, r2, r3⟩ := vp_rd (V := V) hp hp8
     exact sas_z c hin hKY hAY hrY (by rw [hgY]; exact s24 _) (a32 _) hl r0 r1 r2 hin₂ h₂ (r3.trans hra)
       fun Z t' hKZ hAZ hrZ hgZ => kb (by omega) Z t' hKZ hAZ hrZ (by rw [hgZ, hgY] <;> rfl)
