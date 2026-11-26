@@ -188,7 +188,8 @@ theorem dr2_ok (c : Seg prof F Wl L s₀ o) (hin : CodeIn L dr2_at dr2)
   refine (c_63 prof).run c hin (fun j g _ V'' => j = 64 ∧ V'' = V₃ ∧
       g = { Y4.cpu.gpr with rbx := rdq(V₃, Y4.cpu.gpr.rsp), rsp := Y4.cpu.gpr.rsp + 8 })
     hK4 hA4 hr4 (vc_63 (by rw [hs4]; exact hl1) fun _ => ⟨rfl, rfl, rfl⟩) ?_
-  rintro j g fl V₄ ⟨rfl, rfl, rfl⟩ Y5 t₆ hK5 hA5 hr5 hg5 -
+  rintro j g fl V₄ ⟨rfl, hV₄, rfl⟩ Y5 t₆ hK5 hA5 hr5 hg5 -
+  rw [hV₄] at hA5
   have hs5 : Y5.cpu.gpr.rsp = X.cpu.gpr.rsp := by
     rw [hg5]; show Y4.cpu.gpr.rsp + 8 = _; rw [hs4]; exact su8 _
   have hrd0 : rdq(V₃, X.cpu.gpr.rsp) = e₂.add j₂ := by
