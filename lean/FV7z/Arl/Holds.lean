@@ -200,8 +200,13 @@ theorem arl_ok {P1 P2 P3 : State → (Addr → Byte) → Prop} (c : Seg prof F W
     (kr : ∀ (Z₃ : State) (V₃ : Addr → Byte) (Z' : State) (t' : Nat), P3 Z₃ V₃ → KeptW Wl s₀ Z' →
       Agree F Z'.proc.mm.mem (W2 V₃ X.cpu.gpr.rdi Z₃.cpu.gpr.r12 (BitVec.setWidth 32 X.cpu.gpr.rsi)) →
       Z'.cpu.rip = e₂.add j₂ →
-      Z'.cpu.gpr = { Z₃.cpu.gpr with rbx := X.cpu.gpr.rbx, rbp := X.cpu.gpr.rbp, r12 := X.cpu.gpr.r12,
-        r13 := X.cpu.gpr.r13, rsp := X.cpu.gpr.rsp + 8 } →
+      Z'.cpu.gpr =
+        { Z₃.cpu.gpr with
+            rbx := X.cpu.gpr.rbx
+            rbp := X.cpu.gpr.rbp
+            r12 := X.cpu.gpr.r12
+            r13 := X.cpu.gpr.r13
+            rsp := X.cpu.gpr.rsp + 8 } →
       GoG prof L o gev gP gE Z' t') :
     GoG prof L o gev gP gE X t := by
   have hlt := X.cpu.gpr.rsp.isLt
@@ -336,8 +341,13 @@ theorem arl_ok {P1 P2 P3 : State → (Addr → Byte) → Prop} (c : Seg prof F W
   have h16 : ∀ i < 8, Foot F.data (Addr.add (X.cpu.gpr.rsp - 16) i) := fun i hi => c.hws _ (hs2 i hi)
   have h8 : ∀ i < 8, Foot F.data (Addr.add (X.cpu.gpr.rsp - 8) i) := fun i hi => c.hws _ (hs1 i hi)
   refine (c_63 prof).run c hin (fun j' g' _ V₄ => j' = 79 ∧
-      g' = { Z₃.cpu.gpr with rbx := X.cpu.gpr.rbx, rbp := X.cpu.gpr.rbp, r12 := X.cpu.gpr.r12,
-        r13 := X.cpu.gpr.r13, rsp := X.cpu.gpr.rsp } ∧
+      g' =
+        { Z₃.cpu.gpr with
+            rbx := X.cpu.gpr.rbx
+            rbp := X.cpu.gpr.rbp
+            r12 := X.cpu.gpr.r12
+            r13 := X.cpu.gpr.r13
+            rsp := X.cpu.gpr.rsp } ∧
       V₄ = W2 V₃ X.cpu.gpr.rdi Z₃.cpu.gpr.r12 (BitVec.setWidth 32 X.cpu.gpr.rsi)) hK₈ hA₈ hr₈
     (vc_63 (by rw [hz3b]; exact w0) (by rw [hz3b]; exact w12) (by rw [hz3s, r32]; exact h32)
       (by rw [hz3s, r32, r24]; exact h24) (by rw [hz3s, r32, r24, r16]; exact h16)
