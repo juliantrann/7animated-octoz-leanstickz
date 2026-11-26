@@ -23,23 +23,26 @@ theorem peqb_comm (a b : BitVec 128) : peqb a b = peqb b a := by
   congr 1
   funext j
   by_cases h : lane 8 a j = lane 8 b j
-  · rw [if_pos h, if_pos h.symm]
-  · rw [if_neg h, if_neg (Ne.symm h)]
+  · simp only [h, eq_self_iff_true, ↓reduceIte]
+  · simp only [h, Ne.symm h, ↓reduceIte]
 
 theorem msb_cm (a b : BitVec 128) {j : Nat} (hj : j < 16) :
     (lane 8 (psb (peqb a b) (peqb 0 a)) j).msb = decide (lane 8 a j = lane 8 b j ∧ lane 8 a j ≠ 0) := by
-  simp only [psb, peqb, lane_ofBytes _ hj, lane_zero]
+  simp only [psb, peqb, lane_ofBytes _ hj, Strlen.lane_zero]
   generalize lane 8 a j = x
   generalize lane 8 b j = y
   by_cases h1 : x = y <;> by_cases h2 : (0 : BitVec 8) = x
-  · rw [if_pos h1, if_pos h2, decide_eq_false fun h => h.2 h2.symm]
+  · subst h1 h2
     decide
-  · rw [if_pos h1, if_neg h2, decide_eq_true ⟨h1, fun h => h2 h.symm⟩]
-    decide
-  · rw [if_neg h1, if_pos h2, decide_eq_false fun h => h1 h.1]
-    decide
-  · rw [if_neg h1, if_neg h2, decide_eq_false fun h => h1 h.1]
-    decide
+  · subst h1
+    have h3 : x ≠ 0 := fun h => h2 h.symm
+    simp only [h2, eq_self_iff_true, ↓reduceIte, h3, ne_eq, not_false_eq_true, and_self, decide_true]
+    all_goals decide
+  · subst h2
+    simp only [h1, eq_self_iff_true, ↓reduceIte, false_and, decide_false]
+    all_goals decide
+  · simp only [h1, h2, ↓reduceIte, false_and, decide_false]
+    all_goals decide
 
 theorem getLsbD_cmask (a b : BitVec 128) (i : Nat) :
     (cmask a b).getLsbD i = (decide (i < 16) && decide (lane 8 a i = lane 8 b i ∧ lane 8 a i ≠ 0)) := by
@@ -86,10 +89,10 @@ theorem lane_align (p q : BitVec 128) {k j : Nat} (hk : k ≤ 16) (hj : j < 16) 
       if j + k < 16 then lane 8 p (j + k) else lane 8 q (j + k - 16) := by
   rw [lane_or, lane_shr p k hj, lane_shl q (16 - k) hj]
   by_cases h : j + k < 16
-  · rw [if_pos h, if_neg (by omega)]
-    exact BitVec.zero_or (x := _)
-  · rw [if_neg h, if_pos (by omega), show j - (16 - k) = j + k - 16 by omega]
-    exact BitVec.or_zero (x := _)
+  · have h2 : ¬ 16 - k ≤ j := by omega
+    simp [h, h2]
+  · have h2 : 16 - k ≤ j := by omega
+    simp [h, h2, show j - (16 - k) = j + k - 16 by omega]
 
 end Strncmp
 end FV7z

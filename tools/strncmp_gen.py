@@ -323,7 +323,7 @@ for (a, b) in tp: FIELDS.append(("p", a, b))
 for s in T_SG: FIELDS.append(("j", s, None))
 FIELDS.sort(key=lambda f: f[1])
 
-at_ = ['import FV7z.Strncmp.Code\n' + HEADER.format(
+at_ = ['import FV7z.Strncmp.Code\nimport FV7z.Lemmas.Sse2b\n' + HEADER.format(
     title="The shifted loops of `__strncmp_sse2` (PLAN.md G3, `strncmp`)",
     body="""When the two strings' offsets in their 16 bytes differ, `__strncmp_sse2` swaps them so that `rsi`'s is the greater, by
 `k = 16 - (rsi's - rdi's)` jumps by its table to one of 15 loops at `c = 400 + 384 * (k - 1)`, and compares `rsi`'s
