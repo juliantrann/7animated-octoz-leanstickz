@@ -1,3 +1,4 @@
-import FV7z.Pcs.Holds
+import FV7z.Dde.Holds
 open FV7z
-#print axioms FV7z.Pcs.pcs_ok
+#print axioms FV7z.Dde.dde_call
+#print axioms FV7z.Dde.dde_ret
