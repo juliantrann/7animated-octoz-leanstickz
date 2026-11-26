@@ -1,4 +1,5 @@
 import FV7z.Mnx.Holds
+import FV7z.Im7.Cls
 /-!
 # `malloc` after the first call: the blocks for a symbolic `nb` (PLAN.md G3, `malloc`)
 
@@ -78,13 +79,13 @@ set_option maxHeartbeats 50000000 in
 clear. -/
 theorem vc_114g {fb sw : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte}
     (hax : g.rax ≠ 0#64) (hsz : rdq(V, g.rax + 18446744073709551608#64) = sw)
-    (h2 : (BitVec.setWidth 8 sw &&& 2#8 == 0#8) = true) (h4 : (BitVec.setWidth 8 sw &&& 4#8 == 0#8) = true)
+    (h2 : BitVec.setWidth 8 sw &&& 2#8 = 0) (h4 : BitVec.setWidth 8 sw &&& 4#8 = 0)
     (hfz : ∀ i < 8, Foot F.data (Addr.add (g.rax + 18446744073709551608#64) i)) :
     W_114 fb F Wl (fun j' g' _ V' => j' = 164 ∧ g' = { g with rax := sw, r8 := g.rax } ∧ V' = V) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at hax hsz hfz ⊢
   have hax' : (rax == 0) = false := beq_eq_false_iff_ne.2 hax
-  wpx [W_114, W_126, W_134, o7, o8, o9, hax', hsz, h2, h4, BitVec.and_self,
+  wpx [W_114, W_126, W_134, o7, o8, o9, hax', hsz, h2, h4, beq_self_eq_true, BitVec.and_self,
     BitVec.reduceAdd, BitVec.reduceAnd, BitVec.reduceSetWidth, BitVec.reduceHShiftRight, BitVec.reduceHShiftLeft,
     BitVec.reduceUShiftRight, BitVec.reduceShiftLeft, BitVec.reduceBEq, BitVec.reduceEq, BitVec.reduceToNat,
     BitVec.reduceSub, BitVec.reduceMul, BitVec.reduceLT, BitVec.reduceULT, BitVec.reduceOr, BitVec.reduceXOr,

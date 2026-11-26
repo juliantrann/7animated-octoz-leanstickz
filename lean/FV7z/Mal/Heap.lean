@@ -228,7 +228,7 @@ theorem mal_hp {fb : Addr} {hi m B : Nat} (c : Seg prof F Wl L sâ‚€ o) (hfs : sâ
       simp only [Addr.add]; rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega
     exact (hTF (Addr.add x i) (by omega) (by omega)).1
   refine Mnx.mal_next (S := X.cpu.gpr.rsp - 216#64) (T := T) (szw := szw) (sm := sm) (C := C)
-    (n := X.cpu.gpr.rdi) (nb := nb) c hfs hin hinI hK hA hcls (Im6.secN hcls) hrip rfl eS'.symm (by omega)
+    (n := X.cpu.gpr.rdi) (nb := nb) c hfs hin hinI hK hA (.inl hcls) (Im6.secN hcls) hrip rfl eS'.symm (by omega)
     (by omega) (by rw [f40, eS]; omega) (by rw [f24, eS]; omega) G.hk G.fh G.tc
     (fun h0 => by rw [h0] at hc1; simp only [BitVec.toNat_ofNat, Nat.zero_mod] at hc1; omega)
     (by rw [eS]; omega) G.cn G.fn G.t1 G.f1 G.gm G.fc G.fz G.bk G.lb G.tb G.un G.m0 G.m1 G.m2 G.m3 G.W G.gf G.tf
