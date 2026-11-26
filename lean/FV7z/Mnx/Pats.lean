@@ -6,7 +6,7 @@ import FV7z.Lemmas.BlkOps3
 /-!
 # The stretches of straight-line code of `__libc_malloc` (PLAN.md G3, `malloc`)
 
-Each distinct stretch between labels and jumps (`p*`, 14 of them) and each distinct jump (`j*`, 12) as its own
+Each distinct stretch between labels and jumps (`p*`, 15 of them) and each distinct jump (`j*`, 13) as its own
 list of bytes: what the model's decoder makes of its instructions on every processor, whatever bytes follow
 (`Leaf.Dec`, by evaluation), their effects (`o*`, `Op`s of `BlkOps.lean`), and the stretch as a `Blk`. Generated from
 the decoder's own output (`decshow`) by `tools/blk_gen.py`.
@@ -320,5 +320,42 @@ theorem b13 (prof : Profile) : Blk prof p13 0 10 o13 :=
 
 def j11 : List Byte := [0x0f, 0x84, 0x43, 0xff, 0xff, 0xff]
 theorem j11_0 : ∀ feat, Dec feat j11 0 (FV7z.mk (.jcc 4) 64 [.rel 18446744073709551427] 6) := by dec_rfl
+
+/-- The stretch at `272`. -/
+def p14 : List Byte := [
+  0x48, 0x8d, 0x04, 0xd8, 0x83, 0xea, 0x01, 0x4c, 0x8b, 0x80, 0x80, 0x00, 0x00, 0x00, 0x49, 0x8b,
+  0x30, 0x48, 0x89, 0xb0, 0x80, 0x00, 0x00, 0x00, 0x66, 0x89, 0x11, 0x49, 0xc7, 0x40, 0x08, 0x00,
+  0x00, 0x00, 0x00]
+
+theorem p14_0 : ∀ feat, Dec feat p14 0 (FV7z.mk .lea 64 [gr 64 0, .mem (mg (some 0) (some 3) 8 0 0)] 4) := by dec_rfl
+theorem p14_4 : ∀ feat, Dec feat p14 4 (FV7z.mk .sub 32 [gr 32 2, Src.opd 32 (.i 1)] 3) := by dec_rfl
+theorem p14_7 : ∀ feat, Dec feat p14 7 (FV7z.mk .mov 64 [gr 64 8, .mem (mg (some 0) none 1 128 64)] 7) := by dec_rfl
+theorem p14_14 : ∀ feat, Dec feat p14 14 (FV7z.mk .mov 64 [gr 64 6, .mem (mg (some 8) none 1 0 64)] 3) := by dec_rfl
+theorem p14_17 : ∀ feat, Dec feat p14 17 (FV7z.mk .mov 64 [.mem (mg (some 0) none 1 128 64), gr 64 6] 7) := by dec_rfl
+theorem p14_24 : ∀ feat, Dec feat p14 24 (FV7z.mk .mov 16 [.mem (mg (some 1) none 1 0 16), gr 16 2] 3) := by dec_rfl
+theorem p14_27 : ∀ feat, Dec feat p14 27 (FV7z.mk .mov 64 [.mem (mg (some 8) none 1 8 64), .imm 64 0] 8) := by dec_rfl
+
+/-- What the stretch does. -/
+def o14 : List Op := [
+  Op.lea 64 0 (some 0) (some 3) 8 0,
+  Op.sub 32 2 (.i 1),
+  Op.ld 64 8 (some 0) none 1 128,
+  Op.ld 64 6 (some 8) none 1 0,
+  Op.st 64 (some 0) none 1 128 6,
+  Op.st 16 (some 1) none 1 0 2,
+  Op.sti 64 (some 8) none 1 8 0]
+
+theorem b14 (prof : Profile) : Blk prof p14 0 35 o14 :=
+  .cons (p14_0 _) (OpI.lea (.inr rfl)) (by decide) <|
+  .cons (p14_4 _) (OpI.sub (.i 1) (.inl rfl)) (by decide) <|
+  .cons (p14_7 _) (OpI.ld (.inr rfl)) (by decide) <|
+  .cons (p14_14 _) (OpI.ld (.inr rfl)) (by decide) <|
+  .cons (p14_17 _) (OpI.st (.inr (.inr (.inr rfl)))) (by decide) <|
+  .cons (p14_24 _) (OpI.st (.inr (.inl rfl))) (by decide) <|
+  .cons (p14_27 _) (OpI.sti (.inr (.inr (.inr rfl)))) (by decide) <|
+  .nil 35
+
+def j12 : List Byte := [0xe9, 0x6c, 0xff, 0xff, 0xff]
+theorem j12_0 : ∀ feat, Dec feat j12 0 (FV7z.mk .jmp 64 [.rel 18446744073709551468] 5) := by dec_rfl
 
 end FV7z.Mnx

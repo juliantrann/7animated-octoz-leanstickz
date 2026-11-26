@@ -108,6 +108,8 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          # the cache j0 saved can be evicted before this job (10 GB for all lanes): then keep the old seed
+          [ -d ~/.elan/toolchains ] || { echo "seed: cache gone, release kept" >> "$GITHUB_STEP_SUMMARY"; exit 0; }
           mv ~/.elan/toolchains .elan-toolchains
           d=$RUNNER_TEMP/seed
           mkdir -p "$d"
