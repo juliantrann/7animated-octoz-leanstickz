@@ -50,7 +50,12 @@ variable {F : Footprint} {Wl : List Rgn}
 
 local macro "vfin" : tactic =>
   `(tactic| repeat' (first | (with_reducible rfl) | (with_reducible assumption) | exact True.intro |
-    (exact fe) | (intro h; exact absurd h (by omega)) | apply And.intro | intro _))
+    (intro h; exact absurd h (by omega)) | apply And.intro | intro _))
+
+/-- `vfin`, and `assumption` at the default transparency (the `fs` stores' addresses `fb + eaG …`). -/
+local macro "vfinE" : tactic =>
+  `(tactic| repeat' (first | (with_reducible rfl) | (with_reducible assumption) | exact True.intro |
+    (intro h; exact absurd h (by omega)) | apply And.intro | assumption | rfl | intro _))
 
 /-- The empty `name`: the pushes, the stack guard stored, `errno` = `ENOENT`, `r12` 0. -/
 theorem vc_0z {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} {cn : BitVec 64}
@@ -68,7 +73,7 @@ theorem vc_0z {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} {cn : BitV
   wpx [W_0, W_288, o0, o13, Op.ldf, Op.cmpmi, Op.stfi, hcn, hz, BitVec.sub_self, xz, decide_true,
     Bool.false_eq_true, Bool.true_eq_false,
     false_implies, eq_self_iff_true, true_implies, implies_true]
-  all_goals vfin
+  all_goals vfinE
 
 /-- The open failing (`eax` negative): `r12` 0. -/
 theorem vc_55n {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (hs : (BitVec.setWidth 32 g.rax).msb = true) :
@@ -103,7 +108,7 @@ theorem vc_80d {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (hs : (Bi
   wpx [W_80, W_88, W_256, o4, o5, o11, Op.stfi, BitVec.and_self, hs, hm', decide_false, Bool.not_false,
     Bool.false_eq_true, Bool.true_eq_false,
     false_implies, eq_self_iff_true, true_implies]
-  all_goals vfin
+  all_goals vfinE
 
 /-- To `__close_nocancel (fd)`: `edi` the descriptor (`ebp`), `r12` 0. -/
 theorem vc_270 {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} :
@@ -152,8 +157,12 @@ theorem vc_337 {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (hnz : g.
 theorem vc_337z {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (hz : g.rax = 0#64)
     (fe : ∀ i < 4, Foot F.data (Addr.add (errnoAt fb) i)) :
     W_337 fb F Wl (fun j' g' _ V' => j' = 366 ∧
-      g' = { g with rbx := 18446744073709551544#64, rdi := BitVec.setWidth 64 (BitVec.setWidth 32 g.rbp),
-        r12 := 0#64, r13 := BitVec.setWidth 64 (ofBytesLE 32 ((byteAddrs (errnoAt fb) 4).map V)) } ∧ V' = V)
+      g' =
+        { g with
+          rbx := 18446744073709551544#64
+          rdi := BitVec.setWidth 64 (BitVec.setWidth 32 g.rbp)
+          r12 := 0#64
+          r13 := BitVec.setWidth 64 (ofBytesLE 32 ((byteAddrs (errnoAt fb) 4).map V)) } ∧ V' = V)
       g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at hz ⊢
@@ -162,7 +171,7 @@ theorem vc_337z {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (hz : g.
   wpx [W_337, W_349, o7, o16, Op.ldf, BitVec.and_self, z0, decide_true, Bool.not_true,
     Bool.false_eq_true, Bool.true_eq_false,
     false_implies, eq_self_iff_true, true_implies]
-  all_goals vfin
+  all_goals vfinE
 
 /-- `errno` restored from `r13d` (`rbx` its offset), to 219. -/
 theorem vc_371 {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (hb : g.rbx = 18446744073709551544#64)
@@ -173,7 +182,7 @@ theorem vc_371 {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (hb : g.r
   dsimp only at hb ⊢
   subst hb
   wpx [W_371, o17, Op.stf]
-  all_goals vfin
+  all_goals vfinE
 
 /-! ## The join at 219 -/
 
