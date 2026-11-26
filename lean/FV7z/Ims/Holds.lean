@@ -176,6 +176,7 @@ contract. -/
 theorem init_misc_ok {pr : List Byte} {e₂ : Addr} {code₂ : List Byte} {j₂ : Nat} {X : State} {t : Nat}
     {V : Addr → Byte} {a0 : Addr} {n : Nat} (c : Seg prof F Wl L s₀ o) (hin : CodeIn L ims_at ims)
     (hir : CodeIn L 4198480#64 pr) (hr0 : 0 < pr.length) (hrchr : Str.RchrAt prof L o 4198480#64 Pm)
+    (hgf : GotF F)
     (hK : KeptW Wl s₀ X) (hA : Agree F X.proc.mm.mem V) (hrip : X.cpu.rip = ims_at)
     (hsp : 32 ≤ X.cpu.gpr.rsp.toNat) (htop : X.cpu.gpr.rsp.toNat + 8 ≤ 2 ^ 64)
     (hst : ∀ i < 32, Foot Wl (Addr.add (X.cpu.gpr.rsp - 32#64) i))
@@ -215,7 +216,7 @@ theorem init_misc_ok {pr : List Byte} {e₂ : Addr} {code₂ : List Byte} {j₂ 
   have hc : Y₂.cpu.gpr.rsi.setWidth 8 = 47#8 := by rw [hg₂, hgY]; rfl
   have hsp₂ : Y₂.cpu.gpr.rsp = X.cpu.gpr.rsp - 32#64 := by rw [hg₂]; rfl
   have vS : ∀ k ≤ n, cV V X.cpu.gpr (Addr.add a0 k) = V (Addr.add a0 k) := fun k hk => cV_out hsp (nout k hk)
-  refine hrchr n c hK₂ hA₂' hr₂ (hPm _ fun a ha => cV_out hsp ha) hin (lt_len (show 39 < 81 by decide)) ?_
+  refine hrchr n c hgf hK₂ hA₂' hr₂ (hPm _ fun a ha => cV_out hsp ha) hin (lt_len (show 39 < 81 by decide)) ?_
     (fun i hi => ?_) (by rw [hdi]; exact nfit) (fun i hi => ?_) ?_ (by rw [hc]; decide) (fun x h1 h2 => ?_) ?_
   · rw [hsp₂]
     unfold cV

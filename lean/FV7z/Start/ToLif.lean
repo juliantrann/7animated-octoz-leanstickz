@@ -26,6 +26,12 @@ open FV7z.Smm (size smEv smEv2)
 open FV7z.Mhi (C2)
 open FV7z.Gor (gEv gor_at)
 
+/-- The GOT's slots, the threshold of `memmove`'s non-temporal copies and `strncmp`'s table: data of `lifG`. -/
+theorem gotF_lifG {lo top : Nat} {B : Addr} {L : List (Addr × List Byte)} : GotF (lifG lo top B L) :=
+  ⟨fun _ h1 h2 => gd_var (by omega) (by omega), fun _ h1 h2 => gd_var (by omega) (by omega),
+    fun _ h1 h2 => foot_reads ⟨_, List.mem_cons_of_mem _ List.mem_cons_self,
+      show _ ∧ _ from ⟨by rgn_red; omega, by rgn_red; omega⟩⟩⟩
+
 set_option maxHeartbeats 4000000 in
 /-- From the call of `__libc_init_first` at `0x613434` to `lif_ok`'s continuations. -/
 theorem ptr_lif {prof : Profile} {L : List (Addr × List Byte)} {o : Oracle} {gev : List Event}
@@ -245,6 +251,7 @@ theorem ptr_lif {prof : Profile} {L : List (Addr × List Byte)} {o : Oracle} {ge
     (hid := hLC.dpr) (him := hLC.mpr) (hfp := hfp') (hph := ph) (hpgs := pgs) (hla := la') (hmg := hmg)
     (hGo := hGo) (hGc := hGc) (hfit := hfit) (hGw := hGw) (hGr := hGr) (hcode := hcode) (hww := hww)
     (hlG := hlG) (hl := hl) (hinS := hLC.ims) (hci := hLC.cti) (hir := hir) (hr0 := hr0) (hrchr := hrchr)
+    (hgG := gotF_lifG)
     (hbk := by omega) (hfl := by omega) (hfsp := by omega) (hs := by omega) (hst₂ := hst₂) (hl₂ := hl₂)
     (hgl := fun i hi => by
       have t := tg (b := 7942968) (n := 16) hi (by omega)

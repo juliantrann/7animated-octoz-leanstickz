@@ -30,7 +30,7 @@ theorem run (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e' sr2) {X : State} {t 
 
 theorem rchrAt_sse2 {prof : Profile} {L : List (Addr × List Byte)} {o : Oracle} {e : Addr}
     {Pm : (Addr → Byte) → Prop} (hin : CodeIn L e sr2) : Str.RchrAt prof L o e Pm := by
-  intro F Wl s₀ gev gP gE X t V e' code j n c hK hA hrip _ hin₂ hj hra hl hov hnz hz hch hft K
+  intro F Wl s₀ gev gP gE X t V e' code j n c _ hK hA hrip _ hin₂ hj hra hl hov hnz hz hch hft K
   exact run (g₀ := X.cpu.gpr) c hin hK hA (by rw [hrip, addr_add_zero])
     (by unfold KpR; exact ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩) rfl rfl hov hnz hz hch hft
     (by

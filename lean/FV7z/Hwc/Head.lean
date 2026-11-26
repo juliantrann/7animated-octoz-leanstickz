@@ -170,7 +170,7 @@ theorem from1778_3 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb)
   rw [s₃] at hA₄ hg₄
   have s₄ : Y₄.cpu.gpr.rsp = R - 8 := by rw [hg₄]; rfl
   have di₄ : Y₄.cpu.gpr.rdi = 7288953#64 := by rw [hg₄]; exact di₃
-  refine hlen 6 c hK₄ hA₄ hr₄ (hPl _ fun a ha => by vout) hin (j := 1895) (lt_len (by omega)) ?_
+  refine hlen 6 c hgf hK₄ hA₄ hr₄ (hPl _ fun a ha => by vout) hin (j := 1895) (lt_len (by omega)) ?_
     (fun i hi => by rw [s₄]; exact rng hFD (by fomega) (by fomega) (by fomega) i hi)
     (by rw [di₄]; decide) (fun q hq => ?_) ?_ (fun x h1 h2 => ?_) ?_
   · rw [s₄]
@@ -350,7 +350,7 @@ theorem from1778_4 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb)
   rw [s₃] at hA₄ hg₄
   have s₄ : Y₄.cpu.gpr.rsp = R - 8 := by rw [hg₄]; rfl
   have di₄ : Y₄.cpu.gpr.rdi = 7288953#64 := by rw [hg₄]; exact di₃
-  refine hlen 6 c hK₄ hA₄ hr₄ (hPl _ fun a ha => by vout) hin (j := 1895) (lt_len (by omega)) ?_
+  refine hlen 6 c hgf hK₄ hA₄ hr₄ (hPl _ fun a ha => by vout) hin (j := 1895) (lt_len (by omega)) ?_
     (fun i hi => by rw [s₄]; exact rng hFD (by fomega) (by fomega) (by fomega) i hi)
     (by rw [di₄]; decide) (fun q hq => ?_) ?_ (fun x h1 h2 => ?_) ?_
   · rw [s₄]
@@ -426,7 +426,7 @@ theorem from1778_4 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb)
   rw [s₇] at hA₈ hg₈
   have s₈ : Y₈.cpu.gpr.rsp = R - 8 := by rw [hg₈]; rfl
   have di₈ : Y₈.cpu.gpr.rdi = 7288962#64 := by rw [hg₈]; exact di₇
-  refine hlen 8 c hK₈ hA₈ hr₈ (hPl _ fun a ha => by vout) hin (j := 1895) (lt_len (by omega)) ?_
+  refine hlen 8 c hgf hK₈ hA₈ hr₈ (hPl _ fun a ha => by vout) hin (j := 1895) (lt_len (by omega)) ?_
     (fun i hi => by rw [s₈]; exact rng hFD (by fomega) (by fomega) (by fomega) i hi)
     (by rw [di₈]; decide) (fun q hq => ?_) ?_ (fun x h1 h2 => ?_) ?_
   · rw [s₈]
