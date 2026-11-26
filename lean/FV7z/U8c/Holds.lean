@@ -172,8 +172,9 @@ theorem z0 (p : Addr) : p + BitVec.ofNat 64 (4 * 0) = p := BitVec.add_zero p
 
 theorem tnk {p : Addr} {n k : Nat} (hp : p.toNat + 4 * n < 2 ^ 64) (hk : k ≤ n) :
     (p + BitVec.ofNat 64 (4 * k)).toNat = p.toNat + 4 * k := by
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show 4 * k < 2 ^ 64 by omega),
-    Nat.mod_eq_of_lt (show p.toNat + 4 * k < 2 ^ 64 by omega)]
+  have h4 : 4 * k < 2 ^ 64 := by simp only [Nat.reducePow] at hp ⊢; omega
+  have h5 : p.toNat + 4 * k < 2 ^ 64 := by simp only [Nat.reducePow] at hp ⊢; omega
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt h4, Nat.mod_eq_of_lt h5]
 
 theorem pinj {p : Addr} {n k j : Nat} (hp : p.toNat + 4 * n < 2 ^ 64) (hk : k ≤ n) (hj : j ≤ n)
     (h : p + BitVec.ofNat 64 (4 * k) = p + BitVec.ofNat 64 (4 * j)) : k = j := by
@@ -229,8 +230,9 @@ variable {F : Footprint} {Wl : List Rgn}
 theorem vc_0 {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post}
     (h122 : decide (g.rsi = g.rdi) = true → ∀ fl, Q 122 { g with rax := (g.rsi - g.rdi).sshiftRight 2 } fl V)
     (h24 : decide (g.rsi = g.rdi) = false → ∀ fl,
-      Q 24 { g with rax := (g.rsi - g.rdi).sshiftRight 2,
-        rdx := BitVec.setWidth 64 (BitVec.setWidth 32 g.rdx &&& 512#32) } fl V) :
+      Q 24 { g with
+          rax := (g.rsi - g.rdi).sshiftRight 2,
+          rdx := BitVec.setWidth 64 (BitVec.setWidth 32 g.rdx &&& 512#32) } fl V) :
     W_0 F Wl Q g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at h122 h24 ⊢
@@ -246,18 +248,21 @@ theorem vc_24 {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post} {e : BitVec
     (h128 : le127 (rdd(V, g.rdi)) = true → ∀ fl,
       Q 128 { g with rcx := BitVec.setWidth 64 (rdd(V, g.rdi)), r8 := g.rdi + 4#64 } fl V)
     (h131 : le127 (rdd(V, g.rdi)) = false → le2047 (rdd(V, g.rdi)) = true → ∀ fl,
-      Q 131 { g with rax := g.rax + 1#64, rcx := BitVec.setWidth 64 (rdd(V, g.rdi)), rdi := g.rdi + 4#64,
-        r8 := g.rdi + 4#64 } fl V)
+      Q 131 { g with
+          rax := g.rax + 1#64, rcx := BitVec.setWidth 64 (rdd(V, g.rdi)), rdi := g.rdi + 4#64,
+          r8 := g.rdi + 4#64 } fl V)
     (h128b : le127 (rdd(V, g.rdi)) = false → le2047 (rdd(V, g.rdi)) = false → (e &&& e == 0) = false →
       m51 (rdd(V, g.rdi)) = true → ∀ fl,
-      Q 128 { g with rcx := BitVec.setWidth 64 (rdd(V, g.rdi)), r8 := g.rdi + 4#64,
-        r9 := BitVec.setWidth 64 (rdd(V, g.rdi) &&& 4294967168#32) } fl V)
+      Q 128 { g with
+          rcx := BitVec.setWidth 64 (rdd(V, g.rdi)), r8 := g.rdi + 4#64,
+          r9 := BitVec.setWidth 64 (rdd(V, g.rdi) &&& 4294967168#32) } fl V)
     (h67a : le127 (rdd(V, g.rdi)) = false → le2047 (rdd(V, g.rdi)) = false → (e &&& e == 0) = true → ∀ fl,
       Q 67 { g with rcx := BitVec.setWidth 64 (rdd(V, g.rdi)), r8 := g.rdi + 4#64 } fl V)
     (h67b : le127 (rdd(V, g.rdi)) = false → le2047 (rdd(V, g.rdi)) = false → (e &&& e == 0) = false →
       m51 (rdd(V, g.rdi)) = false → ∀ fl,
-      Q 67 { g with rcx := BitVec.setWidth 64 (rdd(V, g.rdi)), r8 := g.rdi + 4#64,
-        r9 := BitVec.setWidth 64 (rdd(V, g.rdi) &&& 4294967168#32) } fl V) :
+      Q 67 { g with
+          rcx := BitVec.setWidth 64 (rdd(V, g.rdi)), r8 := g.rdi + 4#64,
+          r9 := BitVec.setWidth 64 (rdd(V, g.rdi) &&& 4294967168#32) } fl V) :
     W_24 F Wl Q g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at he fq h128 h131 h128b h67a h67b ⊢
@@ -282,28 +287,33 @@ theorem vc_67 {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post} {c : BitVec
       Q 184 { g with rcx := BitVec.setWidth 64 c, r9 := BitVec.setWidth 64 (c &&& 4294965248#32) } fl V)
     (h184c : sur c = true → hi c = false → decide (g.rsi = g.r8) = false → ∀ fl,
       Q 184 (if lo2 (rdd(V, g.rdi + 4#64)) = true then
-          { g with rcx := BitVec.setWidth 64 (rdd(V, g.rdi + 4#64) - 56320#32), rdi := g.rdi + 8#64,
-            r8 := g.rdi + 8#64, r9 := BitVec.setWidth 64 (c &&& 4294965248#32) }
+          { g with
+              rcx := BitVec.setWidth 64 (rdd(V, g.rdi + 4#64) - 56320#32), rdi := g.rdi + 8#64,
+              r8 := g.rdi + 8#64, r9 := BitVec.setWidth 64 (c &&& 4294965248#32) }
         else
-          { g with rcx := BitVec.setWidth 64 (rdd(V, g.rdi + 4#64) - 56320#32), rdi := g.rdi + 8#64,
-            r9 := BitVec.setWidth 64 (c &&& 4294965248#32) }) fl V)
+          { g with
+              rcx := BitVec.setWidth 64 (rdd(V, g.rdi + 4#64) - 56320#32), rdi := g.rdi + 8#64,
+              r9 := BitVec.setWidth 64 (c &&& 4294965248#32) }) fl V)
     (h184d : sur c = false → le65535 c = true → ∀ fl,
       Q 184 { g with rcx := BitVec.setWidth 64 c, r9 := BitVec.setWidth 64 (c &&& 4294965248#32) } fl V)
     (h224a : sur c = false → le65535 c = false → le2097151 c = true → ∀ fl,
       Q 224 { g with rcx := BitVec.setWidth 64 c, r9 := BitVec.setWidth 64 (c &&& 4294965248#32) } fl V)
     (h131 : sur c = false → le65535 c = false → le2097151 c = false → gt26 c = true → ns c = true → ∀ fl,
-      Q 131 { g with rax := g.rax + 5#64, rcx := BitVec.setWidth 64 c, rdi := g.r8,
-        r9 := BitVec.setWidth 64 (c &&& 4294965248#32) } fl V)
+      Q 131 { g with
+          rax := g.rax + 5#64, rcx := BitVec.setWidth 64 c, rdi := g.r8,
+          r9 := BitVec.setWidth 64 (c &&& 4294965248#32) } fl V)
     (h224b : sur c = false → le65535 c = false → le2097151 c = false → gt26 c = true → ns c = false → ∀ fl,
       Q 224 { g with rcx := BitVec.setWidth 64 c, r9 := BitVec.setWidth 64 (c &&& 4294965248#32) } fl V)
     (h24 : sur c = false → le65535 c = false → le2097151 c = false → gt26 c = false →
       (!decide (g.rsi = g.r8)) = true → ∀ fl,
-      Q 24 { g with rax := g.rax + 4#64, rcx := BitVec.setWidth 64 c, rdi := g.r8,
-        r9 := BitVec.setWidth 64 (c &&& 4294965248#32) } fl V)
+      Q 24 { g with
+          rax := g.rax + 4#64, rcx := BitVec.setWidth 64 c, rdi := g.r8,
+          r9 := BitVec.setWidth 64 (c &&& 4294965248#32) } fl V)
     (h122 : sur c = false → le65535 c = false → le2097151 c = false → gt26 c = false →
       (!decide (g.rsi = g.r8)) = false → ∀ fl,
-      Q 122 { g with rax := g.rax + 4#64, rcx := BitVec.setWidth 64 c, rdi := g.r8,
-        r9 := BitVec.setWidth 64 (c &&& 4294965248#32) } fl V) :
+      Q 122 { g with
+          rax := g.rax + 4#64, rcx := BitVec.setWidth 64 c, rdi := g.r8,
+          r9 := BitVec.setWidth 64 (c &&& 4294965248#32) } fl V) :
     W_67 F Wl Q g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at hc fq2 h184a h184b h184c h184d h224a h131 h224b h24 h122 ⊢
@@ -379,13 +389,15 @@ theorem x0_122 (hl : Lim g₀ n) : decide (g₀.rsi = g₀.rdi) = true → ∀ f
   rw [T, ex_n, BitVec.add_zero]
 
 theorem x0_24 (hl : Lim g₀ n) : decide (g₀.rsi = g₀.rdi) = false → ∀ fl,
-    Nx g₀ V n (5 * n + 10) 24 { g₀ with rax := (g₀.rsi - g₀.rdi).sshiftRight 2,
-      rdx := BitVec.setWidth 64 (BitVec.setWidth 32 g₀.rdx &&& 512#32) } fl V := by
+    Nx g₀ V n (5 * n + 10) 24 { g₀ with
+        rax := (g₀.rsi - g₀.rdi).sshiftRight 2,
+        rdx := BitVec.setWidth 64 (BitVec.setWidth 32 g₀.rdx &&& 512#32) } fl V := by
   intro h fl
   have hn : 0 < n := by
     rcases Nat.eq_zero_or_pos n with hn | hn
     · subst hn
-      exact absurd (decide_eq_true (by rw [hl.1, z0])) (by rw [h]; decide)
+      rw [hl.1, z0] at h
+      simp at h
     · exact hn
   refine Or.inl ⟨5 * (n - 0) + 4, by omega, rfl, Or.inr (Or.inl ⟨rfl, 0, hn, rfl,
     (g₀.rsi - g₀.rdi).sshiftRight 2, g₀.rcx, g₀.r8, g₀.r9, by rw [z0], rfl⟩)⟩
@@ -397,8 +409,9 @@ abbrev G24 (g₀ : Gprs) (k : Nat) (a c x y : BitVec 64) : Gprs := Gs g₀ a c (
 
 theorem x24_128 (hk : k < n) (hX : a + BitVec.ofNat 64 (ex V g₀.rdi n (E g₀) k) = T g₀ V n) :
     le127 (ch V g₀.rdi k) = true → ∀ fl, Nx g₀ V n (5 * (n - k) + 4) 128
-      { G24 g₀ k a c x y with rcx := BitVec.setWidth 64 (ch V g₀.rdi k),
-        r8 := g₀.rdi + BitVec.ofNat 64 (4 * k) + 4#64 } fl V := by
+      { G24 g₀ k a c x y with
+          rcx := BitVec.setWidth 64 (ch V g₀.rdi k),
+          r8 := g₀.rdi + BitVec.ofNat 64 (4 * k) + 4#64 } fl V := by
   intro h1 fl
   refine Or.inl ⟨5 * (n - (k + 1)) + 6, by omega, rfl, Or.inr (Or.inr (Or.inr (Or.inl ⟨0, Or.inl ⟨rfl, rfl⟩,
     k + 1, by omega, rfl, a, BitVec.setWidth 64 (ch V g₀.rdi k), g₀.rdi + BitVec.ofNat 64 (4 * k), y,
@@ -406,20 +419,21 @@ theorem x24_128 (hk : k < n) (hX : a + BitVec.ofNat 64 (ex V g₀.rdi n (E g₀)
 
 theorem x24_131 (hk : k < n) (hX : a + BitVec.ofNat 64 (ex V g₀.rdi n (E g₀) k) = T g₀ V n) :
     le127 (ch V g₀.rdi k) = false → le2047 (ch V g₀.rdi k) = true → ∀ fl, Nx g₀ V n (5 * (n - k) + 4) 131
-      { G24 g₀ k a c x y with rax := a + 1#64, rcx := BitVec.setWidth 64 (ch V g₀.rdi k),
-        rdi := g₀.rdi + BitVec.ofNat 64 (4 * k) + 4#64, r8 := g₀.rdi + BitVec.ofNat 64 (4 * k) + 4#64 } fl V := by
+      { G24 g₀ k a c x y with
+          rax := a + 1#64, rcx := BitVec.setWidth 64 (ch V g₀.rdi k),
+          rdi := g₀.rdi + BitVec.ofNat 64 (4 * k) + 4#64, r8 := g₀.rdi + BitVec.ofNat 64 (4 * k) + 4#64 } fl V := by
   intro h1 h2 fl
   refine Or.inl ⟨5 * (n - (k + 1)) + 5, by omega, rfl, Or.inr (Or.inr (Or.inr (Or.inr ⟨rfl,
     k + 1, by omega, rfl, a + 1#64, BitVec.setWidth 64 (ch V g₀.rdi k), y, by rw [← adv4], ?_⟩)))⟩
-  rw [← hX, ex_b hk h1 h2, addK]
-  rfl
+  rw [← hX, ex_b hk h1 h2, addK a 1]
 
 theorem x24_128b (hk : k < n) (hX : a + BitVec.ofNat 64 (ex V g₀.rdi n (E g₀) k) = T g₀ V n) :
     le127 (ch V g₀.rdi k) = false → le2047 (ch V g₀.rdi k) = false → (E g₀ &&& E g₀ == 0) = false →
       m51 (ch V g₀.rdi k) = true → ∀ fl, Nx g₀ V n (5 * (n - k) + 4) 128
-      { G24 g₀ k a c x y with rcx := BitVec.setWidth 64 (ch V g₀.rdi k),
-        r8 := g₀.rdi + BitVec.ofNat 64 (4 * k) + 4#64,
-        r9 := BitVec.setWidth 64 (ch V g₀.rdi k &&& 4294967168#32) } fl V := by
+      { G24 g₀ k a c x y with
+          rcx := BitVec.setWidth 64 (ch V g₀.rdi k),
+          r8 := g₀.rdi + BitVec.ofNat 64 (4 * k) + 4#64,
+          r9 := BitVec.setWidth 64 (ch V g₀.rdi k &&& 4294967168#32) } fl V := by
   intro h1 h2 h3 h4 fl
   refine Or.inl ⟨5 * (n - (k + 1)) + 6, by omega, rfl, Or.inr (Or.inr (Or.inr (Or.inl ⟨0, Or.inl ⟨rfl, rfl⟩,
     k + 1, by omega, rfl, a, BitVec.setWidth 64 (ch V g₀.rdi k), g₀.rdi + BitVec.ofNat 64 (4 * k),
@@ -429,8 +443,9 @@ theorem x24_128b (hk : k < n) (hX : a + BitVec.ofNat 64 (ex V g₀.rdi n (E g₀
 theorem x24_67a (hk : k < n) (hX : a + BitVec.ofNat 64 (ex V g₀.rdi n (E g₀) k) = T g₀ V n) :
     le127 (ch V g₀.rdi k) = false → le2047 (ch V g₀.rdi k) = false → (E g₀ &&& E g₀ == 0) = true →
       ∀ fl, Nx g₀ V n (5 * (n - k) + 4) 67
-      { G24 g₀ k a c x y with rcx := BitVec.setWidth 64 (ch V g₀.rdi k),
-        r8 := g₀.rdi + BitVec.ofNat 64 (4 * k) + 4#64 } fl V := by
+      { G24 g₀ k a c x y with
+          rcx := BitVec.setWidth 64 (ch V g₀.rdi k),
+          r8 := g₀.rdi + BitVec.ofNat 64 (4 * k) + 4#64 } fl V := by
   intro h1 h2 h3 fl
   exact Or.inl ⟨5 * (n - k) + 3, by omega, rfl, Or.inr (Or.inr (Or.inl ⟨rfl, k, hk, rfl, a, y, rfl, hX,
     h1, h2, nz_t h3⟩))⟩
@@ -438,9 +453,10 @@ theorem x24_67a (hk : k < n) (hX : a + BitVec.ofNat 64 (ex V g₀.rdi n (E g₀)
 theorem x24_67b (hk : k < n) (hX : a + BitVec.ofNat 64 (ex V g₀.rdi n (E g₀) k) = T g₀ V n) :
     le127 (ch V g₀.rdi k) = false → le2047 (ch V g₀.rdi k) = false → (E g₀ &&& E g₀ == 0) = false →
       m51 (ch V g₀.rdi k) = false → ∀ fl, Nx g₀ V n (5 * (n - k) + 4) 67
-      { G24 g₀ k a c x y with rcx := BitVec.setWidth 64 (ch V g₀.rdi k),
-        r8 := g₀.rdi + BitVec.ofNat 64 (4 * k) + 4#64,
-        r9 := BitVec.setWidth 64 (ch V g₀.rdi k &&& 4294967168#32) } fl V := by
+      { G24 g₀ k a c x y with
+          rcx := BitVec.setWidth 64 (ch V g₀.rdi k),
+          r8 := g₀.rdi + BitVec.ofNat 64 (4 * k) + 4#64,
+          r9 := BitVec.setWidth 64 (ch V g₀.rdi k &&& 4294967168#32) } fl V := by
   intro h1 h2 h3 h4 fl
   exact Or.inl ⟨5 * (n - k) + 3, by omega, rfl, Or.inr (Or.inr (Or.inl ⟨rfl, k, hk, rfl, a,
     BitVec.setWidth 64 (ch V g₀.rdi k &&& 4294967168#32), rfl, hX, h1, h2, nz_f h3 h4⟩))⟩
@@ -451,11 +467,12 @@ abbrev G67 (g₀ : Gprs) (V : Addr → Byte) (k : Nat) (a y : BitVec 64) : Gprs 
     (g₀.rdi + BitVec.ofNat 64 (4 * k) + 4#64) y
 
 /-- 67 to 184, 224 with `r8` at the next character. -/
-theorem x67_d (hk : k < n) {d : Nat} (hd : (d = 2) ∨ (d = 3)) {j : Nat} (hj : (j = 184 ∧ d = 2) ∨ (j = 224 ∧ d = 3))
+theorem x67_d (hk : k < n) {d j : Nat} (hj : (j = 184 ∧ d = 2) ∨ (j = 224 ∧ d = 3))
     (hX : a + BitVec.ofNat 64 (d + ex V g₀.rdi n (E g₀) (k + 1)) = T g₀ V n) {fl : Rflags} :
     Nx g₀ V n (5 * (n - k) + 3) j
-      { G67 g₀ V k a y with rcx := BitVec.setWidth 64 (ch V g₀.rdi k),
-        r9 := BitVec.setWidth 64 (ch V g₀.rdi k &&& 4294965248#32) } fl V := by
+      { G67 g₀ V k a y with
+          rcx := BitVec.setWidth 64 (ch V g₀.rdi k),
+          r9 := BitVec.setWidth 64 (ch V g₀.rdi k &&& 4294965248#32) } fl V := by
   refine Or.inl ⟨5 * (n - (k + 1)) + 6, by omega, rfl, Or.inr (Or.inr (Or.inr (Or.inl ⟨d, Or.inr hj,
     k + 1, by omega, rfl, a, BitVec.setWidth 64 (ch V g₀.rdi k), g₀.rdi + BitVec.ofNat 64 (4 * k),
     BitVec.setWidth 64 (ch V g₀.rdi k &&& 4294965248#32), by rw [← adv4], hX⟩)))⟩
@@ -475,6 +492,230 @@ theorem lst (hl : Lim g₀ n) (hk : k < n)
   rw [hl.1, adv4] at h'
   exact (pinj hl.2 (Nat.le_refl n) (by omega) h').symm
 
+
+/-- At 67's exits without the pair: `rcx` the character, `r9` its masked form. -/
+abbrev R67 (g₀ : Gprs) (V : Addr → Byte) (k : Nat) (a y : BitVec 64) : Gprs :=
+  { G67 g₀ V k a y with
+      rcx := BitVec.setWidth 64 (ch V g₀.rdi k),
+      r9 := BitVec.setWidth 64 (ch V g₀.rdi k &&& 4294965248#32) }
+
+/-- The next character is read only when it is in the string. -/
+theorem fq67 (hl : Lim g₀ n) (hk : k < n)
+    (fa : ∀ k < n, ∀ i < 4, Foot F.data (Addr.add (g₀.rdi + BitVec.ofNat 64 (4 * k)) i)) :
+    decide (g₀.rsi = g₀.rdi + BitVec.ofNat 64 (4 * k) + 4#64) = false →
+      ∀ i < 4, Foot F.data (Addr.add (g₀.rdi + BitVec.ofNat 64 (4 * k) + 4#64) i) := fun h => by
+  rw [adv4]
+  exact fa (k + 1) (nxt hl hk h)
+
+section x67
+variable (hk : k < n) (hX : a + BitVec.ofNat 64 (ex V g₀.rdi n (E g₀) k) = T g₀ V n)
+  (hP : Past V g₀.rdi (E g₀) k)
+include hk hX hP
+
+theorem x67_a : sur (ch V g₀.rdi k) = true → hi (ch V g₀.rdi k) = true → ∀ fl,
+    Nx g₀ V n (5 * (n - k) + 3) 184 (R67 g₀ V k a y) fl V := fun h4 h5 _ =>
+  x67_d hk (Or.inl ⟨rfl, rfl⟩) (by rw [← ex_d hk hP h4 h5]; exact hX)
+
+theorem x67_b (hl : Lim g₀ n) : sur (ch V g₀.rdi k) = true → hi (ch V g₀.rdi k) = false →
+    decide (g₀.rsi = g₀.rdi + BitVec.ofNat 64 (4 * k) + 4#64) = true → ∀ fl,
+    Nx g₀ V n (5 * (n - k) + 3) 184 (R67 g₀ V k a y) fl V := fun h4 h5 h6 _ =>
+  x67_d hk (Or.inl ⟨rfl, rfl⟩) (by rw [← ex_e hk hP h4 h5 (lst hl hk h6)]; exact hX)
+
+theorem x67_c (hl : Lim g₀ n) : sur (ch V g₀.rdi k) = true → hi (ch V g₀.rdi k) = false →
+    decide (g₀.rsi = g₀.rdi + BitVec.ofNat 64 (4 * k) + 4#64) = false → ∀ fl,
+    Nx g₀ V n (5 * (n - k) + 3) 184
+      (if lo2 (rdd(V, g₀.rdi + BitVec.ofNat 64 (4 * k) + 4#64)) = true then
+        { G67 g₀ V k a y with
+          rcx := BitVec.setWidth 64 (rdd(V, g₀.rdi + BitVec.ofNat 64 (4 * k) + 4#64) - 56320#32),
+          rdi := g₀.rdi + BitVec.ofNat 64 (4 * k) + 8#64, r8 := g₀.rdi + BitVec.ofNat 64 (4 * k) + 8#64,
+          r9 := BitVec.setWidth 64 (ch V g₀.rdi k &&& 4294965248#32) }
+      else
+        { G67 g₀ V k a y with
+          rcx := BitVec.setWidth 64 (rdd(V, g₀.rdi + BitVec.ofNat 64 (4 * k) + 4#64) - 56320#32),
+          rdi := g₀.rdi + BitVec.ofNat 64 (4 * k) + 8#64,
+          r9 := BitVec.setWidth 64 (ch V g₀.rdi k &&& 4294965248#32) }) fl V := by
+  intro h4 h5 h6 fl
+  have h7 := nxt hl hk h6
+  by_cases h8 : lo2 (rdd(V, g₀.rdi + BitVec.ofNat 64 (4 * k) + 4#64)) = true
+  · rw [if_pos h8]
+    rw [adv4] at h8
+    exact Or.inl ⟨5 * (n - (k + 2)) + 6, by omega, rfl, Or.inr (Or.inr (Or.inr (Or.inl ⟨2,
+      Or.inr (Or.inl ⟨rfl, rfl⟩), k + 2, by omega, rfl, a,
+      BitVec.setWidth 64 (rdd(V, g₀.rdi + BitVec.ofNat 64 (4 * k) + 4#64) - 56320#32),
+      g₀.rdi + BitVec.ofNat 64 (4 * k) + 8#64, BitVec.setWidth 64 (ch V g₀.rdi k &&& 4294965248#32),
+      by rw [← adv8], by rw [← ex_f hk hP h4 h5 h7 h8]; exact hX⟩)))⟩
+  · rw [if_neg h8]
+    have h8' := eq_false_of_ne_true h8
+    rw [adv4] at h8'
+    exact Or.inl ⟨5 * (n - (k + 1)) + 6, by omega, rfl, Or.inr (Or.inr (Or.inr (Or.inl ⟨2,
+      Or.inr (Or.inl ⟨rfl, rfl⟩), k + 1, by omega, rfl, a,
+      BitVec.setWidth 64 (rdd(V, g₀.rdi + BitVec.ofNat 64 (4 * k) + 4#64) - 56320#32),
+      g₀.rdi + BitVec.ofNat 64 (4 * k) + 8#64, BitVec.setWidth 64 (ch V g₀.rdi k &&& 4294965248#32),
+      by rw [← adv4], by rw [← ex_g hk hP h4 h5 h7 h8']; exact hX⟩)))⟩
+
+theorem x67_h : sur (ch V g₀.rdi k) = false → le65535 (ch V g₀.rdi k) = true → ∀ fl,
+    Nx g₀ V n (5 * (n - k) + 3) 184 (R67 g₀ V k a y) fl V := fun h4 h5 _ =>
+  x67_d hk (Or.inl ⟨rfl, rfl⟩) (by rw [← ex_h hk hP h4 h5]; exact hX)
+
+theorem x67_i : sur (ch V g₀.rdi k) = false → le65535 (ch V g₀.rdi k) = false →
+    le2097151 (ch V g₀.rdi k) = true → ∀ fl, Nx g₀ V n (5 * (n - k) + 3) 224 (R67 g₀ V k a y) fl V :=
+  fun h4 h5 h6 _ => x67_d hk (Or.inr ⟨rfl, rfl⟩) (by rw [← ex_i hk hP h4 h5 h6]; exact hX)
+
+theorem x67_j : sur (ch V g₀.rdi k) = false → le65535 (ch V g₀.rdi k) = false →
+    le2097151 (ch V g₀.rdi k) = false → gt26 (ch V g₀.rdi k) = true → ns (ch V g₀.rdi k) = true → ∀ fl,
+    Nx g₀ V n (5 * (n - k) + 3) 131 { R67 g₀ V k a y with
+        rax := a + 5#64,
+        rdi := g₀.rdi + BitVec.ofNat 64 (4 * k) + 4#64 } fl V := fun h4 h5 h6 h7 h8 _ =>
+  Or.inl ⟨5 * (n - (k + 1)) + 5, by omega, rfl, Or.inr (Or.inr (Or.inr (Or.inr ⟨rfl, k + 1, by omega, rfl,
+    a + 5#64, BitVec.setWidth 64 (ch V g₀.rdi k), BitVec.setWidth 64 (ch V g₀.rdi k &&& 4294965248#32),
+    by rw [← adv4], by rw [← hX, ex_j hk hP h4 h5 h6 h7 h8, addK a 5]⟩)))⟩
+
+theorem x67_k : sur (ch V g₀.rdi k) = false → le65535 (ch V g₀.rdi k) = false →
+    le2097151 (ch V g₀.rdi k) = false → gt26 (ch V g₀.rdi k) = true → ns (ch V g₀.rdi k) = false → ∀ fl,
+    Nx g₀ V n (5 * (n - k) + 3) 224 (R67 g₀ V k a y) fl V := fun h4 h5 h6 h7 h8 _ =>
+  x67_d hk (Or.inr ⟨rfl, rfl⟩) (by rw [← ex_k hk hP h4 h5 h6 h7 h8]; exact hX)
+
+theorem x67_l (hl : Lim g₀ n) : sur (ch V g₀.rdi k) = false → le65535 (ch V g₀.rdi k) = false →
+    le2097151 (ch V g₀.rdi k) = false → gt26 (ch V g₀.rdi k) = false →
+    (!decide (g₀.rsi = g₀.rdi + BitVec.ofNat 64 (4 * k) + 4#64)) = true → ∀ fl,
+    Nx g₀ V n (5 * (n - k) + 3) 24 { R67 g₀ V k a y with
+        rax := a + 4#64,
+        rdi := g₀.rdi + BitVec.ofNat 64 (4 * k) + 4#64 } fl V := by
+  intro h4 h5 h6 h7 h8 _
+  have h8' : decide (g₀.rsi = g₀.rdi + BitVec.ofNat 64 (4 * k) + 4#64) = false := by simpa using h8
+  have h9 := nxt hl hk h8'
+  exact Or.inl ⟨5 * (n - (k + 1)) + 4, by omega, rfl, Or.inr (Or.inl ⟨rfl, k + 1, h9, rfl,
+    a + 4#64, BitVec.setWidth 64 (ch V g₀.rdi k), g₀.rdi + BitVec.ofNat 64 (4 * k) + 4#64,
+    BitVec.setWidth 64 (ch V g₀.rdi k &&& 4294965248#32),
+    by rw [← adv4], by rw [← hX, ex_l hk hP h4 h5 h6 h7, addK a 4]⟩)⟩
+
+theorem x67_m (hl : Lim g₀ n) : sur (ch V g₀.rdi k) = false → le65535 (ch V g₀.rdi k) = false →
+    le2097151 (ch V g₀.rdi k) = false → gt26 (ch V g₀.rdi k) = false →
+    (!decide (g₀.rsi = g₀.rdi + BitVec.ofNat 64 (4 * k) + 4#64)) = false → ∀ fl,
+    Nx g₀ V n (5 * (n - k) + 3) 122 { R67 g₀ V k a y with
+        rax := a + 4#64,
+        rdi := g₀.rdi + BitVec.ofNat 64 (4 * k) + 4#64 } fl V := by
+  intro h4 h5 h6 h7 h8 _
+  have h8' : decide (g₀.rsi = g₀.rdi + BitVec.ofNat 64 (4 * k) + 4#64) = true := by simpa using h8
+  have e := lst hl hk h8'
+  have ht : a + 4#64 = T g₀ V n := by
+    rw [← hX, ex_l hk hP h4 h5 h6 h7, e, ex_n, Nat.add_zero]
+  refine Or.inr ⟨Or.inl rfl, rfl, BitVec.setWidth 64 (ch V g₀.rdi k), BitVec.setWidth 64 (E g₀),
+    g₀.rdi + BitVec.ofNat 64 (4 * k) + 4#64, g₀.rdi + BitVec.ofNat 64 (4 * k) + 4#64,
+    BitVec.setWidth 64 (ch V g₀.rdi k &&& 4294965248#32), ?_⟩
+  rw [← ht]
+
+end x67
+
+/-! ### 128, 184, 224: `rdi` = `r8`, 0, 2 or 3 more -/
+
+variable {i : BitVec 64}
+
+theorem xd_128 (hk : k ≤ n) (hX : a + BitVec.ofNat 64 (0 + ex V g₀.rdi n (E g₀) k) = T g₀ V n) :
+    ∀ fl, Nx g₀ V n (5 * (n - k) + 6) 131
+      { Gs g₀ a c i (g₀.rdi + BitVec.ofNat 64 (4 * k)) y with rdi := g₀.rdi + BitVec.ofNat 64 (4 * k) } fl V :=
+  fun _ => Or.inl ⟨5 * (n - k) + 5, by omega, rfl, Or.inr (Or.inr (Or.inr (Or.inr ⟨rfl, k, hk, rfl, a, c, y, rfl,
+    by rw [Nat.zero_add] at hX; exact hX⟩)))⟩
+
+theorem xd_184 (hk : k ≤ n) (hX : a + BitVec.ofNat 64 (2 + ex V g₀.rdi n (E g₀) k) = T g₀ V n) :
+    ∀ fl, Nx g₀ V n (5 * (n - k) + 6) 131
+      { Gs g₀ a c i (g₀.rdi + BitVec.ofNat 64 (4 * k)) y with
+          rax := a + 2#64,
+          rdi := g₀.rdi + BitVec.ofNat 64 (4 * k) } fl V :=
+  fun _ => Or.inl ⟨5 * (n - k) + 5, by omega, rfl, Or.inr (Or.inr (Or.inr (Or.inr ⟨rfl, k, hk, rfl, a + 2#64, c, y,
+    rfl, by rw [← hX, addK a 2]⟩)))⟩
+
+theorem xd_224 (hk : k ≤ n) (hX : a + BitVec.ofNat 64 (3 + ex V g₀.rdi n (E g₀) k) = T g₀ V n) :
+    ∀ fl, Nx g₀ V n (5 * (n - k) + 6) 131
+      { Gs g₀ a c i (g₀.rdi + BitVec.ofNat 64 (4 * k)) y with
+          rax := a + 3#64,
+          rdi := g₀.rdi + BitVec.ofNat 64 (4 * k) } fl V :=
+  fun _ => Or.inl ⟨5 * (n - k) + 5, by omega, rfl, Or.inr (Or.inr (Or.inr (Or.inr ⟨rfl, k, hk, rfl, a + 3#64, c, y,
+    rfl, by rw [← hX, addK a 3]⟩)))⟩
+
+/-! ### 131: back to 24, or out at 136 -/
+
+theorem x131_24 (hl : Lim g₀ n) (hk : k ≤ n)
+    (hX : a + BitVec.ofNat 64 (ex V g₀.rdi n (E g₀) k) = T g₀ V n) :
+    (!decide (g₀.rsi = g₀.rdi + BitVec.ofNat 64 (4 * k))) = true → ∀ fl, Nx g₀ V n (5 * (n - k) + 5) 24
+      (Gs g₀ a c (g₀.rdi + BitVec.ofNat 64 (4 * k)) (g₀.rdi + BitVec.ofNat 64 (4 * k)) y) fl V := by
+  intro h _
+  have hk' : k < n := by
+    rcases Nat.lt_or_ge k n with h' | h'
+    · exact h'
+    · have e : k = n := by omega
+      subst e
+      rw [hl.1] at h
+      simp at h
+  exact Or.inl ⟨5 * (n - k) + 4, by omega, rfl, Or.inr (Or.inl ⟨rfl, k, hk', rfl, a, c,
+    g₀.rdi + BitVec.ofNat 64 (4 * k), y, rfl, hX⟩)⟩
+
+theorem x131_136 (hl : Lim g₀ n) (hk : k ≤ n)
+    (hX : a + BitVec.ofNat 64 (ex V g₀.rdi n (E g₀) k) = T g₀ V n) :
+    (!decide (g₀.rsi = g₀.rdi + BitVec.ofNat 64 (4 * k))) = false → ∀ fl, Nx g₀ V n (5 * (n - k) + 5) 136
+      (Gs g₀ a c (g₀.rdi + BitVec.ofNat 64 (4 * k)) (g₀.rdi + BitVec.ofNat 64 (4 * k)) y) fl V := by
+  intro h _
+  have h' : g₀.rsi = g₀.rdi + BitVec.ofNat 64 (4 * k) := by simpa using h
+  have e : k = n := pinj hl.2 hk (Nat.le_refl n) (h'.symm.trans hl.1)
+  rw [e, ex_n, BitVec.add_zero] at hX
+  refine Or.inr ⟨Or.inr rfl, rfl, c, BitVec.setWidth 64 (E g₀), g₀.rdi + BitVec.ofNat 64 (4 * k),
+    g₀.rdi + BitVec.ofNat 64 (4 * k), y, ?_⟩
+  rw [hX]
+
 end exits
+
+/-! ## The cut points' conditions -/
+
+theorem vcAll {g₀ : Gprs} {V₀ : Addr → Byte} {n : Nat} (hl : Lim g₀ n)
+    (fa : ∀ k < n, ∀ i < 4, Foot F.data (Addr.add (g₀.rdi + BitVec.ofNat 64 (4 * k)) i)) (ℓ m : Nat) (g : Gprs)
+    (f : Rflags) (V : Addr → Byte) (h : Inv g₀ V₀ n ℓ m g V) : Wt ℓ F Wl (Nx g₀ V₀ n m) g f V := by
+  rcases h with ⟨rfl, ⟨rfl, rfl, rfl⟩ | ⟨rfl, k, hk, rfl, a, c, x, y, rfl, hX⟩ |
+    ⟨rfl, k, hk, rfl, a, y, rfl, hX, hP⟩ |
+    ⟨d, ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩, k, hk, rfl, a, c, i, y, rfl, hX⟩ |
+    ⟨rfl, k, hk, rfl, a, c, y, rfl, hX⟩⟩
+  · exact vc_0 (x0_122 hl) (x0_24 hl)
+  · exact vc_24 (e := E g₀) rfl (fa k hk) (x24_128 hk hX) (x24_131 hk hX) (x24_128b hk hX) (x24_67a hk hX)
+      (x24_67b hk hX)
+  · exact vc_67 (c := ch _ g₀.rdi k) rfl (fq67 hl hk fa) (x67_a hk hX hP) (x67_b hk hX hP hl)
+      (x67_c hk hX hP hl) (x67_h hk hX hP) (x67_i hk hX hP) (x67_j hk hX hP) (x67_k hk hX hP)
+      (x67_l hk hX hP hl) (x67_m hk hX hP hl)
+  · exact vc_128 (xd_128 hk hX)
+  · exact vc_184 (xd_184 hk hX)
+  · exact vc_224 (xd_224 hk hX)
+  · exact vc_131 (x131_24 hl hk hX) (x131_136 hl hk hX)
+
+variable {prof : Profile} {L : List (Addr × List Byte)} {s₀ : State} {o : Oracle}
+  {gev : List Event} {gP : State → Nat → List Event → Prop} {gE : Outcome → List Event → Prop}
+  {X : State} {t : Nat} {V : Addr → Byte} {n : Nat}
+
+/-- `Utf16_To_Utf8_Calc (src, srcLim, flags)` from its entry, with `srcLim` = `src + 4n` (no wrap) and the `n`
+characters readable: at the return address, the return address popped, the memory as it was, `rax` = `T` (the UTF-8
+size), `rcx`, `rdx`, `rdi`, `r8`, `r9` some values. -/
+theorem u8c_ok (c : Seg prof F Wl L s₀ o) (hin : CodeIn L u8c_at u8c) (hK : KeptW Wl s₀ X)
+    (hA : Agree F X.proc.mm.mem V) (hrip : X.cpu.rip = u8c_at) (hl : Lim X.cpu.gpr n)
+    (fa : ∀ k < n, ∀ i < 4, Foot F.data (Addr.add (X.cpu.gpr.rdi + BitVec.ofNat 64 (4 * k)) i))
+    (hsl : ∀ i < 8, Foot F.data (Addr.add X.cpu.gpr.rsp i))
+    {e₂ : Addr} {code₂ : List Byte} (hin₂ : CodeIn L e₂ code₂) {j₂ : Nat} (h₂ : j₂ < code₂.length)
+    (hra : rdq(V, X.cpu.gpr.rsp) = e₂.add j₂)
+    (k : ∀ (Z : State) (t' : Nat), KeptW Wl s₀ Z → Agree F Z.proc.mm.mem V → Z.cpu.rip = e₂.add j₂ →
+      (∃ c d i x y, Z.cpu.gpr = ({ X.cpu.gpr with
+          rax := T X.cpu.gpr V n, rcx := c, rdx := d, rdi := i, r8 := x,
+          r9 := y } : Gprs).set 4 (X.cpu.gpr.rsp + 8)) →
+      GoG prof L o gev gP gE Z t') :
+    GoG prof L o gev gP gE X t := by
+  refine c.cfg hin (fun ℓ => spAll prof ℓ) (fun ℓ m g _ V' => Inv X.cpu.gpr V n ℓ m g V')
+    (fun j g _ V' => Fin X.cpu.gpr V n j g V') (fun ℓ m g f V' h => vcAll hl fa ℓ m g f V' h) ?_
+    (5 * n + 10) 0 hK hA (by rw [addr_add_zero]; exact hrip) ⟨rfl, Or.inl ⟨rfl, rfl, rfl⟩⟩
+  rintro j g fl V' ⟨hj, hV, c', d, i, x, y, rfl⟩ Y t' hKY hAY hrY hgY -
+  subst hV
+  have hsY : Y.cpu.gpr.rsp = X.cpu.gpr.rsp := by rw [hgY]
+  have hdec : Dec prof.feat u8c j (FV7z.mk .ret 64 [] 1) := by
+    rcases hj with rfl | rfl
+    · exact ret_122 _
+    · exact ret_136 _
+  have hj' : j < 249 := by omega
+  refine c.s_ret hKY hAY hin (lt_len hj') hrY hdec (by rw [hsY]; exact hsl) hin₂ h₂ (by rw [hsY]; exact hra) ?_
+  rintro Z t₂ hKZ hAZ ⟨hrZ, hgZ⟩
+  exact k Z t₂ hKZ hAZ hrZ ⟨c', d, i, x, y, by rw [hgZ, hsY, hgY]⟩
 
 end FV7z.U8c
