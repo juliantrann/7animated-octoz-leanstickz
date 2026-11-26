@@ -651,6 +651,21 @@ FNS = {
     # the inserted string while in the string. Stops: the `ret`s (0x84, 0xa6).
     "rpl": dict(grp="Rpl", cn="AString::Replace", a=0x44ced0, n=167, pos=True, stops=(0x84, 0xa6), calls=True,
                 tag="PLAN.md §M, M1", src="7-Zip's `AString::Replace` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/Common/Wildcard.cpp `CCensorNode::AreAllAllowed ()`: 0 (the `ret`, 0x21) unless `Name` is empty,
+    # no `SubNodes`, no `ExcludeItems` and one item of `IncludeItems`; then a tail jump (0x2f) to its `AreAllAllowed`.
+    "caa": dict(grp="Caa", cn="NWildcard::CCensorNode::AreAllAllowed", a=0x452b20, n=52, pos=True, stops=(0x21, 0x2f),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CCensorNode::AreAllAllowed` (`CPP/Common/Wildcard.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/Windows/PropVariant.cpp `CPropVariant::operator= (UInt32)`: `InternalClear ()` (the `call`, 0x16)
+    # unless `vt` is `VT_UI4`, then `vt` = `VT_UI4`, `wReserved1` = 0, `ulVal` = the value. Stop: the `ret` (0x3c).
+    "pvu": dict(grp="Pvu", cn="CPropVariant::operator=(UInt32)", a=0x457430, n=61, pos=True, stops=(0x3c,), calls=True,
+                tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CPropVariant::operator= (UInt32)` (`CPP/Windows/PropVariant.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/Common/Wildcard.cpp `ExtractFileNameFromPath (path)`: `path.ReverseFind_PathSepar ()` (the `call`,
+    # 0x14), then `UString (path + it + 1)` into the result (0x26). Stop: the `ret` (0x35).
+    "efn": dict(grp="Efn", cn="ExtractFileNameFromPath(const UString &)", a=0x4528f0, n=54, pos=True, stops=(0x35,),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `ExtractFileNameFromPath` (`CPP/Common/Wildcard.cpp`; `objdump -d`)"),
     "usl": dict(grp="Usl", cn="UString::SetStartLen", a=0x44d060, n=54, pos=True, stops=(0x35,), calls=True,
                 tag="PLAN.md §M, M1", src="7-Zip's `UString::SetStartLen` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
     # `UString::UString (const UString &s)`: `SetStartLen (s._len)` (the `call` at 0x13 to `usl`), then a tail jump
