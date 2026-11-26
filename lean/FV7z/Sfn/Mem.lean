@@ -36,7 +36,7 @@ abbrev bq (p x : BitVec 64) : Addr := p + x * 4#64
 structure Lay (R p : Addr) (n : Nat) : Prop where
   hn : n < 4294967296
   hR8 : 8 ≤ R.toNat
-  hR : R.toNat + 128 ≤ 18446744073709551616
+  hR : R.toNat + 128 < 18446744073709551616
   hp : p.toNat + 4 * n ≤ 18446744073709551616
   hD : p.toNat + 4 * n + 8 ≤ R.toNat ∨ R.toNat + 128 ≤ p.toNat
 
@@ -106,7 +106,7 @@ theorem tS8 {R : Addr} (h : 8 ≤ R.toNat) : (R - 8).toNat = R.toNat - 8 := by
 section
 variable {R p : Addr} {n : Nat}
 
-theorem Lay.tR (hL : Lay R p n) {d : Nat} (h : d < 128) : (R + BitVec.ofNat 64 d).toNat = R.toNat + d :=
+theorem Lay.tR (hL : Lay R p n) {d : Nat} (h : d ≤ 128) : (R + BitVec.ofNat 64 d).toNat = R.toNat + d :=
   FV7z.Sfn.tR (by have := hL.hR; omega)
 
 theorem Lay.tB (hL : Lay R p n) {x : BitVec 64} (hx : x.toNat < n) : (bq p x).toNat = p.toNat + 4 * x.toNat :=
@@ -381,5 +381,35 @@ theorem Env.rE (E : Env prof F Wl L s₀ o fb R p sv n I) {x : BitVec 64} (hx : 
   fun i hi => E.c.hws _ (E.wE hx i hi)
 
 end
+
+/-! ## Next steps (design notes)
+
+Not yet written: `Sfn/Vc.lean` (the pieces' conditions) and `Sfn/Build.lean`, `Sfn/Sort.lean`, `Sfn/Holds.lean`
+(the loops and `sfn_ok`). Plan, as `FV7z.Msi`'s `Holds.lean` (vcs with exact posts `j' = … ∧ g' = {g with …} ∧
+V' = …`, the reasoning in the loops through `AtJ`, `(c_J prof fb).run`):
+
+- Instructions outside the blocks: the comparator calls at 320, 356, 553, 589 (`call 0x5dca50`, `Dec` lemmas and
+  `tgt_*` as `Msi`'s `qc70`; run with `SpAt.callK … (call_320 _) …` and `Env.cmp`, `Mk.call`, `a1s`); the counter's
+  `sub qword [rsp + 32], 2` at 378 (`Seg.s_sub_mi64`, decode `mk .sub 64 [.mem (mbd 4 32 64), .imm 64 2] 6`); the
+  `js` at 60 (target outside the code: `Seg.s_jcc_f`, needs the size below `2 ^ 31`).
+- Build phase, `Lr R p m sv g := g.rsp = R ∧ g.rbx = p ∧ g.rbp = m ∧ g.r13 = sv` (`m + 1 = n`):
+  - `P208 i`: `Lr`, `r15 = i < n`, `Mk W`, the 8 bytes at `R + 32` = `2 i + 1`. `vc_208` (`o10`, `o11`): `temp` :=
+    `p[i]`; `m < 2 i + 1` (cond 2) to 378 with `rcx = p[i]`, `rdx = bq p i`; else to 287 with `r14` = `2 i + 1`,
+    `[R + 8]` := `i`.
+  - Sift-down at 287 (measure `m - c`, `c` = `r14`): `c = m` (cond 6 with `zf`) to 345, `r12 = bq p c`; else 296:
+    `r8 = rax + 2`, `[R + 24]` := `r8`, `[R + 16]` := `bq p r8`, comparator (320), 325: `cmovg` twice (`o16`, post
+    `g' = G0 ∨ g' = G1`, `split_ifs`, mixed cases by `absurd ((rfz_cond _ _).trans h1) h2`); 345: `rdi = [R + 40]`
+    (`&temp`), comparator (356); 361 (`o18`, cond 8 = `(setWidth 32 rax).msb`): taken to 256 (`p[k]` := `p[c]`,
+    `rax = 2 c`, `rdx = 2 c + 1`; `m < rdx` to 624 → 378, else 279: `[R + 8]` := `c`, `r14` := `rdx`, to 287); not
+    taken to 374 → 378.
+  - `P378`: `Lr`, `r15 = i`, `rcx = setWidth 64 temp`, `rdx = bq p y` (`y < n`), `Mk`, `temp < n`, counter `2 i + 1`;
+    378 (`sub`), 384: `p[y]` := `ecx` (`Mk.st_B`), `r15 = 0` to 449, else 391: `r15 - 1`, to 208 (counter `2 i - 1`).
+- Sort phase from 449 (`rbp = m ≥ 1`, measure `m`): swap `p[m]`, `p[0]`, `temp` := old `p[m]`, `rbp = m - 1`; `zf`
+  (`rbp = 1`) to 400, else 469 → sift-down 520 … 606 as above (`r15` the pointer, `[R + 24]` = `&temp`, `test r8d`
+  at 594; cases 496, 440, 514, 606).
+- `P400`: `rsp = R`, `Mk W`; then the stack guard check (`rdq(W, R + 56) = rdq(W, fb + 40)` from `Tp`), the pops by
+  `Tp`, `ret` at 434. The head: 6 pushes, `sub rsp, 72`, the guard, `[rsi + 8]` := 0, the realloc path through
+  `operator delete` (0x6014f0) and `new[]` (0x6029b0) as `Arb`'s `kn`, the fill loop (127, 144, 159, 172).
+-/
 
 end FV7z.Sfn
