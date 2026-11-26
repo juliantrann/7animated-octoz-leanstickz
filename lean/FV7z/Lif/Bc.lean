@@ -82,6 +82,7 @@ theorem lif_bc {fb lp ct a0 : Addr} {a b cc : BitVec 64} {n : Nat} {pr : List By
     (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb)
     (hin : CodeIn L lif_at lif) (hinI : CodeIn L Ims.ims_at Ims.ims) (hci : CodeIn L Cti.cti_at Cti.cti)
     (hir : CodeIn L 4198480#64 pr) (hr0 : 0 < pr.length) (hrchr : Str.RchrAt prof L o 4198480#64 Pm)
+    (hgf : GotF F)
     (hK : KeptW Wl s₀ X) (hA : Agree F X.proc.mm.mem V) (hrip : X.cpu.rip = lif_at.add 70)
     (hsp : 40 ≤ X.cpu.gpr.rsp.toNat) (htop : X.cpu.gpr.rsp.toNat + 32 ≤ 2 ^ 64)
     (hst : ∀ i < 40, Foot Wl (Addr.add (X.cpu.gpr.rsp - 40#64) i))
@@ -128,7 +129,7 @@ theorem lif_bc {fb lp ct a0 : Addr} {a b cc : BitVec 64} {n : Nat} {pr : List By
   have nY : Y.cpu.gpr.rsp.toNat = X.cpu.gpr.rsp.toNat - 8 := by rw [eY, n8]
   have eYsi : Y.cpu.gpr.rsi = X.cpu.gpr.r12 := by rw [hgY]; rfl
   have e40 : X.cpu.gpr.rsp - 8 - 32#64 = X.cpu.gpr.rsp - 40#64 := by bv_omega
-  refine Ims.init_misc_ok (a0 := a0) (n := n) (j₂ := 83) c hinI hir hr0 hrchr hKY hAY hrY (by rw [nY]; omega)
+  refine Ims.init_misc_ok (a0 := a0) (n := n) (j₂ := 83) c hinI hir hr0 hrchr hgf hKY hAY hrY (by rw [nY]; omega)
     (by rw [nY]; omega) (fun i hi => ?_) (fun i hi => ?_) hin (by rw [lif_length]; omega) ?_
     (by rw [eYsi]; exact hsi) (fun i hi => by rw [eYsi]; exact fa i hi) ?_ hnz (by rw [eYsi]; exact hap0.1)
     (by rw [nY, eYsi]; have := hap0.2.1; omega) (by rw [eYsi]; have := hap0.2.2; omega) hgl

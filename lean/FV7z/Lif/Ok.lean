@@ -155,7 +155,7 @@ theorem lif_ok {pl pc ip cpy : List Byte} {Pm : (Addr → Byte) → Prop} {E : E
     (hfp : ∀ x : Addr, 4194368 ≤ x.toNat → x.toNat < 4194816 → Foot F.data x) (hph : Ph (fV W sp gY))
     (hpgs : rdq(fV W sp gY, 7943128#64) = 4096#64) (hla : rdq(fV W sp gY, 7943392#64) = 0#64)
     (hmg : ∀ t p, o t (.memFail p) = none)
-    (hGo : G.own = []) (hGc : G.code = F.code) (hfit : ∀ r ∈ G.writes ++ G.reads, r.Fits)
+    (hGo : G.own = []) (hGc : G.code = F.code) (hgG : GotF G) (hfit : ∀ r ∈ G.writes ++ G.reads, r.Fits)
     (hGw : ∀ r ∈ G.writes, ∀ a, r.Mem a → Foot (N ++ F.writes) a ∧ inPages 0x777 27 (pageOf a) = false)
     (hGr : ∀ r ∈ G.reads, ∀ a, r.Mem a → Foot (N ++ F.writes) a ∨ Foot F.reads a)
     (hcode : ∀ a, Foot F.codeRgns a → inPages 0x777 27 (pageOf a) = false)
@@ -222,7 +222,7 @@ theorem lif_ok {pl pc ip cpy : List Byte} {Pm : (Addr → Byte) → Prop} {E : E
   intro x nn ss Vc M W' evs gg U s₂ Z t' W₂ _ _ _ _ _ _ _ _ _ _ hLo hSame hev hUr hHp hc₂ hB hK₂ hA₂ hE hr₂ hs₂ hbx hbp
     h12 h13 h14 h15
   refine Lif.lif_nb (lp := lp) (ct := ct) (a := ca) (b := cb) (cc := cc) (a0 := a0) (n := n) (g := Y.cpu.gpr) hc₂
-    hB.fsb hinL hinS hci hir hr0 hrchr hK₂ hA₂ hr₂ hs₂ hE hUr hLo hSame hbk hfl hfsp hs (by rw [hs₂]; exact hst₂)
+    hB.fsb hinL hinS hci hir hr0 hrchr hgG hK₂ hA₂ hr₂ hs₂ hE hUr hLo hSame hbk hfl hfsp hs (by rw [hs₂]; exact hst₂)
     (by rw [hs₂]; exact hl₂) hgl (by rw [h12]; exact hsi) (by rw [h12]; exact fa) (by rw [h12]; exact ha0) hnz
     (by rw [h12]; exact hrs) (by rw [h12]; exact hr8) nfit nnz nz hns npg hPr hlp hct ha hb hc hlg hcg f1 f2 f3 fw
     hin₃ h₃ hra ?_

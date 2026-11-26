@@ -667,7 +667,7 @@ theorem getenv_none {pl pc : List Byte} {e₂ : Addr} {code₂ : List Byte} {j�
   have hM₂ := hM0.call h64 (bs := toBytesLE (gev_at.add (120 + 5)) 8) (toBytesLE_length _ _)
   have hdi : Y₂.cpu.gpr.rdi = P.g.rdi := by rw [hg₂, hgY]; rfl
   have hsp₂ : Y₂.cpu.gpr.rsp = P.g.rsp - 64#64 := by rw [hg₂]; rfl
-  refine hlen P.n c hK₂ hA₂ hr₂ (hPm _ hM₂.out) hin (lt_len (show 125 < 224 by decide)) ?_ (fun k hk => ?_)
+  refine hlen P.n c hgf hK₂ hA₂ hr₂ (hPm _ hM₂.out) hin (lt_len (show 125 < 224 by decide)) ?_ (fun k hk => ?_)
     (by rw [hdi]; exact hnf) (fun k hk => ?_) ?_ (fun x h1 h2 => ?_) ?_
   · rw [hsp₂, vs (toBytesLE_length _ _) (by bv_omega)]
     exact ofBytesLE_toBytesLE (w := 64) (n := 8) rfl _

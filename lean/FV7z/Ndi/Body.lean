@@ -150,7 +150,9 @@ theorem body_a {pl pc : List Byte} {Pm : (Addr → Byte) → Prop} {E : Ev} {V W
   have hsp₈ : Y₈.cpu.gpr.rsp = sp - 8#64 := by rw [hg₈]; rfl
   have ap : ∀ k ≤ n, (Addr.add p k).toNat = p.toNat + k := fun k hk =>
     toNat_add_of_fits (n := n + 1) (by omega) (by have := hpl.fit; omega)
-  refine cx.hlen n c hK₈ hA₈ hr₈ (cx.hPm _ (got_kept h72 M₈ G₅)) cx.hin (lt_len (show 2563 + 5 < 2897 by decide))
+  have hgf : GotF F :=
+    ⟨fun a h1 h2 => cx.hr a (by omega) (by omega), fun a h1 h2 => cx.hr a (by omega) (by omega), cx.hro⟩
+  refine cx.hlen n c hgf hK₈ hA₈ hr₈ (cx.hPm _ (got_kept h72 M₈ G₅)) cx.hin (lt_len (show 2563 + 5 < 2897 by decide))
     ?_ (fun i hi => ?_) (by rw [hdi₈]; exact hpl.fit) (fun k hk => ?_) ?_ (fun x h1 h2 => ?_) ?_
   · rw [hsp₈, vs (toBytesLE_length _ 8) (by rw [e8]; omega)]
     exact ofBytesLE_toBytesLE (w := 64) (n := 8) rfl _
