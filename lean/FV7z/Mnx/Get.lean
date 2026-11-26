@@ -9,10 +9,13 @@ from the tcache and from every entry's `next` word.
 
 - `rd3`: a read apart from each of the three stores.
 - `tc_get`: `TcSt V C bins` gives `TcSt (Vget …) C (bpop bins ix)`.
+- `Vget_out`: a byte apart from the three stores.
+- `pop_inv`: `GlB ∧ TcSt bins` before, `GlB ∧ TcSt (bpop bins ix)` after, with the bytes `GlB` reads apart from the
+  tcache and from `e`'s `key`.
 -/
 open ZellicX86 Decode FV7z FV7z.Leaf
-open FV7z.Tun (rd_Vst rd_Vst_self)
-open FV7z.Mal (TcSt tcnt tent)
+open FV7z.Tun (rd_Vst rd_Vst_self Vst_out)
+open FV7z.Mal (GlB TcSt tcnt tent)
 open FV7z.Ifr (tAdd ix2 ix8 a2 a8 toNat_C)
 namespace FV7z.Mnx
 
@@ -107,5 +110,33 @@ theorem tc_get {V : Addr → Byte} {C ix e : Addr} {bins : Nat → List Addr} (h
     · obtain ⟨x8, d1, d2⟩ := dis _ hj _ (List.getElem_mem (by omega : k < (bins j).length))
       rw [← h3 k hk']
       exact congrArg (ofBytesLE 64) (rd3 V C ix e _ he hc hk x8 (by omega) (by omega) (by omega))
+
+/-- A byte apart from the three stores. -/
+theorem Vget_out (U : Addr → Byte) (C ix e : Addr) (c : BitVec 16) (he : e.toNat + 16 ≤ 2 ^ 64)
+    (hc : C.toNat + 640 ≤ 2 ^ 64) (hk : ix.toNat < 64) (a : Addr)
+    (h1 : a.toNat < C.toNat ∨ C.toNat + 640 ≤ a.toNat) (h2 : a.toNat < e.toNat + 8 ∨ e.toNat + 16 ≤ a.toNat) :
+    Vget U C ix e c a = U a := by
+  have e8' : (e + 8#64).toNat = e.toNat + 8 := tAdd e 8 (by omega)
+  have e8 := ix8 hc hk
+  have e2 := ix2 hc hk
+  dsimp only [Vget]
+  rw [Vst_out, Vst_out, Vst_out]
+  all_goals (try simp only [toBytesLE_length, e8', e8, e2])
+  all_goals omega
+
+/-- The heap after `tcache_get`: `GlB` kept, bin `ix` without its head `e`. -/
+theorem pop_inv {F : Footprint} {Wl : List Rgn} {fb C ix e : Addr} {V : Addr → Byte} {bins : Nat → List Addr}
+    (hg : GlB F Wl fb C V) (ht : TcSt V C bins) (hc : C.toNat + 640 ≤ 2 ^ 64) (hk : ix.toNat < 64)
+    (hb : (bins ix.toNat).head? = some e) (he : e.toNat + 16 ≤ 2 ^ 64)
+    (eC : e.toNat + 16 ≤ C.toNat ∨ C.toNat + 640 ≤ e.toNat + 8)
+    (dis : ∀ i < 64, ∀ x ∈ bins i, x.toNat + 8 ≤ 2 ^ 64 ∧ (x.toNat + 8 ≤ e.toNat + 8 ∨ e.toNat + 16 ≤ x.toNat) ∧
+      (x.toNat + 8 ≤ C.toNat ∨ C.toNat + 640 ≤ x.toNat))
+    (f0 : 40 ≤ fb.toNat) (f1 : fb.toNat + 28 ≤ 2 ^ 64)
+    (hG : ∀ a : Addr, Ifr.Gr fb a → (a.toNat < C.toNat ∨ C.toNat + 640 ≤ a.toNat) ∧
+      (a.toNat < e.toNat + 8 ∨ e.toNat + 16 ≤ a.toNat)) :
+    GlB F Wl fb C (Vget V C ix e (ofBytesLE 16 (List.map V (byteAddrs (C + ix * 2#64) 2)))) ∧
+      TcSt (Vget V C ix e (ofBytesLE 16 (List.map V (byteAddrs (C + ix * 2#64) 2)))) C (bpop bins ix.toNat) :=
+  ⟨Ifr.GlB.congr hg f0 f1 fun a ha => Vget_out V C ix e _ he hc hk a (hG a ha).1 (hG a ha).2,
+    tc_get ht hc hk hb he eC dis⟩
 
 end FV7z.Mnx
