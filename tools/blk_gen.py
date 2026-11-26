@@ -361,6 +361,10 @@ FNS = {
     # glibc 2.31 libio/fileops.c `_IO_file_stat (fp, st)`: a tail jump (0xf) to `__fxstat (1, fp->_fileno, st)`.
     "ifs": dict(grp="Ifs", cn="_IO_file_stat", a=0x6287b0, n=20, pos=True, stops=(0xf,), calls=True,
                 tag="PLAN.md §M, M1", src="glibc 2.31's `_IO_file_stat` (`libio/fileops.c`; `objdump -d`)"),
+    # 7-Zip 26.06 `CreateArc` of the lzma handler (`CPP/7zip/Archive/LzmaHandler.cpp`, `new CHandler`): `operator new
+    # (0x58)` (the `call`, 0xd, to the body at 0x602970), then the fields and the two vtables stored (to the `ret`).
+    "cra": dict(grp="Cra", cn="CreateArc", a=0x49e9c0, n=0x4b, pos=True, stops=(0x4a,), calls=True,
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's lzma `CreateArc` (`CPP/7zip/Archive/LzmaHandler.cpp`; `objdump -d`)"),
     "sfs": dict(grp="Sfs", cn="SysFreeString", a=0x5a00c0, n=25, pos=True, stops=(0xd, 0x18),
                 tag="PLAN.md §M, M1", src="7-Zip 26.06's `SysFreeString` (`CPP/Common/MyWindows.cpp`; `objdump -d`)"),
     # 7-Zip's CPP/Common/Wildcard.cpp `DoesNameContainWildcard (const UString &)`: the `wchar_t`s (4 bytes, at
