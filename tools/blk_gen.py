@@ -565,6 +565,13 @@ FNS = {
     # 0x30]` at 0x3b); its result if not 0, else `VT_BOOL`: `result` = `boolVal != 0`, `VT_EMPTY`: S_OK, else
     # E_FAIL; `~CPropVariant` (the `call` at 0x5e), the stack guard. Stops: the `ret` (0x7e), `__stack_chk_fail`
     # (0x8b).
+    # CPP/Common/MyVector.h `CObjectVector<CRecordVector<unsigned>>::~CObjectVector ()`: from the last item down,
+    # `delete [] item->_items` (the `call` at 0x32, when not null) and `delete item` (the `call` at 0x3f, 16 bytes),
+    # then `delete [] _items` as a tail jump (0x5b) when not null, else the `ret` (0x64).
+    "ocv": dict(grp="Ocv", cn="CObjectVector<CRecordVector<unsigned>>::~CObjectVector", a=0x454600, n=101, pos=True,
+                stops=(0x5b, 0x64), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CObjectVector<CRecordVector<unsigned>>::~CObjectVector` (`CPP/Common/MyVector.h`; "
+                    "`objdump -d`)"),
     "gbp": dict(grp="Gbp", cn="Archive_GetItemBoolProp", a=0x5d15e0, n=144, pos=True, fs=True, stops=(0x7e, 0x8b),
                 hand=(0x86,),
                 calls=True, tag="PLAN.md §M, M1",
