@@ -227,14 +227,15 @@ theorem ura_ok {Pn : State → (Addr → Byte) → Prop} {Pw Pd : State → Stat
       rdq(V₂, X.cpu.gpr.rdi) = 0 → KeptW Wl s₀ Z' →
       Agree F Z'.proc.mm.mem (VE V₂ X.cpu.gpr.rdi Zn.cpu.gpr.rax (BitVec.setWidth 32 X.cpu.gpr.rsi)) →
       Z'.cpu.rip = e₂.add j₂ →
-      Z'.cpu.gpr = { Zw.cpu.gpr with rdi := rdq(V₂, X.cpu.gpr.rdi), rbx := X.cpu.gpr.rbx, rbp := X.cpu.gpr.rbp,
-        r12 := X.cpu.gpr.r12, rsp := X.cpu.gpr.rsp + 8 } →
+      Z'.cpu.gpr = { Zw.cpu.gpr with
+          rdi := rdq(V₂, X.cpu.gpr.rdi), rbx := X.cpu.gpr.rbx, rbp := X.cpu.gpr.rbp,
+          r12 := X.cpu.gpr.r12, rsp := X.cpu.gpr.rsp + 8 } →
       GoG prof L o gev gP gE Z' t')
     (kr1 : ∀ (Zn Zd : State) (V₃ : Addr → Byte) (Z' : State) (t' : Nat), Pd Zn Zd V₃ → KeptW Wl s₀ Z' →
       Agree F Z'.proc.mm.mem (VE V₃ X.cpu.gpr.rdi Zn.cpu.gpr.rax (BitVec.setWidth 32 X.cpu.gpr.rsi)) →
       Z'.cpu.rip = e₂.add j₂ →
-      Z'.cpu.gpr = { Zd.cpu.gpr with rbx := X.cpu.gpr.rbx, rbp := X.cpu.gpr.rbp, r12 := X.cpu.gpr.r12,
-        rsp := X.cpu.gpr.rsp + 8 } →
+      Z'.cpu.gpr = { Zd.cpu.gpr with
+          rbx := X.cpu.gpr.rbx, rbp := X.cpu.gpr.rbp, r12 := X.cpu.gpr.r12, rsp := X.cpu.gpr.rsp + 8 } →
       GoG prof L o gev gP gE Z' t') :
     GoG prof L o gev gP gE X t := by
   have hlt := X.cpu.gpr.rsp.isLt
@@ -286,8 +287,8 @@ theorem ura_ok {Pn : State → (Addr → Byte) → Prop} {Pw Pd : State → Stat
       (∀ (Z' : State) (t'' : Nat), KeptW Wl s₀ Z' →
         Agree F Z'.proc.mm.mem (VE W X.cpu.gpr.rdi U.cpu.gpr.r12 (BitVec.setWidth 32 X.cpu.gpr.rsi)) →
         Z'.cpu.rip = e₂.add j₂ →
-        Z'.cpu.gpr = { U.cpu.gpr with rbx := X.cpu.gpr.rbx, rbp := X.cpu.gpr.rbp, r12 := X.cpu.gpr.r12,
-          rsp := X.cpu.gpr.rsp + 8 } →
+        Z'.cpu.gpr = { U.cpu.gpr with
+            rbx := X.cpu.gpr.rbx, rbp := X.cpu.gpr.rbp, r12 := X.cpu.gpr.r12, rsp := X.cpu.gpr.rsp + 8 } →
         GoG prof L o gev gP gE Z' t'') →
       GoG prof L o gev gP gE U t' := by
     intro U W t' hKU hAU hrU hus hub hup hsv k
@@ -311,8 +312,8 @@ theorem ura_ok {Pn : State → (Addr → Byte) → Prop} {Pw Pd : State → Stat
       rw [m1 W _ _ X.cpu.gpr.rsp hp8 (by omega)]
       exact hsv.2.2.2
     refine (c_62 prof).run c hin (fun j' g' _ V' => j' = 72 ∧
-        g' = { U.cpu.gpr with rbx := X.cpu.gpr.rbx, rbp := X.cpu.gpr.rbp, r12 := X.cpu.gpr.r12,
-          rsp := X.cpu.gpr.rsp } ∧
+        g' = { U.cpu.gpr with
+            rbx := X.cpu.gpr.rbx, rbp := X.cpu.gpr.rbp, r12 := X.cpu.gpr.r12, rsp := X.cpu.gpr.rsp } ∧
         V' = VE W X.cpu.gpr.rdi U.cpu.gpr.r12 (BitVec.setWidth 32 X.cpu.gpr.rsi)) hKU hAU hrU
       (vc_62 (by rw [hub]; exact fw0) (by rw [hub]; exact fw12) (by rw [hus]; exact h24)
         (by rw [hus, a16]; exact h16) (by rw [hus, a16, a8]; exact h8)
