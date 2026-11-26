@@ -123,8 +123,7 @@ theorem vc_960 (hK : Ok K) (hE : Env K F Wl) (hc : Cm K g) (hI : I960 K g) :
   repeat' (first
     | exact fIn hE (by tfo) (by tfo)
     | exact fP hK hE (by tfo) (by tfo)
-    | exact x343 (by tcm) (by dsimp only [I343]; first | exact Or.inl ⟨by tfo, rfl⟩
-          | exact Or.inr ⟨⟨by tfo, by tfo⟩, rfl⟩) (by dsimp only [M343] <;> tfo)
+    | exact x343 (by tcm) (by dsimp only [I343]; t343) (by dsimp only [M343] <;> tfo)
     | exact x1024 (by tcm) rfl (by dsimp only [I1024] <;> tfs) (by dsimp only [M1024] <;> tfo)
     | exact x1200 (by tcm) rfl (by dsimp only [I1200] <;> tfs) (by dsimp only [M1200] <;> tfo)
     | (with_reducible rfl)
@@ -193,8 +192,7 @@ theorem vc_1200 (hK : Ok K) (hE : Env K F Wl) (hc : Cm K g) (hI : I1200 K g) :
   repeat' (first
     | exact fIn hE (by tfo) (by tfo)
     | exact fP hK hE (by tfo) (by tfo)
-    | exact x343 (by tcm) (by dsimp only [I343]; first | exact Or.inl ⟨by tfo, rfl⟩
-          | exact Or.inr ⟨⟨by tfo, by tfo⟩, rfl⟩) (by dsimp only [M343] <;> tfo)
+    | exact x343 (by tcm) (by dsimp only [I343]; t343) (by dsimp only [M343] <;> tfo)
     | exact x1261 (by tcm) rfl (by dsimp only [I1261] <;> tfs) (by dsimp only [M1261] <;> tfo)
     | exact x1288 (by tcm) rfl (by dsimp only [I1288] <;> tfs) (by dsimp only [M1288] <;> tfo)
     | (with_reducible rfl)

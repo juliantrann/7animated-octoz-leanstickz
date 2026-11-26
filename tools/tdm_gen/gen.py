@@ -120,11 +120,9 @@ SPLIT = {594}
 
 def exit_closer(src, j):
     if j in FIN:
-        return ("exact xFin (by decide) ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, by tfo, by tfo,\n"
-                "          by first | exact Or.inl ⟨by tfo, rfl⟩ | exact Or.inr ⟨by tfo, by tfo, rfl⟩⟩")
+        return "exact xFin (by decide) ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, by tfo, by tfo, by tfv⟩"
     if j == 343:
-        return ("exact x343 (by tcm) (by dsimp only [I343]; first | exact Or.inl ⟨by tfo, rfl⟩\n"
-                "          | exact Or.inr ⟨⟨by tfo, by tfo⟩, rfl⟩) (by dsimp only [M343] <;> tfo)")
+        return "exact x343 (by tcm) (by dsimp only [I343]; t343) (by dsimp only [M343] <;> tfo)"
     if (src, j) == (103, 180):
         return ("exact x180 (by tcm) rfl (by dsimp only [I180]; refine ⟨?_, ?_, ?_, ctx_ok hK _, ?_⟩ <;> tfs)\n"
                 "          (by dsimp only [M180] <;> tfo)")
