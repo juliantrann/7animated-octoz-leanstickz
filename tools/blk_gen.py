@@ -505,6 +505,12 @@ FNS = {
     "cib": dict(grp="Cib", cn="NCompress::NLzma::CDecoder::CreateInputBuffer", a=0x57fcc0, n=73, pos=True,
                 stops=(0x41, 0x48), calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `CDecoder::CreateInputBuffer` (`CPP/7zip/Compress/LzmaDecoder.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 `NWildcard::CCensorNode::CheckPathCurrent (include, pathParts, isFile)`: the loop over
+    # `IncludeItems` or `ExcludeItems` (`cmove`) with `CItem::CheckPath` (0x4529d0) at 0x4a; the `ret`s at 0x5d (one
+    # matched, its `al`) and 0x6c (none, 0).
+    "cpt": dict(grp="Cpt", cn="NWildcard::CCensorNode::CheckPathCurrent", a=0x453050, n=0x6e, pos=True,
+                stops=(0x5d, 0x6c), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `NWildcard::CCensorNode::CheckPathCurrent` (`CPP/Common/Wildcard.cpp`; `objdump -d`)"),
     "sfs": dict(grp="Sfs", cn="SysFreeString", a=0x5a00c0, n=25, pos=True, stops=(0xd, 0x18),
                 tag="PLAN.md §M, M1", src="7-Zip 26.06's `SysFreeString` (`CPP/Common/MyWindows.cpp`; `objdump -d`)"),
     # 7-Zip's CPP/Common/Wildcard.cpp `DoesNameContainWildcard (const UString &)`: the `wchar_t`s (4 bytes, at
