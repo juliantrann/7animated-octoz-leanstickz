@@ -159,6 +159,13 @@ FNS = {
                 stops=(0x49, 0x4a, 0x11b, 0x13c, 0x140, 0x14c), calls=True,
                 hand=(0x27, 0x5c, 0x77, 0x7b, 0x82, 0x8b, 0x94),
                 tag="PLAN.md §M, M1", src="glibc 2.31's `malloc_consolidate` (`malloc/malloc.c`; `objdump -d`)"),
+    # glibc 2.31 malloc/malloc.c (`_int_memalign (av, alignment, bytes)`): the request size `nb`, `_int_malloc (av,
+    # nb + alignment + MINSIZE)` (0x3a), the chunk cut at the first aligned spot (`div`, 0x51) with the leader given
+    # back by `_int_free` (0xd8) and the tail past `nb` too (0x150). Stops: the `ret` (0x166), the padding (0x167,
+    # 0x183, 0x196), the failed `assert` (0x1b7). By hand: `or qword [r13 + r14 + 8], 1` (0xba).
+    "mga": dict(grp="Mga", cn="_int_memalign", a=0x631bc0, n=470, pos=True, fs=True,
+                stops=(0x166, 0x167, 0x183, 0x196, 0x1b7), calls=True, hand=(0xba,),
+                tag="PLAN.md §M, M1", src="glibc 2.31's `_int_memalign` (`malloc/malloc.c`; `objdump -d`)"),
     "gdn": dict(grp="Gdn", cn="__getdents", a=0x6a2820, n=0x3c, pos=True, fs=True, stops=(0x23, 0x24, 0x3b),
                 calls=True, tag="PLAN.md §M, M1",
                 src="glibc 2.31's `__getdents` (`sysdeps/unix/sysv/linux/getdents64.c`; `objdump -d`)"),
