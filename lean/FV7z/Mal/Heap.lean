@@ -171,7 +171,10 @@ theorem nb_exW {n : Addr} {B : Nat} (h : MalB n B) :
     exact ⟨_, .inr hg, by omega, by omega, by omega⟩
 
 /-- `_int_malloc` on the second call for every request of `Im7.ClsW`. -/
-theorem secW {n nb : Addr} (h : Im7.ClsW n nb) : Im5.SecA n nb := h.elim Im6.secN Im7.secC
+theorem secW {n nb : Addr} (h : Im7.ClsW n nb) : Im5.SecA n nb := by
+  rcases h with h | h
+  · exact Im6.secN h
+  · exact Im7.secC h
 
 /-- `main_arena.top` after the split. -/
 theorem VspN_top {T szw nb : Addr} (V : Addr → Byte) (h1 : 7940776 ≤ T.toNat) (hT : T.toNat + nb.toNat + 16 < 2 ^ 64) :
