@@ -20,13 +20,13 @@ theorem lane_app (A B : BitVec 64) {j : Nat} (hj : j < 16) :
     lane 8 (A ++ B) j = if j < 8 then elem 8 B j else elem 8 A (j - 8) := by
   unfold lane elem
   split
-  · simp (disch := omega) only [BitVec.extractLsb'_append_eq_right]
+  · exact BitVec.extractLsb'_append_eq_of_add_le (by omega)
   · rw [show 8 * (j - 8) = 8 * j - 64 by omega]
     simp (disch := omega) only [BitVec.extractLsb'_append_eq_of_le]
 
 /-- The low half of two halves. -/
 theorem lane64_app (A B : BitVec 64) : lane 64 (A ++ B) 0 = B := by
-  simp (disch := omega) only [lane, BitVec.extractLsb'_append_eq_right, BitVec.extractLsb'_eq_self, Nat.mul_zero]
+  simp (disch := omega) only [lane, BitVec.extractLsb'_append_eq_right, Nat.mul_zero]
 
 /-- Byte `j` of 8 bytes at `a`. -/
 theorem elem8 (V : Addr → Byte) (a : Addr) {j : Nat} (hj : j < 8) :
