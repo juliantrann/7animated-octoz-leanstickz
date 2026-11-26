@@ -299,6 +299,10 @@ import FV7z.Start.Witness
 import FV7z.Lemmas.SysClose
 import FV7z.Close.Blocks
 import FV7z.Close.Cuts
+import FV7z.Lemmas.SysWrite
+import FV7z.Write.Blocks
+import FV7z.Write.Cuts
+import FV7z.Write.Holds
 import FV7z.Statement.Examples
 import FV7z.Lemmas.BlkOps7
 import FV7z.Gts.Holds
