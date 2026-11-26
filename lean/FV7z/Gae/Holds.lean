@@ -58,9 +58,6 @@ theorem sw3' (x : BitVec 16) : (x.setWidth 32).setWidth 16 = x := by
   simp only [BitVec.toNat_setWidth]
   rw [Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
 
-theorem ne_sub {x y : BitVec 16} (h : x ≠ y) : (x - y == 0) = false :=
-  beq_eq_false_iff_ne.2 fun h' => h (by bv_omega)
-
 /-- The closer of the pieces' conditions. -/
 macro "gcl" : tactic => `(tactic| (all_goals repeat'
     first
@@ -106,9 +103,9 @@ theorem vc_zt (hs : g.rsi = 0) (ft : ∀ i < 2, Foot F.data (Addr.add g.rdi i)) 
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only [vtOf] at hs ft h0 h19 h21 ⊢
   subst hs
-  have e0 := beq_eq_false_iff_ne.2 h0
-  have e19 := ne_sub h19
-  have e21 := ne_sub h21
+  have e0 : (ofBytesLE 16 ((byteAddrs rdi 2).map V) == 0) = false := beq_eq_false_iff_ne.2 h0
+  have e19 := decide_eq_false h19
+  have e21 := decide_eq_false h21
   wpx [W_0, W_72, W_78, W_84, o0, o2, o3, o7, K8, e0, e19, e21, sw3, sw3', BitVec.and_self, decide_false,
     decide_true, Bool.not_true, Bool.not_false, Bool.false_eq_true, Bool.true_eq_false, false_implies, implies_true]
   gcl
@@ -145,9 +142,9 @@ theorem vc_nt (hs : g.rsi ≠ 0) (ft : ∀ i < 2, Foot F.data (Addr.add g.rdi i)
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only [vtOf, st1] at hs ft fw h0 h19 h21 ⊢
   have hz : (rsi == 0) = false := beq_eq_false_iff_ne.2 hs
-  have e0 := beq_eq_false_iff_ne.2 h0
-  have e19 := ne_sub h19
-  have e21 := ne_sub h21
+  have e0 : (ofBytesLE 16 ((byteAddrs rdi 2).map V) == 0) = false := beq_eq_false_iff_ne.2 h0
+  have e19 := decide_eq_false h19
+  have e21 := decide_eq_false h21
   wpx [W_0, W_16, W_25, W_31, o0, o1, o2, o3, K8, hz, e0, e19, e21, sw3, sw3', BitVec.and_self, decide_false,
     decide_true, Bool.not_true, Bool.not_false, Bool.false_eq_true, Bool.true_eq_false, false_implies, implies_true]
   gcl
@@ -198,7 +195,7 @@ theorem fin36 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L gae_at gae) {Y : Stat
     (by rw [hspZ]; exact hra) ?_
   rintro W t₃ hKW hAW ⟨hrW, hgW⟩
   exact k W t₃ hKW hAW hrW (by rw [hgW]; exact (hK8.trans hk).set4)
-    (by rw [hgW]; show Z.cpu.gpr.rsp + 8 = _; rw [hspZ]) (by rw [hgW]; exact hax)
+    (by rw [hgW]; show Z.cpu.gpr.rsp + 8 = _; rw [hspZ]; rfl) (by rw [hgW]; exact hax)
 
 /-- From 51 to the return address: the result the 4 bytes at `prop + 8`. -/
 theorem fin51 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L gae_at gae) {Y : State} {t₁ : Nat} {V₁ : Addr → Byte}
@@ -221,7 +218,7 @@ theorem fin51 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L gae_at gae) {Y : Stat
     (by rw [hspZ]; exact hra) ?_
   rintro W t₃ hKW hAW ⟨hrW, hgW⟩
   exact k W t₃ hKW hAW hrW (by rw [hgW]; exact (hK8.trans hk).set4)
-    (by rw [hgW]; show Z.cpu.gpr.rsp + 8 = _; rw [hspZ]) (by rw [hgW]; show Z.cpu.gpr.rax = _; rw [hax, hdi])
+    (by rw [hgW]; show Z.cpu.gpr.rsp + 8 = _; rw [hspZ]; rfl) (by rw [hgW]; show Z.cpu.gpr.rax = _; rw [hax, hdi])
 
 /-- From 48: `*rsi` = 1, then as `fin51`. -/
 theorem fin48 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L gae_at gae) {Y : State} {t₁ : Nat} {V₁ : Addr → Byte}
@@ -294,8 +291,8 @@ theorem gae_ok (c : Seg prof F Wl L s₀ o) (hin : CodeIn L gae_at gae) {codeT :
     GoG prof L o gev gP gE X t := by
   have hrip' : X.cpu.rip = gae_at.add 0 := by rw [addr_add_zero]; exact hrip
   by_cases hs : X.cpu.gpr.rsi = 0
-  · have ez : Vz V X.cpu.gpr = V := if_pos hs
-    have e1 : V1 V X.cpu.gpr = V := if_pos hs
+  · have ez : Vz V X.cpu.gpr = V := ite_cond_eq_true _ _ (eq_true hs)
+    have e1 : V1 V X.cpu.gpr = V := ite_cond_eq_true _ _ (eq_true hs)
     rw [ez] at k0 kt
     rw [e1] at k1
     by_cases h0 : vtOf V X.cpu.gpr = 0#16
@@ -315,8 +312,8 @@ theorem gae_ok (c : Seg prof F Wl L s₀ o) (hin : CodeIn L gae_at gae) {codeT :
       subst hgY
       exact thr c hin hinT hT hKY hAY (.inr rfl) hrY fun Z t' hKZ hAZ hrZ hgZ =>
         kt h0 h19 h21 Z t' hKZ hAZ hrZ (by rw [hgZ]; exact hk) (by rw [hgZ]; exact hsp)
-  · have ez : Vz V X.cpu.gpr = st1 V X.cpu.gpr.rsi 0#8 := if_neg hs
-    have e1 : V1 V X.cpu.gpr = st1 (st1 V X.cpu.gpr.rsi 0#8) X.cpu.gpr.rsi 1#8 := if_neg hs
+  · have ez : Vz V X.cpu.gpr = st1 V X.cpu.gpr.rsi 0#8 := ite_cond_eq_false _ _ (eq_false hs)
+    have e1 : V1 V X.cpu.gpr = st1 (st1 V X.cpu.gpr.rsi 0#8) X.cpu.gpr.rsi 1#8 := ite_cond_eq_false _ _ (eq_false hs)
     rw [ez] at k0 kt
     rw [e1] at k1
     have oz : Raf.Out X.cpu.gpr.rsi.toNat (X.cpu.gpr.rsi.toNat + 1) V (st1 V X.cpu.gpr.rsi 0#8) :=
