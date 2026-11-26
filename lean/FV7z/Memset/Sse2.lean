@@ -24,24 +24,6 @@ variable {prof : Profile} {L : List (Addr × List Byte)} {s₀ : State} {o : Ora
   {gev : List Event} {gP : State → Nat → List Event → Prop} {gE : Outcome → List Event → Prop}
   {e' : Addr} {code : List Byte} {X : State} {t j : Nat} {V : Addr → Byte}
 
-/-- `s_jccV`, with the flags kept when not taken (two `jcc`s after one `cmp`). -/
-theorem s_jccF (c : Seg prof F Wl L s₀ o) (hK : KeptW Wl s₀ X)
-    (hA : Agree F X.proc.mm.mem V) (hin : CodeIn L e' code) (hj : j < code.length)
-    (hrip : X.cpu.rip = e'.add j) {cc : Cond} {rel len tgt : Nat}
-    (hd : Dec prof.feat code j (FV7z.mk (.jcc cc) 64 [.rel rel] len))
-    (htgt : (j + len + rel) % 2 ^ 64 = tgt % 2 ^ 64) (ht : tgt < code.length)
-    (taken : X.cpu.rflags.cond cc = true → ContG prof F Wl L s₀ o gev gP gE V fun Y =>
-      Y.cpu.rip = e'.add tgt ∧ Y.cpu.gpr = X.cpu.gpr ∧ Y.cpu.vec = X.cpu.vec)
-    (fall : X.cpu.rflags.cond cc = false → ContG prof F Wl L s₀ o gev gP gE V fun Y =>
-      Y.cpu.rip = e'.add (j + len) ∧ Y.cpu.gpr = X.cpu.gpr ∧ Y.cpu.vec = X.cpu.vec ∧
-        Y.cpu.rflags = rfz X.cpu.rflags) :
-    GoG prof L o gev gP gE X t := by
-  cases hcc : X.cpu.rflags.cond cc
-  · exact c.next hK hA hin hj hrip (fun M hK' hA' htf _ => ⟨_, _, jcc_n (s := X.withMem M) htf
-      (c.dec hK' hin hrip hd) hcc, hK'.nx rfl rfl rfl, hA', rip_add hrip M len, rfl, rfl, rfl⟩) (fall hcc)
-  · exact c.s_jccV hK hA hin hj hrip hd htgt ht (fun _ => taken hcc)
-      (fun h => absurd (hcc.symm.trans h) (by decide))
-
 end FV7z.Fn.Seg
 
 namespace FV7z.Memset
