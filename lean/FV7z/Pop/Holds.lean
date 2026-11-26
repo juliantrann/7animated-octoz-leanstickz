@@ -39,8 +39,13 @@ theorem vc_0t {g : Gprs} {f : Rflags} {V : Addr → Byte} (h : m V g ≠ 0)
   dsimp only [gT, m] at h fa fm ⊢
   wpx [W_0, W_19, o0, o1, h, BitVec.and_self, beq_iff_eq, beq_eq_false_iff_ne, ne_eq,
     not_true_eq_false, not_false_eq_true, false_implies, Bool.true_eq_false, Bool.false_eq_true, implies_true]
-  all_goals repeat' (first | exact rfl | assumption | exact trivial | (intro hh; exact absurd hh h)
-    | apply And.intro | intro _)
+  all_goals repeat' (first
+    | exact rfl
+    | assumption
+    | exact trivial
+    | (intro hh; exact absurd hh h)
+    | apply And.intro
+    | intro _)
 
 variable {prof : Profile} {L : List (Addr × List Byte)} {s₀ : State} {o : Oracle}
   {gev : List Event} {gP : State → Nat → List Event → Prop} {gE : Outcome → List Event → Prop}
@@ -60,7 +65,8 @@ theorem pop_t (c : Seg prof F Wl L s₀ o) (hin : CodeIn L pop_at pop) (hK : Kep
     GoG prof L o gev gP gE X t := by
   refine (c_0 prof).run c hin (fun j' g' _ V' => j' = 22 ∧ g' = gT V X.cpu.gpr ∧ V' = V) hK hA
     (by rw [addr_add_zero]; exact hrip) (vc_0t h fa fm) ?_
-  rintro j' g fl V₁ ⟨rfl, rfl, rfl⟩ Y t₁ hKY hAY hrY hgY -
+  rintro j' g fl V₁ ⟨rfl, rfl, hV₁⟩ Y t₁ hKY hAY hrY hgY -
+  subst V₁
   have he : eaD Y 0 40 = rdq(V, m V X.cpu.gpr) + 40#64 := by
     show Y.cpu.gpr.get (regOf 0) + BitVec.ofNat 64 40 = _
     rw [hgY]
