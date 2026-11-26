@@ -109,14 +109,32 @@ abbrev pops3 (V : Addr → Byte) (g : Gprs) : Gprs :=
       r12 := rdq(V, g.rsp + 8 + 8) }
 
 theorem rbx0_eq {n : BitVec 32} (h : n ≠ 0) : rbx0 n = BitVec.ofNat 64 (8 * (n.toNat - 1)) := by
-  have h1 : n.toNat ≠ 0 := fun e => h (BitVec.eq_of_toNat_eq e)
+  have h1 : n.toNat ≠ 0 := fun e => h (BitVec.eq_of_toNat_eq (e.trans rfl))
   have h2 : n.toNat < 4294967296 := n.isLt
+  have l64 : 4294967296 ≤ 2 ^ 64 := by decide
+  have eA : (BitVec.setWidth 64 n).toNat = n.toNat := by
+    rw [BitVec.toNat_setWidth]
+    exact Nat.mod_eq_of_lt (Nat.lt_of_lt_of_le h2 l64)
+  have eB : (BitVec.setWidth 64 n + 18446744073709551615#64).toNat = n.toNat - 1 := by
+    rw [BitVec.toNat_add, eA, BitVec.toNat_ofNat,
+      Nat.mod_eq_of_lt (a := 18446744073709551615) (b := 2 ^ 64) (by decide)]
+    have e : n.toNat + 18446744073709551615 = (n.toNat - 1) + 2 ^ 64 := by
+      rw [show (2 : Nat) ^ 64 = 18446744073709551616 from rfl]
+      omega
+    rw [e, Nat.add_mod_right]
+    exact Nat.mod_eq_of_lt (Nat.lt_of_le_of_lt (Nat.sub_le _ _) (Nat.lt_of_lt_of_le h2 l64))
+  have eC : (BitVec.setWidth 32 (BitVec.setWidth 64 n + 18446744073709551615#64)).toNat = n.toNat - 1 := by
+    rw [BitVec.toNat_setWidth, eB]
+    exact Nat.mod_eq_of_lt (Nat.lt_of_le_of_lt (Nat.sub_le _ _) h2)
+  have eD : (BitVec.setWidth 64 (BitVec.setWidth 32 (BitVec.setWidth 64 n + 18446744073709551615#64))).toNat =
+      n.toNat - 1 := by
+    rw [BitVec.toNat_setWidth, eC]
+    exact Nat.mod_eq_of_lt (Nat.lt_of_le_of_lt (Nat.sub_le _ _) (Nat.lt_of_lt_of_le h2 l64))
   apply BitVec.eq_of_toNat_eq
-  simp only [rbx0, BitVec.toNat_shiftLeft, BitVec.toNat_setWidth, BitVec.toNat_add, BitVec.toNat_ofNat,
-    Nat.shiftLeft_eq, Nat.reducePow, Nat.reduceMod]
-  omega
+  rw [rbx0, BitVec.toNat_shiftLeft, eD, Nat.shiftLeft_eq, BitVec.toNat_ofNat]
+  exact congrArg (fun x => x % 2 ^ 64) (Nat.mul_comm (n.toNat - 1) (2 ^ 3))
 
-theorem rb_step (k : Nat) (hk : k < 4294967296) :
+theorem rb_step (k : Nat) (_hk : k < 4294967296) :
     BitVec.ofNat 64 (8 * (k + 1)) - 8#64 = BitVec.ofNat 64 (8 * k) := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_sub, BitVec.toNat_ofNat, Nat.reducePow, Nat.reduceMod]
@@ -153,18 +171,33 @@ variable {F : Footprint} {Wl : List Rgn}
 section
 variable {g : Gprs} {f : Rflags} {V : Addr → Byte}
 
-/-- From the entry: the pushes, `r12` = `this`, the size `n32` and `it` read; to 82 when the size is 0, else to 32
-with `rbx` = `rbx0 n32`. -/
-theorem vc_0 {n32 : BitVec 32} {it : BitVec 64}
-    (hn : rdd(Vp V g, g.rdi + 8#64) = n32) (hit : rdq(Vp V g, g.rdi) = it)
+/-- From the entry with the size 0: the pushes, `r12` = `this`, `it` read; to 82. -/
+theorem vc_0z {n32 : BitVec 32} {it : BitVec 64}
+    (hn : rdd(Vp V g, g.rdi + 8#64) = n32) (hit : rdq(Vp V g, g.rdi) = it) (hn0 : n32 = 0)
     (fn : ∀ i < 4, Foot F.data (Addr.add (g.rdi + 8#64) i)) (fa : ∀ i < 8, Foot F.data (Addr.add g.rdi i))
     (w1 : ∀ i < 8, Foot Wl (Addr.add (g.rsp - 8) i)) (w2 : ∀ i < 8, Foot Wl (Addr.add (g.rsp - 8 - 8) i))
     (w3 : ∀ i < 8, Foot Wl (Addr.add (g.rsp - 8 - 8 - 8) i)) :
-    W_0 F Wl (fun j' g' _ V' => V' = Vp V g ∧ Rs g g' ∧ g'.rdi = it ∧
-      (n32 = 0 ∧ j' = 82 ∨ n32 ≠ 0 ∧ j' = 32 ∧ g'.rbx = rbx0 n32)) g f V := by
+    W_0 F Wl (fun j' g' _ V' => V' = Vp V g ∧ Rs g g' ∧ g'.rdi = it ∧ j' = 82) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only [Vp] at hn hit fn fa w1 w2 w3 ⊢
-  wpx [W_0, W_21, o0, o1, Op.shl64, Rs, hn, hit, BitVec.and_self, beq_iff_eq, beq_eq_false_iff_ne]
+  have e : (n32 == 0) = true := beq_iff_eq.2 hn0
+  wpx [W_0, W_21, o0, o1, Op.shl64, Rs, hn, hit, e, BitVec.and_self, Bool.false_eq_true, Bool.true_eq_false,
+    false_implies, eq_self_iff_true, true_implies, implies_true]
+  ocl
+
+/-- From the entry with the size `n32` not 0: the pushes, `r12` = `this`, `it` read; to 32 with `rbx` =
+`rbx0 n32`. -/
+theorem vc_0n {n32 : BitVec 32} {it : BitVec 64}
+    (hn : rdd(Vp V g, g.rdi + 8#64) = n32) (hit : rdq(Vp V g, g.rdi) = it) (hn0 : n32 ≠ 0)
+    (fn : ∀ i < 4, Foot F.data (Addr.add (g.rdi + 8#64) i)) (fa : ∀ i < 8, Foot F.data (Addr.add g.rdi i))
+    (w1 : ∀ i < 8, Foot Wl (Addr.add (g.rsp - 8) i)) (w2 : ∀ i < 8, Foot Wl (Addr.add (g.rsp - 8 - 8) i))
+    (w3 : ∀ i < 8, Foot Wl (Addr.add (g.rsp - 8 - 8 - 8) i)) :
+    W_0 F Wl (fun j' g' _ V' => V' = Vp V g ∧ Rs g g' ∧ g'.rdi = it ∧ j' = 32 ∧ g'.rbx = rbx0 n32) g f V := by
+  obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
+  dsimp only [Vp] at hn hit fn fa w1 w2 w3 ⊢
+  have e : (n32 == 0) = false := beq_eq_false_iff_ne.2 hn0
+  wpx [W_0, W_21, o0, o1, Op.shl64, Rs, hn, hit, e, BitVec.and_self, Bool.false_eq_true, Bool.true_eq_false,
+    false_implies, eq_self_iff_true, true_implies, implies_true]
   ocl
 
 /-- 32 with `_items[k]` 0: to 72. -/
@@ -481,14 +514,18 @@ theorem ocv_ok {n32 : BitVec 32} {it : BitVec 64} {I : Nat → (Addr → Byte) �
         exact ih (by omega))
   -- the entry
   have hrip' : X.cpu.rip = ocv_at.add 0 := by rw [addr_add_zero]; exact hrip
-  refine (c_0 prof).run c hin _ hK hA hrip' (vc_0 hn (hIt _ _ hI) fn fa w1 w2 w3) ?_
-  rintro j' g fl V₁ ⟨hV₁, hR, hdi, hj⟩ Y t₁ hKY hAY hrY hgY -
-  subst V₁
-  subst hgY
-  rcases hj with ⟨hn0, rfl⟩ | ⟨hn0, rfl, hb⟩
-  · have e0 : n32.toNat = 0 := congrArg BitVec.toNat hn0
+  by_cases hn0 : n32 = 0
+  · refine (c_0 prof).run c hin _ hK hA hrip' (vc_0z hn (hIt _ _ hI) hn0 fn fa w1 w2 w3) ?_
+    rintro j' g fl V₁ ⟨hV₁, hR, hdi, rfl⟩ Y t₁ hKY hAY hrY hgY -
+    subst V₁
+    subst hgY
+    have e0 : n32.toNat = 0 := (congrArg BitVec.toNat hn0).trans rfl
     exact F82 Y _ t₁ hKY hAY hrY ⟨e0 ▸ hI, hf, hR, hdi⟩
-  · have hnz : n32.toNat ≠ 0 := fun e => hn0 (BitVec.eq_of_toNat_eq e)
+  · refine (c_0 prof).run c hin _ hK hA hrip' (vc_0n hn (hIt _ _ hI) hn0 fn fa w1 w2 w3) ?_
+    rintro j' g fl V₁ ⟨hV₁, hR, hdi, rfl, hb⟩ Y t₁ hKY hAY hrY hgY -
+    subst V₁
+    subst hgY
+    have hnz : n32.toNat ≠ 0 := fun e => hn0 (BitVec.eq_of_toNat_eq (e.trans rfl))
     have e1 : n32.toNat - 1 + 1 = n32.toNat := by omega
     exact L32 (n32.toNat - 1) (by omega) Y _ t₁ hKY hAY hrY
       ⟨by rw [e1]; exact hI, hf, hR, hdi, by rw [hb, rbx0_eq hn0]⟩
