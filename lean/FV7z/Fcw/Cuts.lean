@@ -1,7 +1,7 @@
 import FV7z.Fcw.Blocks
 import FV7z.Lemmas.Wp
 /-!
-# The cut points of `FindCharPosInString (wchar_t)` (PLAN.md §M, M1)
+# The cut points of `FindCharPosInString(const wchar_t *, wchar_t)` (PLAN.md §M, M1)
 
 The 2 cut points: the entry and where two ways meet. From each, the blocks up to the next cut points as one
 piece (`W_*`, with its `Sp`, `c_*`): a block's straight-line code, then at its jump's exits the next block's condition,

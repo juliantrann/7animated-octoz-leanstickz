@@ -1,6 +1,6 @@
 import FV7z.Fcw.Blocks1
 /-!
-# The basic blocks of `FindCharPosInString (wchar_t)` (PLAN.md §M, M1)
+# The basic blocks of `FindCharPosInString(const wchar_t *, wchar_t)` (PLAN.md §M, M1)
 
 Where the stretches of `Pats.lean` lie in the code (`w_*`, `wj_*`: a prefix of the code from an offset, by the kernel's
 evaluation), and for each of the 7 basic blocks that the entry reaches an `Sp` (`sp_*`, by the block's offset): what

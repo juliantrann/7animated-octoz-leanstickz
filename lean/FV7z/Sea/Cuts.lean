@@ -1,7 +1,7 @@
 import FV7z.Sea.Blocks
 import FV7z.Lemmas.Wp
 /-!
-# The cut points of `StringsAreEqual_Ascii` (PLAN.md §M, M1)
+# The cut points of `StringsAreEqual_Ascii(const wchar_t *, const char *)` (PLAN.md §M, M1)
 
 The 3 cut points: the entry and where two ways meet. From each, the blocks up to the next cut points as one
 piece (`W_*`, with its `Sp`, `c_*`): a block's straight-line code, then at its jump's exits the next block's condition,

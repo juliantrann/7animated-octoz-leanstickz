@@ -1,7 +1,7 @@
 import FV7z.Lemmas.Sp
 import FV7z.Lemmas.BlkOps3
 /-!
-# The stretches of straight-line code of `FindCharPosInString (wchar_t)` (PLAN.md §M, M1)
+# The stretches of straight-line code of `FindCharPosInString(const wchar_t *, wchar_t)` (PLAN.md §M, M1)
 
 Each distinct stretch between labels and jumps (`p*`, 6 of them) and each distinct jump (`j*`, 4) as its own
 list of bytes: what the model's decoder makes of its instructions on every processor, whatever bytes follow
