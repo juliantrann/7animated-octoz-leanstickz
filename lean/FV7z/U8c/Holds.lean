@@ -692,10 +692,10 @@ theorem vcAll {g₀ : Gprs} {V₀ : Addr → Byte} {n : Nat} (hl : Lim g₀ n)
     · exact x67_c hk hX hP hl
     · exact x67_h hk hX hP
     · exact x67_i hk hX hP
-    · exact x67_j hk hX hP
+    · exact x67_j (y := y) hk hX hP
     · exact x67_k hk hX hP
-    · exact x67_l hk hX hP hl
-    · exact x67_m hk hX hP hl
+    · exact x67_l (y := y) hk hX hP hl
+    · exact x67_m (y := y) hk hX hP hl
   · exact vc_128 (xd_128 hk hX)
   · exact vc_184 (xd_184 hk hX)
   · exact vc_224 (xd_224 hk hX)
