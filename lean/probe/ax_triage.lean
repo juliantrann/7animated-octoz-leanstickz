@@ -1,3 +1,3 @@
-import FV7z.Ldf.Holds
+import FV7z.Lap.Holds
 open FV7z
-#print axioms FV7z.Ldf.ldf_ok
+#print axioms FV7z.Lap.lap_ok

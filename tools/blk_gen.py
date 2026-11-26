@@ -169,6 +169,11 @@ FNS = {
     # `ISzAlloc_Free (alloc, p->dic)` (28), `p->dic` = NULL. Stop: the `ret` (45).
     "ldf": dict(grp="Ldf", cn="LzmaDec_Free", a=0x42be70, n=46, pos=True, stops=(45,), calls=True,
                 tag="PLAN.md §M, M1", src="7-Zip 26.06's `LzmaDec_Free` (`C/LzmaDec.c`; `objdump -d`)"),
+    # 7-Zip's C/LzmaDec.c `LzmaDec_AllocateProbs2 (p, propNew, alloc)` (`lc` = esi, `lp` = edx): `numProbs` = 0x7c0 +
+    # (0x300 << (lc + lp)); the same `probs` kept (0x26 to 0x57), else `LzmaDec_FreeProbs` (0x2e), `alloc->Alloc`
+    # (0x3b), SZ_ERROR_MEM on NULL (0x60). Stop: the `ret` (0x5b).
+    "lap": dict(grp="Lap", cn="LzmaDec_AllocateProbs2", a=0x42be00, n=103, pos=True, stops=(0x5b,), calls=True,
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `LzmaDec_AllocateProbs2` (`C/LzmaDec.c`; `objdump -d`)"),
     "lfp": dict(grp="Lfp", cn="LzmaDec_FreeProbs", a=0x42bde0, n=31, pos=True, stops=(30,), calls=True,
                 tag="PLAN.md §M, M1", src="7-Zip 26.06's `LzmaDec_FreeProbs` (`C/LzmaDec.c`; `objdump -d`)"),
     # 7-Zip's C/LzmaDec.c `LzmaDec_InitDicAndState (p, initDic, initState)`: `remainLen` = kMatchSpecLenStart + 1,
