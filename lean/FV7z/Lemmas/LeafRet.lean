@@ -89,9 +89,9 @@ theorem addref_vc {d : Nat} {g : Gprs} {f : Rflags}
 
 /-- `AddRef` (the count at `this + d`, `this` in `rdi`) from its entry to the return address: the count at
 `this + d` one more, and in `eax`. -/
-theorem addref_ok {code : List Byte} {e : Addr} {d : Nat}
-    (c0 : Sp prof code e 0 fun F Wl Q => wp F Wl (arOps d) (Q 13))
-    (hd : Dec prof.feat code 13 (FV7z.mk .ret 64 [] 1)) (hj : 13 < code.length)
+theorem addref_ok {code : List Byte} {e : Addr} {d n : Nat}
+    (c0 : Sp prof code e 0 fun F Wl Q => wp F Wl (arOps d) (Q n))
+    (hd : Dec prof.feat code n (FV7z.mk .ret 64 [] 1)) (hj : n < code.length)
     (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e code) (hK : KeptW Wl s₀ X) (hA : Agree F X.proc.mm.mem V)
     (hrip : X.cpu.rip = e)
     (fa : ∀ i < 4, Foot F.data (Addr.add (X.cpu.gpr.rdi + BitVec.ofNat 64 d) i))

@@ -34,10 +34,11 @@ theorem vc_0 {g : Gprs} {f : Rflags} :
   first
   | rfl
   | exact fun _ => rfl
-  | (simp only [ftV])
-  | (simp only [ftV, BitVec.add_comm])
-  | (intro _; simp only [ftV, BitVec.add_comm])
+  | (intro _; rw [← imul64_eq]; rfl)
   | (trace_state; done)
+
+/-- `rsp` after `rax` is written (by the structure, not by the value: the kernel would evaluate it). -/
+theorem set0_rsp (g : Gprs) (v : BitVec 64) : (g.set 0 v).rsp = g.rsp := rfl
 
 /-- `UnixTime64_To_FileTime64` from its entry to the return address: `rax` = `ftV rdi`. -/
 theorem utf_ok (c : Seg prof F Wl L s₀ o) (hin : CodeIn L utf_at utf) (hK : KeptW Wl s₀ X)
@@ -48,6 +49,6 @@ theorem utf_ok (c : Seg prof F Wl L s₀ o) (hin : CodeIn L utf_at utf) (hK : Ke
     (k : ∀ (Z : State) (t' : Nat), KeptW Wl s₀ Z → Agree F Z.proc.mm.mem V → Z.cpu.rip = e₂.add j₂ →
       Z.cpu.gpr = (X.cpu.gpr.set 0 (ftV X.cpu.gpr.rdi)).set 4 (X.cpu.gpr.rsp + 8) → GoG prof L o gev gP gE Z t') :
     GoG prof L o gev gP gE X t :=
-  leaf_ok (c_0 prof) (ret_24 _) (lt_len (by decide)) c hin hK hA hrip vc_0 rfl hl hin₂ h₂ hra k
+  leaf_ok (c_0 prof) (ret_24 _) (lt_len (by decide)) c hin hK hA hrip vc_0 (set0_rsp _ _) hl hin₂ h₂ hra k
 
 end FV7z.Utf
