@@ -529,7 +529,9 @@ import FV7z.Irp.Holds
 import FV7z.Pic.Cuts
 import FV7z.Pic.Holds
 import FV7z.Pdt.Cuts
+import FV7z.Pdt.Holds
 import FV7z.Pvd.Cuts
+import FV7z.Pvd.Holds
 import FV7z.Lemmas.SysMunmap
 import FV7z.Start.Unmap
 import FV7z.Mun.Ok
