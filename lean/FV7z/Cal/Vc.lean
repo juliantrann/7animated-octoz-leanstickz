@@ -19,7 +19,7 @@ one thread (`fs:0x18` 0), `perturb_byte` 0 and `_int_malloc` gives a chunk of th
   `ret` (209).
 -/
 open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn
-open FV7z.Tun (rd_Vst)
+open FV7z.Tun (rd_Vst rd_Vst_self)
 namespace FV7z.Cal
 
 /-- The extra lemmas of the pieces' `wp`. -/
@@ -34,7 +34,7 @@ macro "cx" cfg:Lean.Parser.Tactic.optConfig "[" ls:Lean.Parser.Tactic.simpLemma,
       Bool.false_or, Bool.not_false, Bool.not_true, Bool.false_eq_true, false_imp_iff, true_imp_iff, Bool.or_self,
       Bool.true_or, Bool.or_true, false_implies, true_implies, and_true, true_and, reduceIte, or_true, true_or,
       or_false, false_or, ne_eq, Nat.reduceEqDiff, not_false_eq_true, ofBytesLE_toBytesLE, Bool.true_eq_false,
-      BitVec.xor_self, BitVec.add_zero, decide_eq_true_eq, $ls,*])
+      BitVec.xor_self, BitVec.add_zero, decide_eq_true_eq, implies_true, forall_const, $ls,*])
 
 /-! ## The frame -/
 
