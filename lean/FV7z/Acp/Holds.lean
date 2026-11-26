@@ -58,8 +58,9 @@ def Pk (g : Gprs) (V : Addr → Byte) (n : Nat) (ra : Addr) (P1 : State → (Add
     (V' : Addr → Byte) : Prop :=
   rdq(V', g.rsp - 16) = g.rbx ∧ rdq(V', g.rsp - 8) = g.rbp ∧ rdq(V', g.rsp) = ra ∧
     Z.cpu.gpr.r12 = g.r12 ∧ Z.cpu.gpr.r13 = g.r13 ∧ Z.cpu.gpr.r14 = g.r14 ∧ Z.cpu.gpr.r15 = g.r15 ∧
-    rdq(V', g.rsi) = rdq(V, g.rsi) ∧ (∀ i, i ≤ n → V' ((rdq(V, g.rsi)).add i) = V ((rdq(V, g.rsi)).add i)) ∧
-    (∀ i, i ≤ n → Foot Wl (Z.cpu.gpr.rax.add i)) ∧ Z.cpu.gpr.rax.toNat + n + 1 ≤ 2 ^ 64 ∧
+    rdq(V', g.rsi) = rdq(V, g.rsi) ∧
+    (∀ i, i ≤ n → V' (Addr.add (rdq(V, g.rsi)) i) = V (Addr.add (rdq(V, g.rsi)) i)) ∧
+    (∀ i, i ≤ n → Foot Wl (Addr.add Z.cpu.gpr.rax i)) ∧ Z.cpu.gpr.rax.toNat + n + 1 ≤ 2 ^ 64 ∧
     (Z.cpu.gpr.rax.toNat + n + 1 ≤ (rdq(V, g.rsi)).toNat ∨
       (rdq(V, g.rsi)).toNat + n + 1 ≤ Z.cpu.gpr.rax.toNat) ∧
     (Z.cpu.gpr.rax.toNat + n + 1 ≤ g.rsp.toNat - 16 ∨ g.rsp.toNat + 8 ≤ Z.cpu.gpr.rax.toNat) ∧ P1 Z V'
@@ -161,9 +162,9 @@ theorem acp_ok {P1 : State → (Addr → Byte) → Prop} {n : Nat} (c : Seg prof
     (hsq : X.cpu.gpr.rsi.toNat + 12 ≤ 2 ^ 64)
     (hsf : X.cpu.gpr.rsi.toNat + 12 ≤ X.cpu.gpr.rsp.toNat - 16 ∨ X.cpu.gpr.rsp.toNat ≤ X.cpu.gpr.rsi.toNat)
     (hst : X.cpu.gpr.rsi.toNat + 8 ≤ X.cpu.gpr.rdi.toNat ∨ X.cpu.gpr.rdi.toNat + 16 ≤ X.cpu.gpr.rsi.toNat)
-    (hn : n < 2 ^ 63) (hnz : ∀ i < n, V ((rdq(V, X.cpu.gpr.rsi)).add i) ≠ 0)
-    (hz : V ((rdq(V, X.cpu.gpr.rsi)).add n) = 0)
-    (hf : ∀ i, i ≤ n → Foot F.data ((rdq(V, X.cpu.gpr.rsi)).add i))
+    (hn : n < 2 ^ 63) (hnz : ∀ i < n, V (Addr.add (rdq(V, X.cpu.gpr.rsi)) i) ≠ 0)
+    (hz : V (Addr.add (rdq(V, X.cpu.gpr.rsi)) n) = 0)
+    (hf : ∀ i, i ≤ n → Foot F.data (Addr.add (rdq(V, X.cpu.gpr.rsi)) i))
     (hpw : (rdq(V, X.cpu.gpr.rsi)).toNat + n + 1 ≤ 2 ^ 64)
     (hpt : (rdq(V, X.cpu.gpr.rsi)).toNat + n + 1 ≤ X.cpu.gpr.rdi.toNat ∨
       X.cpu.gpr.rdi.toNat + 16 ≤ (rdq(V, X.cpu.gpr.rsi)).toNat)
@@ -310,12 +311,12 @@ theorem acp_ok {P1 : State → (Addr → Byte) → Prop} {n : Nat} (c : Seg prof
   have y15 : Y₃.cpu.gpr.r15 = X.cpu.gpr.r15 := by rw [hg₃, hgZ']; exact k15
   have hpw' : (rdq(V, X.cpu.gpr.rsi)).toNat + (n + 1) ≤ 2 ^ 64 := by omega
   have hdw' : Z.cpu.gpr.rax.toNat + (n + 1) ≤ 2 ^ 64 := by omega
-  have tp : ∀ i, i ≤ n → ((rdq(V, X.cpu.gpr.rsi)).add i).toNat = (rdq(V, X.cpu.gpr.rsi)).toNat + i :=
+  have tp : ∀ i, i ≤ n → (Addr.add (rdq(V, X.cpu.gpr.rsi)) i).toNat = (rdq(V, X.cpu.gpr.rsi)).toNat + i :=
     fun i hi => toNat_add_of_fits (by omega) hpw'
-  have td : ∀ i, i ≤ n → (Z.cpu.gpr.rax.add i).toNat = Z.cpu.gpr.rax.toNat + i :=
+  have td : ∀ i, i ≤ n → (Addr.add Z.cpu.gpr.rax i).toNat = Z.cpu.gpr.rax.toNat + i :=
     fun i hi => toNat_add_of_fits (by omega) hdw'
   have hWp : ∀ i, i ≤ n → Asl.V1 V' X.cpu.gpr.rdi rdd(V, X.cpu.gpr.rsi + 8#64) Z.cpu.gpr.rax
-      ((rdq(V, X.cpu.gpr.rsi)).add i) = V ((rdq(V, X.cpu.gpr.rsi)).add i) := fun i hi => by
+      (Addr.add (rdq(V, X.cpu.gpr.rsi)) i) = V (Addr.add (rdq(V, X.cpu.gpr.rsi)) i) := fun i hi => by
     rw [byV1 _ _ _ _ _ hq (by rw [tp i hi]; omega), hstr i hi]
   have fr : ∀ a : Addr, a.toNat + 8 ≤ 2 ^ 64 → X.cpu.gpr.rsp.toNat - 16 ≤ a.toNat →
       a.toNat ≤ X.cpu.gpr.rsp.toNat →
