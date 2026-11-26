@@ -46,7 +46,8 @@ theorem wpV_ldzx8 {r : Nat} {b i : Option Nat} {sc d : Nat} {ops : List VOp}
     (k : wpV F Wl ops Q (wr g r ((V a).setWidth 32)) (rfz f) x V) :
     wpV F Wl (.op (Op.ldzx 8 r b i sc d) :: ops) Q g f x V := by
   refine ⟨rfl, fun j hj => ?_, fun fl hfl => ?_⟩
-  · rw [he, show j = 0 by omega, addr_add_zero]
+  · show Foot F.data ((eaG g b i sc d).add j)
+    rw [he, show j = 0 by omega, addr_add_zero]
     exact hf
   · obtain rfl : fl = rfz f := hfl
     show wpV F Wl ops Q (wr g r ((ofBytesLE 8 ((byteAddrs (eaG g b i sc d) 1).map V)).setWidth 32)) (rfz f) x V
@@ -59,7 +60,7 @@ end
 theorem ea_ip {g : Gprs} {b i : Nat} {a : Addr} {k : Nat} (hb : g.get (regOf b) = a)
     (hi : g.get (regOf i) = BitVec.ofNat 64 k) : eaG g (some b) (some i) 1 0 = a.add k := by
   simp only [eaG, optV, hb, hi, Addr.add]
-  rw [show BitVec.ofNat 64 1 = 1 from rfl, BitVec.mul_one, show BitVec.ofNat 64 0 = 0 from rfl, BitVec.add_zero]
+  rw [BitVec.mul_one, BitVec.add_zero]
 
 /-- `sub` of `p` from `R`, then `jbe`: taken just when `R ≤ p`. -/
 theorem jbe_ofNat {R p : Nat} (hR : R < 2 ^ 64) (hp : p < 2 ^ 64) :
@@ -81,17 +82,16 @@ theorem jbe_ofNat {R p : Nat} (hR : R < 2 ^ 64) (hp : p < 2 ^ 64) :
 
 /-- The difference of two bytes zero-extended: 0 just when they are the same. -/
 theorem zsub_eq_zero (x y : Byte) : x.setWidth 32 - y.setWidth 32 = 0 ↔ x = y := by
+  rw [sub_eq_zero_iff]
   constructor
   · intro h
     apply BitVec.eq_of_toNat_eq
     have e := congrArg BitVec.toNat h
-    have hx := x.isLt
-    have hy := y.isLt
-    simp only [BitVec.toNat_sub, BitVec.toNat_setWidth, BitVec.toNat_zero] at e
-    simp only [Nat.reducePow] at hx hy e
-    omega
+    rw [BitVec.toNat_setWidth, BitVec.toNat_setWidth, Nat.mod_eq_of_lt (Nat.lt_trans x.isLt (by decide)),
+      Nat.mod_eq_of_lt (Nat.lt_trans y.isLt (by decide))] at e
+    exact e
   · rintro rfl
-    exact BitVec.sub_self _
+    rfl
 
 variable {prof : Profile} {L : List (Addr × List Byte)} {s₀ : State} {o : Oracle} {F : Footprint} {Wl : List Rgn}
   {gev : List Event} {gP : State → Nat → List Event → Prop} {gE : Outcome → List Event → Prop}
@@ -158,7 +158,8 @@ theorem exit6192 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e' scm) {Y : State
   have hdx₂ : Y₂.cpu.gpr.rdx = BitVec.ofNat 64 p := by simp only [hg₂]; exact hdx₁
   have hkp₂ : KpN g₀ Y₂.cpu.gpr := by simp only [KpN, hg₂]; exact hkp₁
   -- `jbe 6212`
-  refine c.s_jcc hK₂ hA₂ hin (lt_scm (by decide)) hr₂ (d6199 prof.feat) (by decide) (lt_scm (by decide)) ?_ ?_
+  refine c.s_jcc (tgt := 6212) hK₂ hA₂ hin (lt_scm (by decide)) hr₂ (d6199 prof.feat) (by decide)
+    (lt_scm (by decide)) ?_ ?_
   · -- no stop before `n`: `xor eax, eax; ret`
     intro hcc
     have hle : R ≤ p := by
