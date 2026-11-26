@@ -216,7 +216,9 @@ theorem crossS (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e' scm) {k cL e : Na
   · -- a 0 among the bytes of `x` left: the end
     intro hcc
     rw [cond_5, ← cond_4, hz] at hcc
-    have hne : pmsk (peqb 0 X3) &&& BitVec.ofNat 32 (65536 - 2 ^ k) ≠ 0 := fun h => by simp [h] at hcc
+    have hne : pmsk (peqb 0 X3) &&& BitVec.ofNat 32 (65536 - 2 ^ k) ≠ 0 := fun h => by
+      rw [h] at hcc
+      exact absurd hcc (by decide)
     have hend : ∃ j < 16 - k, V (x.add (u + j)) = 0 := by
       refine Classical.byContradiction fun hn => hne ((test_hi X3 (by omega)).2 fun i hki hi h0 =>
         hn ⟨i - k, by omega, ?_⟩)
