@@ -153,12 +153,12 @@ theorem tdm_ok (c : Seg prof F Wl L s₀ o) (hin : CodeIn L tdm_at tdm) (hO : Ok
     · exact Or.inl h
     · exact Or.inr ⟨h1, h2⟩
   obtain ⟨e0, e1, e2, e3, e4, e5⟩ := rd1 hO hs hs8
-  rw [rdv hv' hr (by tbo) (by tbo), e0] at hbx
-  rw [rdv hv' hr (by tbo) (by tbo), e1] at hbp
-  rw [rdv hv' hr (by tbo) (by tbo), e2] at h12
-  rw [rdv hv' hr (by tbo) (by tbo), e3] at h13
-  rw [rdv hv' hr (by tbo) (by tbo), e4] at h14
-  have hra' : rdq(V', K.g0.rsp) = e₂.add j₂ := by rw [rdv hv' hr (by tbo) (by tbo), e5]; exact hra
+  rw [rdv (x := K.sp) hv' hr (by tbo) (by tbo), e0] at hbx
+  rw [rdv (x := K.sp + 8) hv' hr (by tbo) (by tbo), e1] at hbp
+  rw [rdv (x := K.sp + 8 + 8) hv' hr (by tbo) (by tbo), e2] at h12
+  rw [rdv (x := K.sp + 8 + 8 + 8) hv' hr (by tbo) (by tbo), e3] at h13
+  rw [rdv (x := K.sp + 8 + 8 + 8 + 8) hv' hr (by tbo) (by tbo), e4] at h14
+  have hra' : rdq(V', K.g0.rsp) = e₂.add j₂ := by rw [rdv (x := K.g0.rsp) hv' hr (by tbo) (by tbo), e5]; exact hra
   have hsp' : rsp = K.g0.rsp := by rw [hsp]; tbo
   subst hsp' hdx hr9 hr15 hbx hbp h12 h13 h14
   have hl' : ∀ i < 8, Foot F.data (Addr.add Y.cpu.gpr.rsp i) := by rw [hgY]; exact hl
@@ -166,7 +166,7 @@ theorem tdm_ok (c : Seg prof F Wl L s₀ o) (hin : CodeIn L tdm_at tdm) (hO : Ok
   have kk : ∀ (Z : State) (t₂ : Nat), KeptW Wl s₀ Z → Agree F Z.proc.mm.mem V' →
       Z.cpu.rip = e₂.add j₂ ∧ Z.cpu.gpr = Y.cpu.gpr.set 4 (Y.cpu.gpr.rsp + 8) → GoG prof L o gev gP gE Z t₂ := by
     rintro Z t₂ hKZ hAZ ⟨hrZ, hgZ⟩
-    exact k V' Z t₂ hKZ hAZ hrZ ⟨rax, rcx, rsi, rdi, r8, r10, r11, by rw [hgZ, hgY]; rfl, hax, hs1, hs2, hvv⟩
+    exact k V' Z t₂ hKZ hAZ hrZ ⟨rax, rcx, rsi, rdi, r8, r10, r11, by rw [hgZ, hgY] <;> rfl, hax, hs1, hs2, hvv⟩
   rcases hj with rfl | rfl
   · exact c.s_ret hKY hAY hin (lt_len (by decide)) hrY (ret_354 _) hl' hin₂ h₂ hra'' kk
   · exact c.s_ret hKY hAY hin (lt_len (by decide)) hrY (ret_765 _) hl' hin₂ h₂ hra'' kk

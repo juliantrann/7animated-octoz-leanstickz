@@ -126,13 +126,20 @@ scoped macro "tfo" : tactic => `(tactic| ((try simp only [Bool.not_eq_true', Boo
 scoped macro "tfod" : tactic => `(tactic| ((simp only [Bool.not_eq_true', Bool.not_eq_false', Bool.or_eq_true,
   Bool.or_eq_false_iff, Bool.and_eq_true, decide_eq_true_eq, decide_eq_false_iff_not, beq_iff_eq,
   beq_eq_false_iff_ne, Bnd, ne_eq] at *) <;> (trace_state; bv_omega)))
+/-- `tfo` with the wraps that `omega` proves away dropped first (`omega` alone gives up on many of them). -/
+scoped macro "tfom" : tactic => `(tactic| ((try simp only [Bool.not_eq_true', Bool.not_eq_false', Bool.or_eq_true,
+  Bool.or_eq_false_iff, Bool.and_eq_true, decide_eq_true_eq, decide_eq_false_iff_not, beq_iff_eq,
+  beq_eq_false_iff_ne, Bnd, ne_eq] at *) <;> (try simp -implicitDefEqProofs only [bitvec_to_nat] at *) <;>
+  (try simp (disch := omega) only [Nat.mod_eq_of_lt] at *) <;> omega))
 /-- A cut point's condition: its conjuncts by `assumption`, `rfl` or `tfo`. -/
 scoped macro "tf1" : tactic => `(tactic| first | (with_reducible assumption) | exact trivial | (with_reducible rfl) |
   (with_reducible apply And.intro))
 scoped macro "tfs" : tactic => `(tactic| ((repeat' tf1) <;> tfo))
+scoped macro "tfsm" : tactic => `(tactic| ((repeat' tf1) <;> tfom))
 scoped macro "tfsd" : tactic => `(tactic| ((repeat' tf1) <;> (trace_state; tfod)))
 /-- `Cm` after a stretch. -/
 scoped macro "tcm" : tactic => `(tactic| exact ⟨rfl, rfl, rfl, rfl, by tfo, by tfo⟩)
+scoped macro "tcmm" : tactic => `(tactic| exact ⟨rfl, rfl, rfl, rfl, by tfom, by tfom⟩)
 scoped macro "tcmd" : tactic => `(tactic| exact ⟨rfl, rfl, rfl, rfl, by tfod, by tfod⟩)
 /-- `I343` after a stretch: no store and `r12d` 0 (`t343a`), or the store and the result (`t343b`). -/
 scoped macro "t343a" : tactic => `(tactic| exact Or.inl ⟨by tfo, rfl⟩)
