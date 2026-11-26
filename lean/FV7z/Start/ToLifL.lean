@@ -1,4 +1,5 @@
 import FV7z.Start.LifL
+import FV7z.Start.PmMono
 /-!
 # From the launch of `7zzs` to the return of `__libc_init_first` (PLAN.md G3, startup)
 
@@ -49,7 +50,7 @@ theorem launch_to_lif {l : Launch} {n : Nat} {o : Oracle} {L : List (Addr × Lis
     -- `__libc_init_first`'s code and the contracts of the functions it calls through the PLT
     (hLC : LifCode L) (hMC : MalCode L)
     (hlen : Str.LenAt l.prof L o 4198664#64 (GotOkB l.prof))
-    (hcmp : Str.NcmpAt l.prof L o 4198472#64 (GotOkB l.prof))
+    (hcmp : Str.NcmpAt l.prof L o 4198472#64 (GotTab l.prof))
     (hpcy : Gor.PcpyAt l.prof L o 4198592#64 (GotOkB l.prof))
     (hset : Ipa.SetAt l.prof L o 4198528#64 (GotOkB l.prof))
     (hrchr : Str.RchrAt l.prof L o 4198480#64 (GotOkB l.prof)) :
@@ -191,8 +192,8 @@ theorem launch_to_lif {l : Launch} {n : Nat} {o : Oracle} {L : List (Addr × Lis
   have hgm : ∀ a : Addr, 7937720 ≤ a.toNat → a.toNat < 7940480 → lifM W' Z a = Z.proc.mm.mem.readByte a :=
     fun a e1 e2 => (lifM_lo (by omega) (by omega)).trans (hgw a e1 e2)
   have hPm : ∀ W₁ : Addr → Byte, (∀ x : Addr, 7938048 ≤ x.toNat → x.toNat < 7940480 → W₁ x = lifM W' Z x) →
-      GotOkB l.prof W₁ := fun W₁ h₁ =>
-    GotOkB.congr hG0 fun a e1 e2 => (h₁ a (by omega) (by omega)).trans (hgm a (by omega) (by omega))
+      NcmpTabV W₁ → GotTab l.prof W₁ := fun W₁ h₁ ht =>
+    ⟨GotOkB.congr hG0 fun a e1 e2 => (h₁ a (by omega) (by omega)).trans (hgm a (by omega) (by omega)), ht⟩
   have hPq : ∀ W₁ : Addr → Byte, (∀ a : Addr, a.toNat < 7940480 → (a.toNat < 7937664 ∨ 7937720 ≤ a.toNat) →
       ¬ Ndi.Hv a → W₁ a = lifM W' Z a) → GotOkB l.prof W₁ := fun W₁ h₁ =>
     GotOkB.congr hG0 fun a e1 e2 => (h₁ a (by omega) (.inr (by omega)) (by unfold Ndi.Hv; omega)).trans
@@ -212,8 +213,9 @@ theorem launch_to_lif {l : Launch} {n : Nat} {o : Oracle} {L : List (Addr × Lis
     (R := (stackLayout l.args l.prof.linux c).sp)
     (P := (stackLayout l.args l.prof.linux c).platform - platformString.length)
     (a0 := BitVec.ofNat 64 (stackLayout l.args l.prof.linux c).strings) (n := (arg0 l.args).length)
-    (Pm := GotOkB l.prof) (Pq := GotOkB l.prof) (Pk := GotOkB l.prof) (Ps := GotOkB l.prof) (Pr := GotOkB l.prof)
-    (hLC := hLC) (hMC := hMC) (hlsm := hC.lsm) (hlen := hlen) (hcmp := hcmp) (hcpy := hpcy) (hcpq := hpcy)
+    (Pm := GotTab l.prof) (Pq := GotOkB l.prof) (Pk := GotOkB l.prof) (Ps := GotOkB l.prof) (Pr := GotOkB l.prof)
+    (hLC := hLC) (hMC := hMC) (hlsm := hC.lsm) (hlen := LenAt.mono hlen fun _ h => h.1) (hcmp := hcmp)
+    (hcpy := PcpyAt.mono hpcy fun _ h => h.1) (hcpq := hpcy)
     (hlenA := hlen) (hset := hset) (hrchr := hrchr) (hPm := hPm) (hPq := hPq) (hPk := hPk) (hPs := hPq)
     (hPr := hPr) (hmg := hmg) (hpse := hpse) (hc := c₂) (hBs := hB₂) (hKZ := hK₂) (hAZ := hA') (hrip := hr₂)
     (hRg := hRg) (hdx := hdx) (hsi := hsi) (hHw := hhw) (hPl := hpl) (hW := hW') (hK := hK) (hI := hI0)
