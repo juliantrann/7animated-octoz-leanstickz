@@ -56,6 +56,11 @@ theorem sw8r (x : BitVec 64) : ((x.setWidth 32).setWidth 64).setWidth 8 = x.setW
   simp only [BitVec.toNat_setWidth]
   omega
 
+theorem sw32r (x : BitVec 64) : (x.setWidth 32).setWidth 8 = x.setWidth 8 := by
+  apply BitVec.eq_of_toNat_eq
+  simp only [BitVec.toNat_setWidth]
+  omega
+
 theorem tz_t {b : BitVec 8} (h : (!(b == 0)) = true) : b ≠ 0 := fun e => by
   subst e
   revert h
@@ -133,17 +138,22 @@ theorem e36 {N n i : Nat} (hi : i ≤ N) (hn : N + 1 - i < n) (hc : ch V₀ g₀
 
 variable {F : Footprint} {Wl : List Rgn}
 
+set_option maxHeartbeats 1000000 in
 /-- The entry: byte 0 `c`, 0 at 53; else the loop's head with byte 0. -/
 theorem vc_0 {N : Nat} {f : Rflags} (hF : ∀ k ≤ N, Foot F.data (Addr.add g₀.rdi k)) :
     W_0 F Wl (Nx g₀ V₀ N (N + 2)) g₀ f V₀ := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g₀
   dsimp only at hF ⊢
-  wpx [W_0, W_17, W_51, o0, o5, sw_8_32_8, BitVec.xor_self]
+  wpx [W_0, W_17, W_51, o0, o5, sw_8_32_8, sw_8_32_64_8, sw8r, sw32r, BitVec.xor_self]
   refine ⟨f0 (hF 0 (Nat.zero_le _)), fun h => ?_, fun h af => ?_⟩
-  · have hc : ch V₀ rdi 0 ≠ rsi.setWidth 8 := fun e => nb_t h (by rw [← e, ch, addr_add_zero])
+  · have hc : ch V₀ rdi 0 ≠ rsi.setWidth 8 := by
+      simp only [ch, addr_add_zero]
+      exact fun e => nb_t h e.symm
     exact e36 (Nat.zero_le _) (by omega) hc (fun k hk => absurd hk (Nat.not_lt_zero _))
       (by simp only [G36, G36a, ch, addr_add_zero])
-  · have hc : ch V₀ rdi 0 = rsi.setWidth 8 := by rw [ch, addr_add_zero]; exact (nb_f h).symm
+  · have hc : ch V₀ rdi 0 = rsi.setWidth 8 := by
+      simp only [ch, addr_add_zero]
+      exact (nb_f h).symm
     exact eFin (Or.inr (Or.inr rfl)) (by exact ⟨0, fun k hk => absurd hk (Nat.not_lt_zero _), Or.inl ⟨hc, rfl⟩⟩) rfl
 
 set_option maxHeartbeats 1000000 in
@@ -153,7 +163,7 @@ theorem vc_36 {N n : Nat} {g : Gprs} {f : Rflags} (hF : ∀ k ≤ N, Foot F.data
   obtain ⟨i, hi, rfl, hne, hok, rfl⟩ := h
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g₀
   dsimp only [G36, G36a] at hF hN hne hok ⊢
-  wpx [W_36, W_24, W_48, W_40, o2, o1, o4, o3, BitVec.and_self, sw_8_32_64_8, sw_8_32_8, sw8r]
+  wpx [W_36, W_24, W_48, W_40, o2, o1, o4, o3, BitVec.and_self, sw_8_32_64_8, sw_8_32_8, sw8r, sw32r]
   intro af
   refine ⟨fun h1 => ?_, fun h1 => ?_⟩
   · have hz : ch V₀ rdi i ≠ 0 := tz_t h1
