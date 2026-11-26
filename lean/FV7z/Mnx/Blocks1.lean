@@ -147,4 +147,14 @@ theorem sp_256 (prof : Profile) (fb : Addr) : SpF prof mnx mnx_at fb 256 fun F W
     (f.cond 4 = true → Q 83 g (rfz f) V) ∧ (f.cond 4 = false → Q 272 g (rfz f) V) :=
   SpF.blk_then (blk_256 prof) (spj_266 prof fb)
 
+theorem w_272 : p14 <+: mnx.drop 272 := by decide +kernel
+theorem blk_272 (prof : Profile) : Blk prof mnx 272 307 o14 := (b14 prof).shift w_272
+theorem wj_307 : j12 <+: mnx.drop 307 := by decide +kernel
+theorem spj_307 (prof : Profile) (fb : Addr) : SpF prof mnx mnx_at fb 307 fun _ _ Q g f V =>
+    Q 164 g (rfz f) V :=
+  (Sp.jmp (j := 307) (tgt := 164) (Dec.shift (j12_0 _) wj_307 (by decide)) (lt_len (by decide)) (by decide) (lt_len (by decide))).fs
+theorem sp_272 (prof : Profile) (fb : Addr) : SpF prof mnx mnx_at fb 272 fun F Wl Q => wp F Wl o14 fun g f V =>
+    Q 164 g (rfz f) V :=
+  SpF.blk_then (blk_272 prof) (spj_307 prof fb)
+
 end FV7z.Mnx
