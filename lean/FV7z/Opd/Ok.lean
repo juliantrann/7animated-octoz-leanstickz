@@ -503,7 +503,7 @@ theorem opd_cnc {fb : Addr} {g : Gprs} {V₀ : Addr → Byte} {S Y : State} {W :
     (by rw [hs₂, hY8]; omega) (by rw [hs₂, hY8]; rcases fr.hed with h | h <;> omega) hin (lt_len hj)
     (by rw [hs₂, rd_Vst_self W (Y.cpu.gpr.rsp - 8) (toBytesLE (opd_at.add (j + 5)) 8) (toBytesLE_length _ _)
       (by rw [hY8]; omega), ofBytesLE_toBytesLE hb8]) ?_
-  intro Y' S' Z r t' hKY' hAY' hgY' hrY' - hS' c' hKZ hrZ hok herr
+  intro Y' S' Z r t' hKY' hAY' hgY' hrY' _ hS' c' hKZ hrZ hok herr
   subst hS'
   have hfs' : (sysSt (closeSt Y') 2 r).cpu.seg.fsBase = fb := by
     show Y'.cpu.seg.fsBase = fb
@@ -569,7 +569,7 @@ theorem opd_r337 {fb : Addr} {g : Gprs} {Pe : List Event → Prop} {S Y : State}
     rintro j' g' fl V₁ ⟨rfl, rfl, hV⟩ Y₁ t₁ hK₁ hA₁ hr₁ hg₁ -
     subst V₁
     refine opd_cnc c hfs hrs hin hinC fr hK₁ hA₁ (by decide) hr₁ (call_366 _) (by decide)
-    (by rw [hg₁, hsp]) hkp ?_
+      (by rw [hg₁, hsp]) hkp ?_
     intro S' Z r W' t' c' hfs' hrs' hKZ hAZ hrZ hkp' zs zk
     obtain ⟨zbx, -, z12, -, z14, z15⟩ := zk
     refine (c_371 prof fb).run c' hfs' hin _ hKZ hAZ hrZ (vc_371 (g := Z.cpu.gpr) (by rw [zbx, hg₁]) fr.fe) ?_
