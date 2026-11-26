@@ -42,6 +42,7 @@ theorem lseek_cps (u : State) (hw : arg32 u.cpu.gpr.rdx â‰¤ 2) {P : StepResult Ã
     | contradiction
     | (exfalso; omega)
     | (rw [runStream_req_bind]; try dsimp only)
+    | (simp only [bind, pure, Req.request, Req.bind, Req.runStream]; try dsimp only)
     | split
 
 /-- `syscall` for `lseek (rdi, rsi, rdx)` with `whence` at most `SEEK_END`: the state after has the processor after
