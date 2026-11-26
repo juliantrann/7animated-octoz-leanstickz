@@ -79,7 +79,7 @@ theorem vc_0e {g : Gprs} {f : Rflags} {V : Addr → Byte} (hz : (rdd(V, g.rdi + 
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only [plast] at hz hh4 hh8 hp h ⊢
   have d := decide_eq_true h
-  wpx [W_0, W_11, W_24, o0, o1, Tun.rd1, BitVec.and_self, hz, d, Kp, Bool.not_true, Bool.not_false,
+  wpx [W_0, W_11, W_24, o0, o1, Op.cmpmi, Tun.rd1, BitVec.and_self, hz, d, Kp, Bool.not_true, Bool.not_false,
     Bool.false_eq_true, Bool.true_eq_false, false_implies, true_implies, implies_true, eq_self_iff_true, and_self,
     and_true]
   all_goals first | exact ⟨hh4, fun _ => ⟨hh8, hp⟩⟩ | exact ⟨hh4, fun _ => ⟨hh8, hp, trivial⟩⟩ | done
@@ -93,7 +93,7 @@ theorem vc_0n {g : Gprs} {f : Rflags} {V : Addr → Byte} (hz : (rdd(V, g.rdi + 
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only [plast] at hz hh4 hh8 hp h ⊢
   have d := decide_eq_false h
-  wpx [W_0, W_11, W_24, o0, o1, Tun.rd1, BitVec.and_self, hz, d, Kp, Bool.not_true, Bool.not_false,
+  wpx [W_0, W_11, W_24, o0, o1, Op.cmpmi, Tun.rd1, BitVec.and_self, hz, d, Kp, Bool.not_true, Bool.not_false,
     Bool.false_eq_true, Bool.true_eq_false, false_implies, true_implies, implies_true, eq_self_iff_true, and_self,
     and_true]
   all_goals first | exact ⟨hh4, fun _ => ⟨hh8, hp⟩⟩ | exact ⟨hh4, fun _ => ⟨hh8, hp, trivial⟩⟩ | done
@@ -116,7 +116,7 @@ theorem vc_41e {g : Gprs} {f : Rflags} {V : Addr → Byte} (h : ¬ g.rdx = g.rax
   dsimp only at h hf hs ⊢
   have d := decide_eq_false h
   have ds := decide_eq_true hs
-  wpx [W_41, W_32, o2, o3, Tun.rd1, d, ds, Kp, Bool.not_true, Bool.not_false, Bool.false_eq_true,
+  wpx [W_41, W_32, o2, o3, Op.cmpmi, Tun.rd1, d, ds, Kp, Bool.not_true, Bool.not_false, Bool.false_eq_true,
     Bool.true_eq_false, false_implies, true_implies, implies_true, eq_self_iff_true, and_self, and_true]
   all_goals first | exact hf | exact fun _ => hf | exact ⟨hf, trivial⟩ | done
 
@@ -128,7 +128,7 @@ theorem vc_41n {g : Gprs} {f : Rflags} {V : Addr → Byte} (h : ¬ g.rdx = g.rax
   dsimp only at h hf hs ⊢
   have d := decide_eq_false h
   have ds := decide_eq_false hs
-  wpx [W_41, W_32, o2, o3, Tun.rd1, d, ds, Kp, Bool.not_true, Bool.not_false, Bool.false_eq_true,
+  wpx [W_41, W_32, o2, o3, Op.cmpmi, Tun.rd1, d, ds, Kp, Bool.not_true, Bool.not_false, Bool.false_eq_true,
     Bool.true_eq_false, false_implies, true_implies, implies_true, eq_self_iff_true, and_self, and_true]
   all_goals first | exact hf | exact fun _ => hf | exact ⟨hf, trivial⟩ | done
 
@@ -252,7 +252,8 @@ theorem rfp_ok (c : Seg prof F Wl L s₀ o) (hin : CodeIn L rfp_at rfp) {X : Sta
     exact at46 c hin hKY hAY hrY (Kp.of_eq hgY hkp') fun Z t₂ hKZ hAZ hrZ hkZ hax₀ =>
       kr Z t₂ 51 hKZ hAZ hrZ (.inl rfl) hkZ (.inr ⟨fun j hj => by rw [hz] at hj; simp at hj, hax₀⟩)
   · have hz' : (rdd(V, X.cpu.gpr.rdi + 8#64) == 0) = false := beq_eq_false_iff_ne.2 hz
-    have hn0 : (rdd(V, X.cpu.gpr.rdi + 8#64)).toNat ≠ 0 := fun e => hz (BitVec.eq_of_toNat_eq (by rw [e]; rfl))
+    have hn0 : (rdd(V, X.cpu.gpr.rdi + 8#64)).toNat ≠ 0 := fun e =>
+      hz (BitVec.eq_of_toNat_eq (by rw [e]; all_goals rfl))
     have ep : plast V X.cpu.gpr.rdi = Addr.add rdq(V, X.cpu.gpr.rdi) ((rdd(V, X.cpu.gpr.rdi + 8#64)).toNat - 1) :=
       p_last _ _ hn0
     have hp : ∀ i < 1, Foot F.data (Addr.add (plast V X.cpu.gpr.rdi) i) := fun i hi => by
@@ -266,7 +267,8 @@ theorem rfp_ok (c : Seg prof F Wl L s₀ o) (hin : CodeIn L rfp_at rfp) {X : Sta
         fun Z t₂ hKZ hAZ hrZ hkZ hax₀ => kr Z t₂ 58 hKZ hAZ hrZ (.inr rfl) hkZ
           (.inl ⟨_, by omega, hs, fun j h1 h2 => absurd h2 (by omega), hax₀⟩)
     · refine (c_0 prof).run c hin _ hK hA hrip0 (vc_0n hz' hh4 hh8 hp (by rw [ep]; exact hs)) ?_
-      rintro j' g fl V₁ ⟨rfl, hax', hdx', hkp', rfl⟩ Y t₁ hKY hAY hrY hgY -
+      rintro j' g fl V₁ ⟨rfl, hax', hdx', hkp', hV⟩ Y t₁ hKY hAY hrY hgY -
+      subst V₁
       refine loop c hin hn hf kr _ Y t₁ hKY hAY hrY (by rw [hgY, hax', ep]) (by rw [hgY, hdx']) (by omega)
         (fun j h1 h2 => ?_) (Kp.of_eq hgY hkp')
       obtain rfl : j = (rdd(V, X.cpu.gpr.rdi + 8#64)).toNat - 1 := by omega
