@@ -118,7 +118,8 @@ theorem vc_35n {g : Gprs} {f : Rflags} {V : Addr → Byte} (hz : (rdd(V, g.rdi) 
   wpx [W_35, W_16, o1, o2, BitVec.and_self, hz, Kp, p4m4, lww_val, Bool.not_true, Bool.not_false,
     Bool.false_eq_true, Bool.true_eq_false, false_implies, true_implies, implies_true, eq_self_iff_true, and_self,
     and_true]
-  all_goals first | exact ⟨hf, fun _ => hw⟩ | exact ⟨hf, fun _ => ⟨hw, trivial⟩⟩ | exact ⟨hf, rfl, hw⟩ |
+  all_goals first | exact ⟨hf, hw⟩ | exact ⟨hf, fun _ => hw⟩ | exact ⟨hf, fun _ => ⟨hw, trivial⟩⟩ |
+    exact ⟨hf, rfl, hw⟩ |
     exact ⟨hf, fun _ => ⟨rfl, hw⟩⟩ |
     exact ⟨hf, fun _ => ⟨hw, rfl, rfl, ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩, rfl⟩⟩ | done
 

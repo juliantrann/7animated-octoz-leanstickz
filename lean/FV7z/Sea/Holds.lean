@@ -185,8 +185,8 @@ theorem loop (c : Seg prof F Wl L s₀ o) (hin : CodeIn L sea_at sea) {V : Addr 
         · exact hm i (by omega)
         · obtain rfl : i = j + 1 := by omega
           exact he
-    · refine (c_40 prof).run c hin _ hK hA hrip (vc_40n hz' hf1 hf4 (fun e => he (by rw [ea1, ea4] at e;
-        exact e.symm))) ?_
+    · refine (c_40 prof).run c hin _ hK hA hrip
+        (vc_40n hz' hf1 hf4 (fun e => he (by rw [ea1, ea4] at e; exact e.symm))) ?_
       rintro j' g fl V₁ ⟨rfl, hkp', rfl⟩ Y t₁ hKY hAY hrY hgY -
       exact at56 c hin hKY hAY hrY (hkp.trans (Kp.of_eq hgY hkp')) fun Z t₂ hKZ hAZ hrZ hkZ hax₀ =>
         k Z t₂ 58 hKZ hAZ hrZ (.inr rfl) hkZ (.inr ⟨⟨j + 1, by omega, he⟩, hax₀⟩)
@@ -230,8 +230,8 @@ theorem sea_ok (c : Seg prof F Wl L s₀ o) (hin : CodeIn L sea_at sea) {X : Sta
     rintro j' g fl V₁ ⟨rfl, hax', hdx', hsi', hdi', hkp', rfl⟩ Y t₁ hKY hAY hrY hgY -
     refine loop c hin hna hnz hz hf kr na 0 (Nat.zero_add na) Y t₁ hKY hAY hrY ?_ (by rw [hgY, hsi'])
       (by rw [hgY, hdi']) ?_ (fun i hi => ?_) (Kp.of_eq hgY hkp')
-    · rw [hgY, hax']
-      exact lf_xz _
+    · rw [hgY, hax', lf_xz]
+      all_goals rfl
     · rw [hgY, hdx', sw8b, a0]
     · obtain rfl : i = 0 := by omega
       rw [e0, a0]
