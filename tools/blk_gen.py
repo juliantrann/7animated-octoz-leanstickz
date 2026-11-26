@@ -116,6 +116,12 @@ FNS = {
     "lsk": dict(grp="Lseek", cn="__libc_lseek", a=0x5ff440, n=0x2c, pos=True, fs=True, stops=(0x13, 0x14, 0x2b),
                 calls=True, tag="PLAN.md §M, M1",
                 src="glibc 2.31's `__libc_lseek` (`sysdeps/unix/sysv/linux/syscall-template.S`; `objdump -d`)"),
+    # glibc 2.31 sysdeps/unix/sysv/linux/getdents64.c (`__getdents64`, aliased `__getdents` on x86_64): `count` capped
+    # at `INT_MAX` (`cmova`), then `getdents64` (217) as is: no conversion of the entries. Stops: the `ret` (0x23), the
+    # padding after it (0x24), the `ret` after `errno` is set (0x3b); the `syscall` (0x19) is a step of its own.
+    "gdn": dict(grp="Gdn", cn="__getdents", a=0x6a2820, n=0x3c, pos=True, fs=True, stops=(0x23, 0x24, 0x3b),
+                calls=True, tag="PLAN.md §M, M1",
+                src="glibc 2.31's `__getdents` (`sysdeps/unix/sysv/linux/getdents64.c`; `objdump -d`)"),
     # glibc 2.31 sysdeps/unix/sysv/linux/close_nocancel.c via INLINE_SYSCALL (`__close_nocancel`). Stops: the `ret`
     # (0x13), the padding after it (0x14), the `ret` after `errno` is set (0x29); the `syscall` (9) is a step of its own.
     "cnc": dict(grp="Cnc", cn="__close_nocancel", a=0x665f20, n=42, pos=True, fs=True, stops=(0x13, 0x14, 0x29),
@@ -216,6 +222,21 @@ FNS = {
     # Stops: the `jmp rax` (0x1f) and the `ret` (0x28).
     "pco": dict(grp="Pco", cn="_pthread_cleanup_pop", a=0x5ff010, n=41, pos=True, fs=True, stops=(0x1f, 0x28),
                 tag="PLAN.md §M, M1", src="glibc 2.31's `_pthread_cleanup_pop` (`nptl/cleanup_compat.c`; `objdump -d`)"),
+    # glibc 2.31 string/strdup.c `__strdup (s)`: `strlen (s) + 1` bytes from `malloc`, then a tail jump to `memcpy`
+    # through the PLT; `malloc`'s 0 is the answer. Stops: the `jmp` to `memcpy` (0x34) and the `ret` (0x3f).
+    # glibc's `__hash_string (str)` (`intl/hash-string.c`): the ELF-style hash of the bytes up to the NUL, a loop
+    # from 0x28 back to itself; three `ret`s (0x4f, 0x50, 0x5a: the empty string).
+    "hsh": dict(grp="Hsh", cn="__hash_string", a=0x6222e0, n=91, pos=True, stops=(0x4f, 0x50, 0x5a),
+                tag="PLAN.md §M, M1", src="glibc 2.31's `__hash_string` (`intl/hash-string.c`; `objdump -d`)"),
+    # libio's `_IO_default_imbue`: `endbr64; ret`.
+    "imb": dict(grp="Imb", cn="_IO_default_imbue", a=0x5ab370, n=5, pos=True, stops=(0x4,),
+                tag="PLAN.md §M, M1", src="glibc 2.31's `_IO_default_imbue` (`libio/genops.c`; `objdump -d`)"),
+    # 7-Zip's CPP/Common/MyWindows.cpp `SysFreeString (bstr)`: null, a `ret` (0x18); else a tail jump to `free`
+    # (0xd) at the allocation, 4 bytes before.
+    "sfs": dict(grp="Sfs", cn="SysFreeString", a=0x5a00c0, n=25, pos=True, stops=(0xd, 0x18),
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `SysFreeString` (`CPP/Common/MyWindows.cpp`; `objdump -d`)"),
+    "sdp": dict(grp="Sdp", cn="__strdup", a=0x635dd0, n=64, pos=True, stops=(0x34, 0x3f), calls=True,
+                tag="PLAN.md §M, M1", src="glibc 2.31's `__strdup` (`string/strdup.c`; `objdump -d`)"),
     # 7-Zip's CPP/Windows/FileIO.cpp `CFileBase::seek (off, whence)`: the descriptor (`this->_handle`, at 0), then
     # `lseek`. Stop: the `jmp` to `__libc_lseek` (6), a branch to another segment (`Seg.s_jmp_x`).
     "fsk": dict(grp="Fsk", cn="NWindows::NFile::NIO::CFileBase::seek", a=0x4560b0, n=11, pos=True, stops=(6,),
@@ -253,6 +274,11 @@ FNS = {
     # `ret` (0xa6), the padding after it (0xa7), `__stack_chk_fail` (0xc4); the `syscall` (0x28) is a step of its own.
     "tcg": dict(grp="Tcg", cn="__tcgetattr", a=0x666240, n=0xc9, pos=True, fs=True,
                 stops=(0x4b, 0xa6, 0xa7, 0xc4), calls=True, tag="PLAN.md §M, M1",
+                src="glibc 2.31's `__tcgetattr` (`sysdeps/unix/sysv/linux/tcgetattr.c`; `objdump -d`)"),
+    # The copy of the settings in `__tcgetattr` after the kernel's answer 0, from after the two loads into `xmm0` and
+    # `xmm1` (0x56) to the first `movups` store (0x86): the `xmm` moves are steps of their own (FV7z/Tcg/Copy.lean).
+    "tcc": dict(grp="TcgC", code=("Tcg", "tcg"), cn="__tcgetattr", a=0x666240, n=0xc9, entry=0x56, pos=True,
+                stops=(0x86,), tag="PLAN.md §M, M1",
                 src="glibc 2.31's `__tcgetattr` (`sysdeps/unix/sysv/linux/tcgetattr.c`; `objdump -d`)"),
     # glibc 2.31 sysdeps/unix/sysv/linux/dl-sysdep.c. Stop: `__uname` failed (0xb0: the release is read from
     # `/proc/sys/kernel/osrelease`); the `ret`s are at 0x8a (three parts read) and 0xa9 (fewer).
