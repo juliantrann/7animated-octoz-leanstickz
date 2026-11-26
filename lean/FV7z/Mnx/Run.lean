@@ -5,11 +5,11 @@ import FV7z.Mhi.TailN
 /-!
 # `malloc` after the first call: from 52 to the return address (PLAN.md G3, `malloc`)
 
-- `mal_tail`: as `Mhi.mhi_tailn` (the same code inline in `malloc_hook_ini`): `vc_52m` (`k ≤ 65`) or `vc_52l`
-  (`k ≥ 66`), `vc_83`, the `call` of `_int_malloc` (`Im5.SecA`, a hypothesis: the chunk split off the top `T`),
-  `vc_114m`, `vc_164r` and the `ret`.
-- `mal_next`: from the entry: `vc_0n` (`n ≥ 9`) or `vc_0s` (`n ≤ 8`), the three pushes (`Mal.Vm`, `Vm_out`), then
-  `mal_tail` on the bytes after them; the pops read back what the pushes left (`Mal.regs3`).
+- `mal_tail`: as `Mhi.mhi_tailn` (the same code inline in `malloc_hook_ini`): `vc_52m` (`k ≤ 65`), `vc_52l`
+  (`k ≥ 66`) or `vc_52g` (`Im7.ClsG`), `vc_83`, the `call` of `_int_malloc` (`Im5.SecA`, a hypothesis: the chunk
+  split off the top `T`), `vc_114m` or `vc_114g`, `vc_164r` and the `ret`.
+- `mal_next`: from the entry: `vc_0n` (`n ≥ 9`), `vc_0s` (`n ≤ 8`) or `vc_0g` (`Im7.ClsG`), the three pushes
+  (`Mal.Vm`, `Vm_out`), then `mal_tail` on the bytes after them; the pops read back what the pushes left (`Mal.regs3`).
 -/
 open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn FV7z.Start
 open FV7z.Raf (off_ft)
@@ -27,7 +27,7 @@ variable {prof : Profile} {L : List (Addr × List Byte)} {s₀ X : State} {o : O
   {gev : List Event} {gP : State → Nat → List Event → Prop} {gE : Outcome → List Event → Prop} {V : Addr → Byte}
 
 /-- `malloc` after the first call, from 52 (the pushes done, `rbx` the tcache index of `nb`, `rbp` = `n`) to the
-return address with `T + 16` in `rax`, `n ≤ 4104` or `n` = 72704 (`Im5.ClsN`): as `Mhi.mhi_tailn`. -/
+return address with `T + 16` in `rax`, `Im7.ClsW` (`n ≤ 4104`, 72704 or `4105 ≤ n ≤ 2 ^ 32`): as `Mhi.mhi_tailn`. -/
 theorem mal_tail {fb S T szw sm C n nb : Addr} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb)
     (hin : CodeIn L mnx_at mnx) (hinI : CodeIn L imm_at imm) (hK : KeptW Wl s₀ X) (hA : Agree F X.proc.mm.mem V)
     (hcls : ClsW n nb) (hsec : SecA n nb)
@@ -92,7 +92,7 @@ theorem mal_tail {fb S T szw sm C n nb : Addr} (c : Seg prof F Wl L s₀ o) (hfs
       Y₁.cpu.gpr.r14 = X.cpu.gpr.r14 → Y₁.cpu.gpr.r15 = X.cpu.gpr.r15 → GoG prof L o gev gP gE Y₁ t₁ by
     -- 52 → 83: the tcache bin `kb - 2` (`kb ≤ 65`) empty, or none (`kb ≥ 66`, or `ClsG`)
     rcases hcls with hcls | hG
-    swap
+    rotate_left
     · refine (c_52 prof fb).run c hfs hin _ hK hA hrip (vc_52g hbx hG.tc htb htc hC htf' htf) ?_
       rintro j' g fl V₁ ⟨rfl, rfl, hv₁⟩ Y₁ t₁ hK₁ hA₁ hr₁ hg₁ -
       rw [hv₁] at hA₁
