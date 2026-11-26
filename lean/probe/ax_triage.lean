@@ -1,3 +1,6 @@
-import FV7z.Mnx.PopNext
+import FV7z.Mnx.Sep
 open FV7z
-#print axioms FV7z.Mnx.mal_pop_next
+#print axioms FV7z.Mnx.mal_pop_sep
+#print axioms FV7z.Mnx.TcSep.put
+#print axioms FV7z.Mnx.TcSep.alloc
+#print axioms FV7z.Mnx.TcSep.pop
