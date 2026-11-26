@@ -150,6 +150,15 @@ FNS = {
     "stm": dict(grp="Stm", cn="systrim.isra.0.constprop.0", a=0x62f8e0, n=172, pos=True, fs=True,
                 stops=(0x51, 0x52, 0xa3), calls=True, hand=(0x8d,),
                 tag="PLAN.md §M, M1", src="glibc 2.31's `systrim` (`malloc/malloc.c`; `objdump -d`)"),
+    # glibc 2.31 malloc/malloc.c (`malloc_consolidate (av)`): `have_fastchunks` cleared, each of the ten fastbins
+    # emptied (`xchg`, 0x27) and its chunks merged with free neighbours (`unlink_chunk`, 0xf7, 0x12a) into the top
+    # chunk or the unsorted bin (the `xmm` stores 0x7b, 0x94). Stops: the `ret` (0x49), the padding (0x4a, 0x11b,
+    # 0x13c), the calls of `malloc_printerr` (0x140, 0x14c). By hand: `xchg` (0x27), `and qword [m], -2` (0x5c),
+    # `pxor` (0x77), the `xmm` moves (0x7b, 0x82, 0x8b, 0x94).
+    "mcn": dict(grp="Mcn", cn="malloc_consolidate", a=0x62eb00, n=344, pos=True, fs=True,
+                stops=(0x49, 0x4a, 0x11b, 0x13c, 0x140, 0x14c), calls=True,
+                hand=(0x27, 0x5c, 0x77, 0x7b, 0x82, 0x8b, 0x94),
+                tag="PLAN.md §M, M1", src="glibc 2.31's `malloc_consolidate` (`malloc/malloc.c`; `objdump -d`)"),
     "gdn": dict(grp="Gdn", cn="__getdents", a=0x6a2820, n=0x3c, pos=True, fs=True, stops=(0x23, 0x24, 0x3b),
                 calls=True, tag="PLAN.md §M, M1",
                 src="glibc 2.31's `__getdents` (`sysdeps/unix/sysv/linux/getdents64.c`; `objdump -d`)"),
