@@ -173,14 +173,14 @@ theorem cra_ok {fb : Addr} {hi m : Nat} (c : Seg prof F Wl L s₀ o) (hfs : s₀
   have e56p := pk p (k := 56) (by omega)
   -- the stores after the `call`
   refine c.s_blk hin (blk_18 prof) hKZ hAZ hrZ ?_
-  rw [haxZ]
-  refine vc_18 (fun i hi' => fw hpw (by omega) hi' (by rw [e16p]; omega) (by rw [e16p]; omega))
-    (fun i hi' => fw hpw (by omega) hi' (by rw [e48p]; omega) (by rw [e48p]; omega))
-    (fun i hi' => fw hpw (by omega) hi' (Nat.le_refl _) (by omega))
-    (fun i hi' => fw hpw (by omega) hi' (by rw [e8p]; omega) (by rw [e8p]; omega))
-    (fun i hi' => fw hpw (by omega) hi' (by rw [e56p]; omega) (by rw [e56p]; omega))
-    (fun i hi' => fw hpw (by omega) hi' (by rw [e20p]; omega) (by rw [e20p]; omega))
+  refine vc_18 (fun i hi' => by rw [haxZ]; exact fw hpw (by omega) hi' (by rw [e16p]; omega) (by rw [e16p]; omega))
+    (fun i hi' => by rw [haxZ]; exact fw hpw (by omega) hi' (by rw [e48p]; omega) (by rw [e48p]; omega))
+    (fun i hi' => by rw [haxZ]; exact fw hpw (by omega) hi' (Nat.le_refl _) (by omega))
+    (fun i hi' => by rw [haxZ]; exact fw hpw (by omega) hi' (by rw [e8p]; omega) (by rw [e8p]; omega))
+    (fun i hi' => by rw [haxZ]; exact fw hpw (by omega) hi' (by rw [e56p]; omega) (by rw [e56p]; omega))
+    (fun i hi' => by rw [haxZ]; exact fw hpw (by omega) hi' (by rw [e20p]; omega) (by rw [e20p]; omega))
     fun _ Y4 t4 hK4 hA4 hr4 hg4 _ => ?_
+  rw [haxZ] at hA4
   have hsp4 : Y4.cpu.gpr.rsp = X.cpu.gpr.rsp := by
     rw [hg4]; show Z.cpu.gpr.rsp + 8#64 = _; rw [hspZ']; exact u16 _
   -- `ret`
