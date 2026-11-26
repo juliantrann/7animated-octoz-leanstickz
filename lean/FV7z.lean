@@ -403,6 +403,18 @@ import FV7z.Cfb.Holds
 import FV7z.Ris.Blocks
 import FV7z.Ris.Cuts
 import FV7z.Ris.Holds
+import FV7z.Sto.Blocks
+import FV7z.Sto.Cuts
+import FV7z.Sto.Holds
+import FV7z.Pop.Blocks
+import FV7z.Pop.Cuts
+import FV7z.Pop.Holds
+import FV7z.Hcl.Blocks
+import FV7z.Hcl.Cuts
+import FV7z.Hcl.Holds
+import FV7z.Sis.Blocks
+import FV7z.Sis.Cuts
+import FV7z.Sis.Holds
 import FV7z.Ncs.Blocks
 import FV7z.Ncs.Cuts
 import FV7z.Ncs.Holds
@@ -431,6 +443,7 @@ import FV7z.Imb.Holds
 import FV7z.Sfs.Blocks
 import FV7z.Sfs.Cuts
 import FV7z.Sfs.Holds
+import FV7z.Gae.Holds
 import FV7z.Lemmas.BlkOps23
 import FV7z.Lemmas.BlkOps24
 import FV7z.Dnw.Blocks
