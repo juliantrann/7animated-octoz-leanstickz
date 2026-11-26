@@ -154,7 +154,8 @@ theorem aaa_ok (c : Seg prof F Wl L s₀ o) (hin : CodeIn L aaa_at aaa) (hinS : 
       ((j' = 28 ∧ g' = X.cpu.gpr ∧ ¬ aOk V X.cpu.gpr.rdi) ∨ (j' = 48 ∧ g' = aG V X.cpu.gpr ∧ aOk V X.cpu.gpr.rdi)))
     hK hA (by rw [addr_add_zero]; exact hrip)
     (vc_0 f17 f18 f19 f8 fp (fun hn _ => ⟨rfl, Or.inl ⟨rfl, rfl, hn⟩⟩) (fun hy _ => ⟨rfl, Or.inr ⟨rfl, rfl, hy⟩⟩)) ?_
-  rintro j' g fl V₁ ⟨rfl, h⟩ Y t₁ hKY hAY hrY hgY -
+  rintro j' g fl V₁ ⟨hV₁, h⟩ Y t₁ hKY hAY hrY hgY -
+  subst V₁
   rcases h with ⟨rfl, rfl, hn⟩ | ⟨rfl, rfl, hy⟩
   · -- `xor eax, eax; ret`
     refine (c_28 prof).run c hin (fun j' g' _ V' => j' = 30 ∧ g' = { X.cpu.gpr with rax := 0#64 } ∧ V' = V)
