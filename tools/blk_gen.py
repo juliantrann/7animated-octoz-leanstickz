@@ -125,10 +125,18 @@ FNS = {
     # 7-Zip's CPP/Windows/TimeUtils.cpp `UnixTime64_To_FileTime64 (unixTime)`: `(unixTime + 11644473600) * 10^7`.
     "utf": dict(grp="Utf", cn="NWindows::NTime::UnixTime64_To_FileTime64", a=0x458880, n=25, pos=True, stops=(24,),
                 tag="PLAN.md §M, M1", src="7-Zip 26.06's `UnixTime64_To_FileTime64` (`TimeUtils.cpp`; `objdump -d`)"),
-    # 7-Zip's C/Threads.c `CriticalSection_Delete`, inlined `pthread_mutex_destroy` behind a null test: nothing for
-    # a null pointer, else a tail jump. Stops: the jump (9), the `ret` (16).
+    # `CriticalSection_Delete` by the symbol table (C/Threads.c): nothing for a null pointer, else a tail jump to
+    # glibc's `__pthread_mutex_lock`. Stops: the jump (9), the `ret` (16).
     "csd": dict(grp="Csd", cn="CriticalSection_Delete", a=0x448b60, n=17, pos=True, stops=(9, 16),
                 tag="PLAN.md §M, M1", src="7-Zip 26.06's `CriticalSection_Delete` (`C/Threads.c`; `objdump -d`)"),
+    # The second `CriticalSection_Delete` of the symbol table (0x448b80): the same code as `csd`, the tail jump to
+    # glibc's `__pthread_mutex_unlock`. Stops: the jump (9), the `ret` (16).
+    "csx": dict(grp="Csx", cn="CriticalSection_Delete (0x448b80)", a=0x448b80, n=17, pos=True, stops=(9, 16),
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `CriticalSection_Delete` (`C/Threads.c`; `objdump -d`)"),
+    # 7-Zip's CPP/7zip/Common/StreamUtils.cpp `InStream_SeekToBegin (stream)`: `stream->Seek (0, STREAM_SEEK_SET,
+    # NULL)` as a tail jump through the vtable (`jmp rax`). Stop: the jump (17).
+    "isb": dict(grp="Isb", cn="InStream_SeekToBegin", a=0x4631e0, n=19, pos=True, stops=(17,),
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `InStream_SeekToBegin` (`StreamUtils.cpp`; `objdump -d`)"),
     # 7-Zip's C/Alloc.c `MyAlloc (size)`: 0 for size 0, else a tail jump to `malloc`. Stops: the jump (9), the `ret`
     # (18).
     "mya": dict(grp="Mya", cn="MyAlloc", a=0x41f3c0, n=19, pos=True, stops=(9, 18),
