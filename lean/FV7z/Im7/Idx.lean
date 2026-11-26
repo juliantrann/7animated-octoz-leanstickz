@@ -35,7 +35,7 @@ theorem deq' {x : BitVec 64} {c : Nat} (h : x.toNat = c) : decide (x = BitVec.of
   decide_eq_true (by apply BitVec.eq_of_toNat_eq; rw [h, BitVec.toNat_ofNat]; omega)
 
 /-- The flags of `cmp x, c; jbe` taken: `x ≤ c`. -/
-theorem dle {x : BitVec 64} {c : Nat} (h : x.toNat ≤ c) (hc : c < 2 ^ 64 := by decide) :
+theorem dle {x : BitVec 64} {c : Nat} (h : x.toNat ≤ c) :
     (decide (x.toNat < c) || decide (x = BitVec.ofNat 64 c)) = true := by
   by_cases e : x.toNat = c
   · rw [deq' e, Bool.or_true]
