@@ -539,10 +539,10 @@ FNS = {
     # the `ret` (0x4f).
     "arl": dict(grp="Arl", cn="AString::ReAlloc", a=0x44bfc0, n=80, pos=True, stops=(0x4f,), calls=True,
                 tag="PLAN.md §M, M1", src="7-Zip's `AString::ReAlloc` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
-    # `AString::ReAlloc2 (newLimit)`: above `k_Alloc_Len_Limit` (0x3ffffffe) the throw at 0x401350 (0xe); else
-    # `newBuf = new char[newLimit + 1]` (0x1f), `newBuf[0] = 0`, `delete [] _chars` unless null (0x32), `_chars`,
-    # `_limit`, `_len` = 0. Stops: the `ja` (0xe) and the `ret` (0x48).
-    "arb": dict(grp="Arb", cn="AString::ReAlloc2", a=0x44c010, n=73, pos=True, stops=(0x48,), calls=True,
+    # `AString::ReAlloc2 (newLimit)`: above `k_Alloc_Len_Limit` (0x3ffffffe) the throw at 0x401350 (the `ja` at 0xe,
+    # by hand: its target is outside); else `newBuf = new char[newLimit + 1]` (0x1f), `newBuf[0] = 0`, `delete []
+    # _chars` unless null (0x32), `_chars`, `_limit`, `_len` = 0. Stop: the `ret` (0x48).
+    "arb": dict(grp="Arb", cn="AString::ReAlloc2", a=0x44c010, n=73, pos=True, stops=(0x48,), calls=True, hand=(0xe,),
                 tag="PLAN.md §M, M1", src="7-Zip's `AString::ReAlloc2` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
     "asl": dict(grp="Asl", cn="AString::SetStartLen", a=0x44c060, n=50, pos=True, stops=(0x31,), calls=True,
                 tag="PLAN.md §M, M1", src="7-Zip's `AString::SetStartLen` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
