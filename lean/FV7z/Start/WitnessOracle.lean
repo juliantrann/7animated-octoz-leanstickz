@@ -9,7 +9,7 @@ link as `/proc/self/exe` (`ProcSelfExe`) but the path of the program, short enou
 (`hmg`), and a kernel that glibc runs on (`KernelNew`). `o0` has them: every system call that may fail fails with
 `EIO` (5), no event comes, `/proc/self/exe` is `/`, and `uname` says Linux `6.18.0`.
 
-- `e5`, `u0` (`u0_ok`, `u0_new`), `o0`.
+- `e5`, `u0` (`u0_ok`, `u0_new`), `si0`, `o0`.
 - `undisturbed0`, `pse0`, `ok0`, `mg0`, `un0`.
 -/
 namespace FV7z.Wit
@@ -29,6 +29,21 @@ theorem u0_new : KernelNew u0 := by
 
 theorem zero_lt_cpus (c : Nat) : (0 : BitVec 32).toNat < max c 1 :=
   Nat.lt_of_lt_of_le (by decide) (Nat.le_max_right c 1)
+
+/-- `sysinfo`: zeros. -/
+def si0 : SysInfo where
+  uptime := 0
+  loads := (0, 0, 0)
+  totalram := 0
+  freeram := 0
+  sharedram := 0
+  bufferram := 0
+  totalswap := 0
+  freeswap := 0
+  procs := 0
+  totalhigh := 0
+  freehigh := 0
+  memUnit := 0
 
 /-- The oracle: what may fail fails with `EIO`, no event, no time, no randomness beyond zeros. -/
 def o0 (_ : Nat) : (r : Request) → r.Answer
@@ -56,8 +71,7 @@ def o0 (_ : Nat) : (r : Request) → r.Answer
   | .dirents _ c => (DirentsResult.error e5 : DirentsResult c)
   | .cwd => (CwdResult.error e5 : CwdResult)
   | .uname => (⟨u0, u0_ok⟩ : { bs : List Byte // UtsnameOk bs })
-  | .sysinfo => ({ uptime := 0, loads := (0, 0, 0), totalram := 0, freeram := 0, sharedram := 0, bufferram := 0,
-      totalswap := 0, freeswap := 0, procs := 0, totalhigh := 0, freehigh := 0, memUnit := 0 } : SysInfo)
+  | .sysinfo => si0
   | .openAt _ _ _ => (OpenResult.error e5 : OpenResult)
   | .seekPast _ _ => (false : Bool)
   | .seek _ _ _ => (Except.error e5 : Except Errno (Fin (2 ^ 63)))
