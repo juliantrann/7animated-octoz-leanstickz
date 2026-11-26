@@ -31,8 +31,7 @@ theorem vc_411 (hK : Ok K) (hE : Env K F Wl) (hc : Cm K g) (hI : I411 K g) :
   repeat' (first
     | exact fIn hE (by tfo) (by tfo)
     | exact fP hK hE (by tfo) (by tfo)
-    | exact x343 (by tcm) (by dsimp only [I343]; first | exact Or.inl ⟨by tfo, rfl⟩
-          | exact Or.inr ⟨⟨by tfo, by tfo⟩, rfl⟩) (by dsimp only [M343] <;> tfo)
+    | exact x343 (by tcm) (by dsimp only [I343]; t343) (by dsimp only [M343] <;> tfo)
     | exact x443 (by tcm) rfl (by dsimp only [I443] <;> tfs) (by dsimp only [M443] <;> tfo)
     | exact x960 (by tcm) rfl (by dsimp only [I960] <;> tfs) (by dsimp only [M960] <;> tfo)
     | (with_reducible rfl)
@@ -269,8 +268,7 @@ theorem vc_751 (hK : Ok K) (hE : Env K F Wl) (hc : Cm K g) (hI : I751 K g) :
     | exact hE.f2
     | exact hE.f3
     | exact hE.f4
-    | exact xFin (by decide) ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, by tfo, by tfo,
-          by first | exact Or.inl ⟨by tfo, rfl⟩ | exact Or.inr ⟨by tfo, by tfo, rfl⟩⟩
+    | exact xFin (by decide) ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, by tfo, by tfo, by tfv⟩
     | (with_reducible rfl)
     | apply And.intro
     | intro _)

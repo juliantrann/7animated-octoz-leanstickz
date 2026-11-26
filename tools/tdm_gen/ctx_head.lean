@@ -67,7 +67,7 @@ theorem Ok.hnl {K : Ctx} (hK : Ok K) : K.nl ≤ 4096 := by
   have h1 := hK.hlc
   have h2 := hK.hlp
   unfold Ctx.nl
-  exact (Nat.pow_le_pow_right (by decide) (by omega : K.lc + K.lp ≤ 12)).trans (by decide)
+  exact Nat.le_trans (Nat.pow_le_pow_right (by decide) (by omega : K.lc + K.lp ≤ 12)) (by decide)
 
 theorem Ok.hnl1 {K : Ctx} (_ : Ok K) : 1 ≤ K.nl := Nat.one_le_two_pow
 
@@ -123,10 +123,16 @@ scoped macro "tfo" : tactic => `(tactic| ((try simp only [Bool.not_eq_true', Boo
   Bool.or_eq_false_iff, Bool.and_eq_true, decide_eq_true_eq, decide_eq_false_iff_not, beq_iff_eq,
   beq_eq_false_iff_ne, Bnd, ne_eq] at *) <;> bv_omega))
 /-- A cut point's condition: its conjuncts by `assumption`, `rfl` or `tfo`. -/
-scoped macro "tfs" : tactic => `(tactic| ((repeat' (first | assumption | exact trivial | (with_reducible rfl)
-  | (with_reducible apply And.intro))) <;> tfo))
+scoped macro "tf1" : tactic =>
+  `(tactic| first | assumption | exact trivial | (with_reducible rfl) | (with_reducible apply And.intro))
+scoped macro "tfs" : tactic => `(tactic| ((repeat' tf1) <;> tfo))
 /-- `Cm` after a stretch. -/
 scoped macro "tcm" : tactic => `(tactic| exact ⟨rfl, rfl, rfl, rfl, by tfo, by tfo⟩)
+/-- `I343` after a stretch: no store and `r12d` 0, or the store and the result. -/
+scoped macro "t343" : tactic =>
+  `(tactic| first | exact Or.inl ⟨by tfo, rfl⟩ | exact Or.inr ⟨⟨by tfo, by tfo⟩, rfl⟩)
+/-- `FinR.v` at a `ret`. -/
+scoped macro "tfv" : tactic => `(tactic| first | exact Or.inl ⟨by tfo, rfl⟩ | exact Or.inr ⟨by tfo, by tfo, rfl⟩)
 
 /-! ## Bounds -/
 

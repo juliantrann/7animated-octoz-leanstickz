@@ -35,8 +35,7 @@ theorem vc_0 (hK : Ok K) (hE : Env K F Wl) : W_0 F Wl (Nx K 6300) K.g0 f K.V0 :=
     | exact fA hE.hp (by omega)
     | exact fP hK hE (by tfo) (by tfo)
     | exact x103 (by tcm) rfl (by dsimp only [I103] <;> tfs) (by dsimp only [M103] <;> tfo)
-    | exact x343 (by tcm) (by dsimp only [I343]; first | exact Or.inl ⟨by tfo, rfl⟩
-          | exact Or.inr ⟨⟨by tfo, by tfo⟩, rfl⟩) (by dsimp only [M343] <;> tfo)
+    | exact x343 (by tcm) (by dsimp only [I343]; t343) (by dsimp only [M343] <;> tfo)
     | (with_reducible rfl)
     | apply And.intro
     | intro _)
@@ -68,8 +67,7 @@ theorem vc_103 (hK : Ok K) (hE : Env K F Wl) (hc : Cm K g) (hI : I103 K g) :
     | exact x180 (by tcm) rfl (by dsimp only [I180]; refine ⟨?_, ?_, ?_, ctx_ok hK _, ?_⟩ <;> tfs)
           (by dsimp only [M180] <;> tfo)
     | exact x210 (by tcm) rfl (by dsimp only [I210] <;> tfs) (by dsimp only [M210] <;> tfo)
-    | exact x343 (by tcm) (by dsimp only [I343]; first | exact Or.inl ⟨by tfo, rfl⟩
-          | exact Or.inr ⟨⟨by tfo, by tfo⟩, rfl⟩) (by dsimp only [M343] <;> tfo)
+    | exact x343 (by tcm) (by dsimp only [I343]; t343) (by dsimp only [M343] <;> tfo)
     | exact x411 (by tcm) rfl (by dsimp only [I411] <;> tfs) (by dsimp only [M411] <;> tfo)
     | (with_reducible rfl)
     | apply And.intro
@@ -232,8 +230,7 @@ theorem vc_340 (hK : Ok K) (hE : Env K F Wl) (hc : Cm K g) (hI : I340 K g) :
   wpx [W_340, o18, M340, Op.not32, Op.cmpmi, BitVec.xor_self, BitVec.and_self]
   repeat' (first
     | exact hE.wbo
-    | exact x343 (by tcm) (by dsimp only [I343]; first | exact Or.inl ⟨by tfo, rfl⟩
-          | exact Or.inr ⟨⟨by tfo, by tfo⟩, rfl⟩) (by dsimp only [M343] <;> tfo)
+    | exact x343 (by tcm) (by dsimp only [I343]; t343) (by dsimp only [M343] <;> tfo)
     | (with_reducible rfl)
     | apply And.intro
     | intro _)
@@ -260,8 +257,7 @@ theorem vc_343 (hK : Ok K) (hE : Env K F Wl) (hc : Cm K g) (hI : I343 K g V) :
       | exact hE.f2
       | exact hE.f3
       | exact hE.f4
-      | exact xFin (by decide) ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, by tfo, by tfo,
-          by first | exact Or.inl ⟨by tfo, rfl⟩ | exact Or.inr ⟨by tfo, by tfo, rfl⟩⟩
+      | exact xFin (by decide) ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, by tfo, by tfo, by tfv⟩
       | (with_reducible rfl)
       | apply And.intro
       | intro _)
