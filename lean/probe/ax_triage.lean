@@ -1,3 +1,3 @@
-import FV7z.Bsg.Holds
+import FV7z.Bsn.Holds
 open FV7z
-#print axioms FV7z.Bsg.bsg_ok
+#print axioms FV7z.Bsn.bsn_ok
