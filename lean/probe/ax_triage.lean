@@ -1,3 +1,3 @@
-import FV7z.Cal.Cuts
+import FV7z.Cal.Steps
+import FV7z.Cal.Vc
 open FV7z
-#print axioms FV7z.Cal.spAll
