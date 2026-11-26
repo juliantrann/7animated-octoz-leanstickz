@@ -159,6 +159,13 @@ FNS = {
                 stops=(0x49, 0x4a, 0x11b, 0x13c, 0x140, 0x14c), calls=True,
                 hand=(0x27, 0x5c, 0x77, 0x7b, 0x82, 0x8b, 0x94),
                 tag="PLAN.md §M, M1", src="glibc 2.31's `malloc_consolidate` (`malloc/malloc.c`; `objdump -d`)"),
+    # glibc 2.31 malloc/malloc.c (`_int_memalign (av, alignment, bytes)`): the request size `nb`, `_int_malloc (av,
+    # nb + alignment + MINSIZE)` (0x3a), the chunk cut at the first aligned spot (`div`, 0x51) with the leader given
+    # back by `_int_free` (0xd8) and the tail past `nb` too (0x150). Stops: the `ret` (0x166), the padding (0x167,
+    # 0x183, 0x196), the failed `assert` (0x1b7). By hand: `or qword [r13 + r14 + 8], 1` (0xba).
+    "mga": dict(grp="Mga", cn="_int_memalign", a=0x631bc0, n=470, pos=True, fs=True,
+                stops=(0x166, 0x167, 0x183, 0x196, 0x1b7), calls=True, hand=(0xba,),
+                tag="PLAN.md §M, M1", src="glibc 2.31's `_int_memalign` (`malloc/malloc.c`; `objdump -d`)"),
     "gdn": dict(grp="Gdn", cn="__getdents", a=0x6a2820, n=0x3c, pos=True, fs=True, stops=(0x23, 0x24, 0x3b),
                 calls=True, tag="PLAN.md §M, M1",
                 src="glibc 2.31's `__getdents` (`sysdeps/unix/sysv/linux/getdents64.c`; `objdump -d`)"),
@@ -281,6 +288,12 @@ FNS = {
     # `ret`s (42, 64).
     "fni": dict(grp="Fni", cn="fini", a=0x41c0f0, n=65, pos=True, stops=(42, 64), calls=True, hand=(31,),
                 tag="PLAN.md §M, M1", src="glibc 2.31's `fini` (`dlfcn/dlerror.c`; `objdump -d`)"),
+    # 7-Zip's `Correct_PathPart (s)` (`CPP/7zip/UI/Common/ExtractingFilePath.cpp`, static): "." and ".." emptied,
+    # else each '/' of the `wchar_t`s made '_' and, when the byte at 0x79eda0 is set, the trailing '.' and ' ' too.
+    # Stops: the `ret`s (0x1e, 0x65, 0x8e); the loops' heads are cuts (0x42, 0x82).
+    "cpp": dict(grp="Cpp", cn="Correct_PathPart", a=0x5c6ee0, n=156, pos=True, stops=(0x1e, 0x65, 0x8e),
+                tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `Correct_PathPart` (`CPP/7zip/UI/Common/ExtractingFilePath.cpp`; `objdump -d`)"),
     # 7-Zip's C/Alloc.c `MyAlloc (size)`: 0 for size 0, else a tail jump to `malloc`. Stops: the jump (9), the `ret`
     # (18).
     "mya": dict(grp="Mya", cn="MyAlloc", a=0x41f3c0, n=19, pos=True, stops=(9, 18),
@@ -579,11 +592,25 @@ FNS = {
     # the `ret` (0x4f).
     "arl": dict(grp="Arl", cn="AString::ReAlloc", a=0x44bfc0, n=80, pos=True, stops=(0x4f,), calls=True,
                 tag="PLAN.md §M, M1", src="7-Zip's `AString::ReAlloc` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
-    # `AString::ReAlloc2 (newLimit)`: above `k_Alloc_Len_Limit` (0x3ffffffe) the throw at 0x401350 (0xe); else
-    # `newBuf = new char[newLimit + 1]` (0x1f), `newBuf[0] = 0`, `delete [] _chars` unless null (0x32), `_chars`,
-    # `_limit`, `_len` = 0. Stops: the `ja` (0xe) and the `ret` (0x48).
-    "arb": dict(grp="Arb", cn="AString::ReAlloc2", a=0x44c010, n=73, pos=True, stops=(0x48,), calls=True,
+    # `AString::ReAlloc2 (newLimit)`: above `k_Alloc_Len_Limit` (0x3ffffffe) the throw at 0x401350 (the `ja` at 0xe,
+    # by hand: its target is outside); else `newBuf = new char[newLimit + 1]` (0x1f), `newBuf[0] = 0`, `delete []
+    # _chars` unless null (0x32), `_chars`, `_limit`, `_len` = 0. Stop: the `ret` (0x48).
+    "arb": dict(grp="Arb", cn="AString::ReAlloc2", a=0x44c010, n=73, pos=True, stops=(0x48,), calls=True, hand=(0xe,),
                 tag="PLAN.md §M, M1", src="7-Zip's `AString::ReAlloc2` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
+    # `AString (const char *s1, unsigned num1, const char *s2, unsigned num2)`: `SetStartLen`, `memcpy`, then a tail
+    # jump to `memcpy` (46).
+    "acs": dict(grp="Acs", cn="AString::AString (s1, num1, s2, num2)", a=0x44c260, n=75, pos=True, stops=(0x46,),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip's `AString (const char *, unsigned, const char *, unsigned)` (`CPP/Common/MyString.cpp`; "
+                    "`objdump -d`)"),
+    # `AString (const AString &s)`: `SetStartLen (s._len)`, then the copy loop (40) through the 0.
+    "acp": dict(grp="Acp", cn="AString::AString (const AString &)", a=0x44c420, n=62, pos=True, stops=(0x3d,),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip's `AString (const AString &)` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
+    # `AString (const char *s)`: the length loop (32), `SetStartLen (len)`, then the copy loop (64) through the 0.
+    "acc": dict(grp="Acc", cn="AString::AString (const char *)", a=0x44c3c0, n=86, pos=True, stops=(0x55,),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip's `AString (const char *)` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
     "asl": dict(grp="Asl", cn="AString::SetStartLen", a=0x44c060, n=50, pos=True, stops=(0x31,), calls=True,
                 tag="PLAN.md §M, M1", src="7-Zip's `AString::SetStartLen` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
     # `UString::UString ()`: `_chars` = NULL, then `_chars` = `new wchar_t[4]` (the `call` at 0x14), `_len` = 0,
@@ -610,12 +637,55 @@ FNS = {
                 src="7-Zip's `StringsAreEqualNoCase` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
     "usl": dict(grp="Usl", cn="UString::SetStartLen", a=0x44d060, n=54, pos=True, stops=(0x35,), calls=True,
                 tag="PLAN.md §M, M1", src="7-Zip's `UString::SetStartLen` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
+    # `UString::UString (const UString &s)`: `SetStartLen (s._len)` (the `call` at 0x13 to `usl`), then a tail jump
+    # (0x2b) to `wmemcpy (_chars, s._chars, s._len + 1)`.
+    "ucc": dict(grp="Ucc", cn="UString::UString(const UString&)", a=0x44d5d0, n=48, pos=True, stops=(0x2b,),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip's `UString::UString (const UString &)` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
+    # `UString::ReAlloc (newLimit)`: `newBuf = new wchar_t[newLimit + 1]` (the `call` at 0x18), `wmemcpy (newBuf,
+    # _chars, _len + 1)` (0x2c), `delete [] _chars` unless null (0x39), `_chars = newBuf`, `_limit = newLimit`. Stop:
+    # the `ret` (0x48).
+    "ura": dict(grp="Ura", cn="UString::ReAlloc", a=0x44cfc0, n=73, pos=True, stops=(0x48,), calls=True,
+                tag="PLAN.md §M, M1", src="7-Zip's `UString::ReAlloc` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
+    # `UString::ReAlloc2 (newLimit)`: above `0x3ffffffe` a jump to the throw stub (0xe, `0x4013c2`, by hand); else
+    # `newBuf = new wchar_t[newLimit + 1]` (0x23), `newBuf[0] = 0`, `delete [] _chars` unless null (0x39), `_chars =
+    # newBuf`, `_limit = newLimit`, `_len = 0`. Stop: the `ret` (0x4f).
+    "ur2": dict(grp="Ur2", cn="UString::ReAlloc2", a=0x44d010, n=80, pos=True, stops=(0x4f,), calls=True,
+                hand=(0xe,),
+                tag="PLAN.md §M, M1", src="7-Zip's `UString::ReAlloc2` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
+    # `UString::UString (num, s)`: `num` capped at `s._len` (`cmovbe`), `SetStartLen (num)` (0x1b), `wmemcpy (_chars,
+    # s._chars, num)` (0x2b), `_chars[num] = 0`; the `ret` at 0x3f.
+    "ucu": dict(grp="Ucu", cn="UString::UString(unsigned, const UString&)", a=0x44d240, n=64, pos=True, stops=(0x3f,),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip's `UString::UString (unsigned, const UString &)` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
+    # `UString::UString (s1, num1, s2, num2)`: `SetStartLen (num1 + num2)` (0x1e), `wmemcpy (_chars, s1, num1)` (0x30),
+    # a tail jump to `wmemcpy (_chars + num1, s2, num2 + 1)` (0x47).
+    "uc4": dict(grp="Uc4", cn="UString::UString(const wchar_t*, unsigned, const wchar_t*, unsigned)", a=0x44d2e0,
+                n=76, pos=True, stops=(0x47,), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip's `UString::UString (const wchar_t *, unsigned, const wchar_t *, unsigned)` "
+                    "(`CPP/Common/MyString.cpp`; `objdump -d`)"),
     # CPP/UI/Common/EnumDirItems.cpp `CDirItems::ScanProgress (dirPath)`: without a `Callback` (at 0xc0) 0, else a tail
     # jump to `Callback->ScanProgress (Stat, false, dirPath)` (`Stat` at 0x48), its vtable's second entry. Stops: the
     # `jmp rax` (0x26) and the `ret` (0x32).
     "dsp": dict(grp="Dsp", cn="CDirItems::ScanProgress", a=0x5c01d0, n=51, pos=True, stops=(0x26, 0x32),
                 tag="PLAN.md §M, M1",
                 src="7-Zip's `CDirItems::ScanProgress` (`CPP/UI/Common/EnumDirItems.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06's CPP/UI/Common/OpenArchive.cpp `Archive_GetItemBoolProp (arc, index, propID, result)`: `result`
+    # false, a `CPropVariant` on the stack (`vt` 0), `arc->GetProperty (index, propID, &prop)` (the `call [rax +
+    # 0x30]` at 0x3b); its result if not 0, else `VT_BOOL`: `result` = `boolVal != 0`, `VT_EMPTY`: S_OK, else
+    # E_FAIL; `~CPropVariant` (the `call` at 0x5e), the stack guard. Stops: the `ret` (0x7e), `__stack_chk_fail`
+    # (0x8b).
+    # CPP/Common/MyVector.h `CObjectVector<CRecordVector<unsigned>>::~CObjectVector ()`: from the last item down,
+    # `delete [] item->_items` (the `call` at 0x32, when not null) and `delete item` (the `call` at 0x3f, 16 bytes),
+    # then `delete [] _items` as a tail jump (0x5b) when not null, else the `ret` (0x64).
+    "ocv": dict(grp="Ocv", cn="CObjectVector<CRecordVector<unsigned>>::~CObjectVector", a=0x454600, n=101, pos=True,
+                stops=(0x5b, 0x64), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CObjectVector<CRecordVector<unsigned>>::~CObjectVector` (`CPP/Common/MyVector.h`; "
+                    "`objdump -d`)"),
+    "gbp": dict(grp="Gbp", cn="Archive_GetItemBoolProp", a=0x5d15e0, n=144, pos=True, fs=True, stops=(0x7e, 0x8b),
+                hand=(0x86,),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `Archive_GetItemBoolProp` (`CPP/UI/Common/OpenArchive.cpp`; `objdump -d`)"),
     # C/7zStream.c `InStream_AtBegin_GetSize (stream, sizeRes)`: `stream->Seek (stream, sizeRes, SZ_SEEK_END)` (the
     # `call [rax + 0x20]` at 0x1b), then `InStream_SeekToBegin (stream)` (the `call` at 0x24); the first's result
     # if not 0, else the second's. Stop: the `ret` (0x3a).
@@ -941,6 +1011,13 @@ FNS = {
                 stops=(0x2e, 0x1fb, 0x20b, 0x350, 0x3c0, 0x47f, 0x610, 0x63e, 0x7d2, 0x808, 0x9d1, 0x9f5, 0xc07, 0x3b6),
                 calls=True, tag="PLAN.md G3, `malloc`",
                 src="glibc 2.31's `_int_malloc` (`malloc/malloc.c`; `objdump -d`)"),
+    # The same function on the second call for every largebin request (`nb > 1023`): the index by any of the three
+    # ways (480: `48 + (nb >> 6)`, 490: `91 + (nb >> 9)`, 507: `110 + (nb >> 12)`, 2192: the `cmovb` of `119 +
+    # (nb >> 15)` and `124 + min (nb >> 18, 2)`), then as `im5`/`im6`. Stops: those of `im6` but 507.
+    "im7": dict(grp="Im7", code=("Imm", "imm"), cn="_int_malloc", a=0x630be0, n=3702, pos=True, fs=True,
+                stops=(0x2e, 0x20b, 0x350, 0x3c0, 0x47f, 0x610, 0x63e, 0x7d2, 0x808, 0x9d1, 0x9f5, 0xc07, 0x3b6),
+                calls=True, tag="PLAN.md G3, `malloc`",
+                src="glibc 2.31's `_int_malloc` (`malloc/malloc.c`; `objdump -d`)"),
     "imm": dict(grp="Imm", cn="_int_malloc", a=0x630be0, n=3702, pos=True, fs=True,
                 stops=(0x2e, 0x6a, 0x160, 0x3c0, 0x44b, 0x47f, 0x610, 0x63e, 0x7b9, 0x808, 0x988, 0x9e7, 0xa2b, 0xc07,
                        0xc20, 0xc77, 0xcef, 0x3b6),
@@ -1022,6 +1099,14 @@ FNS = {
     "pcs": dict(grp="Pcs", cn="ParseComplexSize", a=0x5d38f0, n=273, pos=True, fs=True, stops=(0xa6, 0xa7, 0x10c),
                 calls=True, jt=(0x6e8e8c, 19), tag="PLAN.md §M, M1",
                 src="7-Zip's `ParseComplexSize` (`CPP/7zip/UI/Common/OpenArchive.cpp`; `objdump -d`)"),
+    # glibc 2.31 nptl/pthread_once.c `__pthread_once_slow (once_control, init_routine)`: done (bit 2), the answer 0;
+    # else `lock cmpxchg` takes the word from its value to `__fork_generation | 1`; another thread at it (bit 0 of the
+    # same generation) is waited for (`futex` wait); else `_pthread_cleanup_push`, `init_routine ()` (`call rbx`),
+    # `_pthread_cleanup_pop`, the word 2 and a `futex` wake. Stops: the `ret` (0x4f), the wait (the `syscall` at
+    # 0x76), `__libc_fatal` (0x95), `__stack_chk_fail` (0x100). By hand: `lock cmpxchg [m], r` (0x59).
+    "pos": dict(grp="Pos", cn="__pthread_once_slow", a=0x5fee60, n=261, pos=True, fs=True,
+                stops=(0x4f, 0x76, 0x95, 0x100), calls=True, hand=(0x59,), tag="PLAN.md §M, M1",
+                src="glibc 2.31's `__pthread_once_slow` (`nptl/pthread_once.c`; `objdump -d`)"),
 }
 
 
