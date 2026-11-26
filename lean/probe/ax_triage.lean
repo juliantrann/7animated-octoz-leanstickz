@@ -1,3 +1,2 @@
-import FV7z.U2s.Holds
+import FV7z.Utr.Holds
 open FV7z
-#print axioms FV7z.U2s.u2s_ok
