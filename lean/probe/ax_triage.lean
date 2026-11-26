@@ -1,9 +1,6 @@
-import FV7z.Fcc.Holds
-import FV7z.Fft.Holds
-import FV7z.Sst.Holds
-import FV7z.Cra.Holds
+import FV7z.Opd.Holds
 open FV7z
-#print axioms FV7z.Fcc.fcc_ok
-#print axioms FV7z.Fft.fft_ok
-#print axioms FV7z.Sst.sst_ok
-#print axioms FV7z.Cra.cra_ok
+#print axioms FV7z.Opd.opd_open
+#print axioms FV7z.Opd.opd_stat
+#print axioms FV7z.Opd.opd_alloc
+#print axioms FV7z.Opd.opd_ret
