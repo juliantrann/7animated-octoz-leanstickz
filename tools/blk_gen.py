@@ -245,6 +245,12 @@ FNS = {
     # throws (the jumps to 0x4176fe, 64 and 89). Stops: the `ret`s (42, 58), the jumps (64, 89).
     "gae": dict(grp="Gae", cn="GetOpenArcErrorFlags", a=0x5d2ae0, n=94, pos=True, stops=(42, 58, 64, 89),
                 tag="PLAN.md §M, M1", src="7-Zip 26.06's `GetOpenArcErrorFlags` (`OpenArchive.cpp`; `objdump -d`)"),
+    # 7-Zip's CPP/Windows/FileFind.cpp `NFind::DoesDirExist (name, followLink)`: a frame of 168 bytes with the stack
+    # guard at `rsp + 152`, `MY_lstat (name, &st, followLink)` (call at 0x25), `S_ISDIR (st.st_mode)`, the guard's
+    # check. Stops: the `ret` (0x5f), the call of `__stack_chk_fail` (0x60).
+    "dde": dict(grp="Dde", cn="NWindows::NFile::NFind::DoesDirExist", a=0x455cf0, n=101, pos=True, fs=True,
+                stops=(0x5f, 0x60), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `NFind::DoesDirExist` (`FileFind.cpp`; `objdump -d`)"),
     # 7-Zip's C/Alloc.c `MyAlloc (size)`: 0 for size 0, else a tail jump to `malloc`. Stops: the jump (9), the `ret`
     # (18).
     "mya": dict(grp="Mya", cn="MyAlloc", a=0x41f3c0, n=19, pos=True, stops=(9, 18),
