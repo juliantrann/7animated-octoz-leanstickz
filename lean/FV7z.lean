@@ -371,6 +371,9 @@ import FV7z.Lemmas.FnJm
 import FV7z.Sri.Blocks
 import FV7z.Sri.Cuts
 import FV7z.Sri.Holds
+import FV7z.Lfp.Blocks
+import FV7z.Lfp.Cuts
+import FV7z.Lfp.Holds
 import FV7z.Fcl.Blocks
 import FV7z.Fcl.Cuts
 import FV7z.Fcl.Holds
