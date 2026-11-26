@@ -23,6 +23,15 @@ the callee's own post (`Pn`, `Pd`, `Pw`); `kr0` (for `len = 0`) and `kr1` at the
 - `VF`: the bytes after `_chars[len] = 0; _len = len`; `Zs`: that store's 4 bytes writable and clear of `Sv5`.
 - `vc_0`, `vc_31`, `vc_49`, `vc_53`, `vc_92`, `vc_108`, `vc_125`: the verification conditions of the pieces.
 - `usf_ok`: from the entry, through the callees, to the return address.
+
+Status (2026-11-26, fork S, kt-fs): written, not yet triaged; `FV7z.lean` does not import it yet. Next step:
+`triage.sh kt1213 -L tri14 FV7z.Usf.Holds -- FV7z.Usf.usf_ok`, then add `import FV7z.Usf.Holds` after
+`import FV7z.Ucn.Holds` once green. The likely weak points: `vc_0` (the flags at 86 closed by `Arb.c7`, through
+`Q`'s argument; the `jb` by `hb` on `decide (m < len)` after `hm`), `vc_31` (`test ebx, ebx` as `l == 0` after
+`sw_64_32`, `BitVec.and_self`), `m5`/`sv5` (the inner four pushes as `Uau.V0` of `gU`, by defeq), and the `rw`
+chain in `fin` (the reads at `rsp - 40 + 8 …` to `rsp - 32 …`). The other targets left after this one:
+`UString::operator= (const wchar_t *)` 0x44d670 (155), `SetFromBstr` 0x44d820 (113) and `UString (const char *)`
+0x44d4e0 (140, a byte `strlen` loop at 32 and a widening copy loop at 80: an invariant like `FV7z/Acp/Loop.lean`).
 -/
 open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn
 namespace FV7z.Usf
