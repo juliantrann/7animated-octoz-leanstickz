@@ -9,10 +9,11 @@ import FV7z.Raf.Holds
 7-Zip 26.06's `LzmaDec_DecodeReal2 (p, limit, bufLimit)` at `0x42b5b0` in `7zzs` (`C/LzmaDec.c`; `objdump -d`),
 for the decoder at `p` = `rdi`: `push rbx`; with `checkDicSize` (the 4 bytes at `p + 68`) 0, `limit` (`rsi`) cut to
 `dicPos + (dicSize - processedPos)` (`p + 40`, `p + 4`, `p + 64`) when it is past it (`cmova`); `rdi = p`;
-`call LZMA_DECODE_REAL` (40, to `0x6d4440` in `.text$LZMADECOPT`); then, `checkDicSize` still 0 and
+`call LZMA_DECODE_REAL` (40, to `0x6d4040`, `LzmaDec_DecodeReal_3`); then, `checkDicSize` still 0 and
 `processedPos ≥ dicSize`, `checkDicSize = dicSize`; `pop rbx; ret` (64).
 
-The callee has no contract yet: `dr2_ok` takes it as a hypothesis (`kf`), as `Lap.lap_ok` does.
+The callee's contract (`Lzma.dr3_holds`) wants `LzmaDec.Pre` at the call, which only the caller can show: `dr2_ok`
+takes the callee as a hypothesis (`kf`), as `Lap.lap_ok` does, for the caller to discharge (`Seg.enterK`).
 
 - `lim`: the cut limit; `Rd`: the decoder's bytes the code reads, in `F.data`.
 - `vc_0`, `vc_37`, `vc_45`, `vc_63`: the cut points' conditions.
@@ -25,11 +26,11 @@ set_option maxRecDepth 100000
 
 /-- The `call` to `LZMA_DECODE_REAL`. -/
 def pcall : List Byte := [0xe8, 0x63, 0x8a, 0x2a, 0x00]
-theorem pcall_0 : ∀ feat, Dec feat pcall 0 (FV7z.mk .call 64 [.rel 2788963] 5) := by dec_rfl
+theorem pcall_0 : ∀ feat, Dec feat pcall 0 (FV7z.mk .call 64 [.rel 2787939] 5) := by dec_rfl
 theorem wc_40 : pcall <+: dr2.drop 40 := by decide +kernel
-theorem call_40 (feat : Features) : Dec feat dr2 40 (FV7z.mk .call 64 [.rel 2788963] 5) :=
+theorem call_40 (feat : Features) : Dec feat dr2 40 (FV7z.mk .call 64 [.rel 2787939] 5) :=
   Dec.shift (j := 40) (k := 0) (pcall_0 feat) wc_40 (Nat.zero_le _)
-theorem tgt_40 : dr2_at.add (40 + 5) + BitVec.ofNat 64 2788963 = (0x6d4440#64 : Addr) := by decide
+theorem tgt_40 : dr2_at.add (40 + 5) + BitVec.ofNat 64 2787939 = (0x6d4040#64 : Addr) := by decide
 
 /-- The `ret`. -/
 def pret : List Byte := [0xc3]
@@ -112,13 +113,13 @@ variable {prof : Profile} {L : List (Addr × List Byte)} {s₀ : State} {o : Ora
   {gev : List Event} {gP : State → Nat → List Event → Prop} {gE : Outcome → List Event → Prop}
 
 set_option maxHeartbeats 4000000 in
-/-- `LzmaDec_DecodeReal2`: see the module doc. The callee `LZMA_DECODE_REAL` (at `eT.add tT` = `0x6d4440`) is the
+/-- `LzmaDec_DecodeReal2`: see the module doc. The callee `LZMA_DECODE_REAL` (at `eT.add tT` = `0x6d4040`) is the
 hypothesis `kf`: entered with `rdi = p`, `rsi` the limit (the given one or `lim`), the frame `[rsp - 16, rsp)` the
 saved `rbx` and the return address; back at 45 with `rsp`, `rbx` as at its entry, the saved `rbx` and the return
 address kept, and `Pc`. -/
 theorem dr2_ok (c : Seg prof F Wl L s₀ o) (hin : CodeIn L dr2_at dr2)
     {eT : Addr} {codeT : List Byte} {tT : Nat} (hinT : CodeIn L eT codeT) (hT : tT < codeT.length)
-    (htT : eT.add tT = 0x6d4440#64)
+    (htT : eT.add tT = 0x6d4040#64)
     {X : State} {t : Nat} {V : Addr → Byte} (hK : KeptW Wl s₀ X) (hA : Agree F X.proc.mm.mem V)
     (hrip : X.cpu.rip = dr2_at) (hr : Rd F X.cpu.gpr.rdi)
     (hw : ∀ i < 4, Foot Wl (Addr.add (X.cpu.gpr.rdi + 68#64) i)) (hp : X.cpu.gpr.rdi.toNat + 72 ≤ 2 ^ 64)
