@@ -683,6 +683,16 @@ FNS = {
     # CPP/Common/MyVector.h `CObjectVector<CRecordVector<unsigned>>::~CObjectVector ()`: from the last item down,
     # `delete [] item->_items` (the `call` at 0x32, when not null) and `delete item` (the `call` at 0x3f, 16 bytes),
     # then `delete [] _items` as a tail jump (0x5b) when not null, else the `ret` (0x64).
+    # 7-Zip's `SortFileNames (strings, indices)`: `indices` cleared and reserved for the `strings.Size ()` indices
+    # (`operator delete` of the old ones, 0x4a, `operator new[]`, 0x65; `js` to the cold throw when negative), filled
+    # with 0..n-1 (0x90), then a heap sort by `CompareFileNames` (0x5dca50) through the indices: the heap built
+    # (0xd0, sift down from 0x11f), then the largest swapped out (0x1c1, sift down from 0x208); the stack guard
+    # (`fs:0x28`). Stops: the `ret` (0x1b2), `__stack_chk_fail` (0x27c). By hand: the `js` (0x3c; its target is
+    # outside), `sub qword [rsp + 0x20], 2` (0x17a; `Seg.s_sub_mi64`, FV7z/Lemmas/Rmw8.lean).
+    "sfn": dict(grp="Sfn", cn="SortFileNames", a=0x5dca70, n=641, pos=True, fs=True, stops=(0x1b2, 0x27c),
+                hand=(0x3c, 0x17a),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `SortFileNames` (`CPP/7zip/UI/Common/SortUtils.cpp`; `objdump -d`)"),
     "msi": dict(grp="Msi", cn="CMultiStreams::Init", a=0x5b3260, n=125, pos=True, stops=(0x7c,), calls=True,
                 tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `CMultiStreams::Init` (`CPP/7zip/Archive/Common/MultiStream.cpp`; `objdump -d`)"),
