@@ -117,7 +117,8 @@ theorem ndi_ab {pl pc ip cpy : List Byte} {Pm : (Addr → Byte) → Prop} {E : E
     h32 (by rw [hzn]; omega) (by rw [hzn]; omega) (by rw [hz]; exact hst) (by rw [hz]; exact hsm)
     (by rw [hzn]; omega) (by rw [hzn]; omega) (by rw [hz]; exact hbuf) (by rw [hz]; exact hfr) hpf hpn hpz hpp
     hof hoz hps hpre hinc hc0 hcpy hgf
-    (fun W₀ h => cx.hPm W₀ fun a a1 a2 => (h a a2).trans (nV_fV (by omega) hsn (.inl (by omega))))
+    (fun W₀ h => cx.hPm W₀ fun a ha => (h a (pmk_lt ha)).trans (nV_fV (by omega) hsn
+      (.inl (by have := pmk_lt ha; omega))))
     cx.hin (lt_len (by decide))
     (by
       rw [hz]

@@ -323,6 +323,11 @@ theorem rf {P : Addr → Prop} {lo hi : Nat} (h : ∀ x : Addr, lo ≤ x.toNat �
     (a : Addr) (n : Nat) (hd : lo ≤ a.toNat ∧ a.toNat + n ≤ hi) : ∀ i < n, P (Addr.add a i) := fun i hi =>
   h _ (by rw [toNat_add_of_fits hi (by omega)]; omega) (by rw [toNat_add_of_fits hi (by omega)]; omega)
 
+/-- The bytes `Pm` may read: the GOT's, `[0x792000, 0x792980)`, and `strncmp`'s jump table, `[0x6f0df0, 0x6f0e30)`. -/
+def PmK (x : Addr) : Prop := (7938048 ≤ x.toNat ∧ x.toNat < 7940480) ∨ (7278064 ≤ x.toNat ∧ x.toNat < 7278128)
+
+theorem pmk_lt {x : Addr} (h : PmK x) : x.toNat < 7940480 := by rcases h with ⟨_, h⟩ | ⟨_, h⟩ <;> omega
+
 /-- What the body's `getenv`s and what follows them are given, the bytes `V` when the body begins: the code; the
 contracts of `strlen` and `strncmp`, which hold of bytes that are `V`'s on the page of the GOT (`0x792000`); the
 environment and the seven names; the stack above the image, 72 bytes below `sp` to store into; the data segment to
@@ -337,7 +342,7 @@ structure Cx (prof : Profile) (F : Footprint) (Wl : List Rgn) (L : List (Addr ×
   hic : CodeIn L 4198472#64 pc
   hc0 : 0 < pc.length
   hcmp : Str.NcmpAt prof L o 4198472#64 Pm
-  hPm : ∀ W : Addr → Byte, (∀ x : Addr, 7938048 ≤ x.toNat → x.toNat < 7940480 → W x = V x) → Pm W
+  hPm : ∀ W : Addr → Byte, (∀ x : Addr, PmK x → W x = V x) → Pm W
   hE : E.Ok V F sp
   n1 : NmOk E V F 7289136#64 7
   n2 : NmOk E V F 7289144#64 15
@@ -349,6 +354,7 @@ structure Cx (prof : Profile) (F : Footprint) (Wl : List Rgn) (L : List (Addr ×
   h72 : 8032256 + 72 ≤ sp.toNat
   hstk : ∀ i < 72, Foot Wl (Addr.add (sp - 72#64) i)
   hr : ∀ x : Addr, 7827456 ≤ x.toNat → x.toNat < 8032256 → Foot F.data x
+  hro : ∀ x : Addr, 7278064 ≤ x.toNat → x.toNat < 7278128 → Foot F.data x
   hw : ∀ x : Addr, 7827456 ≤ x.toNat → x.toNat < 8032256 → Foot Wl x
 
 /-- The return address's bytes below `sp`. -/
@@ -360,8 +366,9 @@ theorem w8 {sp : Addr} (hstk : ∀ i < 72, Foot Wl (Addr.add (sp - 72#64) i)) :
 /-- Bytes that are `M`'s outside the 72 below `sp`, `M` being `V` but for the body's variables, are `V`'s on the
 GOT (`[0x792000, 0x792980)`, the page of the GOT below `main_arena`, which `malloc` writes). -/
 theorem got_kept {sp : Addr} {V M W : Addr → Byte} (h72 : 8032256 + 72 ≤ sp.toNat) (hM : Eqo sp W M)
-    (hG : Gk V M) : ∀ x : Addr, 7938048 ≤ x.toNat → x.toNat < 7940480 → W x = V x := fun x h1 h2 =>
-  (hM x (by unfold Scr; omega)).trans (hG x (by
+    (hG : Gk V M) : ∀ x : Addr, PmK x → W x = V x := fun x hx => by
+  rcases hx with ⟨h1, h2⟩ | ⟨h1, h2⟩ <;>
+  exact (hM x (by unfold Scr; omega)).trans (hG x (by
     simp only [nv, Bool.or_eq_false_iff, Bool.and_eq_false_iff, decide_eq_false_iff_not]
     omega))
 
@@ -379,8 +386,8 @@ theorem gs {pl pc : List Byte} {Pm : (Addr → Byte) → Prop} {E : Ev} {V M W :
     GoG prof L o gev gP gE X t := by
   have h72 := cx.h72
   refine ge c cx.hin cx.hig cx.hil cx.hl0 cx.hlen cx.hic cx.hc0 cx.hcmp
-    ⟨fun a h1 h2 => cx.hr a (by omega) (by omega), fun a h1 h2 => cx.hr a (by omega) (by omega)⟩ hj hd htgt hK hA hrip
-    hsp hdi cx.hE hN h72
+    ⟨fun a h1 h2 => cx.hr a (by omega) (by omega), fun a h1 h2 => cx.hr a (by omega) (by omega), cx.hro⟩ hj hd htgt hK hA
+    hrip hsp hdi cx.hE hN h72
     (fun x hx hx' => (hM x hx).trans (hG x ?_)) ?_ cx.hstk (gf cx.hr _ 8 (by decide))
     (fun W' hW' => cx.hPm W' (got_kept h72 (hM.scr hW') hG))
     (fun Z t' W' hKZ hAZ hW' => k Z t' W' hKZ hAZ (hM.scr hW'))
