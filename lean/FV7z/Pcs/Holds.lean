@@ -429,8 +429,7 @@ local macro "vc_fin" : tactic =>
 
 /-- `Rk` as equations substituted. -/
 local macro "kept" h:ident : tactic =>
-  `(tactic| (obtain ⟨hb, hp, hs, h12, h13, h14, h15⟩ := $h:ident
-    dsimp only at hb hp hs h12 h13 h14 h15
+  `(tactic| (obtain ⟨hb, hp, hs, h12, h13, h14, h15⟩ := $h:ident; dsimp only at hb hp hs h12 h13 h14 h15;
     subst hb hp hs h12 h13 h14 h15))
 
 /-- `Rk` of the registers after the substitution. -/
