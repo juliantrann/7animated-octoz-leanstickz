@@ -114,7 +114,7 @@ theorem rq_out (W : Addr → Byte) (a x : Addr) (v : BitVec 64) (ha : a.toNat + 
 theorem rq_self (W : Addr → Byte) (a : Addr) (v : BitVec 64) (ha : a.toNat + 8 ≤ 2 ^ 64) :
     rdq(Vst W a (toBytesLE v 8), a) = v := by
   rw [Tun.rd_Vst_self (n := 8) _ a _ (toBytesLE_length _ _) ha]
-  exact ofBytesLE_toBytesLE rfl _
+  exact ofBytesLE_toBytesLE (n := 8) rfl _
 
 /-- `n` bytes apart from the pushes are those before them. -/
 theorem m0 {V : Addr → Byte} {g : Gprs} (hp : 32 ≤ g.rsp.toNat) (y : Addr) (n : Nat) (hy : y.toNat + n ≤ 2 ^ 64)
