@@ -213,6 +213,12 @@ FNS = {
     # 0x79f088). Stop: the `ret` (0x4f).
     "ost": dict(grp="Ost", cn="COpenCallbackConsole::Open_SetTotal", a=0x5f65b0, n=0x7d, pos=True, stops=(0x4f,),
                 tag="PLAN.md §M, M1", src="7-Zip 26.06's `Open_SetTotal` (`OpenCallbackConsole.cpp`; `objdump -d`)"),
+    # 7-Zip's CPP/7zip/UI/Console/ConsoleClose.cpp `CCtrlHandlerSetter::~CCtrlHandlerSetter ()`: `signal (SIGINT,
+    # memo_sig_int)` (the `call`, 16; a cut after it) and `signal (SIGTERM, memo_sig_term)` as a tail jump. Stop: the
+    # `jmp` (31).
+    "chd": dict(grp="Chd", cn="CCtrlHandlerSetter::~CCtrlHandlerSetter", a=0x5e77a0, n=36, pos=True, stops=(31,),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `~CCtrlHandlerSetter` (`ConsoleClose.cpp`; `objdump -d`)"),
     # 7-Zip's C/LzmaDec.c `LzmaDec_FreeProbs (p, alloc)`: `ISzAlloc_Free (alloc, p->probs); p->probs = NULL`, the
     # free through `alloc->Free` (`call [rax + 8]`, 18; a cut after it). Stop: the `ret` (30).
     # 7-Zip's C/LzmaDec.c `LzmaDec_Free (p, alloc)`: `LzmaDec_FreeProbs (p, alloc)` (16), then
