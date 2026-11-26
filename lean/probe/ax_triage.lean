@@ -1,9 +1,12 @@
-import FV7z.Lemmas.CmovLd
-import FV7z.Mun.Cuts
-import FV7z.Mmp.Cuts
-import FV7z.Gdt.Cuts
-import FV7z.Tcg.Cuts
-import FV7z.Mun.Probe
+import FV7z.Mun.Holds
+import FV7z.Mmp.Holds
+import FV7z.Gdt.Holds
+import FV7z.Tcg.Holds
 open FV7z
-#print axioms FV7z.OpI.cmovld32
-#print axioms FV7z.Gdt.c_37
+#print axioms FV7z.Mun.mun_pre
+#print axioms FV7z.Mun.mun_post
+#print axioms FV7z.Mmp.mmp_pre
+#print axioms FV7z.Mmp.mmp_post
+#print axioms FV7z.Gdt.gdt_ok
+#print axioms FV7z.Tcg.tcg_pre
+#print axioms FV7z.Tcg.tcg_post
