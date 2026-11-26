@@ -98,7 +98,7 @@ FOOT = {
     "w": ["exact hE.w1", "exact hE.w2", "exact hE.w3", "exact hE.w4", "exact hE.w5"],
     "hbo": ["exact hE.hbo"], "wbo": ["exact hE.wbo"],
     "f": ["exact hE.f0", "exact hE.f1", "exact hE.f2", "exact hE.f3", "exact hE.f4"],
-    "fA": ["exact fA hE.hp (by omega)"], "fA0": ["exact fA0 hE.hp (by omega)"],
+    "fA": ["with_reducible exact fA hE.hp (by omega)"], "fA0": ["with_reducible exact fA0 hE.hp (by omega)"],
     "fIn": ["exact fIn hE (by tfo) (by tfo)"], "fP": ["exact fP hK hE (by tfo) (by tfo)"],
     "fD": ["exact fD hE (by tfo) (by tfo)"],
 }
@@ -116,28 +116,42 @@ PRE = {
 }
 WX = {0: ["← hK.eV1", "hK.eB", "hK.eP"], 103: ["hK.eD"], 210: ["hK.eD"]}
 SPLIT = {594}
+# Generalized after `wpx`: the literal context at 180 (its bound `hx` is from `CtxOk`).
+POST = {180: ["generalize BitVec.setWidth 32 rbx + BitVec.setWidth 32 (ofBytesLE 8 (List.map K.V1 (byteAddrs (K.D + rcx)",
+              "  1))) >>> ((BitVec.setWidth 8 (8#32 - BitVec.setWidth 32 r12)).toNat % 32) = cv at hx ⊢"]}
+# Triage only: `src:dst` exits whose closers show their goals (TDM_DBG="320:340,794:833").
+DBG = {tuple(map(int, x.split(":"))) for x in os.environ.get("TDM_DBG", "").split(",") if x}
 
 
-def exit_closer(src, j):
+def dbg(src, j, s):
+    if (src, j) not in DBG:
+        return s
+    return s.replace("by tcm)", "by tcmd)").replace("tfs)", "tfsd)").replace("by tfo)", "by tfod)")
+
+
+def exit_closer(src, j, case=None):
+    return dbg(src, j, exit_closer0(src, j, case))
+
+
+def exit_closer0(src, j, case):
     if j in FIN:
-        return "exact xFin (by decide) ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, by tfo, by tfo, by tfv⟩"
+        return f"exact xFin (by decide) ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, by tfo, by tfo, by tfv{case}⟩"
     if j == 343:
-        return "exact x343 (by tcm) (by dsimp only [I343]; t343) (by dsimp only [M343] <;> tfo)"
+        t = "t343b" if src == 340 else "t343a"
+        return f"exact x343 (by tcm) (by dsimp only [I343]; {t}) (by dsimp only [M343] <;> tfo)"
     if (src, j) == (103, 180):
-        return ("exact x180 (by tcm) rfl (by dsimp only [I180]; refine ⟨?_, ?_, ?_, ctx_ok hK _, ?_⟩ <;> tfs)\n"
-                "          (by dsimp only [M180] <;> tfo)")
+        return ("exact x180 (by tcm) rfl (by dsimp only [I180]; refine ⟨?_, ?_, ?_, ?_, ?_⟩ <;>\n"
+                "            (first | (with_reducible exact ctx_ok' hK _) | tfs)) (by dsimp only [M180] <;> tfo)")
     return f"exact x{j} (by tcm) rfl (by dsimp only [I{j}] <;> tfs) (by dsimp only [M{j}] <;> tfo)"
 
 
-def loop(k):
+def loop(k, case=None):
     unf, exits, I, M, tags = C[k]
-    alts = []
+    alts = ["split"] if k in SPLIT else []
     for t in tags:
         alts += FOOT[t]
-    alts += [exit_closer(k, j) for j in exits]
+    alts += [exit_closer(k, j, case) for j in exits]
     alts += ["(with_reducible rfl)", "apply And.intro", "intro _"]
-    if k in SPLIT:
-        alts.append("split")
     o = ["  repeat' (first"]
     for a in alts:
         o.append("    | " + a)
@@ -183,9 +197,10 @@ def vc(k):
     if k == 343:
         o.append("  dsimp only [I343] at hI")
         o.append("  rcases hI with ⟨h0, rfl⟩ | ⟨⟨h0, h1⟩, rfl⟩")
-        body = ["  " + x for x in OKF] + wpx(k, []) + loop(k)
-        o.append("  all_goals")
-        o += ["  " + x for x in body]
+        for case in "ab":
+            body = ["  " + x for x in OKF] + wpx(k, []) + loop(k, case)
+            o.append("  ·" + body[0][1:])
+            o += ["  " + x for x in body[1:]]
         return o
     I = C[k][2]
     if I:
@@ -197,6 +212,7 @@ def vc(k):
             o.append(f"  obtain ⟨{', '.join(pats)}⟩ := hI")
     o += ["  " + x for x in OKF + PRE.get(k, [])]
     o += wpx(k, WX.get(k, []))
+    o += ["  " + x for x in POST.get(k, [])]
     o += loop(k)
     return o
 

@@ -31,7 +31,7 @@ theorem vc_411 (hK : Ok K) (hE : Env K F Wl) (hc : Cm K g) (hI : I411 K g) :
   repeat' (first
     | exact fIn hE (by tfo) (by tfo)
     | exact fP hK hE (by tfo) (by tfo)
-    | exact x343 (by tcm) (by dsimp only [I343]; t343) (by dsimp only [M343] <;> tfo)
+    | exact x343 (by tcm) (by dsimp only [I343]; t343a) (by dsimp only [M343] <;> tfo)
     | exact x443 (by tcm) rfl (by dsimp only [I443] <;> tfs) (by dsimp only [M443] <;> tfo)
     | exact x960 (by tcm) rfl (by dsimp only [I960] <;> tfs) (by dsimp only [M960] <;> tfo)
     | (with_reducible rfl)
@@ -171,12 +171,12 @@ theorem vc_594 (hK : Ok K) (hE : Env K F Wl) (hc : Cm K g) (hI : I594 K g) :
   have := hK.hnl1
   wpx [W_594, W_603, o33, o34, M594, Op.not32, Op.cmpmi, BitVec.xor_self, BitVec.and_self]
   repeat' (first
+    | split
     | exact x320 (by tcm) rfl (by dsimp only [I320] <;> tfs) (by dsimp only [M320] <;> tfo)
     | exact x657 (by tcm) rfl (by dsimp only [I657] <;> tfs) (by dsimp only [M657] <;> tfo)
     | (with_reducible rfl)
     | apply And.intro
-    | intro _
-    | split)
+    | intro _)
 
 set_option maxHeartbeats 4000000 in
 /-- 648. -/
@@ -268,7 +268,7 @@ theorem vc_751 (hK : Ok K) (hE : Env K F Wl) (hc : Cm K g) (hI : I751 K g) :
     | exact hE.f2
     | exact hE.f3
     | exact hE.f4
-    | exact xFin (by decide) ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, by tfo, by tfo, by tfv⟩
+    | exact xFin (by decide) ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, by tfo, by tfo, by tfvNone⟩
     | (with_reducible rfl)
     | apply And.intro
     | intro _)
