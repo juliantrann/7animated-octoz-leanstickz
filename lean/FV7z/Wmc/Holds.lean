@@ -26,9 +26,10 @@ variable {F : Footprint} {Wl : List Rgn}
 theorem vc_0 {g : Gprs} {f : Rflags} {V : Addr → Byte} :
     W_0 F Wl (fun j' g' _ V' => j' = 8 ∧ g' = { g with rdx := g.rdx <<< 2 } ∧ V' = V) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
-  wpx [W_0, o0]
+  wpx [W_0, o0, Op.shl64]
   first
   | trivial
+  | exact ⟨rfl, rfl⟩
   | exact ⟨rfl, rfl, rfl⟩
   | rfl
 
@@ -80,7 +81,7 @@ theorem wmc_ok {Pm : (Addr → Byte) → Prop} (hcpy : Tls.CpyAt prof L o 419851
   have hr14 : Y₂.cpu.gpr.r14 = X.cpu.gpr.r14 := by rw [hg]
   have hr15 : Y₂.cpu.gpr.r15 = X.cpu.gpr.r15 := by rw [hg]
   refine hcpy c hG hK₂ hA₂ (by rw [hr₂, addr_add_zero]) hPm hin₂ hj ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_
-    (hK₂.df.symm.trans hdf₀) ?_ ?_ <;>
+    (hK₂.df.trans hdf₀) ?_ ?_ <;>
     simp only [hrsp, hrsi, hrdi, hrdx, hrbx, hrbp, hr12, hr13, hr14, hr15] <;>
     first
     | assumption
