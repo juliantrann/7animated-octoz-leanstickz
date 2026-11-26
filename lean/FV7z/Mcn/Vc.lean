@@ -68,27 +68,27 @@ theorem vc_0 {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte}
       g'.rbx = g.rbx ∧ g'.rbp = g.rbp ∧ g'.r12 = g.r12 ∧ g'.r14 = g.r14) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at w1 w2 w3 w4 w5 w6 w7 w8 ⊢
-  mcx [W_0, o0, fr6, w1, w2, w3, w4, w5, w6, w7, w8]
+  mcx +contextual [W_0, o0, fr6, w1, w2, w3, w4, w5, w6, w7, w8]
 
 /-- `ebx = 0`, to the `xchg` (39). -/
 theorem vc_37 {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} :
     W_37 fb F Wl (fun j' g' _ V' => j' = 39 ∧ V' = V ∧ g' = { g with rbx := 0#64 }) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
-  mcx [W_37, o1]
+  mcx +contextual [W_37, o1]
 
 /-- A chunk in the bin: to 164. -/
 theorem vc_43n {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (hz : (g.rbx == 0) = false) :
     W_43 fb F Wl (fun j' g' _ V' => j' = 164 ∧ V' = V ∧ g' = g) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at hz ⊢
-  mcx [W_43, o2, hz]
+  mcx +contextual [W_43, o2, hz]
 
 /-- The bin empty: to 48. -/
 theorem vc_43z {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (hz : (g.rbx == 0) = true) :
     W_43 fb F Wl (fun j' g' _ V' => j' = 48 ∧ V' = V ∧ g' = g) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at hz ⊢
-  mcx [W_43, o2, hz]
+  mcx +contextual [W_43, o2, hz]
 
 /-- Not the last bin: the next one, to 37. -/
 theorem vc_48c {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte}
@@ -96,7 +96,7 @@ theorem vc_48c {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte}
     W_48 fb F Wl (fun j' g' _ V' => j' = 37 ∧ V' = V ∧ g' = { g with r13 := g.r13 + 8#64 }) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at hne f1 ⊢
-  mcx [W_48, W_59, o3, o4, hne, f1]
+  mcx +contextual [W_48, W_59, o3, o4, hne, f1]
 
 set_option maxHeartbeats 2000000 in
 /-- After the last bin: the epilogue, to the `ret` (73). -/
@@ -114,7 +114,7 @@ theorem vc_48e {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte}
       g'.r14 = rdq(V, g.rsp + 24#64 + 8 + 8 + 8 + 8) ∧ g'.r15 = rdq(V, g.rsp + 24#64 + 8 + 8 + 8 + 8 + 8)) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at heq f1 p0 p1 p2 p3 p4 p5 ⊢
-  mcx [W_48, W_59, o3, o4, heq, f1, p0, p1, p2, p3, p4, p5]
+  mcx +contextual [W_48, W_59, o3, o4, heq, f1, p0, p1, p2, p3, p4, p5]
 
 set_option maxHeartbeats 4000000 in
 /-- The chunk's checks and words, the previous chunk in use: to 256. -/
@@ -129,7 +129,7 @@ theorem vc_164u {fb sz nx ns : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte}
       g'.r13 = g.r13 ∧ g'.r15 = g.r15 ∧ g'.rsp = g.rsp) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only [fbx] at hsz hfb hnx hns f1 f2 f3 ⊢
-  mcx [W_164, W_190, W_218, W_240, o13, o14, o15, o16, hsz, hfb, hnx, hns, hb, f1, f2, f3]
+  mcx +contextual [W_164, W_190, W_218, W_240, o13, o14, o15, o16, hsz, hfb, hnx, hns, hb, f1, f2, f3]
 
 set_option maxHeartbeats 4000000 in
 /-- The chunk's checks and words, the previous chunk free: `p` the previous chunk, `size` the sum,
@@ -149,7 +149,8 @@ theorem vc_164f {fb sz nx ns pv : Addr} {g : Gprs} {f : Rflags} {V : Addr → By
       g'.r13 = g.r13 ∧ g'.r15 = g.r15 ∧ g'.rsp = g.rsp) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only [fbx] at hsz hfb hnx hns hpv hck f1 f2 f3 f4 f5 w ⊢
-  mcx [W_164, W_190, W_218, W_240, o13, o14, o15, o16, hsz, hfb, hnx, hns, hb, hpv, hck, f1, f2, f3, f4, f5, w]
+  mcx +contextual [W_164, W_190, W_218, W_240, o13, o14, o15, o16, hsz, hfb, hnx, hns, hb, hpv, hck, f1, f2, f3, f4,
+    f5, w]
 
 /-- `nextp` back from `[rsp]`, to 256. -/
 theorem vc_252 {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte}
@@ -157,7 +158,7 @@ theorem vc_252 {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte}
     W_252 fb F Wl (fun j' g' _ V' => j' = 256 ∧ V' = V ∧ g' = { g with rdx := rdq(V, g.rsp) }) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at f1 ⊢
-  mcx [W_252, o17, f1]
+  mcx +contextual [W_252, o17, f1]
 
 set_option maxHeartbeats 2000000 in
 /-- `nextchunk` the top chunk: `set_head (p, size | PREV_INUSE)`, `av->top = p`; to 156. -/
@@ -169,7 +170,7 @@ theorem vc_256t {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte}
       g' = { g with rbp := (g.rbp + g.r14) ||| 1#64 }) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at htop f1 w1 w2 ⊢
-  mcx [W_256, W_80, W_266, W_288, o18, o19, htop, f1, w1, w2]
+  mcx +contextual [W_256, W_80, W_266, W_288, o18, o19, htop, f1, w1, w2]
   all_goals assumption
 
 set_option maxHeartbeats 2000000 in
@@ -181,7 +182,7 @@ theorem vc_256i {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte}
     W_256 fb F Wl (fun j' g' _ V' => j' = 92 ∧ V' = V ∧ g' = g) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at hnt f1 hb f2 ⊢
-  mcx [W_256, W_80, W_266, W_288, o5, o18, o20, hnt, f1, hb, f2]
+  mcx +contextual [W_256, W_80, W_266, W_288, o5, o18, o20, hnt, f1, hb, f2]
 
 set_option maxHeartbeats 2000000 in
 /-- `nextchunk` not the top chunk and free: `size` the sum, `[rsp] = nextp`, `rdi = nextchunk`; to the `call` of
@@ -194,7 +195,7 @@ theorem vc_256f {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte}
       g' = { g with rdi := g.r12, rbp := g.rbp + g.r14 }) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at hnt f1 hb f2 w ⊢
-  mcx [W_256, W_80, W_266, W_288, o5, o18, o20, hnt, f1, hb, f2, w]
+  mcx +contextual [W_256, W_80, W_266, W_288, o5, o18, o20, hnt, f1, hb, f2, w]
 
 /-- `nextchunk` again (`p + size`), `nextp` back from `[rsp]`; to 98. -/
 theorem vc_303 {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte}
@@ -203,7 +204,7 @@ theorem vc_303 {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte}
       g' = { g with r12 := g.rbx + g.rbp, rdx := rdq(V, g.rsp) }) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at f1 ⊢
-  mcx [W_303, o21, f1]
+  mcx +contextual [W_303, o21, f1]
 
 set_option maxHeartbeats 2000000 in
 /-- `first_unsorted = unsorted_bin->fd`, `unsorted_bin->fd = p`, `first_unsorted->bk = p`; a small chunk: to 127. -/
@@ -217,7 +218,7 @@ theorem vc_98s {fb fu : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (hfu :
   dsimp only at hfu hs f1 w1 w2 ⊢
   have hb := be_imm rbp 1023 (by decide)
   have hs' := eq_true hs
-  mcx [W_98, o6, hb, hs', hfu, f1, w1, w2]
+  mcx +contextual [W_98, o6, hb, hs', hfu, f1, w1, w2]
 
 set_option maxHeartbeats 2000000 in
 /-- As `vc_98s`, a large chunk: to the `pxor` (119). -/
@@ -231,19 +232,19 @@ theorem vc_98l {fb fu : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (hfu :
   dsimp only at hfu hs f1 w1 w2 ⊢
   have hb := be_imm rbp 1023 (by decide)
   have hs' := eq_false hs
-  mcx [W_98, o6, hb, hs', hfu, f1, w1, w2]
+  mcx +contextual [W_98, o6, hb, hs', hfu, f1, w1, w2]
 
 /-- `rsi = size`, to the `movq` (130). -/
 theorem vc_127 {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} :
     W_127 fb F Wl (fun j' g' _ V' => j' = 130 ∧ V' = V ∧ g' = { g with rsi := g.rbp }) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
-  mcx [W_127, o7]
+  mcx +contextual [W_127, o7]
 
 /-- `rsi = size | PREV_INUSE`, to the `movhps` (139). -/
 theorem vc_135 {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} :
     W_135 fb F Wl (fun j' g' _ V' => j' = 139 ∧ V' = V ∧ g' = { g with rsi := g.rsi ||| 1#64 }) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
-  mcx [W_135, o8]
+  mcx +contextual [W_135, o8]
 
 /-- `set_head (p, size | PREV_INUSE)`, to the `movups` (148). -/
 theorem vc_144 {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte}
@@ -251,7 +252,7 @@ theorem vc_144 {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte}
     W_144 fb F Wl (fun j' g' _ V' => j' = 148 ∧ V' = Vst V (g.rbx + 8#64) (toBytesLE g.rsi 8) ∧ g' = g) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at w ⊢
-  mcx [W_144, o9, w]
+  mcx +contextual [W_144, o9, w]
   all_goals assumption
 
 /-- `set_foot (p, size)`, to 156. -/
@@ -260,7 +261,7 @@ theorem vc_152 {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte}
     W_152 fb F Wl (fun j' g' _ V' => j' = 156 ∧ V' = Vst V g.r12 (toBytesLE g.rbp 8) ∧ g' = g) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at w ⊢
-  mcx [W_152, o10, w]
+  mcx +contextual [W_152, o10, w]
   all_goals assumption
 
 /-- `nextp` null: to 48. -/
@@ -268,13 +269,13 @@ theorem vc_156z {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (hz : (g
     W_156 fb F Wl (fun j' g' _ V' => j' = 48 ∧ V' = V ∧ g' = g) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at hz ⊢
-  mcx [W_156, W_161, o11, o12, hz]
+  mcx +contextual [W_156, W_161, o11, o12, hz]
 
 /-- `p = nextp`, to 164. -/
 theorem vc_156n {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (hz : (g.rdx == 0) = false) :
     W_156 fb F Wl (fun j' g' _ V' => j' = 164 ∧ V' = V ∧ g' = { g with rbx := g.rdx }) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at hz ⊢
-  mcx [W_156, W_161, o11, o12, hz]
+  mcx +contextual [W_156, W_161, o11, o12, hz]
 
 end FV7z.Mcn
