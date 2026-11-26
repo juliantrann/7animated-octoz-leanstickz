@@ -352,6 +352,7 @@ import FV7z.Csu.Init
 import FV7z.Eli.Holds
 import FV7z.Csu.Pre
 import FV7z.Lemmas.Xmm3
+import FV7z.Lemmas.Xmm4
 import FV7z.Lemmas.Sse2
 import FV7z.Strlen.Code
 import FV7z.Strlen.Mask
