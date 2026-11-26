@@ -5,5 +5,5 @@ import FV7z.Gdt.Cuts
 import FV7z.Tcg.Cuts
 import FV7z.Mun.Probe
 open FV7z
-#print axioms FV7z.Lemmas.OpI.cmovld32
+#print axioms FV7z.OpI.cmovld32
 #print axioms FV7z.Gdt.c_37
