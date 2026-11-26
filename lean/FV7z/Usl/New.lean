@@ -153,7 +153,7 @@ theorem kf_hpW {fb : Addr} {hi m B : Nat} {g : Gprs} {ra : Addr} (c : Seg prof F
       (by rw [l8, e16, tn16, tn8]; omega)]
     rw [Tun.rd_Vst_self V (g.rsp - 8) (toBytesLE g.rbp 8) (l8 _) (by rw [tn8]; omega),
       ofBytesLE_toBytesLE (by rfl : (64 : Nat) = 8 * 8)]
-  have hr : rdq(V₂, g.rsp) = e₂.add j₂ := by
+  have hr : rdq(V₂, g.rsp) = ra := by
     rw [Sbrk.rd_eq (V := Vst (V0 V g) (g.rsp - 32) (toBytesLE (usl_at.add 38) 8))
       (x := g.rsp) (n := 8) hp8 fun a a1 _ => hVr a (by omega)]
     rw [Tun.rd_Vst (V0 V g) (g.rsp - 32) (toBytesLE (usl_at.add 38) 8) g.rsp 8
@@ -244,7 +244,7 @@ theorem usl_okH {fb : Addr} {hi m B : Nat} (c : Seg prof F Wl L s₀ o) (hfs : s
   refine usl_ok (Pc := Po F Wl fb hi m X.cpu.gpr V) c hin hinW hK hA hrip (by omega) hp8
     (hfw _ 8 tn8 (by omega) (by omega)) (hfw _ 16 tn16 (by omega) (by omega)) (hfw _ 32 tn32 (by omega) (by omega))
     hl fw0 fw8 fw12 hq hd hin₂ h₂ (kf_hpW c hfs hin hinW hinM hinI hH hB hhi hR hsw hq hd hdh hra) ?_
-  intro Z V' Z' t' ⟨-, -, -, -, hp1, hp2, hft, hPm, hfr⟩ hKZ' hAZ' hrZ' hgZ'
+  intro Z V' Z' t' ⟨_, _, _, _, hp1, hp2, hft, hPm, hfr⟩ hKZ' hAZ' hrZ' hgZ'
   refine kr Z V' Z' t' hp1 hp2 hft (hPm _ fun a a1 a2 a3 => ?_) hfr hKZ' hAZ' hrZ' hgZ'
   have s1 := Tun.Vst_out (Vst (Vst V' (X.cpu.gpr.rdi + 8#64) (toBytesLE (BitVec.setWidth 32 X.cpu.gpr.rsi) 4))
     (X.cpu.gpr.rdi + 12#64) (toBytesLE (BitVec.setWidth 32 X.cpu.gpr.rsi) 4)) X.cpu.gpr.rdi
