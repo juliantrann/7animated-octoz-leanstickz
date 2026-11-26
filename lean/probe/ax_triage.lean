@@ -1,7 +1,5 @@
-import FV7z.Mcn.Vc
+import FV7z.Mcn.Spec
 open FV7z
-#print axioms FV7z.Mcn.vc_0
-#print axioms FV7z.Mcn.vc_48e
-#print axioms FV7z.Mcn.vc_164f
-#print axioms FV7z.Mcn.vc_256f
-#print axioms FV7z.Mcn.vc_98l
+#print axioms FV7z.Mcn.kf_ulk
+#print axioms FV7z.Mcn.kf_mbins
+#print axioms FV7z.Mcn.mB_toNat
