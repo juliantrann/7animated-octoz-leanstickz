@@ -416,6 +416,7 @@ import FV7z.Strncmp.Vec16
 import FV7z.Strncmp.Head
 import FV7z.Strncmp.Align
 import FV7z.Strncmp.ExitS
+import FV7z.Strncmp.Shr
 import FV7z.Pmi.Holds
 import FV7z.Lemmas.Lock2
 import FV7z.Pml.Holds
