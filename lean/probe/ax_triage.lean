@@ -1,4 +1,4 @@
-import FV7z.Lemmas.SysWrite
-import FV7z.Write.Holds
+import FV7z.Lemmas.SysOpen
+import FV7z.Onc.Probe
 open FV7z
-#print axioms FV7z.Write.write_ok
+#print axioms FV7z.Fn.Seg.s_openat_re

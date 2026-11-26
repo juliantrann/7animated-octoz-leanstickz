@@ -144,6 +144,10 @@ FNS = {
     # the `ret` (0x33).
     "sgw": dict(grp="Sgw", cn="__sigaction", a=0x6011d0, n=52, pos=True, fs=True, stops=(0x14, 0x33),
                 tag="PLAN.md §M, M1", src="glibc 2.31's `__sigaction` (`signal/sigaction.c`; `objdump -d`)"),
+    # glibc 2.31 `__wmemcpy (d, s, n)`: `n` scaled to bytes (`shl rdx, 2`), a tail jump to `memcpy`'s PLT entry.
+    # Stop: the `jmp` (0x8).
+    "wmc": dict(grp="Wmc", cn="__wmemcpy", a=0x65d300, n=13, pos=True, stops=(0x8,),
+                tag="PLAN.md §M, M1", src="glibc 2.31's `__wmemcpy` (`wcsmbs/wmemcpy.c`; `objdump -d`)"),
     # glibc 2.31 nptl/cleanup_compat.c `_pthread_cleanup_push (buffer, routine, arg)`: the buffer filled, linked in
     # front of the thread's `cleanup` list (`fs:0x2f8`). Stop: the `ret` (0x21).
     "pcp": dict(grp="Pcp", cn="_pthread_cleanup_push", a=0x5fefe0, n=34, pos=True, fs=True, stops=(0x21,),
@@ -158,6 +162,12 @@ FNS = {
     "wrt": dict(grp="Write", cn="__libc_write", a=0x5ff270, n=0x99, pos=True, fs=True, stops=(0x1f, 0x20, 0x83),
                 calls=True, tag="PLAN.md §M, M1",
                 src="glibc 2.31's `__libc_write` (`sysdeps/unix/sysv/linux/write.c`; `objdump -d`)"),
+    # glibc 2.31 sysdeps/unix/sysv/linux/open64_nocancel.c (`__open64_nocancel`, `openat (AT_FDCWD, …)`). Stops: the
+    # `ret` (0x68), the padding after it (0x69), the flags have `O_CREAT` or `O_TMPFILE` (0x70: the mode from the
+    # `va_list`), the padding after that (0x92), `__stack_chk_fail` (0xab); the `syscall` (0x4a) is a step of its own.
+    "onc": dict(grp="Onc", cn="__open64_nocancel", a=0x666090, n=0xb0, pos=True, fs=True,
+                stops=(0x68, 0x69, 0x70, 0x92, 0xab), calls=True, tag="PLAN.md §M, M1",
+                src="glibc 2.31's `__open64_nocancel` (`sysdeps/unix/sysv/linux/open64_nocancel.c`; `objdump -d`)"),
     # glibc 2.31 sysdeps/unix/sysv/linux/dl-sysdep.c. Stop: `__uname` failed (0xb0: the release is read from
     # `/proc/sys/kernel/osrelease`); the `ret`s are at 0x8a (three parts read) and 0xa9 (fewer).
     "osv": dict(grp="Osv", cn="_dl_discover_osversion", a=0x671d50, n=268, pos=True, stops=(0xb0,), calls=True,

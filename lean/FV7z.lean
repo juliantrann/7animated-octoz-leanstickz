@@ -322,6 +322,8 @@ import FV7z.Gps.Holds
 import FV7z.Pcp.Holds
 import FV7z.Fno.Holds
 import FV7z.Pmd.Holds
+import FV7z.Sgw.Holds
+import FV7z.Wmc.Holds
 import FV7z.Lemmas.SysWrite
 import FV7z.Write.Blocks
 import FV7z.Write.Cuts
@@ -362,6 +364,7 @@ import FV7z.Ctor.Cx102
 import FV7z.Lemmas.BlkOps20
 import FV7z.Lemmas.BlkOps21
 import FV7z.Lemmas.BlkOps22
+import FV7z.Lemmas.CmpImm
 import FV7z.Spec.Cache
 import FV7z.C103.Cuts
 import FV7z.Hca.Cuts
