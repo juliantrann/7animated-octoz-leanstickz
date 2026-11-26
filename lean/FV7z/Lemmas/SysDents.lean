@@ -34,19 +34,22 @@ structure DnOut where
   ret : BitVec 64
   t' : Nat
 
-/-- What `getdents64 (rdi, rsi, rdx)` from `s` does, the stream of answers at `t` (as `sysGetdents64`): `EBADF` for a
-descriptor not open or open with `O_PATH`, `ENOTDIR` for a file with pages; for another file the entries it gives
-for `count` (`rdx`, 32 bits) bytes, or its error (`Request.dirents`). -/
-def dentsRes (o : Oracle) (t : Nat) (s : State) : DnOut :=
+/-- What `getdents64 (rdi, rsi, count)` from `s` does, `count` = `n`, the stream of answers at `t` (as
+`sysGetdents64`): `EBADF` for a descriptor not open or open with `O_PATH`, `ENOTDIR` for a file with pages; for another
+file the entries it gives for `n` bytes, or its error (`Request.dirents`). -/
+def dentsResN (o : Oracle) (t : Nat) (s : State) (n : Nat) : DnOut :=
   match s.proc.files.descNoPath (arg32 s.cpu.gpr.rdi) with
   | none => ⟨[], errRet EBADF, t⟩
   | some f =>
     match f.map with
     | .pages _ => ⟨[], errRet ENOTDIR, t⟩
     | _ =>
-      match o t (.dirents f.id (arg32 s.cpu.gpr.rdx)) with
+      match o t (.dirents f.id n) with
       | .error e => ⟨[], errRet e.val, t + 1⟩
       | .entries es _ => ⟨es, BitVec.ofNat 64 (es.map Dirent.reclen).sum, t + 1⟩
+
+/-- `dentsResN` for `count` from `rdx` (32 bits); `dentsResN` takes it apart, as the answer's type depends on it. -/
+def dentsRes (o : Oracle) (t : Nat) (s : State) : DnOut := dentsResN o t s (arg32 s.cpu.gpr.rdx)
 
 /-- The memory `M` with the pieces `rs` (an offset from `a`, the bytes there) written one after the other. -/
 def wrRuns : Memory → Addr → List (Nat × List Byte) → Memory
@@ -77,7 +80,7 @@ abbrev dnBuf (V : Addr → Byte) (a : Addr) (n : Nat) (r : DnOut) : List Byte :=
 
 /-- The entries `getdents64` delivers take at most `count` bytes. -/
 theorem dentsRes_sum : ((dentsRes o t s).es.map Dirent.reclen).sum ≤ arg32 s.cpu.gpr.rdx := by
-  unfold dentsRes
+  unfold dentsRes dentsResN
   repeat' split
   all_goals (try dsimp only)
   all_goals first
@@ -144,7 +147,7 @@ theorem sysGetdents64_ok (hw : Writable prof s s.cpu.gpr.rsi (arg32 s.cpu.gpr.rd
     (sysGetdents64 prof s).runStream o t =
       (sysReturn (dnSt s (dentsRes o t s)) (dentsRes o t s).ret [] (dnBytes (dentsRes o t s)),
         (dentsRes o t s).t') := by
-  unfold sysGetdents64 dentsRes
+  unfold sysGetdents64 dentsRes dentsResN
   try dsimp only
   -- Case on each test both sides make (`split` would case on one side only), the same terms on both.
   cases s.proc.files.descNoPath (arg32 s.cpu.gpr.rdi) with
@@ -174,14 +177,10 @@ theorem sysGetdents64_ok (hw : Writable prof s s.cpu.gpr.rsi (arg32 s.cpu.gpr.rd
 /-- `dentsRes` reads the descriptor table, `rdi` and `rdx` only. -/
 theorem dentsRes_congr {s' : State} (h1 : s'.proc.files = s.proc.files) (h2 : s'.cpu.gpr.rdi = s.cpu.gpr.rdi)
     (h3 : s'.cpu.gpr.rdx = s.cpu.gpr.rdx) : dentsRes o t s' = dentsRes o t s := by
-  have h3' : arg32 s'.cpu.gpr.rdx = arg32 s.cpu.gpr.rdx := congrArg arg32 h3
   unfold dentsRes
+  rw [h3]
+  unfold dentsResN
   simp only [h1, h2]
-  revert h3'
-  generalize arg32 s'.cpu.gpr.rdx = n
-  intro h3'
-  subst h3'
-  rfl
 
 /-- `syscall` for `getdents64 (rdi, rsi, rdx)`, `rsi`'s `count` bytes writable and the pieces of any entries that fit
 stored as `wrRuns` from any state with `s`'s memory and keys: the entries in the buffer, `dentsRes`'s answer in
