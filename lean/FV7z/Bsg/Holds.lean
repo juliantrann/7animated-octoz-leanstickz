@@ -75,7 +75,7 @@ theorem fill_out (v : BitVec 64) : ∀ (n : Nat) (V : Addr → Byte) (a : Addr),
   | 0, _, _, _ => fun _ _ => rfl
   | n + 1, V, a, h => by
     have e : (a + 8).toNat = a.toNat + 8 := by bv_omega
-    have ih := fill_out v n (Vst V a (toBytesLE v 8)) (a + 8) (by omega)
+    have ih := fill_out v n (Vst V a (toBytesLE v 8)) (a + 8) (by rw [e]; omega)
     rw [e] at ih
     rw [Vfill_succ]
     exact ((Raf.Out.vst (toBytesLE_length _ _) (by omega)).mono (Nat.le_refl _) (by omega)).trans
@@ -106,15 +106,19 @@ theorem Fm.out {S : Addr} {h c : BitVec 64} {V W W' : Addr → Byte} {lo hi : Na
 
 variable {F : Footprint} {Wl : List Rgn}
 
+/-- The registers at the `rep stos`. -/
+abbrev g1 (g : Gprs) (r : BitVec 64) : Gprs :=
+  { g with rax := 0, rcx := 16, rdx := g.rsp - 328#64 + 160#64, rsp := g.rsp - 328#64, rsi := g.rsp - 328#64,
+           rdi := g.rsp - 328#64 + 8#64, r8 := r }
+
 /-! ## The pieces -/
 
 /-- To the `rep stos`: the frame, the guard at `S - 16`, the handler at `S - 328`; `rdi` the mask, `rcx` 16,
 `rax` 0, `rsi` the action, `rdx` the old action, `r8d` `sig`. -/
 theorem vc_0 {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (hsp : 336 ≤ g.rsp.toNat)
     (hst : ∀ i < 328, Foot Wl (Addr.add (g.rsp - 328#64) i)) (hfl : ∀ i < 8, Foot F.data (Addr.add (fb + 40#64) i)) :
-    W_0 fb F Wl (fun j' g' _ V' => j' = 57 ∧ (∃ r, g' = { g with rax := 0, rcx := 16,
-      rdx := g.rsp - 328#64 + 160#64, rsp := g.rsp - 328#64, rsi := g.rsp - 328#64, rdi := g.rsp - 328#64 + 8#64,
-      r8 := r } ∧ r.setWidth 32 = g.rdi.setWidth 32) ∧ Sga.Fr V V' g.rsp fb g.rsi) g f V := by
+    W_0 fb F Wl (fun j' g' _ V' => j' = 57 ∧ (∃ r, g' = g1 g r ∧
+      r.setWidth 32 = g.rdi.setWidth 32) ∧ Sga.Fr V V' g.rsp fb g.rsi) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at hsp hst ⊢
   have e16 : rsp - 328#64 + 312#64 = rsp - 16#64 := by bv_omega
@@ -178,17 +182,18 @@ theorem vc_108 {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte}
     W_108 fb F Wl (fun j' g' _ V' => j' = 152 ∧ g'.rsp = g.rsp + 328#64 ∧ Kc g g' ∧ V' = V) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at h160 h312 hc ⊢
-  wpx [W_108, W_145, o3, o4, Op.xormf, Op.cmovld64, hc, BitVec.xor_self, Kc]
+  by_cases hm : (!(BitVec.setWidth 32 rax &&& BitVec.setWidth 32 rax).msb) = true
+  all_goals wpx [W_108, W_145, o3, o4, Op.xormf, Op.cmovld64, hc, BitVec.xor_self, Kc, hm, ↓reduceIte,
+    beq_self_eq_true, Bool.not_true, Bool.false_eq_true, false_implies]
   all_goals repeat' (first
     | exact rfl
     | exact trivial
     | exact h160
     | exact h312
     | exact hfl
-    | exact fun h => absurd h (by decide)
+    | (intro h; exact absurd h (by decide))
     | apply And.intro
-    | intro _
-    | split)
+    | intro _)
 
 /-! ## The run -/
 
