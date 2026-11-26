@@ -596,6 +596,10 @@ FNS = {
                 calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip's `AString (const char *, unsigned, const char *, unsigned)` (`CPP/Common/MyString.cpp`; "
                     "`objdump -d`)"),
+    # `AString (const AString &s)`: `SetStartLen (s._len)`, then the copy loop (40) through the 0.
+    "acp": dict(grp="Acp", cn="AString::AString (const AString &)", a=0x44c420, n=62, pos=True, stops=(0x3d,),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip's `AString (const AString &)` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
     "asl": dict(grp="Asl", cn="AString::SetStartLen", a=0x44c060, n=50, pos=True, stops=(0x31,), calls=True,
                 tag="PLAN.md §M, M1", src="7-Zip's `AString::SetStartLen` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
     # `UString::UString ()`: `_chars` = NULL, then `_chars` = `new wchar_t[4]` (the `call` at 0x14), `_len` = 0,
@@ -1070,6 +1074,14 @@ FNS = {
     "pcs": dict(grp="Pcs", cn="ParseComplexSize", a=0x5d38f0, n=273, pos=True, fs=True, stops=(0xa6, 0xa7, 0x10c),
                 calls=True, jt=(0x6e8e8c, 19), tag="PLAN.md §M, M1",
                 src="7-Zip's `ParseComplexSize` (`CPP/7zip/UI/Common/OpenArchive.cpp`; `objdump -d`)"),
+    # glibc 2.31 nptl/pthread_once.c `__pthread_once_slow (once_control, init_routine)`: done (bit 2), the answer 0;
+    # else `lock cmpxchg` takes the word from its value to `__fork_generation | 1`; another thread at it (bit 0 of the
+    # same generation) is waited for (`futex` wait); else `_pthread_cleanup_push`, `init_routine ()` (`call rbx`),
+    # `_pthread_cleanup_pop`, the word 2 and a `futex` wake. Stops: the `ret` (0x4f), the wait (the `syscall` at
+    # 0x76), `__libc_fatal` (0x95), `__stack_chk_fail` (0x100). By hand: `lock cmpxchg [m], r` (0x59).
+    "pos": dict(grp="Pos", cn="__pthread_once_slow", a=0x5fee60, n=261, pos=True, fs=True,
+                stops=(0x4f, 0x76, 0x95, 0x100), calls=True, hand=(0x59,), tag="PLAN.md §M, M1",
+                src="glibc 2.31's `__pthread_once_slow` (`nptl/pthread_once.c`; `objdump -d`)"),
 }
 
 

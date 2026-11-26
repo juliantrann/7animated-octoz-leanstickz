@@ -1,7 +1,6 @@
-import FV7z.Cpt.Holds
-import FV7z.Cpp.Holds
-import FV7z.Sen.Holds
+import FV7z.Acp.Holds
+import FV7z.Pos.Holds
 open FV7z
-#print axioms FV7z.Cpt.cpt_ok
-#print axioms FV7z.Cpp.cpp_ok
-#print axioms FV7z.Sen.sen_ok
+#print axioms FV7z.Acp.acp_ok
+#print axioms FV7z.Pos.pos_init
+#print axioms FV7z.Pos.pos_done
