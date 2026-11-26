@@ -1,3 +1,9 @@
-FV7z.Lemmas.Sse2d
-FV7z.Ndi.All
-FV7z.Gor.Run
+FV7z.Strncmp.Code
+FV7z.Strncmp.AshrT
+FV7z.Strncmp.Ashr1
+FV7z.Strncmp.Ashr2
+FV7z.Strncmp.Ashr3
+FV7z.Strncmp.Ashr4
+FV7z.Strncmp.Ashr5
+FV7z.Tls.Holds
+FV7z.Start.ToTls

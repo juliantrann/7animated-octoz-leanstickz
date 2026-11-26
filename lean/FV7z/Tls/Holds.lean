@@ -108,7 +108,8 @@ theorem tls_end {G : Footprint} {Wn : List Rgn} {s₁ Y : State} {V₆ : Addr �
 set_option maxHeartbeats 3200000 in
 /-- `__libc_setup_tls` on the way the run of `7zzs` takes: two `brk`, the copy of the image, `arch_prctl`, and the
 `ret` with `rax` 4480, the saved registers back, the bytes `TlsMem V b` outside the 128 bytes below the stack
-pointer of the entry, from a start with the break `b + 4544` and the `fs` base `b + 2176`. -/
+pointer of the entry, from a start with the break `b + 4544` and the `fs` base `b + 2176`; the table of
+`__strncmp_sse2`'s jumps (`hntb`) to read, as `memcpy`'s call asks (`GotF`). -/
 theorem setup_tls {lim : Nat} {b fsb : Addr} {ks : Kst} {Pm : (Addr → Byte) → Prop} {cpy : List Byte}
     (c : Seg prof F Wl L s₀ o) (hB : Base s₀ lim b fsb ks) (hin : CodeIn L tls_at tls)
     (hins : CodeIn L Sbrk.sbk_at Sbrk.sbk) (hinb : CodeIn L Brk.brk_at Brk.brk)
@@ -117,6 +118,7 @@ theorem setup_tls {lim : Nat} {b fsb : Addr} {ks : Kst} {Pm : (Addr → Byte) �
     (hst : ∀ i < 128, Foot Wl (Addr.add (X.cpu.gpr.rsp - 128) i))
     (hgl : ∀ a : Addr, 0x777000 ≤ a.toNat → a.toNat < 0x7a9000 → Foot Wl a)
     (hhd : ∀ a : Addr, 0x400000 ≤ a.toNat → a.toNat < 0x401000 → Foot F.data a)
+    (hntb : ∀ a : Addr, 0x6f0df0 ≤ a.toNat → a.toNat < 0x6f0e30 → Foot F.reads a)
     (hbl : 0x7a9000 ≤ b.toNat) (hbp : b.toNat % 4096 = 0) (hsp : b.toNat + 8192 + 128 ≤ X.cpu.gpr.rsp.toNat)
     (hmg : ∀ t p, o t (.memFail p) = none) (hlim : b.toNat / 4096 + 2 ≤ lim)
     (hPm : ∀ W, Eo (Scr X.cpu.gpr.rsp) W (T3 V b) → Pm W)
@@ -228,7 +230,8 @@ theorem setup_tls {lim : Nat} {b fsb : Addr} {ks : Kst} {Pm : (Addr → Byte) �
   have hdx₅ : Y₅.cpu.gpr.rdx = 40#64 := by rw [hg₅]; exact hdx₄
   have hsp₅ : Y₅.cpu.gpr.rsp = q - 8 := by rw [hg₅]; rfl
   refine hcpy c₁ ⟨fun a h1 h2 => c₁.hws _ (foot_append_iff.2 (.inr (hgl a (by omega) (by omega)))),
-    fun a h1 h2 => c₁.hws _ (foot_append_iff.2 (.inr (hgl a (by omega) (by omega))))⟩ hK₅ hA₅ hr₅
+    fun a h1 h2 => c₁.hws _ (foot_append_iff.2 (.inr (hgl a (by omega) (by omega)))),
+    fun a h1 h2 => foot_append_iff.2 (.inr (hntb a h1 h2))⟩ hK₅ hA₅ hr₅
     (hPm _ h5) hin (j := 304) (lt_len (by decide)) ?_ (fun i hi => ?_) (fun i hi => ?_)
     (fun i hi => ?_) (by rw [hsi₅, hdx₅]; decide) (by rw [hdi₅, hdx₅]; bv_omega)
     (by rw [hsi₅, hdi₅, hdx₅]; left; bv_omega) (by rw [hdi₅, hdx₅, hsp₅]; left; bv_omega) (hK₅.df.trans hB₁.df)
