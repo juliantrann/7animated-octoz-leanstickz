@@ -1,6 +1,5 @@
 import FV7z.Dnw.Cuts
 import FV7z.Lemmas.LeafRet
-import Std.Tactic.BVDecide
 /-!
 # `DoesNameContainWildcard`: a `*` or `?` in a `UString` (PLAN.md §M, M1)
 
@@ -101,6 +100,19 @@ theorem atEnd (p : Addr) (c : BitVec 32) (hc : c ≠ 0#32) {k : Nat} (hk : k < c
 
 theorem z0 (p : Addr) : p + BitVec.ofNat 64 (4 * 0) = p := BitVec.add_zero p
 
+/-- A low byte made of `wrLo`s (`setcc`, `or r8`), bit by bit: equal to a literal. -/
+macro "lob" : tactic => `(tactic| (apply BitVec.eq_of_getLsbD_eq; intro i hi;
+  rcases i with _ | _ | _ | _ | _ | _ | _ | _ | i <;>
+    simp (config := { decide := true }) [BitVec.getLsbD_ofNat, BitVec.shiftLeft_zero, *] at hi ⊢))
+
+/-- `al ||| cl` with a 1 in `al` or `cl` is not 0: its bit 0. -/
+macro "lo_ne" : tactic => `(tactic| (exfalso;
+  have h0 := congrArg (fun x : BitVec 8 => x.getLsbD 0) (eq_of_beq ‹((_ : BitVec 8) == 0) = true›);
+  simp (config := { decide := true }) [BitVec.getLsbD_ofNat, BitVec.shiftLeft_zero] at h0))
+
+/-- `al ||| cl` with 0 in both is 0. -/
+macro "lo_eq" : tactic => `(tactic| (exfalso; apply (beq_eq_false_iff_ne.1 ‹((_ : BitVec 8) == 0) = false›); lob))
+
 variable {F : Footprint} {Wl : List Rgn}
 
 /-! ## The pieces -/
@@ -148,8 +160,8 @@ theorem vc_41w {g : Gprs} {f : Rflags} {V : Addr → Byte} (fa : ∀ i < 4, Foot
       Bool.not_false]
     all_goals repeat' (first | exact fa | exact rfl | exact trivial | apply And.intro | intro _)
     all_goals first
-      | exact ⟨_, _, rfl, by bv_decide⟩
-      | (exfalso; bv_decide)
+      | exact ⟨_, _, rfl, by lob⟩
+      | lo_ne
       | (exfalso; simp_all)
 
 /-- From 41, the character not a wildcard and the last: to the `ret` at 64, `al` 0, `rdx` one on. -/
@@ -168,8 +180,8 @@ theorem vc_41e {g : Gprs} {f : Rflags} {V : Addr → Byte} (fa : ∀ i < 4, Foot
     Bool.not_false]
   all_goals repeat' (first | exact fa | exact rfl | exact trivial | apply And.intro | intro _)
   all_goals first
-    | exact ⟨_, _, rfl, by bv_decide⟩
-    | (exfalso; bv_decide)
+    | exact ⟨_, _, rfl, by lob⟩
+    | lo_eq
     | (exfalso; simp_all)
 
 /-- From 41, the character not a wildcard and not the last: back to 41, `rdx` one on. -/
@@ -188,7 +200,7 @@ theorem vc_41c {g : Gprs} {f : Rflags} {V : Addr → Byte} (fa : ∀ i < 4, Foot
   all_goals repeat' (first | exact fa | exact rfl | exact trivial | apply And.intro | intro _)
   all_goals first
     | exact ⟨_, _, rfl⟩
-    | (exfalso; bv_decide)
+    | lo_eq
     | (exfalso; simp_all)
 
 /-! ## The loop and the function -/
