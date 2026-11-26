@@ -367,6 +367,10 @@ import FV7z.Csx.Holds
 import FV7z.Isb.Blocks
 import FV7z.Isb.Cuts
 import FV7z.Isb.Holds
+import FV7z.Lemmas.FnJm
+import FV7z.Sri.Blocks
+import FV7z.Sri.Cuts
+import FV7z.Sri.Holds
 import FV7z.Fcl.Blocks
 import FV7z.Fcl.Cuts
 import FV7z.Fcl.Holds

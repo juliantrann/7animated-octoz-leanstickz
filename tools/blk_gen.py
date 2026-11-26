@@ -142,6 +142,15 @@ FNS = {
     # NULL)` as a tail jump through the vtable (`jmp rax`). Stop: the jump (17).
     "isb": dict(grp="Isb", cn="InStream_SeekToBegin", a=0x4631e0, n=19, pos=True, stops=(17,),
                 tag="PLAN.md §M, M1", src="7-Zip 26.06's `InStream_SeekToBegin` (`StreamUtils.cpp`; `objdump -d`)"),
+    # 7-Zip's CPP/7zip/UI/Common/ArchiveExtractCallback.cpp `CArchiveExtractCallback::SetRatioInfo`: forwarded to
+    # `_compressProgress->SetRatioInfo` (at `this + 552`) by a tail jump through its vtable. Stop: the jump (14).
+    "sri": dict(grp="Sri", cn="CArchiveExtractCallback::SetRatioInfo", a=0x5aa190, n=17, pos=True, stops=(14,),
+                tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CArchiveExtractCallback::SetRatioInfo` (`ArchiveExtractCallback.cpp`; `objdump -d`)"),
+    # 7-Zip's C/LzmaDec.c `LzmaDec_FreeProbs (p, alloc)`: `ISzAlloc_Free (alloc, p->probs); p->probs = NULL`, the
+    # free through `alloc->Free` (`call [rax + 8]`, 18; a cut after it). Stop: the `ret` (30).
+    "lfp": dict(grp="Lfp", cn="LzmaDec_FreeProbs", a=0x42bde0, n=31, pos=True, stops=(30,), calls=True,
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `LzmaDec_FreeProbs` (`C/LzmaDec.c`; `objdump -d`)"),
     # 7-Zip's C/Alloc.c `MyAlloc (size)`: 0 for size 0, else a tail jump to `malloc`. Stops: the jump (9), the `ret`
     # (18).
     "mya": dict(grp="Mya", cn="MyAlloc", a=0x41f3c0, n=19, pos=True, stops=(9, 18),
@@ -872,7 +881,8 @@ def main():
         r = int(re.search(r'rel (\d+)', ol[-1])[1])
         return off + ln + (r if r < 2 ** 63 else r - 2 ** 64)
     ctl = lambda i: i[1].split()[0] in ('jcc', 'jmp', 'ret')
-    jr = lambda i: i[1] == 'jmp' and i[3][0].startswith('reg')   # `jmp r`: through the jump table
+    # `jmp r` (through the jump table) and `jmp [m]` (through a vtable: `Seg.s_jmp_mx`, at a stop)
+    jr = lambda i: i[1] == 'jmp' and not i[3][0].startswith('rel')
     # calls (`calls`): the proof stops at a `call` and starts again after it, a cut point; the `call` itself is the
     # caller's to do (`SpAt.call`, FV7z/Lemmas/SpCall.lean)
     # (`syscall` likewise: `Seg.s_brk_grow` and its like, FV7z/Start/SysSeg.lean; `div` and the moves of an `xmm`
