@@ -52,16 +52,23 @@ theorem vc_n {g : Gprs} {f : Rflags} {V : Addr → Byte}
     (fw : ∀ i < 2, Foot Wl (Addr.add g.rdi i)) (hl : ∀ i < 8, Foot F.data (Addr.add (g.rsp - 8) i))
     (ht : ofBytesLE 16 ((byteAddrs g.rdi 2).map (Vst V (g.rsp - 8) (toBytesLE g.rbx 8))) ≠ 8#16) :
     W_0 F Wl (fun j' g' _ V' => j' = 22 ∧
-      g' = { g with rax := 0#64,
-        rbx := rdq(Vst (Vst V (g.rsp - 8) (toBytesLE g.rbx 8)) g.rdi (toBytesLE 0#16 2), g.rsp - 8),
-        rsp := g.rsp - 8 + 8 } ∧
+      g' = { g with
+          rax := 0#64,
+          rbx := rdq(Vst (Vst V (g.rsp - 8) (toBytesLE g.rbx 8)) g.rdi (toBytesLE 0#16 2), g.rsp - 8),
+          rsp := g.rsp - 8 + 8 } ∧
       V' = Vst (Vst V (g.rsp - 8) (toBytesLE g.rbx 8)) g.rdi (toBytesLE 0#16 2)) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at hst ft fw hl ht ⊢
   wpx [W_0, W_14, W_32, o0, o1, o2, Op.cmpmi, ht, BitVec.xor_self, BitVec.setWidth_zero, decide_false,
     decide_true, Bool.false_eq_true, Bool.true_eq_false, false_implies, implies_true]
-  all_goals repeat' (first | exact rfl | assumption | exact trivial | (intro h; exact absurd h (by decide)) |
-    apply And.intro | intro _)
+  all_goals repeat'
+    first
+    | exact rfl
+    | assumption
+    | exact trivial
+    | (intro h; exact absurd h (by decide))
+    | apply And.intro
+    | intro _
 
 /-- The tag 8: `push rbx; cmp word [rdi], 8; mov rbx, rdi`, then `mov rdi, [rdi + 8]` to the `call` at 36. -/
 theorem vc_y {g : Gprs} {f : Rflags} {V : Addr → Byte}
@@ -74,8 +81,14 @@ theorem vc_y {g : Gprs} {f : Rflags} {V : Addr → Byte}
   dsimp only at hst ft fb ht hx ⊢
   wpx [W_0, W_14, W_32, o0, o1, o2, Op.cmpmi, gC, ht, hx, decide_false, decide_true, Bool.false_eq_true,
     Bool.true_eq_false, false_implies, implies_true]
-  all_goals repeat' (first | exact rfl | assumption | exact trivial | (intro h; exact absurd h (by decide)) |
-    apply And.intro | intro _)
+  all_goals repeat'
+    first
+    | exact rfl
+    | assumption
+    | exact trivial
+    | (intro h; exact absurd h (by decide))
+    | apply And.intro
+    | intro _
 
 /-- Back from the callee: `xor eax, eax; mov [rbx], ax; xor eax, eax; pop rbx` to the `ret` at 49. -/
 theorem vc_41 {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post}
@@ -208,10 +221,11 @@ theorem vcl_ok {Pc : State → (Addr → Byte) → Prop} (c : Seg prof F Wl L s�
       rw [mz _ _ hp8 (by omega), m8 _ 8 hp8 (by omega)]
       exact hra
     refine (c_0 prof).run c hin (fun j' g' _ V' => j' = 22 ∧
-        g' = { X.cpu.gpr with rax := 0#64,
-          rbx := rdq(Vst (Vst V (X.cpu.gpr.rsp - 8) (toBytesLE X.cpu.gpr.rbx 8)) X.cpu.gpr.rdi (toBytesLE 0#16 2),
-            X.cpu.gpr.rsp - 8),
-          rsp := X.cpu.gpr.rsp - 8 + 8 } ∧
+        g' = { X.cpu.gpr with
+            rax := 0#64,
+            rbx := rdq(Vst (Vst V (X.cpu.gpr.rsp - 8) (toBytesLE X.cpu.gpr.rbx 8)) X.cpu.gpr.rdi (toBytesLE 0#16 2),
+              X.cpu.gpr.rsp - 8),
+            rsp := X.cpu.gpr.rsp - 8 + 8 } ∧
         V' = Vst (Vst V (X.cpu.gpr.rsp - 8) (toBytesLE X.cpu.gpr.rbx 8)) X.cpu.gpr.rdi (toBytesLE 0#16 2)) hK hA hrip'
       (vc_n hs1 (fun i hi => c.hws _ (fw i hi)) fw h8 (by rw [htg]; exact ht)) ?_
     rintro j' g fl V₂ ⟨rfl, rfl, hV₂⟩ U t₁ hKU hAU hrU hgU -
