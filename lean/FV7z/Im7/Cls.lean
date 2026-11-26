@@ -41,7 +41,7 @@ theorem ClsG.tc {n nb : Addr} (h : ClsG n nb) :
   have e : (nb + 18446744073709551599#64).toNat = nb.toNat - 17 := by
     rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega
   have e4 : ((nb + 18446744073709551599#64) >>> 4).toNat = (nb + 18446744073709551599#64).toNat / 16 := by
-    rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]; rfl
+    rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
   rw [e4, e]
   exact decide_eq_false (by omega)
 
