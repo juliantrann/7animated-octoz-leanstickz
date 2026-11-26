@@ -22,11 +22,11 @@ def fwR (feat : Features) (a : Addr) : BitVec 64 :=
 theorem fwR_cases (feat : Features) (a : Addr) :
     fwR feat a = 0 ∨ fwR feat a = errRet EINVAL ∨ fwR feat a = errRet EFAULT := by
   unfold fwR
-  by_cases h1 : a.toNat % 4 ≠ 0
-  · simp only [h1, ↓reduceIte, true_or, or_true]
-  · by_cases h2 : (!accessOkFixed feat a 4) = true
-    · simp only [h1, h2, ↓reduceIte, or_true]
-    · simp only [h1, h2, ↓reduceIte, Bool.false_eq_true, true_or]
+  split
+  · exact Or.inr (Or.inl rfl)
+  · split
+    · exact Or.inr (Or.inr rfl)
+    · exact Or.inl rfl
 
 /-- The event of a private wake from the registers `g`. -/
 abbrev fwEv (feat : Features) (g : Gprs) : Event :=
@@ -38,8 +38,7 @@ theorem sysFutex_wake (hop : arg32 s.cpu.gpr.rsi = 0x81) :
   unfold sysFutex fwR
   simp only [hop]
   by_cases h1 : s.cpu.gpr.rdi.toNat % 4 ≠ 0 <;> by_cases h2 : (!accessOkFixed prof.feat s.cpu.gpr.rdi 4) = true <;>
-    simp (config := { decide := true }) [futexHasTimeout, FUTEX_WAKE, FUTEX_WAKE_BITSET, FUTEX_PRIVATE_FLAG,
-      FUTEX_CLOCK_REALTIME, h1, h2]
+    simp (config := { decide := true }) [h1, h2]
 
 /-- `syscall` for a private wake. -/
 theorem syscall_fwake {len : Nat} (htf : s.cpu.rflags.tf = false)
