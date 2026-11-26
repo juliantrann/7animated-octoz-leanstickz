@@ -311,6 +311,9 @@ import FV7z.Lseek.Holds
 import FV7z.Fsk.Blocks
 import FV7z.Fsk.Cuts
 import FV7z.Fsk.Holds
+import FV7z.Cnc.Blocks
+import FV7z.Cnc.Cuts
+import FV7z.Cnc.Holds
 import FV7z.Statement.Examples
 import FV7z.Lemmas.BlkOps7
 import FV7z.Gts.Holds
