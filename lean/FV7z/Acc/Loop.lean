@@ -48,7 +48,8 @@ theorem vc_0z {g : Gprs} {f : Rflags} {V : Addr → Byte}
     W_0 F Wl (fun j' g' _ V' => j' = 44 ∧ g' = gS g ∧ V' = V0 V g) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at hs1 hs2 hf hz ⊢
-  wpx [W_0, W_26, o0, o1, Op.cmpmi, Tun.rd1, BitVec.sub_zero, hz, gS, V0, Bool.not_true, Bool.not_false,
+  wpx [W_0, W_26, o0, o1, Op.cmpmi, Tun.rd1, BitVec.sub_zero, hz, gS, V0, decide_true, decide_false,
+    Bool.not_true, Bool.not_false,
     Bool.false_eq_true, Bool.true_eq_false, false_implies, true_implies, implies_true, eq_self_iff_true, and_self,
     and_true]
   all_goals repeat'
@@ -67,7 +68,8 @@ theorem vc_0n {g : Gprs} {f : Rflags} {V : Addr → Byte}
     W_0 F Wl (fun j' g' _ V' => j' = 32 ∧ g' = gS g ∧ V' = V0 V g) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at hs1 hs2 hf hz ⊢
-  wpx [W_0, W_26, o0, o1, Op.cmpmi, Tun.rd1, BitVec.sub_zero, hz, gS, V0, Bool.not_true, Bool.not_false,
+  wpx [W_0, W_26, o0, o1, Op.cmpmi, Tun.rd1, BitVec.sub_zero, hz, gS, V0, decide_true, decide_false,
+    Bool.not_true, Bool.not_false,
     Bool.false_eq_true, Bool.true_eq_false, false_implies, true_implies, implies_true, eq_self_iff_true, and_self,
     and_true]
   all_goals repeat'
@@ -84,7 +86,8 @@ theorem vc_32z {g : Gprs} {f : Rflags} {V : Addr → Byte}
     W_32 F Wl (fun j' g' _ V' => j' = 44 ∧ g'.rsi = nx g ∧ Kp g g' ∧ V' = V) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at hf hz ⊢
-  wpx [W_32, o2, Op.cmpmi, Tun.rd1, BitVec.sub_zero, hz, Kp, Bool.not_true, Bool.not_false, Bool.false_eq_true,
+  wpx [W_32, o2, Op.cmpmi, Tun.rd1, BitVec.sub_zero, hz, Kp, decide_true, decide_false,
+    Bool.not_true, Bool.not_false, Bool.false_eq_true,
     Bool.true_eq_false, false_implies, true_implies, implies_true, eq_self_iff_true, and_self, and_true]
   all_goals repeat'
     first
@@ -100,7 +103,8 @@ theorem vc_32n {g : Gprs} {f : Rflags} {V : Addr → Byte}
     W_32 F Wl (fun j' g' _ V' => j' = 32 ∧ g'.rsi = nx g ∧ Kp g g' ∧ V' = V) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at hf hz ⊢
-  wpx [W_32, o2, Op.cmpmi, Tun.rd1, BitVec.sub_zero, hz, Kp, Bool.not_true, Bool.not_false, Bool.false_eq_true,
+  wpx [W_32, o2, Op.cmpmi, Tun.rd1, BitVec.sub_zero, hz, Kp, decide_true, decide_false,
+    Bool.not_true, Bool.not_false, Bool.false_eq_true,
     Bool.true_eq_false, false_implies, true_implies, implies_true, eq_self_iff_true, and_self, and_true]
   all_goals repeat'
     first
@@ -163,15 +167,14 @@ theorem slen (c : Seg prof F Wl L s₀ o) (hin : CodeIn L acc_at acc) {W : Addr 
       obtain rfl : i = 0 := by omega
       rw [addr_add_zero, ea]
       exact hf (j + 1) (by omega)
-    refine (c_32 prof).run c hin _ hK hA hrip (vc_32z hf1 (by rw [ea]; obtain rfl : j + 1 = n := by omega; exact hz))
+    refine (c_32 prof).run c hin _ hK hA hrip (vc_32z hf1 (by rw [ea]; obtain rfl : j + 1 = n := (by omega); exact hz))
       ?_
     rintro j' g fl V₁ ⟨rfl, hsi', hkp', rfl⟩ Y t₁ hKY hAY hrY hgY -
     refine k Y t₁ hKY hAY hrY ?_ (hkp.trans (Kp.of_eq hgY hkp'))
     rw [hgY, hsi']
     show BitVec.setWidth 64 (BitVec.setWidth 32 (X.cpu.gpr.rsi + 1#64)) = _
     rw [hsi, nx_ofNat j (by omega)]
-    congr 1
-    omega
+    congr 1 <;> omega
   | succ m ih =>
     intro j hj X t hK hA hrip hsi hkp
     have ea : X.cpu.gpr.rbx + nx X.cpu.gpr = p.add (j + 1) := by
