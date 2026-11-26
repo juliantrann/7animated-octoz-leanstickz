@@ -72,12 +72,14 @@ abbrev gB (g : Gprs) (si : BitVec 64) : Gprs := { g with rax := g.rdi, rsi := si
 abbrev r9v (V : Addr → Byte) (a : Addr) : Addr := rdq(V, a + 128#64)
 /-- The registers at 77: `r9` the object, `rdx` its vtable, `r10` the vtable's entry at 48, `rdi` = `di`. -/
 abbrev gM (V : Addr → Byte) (g : Gprs) (di : Addr) : Gprs :=
-  { g with rdx := rdq(V, r9v V g.rax), rdi := di, r9 := r9v V g.rax,
+  { g with
+    rdx := rdq(V, r9v V g.rax), rdi := di, r9 := r9v V g.rax,
     r10 := rdq(V, rdq(V, r9v V g.rax) + 48#64) }
 /-- The registers at the jump through `r10`. -/
 abbrev gJ (V : Addr → Byte) (g : Gprs) : Gprs :=
-  { g with rcx := BitVec.setWidth 64 (BitVec.setWidth 32 g.rsi),
-    rdx := BitVec.setWidth 64 (BitVec.setWidth 32 (V (g.rax + 274#64))),
+  { g with
+    rcx := BitVec.setWidth 64 (BitVec.setWidth 32 g.rsi),
+    rdx := BitVec.setWidth 64 (BitVec.setWidth 32 (ofBytesLE 8 ((byteAddrs (g.rax + 274#64) 1).map V))),
     rsi := rdq(V, g.rax + 208#64), rdi := g.r9, r8 := g.rdi, r11 := rdq(V, g.rax + 208#64) }
 
 /-- A byte stored twice at the same place. -/
