@@ -66,9 +66,9 @@ abbrev fre_at : Addr := 0x633750
 
 /-! ## Offsets -/
 
-theorem o1 (x : Addr) : x - 8 - 8 - 24#64 = x - 40 := by bv_omega
-theorem o3 (x : Addr) : x - 8 - 8 = x - 16 := by bv_omega
-theorem o2 (x : Addr) : x - 40 + 8#64 = x - 32 := by bv_omega
+theorem m40 (x : Addr) : x - 8 - 8 - 24#64 = x - 40 := by bv_omega
+theorem m16 (x : Addr) : x - 8 - 8 = x - 16 := by bv_omega
+theorem p32 (x : Addr) : x - 40 + 8#64 = x - 32 := by bv_omega
 theorem a24 (x : Addr) : x - 40 + 24#64 = x - 16 := by bv_omega
 theorem a32 (x : Addr) : x - 16 + 8 = x - 8 := by bv_omega
 theorem a40 (x : Addr) : x - 8 + 8 = x := by bv_omega
@@ -80,7 +80,7 @@ theorem f48 (x : Addr) : x - 40 + 48 = x + 8 := by bv_omega
 theorem n8 (x : Addr) : x - 8 = x - 48 + BitVec.ofNat 64 40 := by bv_omega
 theorem n16 (x : Addr) : x - 8 - 8 = x - 48 + BitVec.ofNat 64 32 := by bv_omega
 theorem n40 (x : Addr) : x - 8 - 8 - 24#64 = x - 48 + BitVec.ofNat 64 8 := by bv_omega
-theorem n32 (x : Addr) : x - 8 - 8 - 24#64 + 8#64 = x - 48 + BitVec.ofNat 64 16 := by bv_omega
+theorem n32 (x : Addr) : x - 32 = x - 48 + BitVec.ofNat 64 16 := by bv_omega
 theorem u8 (x : Addr) (h : 8 ≤ x.toNat) : (x - 8).toNat = x.toNat - 8 := by bv_omega
 theorem u16 (x : Addr) (h : 16 ≤ x.toNat) : (x - 16).toNat = x.toNat - 16 := by bv_omega
 theorem u32 (x : Addr) (h : 32 ≤ x.toNat) : (x - 32).toNat = x.toNat - 32 := by bv_omega
@@ -100,14 +100,16 @@ abbrev Vp (V : Addr → Byte) (g : Gprs) : Addr → Byte :=
   Vst (Vst V (g.rsp - 8) (toBytesLE g.rbp 8)) (g.rsp - 8 - 8) (toBytesLE g.rbx 8)
 /-- The registers at 39 or 80, `b` the old buffer, `w` the flags. -/
 abbrev G1 (g : Gprs) (b : BitVec 64) (w : BitVec 32) : Gprs :=
-  { g with rbp := (g.rcx.setWidth 32).setWidth 64, rbx := g.rdi, rsp := g.rsp - 8 - 8 - 24#64, rdi := b,
+  { g with
+    rbp := (g.rcx.setWidth 32).setWidth 64, rbx := g.rdi, rsp := g.rsp - 8 - 8 - 24#64, rdi := b,
     rax := w.setWidth 64 }
 /-- The bytes at 39 or 80: `b`, `eb` kept. -/
 abbrev V1 (V : Addr → Byte) (g : Gprs) : Addr → Byte :=
   Vst (Vst (Vp V g) (g.rsp - 8 - 8 - 24#64) (toBytesLE g.rsi 8)) (g.rsp - 8 - 8 - 24#64 + 8#64) (toBytesLE g.rdx 8)
 /-- The registers after `or eax, 1; and edx, ~1; test ebp, ebp; cmovne eax, edx`. -/
 abbrev G46 (g : Gprs) : Gprs :=
-  { g with rax := (fw (g.rbp.setWidth 32) (g.rax.setWidth 32)).setWidth 64,
+  { g with
+    rax := (fw (g.rbp.setWidth 32) (g.rax.setWidth 32)).setWidth 64,
     rdx := (g.rax.setWidth 32 &&& 4294967294#32).setWidth 64 }
 /-- The old buffer and the flags at the entry. -/
 abbrev bv (V : Addr → Byte) (g : Gprs) : BitVec 64 := rdq(V, g.rdi + 56#64)
@@ -137,7 +139,7 @@ theorem v1_rd {V : Addr → Byte} {g : Gprs} (hp : 48 ≤ g.rsp.toNat) (hp8 : g.
   have t32 := u32 g.rsp (by omega)
   have t40 := u40 g.rsp (by omega)
   dsimp only [V1, Vp]
-  rw [o1, o3, o2, a24, a32, a40]
+  rw [m40, m16, p32, a24, a32, a40]
   have l8 : ∀ v : BitVec 64, (toBytesLE v 8).length = 8 := fun v => toBytesLE_length v 8
   have d : ∀ (a z : Addr) (v : BitVec 64), a.toNat + 8 ≤ 2 ^ 64 → z.toNat + 8 ≤ 2 ^ 64 →
       (a.toNat + 8 ≤ z.toNat ∨ z.toNat + 8 ≤ a.toNat) → ∀ W : Addr → Byte,
@@ -205,8 +207,8 @@ theorem vc_0b {g : Gprs} {f : Rflags} {V : Addr → Byte} {b : BitVec 64} {w : B
     (hb : rdq(Vp V g, g.rdi + 56#64) = b) (hw : ofBytesLE 32 ((byteAddrs g.rdi 4).map (Vp V g)) = w)
     (hb0 : b ≠ 0) (hf : w.setWidth 8 &&& 1#8 ≠ 0) :
     W_0 F Wl (fun j' g' _ V' => j' = 39 ∧ g' = G1 g b w ∧ V' = V1 V g) g f V := by
-  have hb0' : (b == 0) = false := by simp [hb0]
-  have hf' : (w.setWidth 8 &&& 1#8 == 0) = false := by simp [hf]
+  have hb0' : (b == 0) = false := by rw [beq_eq_false_iff_ne]; exact hb0
+  have hf' : (w.setWidth 8 &&& 1#8 == 0) = false := by rw [beq_eq_false_iff_ne]; exact hf
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at h1 h2 l1 l2 s1 s2 hb hw ⊢
   revert hb hw
@@ -232,7 +234,7 @@ theorem vc_0c {g : Gprs} {f : Rflags} {V : Addr → Byte} {b : BitVec 64} {w : B
     (hb : rdq(Vp V g, g.rdi + 56#64) = b) (hw : ofBytesLE 32 ((byteAddrs g.rdi 4).map (Vp V g)) = w)
     (hb0 : b ≠ 0) (hf : w.setWidth 8 &&& 1#8 = 0) :
     W_0 F Wl (fun j' g' _ V' => j' = 80 ∧ g' = G1 g b w ∧ V' = V1 V g) g f V := by
-  have hb0' : (b == 0) = false := by simp [hb0]
+  have hb0' : (b == 0) = false := by rw [beq_eq_false_iff_ne]; exact hb0
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at h1 h2 l1 l2 s1 s2 hb hw ⊢
   revert hb hw
@@ -265,11 +267,11 @@ theorem vc_46 {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Gprs → Rflags �
   subst hd
   dsimp only [G46] at hQ
   by_cases hz : rbp.setWidth 32 = 0
-  · have hz' : (rbp.setWidth 32 == 0) = true := by simp [hz]
+  · have hz' : (rbp.setWidth 32 == 0) = true := beq_iff_eq.mpr hz
     rw [fw, if_pos hz] at hQ
     wpx [o3, hz', BitVec.and_self, Bool.not_true, Bool.false_eq_true, if_false, ↓reduceIte]
     all_goals repeat' (first | exact hQ _ | exact rfl | exact trivial | apply And.intro | intro _)
-  · have hz' : (rbp.setWidth 32 == 0) = false := by simp [hz]
+  · have hz' : (rbp.setWidth 32 == 0) = false := by rw [beq_eq_false_iff_ne]; exact hz
     rw [fw, if_neg hz] at hQ
     wpx [o3, hz', BitVec.and_self, Bool.not_false, if_true, ↓reduceIte]
     all_goals repeat' (first | exact hQ _ | exact rfl | exact trivial | apply And.intro | intro _)
@@ -448,7 +450,7 @@ theorem stb_ok {Pf : State → (Addr → Byte) → Prop} (c : Seg prof F Wl L s�
     GoG prof L o gev gP gE X t := by
   have t8 := u8 X.cpu.gpr.rsp (by omega)
   have t16 : (X.cpu.gpr.rsp - 8 - 8).toNat = X.cpu.gpr.rsp.toNat - 16 := by
-    rw [o3]; exact u16 _ (by omega)
+    rw [m16]; exact u16 _ (by omega)
   have t40 := u40 X.cpu.gpr.rsp (by omega)
   have t56 : (X.cpu.gpr.rdi + 56#64).toNat = X.cpu.gpr.rdi.toNat + 56 := Sas.tn_add _ 56 (by omega)
   have hrip' : X.cpu.rip = stb_at.add 0 := by rw [addr_add_zero]; exact hrip
@@ -458,7 +460,7 @@ theorem stb_ok {Pf : State → (Addr → Byte) → Prop} (c : Seg prof F Wl L s�
   have s1 : ∀ i < 8, Foot Wl (Addr.add (X.cpu.gpr.rsp - 8 - 8 - 24#64) i) := by
     rw [n40]; exact Sas.ft hs 8 8 (by decide)
   have s2 : ∀ i < 8, Foot Wl (Addr.add (X.cpu.gpr.rsp - 8 - 8 - 24#64 + 8#64) i) := by
-    rw [n32]; exact Sas.ft hs 16 8 (by decide)
+    rw [m40, p32, n32]; exact Sas.ft hs 16 8 (by decide)
   have l1 : ∀ i < 8, Foot F.data (Addr.add (X.cpu.gpr.rdi + 56#64) i) := fun i hi =>
     c.hws _ (Sas.ft hfw 56 8 (by decide) i hi)
   have l2 : ∀ i < 4, Foot F.data (Addr.add X.cpu.gpr.rdi i) := fun i hi => c.hws _ (hfw i (by omega))
@@ -489,7 +491,7 @@ theorem stb_ok {Pf : State → (Addr → Byte) → Prop} (c : Seg prof F Wl L s�
       stb_t (r := X.cpu.gpr.rsp - 40) (fp := X.cpu.gpr.rdi) (rf := X.cpu.gpr.rsp + 8)
         (a := X.cpu.gpr.rcx.setWidth 32) (x := wv V X.cpu.gpr) (bb := X.cpu.gpr.rsi) (be := X.cpu.gpr.rdx)
         (b3 := X.cpu.gpr.rbx) (b5 := X.cpu.gpr.rbp)
-        c hin hKY hAY hrY (by rw [hgY]; exact o1 _) (by rw [hgY]; try rfl) (f48 _)
+        c hin hKY hAY hrY (by rw [hgY]; exact m40 _) (by rw [hgY]; try rfl) (f48 _)
         (by rw [hgY]; exact sw_64_32 _) (by rw [hgY]; exact sw_64_32 _) hp' hl' hfw hfp hdj' r0 r1 r3 r5 hin₂ h₂
         (r6.trans hra) fun Z' t' hKZ hAZ hrZ hgZ => k1 hc Z' t' hKZ hAZ hrZ (by rw [hgZ, hgY] <;> rfl)
   by_cases hb0 : bv V X.cpu.gpr = 0
@@ -502,7 +504,7 @@ theorem stb_ok {Pf : State → (Addr → Byte) → Prop} (c : Seg prof F Wl L s�
     refine (c_0 prof).run c hin _ hK hA hrip' (vc_0c h1 h2 l1 l2 s1 s2 hbv hwv hb0 hf) ?_
     rintro j' g fl V₁ ⟨rfl, rfl, hV⟩ Y t₁ hKY hAY hrY hgY -
     subst V₁
-    have hsY : Y.cpu.gpr.rsp = X.cpu.gpr.rsp - 40 := by rw [hgY]; exact o1 _
+    have hsY : Y.cpu.gpr.rsp = X.cpu.gpr.rsp - 40 := by rw [hgY]; exact m40 _
     refine c.s_call hKY hAY hin (lt_len (by decide)) hrY (call_80 _) hinF hF (by decide)
       (by rw [hsY, m48]; exact fun i hi => hs i (by omega)) ?_
     rintro Y₂ t₂ hK₂ hA₂ ⟨hr₂, hg₂⟩
@@ -522,7 +524,7 @@ theorem stb_ok {Pf : State → (Addr → Byte) → Prop} (c : Seg prof F Wl L s�
       (by rw [hgU]; exact hzp)
       (by rw [hgU]; show ((ofBytesLE 32 ((byteAddrs Z.cpu.gpr.rbx 4).map V')).setWidth 64).setWidth 32 = _
           rw [sw_64_32, hzb])
-      hp' hl' hfw hfp hdj' e0 (by rw [o2]; exact e1) (by rw [a24]; exact e3) (by rw [a24, a32]; exact e5) hin₂ h₂
+      hp' hl' hfw hfp hdj' e0 (by rw [p32]; exact e1) (by rw [a24]; exact e3) (by rw [a24, a32]; exact e5) hin₂ h₂
       (by rw [a24, a32, a40]; exact e6) fun Z' t' hKZ' hAZ' hrZ' hgZ' =>
       kr Z V' hPf Z' t' hKZ' hAZ' hrZ' (by rw [hgZ', hgU] <;> rfl)
   · refine (c_0 prof).run c hin _ hK hA hrip' (vc_0b h1 h2 l1 l2 s1 s2 hbv hwv hb0 hf) ?_
