@@ -26,8 +26,8 @@ open FV7z.Tun (rd_Vst rd_Vst_self Vst_out)
 namespace FV7z.U16
 
 /-- A bound on `s - c` and the bytes from it, `c` a literal. -/
-macro "tsl" : tactic => `(tactic| (simp only [toBytesLE_length, BitVec.toNat_sub, BitVec.toNat_ofNat, Nat.reducePow,
-  Nat.reduceMod]; omega))
+macro "tsl" : tactic =>
+  `(tactic| (simp only [toBytesLE_length, BitVec.toNat_sub, BitVec.toNat_ofNat, Nat.reducePow, Nat.reduceMod]; omega))
 
 /-- The `ret`. -/
 theorem w_335 : pret <+: u16.drop 335 := by decide +kernel
@@ -37,9 +37,9 @@ theorem ret_335 (feat : Features) : Dec feat u16 335 (FV7z.mk .ret 64 [] 1) :=
 /-! ## The bytes and their classes, in the code's terms -/
 
 /-- The byte at `a`. -/
-abbrev b8 (V : Addr → Byte) (a : Addr) : BitVec 8 := ofBytesLE 8 (List.map V (byteAddrs a 1))
+abbrev rb (V : Addr → Byte) (a : Addr) : BitVec 8 := ofBytesLE 8 (List.map V (byteAddrs a 1))
 /-- The `k`-th byte from `p`. -/
-abbrev by8 (V : Addr → Byte) (p : Addr) (k : Nat) : BitVec 8 := b8 V (p + BitVec.ofNat 64 k)
+abbrev by8 (V : Addr → Byte) (p : Addr) (k : Nat) : BitVec 8 := rb V (p + BitVec.ofNat 64 k)
 
 abbrev s8 (b : BitVec 8) : BitVec 8 := BitVec.setWidth 8 (BitVec.setWidth 32 b)
 /-- `test al, al; js`: not under `0x80`. -/

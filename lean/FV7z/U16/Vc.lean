@@ -68,27 +68,27 @@ theorem vc_116 {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post}
 and to 109, a byte under `0x80` to 141 (with `dest`) or 109. -/
 theorem vc_125 {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post}
     (fq : ∀ i < 1, Foot F.data (Addr.add g.rdx i))
-    (h3 : na (b8 V g.rdx) = true → lv (b8 V g.rdx) = true → g223 (b8 V g.rdx) = true → g239 (b8 V g.rdx) = true →
+    (h3 : na (rb V g.rdx) = true → lv (rb V g.rdx) = true → g223 (rb V g.rdx) = true → g239 (rb V g.rdx) = true →
       ∀ fl a bp, Q 174 { g with
-        rax := a, rcx := w64(3#32), rdx := dl (b8 V g.rdx) 18446744073709551376#64, rbp := bp,
+        rax := a, rcx := w64(3#32), rdx := dl (rb V g.rdx) 18446744073709551376#64, rbp := bp,
         r9 := g.rdx + 1#64 } fl V)
-    (h2 : na (b8 V g.rdx) = true → lv (b8 V g.rdx) = true → g223 (b8 V g.rdx) = true → g239 (b8 V g.rdx) = false →
+    (h2 : na (rb V g.rdx) = true → lv (rb V g.rdx) = true → g223 (rb V g.rdx) = true → g239 (rb V g.rdx) = false →
       ∀ fl a bp, Q 174 { g with
-        rax := a, rcx := w64(2#32), rdx := dl (b8 V g.rdx) 18446744073709551392#64, rbp := bp,
+        rax := a, rcx := w64(2#32), rdx := dl (rb V g.rdx) 18446744073709551392#64, rbp := bp,
         r9 := g.rdx + 1#64 } fl V)
-    (h1 : na (b8 V g.rdx) = true → lv (b8 V g.rdx) = true → g223 (b8 V g.rdx) = false →
+    (h1 : na (rb V g.rdx) = true → lv (rb V g.rdx) = true → g223 (rb V g.rdx) = false →
       ∀ fl a bp, Q 174 { g with
-        rax := a, rcx := w64(1#32), rdx := dl (b8 V g.rdx) 18446744073709551424#64, rbp := bp,
+        rax := a, rcx := w64(1#32), rdx := dl (rb V g.rdx) 18446744073709551424#64, rbp := bp,
         r9 := g.rdx + 1#64 } fl V)
-    (hz : na (b8 V g.rdx) = true → lv (b8 V g.rdx) = false → zq g.rbx = true →
+    (hz : na (rb V g.rdx) = true → lv (rb V g.rdx) = false → zq g.rbx = true →
       ∀ fl a d, Q 109 { g with rax := a, rdx := d, r9 := g.rdx + 1#64 } fl V)
-    (fw : na (b8 V g.rdx) = true → lv (b8 V g.rdx) = false → zq g.rbx = false →
+    (fw : na (rb V g.rdx) = true → lv (rb V g.rdx) = false → zq g.rbx = false →
       ∀ i < 4, Foot Wl (Addr.add (g.rbx + g.r11 * 4#64) i))
-    (hs : na (b8 V g.rdx) = true → lv (b8 V g.rdx) = false → zq g.rbx = false →
+    (hs : na (rb V g.rdx) = true → lv (rb V g.rdx) = false → zq g.rbx = false →
       ∀ fl a d (w : BitVec 32), Q 109 { g with rax := a, rdx := d, r9 := g.rdx + 1#64 } fl
         (Vst V (g.rbx + g.r11 * 4#64) (toBytesLE w 4)))
-    (ha : na (b8 V g.rdx) = false → zq g.rbx = true → ∀ fl a, Q 109 { g with rax := a, r9 := g.rdx + 1#64 } fl V)
-    (h141 : na (b8 V g.rdx) = false → zq g.rbx = false →
+    (ha : na (rb V g.rdx) = false → zq g.rbx = true → ∀ fl a, Q 109 { g with rax := a, r9 := g.rdx + 1#64 } fl V)
+    (h141 : na (rb V g.rdx) = false → zq g.rbx = false →
       ∀ fl a, Q 141 { g with rax := a, r9 := g.rdx + 1#64 } fl V) :
     W_125 F Wl Q g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
@@ -166,36 +166,36 @@ checks (overlong, surrogate, past `0x10FFFF`) to 272, else to 192 or 201. -/
 theorem vc_209 {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post}
     (he : decide (g.rdi = g.r10) = true → ∀ fl, Q 272 g fl V)
     (fq : decide (g.rdi = g.r10) = false → ∀ i < 1, Foot F.data (Addr.add g.rdi i))
-    (hb : decide (g.rdi = g.r10) = false → bad (b8 V g.rdi) = true → ∀ fl a, Q 272 { g with rax := a } fl V)
-    (h192 : decide (g.rdi = g.r10) = false → bad (b8 V g.rdi) = false → (!decide (w32(g.rsi) + 1#32 = 1#32)) = true →
-      ∀ fl a, Q 192 { g with rax := a, rdx := w64(acc w32(g.rdx) (b8 V g.rdi)), rsi := w64(w32(g.rsi) + 1#32) } fl V)
-    (ho : decide (g.rdi = g.r10) = false → bad (b8 V g.rdi) = false → (!decide (w32(g.rsi) + 1#32 = 1#32)) = false →
-      ovl w32(g.rcx) (acc w32(g.rdx) (b8 V g.rdi)) = true →
-      ∀ fl a, Q 272 { g with rax := a, rdx := w64(acc w32(g.rdx) (b8 V g.rdi)), rsi := w64(w32(g.rsi) + 1#32) } fl V)
-    (hu : decide (g.rdi = g.r10) = false → bad (b8 V g.rdi) = false → (!decide (w32(g.rsi) + 1#32 = 1#32)) = false →
-      ovl w32(g.rcx) (acc w32(g.rdx) (b8 V g.rdi)) = false → decide (w32(g.r8) = 1#32) = true →
+    (hb : decide (g.rdi = g.r10) = false → bad (rb V g.rdi) = true → ∀ fl a, Q 272 { g with rax := a } fl V)
+    (h192 : decide (g.rdi = g.r10) = false → bad (rb V g.rdi) = false → (!decide (w32(g.rsi) + 1#32 = 1#32)) = true →
+      ∀ fl a, Q 192 { g with rax := a, rdx := w64(acc w32(g.rdx) (rb V g.rdi)), rsi := w64(w32(g.rsi) + 1#32) } fl V)
+    (ho : decide (g.rdi = g.r10) = false → bad (rb V g.rdi) = false → (!decide (w32(g.rsi) + 1#32 = 1#32)) = false →
+      ovl w32(g.rcx) (acc w32(g.rdx) (rb V g.rdi)) = true →
+      ∀ fl a, Q 272 { g with rax := a, rdx := w64(acc w32(g.rdx) (rb V g.rdi)), rsi := w64(w32(g.rsi) + 1#32) } fl V)
+    (hu : decide (g.rdi = g.r10) = false → bad (rb V g.rdi) = false → (!decide (w32(g.rsi) + 1#32 = 1#32)) = false →
+      ovl w32(g.rcx) (acc w32(g.rdx) (rb V g.rdi)) = false → decide (w32(g.r8) = 1#32) = true →
       zr w32(g.r15) = true →
-      ∀ fl a, Q 201 { g with rax := a, rdx := w64(acc w32(g.rdx) (b8 V g.rdi)), rsi := w64(w32(g.rsi) + 1#32) } fl V)
-    (hn : decide (g.rdi = g.r10) = false → bad (b8 V g.rdi) = false → (!decide (w32(g.rsi) + 1#32 = 1#32)) = false →
-      ovl w32(g.rcx) (acc w32(g.rdx) (b8 V g.rdi)) = false → decide (w32(g.r8) = 1#32) = true →
-      zr w32(g.r15) = false → nsg (acc w32(g.rdx) (b8 V g.rdi)) = true →
-      ∀ fl a, Q 201 { g with rax := a, rdx := w64(acc w32(g.rdx) (b8 V g.rdi)), rsi := w64(w32(g.rsi) + 1#32) } fl V)
-    (hs : decide (g.rdi = g.r10) = false → bad (b8 V g.rdi) = false → (!decide (w32(g.rsi) + 1#32 = 1#32)) = false →
-      ovl w32(g.rcx) (acc w32(g.rdx) (b8 V g.rdi)) = false → decide (w32(g.r8) = 1#32) = true →
-      zr w32(g.r15) = false → nsg (acc w32(g.rdx) (b8 V g.rdi)) = false →
-      ∀ fl a, Q 272 { g with rax := a, rdx := w64(acc w32(g.rdx) (b8 V g.rdi)), rsi := w64(w32(g.r15)) } fl V)
-    (h3 : decide (g.rdi = g.r10) = false → bad (b8 V g.rdi) = false → (!decide (w32(g.rsi) + 1#32 = 1#32)) = false →
-      ovl w32(g.rcx) (acc w32(g.rdx) (b8 V g.rdi)) = false → decide (w32(g.r8) = 1#32) = false →
+      ∀ fl a, Q 201 { g with rax := a, rdx := w64(acc w32(g.rdx) (rb V g.rdi)), rsi := w64(w32(g.rsi) + 1#32) } fl V)
+    (hn : decide (g.rdi = g.r10) = false → bad (rb V g.rdi) = false → (!decide (w32(g.rsi) + 1#32 = 1#32)) = false →
+      ovl w32(g.rcx) (acc w32(g.rdx) (rb V g.rdi)) = false → decide (w32(g.r8) = 1#32) = true →
+      zr w32(g.r15) = false → nsg (acc w32(g.rdx) (rb V g.rdi)) = true →
+      ∀ fl a, Q 201 { g with rax := a, rdx := w64(acc w32(g.rdx) (rb V g.rdi)), rsi := w64(w32(g.rsi) + 1#32) } fl V)
+    (hs : decide (g.rdi = g.r10) = false → bad (rb V g.rdi) = false → (!decide (w32(g.rsi) + 1#32 = 1#32)) = false →
+      ovl w32(g.rcx) (acc w32(g.rdx) (rb V g.rdi)) = false → decide (w32(g.r8) = 1#32) = true →
+      zr w32(g.r15) = false → nsg (acc w32(g.rdx) (rb V g.rdi)) = false →
+      ∀ fl a, Q 272 { g with rax := a, rdx := w64(acc w32(g.rdx) (rb V g.rdi)), rsi := w64(w32(g.r15)) } fl V)
+    (h3 : decide (g.rdi = g.r10) = false → bad (rb V g.rdi) = false → (!decide (w32(g.rsi) + 1#32 = 1#32)) = false →
+      ovl w32(g.rcx) (acc w32(g.rdx) (rb V g.rdi)) = false → decide (w32(g.r8) = 1#32) = false →
       (!decide (w32(g.r8 + 1#64) = 3#32)) = true →
-      ∀ fl a, Q 192 { g with rax := a, rdx := w64(acc w32(g.rdx) (b8 V g.rdi)), rsi := w64(w32(g.rsi) + 1#32) } fl V)
-    (hl : decide (g.rdi = g.r10) = false → bad (b8 V g.rdi) = false → (!decide (w32(g.rsi) + 1#32 = 1#32)) = false →
-      ovl w32(g.rcx) (acc w32(g.rdx) (b8 V g.rdi)) = false → decide (w32(g.r8) = 1#32) = false →
-      (!decide (w32(g.r8 + 1#64) = 3#32)) = false → l271 (acc w32(g.rdx) (b8 V g.rdi)) = true →
-      ∀ fl a, Q 192 { g with rax := a, rdx := w64(acc w32(g.rdx) (b8 V g.rdi)), rsi := w64(w32(g.rsi) + 1#32) } fl V)
-    (hh : decide (g.rdi = g.r10) = false → bad (b8 V g.rdi) = false → (!decide (w32(g.rsi) + 1#32 = 1#32)) = false →
-      ovl w32(g.rcx) (acc w32(g.rdx) (b8 V g.rdi)) = false → decide (w32(g.r8) = 1#32) = false →
-      (!decide (w32(g.r8 + 1#64) = 3#32)) = false → l271 (acc w32(g.rdx) (b8 V g.rdi)) = false →
-      ∀ fl a, Q 272 { g with rax := a, rdx := w64(acc w32(g.rdx) (b8 V g.rdi)), rsi := w64(w32(g.rsi) + 1#32) } fl V) :
+      ∀ fl a, Q 192 { g with rax := a, rdx := w64(acc w32(g.rdx) (rb V g.rdi)), rsi := w64(w32(g.rsi) + 1#32) } fl V)
+    (hl : decide (g.rdi = g.r10) = false → bad (rb V g.rdi) = false → (!decide (w32(g.rsi) + 1#32 = 1#32)) = false →
+      ovl w32(g.rcx) (acc w32(g.rdx) (rb V g.rdi)) = false → decide (w32(g.r8) = 1#32) = false →
+      (!decide (w32(g.r8 + 1#64) = 3#32)) = false → l271 (acc w32(g.rdx) (rb V g.rdi)) = true →
+      ∀ fl a, Q 192 { g with rax := a, rdx := w64(acc w32(g.rdx) (rb V g.rdi)), rsi := w64(w32(g.rsi) + 1#32) } fl V)
+    (hh : decide (g.rdi = g.r10) = false → bad (rb V g.rdi) = false → (!decide (w32(g.rsi) + 1#32 = 1#32)) = false →
+      ovl w32(g.rcx) (acc w32(g.rdx) (rb V g.rdi)) = false → decide (w32(g.r8) = 1#32) = false →
+      (!decide (w32(g.r8 + 1#64) = 3#32)) = false → l271 (acc w32(g.rdx) (rb V g.rdi)) = false →
+      ∀ fl a, Q 272 { g with rax := a, rdx := w64(acc w32(g.rdx) (rb V g.rdi)), rsi := w64(w32(g.rsi) + 1#32) } fl V) :
     W_209 F Wl Q g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at he fq hb h192 ho hu hn hs h3 hl hh ⊢
