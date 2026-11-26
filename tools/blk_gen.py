@@ -265,6 +265,13 @@ FNS = {
     "dde": dict(grp="Dde", cn="NWindows::NFile::NFind::DoesDirExist", a=0x455cf0, n=101, pos=True, fs=True,
                 stops=(0x5f, 0x60), calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `NFind::DoesDirExist` (`FileFind.cpp`; `objdump -d`)"),
+    # 7-Zip's CPP/Windows/FileFind.cpp `CFileInfo::Find_DontFill_Name (path, followLink)`: two pushes, a frame of 168
+    # bytes with the stack guard at `rsp + 152`, `MY_lstat (path, &st, followLink)` (call at 0x30), when it answers 0
+    # `SetFrom_stat (st)` (call at 0x45) and `al` = 1, the guard's check. Stops: the `ret` (0x6c), the call of
+    # `__stack_chk_fail` (0x6d).
+    "fdn": dict(grp="Fdn", cn="NWindows::NFile::NFind::CFileInfo::Find_DontFill_Name", a=0x455b00, n=114, pos=True,
+                fs=True, stops=(0x6c, 0x6d), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CFileInfo::Find_DontFill_Name` (`FileFind.cpp`; `objdump -d`)"),
     # 7-Zip's C/Alloc.c `MyAlloc (size)`: 0 for size 0, else a tail jump to `malloc`. Stops: the jump (9), the `ret`
     # (18).
     "mya": dict(grp="Mya", cn="MyAlloc", a=0x41f3c0, n=19, pos=True, stops=(9, 18),
