@@ -101,10 +101,10 @@ theorem step90 {L r n : BitVec 32} {D k : Nat} (h1 : r.toNat + n.toNat ≤ L.toN
     (r + n).toNat < L.toNat ∧ L.toNat = (r + n).toNat + (L.toNat - (r + n).toNat) ∧
       10 * (L.toNat - (r + n).toNat) + 9 < 10 * D + 3 := by
   have hL : L.toNat < 4294967296 := L.isLt
+  have h7 : r.toNat + n.toNat < 4294967296 := by omega
   have e : (r + n).toNat = r.toNat + n.toNat := by
     rw [BitVec.toNat_add]
-    exact Nat.mod_eq_of_lt (by have : r.toNat + n.toNat < 4294967296 := by omega
-                                exact this)
+    exact Nat.mod_eq_of_lt h7
   have h4 : ¬ L = r + n := fun h => by simp [h] at h3
   have h5 : L.toNat ≠ (r + n).toNat := fun h => h4 (BitVec.eq_of_toNat_eq h)
   simp only [Bool.or_eq_false_iff, decide_eq_false_iff_not] at h3
@@ -667,7 +667,7 @@ theorem vc_107 (hF : Fr F Wl g₀.rsp) (hd : Fdat F g₀) (hAi : AIns A g₀.rsp
   rintro g' V' ⟨rfl, ⟨a', c', d', si', di', y8, y9, y10, y11, rfl⟩, hr⟩ fl
   simp only [set4, BitVec.sub_add_cancel, sw_64_32] at hr ⊢
   rw [← eL] at hD
-  refine x112 (by omega) (fm_st hF.lo hK _) (a_st hF.lo hAi hA _) hk
+  refine x112 (D := D) (by omega) (fm_st hF.lo hK _) (a_st hF.lo hAi hA _) hk
     ⟨a', d', si', di', b, ⟨c', y8, y9, y10, y11, rfl⟩, ?_⟩
   rcases hr with h1 | ⟨h1, h2⟩
   · exact Or.inl h1
@@ -687,7 +687,7 @@ theorem vc_72 (hF : Fr F Wl g₀.rsp) (hd : Fdat F g₀) (hAi : AIns A g₀.rsp)
     exact h1
   rintro g' V' ⟨hfk, ⟨a', c', d', si', di', y8, y9, y10, y11, rfl⟩, hA', hl⟩ fl
   simp only [set4, BitVec.sub_add_cancel, sw_64_32, eL] at hl ⊢
-  exact x77 (by omega) (fm_fk hF.lo (fm_st hF.lo hK _) hfk rfl) hA' hk
+  exact x77 (D := D) (by omega) (fm_fk hF.lo (fm_st hF.lo hK _) hfk rfl) hA' hk
     ⟨r, by omega, by omega, a', d', si', di', c', y8, y9, y10, y11, rfl⟩
 
 /-- `Insert (pos, q₂)`. -/
@@ -704,7 +704,7 @@ theorem vc_85 (hF : Fr F Wl g₀.rsp) (hd : Fdat F g₀) (hAi : AIns A g₀.rsp)
     exact h1
   rintro g' V' ⟨hfk, ⟨a', c', d', si', di', y8, y9, y10, y11, rfl⟩, hA', hl⟩ fl
   simp only [set4, BitVec.sub_add_cancel, eL] at hl ⊢
-  exact x90 (by omega) (fm_fk hF.lo (fm_st hF.lo hK _) hfk rfl) hA' hk
+  exact x90 (D := D) (by omega) (fm_fk hF.lo (fm_st hF.lo hK _) hfk rfl) hA' hk
     ⟨r, by omega, by omega, a', d', si', di', c', y8, y9, y10, y11, rfl⟩
 
 /-! ## The run -/
