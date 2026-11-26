@@ -45,15 +45,24 @@ abbrev mh (x : BitVec 64) : BitVec 64 :=
 abbrev m100 (x : BitVec 64) : BitVec 64 :=
   ((mh x &&& 18446744073709551612#64) + mh x >>> 2 + ((mh x &&& 18446744073709551612#64) + mh x >>> 2) * 4#64) <<< 2
 
-theorem mh_toNat (x : BitVec 64) : (mh x).toNat = x.toNat / 4 * 2951479051793528259 / 2 ^ 64 := by
+theorem mh1 (x : BitVec 64) : x.toNat / 4 < 4611686018427387904 := by
   have hx := x.isLt
-  have h1 : x.toNat / 4 < 340282366920938463463374607431768211456 := by omega
-  have h2 : x.toNat / 4 * 2951479051793528259 < 340282366920938463463374607431768211456 := by omega
-  have h3 : x.toNat / 4 * 2951479051793528259 / 18446744073709551616 < 18446744073709551616 := by omega
-  simp only [mh, BitVec.extractLsb'_toNat, BitVec.toNat_mul, BitVec.toNat_setWidth, BitVec.toNat_ushiftRight,
-    Nat.shiftRight_eq_div_pow, BitVec.toNat_ofNat, Nat.reducePow, Nat.reduceMod, Nat.mod_eq_of_lt h1,
-    Nat.mod_eq_of_lt h2, Nat.mod_eq_of_lt h3]
-  first | done | omega
+  omega
+
+theorem mh2 {y : Nat} (h : y < 4611686018427387904) :
+    y * 2951479051793528259 < 340282366920938463463374607431768211456 := by
+  omega
+
+theorem mh3 {y : Nat} (h : y < 340282366920938463463374607431768211456) :
+    y / 18446744073709551616 < 18446744073709551616 := by
+  omega
+
+theorem mh_toNat (x : BitVec 64) : (mh x).toNat = x.toNat / 4 * 2951479051793528259 / 2 ^ 64 := by
+  have h1 : x.toNat / 4 < 340282366920938463463374607431768211456 := Nat.lt_trans (mh1 x) (by decide)
+  have h2 := mh2 (mh1 x)
+  simp -implicitDefEqProofs only [mh, BitVec.extractLsb'_toNat, BitVec.toNat_mul, BitVec.toNat_setWidth,
+    BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, BitVec.toNat_ofNat, Nat.reducePow, Nat.reduceMod,
+    Nat.mod_eq_of_lt h1, Nat.mod_eq_of_lt h2, Nat.mod_eq_of_lt (mh3 h2)]
 
 /-- `C` = `(2^66 + 11) / 25`: for `y` < `2^62`, `y * C / 2^66` = `y / 25`. -/
 theorem div25 (y : Nat) (hy : y < 4611686018427387904) :
@@ -91,6 +100,20 @@ theorem m100_eq (x : BitVec 64) : x - m100 x = x % 100#64 ∧ mh x >>> 2 = x / 1
   omega
 
 /-! ## Addresses -/
+
+theorem tsubc {a : Addr} {c : Nat} (hc : c < 2 ^ 64) (h : c ≤ a.toNat) :
+    (a - BitVec.ofNat 64 c).toNat = a.toNat - c := by
+  have ha := a.isLt
+  rw [BitVec.toNat_sub, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hc]
+  omega
+
+theorem taddc {a : Addr} {c : Nat} (hc : c < 2 ^ 64) (h : a.toNat + c < 2 ^ 64) :
+    (a + BitVec.ofNat 64 c).toNat = a.toNat + c := by
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hc]
+  omega
+
+/-- A disjunction `omega` does not split unless asked (`unfold Sep at h`). -/
+def Sep (p q : Prop) : Prop := p ∨ q
 
 theorem tsub8 {a : Addr} (h : 8 ≤ a.toNat) : (a - 8).toNat = a.toNat - 8 := by
   have ha := a.isLt
@@ -205,6 +228,10 @@ theorem fft_ok (c : Seg prof F Wl L s₀ o) (hin : CodeIn L fft_at fft) (hinu : 
       rdd(V', X.cpu.gpr.rdx) = (rdq(V, X.cpu.gpr.rdi + 8#64) % 100#64).setWidth 32 →
       Z.cpu.rip = e₂.add j₂ → Osv.Back X.cpu.gpr Z.cpu.gpr → GoG prof L o gev gP gE Z t') :
     GoG prof L o gev gP gE X t := by
+  replace htd : Sep _ _ := htd
+  replace hfd : Sep _ _ := hfd
+  replace hnd : Sep _ _ := hnd
+  replace hnf : Sep _ _ := hnf
   have t8 : (X.cpu.gpr.rsp - 8).toNat = X.cpu.gpr.rsp.toNat - 8 := tsub8 (by omega)
   have t16 : (X.cpu.gpr.rsp - 8 - 8).toNat = X.cpu.gpr.rsp.toNat - 16 := by
     have := tsub8 (a := X.cpu.gpr.rsp - 8) (by omega)
@@ -215,18 +242,15 @@ theorem fft_ok (c : Seg prof F Wl L s₀ o) (hin : CodeIn L fft_at fft) (hinu : 
   have t32 : (X.cpu.gpr.rsp - 8 - 8 - 8 - 8).toNat = X.cpu.gpr.rsp.toNat - 32 := by
     have := tsub8 (a := X.cpu.gpr.rsp - 8 - 8 - 8) (by omega)
     omega
-  have t32' : (X.cpu.gpr.rsp - 32#64).toNat = X.cpu.gpr.rsp.toNat - 32 := by
-    rw [BitVec.toNat_sub, BitVec.toNat_ofNat]
-    omega
-  have tt8 : (X.cpu.gpr.rdi + 8#64).toNat = X.cpu.gpr.rdi.toNat + 8 := by
-    rw [BitVec.toNat_add, BitVec.toNat_ofNat]
-    omega
+  have t32' : (X.cpu.gpr.rsp - 32#64).toNat = X.cpu.gpr.rsp.toNat - 32 := tsubc (by omega) (by omega)
+  have tt8 : (X.cpu.gpr.rdi + 8#64).toNat = X.cpu.gpr.rdi.toNat + 8 := taddc (by omega) (by omega)
   -- to the call
   refine (c_0 prof).run c hin (P20 X.cpu.gpr V) hK hA (by rw [addr_add_zero]; exact hrip)
     (vc_0 (offF (d := 24) hst (by omega) (by omega)) (offF (d := 16) hst (by omega) (by omega))
       (offF (d := 8) hst (by omega) (by omega)) (fun i hi => hts i (by omega))) ?_
   rintro j g fl V₁ ⟨rfl, rfl, rfl⟩ Y₁ t₁ hK₁ hA₁ hr₁ hg₁ -
   have hR1 : rdq(V3 X.cpu.gpr V, X.cpu.gpr.rdi) = rdq(V, X.cpu.gpr.rdi) := by
+    unfold Sep at htd
     dsimp only [V3]
     rw [vr (by ln) (by omega) (by omega) (by omega), vr (by ln) (by omega) (by omega) (by omega),
       vr (by ln) (by omega) (by omega) (by omega)]
@@ -287,7 +311,7 @@ theorem fft_ok (c : Seg prof F Wl L s₀ o) (hin : CodeIn L fft_at fft) (hinu : 
     have := tadd8 (a := X.cpu.gpr.rsp - 8 - 8 - 8 + 8) (by omega)
     omega
   have hx2 : rdq(V₂, X.cpu.gpr.rdi + 8#64) = rdq(V, X.cpu.gpr.rdi + 8#64) :=
-    congrArg (ofBytesLE 64) (rd_out h2o (by omega) (by omega))
+    congrArg (ofBytesLE 64) (rd_out h2o (by omega) (by unfold Sep at htd; omega))
   -- to the `ret`
   refine (c_25 prof).run c hin (P95 Z.cpu.gpr V₂) hK₃ hA₃ hr₃
     (vc_25 (by rw [zb]; exact offF (d := 8) hts (by omega) (by omega))
@@ -309,6 +333,7 @@ theorem fft_ok (c : Seg prof F Wl L s₀ o) (hin : CodeIn L fft_at fft) (hinu : 
   have g5p : Y₅.cpu.gpr.rbp = X.cpu.gpr.rbp := by
     rw [hg₅]
     show rdq(V5 Z.cpu.gpr V₂, Z.cpu.gpr.rsp + 8) = _
+    unfold Sep at hfd hnd
     rw [zsp, BitVec.sub_add_cancel]
     simp only [V5, zr12, zbp]
     rw [vr (by ln) (by omega) (by omega) (by omega), vr (by ln) (by omega) (by omega) (by omega)]
@@ -316,11 +341,13 @@ theorem fft_ok (c : Seg prof F Wl L s₀ o) (hin : CodeIn L fft_at fft) (hinu : 
   have g5c : Y₅.cpu.gpr.r12 = X.cpu.gpr.r12 := by
     rw [hg₅]
     show rdq(V5 Z.cpu.gpr V₂, Z.cpu.gpr.rsp + 8 + 8) = _
+    unfold Sep at hfd hnd
     rw [zsp]
     simp only [BitVec.sub_add_cancel, V5, zr12, zbp]
     rw [vr (by ln) (by omega) (by omega) (by omega), vr (by ln) (by omega) (by omega) (by omega)]
     exact h2c
   have hret : rdq(V5 Z.cpu.gpr V₂, X.cpu.gpr.rsp) = e₂.add j₂ := by
+    unfold Sep at hfd hnd
     simp only [V5, zr12, zbp]
     rw [vr (by ln) (by omega) (by omega) (by omega), vr (by ln) (by omega) (by omega) (by omega), ← hra]
     exact congrArg (ofBytesLE 64) (rd_out h2o (by omega) (by omega))
@@ -337,6 +364,7 @@ theorem fft_ok (c : Seg prof F Wl L s₀ o) (hin : CodeIn L fft_at fft) (hinu : 
     rw [vs (by ln) (by omega), ofBytesLE_toBytesLE (n := 8) rfl, (m100_eq _).2]
     exact BitVec.add_comm _ _
   have hnsv : rdd(V5 Z.cpu.gpr V₂, X.cpu.gpr.rdx) = (rdq(V, X.cpu.gpr.rdi + 8#64) % 100#64).setWidth 32 := by
+    unfold Sep at hnf
     simp only [V5, zr12, zbp, zb, hx2]
     rw [vr (by ln) (by omega) (by omega) (by omega), vs (by ln) (by omega), ofBytesLE_toBytesLE (n := 4) rfl,
       (m100_eq _).1]
