@@ -141,8 +141,10 @@ theorem vc_48 {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post}
     (hw : ∀ i < 8, Foot Wl (Addr.add (g.rbp + 256#64) i))
     (hl1 : ∀ i < 8, Foot F.data (Addr.add (g.rsp + 8#64) i))
     (hl2 : ∀ i < 8, Foot F.data (Addr.add (g.rsp + 8#64 + 8) i))
-    (h : ∀ fl, Q 63 { g with rax := 0#64, rbx := rdq(Vst V (g.rbp + 256#64) (toBytesLE g.rbx 8), g.rsp + 8#64),
-      rsp := g.rsp + 8#64 + 8 + 8, rbp := rdq(Vst V (g.rbp + 256#64) (toBytesLE g.rbx 8), g.rsp + 8#64 + 8) } fl
+    (h : ∀ fl, Q 63
+      { g with
+        rax := 0#64, rbx := rdq(Vst V (g.rbp + 256#64) (toBytesLE g.rbx 8), g.rsp + 8#64),
+        rsp := g.rsp + 8#64 + 8 + 8, rbp := rdq(Vst V (g.rbp + 256#64) (toBytesLE g.rbx 8), g.rsp + 8#64 + 8) } fl
       (Vst V (g.rbp + 256#64) (toBytesLE g.rbx 8))) :
     W_48 F Wl Q g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
