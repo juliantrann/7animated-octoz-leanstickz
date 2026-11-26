@@ -56,7 +56,7 @@ theorem ulk_rd {S : Addr} (hS : 80 ≤ S.toNat) {V : Addr → Byte} {x ra q : Ad
   have e8 := mB8_toNat hS
   have hl := S.isLt
   exact ⟨(kf_rd (kf_ulk h) (by rw [e]; omega) (by rw [e]; omega) (by omega)).trans (psh_rd0 hS V x ra),
-    (kf_rd (kf_ulk h) (by rw [e8]) (by rw [e8]; omega) (by omega)).trans (psh_rd8 hS V x ra)⟩
+    (kf_rd (kf_ulk h) (Nat.le_of_eq e8.symm) (by rw [e8]; omega) (by omega)).trans (psh_rd8 hS V x ra)⟩
 
 /-! ## The parts -/
 
@@ -84,8 +84,8 @@ theorem from127 {fb S av fq : Addr} {V : Addr → Byte} {p : Addr} {X : State} {
   rintro j' g₁ fl V' ⟨rfl, rfl, rfl⟩ Y₁ t₁ hK₁ hA₁ hr₁ hg₁ -
   refine c.s_movq_rx hK₁ hA₁ hin (lt_len (by decide)) hr₁ (movq_130 _) ?_
   rintro Y₂ t₂ hK₂ hA₂ ⟨hr₂, hg₂, hx₂, -⟩
-  refine (c_135 prof fb).run c hfs hin _ hK₂ hA₂ hr₂ vc_135 ?_
-  rintro j' g₃ fl V' ⟨rfl, rfl, rfl⟩ Y₃ t₃ hK₃ hA₃ hr₃ hg₃ hv₃
+  refine c.runV hfs hin (((blk_135 prof).at mcn_at).fs fb) rfl _ hK₂ hA₂ hr₂ vc_135 ?_
+  rintro g₃ fl V' ⟨-, rfl, rfl⟩ Y₃ t₃ hK₃ hA₃ hr₃ hg₃ hv₃
   have hY₃ : Y₃.cpu.gpr = { X.cpu.gpr with rsi := X.cpu.gpr.rbp ||| 1#64 } := by rw [hg₃, hg₂, hg₁]
   have ea : eaD Y₃ 4 8 = mB S + 8#64 := by
     show Y₃.cpu.gpr.rsp + 8#64 = _
@@ -103,8 +103,8 @@ theorem from127 {fb S av fq : Addr} {V : Addr → Byte} {p : Addr} {X : State} {
     exact congrArg (BitVec.setWidth 128) hax
   rw [ea, h8, hx₃, lane_lo] at hx₄
   have hY₄ : Y₄.cpu.gpr = { X.cpu.gpr with rsi := X.cpu.gpr.rbp ||| 1#64 } := by rw [hg₄, hY₃]
-  refine (c_144 prof fb).run c hfs hin _ hK₄ hA₄ hr₄ (vc_144 (by rw [hY₄]; exact (by rw [hbx]; exact r.w4.1))) ?_
-  rintro j' g₅ fl V' ⟨rfl, rfl, rfl⟩ Y₅ t₅ hK₅ hA₅ hr₅ hg₅ hv₅
+  refine c.runV hfs hin (((blk_144 prof).at mcn_at).fs fb) rfl _ hK₄ hA₄ hr₄ (vc_144 (by rw [hY₄]; exact (by rw [hbx]; exact r.w4.1))) ?_
+  rintro g₅ fl V' ⟨-, rfl, rfl⟩ Y₅ t₅ hK₅ hA₅ hr₅ hg₅ hv₅
   have hY₅ : Y₅.cpu.gpr = { X.cpu.gpr with rsi := X.cpu.gpr.rbp ||| 1#64 } := by rw [hg₅, hY₄]
   have e16 : eaD Y₅ 3 16 = cp1 V p + 16#64 := by
     show Y₅.cpu.gpr.rbx + 16#64 = _
@@ -136,7 +136,7 @@ theorem stB {S : Addr} (hS : 80 ≤ S.toNat) (hstk : ∀ a : Addr, S.toNat - 80 
   have e8 := mB8_toNat hS
   have hl := S.isLt
   exact ⟨Stm.stk hstk (by rw [e]; omega) (by rw [e]; omega) (by omega),
-    Stm.stk hstk (by rw [e8]) (by rw [e8]; omega) (by omega)⟩
+    Stm.stk hstk (Nat.le_of_eq e8.symm) (by rw [e8]; omega) (by omega)⟩
 
 set_option maxHeartbeats 4000000 in
 /-- From 98: `p` first in the unsorted bin, a large chunk's `nextsize` words cleared; then `from127`. -/
@@ -209,8 +209,12 @@ theorem from256 {fb S av fq : Addr} {V : Addr → Byte} {p : Addr} {X : State} {
     exact k Y₁ t₁ hK₁ hA' hr₁ (by rw [hg₁]; exact hdx) (by rw [hg₁]; exact hsp) (by rw [hg₁]; exact h13)
       (by rw [hg₁]; exact h15)
   obtain ⟨f2, r⟩ := hP.nt ht
+  have kt : ∀ Y t', KeptW Wl s₀ Y → Agree F Y.proc.mm.mem (cV7 S av V p) → Y.cpu.rip = mcn_at.add 156 →
+      Y.cpu.gpr.rdx = cnx V p → Y.cpu.gpr.rsp = mB S → Y.cpu.gpr.r13 = fq → Y.cpu.gpr.r15 = av →
+      GoG prof L o gev gP gE Y t' := fun Y t' hKY hAY =>
+    k Y t' hKY (by unfold cstep; rw [ite_eq_right ht]; exact hAY)
   have h8' : rdq(cV4 S av V p, mB S + 8#64) = av + 96#64 :=
-    (kf_rd (kf_cV4 hS hP r) (by rw [e8]) (by rw [e8]; omega) (by omega)).trans h8
+    (kf_rd (kf_cV4 hS hP r) (Nat.le_of_eq e8.symm) (by rw [e8]; omega) (by omega)).trans h8
   have hnt : ¬ rdq(cV1 S V p, X.cpu.gpr.r15 + 96#64) = X.cpu.gpr.r12 := by rw [h15, h12]; exact ht
   have f2' : ∀ i < 1, Foot F.data (Addr.add (X.cpu.gpr.r12 + X.cpu.gpr.r14 + 8#64) i) := by
     rw [h12, h14]; exact f2
@@ -242,7 +246,7 @@ theorem from256 {fb S av fq : Addr} {V : Addr → Byte} {p : Addr} {X : State} {
       rw [kbp, hg₂]; show Y₁.cpu.gpr.rbp = _; rw [hg₁]; show X.cpu.gpr.rbp + X.cpu.gpr.r14 = _
       rw [hbp, h14]; unfold cz2; rw [ite_eq_left hn]
     refine from98 c hfs hin hK₃ hA' hr₃ hS hstk (by rw [hg₃]; exact hspZ') (by rw [hg₃]; exact zbx)
-      (by rw [hg₃]; exact zbp) ?_ ?_ ?_ ?_ h8' r k
+      (by rw [hg₃]; exact zbp) ?_ ?_ ?_ ?_ h8' r kt
     · rw [hg₃]; show Z.cpu.gpr.rbx + Z.cpu.gpr.rbp = _
       rw [zbx, zbp]; unfold cft; rw [ite_eq_left hn]
     · rw [hg₃]; show rdq(ulkV _ (cnc V p), Z.cpu.gpr.rsp) = _
@@ -264,7 +268,7 @@ theorem from256 {fb S av fq : Addr} {V : Addr → Byte} {p : Addr} {X : State} {
     have hA' : Agree F Y₂.proc.mm.mem (cV2 S V p) := by unfold cV2; rw [ite_eq_right hn]; exact hA₂
     have hY : Y₂.cpu.gpr = X.cpu.gpr := by rw [hg₂, hg₁]
     refine from98 c hfs hin hK₂ hA' hr₂ hS hstk (by rw [hY]; exact hsp) (by rw [hY]; exact hbx) ?_ ?_
-      (by rw [hY]; exact hdx) (by rw [hY]; exact h13) (by rw [hY]; exact h15) h8' r k
+      (by rw [hY]; exact hdx) (by rw [hY]; exact h13) (by rw [hY]; exact h15) h8' r kt
     · rw [hY, hbp]; unfold cz2; rw [ite_eq_right hn]
     · rw [hY, h12]; unfold cft; rw [ite_eq_right hn]
 
@@ -311,7 +315,7 @@ theorem chunk_ok {fb S av fq : Addr} {V : Addr → Byte} {p : Addr} {X : State} 
     have hA' : Agree F Y₃.proc.mm.mem (cV1 S V X.cpu.gpr.rbx) := by unfold cV1; rw [ite_eq_left pf]; exact hA₃
     refine from256 c hfs hin hinu hK₃ hA' hr₃ hS hstk (by rw [hg₃]; exact hspZ') ?_ ?_ ?_ ?_ ?_ ?_ ?_ h8 hP k
     · rw [hg₃]; show Z.cpu.gpr.rbx = _
-      rw [kbx, hg₂]; show Y₁.cpu.gpr.rbx = _; rw [hbx₁]; unfold cp1; rw [ite_eq_left pf]; rfl
+      rw [kbx, hg₂]; show Y₁.cpu.gpr.rbx = _; rw [hbx₁]; unfold cp1; rw [ite_eq_left pf]
     · rw [hg₃]; show Z.cpu.gpr.rbp = _
       rw [kbp, hg₂]; show Y₁.cpu.gpr.rbp = _; rw [hbp₁]; unfold cz1; rw [ite_eq_left pf]; rfl
     · rw [hg₃]; show Z.cpu.gpr.r12 = _
@@ -328,8 +332,9 @@ theorem chunk_ok {fb S av fq : Addr} {V : Addr → Byte} {p : Addr} {X : State} 
     refine (c_164 prof fb).run c hfs hin _ hK hA hrip (vc_164u (sz := csz V X.cpu.gpr.rbx)
       (nx := cnx V X.cpu.gpr.rbx) (ns := rdq(V, cnc V X.cpu.gpr.rbx + 8#64)) rfl hP.fb rfl rfl pf' hP.f1 hP.f2
       hP.f3) ?_
-    rintro j' g₁ fl V' ⟨rfl, rfl, hbx₁, hbp₁, hdx₁, h12₁, h14₁, h13₁, h15₁, hsp₁⟩ Y₁ t₁ hK₁ hA₁ hr₁ hg₁ -
+    rintro j' g₁ fl V' ⟨rfl, hV, hbx₁, hbp₁, hdx₁, h12₁, h14₁, h13₁, h15₁, hsp₁⟩ Y₁ t₁ hK₁ hA₁ hr₁ hg₁ -
     subst hg₁
+    rw [hV] at hA₁
     have hA' : Agree F Y₁.proc.mm.mem (cV1 S V X.cpu.gpr.rbx) := by unfold cV1; rw [ite_eq_right pf]; exact hA₁
     refine from256 c hfs hin hinu hK₁ hA' hr₁ hS hstk (hsp₁.trans hsp) ?_ ?_ h12₁ h14₁ hdx₁ h13₁ h15₁ h8 hP k
     · rw [hbx₁]; unfold cp1; rw [ite_eq_right pf]
