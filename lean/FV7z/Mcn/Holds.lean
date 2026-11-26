@@ -134,7 +134,7 @@ theorem bin_ok {fb S av fq : Addr} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.
     GoG prof L o gev gP gE X t
   | [], _, _, _, hne, _, _, _, _, _, _, _, _, _, _ => absurd rfl hne
   | p :: ps, V, X, t, _, hK, hA, hrip, hsp, hbx, h13, h15, h8, ⟨hP, hnx, hs⟩, k => by
-    refine chunk_ok c hfs hin hinu hK hA hrip hS hstk hsp hbx h13 h15 h8 hP ?_
+    refine chunk_ok (p := p) c hfs hin hinu hK hA hrip hS hstk hsp hbx h13 h15 h8 hP ?_
     intro Y t' hKY hAY hrY hdxY hspY h13Y h15Y
     have h8' : rdq(cstep S av V p, mB S + 8#64) = av + 96#64 := (rd8 hS (kf_cstep hS hP)).trans h8
     by_cases hc : ps = []
