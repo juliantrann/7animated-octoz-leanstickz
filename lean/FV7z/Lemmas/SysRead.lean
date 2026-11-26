@@ -111,43 +111,58 @@ theorem sysRead_ok (hw : Writable prof s s.cpu.gpr.rsi s.cpu.gpr.rdx.toNat) :
     intro bs done t₁ hl
     rw [deliverRead_ok (writable_le hw hl)]
     rfl
+  have nt : ¬ ((!true) = true) := by decide
   unfold sysRead readRes
   try dsimp only
-  split
-  · rfl
-  · cases hr : (‹OpenFile›).readable
+  -- Case on each test both sides make (`split` would case on one side only), the same terms on both.
+  cases s.proc.files.desc (s.cpu.gpr.rdi.toNat % 2 ^ 32) with
+  | none => rfl
+  | some f =>
+    try dsimp only
+    cases f.readable
     · rfl
-    · cases ha : accessOk prof.feat s.cpu.gpr.rsi s.cpu.gpr.rdx.toNat
-      · rfl
-      · simp only [Bool.not_true, Bool.false_eq_true, ↓reduceIte]
-        cases hm : (‹OpenFile›).map with
+    · cases accessOk prof.feat s.cpu.gpr.rsi s.cpu.gpr.rdx.toNat
+      · rw [if_neg nt, if_neg nt]
+        all_goals rfl
+      · rw [if_neg nt, if_neg nt, if_neg nt, if_neg nt]
+        cases f.map with
         | pages id =>
           try dsimp only
           unfold readPages readPagesAt
           try dsimp only
-          split
-          · rfl
-          · rw [req_ask_run]
+          by_cases h63 : 2 ^ 63 ≤ (s.proc.opens.pos f).offset + s.cpu.gpr.rdx.toNat
+          · rw [if_pos h63, if_pos h63]
+            all_goals rfl
+          · rw [if_neg h63, if_neg h63, req_ask_run]
             try dsimp only
-            split
-            · rw [D]
+            cases o t (Request.readFail f.id (min (min s.cpu.gpr.rdx.toNat maxRwCount)
+                (s.proc.mm.mem.files.size id - (s.proc.opens.pos f).offset))) with
+            | none =>
+              try dsimp only
+              rw [D]
               · rfl
               · simp only [Files.bytes, List.length_map, List.length_range]
                 omega
-            · split
-              · rfl
-              · rw [D]
+            | some ek =>
+              obtain ⟨e, k⟩ := ek
+              try dsimp only
+              by_cases hk : k.val = 0
+              · rw [if_pos hk, if_pos hk]
+                all_goals rfl
+              · rw [if_neg hk, if_neg hk, D]
                 · rfl
                 · simp only [Files.bytes, List.length_map, List.length_range]
-                  have := Fin.isLt ‹Fin _›
+                  have := k.isLt
                   omega
         | none | path | other =>
           try dsimp only
           rw [req_ask_run]
           try dsimp only
-          split
-          · rfl
-          · rw [D]
+          cases o t (Request.read f.id (min s.cpu.gpr.rdx.toNat maxRwCount)) with
+          | error e => rfl
+          | data bs h =>
+            try dsimp only
+            rw [D]
             · rfl
             · omega
 
