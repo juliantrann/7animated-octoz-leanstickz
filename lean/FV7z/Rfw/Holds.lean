@@ -154,6 +154,7 @@ theorem vc_0 {f : Rflags} (hF : Fp F V₀ g₀.rdi) :
       Nat.pos_of_ne_zero fun e => hne (BitVec.eq_of_toNat_eq (by simpa using e))
     exact xe29 (by exact hpos) (by dsimp only; omega) rfl
 
+set_option maxHeartbeats 1000000 in
 /-- The loop's head, character `m` equal to `c`: its index, the `ret` at 44. -/
 theorem vc_29f {m : Nat} {f : Rflags} (hF : Fp F V₀ g₀.rdi) (hm : m + 1 ≤ (len V₀ g₀.rdi).toNat)
     (hall : ∀ j < (len V₀ g₀.rdi).toNat, m + 1 ≤ j → ch V₀ g₀.rdi j ≠ cc g₀) (hch : ch V₀ g₀.rdi m = cc g₀) :
@@ -171,9 +172,9 @@ theorem vc_29f {m : Nat} {f : Rflags} (hF : Fp F V₀ g₀.rdi) (hm : m + 1 ≤ 
     Bool.false_eq_true, false_implies, true_implies, true_and, and_true, implies_true]
   all_goals repeat' (first
     | with_reducible exact fm
-    | exact xFin (Or.inl rfl) (by exact hr) rfl
     | apply And.intro
     | intro)
+  exact xFin (Or.inl rfl) (by exact hr) rfl
 
 /-- The loop's head, the first character not `c`: no character is, 48. -/
 theorem vc_29z {f : Rflags} (hF : Fp F V₀ g₀.rdi) (hm : 1 ≤ (len V₀ g₀.rdi).toNat)
