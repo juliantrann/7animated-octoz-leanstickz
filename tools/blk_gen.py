@@ -328,6 +328,12 @@ FNS = {
     "u8c": dict(grp="U8c", cn="Utf16_To_Utf8_Calc", a=0x4518e0, n=0xf9, pos=True, stops=(0x7a, 0x88),
                 tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `Utf16_To_Utf8_Calc` (`CPP/Common/UTFConvert.cpp`; `objdump -d`)"),
+    # 7-Zip's CPP/Common/UTFConvert.cpp `Utf16_To_Utf8 (dest, src, srcLim, flags)` (`wchar_t` 4 bytes): the
+    # characters in [src, srcLim) to UTF-8 at dest, the end returned; the outer loop at 0x20, the continuation
+    # bytes' loop at 0x98; one `ret` (0xc1).
+    "u8w": dict(grp="U8w", cn="Utf16_To_Utf8", a=0x4519e0, n=0x241, pos=True, stops=(0xc1,),
+                tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `Utf16_To_Utf8` (`CPP/Common/UTFConvert.cpp`; `objdump -d`)"),
     "lpd": dict(grp="Lpd", cn="LzmaProps_Decode", a=0x42bea0, n=0x66, pos=True, stops=(0x56, 0x65),
                 tag="PLAN.md §M, M1", src="7-Zip 26.06's `LzmaProps_Decode` (`C/LzmaDec.c`; `objdump -d`)"),
     "stu": dict(grp="Stu", cn="ConvertStringToUInt64", a=0x451330, n=0x7c, pos=True, stops=(0x55, 0x68, 0x77),
