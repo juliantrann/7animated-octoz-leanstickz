@@ -1,7 +1,7 @@
-import FV7z.Acs.Holds
-import FV7z.Mga.Holds
+import FV7z.Cpt.Holds
+import FV7z.Cpp.Holds
+import FV7z.Sen.Holds
 open FV7z
-#print axioms FV7z.Acs.acs_ok
-#print axioms FV7z.Mga.mga_e
-#print axioms FV7z.Mga.mga_u
-#print axioms FV7z.Mga.mga_254
+#print axioms FV7z.Cpt.cpt_ok
+#print axioms FV7z.Cpp.cpp_ok
+#print axioms FV7z.Sen.sen_ok
