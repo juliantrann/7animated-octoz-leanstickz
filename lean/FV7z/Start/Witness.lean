@@ -11,7 +11,7 @@ Every hypothesis of `launch_main_plt` holds of one launch, oracle and code list 
 from its start for it.
 -/
 namespace FV7z.Wit
-open ZellicX86 FV7z FV7z.Start FV7z.Glibc
+open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn FV7z.Glibc FV7z.AuxInit FV7z.Start
 
 theorem launch_main_witness (gev : List Event) (t : Nat) :
     ∃ (l : Launch) (o : Oracle) (L : List (Addr × List Byte)),
