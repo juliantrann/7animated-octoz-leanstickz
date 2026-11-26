@@ -1,3 +1,3 @@
-import FV7z.Stb.Holds
+import FV7z.Dab.Holds
 open FV7z
-#print axioms FV7z.Stb.stb_ok
+#print axioms FV7z.Dab.dab_ok
