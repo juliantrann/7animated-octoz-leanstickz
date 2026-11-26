@@ -1,3 +1,3 @@
-import FV7z.Arl.Holds
+import FV7z.Arb.Holds
 open FV7z
-#print axioms FV7z.Arl.arl_ok
+#print axioms FV7z.Arb.arb_ok
