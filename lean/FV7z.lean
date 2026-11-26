@@ -436,6 +436,9 @@ import FV7z.Stu.Holds
 import FV7z.Lpd.Blocks
 import FV7z.Lpd.Cuts
 import FV7z.Lpd.Holds
+import FV7z.Lhp.Blocks
+import FV7z.Lhp.Cuts
+import FV7z.Lhp.Holds
 import FV7z.Cal.Holds
 import FV7z.Fno.Holds
 import FV7z.Pmd.Holds
