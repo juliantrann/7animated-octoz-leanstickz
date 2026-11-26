@@ -1,5 +1,6 @@
-import FV7z.Sis.Holds
+import FV7z.Pop.Holds
 open FV7z
-#print axioms FV7z.Sis.sis_ok
-#print axioms FV7z.Sis.sis_tail
-#print axioms FV7z.Sis.sis_mid
+#print axioms FV7z.Pop.pop_t
+#print axioms FV7z.Pop.pop_b
+#print axioms FV7z.Pop.pop_m
+#print axioms FV7z.Pop.pop_ok
