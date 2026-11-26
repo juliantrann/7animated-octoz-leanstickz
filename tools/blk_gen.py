@@ -121,6 +121,19 @@ FNS = {
     "fcl": dict(grp="Fcl", cn="NWindows::NFile::NIO::CFileBase::Close", a=0x456030, n=48, pos=True, stops=(0x2f,),
                 calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `CFileBase::Close` (`CPP/Windows/FileIO.cpp`; `objdump -d`)"),
+    # glibc 2.31 elf/dl-profstub.c `_dl_mcount_wrapper_check (selfpc)`: nothing unless
+    # `GLRO(dl_profile_map)` is set. Stops: the tail jump to `_dl_mcount` (0x15), the `ret` (0x20).
+    "dmw": dict(grp="Dmw", cn="_dl_mcount_wrapper_check", a=0x670700, n=33, pos=True, stops=(0x15, 0x20),
+                tag="PLAN.md §M, M1", src="glibc 2.31's `_dl_mcount_wrapper_check` (`elf/dl-profstub.c`; `objdump -d`)"),
+    # glibc 2.31 sysdeps/unix/sysv/linux/getpagesize.c `__getpagesize ()`: `GLRO(dl_pagesize)`, asserted not 0.
+    # Stops: the `ret` (0x10), the call of `__assert_fail` (0x2c).
+    "gps": dict(grp="Gps", cn="__getpagesize", a=0x666460, n=49, pos=True, stops=(0x10, 0x2c), calls=True,
+                tag="PLAN.md §M, M1",
+                src="glibc 2.31's `__getpagesize` (`sysdeps/unix/sysv/linux/getpagesize.c`; `objdump -d`)"),
+    # glibc 2.31 nptl/cleanup_compat.c `_pthread_cleanup_push (buffer, routine, arg)`: the buffer filled, linked in
+    # front of the thread's `cleanup` list (`fs:0x2f8`). Stop: the `ret` (0x21).
+    "pcp": dict(grp="Pcp", cn="_pthread_cleanup_push", a=0x5fefe0, n=34, pos=True, fs=True, stops=(0x21,),
+                tag="PLAN.md §M, M1", src="glibc 2.31's `_pthread_cleanup_push` (`nptl/cleanup_compat.c`; `objdump -d`)"),
     # 7-Zip's CPP/Windows/FileIO.cpp `CFileBase::seek (off, whence)`: the descriptor (`this->_handle`, at 0), then
     # `lseek`. Stop: the `jmp` to `__libc_lseek` (6), a branch to another segment (`Seg.s_jmp_x`).
     "fsk": dict(grp="Fsk", cn="NWindows::NFile::NIO::CFileBase::seek", a=0x4560b0, n=11, pos=True, stops=(6,),
