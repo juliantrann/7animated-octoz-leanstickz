@@ -42,6 +42,7 @@ theorem ent_cx {prof : Profile} {L : List (Addr × List Byte)} {o : Oracle} {pl 
     (noLD : ∀ i < K.N, ¬ (K.ez i 0 = 0x4c ∧ K.ez i 1 = 0x44 ∧ K.ez i 2 = 0x5f))
     (h72 : 8032256 + 72 ≤ sp.toNat) (hstk : ∀ i < 72, Foot Wl (Addr.add (sp - 72#64) i))
     (hFv : ∀ x : Addr, 7827456 ≤ x.toNat → x.toNat < 8032256 → Foot F.data x)
+    (hro : ∀ x : Addr, 7278064 ≤ x.toNat → x.toNat < 7278128 → Foot F.data x)
     (hWv : ∀ x : Addr, 7827456 ≤ x.toNat → x.toNat < 8032256 → Foot Wl x) :
     Ndi.Cx prof F Wl L o pl pc Pm (evOf K)
       (Ndi.fV (Vst (Lif.LifMem (Vst W g.rsp (toBytesLE ra₀ 8)) g) (g.rsp - 32#64) (toBytesLE ra 8)) sp gY) sp := by
@@ -59,10 +60,11 @@ theorem ent_cx {prof : Profile} {L : List (Addr × List Byte)} {o : Oracle} {pl 
         toNat_add_of_fits (n := K.len i + 1) (by omega) (by have := hs2 i hi; omega)
       have hl := hls i hi
       exact ent_hi hM hb hb' hW (by omega) (by omega) (by omega) hr0 (by omega) (hDs i hi k hk)) noLD
-  exact ⟨hLC.ndi, hLC.gev, hil, hl0, hlen, hic, hc0, hcmp, hPm, hE,
+  exact ⟨hLC.ndi, hLC.gev, hil, hl0, hlen, hic, hc0, hcmp,
+    fun W₁ h => hPm W₁ (fun x h1 h2 => h x (.inl ⟨h1, h2⟩)), hE,
     nm_ok (o := 0) (by decide) hN hpg hLD, nm_ok (o := 8) (by decide) hN hpg hLD,
     nm_ok (o := 24) (by decide) hN hpg hLD, nm_ok (o := 36) (by decide) hN hpg hLD,
     nm_ok (o := 48) (by decide) hN hpg hLD, nm_ok (o := 64) (by decide) hN hpg hLD,
-    nm_ok (o := 82) (by decide) hN hpg hLD, h72, hstk, hFv, hWv⟩
+    nm_ok (o := 82) (by decide) hN hpg hLD, h72, hstk, hFv, hro, hWv⟩
 
 end FV7z.Start

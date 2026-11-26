@@ -206,7 +206,8 @@ theorem ptr_lif {prof : Profile} {L : List (Addr × List Byte)} {o : Oracle} {ge
       have := hlt i hi
       exact lf_stk (x := K.ptr i) (n := 2) htop' (by omega) (by omega) 1 (by omega))
     (fun x e1 e2 => lf_ro (by omega) (by omega)) noLD (by omega)
-    (wl_stk htop' (by omega) (by omega)) hFv (fun _ e1 e2 => lw_var e1 e2)
+    (wl_stk htop' (by omega) (by omega)) hFv (fun x e1 e2 => lf_ro (by omega) (by omega))
+    (fun _ e1 e2 => lw_var e1 e2)
   have hsi' : (lifY W Z).r12 ≠ 0 := by
     rw [e12]
     exact ne0_of hav
