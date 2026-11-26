@@ -1,5 +1,6 @@
-import FV7z.Mnx.Sep
+import FV7z.Lemmas.RepCmpsb
+import FV7z.Fni.Holds
 open FV7z
-#print axioms FV7z.Mnx.mal_pop_sep
-#print axioms FV7z.Mnx.TcSep.put
-#print axioms FV7z.Mnx.TcSep.alloc
+#print axioms FV7z.Fni.fni_ok
+#print axioms FV7z.Fni.fni_ret
+#print axioms FV7z.Fn.Seg.s_repz_cmpsb
