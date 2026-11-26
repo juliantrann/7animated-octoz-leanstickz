@@ -1,7 +1,6 @@
 import FV7z.Sgw.Cuts
 import FV7z.Close.Holds
 import FV7z.Sga.Holds
-import FV7z.Lemmas.CmpImm
 /-!
 # `__sigaction` checks the signal, then is `__libc_sigaction` (PLAN.md §M, M1)
 
@@ -10,7 +9,8 @@ glibc 2.31's `__sigaction (sig, act, oact)` at `0x6011d0` in `7zzs`: if `sig` (3
 registers of the entry but `rax`; else `errno` (`fs:-0x48`, `Close.errnoAt`) set to `EINVAL` (22) and -1 in `eax`.
 Two pieces of the code: from the entry (0) to the jump (20) or to the error path (32), and from 32 to the `ret` (51).
 
-- `SigOk`: the two unsigned comparisons of the code, `sig - 1 ≤ 63` and `sig - 32 > 1` at 32 bits.
+- `SigOk`: the two unsigned comparisons of the code, `sig - 1 ≤ 63` and `sig - 32 > 1` at 32 bits, as the
+  model's `ja`/`jbe` have them (`decide (x < n) || decide (x = n)`).
 - `sgw_ok`: with `SigOk`, the run reaches `__libc_sigaction`'s entry with the registers of the entry but `rax`;
   without, the return address with `errno` set and `eax` -1.
 -/
@@ -31,11 +31,19 @@ theorem w_51 : pret <+: sgw.drop 51 := by decide +kernel
 theorem ret_51 (feat : Features) : Dec feat sgw 51 (FV7z.mk .ret 64 [] 1) :=
   Dec.shift (j := 51) (k := 0) (pret_0 feat) w_51 (Nat.zero_le _)
 
-/-- The signal from 1 to 64, not 32 or 33: `sig - 1 ≤ 63` and `sig - 32 > 1`, unsigned at 32 bits (`lea`: the sum
-at 64 bits, its low half). -/
+/-- `sig - 1` and `sig - 32`, unsigned at 32 bits (`lea`: the sum at 64 bits, its low half). -/
+abbrev sm1 (r : BitVec 64) : BitVec 32 := BitVec.setWidth 32 (r + 18446744073709551615#64)
+abbrev sm32 (r : BitVec 64) : BitVec 32 := BitVec.setWidth 32 (r + 18446744073709551584#64)
+/-- The signal from 1 to 64, not 32 or 33: `sig - 1 ≤ 63` and not `sig - 32 ≤ 1`, the two comparisons of the code
+(`cmp; ja` and `cmp; jbe`) as the model has them. -/
 def SigOk (r : BitVec 64) : Prop :=
-  (BitVec.setWidth 32 (r + 18446744073709551615#64)).toNat ≤ 63 ∧
-    1 < (BitVec.setWidth 32 (r + 18446744073709551584#64)).toNat
+  (decide ((sm1 r).toNat < 63) || decide (sm1 r = 63#32)) = true ∧
+    (decide ((sm32 r).toNat < 1) || decide (sm32 r = 1#32)) = false
+/-- `!b = false` is `b`. -/
+theorem of_not_false {b : Bool} (h : (!b) = false) : b = true := by
+  cases b
+  · exact absurd h (by decide)
+  · rfl
 /-- `EINVAL` as `errno`'s bytes. -/
 abbrev einval : List Byte := toBytesLE (22#32) 4
 
@@ -46,15 +54,10 @@ theorem vc_ok {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (h : SigOk
     W_0 fb F Wl (fun j' g' _ V' => j' = 20 ∧ (∃ a, g' = { g with rax := a }) ∧ V' = V) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   obtain ⟨h1, h2⟩ := h
-  dsimp only at h1 h2 ⊢
-  wpx [W_0, W_12, o0, o1, be_imm (w := 32) _ 63 (by decide), be_imm (w := 32) _ 1 (by decide)]
-  refine ⟨fun hc => ?_, fun _ => ⟨fun hc => ?_, fun _ => ⟨_, rfl⟩⟩⟩
-  · first
-    | exact absurd h1 (by simpa using hc)
-    | (simp at hc; omega)
-  · first
-    | exact absurd h2 (by simpa using hc)
-    | (simp at hc; omega)
+  dsimp only [sm1, sm32] at h1 h2 ⊢
+  wpx [W_0, W_12, o0, o1]
+  exact ⟨fun hc => absurd hc (by rw [h1]; decide), fun _ => ⟨fun hc => absurd hc (by rw [h2]; decide),
+    fun _ => ⟨_, rfl⟩⟩⟩
 
 /-- From the entry to the error path: a signal not `SigOk`. -/
 theorem vc_bad {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (h : ¬ SigOk g.rdi) :
@@ -62,14 +65,9 @@ theorem vc_bad {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (h : ¬ S
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   unfold SigOk at h
   dsimp only at h ⊢
-  wpx [W_0, W_12, o0, o1, be_imm (w := 32) _ 63 (by decide), be_imm (w := 32) _ 1 (by decide)]
-  refine ⟨fun _ => ⟨_, rfl⟩, fun hc0 => ⟨fun _ => ⟨_, rfl⟩, fun hc => (h ⟨?_, ?_⟩).elim⟩⟩
-  · first
-    | simpa using hc0
-    | (simp at hc0; omega)
-  · first
-    | simpa using hc
-    | (simp at hc; omega)
+  wpx [W_0, W_12, o0, o1]
+  exact ⟨fun _ => ⟨_, rfl⟩, fun hc0 => ⟨fun _ => ⟨_, rfl⟩,
+    fun hc => (h ⟨of_not_false hc0, hc⟩).elim⟩⟩
 
 /-- The error path: `errno` = `EINVAL`, `eax` -1. -/
 theorem vc_32 {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (fe : ∀ i < 4, Foot Wl ((errnoAt fb).add i)) :
