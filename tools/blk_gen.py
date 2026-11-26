@@ -116,6 +116,12 @@ FNS = {
     "lsk": dict(grp="Lseek", cn="__libc_lseek", a=0x5ff440, n=0x2c, pos=True, fs=True, stops=(0x13, 0x14, 0x2b),
                 calls=True, tag="PLAN.md §M, M1",
                 src="glibc 2.31's `__libc_lseek` (`sysdeps/unix/sysv/linux/syscall-template.S`; `objdump -d`)"),
+    # glibc 2.31 sysdeps/unix/sysv/linux/getdents64.c (`__getdents64`, aliased `__getdents` on x86_64): `count` capped
+    # at `INT_MAX` (`cmova`), then `getdents64` (217) as is: no conversion of the entries. Stops: the `ret` (0x23), the
+    # padding after it (0x24), the `ret` after `errno` is set (0x3b); the `syscall` (0x19) is a step of its own.
+    "gdn": dict(grp="Gdn", cn="__getdents", a=0x6a2820, n=0x3c, pos=True, fs=True, stops=(0x23, 0x24, 0x3b),
+                calls=True, tag="PLAN.md §M, M1",
+                src="glibc 2.31's `__getdents` (`sysdeps/unix/sysv/linux/getdents64.c`; `objdump -d`)"),
     # glibc 2.31 sysdeps/unix/sysv/linux/close_nocancel.c via INLINE_SYSCALL (`__close_nocancel`). Stops: the `ret`
     # (0x13), the padding after it (0x14), the `ret` after `errno` is set (0x29); the `syscall` (9) is a step of its own.
     "cnc": dict(grp="Cnc", cn="__close_nocancel", a=0x665f20, n=42, pos=True, fs=True, stops=(0x13, 0x14, 0x29),

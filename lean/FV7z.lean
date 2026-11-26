@@ -312,6 +312,10 @@ import FV7z.Lemmas.SysLseek
 import FV7z.Lseek.Blocks
 import FV7z.Lseek.Cuts
 import FV7z.Lseek.Holds
+import FV7z.Lemmas.SysDents
+import FV7z.Gdn.Blocks
+import FV7z.Gdn.Cuts
+import FV7z.Gdn.Holds
 import FV7z.Fsk.Blocks
 import FV7z.Fsk.Cuts
 import FV7z.Fsk.Holds
