@@ -1,7 +1,5 @@
-import FV7z.Mnx.Pop
-import FV7z.Mnx.Run
-import FV7z.Mal.Heap
+import FV7z.Mnx.PopRun
+import FV7z.Mnx.Get
 open FV7z
-#print axioms FV7z.Mnx.vc_52p
-#print axioms FV7z.Mnx.vc_52m
-#print axioms FV7z.Mnx.cnt_dec
+#print axioms FV7z.Mnx.mal_pop_tail
+#print axioms FV7z.Mnx.tc_get
