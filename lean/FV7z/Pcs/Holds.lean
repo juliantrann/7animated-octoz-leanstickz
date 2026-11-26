@@ -305,7 +305,7 @@ theorem pop_rd (hP : Pe F Wl fb n g V) (hFr : Fr g V fb V') :
   · rw [Tun.rd_Vst _ (fsp g + 8#64) (toBytesLE (cnr V g fb) 8) (g.rsp - 8 - 8) 8 ?a1 ?a2 ?a3,
       Tun.rd_Vst_self _ (g.rsp - 8 - 8) (toBytesLE g.rbx 8) (toBytesLE_length _ _) ?a4,
       ofBytesLE_toBytesLE (n := 8) rfl]
-    all_goals (try simp only [toBytesLE_length, a1, a2, a3])
+    all_goals (try simp only [toBytesLE_length, a2, a3])
     all_goals omega
   · rw [Tun.rd_Vst _ (fsp g + 8#64) (toBytesLE (cnr V g fb) 8) (g.rsp - 8) 8 ?b1 ?b2 ?b3,
       Tun.rd_Vst _ (g.rsp - 8 - 8) (toBytesLE g.rbx 8) (g.rsp - 8) 8 ?c1 ?c2 ?c3,
@@ -324,7 +324,7 @@ theorem ra_rd (hP : Pe F Wl fb n g V) (hFr : Fr g V fb V') :
 
 /-! ## The jump table -/
 
-theorem jt_addr (w : BitVec 32) (h : w.toNat ≤ 18) :
+theorem jt_addr (w : BitVec 32) (_h : w.toNat ≤ 18) :
     7245452#64 + BitVec.setWidth 64 w * 4#64 = Addr.add 7245452#64 (4 * w.toNat) := by
   apply BitVec.eq_of_toNat_eq
   simp only [Addr.add, BitVec.toNat_add, BitVec.toNat_mul, BitVec.toNat_setWidth, BitVec.toNat_ofNat]
