@@ -126,8 +126,8 @@ theorem vc_0 {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post}
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at hs8 hs16 hs24 hl8 hl96 hx8 hx96 h40 h87 ⊢
   revert h40 h87
-  wpx [W_0, W_33, o0, o1, g24, V24, rd4, cx, np, hx8, hx96, m8_8, m16_8, BitVec.xor_self, BitVec.reduceSetWidth,
-    decide_eq_true_eq, decide_eq_false_iff_not]
+  wpx [W_0, W_33, o0, o1, Op.cmpmi, g24, V24, rd4, cx, np, hx8, hx96, m8_8, m16_8, BitVec.xor_self,
+    BitVec.reduceSetWidth, decide_eq_true_eq, decide_eq_false_iff_not]
   intro h40 h87
   repeat' (first | exact hs8 | exact hs16 | exact hs24 | exact hl8 | exact hl96 | apply And.intro | intro _)
   all_goals first | exact h40 _ _ | exact h87 _ ‹_› ‹_›
@@ -143,8 +143,10 @@ theorem vc_40 {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post}
 
 /-- `mov esi, ebp; mov rdi, r12; add rsi, rsi`. -/
 theorem vc_51 {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post}
-    (h : ∀ fl, Q 59 { g with rsi := (g.rbp.setWidth 32).setWidth 64 + (g.rbp.setWidth 32).setWidth 64,
-      rdi := g.r12 } fl V) : W_51 F Wl Q g f V := by
+    (h : ∀ fl, Q 59
+      { g with
+        rsi := (g.rbp.setWidth 32).setWidth 64 + (g.rbp.setWidth 32).setWidth 64,
+        rdi := g.r12 } fl V) : W_51 F Wl Q g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at h ⊢
   wpx [W_51, o3]

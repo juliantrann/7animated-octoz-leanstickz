@@ -1248,8 +1248,8 @@ macro "dec_rfl" : tactic => `(tactic| (intro feat f; rfl))
             w = f"(f.cond {cc} = true → Q {tg} g (rfz f) V) ∧ (f.cond {cc} = false → Q {nx} g (rfz f) V)"
             rule = "Sp.jcc"
         B.append(f"theorem spj_{off} (prof : Profile){EB}{FB} : {SP} prof {nm}{EA}{FA} {off} fun _ _ Q g f V =>\n"
-                 f"    {w} :=\n  {FS0}{rule} (j := {off}) (tgt := {tg}) (Dec.shift (j{jk}_0 _) wj_{off} (by decide)) "
-                 f"(lt_len (by decide)) (by decide) (lt_len (by decide)){FS1}")
+                 f"    {w} :=\n  {FS0}{rule} (j := {off}) (tgt := {tg}) (Dec.shift (j{jk}_0 _) wj_{off} (by decide))\n"
+                 f"    (lt_len (by decide)) (by decide) (lt_len (by decide)){FS1}")
         if run:
             B.append(f"theorem sp_{l} (prof : Profile){EB}{FB} : {SP} prof {nm}{EA}{FA} {l} fun F Wl Q => wp F Wl {ok} fun g f V =>\n"
                      f"    {w} :=\n  {SP}.{bk}_then ({bl}) (spj_{off} prof{ER}{FA})\n")
