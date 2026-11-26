@@ -400,6 +400,9 @@ import FV7z.Cfb.Holds
 import FV7z.Ris.Blocks
 import FV7z.Ris.Cuts
 import FV7z.Ris.Holds
+import FV7z.Sto.Blocks
+import FV7z.Sto.Cuts
+import FV7z.Sto.Holds
 import FV7z.Ncs.Blocks
 import FV7z.Ncs.Cuts
 import FV7z.Ncs.Holds
