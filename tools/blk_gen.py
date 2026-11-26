@@ -148,7 +148,7 @@ FNS = {
     # `MORECORE (-extra)` (0x5e), `__after_morecore_hook` if set (0xa8), `MORECORE (0)` again (0x72) and the top and
     # `system_mem` made smaller. Stops: the `ret` (0x51), the padding (0x52, 0xa3).
     "stm": dict(grp="Stm", cn="systrim.isra.0.constprop.0", a=0x62f8e0, n=172, pos=True, fs=True,
-                stops=(0x51, 0x52, 0xa3), calls=True,
+                stops=(0x51, 0x52, 0xa3), calls=True, hand=(0x8d,),
                 tag="PLAN.md §M, M1", src="glibc 2.31's `systrim` (`malloc/malloc.c`; `objdump -d`)"),
     "gdn": dict(grp="Gdn", cn="__getdents", a=0x6a2820, n=0x3c, pos=True, fs=True, stops=(0x23, 0x24, 0x3b),
                 calls=True, tag="PLAN.md §M, M1",
