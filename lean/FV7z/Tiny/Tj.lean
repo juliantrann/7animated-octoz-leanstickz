@@ -1,3 +1,4 @@
+import ZellicX86.Spec.Executable
 import FV7z.Image
 import FV7z.Lemmas.FnFar
 /-!
