@@ -19,7 +19,7 @@ theorem stop_comm {V : Addr → Byte} {u v : Addr}
     (h : ¬ (V u = V v ∧ V u ≠ 0)) : ¬ (V v = V u ∧ V v ≠ 0) :=
   fun ⟨he, hz⟩ => h ⟨he.symm, he ▸ hz⟩
 
-theorem lea_m16 {k₉ kc : Nat} (h : k₉ + kc < 2 ^ 64) (h16 : 16 ≤ k₉ + kc) :
+theorem lea_m16 {k₉ kc : Nat} (h16 : 16 ≤ k₉ + kc) :
     BitVec.ofNat 64 k₉ + BitVec.ofNat 64 kc * BitVec.ofNat 64 1 + BitVec.ofNat 64 18446744073709551600 =
       BitVec.ofNat 64 (k₉ + kc - 16) := by
   have e : BitVec.ofNat 64 18446744073709551600 = -BitVec.ofNat 64 16 := by decide
@@ -43,7 +43,7 @@ theorem exit6165 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e' scm) {Y : State
     (hxy : sw = false ∧ x = a ∧ y = b ∨ sw = true ∧ x = b ∧ y = a)
     (h11 : Y.cpu.gpr.r11 = BitVec.ofNat 64 R) (hR64 : R < 2 ^ 64) (hn : q + R = n)
     (hnz : Y.cpu.gpr.rdx ≠ 0) (hp : lowestSetBit Y.cpu.gpr.rdx = p) (hp64 : p < 64)
-    (hsame : Same V x y (q + p))
+    (hsame : Same V x y (q + min p R))
     (hstop : p < R → ¬ (V (x.add (q + p)) = V (y.add (q + p)) ∧ V (x.add (q + p)) ≠ 0))
     (hfx : p < R → Foot F.data (x.add (q + p))) (hfy : p < R → Foot F.data (y.add (q + p)))
     (hP : ∀ r, NRes V a b n r → P r) (hR : RetN prof F Wl L s₀ o gev gP gE V g₀ P) :
@@ -102,13 +102,13 @@ theorem exit6160 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e' scm) {Y : State
     {a b x y : Addr} {q R p n k₉ kc : Nat} {sw : Bool} {P : BitVec 32 → Prop}
     (hK : KeptW Wl s₀ Y) (hA : Agree F Y.proc.mm.mem V) (hrip : Y.cpu.rip = e'.add 6160) (hkp : KpN g₀ Y.cpu.gpr)
     (h9 : Y.cpu.gpr.r9 = BitVec.ofNat 64 k₉) (hcx : Y.cpu.gpr.rcx = BitVec.ofNat 64 kc)
-    (hk64 : k₉ + kc < 2 ^ 64) (h16 : 16 ≤ k₉ + kc)
+    (h16 : 16 ≤ k₉ + kc)
     (hdi : Addr.add Y.cpu.gpr.rdi (k₉ + kc - 16) = x.add q) (hsi : Addr.add Y.cpu.gpr.rsi kc = y.add q)
     (h8 : Y.cpu.gpr.r8 = if sw then BitVec.ofNat 64 65535 else 0)
     (hxy : sw = false ∧ x = a ∧ y = b ∨ sw = true ∧ x = b ∧ y = a)
     (h11 : Y.cpu.gpr.r11 = BitVec.ofNat 64 R) (hR64 : R < 2 ^ 64) (hn : q + R = n)
     (hnz : Y.cpu.gpr.rdx ≠ 0) (hp : lowestSetBit Y.cpu.gpr.rdx = p) (hp64 : p < 64)
-    (hsame : Same V x y (q + p))
+    (hsame : Same V x y (q + min p R))
     (hstop : p < R → ¬ (V (x.add (q + p)) = V (y.add (q + p)) ∧ V (x.add (q + p)) ≠ 0))
     (hfx : p < R → Foot F.data (x.add (q + p))) (hfy : p < R → Foot F.data (y.add (q + p)))
     (hP : ∀ r, NRes V a b n r → P r) (hR : RetN prof F Wl L s₀ o gev gP gE V g₀ P) :
@@ -118,7 +118,7 @@ theorem exit6160 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e' scm) {Y : State
   intro Y₁ t₁ hK₁ hA₁ hr₁ hg₁ _ _
   simp only [wr, set_rax] at hg₁
   refine exit6165 (ka := k₉ + kc - 16) (kc := kc) c hin hK₁ hA₁ hr₁ (by simp only [KpN, hg₁]; exact hkp)
-    (by simp only [hg₁, eaG, optV, get1, get_r9n, BitVec.setWidth_eq, h9, hcx]; exact lea_m16 hk64 h16)
+    (by simp only [hg₁, eaG, optV, get1, get_r9n, BitVec.setWidth_eq, h9, hcx]; exact lea_m16 h16)
     (by simp only [hg₁]; exact hcx) (by simp only [hg₁]; exact hdi) (by simp only [hg₁]; exact hsi)
     (by simp only [hg₁]; exact h8) hxy (by simp only [hg₁]; exact h11) hR64 hn (by simp only [hg₁]; exact hnz)
     (by simp only [hg₁]; exact hp) hp64 hsame hstop hfx hfy hP hR

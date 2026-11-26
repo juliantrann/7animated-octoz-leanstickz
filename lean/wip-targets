@@ -1,9 +1,4 @@
-FV7z.Strlen.Steps
-FV7z.Strncmp.Align
+FV7z.Strncmp.Exit
+FV7z.Strncmp.Head
 FV7z.Strncmp.ExitS
-FV7z.Strncmp.Shr
-FV7z.Memset.Sse2
-FV7z.Memcpy.Entry
-FV7z.Memcpy.EntryE
-FV7z.Memcpy.Erms
-FV7z.Memcpy.Small2
+FV7z.Strncmp.Ashr0
