@@ -89,8 +89,8 @@ theorem p306 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e mc2) {X : State} {t 
     (hR : RetC prof F Wl L s₀ o gev gP gE V g₀ r) : GoG prof L o gev gP gE X t := by
   have hl : ∀ a : Addr, ((byteAddrs a 8).map V).length = 8 := fun a => by rw [List.length_map, byteAddrs_len]
   refine c.s_blkV hin (bL306 prof) hK hA hrip ?_
-  refine wpV_ldA (eaG_bi (a := g₀.rsi) (d := g₀.rdx) (by rw [get6, hsi]) (by rw [get2, hdx]) (k := 8) (D := 18446744073709551608)
-      (by decide) (by omega))
+  refine wpV_ldA (eaG_bi (a := g₀.rsi) (d := g₀.rdx) (by rw [get6, hsi]) (by rw [get2, hdx]) (k := 8)
+      (D := 18446744073709551608) (by decide) (by omega))
     (fun i hi => ?_) fun fl₁ _ => ?_
   · rw [addr_add_add]
     exact hsrc _ (by omega)
@@ -143,8 +143,8 @@ theorem p323 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e mc2) {X : State} {t 
     (hR : RetC prof F Wl L s₀ o gev gP gE V g₀ r) : GoG prof L o gev gP gE X t := by
   have hl : ∀ a : Addr, ((byteAddrs a 4).map V).length = 4 := fun a => by rw [List.length_map, byteAddrs_len]
   refine c.s_blkV hin (bL323 prof) hK hA hrip ?_
-  refine wpV_ldA (eaG_bi (a := g₀.rsi) (d := g₀.rdx) (by rw [get6, hsi]) (by rw [get2, hdx]) (k := 4) (D := 18446744073709551612)
-      (by decide) (by omega))
+  refine wpV_ldA (eaG_bi (a := g₀.rsi) (d := g₀.rdx) (by rw [get6, hsi]) (by rw [get2, hdx]) (k := 4)
+      (D := 18446744073709551612) (by decide) (by omega))
     (fun i hi => ?_) fun fl₁ _ => ?_
   · rw [addr_add_add]
     exact hsrc _ (by omega)
