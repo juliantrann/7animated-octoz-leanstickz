@@ -52,6 +52,11 @@ theorem add_one_ofNat (a : Addr) (i : Nat) : a + 1 + BitVec.ofNat 64 (i + 1) = a
 theorem sub_one_ofNat (a : Addr) (i : Nat) : a - 1 - BitVec.ofNat 64 (i + 1) = a - BitVec.ofNat 64 (i + 1 + 1) := by
   bv_omega
 
+/-- The flags read by a step of the model: those of the state. -/
+theorem run_getFlags {α : Type} (feat : Features) (sl : SplitLock)
+    (k : ZellicX86.Op.Ret ZellicX86.Op.getFlags → Prog α) (st : State) :
+    Prog.run feat sl (Prog.op ZellicX86.Op.getFlags k) st = Prog.run feat sl (k st.cpu.rflags) st := rfl
+
 /-- One iteration of `repz cmpsb` with `rcx` not 0: the flags of `[rsi] - [rdi]`, `rsi` and `rdi` one up, `rcx` one
 down; again unless `rcx` is then 0 or the bytes differ. -/
 theorem repz_cmpsb_exec {len : Nat} (hac : s.cpu.rflags.ac = false) (hdf : s.cpu.rflags.df = false)
@@ -94,6 +99,7 @@ theorem repz_cmpsb_exec {len : Nat} (hac : s.cpu.rflags.ac = false) (hdf : s.cpu
     by_cases hz : (subF (rf0 s) (ofBytesLE 8 (readBytes s.proc.mm.mem s.cpu.gpr.rsi 1))
         (ofBytesLE 8 (readBytes s.proc.mm.mem s.cpu.gpr.rdi 1))).zf = true
     · rw [if_pos hz]
+      (try rw [run_getFlags])
       first
         | rfl
         | split
@@ -101,6 +107,7 @@ theorem repz_cmpsb_exec {len : Nat} (hac : s.cpu.rflags.ac = false) (hdf : s.cpu
           · rename_i hn
             exact absurd hz hn
     · rw [if_neg hz]
+      (try rw [run_getFlags])
       first
         | rfl
         | split
@@ -140,13 +147,13 @@ theorem s_repz_cmpsb (c : Seg prof F Wl L s₀ o) (hdf : s₀.cpu.rflags.df = fa
     ∀ (n : Nat) {X : State} {t : Nat} {V : Addr → Byte}, KeptW Wl s₀ X → Agree F X.proc.mm.mem V →
       X.cpu.rip = e'.add j → X.cpu.gpr.rcx.toNat = n + 1 →
       (∀ i < n + 1, SameB V X.cpu.gpr.rsi X.cpu.gpr.rdi i →
-        Foot F.data (X.cpu.gpr.rsi.add i) ∧ Foot F.data (X.cpu.gpr.rdi.add i)) →
+        Foot F.data (Addr.add X.cpu.gpr.rsi i) ∧ Foot F.data (Addr.add X.cpu.gpr.rdi i)) →
       (∀ i ≤ n, SameB V X.cpu.gpr.rsi X.cpu.gpr.rdi i →
-        (i = n ∨ V (X.cpu.gpr.rsi.add i) ≠ V (X.cpu.gpr.rdi.add i)) →
+        (i = n ∨ V (Addr.add X.cpu.gpr.rsi i) ≠ V (Addr.add X.cpu.gpr.rdi i)) →
         ContG prof F Wl L s₀ o gev gP gE V (fun Y => Y.cpu.rip = e'.add (j + len) ∧
           Y.cpu.gpr = ((X.cpu.gpr.set 6 (X.cpu.gpr.rsi + BitVec.ofNat 64 (i + 1))).set 7
             (X.cpu.gpr.rdi + BitVec.ofNat 64 (i + 1))).set 1 (X.cpu.gpr.rcx - BitVec.ofNat 64 (i + 1)) ∧
-          Y.cpu.rflags = subF (rfz X.cpu.rflags) (V (X.cpu.gpr.rsi.add i)) (V (X.cpu.gpr.rdi.add i)))) →
+          Y.cpu.rflags = subF (rfz X.cpu.rflags) (V (Addr.add X.cpu.gpr.rsi i)) (V (Addr.add X.cpu.gpr.rdi i)))) →
       GoG prof L o gev gP gE X t := by
   intro n
   induction n with
