@@ -691,6 +691,11 @@ FNS = {
     "uau": dict(grp="Uau", cn="UString::operator=(const UString&)", a=0x44d710, n=115, pos=True, stops=(0x44,),
                 calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip's `UString::operator= (const UString &)` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
+    # `UString::UString (num, s)`: the length `n` of `s` (`s[0]` at 0x16, then the loop at 0x20 from the index 1),
+    # `min (num, n)` (0x2e), `SetStartLen` (0x41), `wmemcpy (_chars, s, num)` (0x4f), `_chars[num] = 0`, `ret` (0x69).
+    "ucn": dict(grp="Ucn", cn="UString::UString(unsigned, const wchar_t*)", a=0x44d1c0, n=122, pos=True, stops=(0x69,),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip's `UString::UString (unsigned, const wchar_t *)` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
     # CPP/UI/Common/EnumDirItems.cpp `CDirItems::ScanProgress (dirPath)`: without a `Callback` (at 0xc0) 0, else a tail
     # jump to `Callback->ScanProgress (Stat, false, dirPath)` (`Stat` at 0x48), its vtable's second entry. Stops: the
     # `jmp rax` (0x26) and the `ret` (0x32).
