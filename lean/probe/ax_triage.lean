@@ -1,5 +1,3 @@
-import FV7z.Mcn.Holds
+import FV7z.Mga.Cuts
+import FV7z.Mga.Steps
 open FV7z
-#print axioms FV7z.Mcn.bin_ok
-#print axioms FV7z.Mcn.bins_ok
-#print axioms FV7z.Mcn.mcn_ok
