@@ -10,8 +10,8 @@ set to `buffer->__prev` (at 24); if `execute` (32 bits) is 0, `ret` (40); else a
 `ret` or to the loads (21), and from 21 to the jump.
 
 - `V1`: the store of `__prev` to the thread's word; `rtn`, `arg`: the routine and its argument, read after it.
-- `pco_ok`: with `execute` 0, at the return address with the store done and `rax` the old `__prev` (`kn`); else at the routine with `rax` the
-  routine, `rdi` and `r8` its argument (`kx`).
+- `pco_ok`: with `execute` 0, at the return address with the store done and `rax` the old `__prev` (`kn`); else at
+  the routine with `rax` the routine, `rdi` and `r8` its argument (`kx`).
 -/
 open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn
 namespace FV7z.Pco
@@ -51,7 +51,7 @@ theorem vc_no {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (hz : BitV
   wpx [W_0, W_21, o0, o1, Op.ld, Op.stf, BitVec.and_self]
   first
   | exact ⟨Pcp.ft8 hb 24 (by decide), hfw, fun hc => absurd hz (by simpa using hc)⟩
-  | exact ⟨Pcp.ft8 hb 24 (by decide), hfw, fun _ => rfl, fun hc => absurd hz (by simpa using hc)⟩
+  | exact ⟨Pcp.ft8 hb 24 (by decide), hfw, fun _ => trivial, fun hc => absurd hz (by simpa using hc)⟩
 
 /-- `execute` not 0: the store, the loads, up to the jump. -/
 theorem vc_ex {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (hz : BitVec.setWidth 32 g.rsi ≠ 0#32)
