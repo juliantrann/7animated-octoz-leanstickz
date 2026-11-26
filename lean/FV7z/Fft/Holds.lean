@@ -156,22 +156,16 @@ abbrev V5 (g : Gprs) (V : Addr → Byte) : Addr → Byte :=
   Vst (Vst V g.r12 (toBytesLE (BitVec.setWidth 32 (rdq(V, g.rbx + 8#64) - m100 rdq(V, g.rbx + 8#64))) 4)) g.rbp
     (toBytesLE (mh rdq(V, g.rbx + 8#64) >>> 2 + g.rax) 8)
 
-/-- `tv_nsec`. -/
-abbrev nsec (g : Gprs) (V : Addr → Byte) : BitVec 64 := rdq(V, g.rbx + 8#64)
-/-- The registers after the division. -/
-abbrev G95a (g : Gprs) (V : Addr → Byte) : Gprs :=
-  { g with rax := mh (nsec g V) >>> 2 + g.rax, rcx := nsec g V - m100 (nsec g V), rdx := m100 (nsec g V) }
-/-- The registers after the first pop. -/
-abbrev G95b (g : Gprs) (V : Addr → Byte) : Gprs :=
-  { G95a g V with rbx := rdq(V, g.rsp), rsp := g.rsp + 8 + 8 + 8, rsi := 2951479051793528259#64, r8 := g.rax }
-/-- The registers at the `ret`. -/
-abbrev G95 (g : Gprs) (V : Addr → Byte) : Gprs :=
-  { G95b g V with rbp := rdq(V5 g V, g.rsp + 8), r12 := rdq(V5 g V, g.rsp + 8 + 8) }
+/-- The registers at the `ret` the proof needs, the ones a call keeps; the others not named, so that the kernel
+never compares a state whose `rdx` has the multiplication by the 64-bit constant with another. -/
+def K95 (g₀ : Gprs) (V₀ : Addr → Byte) (g : Gprs) : Prop :=
+  g.rsp = g₀.rsp + 8 + 8 + 8 ∧ g.rbx = rdq(V₀, g₀.rsp) ∧ g.rbp = rdq(V5 g₀ V₀, g₀.rsp + 8) ∧
+    g.r12 = rdq(V5 g₀ V₀, g₀.rsp + 8 + 8) ∧ g.r13 = g₀.r13 ∧ g.r14 = g₀.r14 ∧ g.r15 = g₀.r15
 
 /-- At the `ret`. -/
-def P95 (g₀ : Gprs) (V₀ : Addr → Byte) : Post := fun j g _ V => j = 95 ∧ g = G95 g₀ V₀ ∧ V = V5 g₀ V₀
+def P95 (g₀ : Gprs) (V₀ : Addr → Byte) : Post := fun j g _ V => j = 95 ∧ K95 g₀ V₀ g ∧ V = V5 g₀ V₀
 
-theorem x95 {g₀ : Gprs} {V₀ : Addr → Byte} {g : Gprs} {fl : Rflags} {V : Addr → Byte} (hg : g = G95 g₀ V₀)
+theorem x95 {g₀ : Gprs} {V₀ : Addr → Byte} {g : Gprs} {fl : Rflags} {V : Addr → Byte} (hg : K95 g₀ V₀ g)
     (hV : V = V5 g₀ V₀) : P95 g₀ V₀ 95 g fl V :=
   ⟨rfl, hg, hV⟩
 
@@ -194,7 +188,7 @@ theorem vc_25 {g : Gprs} {f : Rflags} {V : Addr → Byte} (hb : ∀ i < 8, Foot 
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at hb h0 h12 hbp h8 h16 ⊢
   wpx [W_25, o1, Op.mul64, Op.mulp, Op.shr64, Op.shl64]
-  exact ⟨hb, h0, fun _ _ _ _ _ _ => ⟨h12, hbp, h8, h16, x95 rfl rfl⟩⟩
+  exact ⟨hb, h0, fun _ _ _ _ _ _ => ⟨h12, hbp, h8, h16, x95 ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩ rfl⟩⟩
 
 /-! ## The bytes around the call and the stores -/
 
@@ -380,27 +374,19 @@ theorem fft_ok (c : Seg prof F Wl L s₀ o) (hin : CodeIn L fft_at fft) (hinu : 
       (by rw [zr12]; exact hns) (by rw [zbp]; exact hft)
       (by rw [zsp]; exact fun i hi => c.hws _ (offF (d := 16) hst (by omega) (by omega) i hi))
       (by rw [zsp]; exact fun i hi => c.hws _ (offF (d := 24) hst (by omega) (by omega) i hi))) ?_
-  rintro j g fl V₅ ⟨rfl, rfl, rfl⟩ Y₅ t₅ hK₅ hA₅ hr₅ hg₅ -
+  rintro j g fl V₅ ⟨rfl, ⟨hk1, hk2, hk3, hk4, hk5, hk6, hk7⟩, rfl⟩ Y₅ t₅ hK₅ hA₅ hr₅ hg₅ -
   have hsp₅ : Y₅.cpu.gpr.rsp = X.cpu.gpr.rsp := by
-    rw [hg₅]
-    show Z.cpu.gpr.rsp + 8 + 8 + 8 = _
-    rw [zsp]
+    rw [hg₅, hk1, zsp]
     simp only [BitVec.sub_add_cancel]
   have g5b : Y₅.cpu.gpr.rbx = X.cpu.gpr.rbx := by
-    rw [hg₅]
-    show rdq(V₂, Z.cpu.gpr.rsp) = _
-    rw [zsp]
+    rw [hg₅, hk2, zsp]
     exact h2b
   have g5p : Y₅.cpu.gpr.rbp = X.cpu.gpr.rbp := by
-    rw [hg₅]
-    show rdq(V5 Z.cpu.gpr V₂, Z.cpu.gpr.rsp + 8) = _
-    rw [V5, zr12, zbp, zsp, BitVec.sub_add_cancel,
+    rw [hg₅, hk3, V5, zr12, zbp, zsp, BitVec.sub_add_cancel,
       w5_rd hnb hfb (by omega) (by unfold Sep at hnd; omega) (by unfold Sep at hfd; omega)]
     exact h2p
   have g5c : Y₅.cpu.gpr.r12 = X.cpu.gpr.r12 := by
-    rw [hg₅]
-    show rdq(V5 Z.cpu.gpr V₂, Z.cpu.gpr.rsp + 8 + 8) = _
-    rw [V5, zr12, zbp, zsp, BitVec.sub_add_cancel, BitVec.sub_add_cancel,
+    rw [hg₅, hk4, V5, zr12, zbp, zsp, BitVec.sub_add_cancel, BitVec.sub_add_cancel,
       w5_rd hnb hfb (by omega) (by unfold Sep at hnd; omega) (by unfold Sep at hfd; omega)]
     exact h2c
   have hret : rdq(V5 Z.cpu.gpr V₂, X.cpu.gpr.rsp) = e₂.add j₂ := by
@@ -423,7 +409,7 @@ theorem fft_ok (c : Seg prof F Wl L s₀ o) (hin : CodeIn L fft_at fft) (hinu : 
   rintro Z' t₆ hKZ hAZ ⟨hrZ, hgZ⟩
   have g5k : Y₅.cpu.gpr.r13 = X.cpu.gpr.r13 ∧ Y₅.cpu.gpr.r14 = X.cpu.gpr.r14 ∧ Y₅.cpu.gpr.r15 = X.cpu.gpr.r15 := by
     rw [hg₅]
-    exact zk
+    exact ⟨hk5.trans zk.1, hk6.trans zk.2.1, hk7.trans zk.2.2⟩
   refine k _ Z' t₆ hKZ hAZ hfr hftv hnsv hrZ ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [hgZ]
     show Y₅.cpu.gpr.rsp + 8 = _
@@ -443,92 +429,6 @@ theorem fft_ok (c : Seg prof F Wl L s₀ o) (hin : CodeIn L fft_at fft) (hinu : 
     exact g5k.2.2
 
 -- TRIAGE probes (to be removed)
-set_option maxHeartbeats 1000000 in
-/-- `FiTime_To_FILETIME_ns100 (ts, ft, ns100)` from its entry to the return address, `ts` = `rdi`, `ft` = `rsi`,
-`ns100` = `rdx`, 32 bytes below the stack pointer in what the run may store into, `ts`'s 16 bytes apart from them,
-`ft`'s 8 and `ns100`'s 4 apart from the saved `rbp`, `r12` and the return address and from each other: the bytes but
-the 32, `ft`'s and `ns100`'s as they were, `ft` = `ftV tv_sec + tv_nsec / 100`, `ns100` = `tv_nsec % 100`, the
-registers a call keeps as at the entry. -/
-theorem fft_okA (c : Seg prof F Wl L s₀ o) (hin : CodeIn L fft_at fft) (hinu : CodeIn L Utf.utf_at Utf.utf)
-    (hK : KeptW Wl s₀ X) (hA : Agree F X.proc.mm.mem V) (hrip : X.cpu.rip = fft_at)
-    (hs : 32 ≤ X.cpu.gpr.rsp.toNat) (hs8 : X.cpu.gpr.rsp.toNat + 8 ≤ 2 ^ 64)
-    (hst : ∀ i < 32, Foot Wl (Addr.add (X.cpu.gpr.rsp - 32#64) i))
-    (hl : ∀ i < 8, Foot F.data (Addr.add X.cpu.gpr.rsp i))
-    (hts : ∀ i < 16, Foot F.data (Addr.add X.cpu.gpr.rdi i)) (htb : X.cpu.gpr.rdi.toNat + 16 ≤ 2 ^ 64)
-    (htd : X.cpu.gpr.rdi.toNat + 16 ≤ X.cpu.gpr.rsp.toNat - 32 ∨ X.cpu.gpr.rsp.toNat ≤ X.cpu.gpr.rdi.toNat)
-    (hft : ∀ i < 8, Foot Wl (Addr.add X.cpu.gpr.rsi i)) (hfb : X.cpu.gpr.rsi.toNat + 8 ≤ 2 ^ 64)
-    (hfd : X.cpu.gpr.rsi.toNat + 8 ≤ X.cpu.gpr.rsp.toNat - 16 ∨ X.cpu.gpr.rsp.toNat + 8 ≤ X.cpu.gpr.rsi.toNat)
-    (hns : ∀ i < 4, Foot Wl (Addr.add X.cpu.gpr.rdx i)) (hnb : X.cpu.gpr.rdx.toNat + 4 ≤ 2 ^ 64)
-    (hnd : X.cpu.gpr.rdx.toNat + 4 ≤ X.cpu.gpr.rsp.toNat - 16 ∨ X.cpu.gpr.rsp.toNat + 8 ≤ X.cpu.gpr.rdx.toNat)
-    (hnf : X.cpu.gpr.rdx.toNat + 4 ≤ X.cpu.gpr.rsi.toNat ∨ X.cpu.gpr.rsi.toNat + 8 ≤ X.cpu.gpr.rdx.toNat)
-    {e₂ : Addr} {code₂ : List Byte} (hin₂ : CodeIn L e₂ code₂) {j₂ : Nat} (h₂ : j₂ < code₂.length)
-    (hra : rdq(V, X.cpu.gpr.rsp) = e₂.add j₂)
-    (k : ∀ (V' : Addr → Byte) (Z : State) (t' : Nat), KeptW Wl s₀ Z → Agree F Z.proc.mm.mem V' →
-      (∀ a : Addr, ¬ (X.cpu.gpr.rsp.toNat - 32 ≤ a.toNat ∧ a.toNat < X.cpu.gpr.rsp.toNat) →
-        ¬ (X.cpu.gpr.rdx.toNat ≤ a.toNat ∧ a.toNat < X.cpu.gpr.rdx.toNat + 4) →
-        ¬ (X.cpu.gpr.rsi.toNat ≤ a.toNat ∧ a.toNat < X.cpu.gpr.rsi.toNat + 8) → V' a = V a) →
-      rdq(V', X.cpu.gpr.rsi) = ftV rdq(V, X.cpu.gpr.rdi) + rdq(V, X.cpu.gpr.rdi + 8#64) / 100#64 →
-      rdd(V', X.cpu.gpr.rdx) = (rdq(V, X.cpu.gpr.rdi + 8#64) % 100#64).setWidth 32 →
-      Z.cpu.rip = e₂.add j₂ → Osv.Back X.cpu.gpr Z.cpu.gpr → GoG prof L o gev gP gE Z t') :
-    GoG prof L o gev gP gE X t := by
-  replace htd : Sep _ _ := htd
-  replace hfd : Sep _ _ := hfd
-  replace hnd : Sep _ _ := hnd
-  replace hnf : Sep _ _ := hnf
-  obtain ⟨t8, t16, t24, t32⟩ := tsp hs
-  have t32' : (X.cpu.gpr.rsp - 32#64).toNat = X.cpu.gpr.rsp.toNat - 32 := tsubc (by omega) (by omega)
-  have tt8 : (X.cpu.gpr.rdi + 8#64).toNat = X.cpu.gpr.rdi.toNat + 8 := taddc (by omega) (by omega)
-  -- to the call
-  refine (c_0 prof).run c hin (P20 X.cpu.gpr V) hK hA (by rw [addr_add_zero]; exact hrip)
-    (vc_0 (offF (d := 24) hst (by omega) (by omega)) (offF (d := 16) hst (by omega) (by omega))
-      (offF (d := 8) hst (by omega) (by omega)) (fun i hi => hts i (by omega))) ?_
-  rintro j g fl V₁ ⟨rfl, rfl, rfl⟩ Y₁ t₁ hK₁ hA₁ hr₁ hg₁ -
-  have hR1 : rdq(V3 X.cpu.gpr V, X.cpu.gpr.rdi) = rdq(V, X.cpu.gpr.rdi) :=
-    r3 hs hs8 (by omega) (by unfold Sep at htd; omega)
-  dsimp only [V3] at hA₁
-  have hsp₁ : Y₁.cpu.gpr.rsp = X.cpu.gpr.rsp - 8 - 8 - 8 := by rw [hg₁]
-  refine c.s_call hK₁ hA₁ hin (lt_len (by decide)) hr₁ (call_20 _) hinu (Utf.lt_len (by decide)) (by decide)
-    (by rw [hsp₁]; exact offF (d := 0) hst (by omega) (by omega)) ?_
-  rintro Y₂ t₂ hK₂ hA₂ ⟨hr₂, hg₂⟩
-  rw [hsp₁] at hA₂
-  have hsp₂ : Y₂.cpu.gpr.rsp = X.cpu.gpr.rsp - 8 - 8 - 8 - 8 := by
-    rw [hg₂]
-    show Y₁.cpu.gpr.rsp - 8 = _
-    rw [hsp₁]
-  obtain ⟨V₂, hA₂, h2o, h2r, h2b, h2p, h2c⟩ : ∃ V₂, Agree F Y₂.proc.mm.mem V₂ ∧
-      (∀ a : Addr, ¬ (X.cpu.gpr.rsp.toNat - 32 ≤ a.toNat ∧ a.toNat < X.cpu.gpr.rsp.toNat) → V₂ a = V a) ∧
-      rdq(V₂, X.cpu.gpr.rsp - 8 - 8 - 8 - 8) = fft_at.add 25 ∧
-      rdq(V₂, X.cpu.gpr.rsp - 8 - 8 - 8) = X.cpu.gpr.rbx ∧ rdq(V₂, X.cpu.gpr.rsp - 8 - 8) = X.cpu.gpr.rbp ∧
-      rdq(V₂, X.cpu.gpr.rsp - 8) = X.cpu.gpr.r12 := by
-    exact ⟨_, hA₂, v4_out (ra := fft_at.add (20 + 5)) hs hs8, v4_rd hs hs8⟩
-  -- `UnixTime64_To_FileTime64 (tv_sec)`
-  refine Utf.utf_ok c hinu hK₂ hA₂ hr₂
-    (by rw [hsp₂]; exact fun i hi => c.hws _ (offF (d := 0) hst (by omega) (by omega) i hi)) hin (j₂ := 25)
-    (lt_len (by decide)) (by rw [hsp₂]; exact h2r) ?_
-  intro Z t₃ hK₃ hA₃ hr₃ hg₃
-  rw [s04] at hg₃
-  rw [s4] at hg₂
-  have zb : Z.cpu.gpr.rbx = X.cpu.gpr.rdi :=
-    (congrArg Gprs.rbx hg₃).trans ((congrArg Gprs.rbx hg₂).trans (congrArg Gprs.rbx hg₁))
-  have zr12 : Z.cpu.gpr.r12 = X.cpu.gpr.rdx :=
-    (congrArg Gprs.r12 hg₃).trans ((congrArg Gprs.r12 hg₂).trans (congrArg Gprs.r12 hg₁))
-  have zbp : Z.cpu.gpr.rbp = X.cpu.gpr.rsi :=
-    (congrArg Gprs.rbp hg₃).trans ((congrArg Gprs.rbp hg₂).trans (congrArg Gprs.rbp hg₁))
-  have zax : Z.cpu.gpr.rax = ftV rdq(V3 X.cpu.gpr V, X.cpu.gpr.rdi) :=
-    (congrArg Gprs.rax hg₃).trans (congrArg ftV ((congrArg Gprs.rdi hg₂).trans (congrArg Gprs.rdi hg₁)))
-  have zsp : Z.cpu.gpr.rsp = X.cpu.gpr.rsp - 8 - 8 - 8 :=
-    (congrArg Gprs.rsp hg₃).trans (by rw [hsp₂]; exact BitVec.sub_add_cancel _ _)
-  have g1k : Y₁.cpu.gpr.r13 = X.cpu.gpr.r13 ∧ Y₁.cpu.gpr.r14 = X.cpu.gpr.r14 ∧ Y₁.cpu.gpr.r15 = X.cpu.gpr.r15 := by
-    rw [hg₁]
-    exact ⟨rfl, rfl, rfl⟩
-  have zk : Z.cpu.gpr.r13 = X.cpu.gpr.r13 ∧ Z.cpu.gpr.r14 = X.cpu.gpr.r14 ∧ Z.cpu.gpr.r15 = X.cpu.gpr.r15 :=
-    ⟨(congrArg Gprs.r13 hg₃).trans ((congrArg Gprs.r13 hg₂).trans g1k.1),
-      (congrArg Gprs.r14 hg₃).trans ((congrArg Gprs.r14 hg₂).trans g1k.2.1),
-      (congrArg Gprs.r15 hg₃).trans ((congrArg Gprs.r15 hg₂).trans g1k.2.2)⟩
-  have hx2 : rdq(V₂, X.cpu.gpr.rdi + 8#64) = rdq(V, X.cpu.gpr.rdi + 8#64) :=
-    congrArg (ofBytesLE 64) (rd_out h2o (by omega) (by unfold Sep at htd; omega))
-  sorry
-
 set_option maxHeartbeats 1000000 in
 /-- `FiTime_To_FILETIME_ns100 (ts, ft, ns100)` from its entry to the return address, `ts` = `rdi`, `ft` = `rsi`,
 `ns100` = `rdx`, 32 bytes below the stack pointer in what the run may store into, `ts`'s 16 bytes apart from them,
@@ -626,11 +526,9 @@ theorem fft_okD (c : Seg prof F Wl L s₀ o) (hin : CodeIn L fft_at fft) (hinu :
       (by rw [zr12]; exact hns) (by rw [zbp]; exact hft)
       (by rw [zsp]; exact fun i hi => c.hws _ (offF (d := 16) hst (by omega) (by omega) i hi))
       (by rw [zsp]; exact fun i hi => c.hws _ (offF (d := 24) hst (by omega) (by omega) i hi))) ?_
-  rintro j g fl V₅ ⟨rfl, rfl, rfl⟩ Y₅ t₅ hK₅ hA₅ hr₅ hg₅ -
+  rintro j g fl V₅ ⟨rfl, ⟨hk1, hk2, hk3, hk4, hk5, hk6, hk7⟩, rfl⟩ Y₅ t₅ hK₅ hA₅ hr₅ hg₅ -
   have hsp₅ : Y₅.cpu.gpr.rsp = X.cpu.gpr.rsp := by
-    rw [hg₅]
-    show Z.cpu.gpr.rsp + 8 + 8 + 8 = _
-    rw [zsp]
+    rw [hg₅, hk1, zsp]
     simp only [BitVec.sub_add_cancel]
   have g5b : Y₅.cpu.gpr.rbx = X.cpu.gpr.rbx := sorry
   have g5p : Y₅.cpu.gpr.rbp = X.cpu.gpr.rbp := sorry
@@ -647,7 +545,7 @@ theorem fft_okD (c : Seg prof F Wl L s₀ o) (hin : CodeIn L fft_at fft) (hinu :
   rintro Z' t₆ hKZ hAZ ⟨hrZ, hgZ⟩
   have g5k : Y₅.cpu.gpr.r13 = X.cpu.gpr.r13 ∧ Y₅.cpu.gpr.r14 = X.cpu.gpr.r14 ∧ Y₅.cpu.gpr.r15 = X.cpu.gpr.r15 := by
     rw [hg₅]
-    exact zk
+    exact ⟨hk5.trans zk.1, hk6.trans zk.2.1, hk7.trans zk.2.2⟩
   refine k _ Z' t₆ hKZ hAZ hfr hftv hnsv hrZ ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [hgZ]
     show Y₅.cpu.gpr.rsp + 8 = _
@@ -665,5 +563,108 @@ theorem fft_okD (c : Seg prof F Wl L s₀ o) (hin : CodeIn L fft_at fft) (hinu :
     exact g5k.2.1
   · rw [hgZ]
     exact g5k.2.2
+
+set_option maxHeartbeats 1000000 in
+/-- `FiTime_To_FILETIME_ns100 (ts, ft, ns100)` from its entry to the return address, `ts` = `rdi`, `ft` = `rsi`,
+`ns100` = `rdx`, 32 bytes below the stack pointer in what the run may store into, `ts`'s 16 bytes apart from them,
+`ft`'s 8 and `ns100`'s 4 apart from the saved `rbp`, `r12` and the return address and from each other: the bytes but
+the 32, `ft`'s and `ns100`'s as they were, `ft` = `ftV tv_sec + tv_nsec / 100`, `ns100` = `tv_nsec % 100`, the
+registers a call keeps as at the entry. -/
+theorem fft_okE (c : Seg prof F Wl L s₀ o) (hin : CodeIn L fft_at fft) (hinu : CodeIn L Utf.utf_at Utf.utf)
+    (hK : KeptW Wl s₀ X) (hA : Agree F X.proc.mm.mem V) (hrip : X.cpu.rip = fft_at)
+    (hs : 32 ≤ X.cpu.gpr.rsp.toNat) (hs8 : X.cpu.gpr.rsp.toNat + 8 ≤ 2 ^ 64)
+    (hst : ∀ i < 32, Foot Wl (Addr.add (X.cpu.gpr.rsp - 32#64) i))
+    (hl : ∀ i < 8, Foot F.data (Addr.add X.cpu.gpr.rsp i))
+    (hts : ∀ i < 16, Foot F.data (Addr.add X.cpu.gpr.rdi i)) (htb : X.cpu.gpr.rdi.toNat + 16 ≤ 2 ^ 64)
+    (htd : X.cpu.gpr.rdi.toNat + 16 ≤ X.cpu.gpr.rsp.toNat - 32 ∨ X.cpu.gpr.rsp.toNat ≤ X.cpu.gpr.rdi.toNat)
+    (hft : ∀ i < 8, Foot Wl (Addr.add X.cpu.gpr.rsi i)) (hfb : X.cpu.gpr.rsi.toNat + 8 ≤ 2 ^ 64)
+    (hfd : X.cpu.gpr.rsi.toNat + 8 ≤ X.cpu.gpr.rsp.toNat - 16 ∨ X.cpu.gpr.rsp.toNat + 8 ≤ X.cpu.gpr.rsi.toNat)
+    (hns : ∀ i < 4, Foot Wl (Addr.add X.cpu.gpr.rdx i)) (hnb : X.cpu.gpr.rdx.toNat + 4 ≤ 2 ^ 64)
+    (hnd : X.cpu.gpr.rdx.toNat + 4 ≤ X.cpu.gpr.rsp.toNat - 16 ∨ X.cpu.gpr.rsp.toNat + 8 ≤ X.cpu.gpr.rdx.toNat)
+    (hnf : X.cpu.gpr.rdx.toNat + 4 ≤ X.cpu.gpr.rsi.toNat ∨ X.cpu.gpr.rsi.toNat + 8 ≤ X.cpu.gpr.rdx.toNat)
+    {e₂ : Addr} {code₂ : List Byte} (hin₂ : CodeIn L e₂ code₂) {j₂ : Nat} (h₂ : j₂ < code₂.length)
+    (hra : rdq(V, X.cpu.gpr.rsp) = e₂.add j₂)
+    (k : ∀ (V' : Addr → Byte) (Z : State) (t' : Nat), KeptW Wl s₀ Z → Agree F Z.proc.mm.mem V' →
+      (∀ a : Addr, ¬ (X.cpu.gpr.rsp.toNat - 32 ≤ a.toNat ∧ a.toNat < X.cpu.gpr.rsp.toNat) →
+        ¬ (X.cpu.gpr.rdx.toNat ≤ a.toNat ∧ a.toNat < X.cpu.gpr.rdx.toNat + 4) →
+        ¬ (X.cpu.gpr.rsi.toNat ≤ a.toNat ∧ a.toNat < X.cpu.gpr.rsi.toNat + 8) → V' a = V a) →
+      rdq(V', X.cpu.gpr.rsi) = ftV rdq(V, X.cpu.gpr.rdi) + rdq(V, X.cpu.gpr.rdi + 8#64) / 100#64 →
+      rdd(V', X.cpu.gpr.rdx) = (rdq(V, X.cpu.gpr.rdi + 8#64) % 100#64).setWidth 32 →
+      Z.cpu.rip = e₂.add j₂ → Osv.Back X.cpu.gpr Z.cpu.gpr → GoG prof L o gev gP gE Z t') :
+    GoG prof L o gev gP gE X t := by
+  replace htd : Sep _ _ := htd
+  replace hfd : Sep _ _ := hfd
+  replace hnd : Sep _ _ := hnd
+  replace hnf : Sep _ _ := hnf
+  obtain ⟨t8, t16, t24, t32⟩ := tsp hs
+  have t32' : (X.cpu.gpr.rsp - 32#64).toNat = X.cpu.gpr.rsp.toNat - 32 := tsubc (by omega) (by omega)
+  have tt8 : (X.cpu.gpr.rdi + 8#64).toNat = X.cpu.gpr.rdi.toNat + 8 := taddc (by omega) (by omega)
+  -- to the call
+  refine (c_0 prof).run c hin (P20 X.cpu.gpr V) hK hA (by rw [addr_add_zero]; exact hrip)
+    (vc_0 (offF (d := 24) hst (by omega) (by omega)) (offF (d := 16) hst (by omega) (by omega))
+      (offF (d := 8) hst (by omega) (by omega)) (fun i hi => hts i (by omega))) ?_
+  rintro j g fl V₁ ⟨rfl, rfl, rfl⟩ Y₁ t₁ hK₁ hA₁ hr₁ hg₁ -
+  have hR1 : rdq(V3 X.cpu.gpr V, X.cpu.gpr.rdi) = rdq(V, X.cpu.gpr.rdi) :=
+    r3 hs hs8 (by omega) (by unfold Sep at htd; omega)
+  dsimp only [V3] at hA₁
+  have hsp₁ : Y₁.cpu.gpr.rsp = X.cpu.gpr.rsp - 8 - 8 - 8 := by rw [hg₁]
+  refine c.s_call hK₁ hA₁ hin (lt_len (by decide)) hr₁ (call_20 _) hinu (Utf.lt_len (by decide)) (by decide)
+    (by rw [hsp₁]; exact offF (d := 0) hst (by omega) (by omega)) ?_
+  rintro Y₂ t₂ hK₂ hA₂ ⟨hr₂, hg₂⟩
+  rw [hsp₁] at hA₂
+  have hsp₂ : Y₂.cpu.gpr.rsp = X.cpu.gpr.rsp - 8 - 8 - 8 - 8 := by
+    rw [hg₂]
+    show Y₁.cpu.gpr.rsp - 8 = _
+    rw [hsp₁]
+  obtain ⟨V₂, hA₂, h2o, h2r, h2b, h2p, h2c⟩ : ∃ V₂, Agree F Y₂.proc.mm.mem V₂ ∧
+      (∀ a : Addr, ¬ (X.cpu.gpr.rsp.toNat - 32 ≤ a.toNat ∧ a.toNat < X.cpu.gpr.rsp.toNat) → V₂ a = V a) ∧
+      rdq(V₂, X.cpu.gpr.rsp - 8 - 8 - 8 - 8) = fft_at.add 25 ∧
+      rdq(V₂, X.cpu.gpr.rsp - 8 - 8 - 8) = X.cpu.gpr.rbx ∧ rdq(V₂, X.cpu.gpr.rsp - 8 - 8) = X.cpu.gpr.rbp ∧
+      rdq(V₂, X.cpu.gpr.rsp - 8) = X.cpu.gpr.r12 := by
+    exact ⟨_, hA₂, v4_out (ra := fft_at.add (20 + 5)) hs hs8, v4_rd hs hs8⟩
+  -- `UnixTime64_To_FileTime64 (tv_sec)`
+  refine Utf.utf_ok c hinu hK₂ hA₂ hr₂
+    (by rw [hsp₂]; exact fun i hi => c.hws _ (offF (d := 0) hst (by omega) (by omega) i hi)) hin (j₂ := 25)
+    (lt_len (by decide)) (by rw [hsp₂]; exact h2r) ?_
+  intro Z t₃ hK₃ hA₃ hr₃ hg₃
+  rw [s04] at hg₃
+  rw [s4] at hg₂
+  have zb : Z.cpu.gpr.rbx = X.cpu.gpr.rdi :=
+    (congrArg Gprs.rbx hg₃).trans ((congrArg Gprs.rbx hg₂).trans (congrArg Gprs.rbx hg₁))
+  have zr12 : Z.cpu.gpr.r12 = X.cpu.gpr.rdx :=
+    (congrArg Gprs.r12 hg₃).trans ((congrArg Gprs.r12 hg₂).trans (congrArg Gprs.r12 hg₁))
+  have zbp : Z.cpu.gpr.rbp = X.cpu.gpr.rsi :=
+    (congrArg Gprs.rbp hg₃).trans ((congrArg Gprs.rbp hg₂).trans (congrArg Gprs.rbp hg₁))
+  have zax : Z.cpu.gpr.rax = ftV rdq(V3 X.cpu.gpr V, X.cpu.gpr.rdi) :=
+    (congrArg Gprs.rax hg₃).trans (congrArg ftV ((congrArg Gprs.rdi hg₂).trans (congrArg Gprs.rdi hg₁)))
+  have zsp : Z.cpu.gpr.rsp = X.cpu.gpr.rsp - 8 - 8 - 8 :=
+    (congrArg Gprs.rsp hg₃).trans (by rw [hsp₂]; exact BitVec.sub_add_cancel _ _)
+  have g1k : Y₁.cpu.gpr.r13 = X.cpu.gpr.r13 ∧ Y₁.cpu.gpr.r14 = X.cpu.gpr.r14 ∧ Y₁.cpu.gpr.r15 = X.cpu.gpr.r15 := by
+    rw [hg₁]
+    exact ⟨rfl, rfl, rfl⟩
+  have zk : Z.cpu.gpr.r13 = X.cpu.gpr.r13 ∧ Z.cpu.gpr.r14 = X.cpu.gpr.r14 ∧ Z.cpu.gpr.r15 = X.cpu.gpr.r15 :=
+    ⟨(congrArg Gprs.r13 hg₃).trans ((congrArg Gprs.r13 hg₂).trans g1k.1),
+      (congrArg Gprs.r14 hg₃).trans ((congrArg Gprs.r14 hg₂).trans g1k.2.1),
+      (congrArg Gprs.r15 hg₃).trans ((congrArg Gprs.r15 hg₂).trans g1k.2.2)⟩
+  have hx2 : rdq(V₂, X.cpu.gpr.rdi + 8#64) = rdq(V, X.cpu.gpr.rdi + 8#64) :=
+    congrArg (ofBytesLE 64) (rd_out h2o (by omega) (by unfold Sep at htd; omega))
+  have u16 : (X.cpu.gpr.rsp - 8 - 8 - 8 + 8).toNat = X.cpu.gpr.rsp.toNat - 16 := by
+    rw [tadd8 (by omega), t24]
+    omega
+  have u24 : (X.cpu.gpr.rsp - 8 - 8 - 8 + 8 + 8).toNat = X.cpu.gpr.rsp.toNat - 8 := by
+    rw [tadd8 (by omega), u16]
+    omega
+  -- to the `ret`
+  refine (c_25 prof).run c hin (P95 Z.cpu.gpr V₂) hK₃ hA₃ hr₃
+    (vc_25 (by rw [zb]; exact offF (d := 8) hts (by omega) (by omega))
+      (by rw [zsp]; exact fun i hi => c.hws _ (offF (d := 8) hst (by omega) (by omega) i hi))
+      (by rw [zr12]; exact hns) (by rw [zbp]; exact hft)
+      (by rw [zsp]; exact fun i hi => c.hws _ (offF (d := 16) hst (by omega) (by omega) i hi))
+      (by rw [zsp]; exact fun i hi => c.hws _ (offF (d := 24) hst (by omega) (by omega) i hi))) ?_
+  rintro j g fl V₅ ⟨rfl, ⟨hk1, hk2, hk3, hk4, hk5, hk6, hk7⟩, rfl⟩ Y₅ t₅ hK₅ hA₅ hr₅ hg₅ -
+  have hsp₅ : Y₅.cpu.gpr.rsp = X.cpu.gpr.rsp := by
+    rw [hg₅, hk1, zsp]
+    simp only [BitVec.sub_add_cancel]
+  sorry
 
 end FV7z.Fft
