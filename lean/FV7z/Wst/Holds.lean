@@ -157,10 +157,10 @@ theorem vc_73 {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte}
   dsimp only [gC, sz] at fr ⊢
   by_cases hcf : rbx.toNat < r12.toNat
   · have hd : decide (rbx.toNat < r12.toNat) = true := decide_eq_true hcf
-    wpx [W_73, o4, hd, hcf, ↓reduceIte, eq_self_iff_true]
+    wpx [W_73, o4, hd, hcf, decide_true, ↓reduceIte, eq_self_iff_true]
     all_goals vfin
   · have hd : decide (rbx.toNat < r12.toNat) = false := decide_eq_false hcf
-    wpx [W_73, o4, hd, hcf, ↓reduceIte, Bool.false_eq_true, eq_self_iff_true]
+    wpx [W_73, o4, hd, hcf, decide_false, ↓reduceIte, Bool.false_eq_true, eq_self_iff_true]
     all_goals vfin
 
 /-- From 98, the callee's answer not 0: to 112. -/

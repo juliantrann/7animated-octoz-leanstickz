@@ -265,6 +265,13 @@ FNS = {
     # `__stack_chk_fail` (0x9f).
     "wst": dict(grp="Wst", cn="WriteStream", a=0x463420, n=164, pos=True, fs=True, stops=(0x8c, 0x9f), calls=True,
                 tag="PLAN.md §M, M1", src="7-Zip 26.06's `WriteStream` (`StreamUtils.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06's CPP/7zip/Common/StreamUtils.cpp `ReadStream (stream, data, size)`: `*size` read and zeroed, then
+    # `stream->Read` (`call *0x18(%rax)`) in a loop of at most `0x80000000` bytes at a time, `processed` added to
+    # `*size`, until an answer not 0, `processed` 0 or the size left 0. Stops: the `ret` (0xa1), the call of
+    # `__stack_chk_fail` (0xac); `add qword [r14], rdx` (0x76) is a step of its own (`Seg.s_add_mr64`).
+    "rst": dict(grp="Rst", cn="ReadStream", a=0x4632b0, n=177, pos=True, fs=True, stops=(0xa1, 0xac), calls=True,
+                hand=(0x76,),
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `ReadStream` (`StreamUtils.cpp`; `objdump -d`)"),
     # 7-Zip's C/Alloc.c `MyAlloc (size)`: 0 for size 0, else a tail jump to `malloc`. Stops: the jump (9), the `ret`
     # (18).
     "mya": dict(grp="Mya", cn="MyAlloc", a=0x41f3c0, n=19, pos=True, stops=(9, 18),
