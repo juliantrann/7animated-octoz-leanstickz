@@ -155,20 +155,34 @@ theorem vX72 (hm : 33 < m) (hO : Ot g₀ V₀ V) (hd : ∀ i < 14, Foot F.data (
     | exact e64 hO (by omega) rfl
 
 set_option maxHeartbeats 1000000 in
-/-- 42: `Size` read and stored, the props byte and `FilterID` checked, to 64 or 72. -/
+/-- 58: `FilterID` checked, to 72 or 64. -/
+theorem vX58 (hm : 33 < m) (hO : Ot g₀ V₀ V) (hd : ∀ i < 14, Foot F.data (Addr.add g₀.rdi i)) :
+    W_58 F Wl (Nx g₀ V₀ m) (G6 g₀ a c d s g₀.rdi x) f V := by
+  obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g₀
+  have f8 : ∀ i < 1, Foot F.data (Addr.add (rdi + 8#64) i) := fA hd (by omega)
+  dsimp only [G6]
+  wpx [W_58, o5, Op.cmpmi]
+  all_goals repeat' (first | exact f8 | exact vX72 hm hO hd | with_reducible rfl | apply And.intro | intro _)
+  all_goals first
+    | exact e64 hO (by omega) rfl
+
+set_option maxHeartbeats 1000000 in
+/-- 42: `Size` read and stored, the props byte checked, to 64 or 58. -/
 theorem vX42 {j : Nat} (hj : j ≤ 1) (hm : 33 < m) (hO : Ot g₀ V₀ V) (hb : g₀.rdi.toNat + 14 ≤ 2 ^ 64)
     (hr : ∀ i < 14, Foot F.data (Addr.add g₀.rsi i)) (hd : ∀ i < 14, Foot F.data (Addr.add g₀.rdi i))
     (hw : ∀ i < 14, Foot Wl (Addr.add g₀.rdi i)) :
     W_42 F Wl (Nx g₀ V₀ m) (G6 g₀ a c d (g₀.rsi + BitVec.ofNat 64 j) g₀.rdi x) f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g₀
-  dsimp only [G6] at hr hd hw ⊢
-  wpx [W_42, W_58, o4, o5, Op.cmpmi, BitVec.xor_self]
+  have f5 : ∀ i < 8, Foot F.data (Addr.add (rsi + BitVec.ofNat 64 j + 5#64) i) := fA2 hr (by omega)
+  have f9 : ∀ i < 1, Foot F.data (Addr.add (rdi + 9#64) i) := fA hd (by omega)
+  have f0 : ∀ i < 8, Foot Wl (Addr.add rdi i) := fun i hi => hw i (by omega)
+  dsimp only [G6]
+  wpx [W_42, o4, Op.cmpmi, BitVec.xor_self]
   all_goals repeat' (first
-    | exact vX72 hm (oSt0 hO hb (toBytesLE_length _ _) (by decide)) hd
-    | exact fA2 hr (by omega)
-    | exact fA hr (by omega)
-    | exact fA hd (by omega)
-    | exact fun i hi => hw i (by omega)
+    | exact f0
+    | exact f5
+    | exact f9
+    | (refine vX58 hm ?_ hd; exact oSt0 hO hb (toBytesLE_length _ _) (by decide))
     | with_reducible rfl
     | apply And.intro
     | intro _)
@@ -238,9 +252,14 @@ theorem vc_24 {k : Nat} (hk : k < 5) (hO : Ot g₀ V₀ V) (hs : S1 g₀ s) (hb 
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g₀
   dsimp only [G6] at hr hd hw ⊢
   rcases Nat.lt_or_ge k 4 with h4 | h4
-  · wpx [W_24, o3]
+  · have fl : ∀ i < 1, Foot F.data (Addr.add (rsi + BitVec.ofNat 64 j + BitVec.ofNat 64 k) i) := fA2 hr (by omega)
+    have fs : ∀ i < 1, Foot Wl (Addr.add (rdi + BitVec.ofNat 64 k + 9#64) i) := fA2 hw (by omega)
+    wpx [W_24, o3]
     all_goals repeat' (first
-      | exact vX42 hj (by omega) (oSt2 hO hb (toBytesLE_length _ _) (by omega) (by decide)) hb hr hd hw
+      | exact fl
+      | exact fs
+      | (refine vX42 hj (by omega) ?_ hb hr hd hw
+         exact oSt2 hO hb (toBytesLE_length _ _) (by omega) (by decide))
       | exact fA2 hr (by omega)
       | exact fA2 hw (by omega)
       | with_reducible rfl
@@ -250,11 +269,17 @@ theorem vc_24 {k : Nat} (hk : k < 5) (hO : Ot g₀ V₀ V) (hs : S1 g₀ s) (hb 
       | exact e24s (by omega) (oSt2 hO hb (toBytesLE_length _ _) (by omega) (by decide)) hs rfl
   · have e4 : k = 4 := by omega
     subst e4
+    have fl : ∀ i < 1, Foot F.data (Addr.add (rsi + BitVec.ofNat 64 j + BitVec.ofNat 64 4) i) := fA2 hr (by omega)
+    have fs : ∀ i < 1, Foot Wl (Addr.add (rdi + BitVec.ofNat 64 4 + 9#64) i) := fA2 hw (by omega)
     wpx [W_24, o3, Bool.not_true, Bool.not_false, Bool.true_eq_false, Bool.false_eq_true, false_implies,
       implies_true]
     all_goals repeat' (first
-      | exact vX42 hj (by omega) (oSt2 hO hb (toBytesLE_length _ _) (by omega) (by decide)) hb hr hd hw
-      | exact vX42 hj (by omega) (oSt hO hb (toBytesLE_length _ _) (by omega) (by decide)) hb hr hd hw
+      | exact fl
+      | exact fs
+      | (refine vX42 hj (by omega) ?_ hb hr hd hw
+         exact oSt2 hO hb (toBytesLE_length _ _) (by omega) (by decide))
+      | (refine vX42 hj (by omega) ?_ hb hr hd hw
+         exact oSt hO hb (toBytesLE_length _ _) (by omega) (by decide))
       | exact fA2 hr (by omega)
       | exact fA2 hw (by omega)
       | exact fA hr (by omega)
