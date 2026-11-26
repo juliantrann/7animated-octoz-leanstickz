@@ -48,9 +48,8 @@ theorem bQ673 (prof : Profile) :
 /-- `[rip + 1362087]` at `682` is the threshold read at `550`. -/
 theorem thr682 (e : Addr) : Addr.add e 689 + BitVec.ofNat 64 1362087 = BitVec.ofNat 64 (thrA e) := by
   rw [thrA, BitVec.ofNat_toNat, BitVec.setWidth_eq]
-  apply BitVec.eq_of_toNat_eq
-  simp only [Addr.add, BitVec.toNat_add, BitVec.toNat_ofNat]
-  omega
+  show Addr.add (Addr.add e 689) 1362087 = Addr.add (Addr.add e 557) 1362219
+  rw [addr_add_add, addr_add_add] <;> rfl
 
 /-- `cmp rdx, [rip + 1362087]`, at `e + 682`. -/
 theorem bQ682 (prof : Profile) (e : Addr) : BlkA prof mc2 e 682 689 [Op.cmpma 64 2 (thrA e)] :=
