@@ -155,7 +155,8 @@ theorem fre_ok {fb : Addr} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBa
       hKZ hAZ hrZ vc_80 ?_
     rintro j' g fl V₃ ⟨rfl, rfl, hV₃⟩ W t₃ hKW hAW hrW hgW -
     subst V₃
-    refine c.s_jmp_x hKW hAW hin (lt_len (by decide)) hrW (jmp_86 _) hinI (tgt := 0) (by decide) (by decide) ?_
+    refine c.s_jmp_x hKW hAW hin (lt_len (by decide)) hrW (jmp_86 _) hinI (tgt := 0) (by rw [Ifr.ifr_length]; decide)
+      (by decide) ?_
     rintro Y₂ t₄ hK₂ hA₂ ⟨hr₂, hg₂⟩
     refine kf h0 Y₂ t₄ hK₂ hA₂ (by rw [hr₂, addr_add_zero]) ?_
     rw [hg₂, hgW, hgZ, hgY]

@@ -51,7 +51,7 @@ def o2d : List Op :=
 theorem o2_eq : o2 = o2a ++ (o2b ++ (o2c ++ o2d)) := rfl
 
 /-- `rdi + 4`, `rdi + 2`, `rdi + 1` as numbers, `rdi` 8 bytes from the top. -/
-theorem tn_add (p : Addr) (k : Nat) (hk : k ≤ 8) (hp : p.toNat + 8 ≤ 2 ^ 64) :
+theorem tn_add (p : Addr) (k : Nat) (hk : k < 8) (hp : p.toNat + 8 ≤ 2 ^ 64) :
     (p + BitVec.ofNat 64 k).toNat = p.toNat + k := by
   rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega
 
@@ -75,7 +75,7 @@ theorem pa (g : Gprs) (f : Rflags) (V : Addr → Byte) :
   all_goals first | exact ⟨_, _, rfl, rfl⟩ | exact ⟨_, _, rfl⟩
 
 theorem pb (g : Gprs) (f : Rflags) (V : Addr → Byte) (fw : ∀ i < 1, Foot Wl (Addr.add g.rdi i)) :
-    wp F Wl o2b (fun g' _ V' => ∃ a c d (b : BitVec 8), g' = { g with rax := a, rcx := c, rdx := d } ∧
+    wp F Wl o2b (fun g' _ V' => ∃ (a c d : BitVec 64) (b : BitVec 8), g' = { g with rax := a, rcx := c, rdx := d } ∧
       V' = Vst V g.rdi (toBytesLE b 1)) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at fw ⊢
@@ -84,7 +84,7 @@ theorem pb (g : Gprs) (f : Rflags) (V : Addr → Byte) (fw : ∀ i < 1, Foot Wl 
   all_goals first | exact ⟨_, _, _, _, rfl, rfl⟩ | rfl
 
 theorem pc (g : Gprs) (f : Rflags) (V : Addr → Byte) (fw : ∀ i < 1, Foot Wl (Addr.add (g.rdi + 2#64) i)) :
-    wp F Wl o2c (fun g' _ V' => ∃ d (b : BitVec 8), g' = { g with rdx := d } ∧
+    wp F Wl o2c (fun g' _ V' => ∃ (d : BitVec 64) (b : BitVec 8), g' = { g with rdx := d } ∧
       V' = Vst V (g.rdi + 2#64) (toBytesLE b 1)) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at fw ⊢
@@ -93,7 +93,7 @@ theorem pc (g : Gprs) (f : Rflags) (V : Addr → Byte) (fw : ∀ i < 1, Foot Wl 
   all_goals first | exact ⟨_, _, rfl, rfl⟩ | rfl
 
 theorem pd (g : Gprs) (f : Rflags) (V : Addr → Byte) (fw : ∀ i < 1, Foot Wl (Addr.add (g.rdi + 1#64) i)) :
-    wp F Wl o2d (fun g' _ V' => ∃ d (b : BitVec 8), g' = { g with rax := 0#64, rdx := d } ∧
+    wp F Wl o2d (fun g' _ V' => ∃ (d : BitVec 64) (b : BitVec 8), g' = { g with rax := 0#64, rdx := d } ∧
       V' = Vst V (g.rdi + 1#64) (toBytesLE b 1)) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at fw ⊢
@@ -128,6 +128,7 @@ def P0 (g₀ : Gprs) (V₀ : Addr → Byte) : Post := fun j g _ V =>
     (j = 86 ∧ ∃ c d w b0 b2 b1, g = { g₀ with rax := 0#64, rcx := c, rdx := d } ∧ V = props V₀ g₀.rdi w b0 b2 b1)
 
 /-- From the entry: the two exits to 96 and the stretch to 86. -/
+set_option maxHeartbeats 1000000 in
 theorem vc_0 {g : Gprs} {f : Rflags} {V : Addr → Byte}
     (fr1 : ∀ i < 4, Foot F.data (Addr.add (g.rsi + 1#64) i)) (fr0 : ∀ i < 1, Foot F.data (Addr.add g.rsi i))
     (fw4 : ∀ i < 4, Foot Wl (Addr.add (g.rdi + 4#64) i)) (fw0 : ∀ i < 1, Foot Wl (Addr.add g.rdi i))
@@ -138,8 +139,8 @@ theorem vc_0 {g : Gprs} {f : Rflags} {V : Addr → Byte}
   wpx [W_0, W_9, o0, o1, Op.ldzx]
   repeat' (first | exact fr1 | exact fr0 | exact fw4 | apply And.intro | intro _)
   all_goals first
-    | exact Or.inl ⟨rfl, _, _, rfl, Or.inl rfl⟩
-    | exact Or.inl ⟨rfl, _, _, rfl, Or.inr ⟨_, rfl⟩⟩
+    | exact Or.inl ⟨rfl, _, _, rfl, Or.inl (by with_reducible rfl)⟩
+    | exact Or.inl ⟨rfl, _, _, rfl, Or.inr ⟨_, by with_reducible rfl⟩⟩
     | exact vc_36 fw0 fw2 fw1 fun c d b0 b2 b1 _ => Or.inr ⟨rfl, c, d, _, b0, b2, b1, rfl, rfl⟩
 
 /-- `mov eax, 4`. -/
@@ -177,7 +178,7 @@ theorem lpd_ok (c : Seg prof F Wl L s₀ o) (hin : CodeIn L lpd_at lpd) (hK : Ke
   have e1 := tn_add X.cpu.gpr.rdi 1 (by decide) hpw
   have r4 : ∀ (V₀ : Addr → Byte) (w : BitVec 32), List.map (Vst V₀ (X.cpu.gpr.rdi + 4#64) (toBytesLE w 4))
       (byteAddrs X.cpu.gpr.rsp 8) = List.map V₀ (byteAddrs X.cpu.gpr.rsp 8) := fun V₀ w =>
-    rdK V₀ _ _ _ 4 _ e4 (by rw [toBytesLE_length]) hpw hsp hsep
+    rdK V₀ _ _ _ 4 _ e4 (by rw [toBytesLE_length] <;> decide) hpw hsp hsep
   refine (c_0 prof).run c hin (P0 X.cpu.gpr V) hK hA (by rw [addr_add_zero]; exact hrip)
     (vc_0 fr1 fr0 fw4 fw0 fw2 fw1) ?_
   rintro j' g fl V₁ (⟨rfl, a, d, rfl, hV₁⟩ | ⟨rfl, c', d, w, b0, b2, b1, rfl, rfl⟩) Y t₁ hKY hAY hrY hgY -
@@ -196,9 +197,9 @@ theorem lpd_ok (c : Seg prof F Wl L s₀ o) (hin : CodeIn L lpd_at lpd) (hK : Ke
   · have hspY : Y.cpu.gpr.rsp = X.cpu.gpr.rsp := by rw [hgY]
     refine c.s_ret hKY hAY hin (lt_len (by decide)) hrY (ret_86 _) (fun i hi => by rw [hspY]; exact hl i hi)
       hin₂ h₂ ?_ ?_
-    · rw [hspY, props, rdK _ _ _ _ 1 _ e1 (by rw [toBytesLE_length]) hpw hsp hsep,
-        rdK _ _ _ _ 2 _ e2 (by rw [toBytesLE_length]) hpw hsp hsep,
-        rdK _ _ _ _ 0 _ rfl (by rw [toBytesLE_length]) hpw hsp hsep, r4]
+    · rw [hspY, props, rdK _ _ _ _ 1 _ e1 (by rw [toBytesLE_length] <;> decide) hpw hsp hsep,
+        rdK _ _ _ _ 2 _ e2 (by rw [toBytesLE_length] <;> decide) hpw hsp hsep,
+        rdK _ _ _ _ 0 _ rfl (by rw [toBytesLE_length] <;> decide) hpw hsp hsep, r4]
       exact hra
     · rintro Z' t₃ hKZ' hAZ' ⟨hrZ', hgZ'⟩
       exact k Z' t₃ _ 0#64 c' d (Or.inr ⟨rfl, w, b0, b2, b1, rfl⟩) hKZ' hAZ' hrZ' (by rw [hgZ', hgY] <;> rfl)
