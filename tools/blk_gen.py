@@ -200,6 +200,19 @@ FNS = {
     "sri": dict(grp="Sri", cn="CArchiveExtractCallback::SetRatioInfo", a=0x5aa190, n=17, pos=True, stops=(14,),
                 tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `CArchiveExtractCallback::SetRatioInfo` (`ArchiveExtractCallback.cpp`; `objdump -d`)"),
+    # The thunk of `CArchiveExtractCallback::SetRatioInfo` for its `ICompressProgressInfo` base: `this` - 24, then a
+    # jump to `sri` (0x5aa190). Stop: the jump (8).
+    "srt": dict(grp="Srt", cn="CArchiveExtractCallback::SetRatioInfo (thunk)", a=0x5aa1b0, n=10, pos=True, stops=(8,),
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `SetRatioInfo` thunk (`objdump -d`)"),
+    # 7-Zip's CPP/7zip/UI/Common/OpenArchive.cpp `Archive_IsItem_Dir (arc, index, result)`: a tail jump to
+    # `Archive_GetItemBoolProp (arc, index, kpidIsDir, result)` (0x5d15e0). Stop: the jump (12).
+    "aid": dict(grp="Aid", cn="Archive_IsItem_Dir", a=0x5d1670, n=17, pos=True, stops=(12,),
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `Archive_IsItem_Dir` (`OpenArchive.cpp`; `objdump -d`)"),
+    # 7-Zip's CPP/7zip/UI/Console/OpenCallbackConsole.cpp `COpenCallbackConsole::Open_SetTotal (files, bytes)`: the
+    # totals into the percent printer when it is on, then `CheckBreak2 ()` (`NConsoleClose::g_BreakCounter` at
+    # 0x79f088). Stop: the `ret` (0x4f).
+    "ost": dict(grp="Ost", cn="COpenCallbackConsole::Open_SetTotal", a=0x5f65b0, n=0x7d, pos=True, stops=(0x4f,),
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `Open_SetTotal` (`OpenCallbackConsole.cpp`; `objdump -d`)"),
     # 7-Zip's C/LzmaDec.c `LzmaDec_FreeProbs (p, alloc)`: `ISzAlloc_Free (alloc, p->probs); p->probs = NULL`, the
     # free through `alloc->Free` (`call [rax + 8]`, 18; a cut after it). Stop: the `ret` (30).
     # 7-Zip's C/LzmaDec.c `LzmaDec_Free (p, alloc)`: `LzmaDec_FreeProbs (p, alloc)` (16), then
@@ -664,6 +677,11 @@ FNS = {
                 n=76, pos=True, stops=(0x47,), calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip's `UString::UString (const wchar_t *, unsigned, const wchar_t *, unsigned)` "
                     "(`CPP/Common/MyString.cpp`; `objdump -d`)"),
+    # `UString::UString (const wchar_t *s)`: the length `len` of `s` (the loop at 0x20; 0 by 0x50), `SetStartLen (len)`
+    # (0x37), a tail jump to `wmemcpy (_chars, s, len + 1)` (0x49).
+    "ucw": dict(grp="Ucw", cn="UString::UString(const wchar_t*)", a=0x44d480, n=90, pos=True, stops=(0x49,),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip's `UString::UString (const wchar_t *)` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
     # CPP/UI/Common/EnumDirItems.cpp `CDirItems::ScanProgress (dirPath)`: without a `Callback` (at 0xc0) 0, else a tail
     # jump to `Callback->ScanProgress (Stat, false, dirPath)` (`Stat` at 0x48), its vtable's second entry. Stops: the
     # `jmp rax` (0x26) and the `ret` (0x32).
@@ -678,6 +696,9 @@ FNS = {
     # CPP/Common/MyVector.h `CObjectVector<CRecordVector<unsigned>>::~CObjectVector ()`: from the last item down,
     # `delete [] item->_items` (the `call` at 0x32, when not null) and `delete item` (the `call` at 0x3f, 16 bytes),
     # then `delete [] _items` as a tail jump (0x5b) when not null, else the `ret` (0x64).
+    "msi": dict(grp="Msi", cn="CMultiStreams::Init", a=0x5b3260, n=125, pos=True, stops=(0x7c,), calls=True,
+                tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CMultiStreams::Init` (`CPP/7zip/Archive/Common/MultiStream.cpp`; `objdump -d`)"),
     "ocv": dict(grp="Ocv", cn="CObjectVector<CRecordVector<unsigned>>::~CObjectVector", a=0x454600, n=101, pos=True,
                 stops=(0x5b, 0x64), calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `CObjectVector<CRecordVector<unsigned>>::~CObjectVector` (`CPP/Common/MyVector.h`; "
