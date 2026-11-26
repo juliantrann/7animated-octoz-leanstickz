@@ -295,6 +295,7 @@ import FV7z.Start.TextP
 import FV7z.Start.WitnessProf
 import FV7z.Start.WitnessOracle
 import FV7z.Start.WitnessExec
+import FV7z.Start.Witness
 import FV7z.Statement.Examples
 import FV7z.Lemmas.BlkOps7
 import FV7z.Gts.Holds
