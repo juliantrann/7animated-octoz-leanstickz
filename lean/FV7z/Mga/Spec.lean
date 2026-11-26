@@ -1,4 +1,5 @@
 import FV7z.Mga.Vc
+import FV7z.Strlen.Entry
 /-!
 # `_int_memalign`: the arithmetic of the aligned chunk (PLAN.md §M, M1)
 
@@ -29,7 +30,7 @@ theorem neg_pow {al : Addr} {k : Nat} (hk : k < 64) (ha : al.toNat = 2 ^ k) :
   have h1 : 0 < 2 ^ k := Nat.two_pow_pos k
   have h2 : 2 ^ k < 2 ^ 64 := Nat.pow_lt_pow_right (by decide) hk
   have h3 : 2 ^ (64 - k) * 2 ^ k = 2 ^ 64 := by rw [← Nat.pow_add, Nat.sub_add_cancel (by omega)]
-  rw [BitVec.toNat_sub, ha, Nat.shiftLeft_eq, Nat.sub_mul, h3, Nat.one_mul, BitVec.toNat_zero, Nat.add_zero,
+  rw [BitVec.toNat_sub, ha, Nat.shiftLeft_eq, Nat.sub_mul, h3, Nat.one_mul, show (0 : Addr).toNat = 0 from rfl, Nat.add_zero,
     Nat.mod_eq_of_lt (by omega)]
 
 /-- `x & -alignment` rounds down. -/
@@ -89,7 +90,7 @@ theorem np_ok {m al : Addr} {k : Nat} (hk : k < 64) (h4 : 4 ≤ k) (ha : al.toNa
     omega
   unfold np
   by_cases hc : (brk m al - (m + 18446744073709551600#64)).toNat ≤ 31
-  · rw [if_pos hc]
+  · rw [ite_cond_eq_true _ _ (eq_true hc)]
     have e : (brk m al + al).toNat = A - 16 + 2 ^ k := by
       rw [BitVec.toNat_add, hb, ha]
       omega
@@ -97,7 +98,7 @@ theorem np_ok {m al : Addr} {k : Nat} (hk : k < 64) (h4 : 4 ≤ k) (ha : al.toNa
     · rw [BitVec.toNat_sub, e, hp]
       omega
     · rw [e, show A - 16 + 2 ^ k + 16 = A + 2 ^ k by omega, Nat.add_mod_right, hA]
-  · rw [if_neg hc]
+  · rw [ite_cond_eq_false _ _ (eq_false hc)]
     refine ⟨A - m.toNat, by rw [hb]; omega, hd, by omega, by omega, by omega, ?_⟩
     rw [hb, show A - 16 + 16 = A by omega, hA]
 
