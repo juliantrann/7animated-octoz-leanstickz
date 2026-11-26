@@ -63,7 +63,7 @@ theorem sw8 (b : BitVec 8) : (b.setWidth 32).setWidth 8 = b := by
   apply BitVec.eq_of_toNat_eq
   have := b.isLt
   simp only [BitVec.toNat_setWidth, Nat.reducePow] at this ⊢
-  rw [Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt this]
+  omega
 
 theorem adv (a : Addr) (k : Nat) : a + BitVec.ofNat 64 k + 1#64 = a + BitVec.ofNat 64 (k + 1) := by
   rw [BitVec.add_assoc, BitVec.ofNat_add]
@@ -86,7 +86,7 @@ theorem vc_0e {g : Gprs} {f : Rflags} {V : Addr → Byte} (fa : ∀ j < 1, Foot 
     W_0 F Wl (fun j' g' _ V' => j' = 90 ∧ g' = { g with rax := 0 } ∧ V' = V) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only [rb] at fa h0 ⊢
-  have hz : (ofBytesLE 8 ((byteAddrs rdi 1).map V) == 0#8) = true := by rw [h0]; rfl
+  have hz : (ofBytesLE 8 ((byteAddrs rdi 1).map V) == 0) = true := by rw [h0]; rfl
   wpx [W_0, W_11, W_33, W_88, o0, o1, o2, o6, sw8, BitVec.and_self, hz, BitVec.xor_self, BitVec.reduceSetWidth,
     Bool.true_eq_false, Bool.false_eq_true, false_implies, implies_true, Bool.not_true, Bool.not_false]
   all_goals repeat' (first | exact fa | exact rfl | exact trivial | apply And.intro | intro _)
@@ -95,12 +95,13 @@ theorem vc_0e {g : Gprs} {f : Rflags} {V : Addr → Byte} (fa : ∀ j < 1, Foot 
 theorem vc_0a {g : Gprs} {f : Rflags} {V : Addr → Byte} (fa : ∀ j < 1, Foot F.data (Addr.add g.rdi j))
     (fb : ∀ j < 1, Foot F.data (Addr.add (g.rdi + 1#64) j)) (h0 : rb V g.rdi ≠ 0) (h1 : rb V (g.rdi + 1#64) = 0) :
     W_0 F Wl (fun j' g' _ V' => j' = 80 ∧
-      g' = { g with rax := zx (rb V g.rdi), rdx := zx (rb V (g.rdi + 1#64)), rcx := g.rdi + 1#64,
+      g' = { g with
+        rax := zx (rb V g.rdi), rdx := zx (rb V (g.rdi + 1#64)), rcx := g.rdi + 1#64,
         rsi := 18446744069683019775#64 } ∧ V' = V) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only [rb] at fa fb h0 h1 ⊢
-  have hz0 : (ofBytesLE 8 ((byteAddrs rdi 1).map V) == 0#8) = false := beq_eq_false_iff_ne.2 h0
-  have hz1 : (ofBytesLE 8 ((byteAddrs (rdi + 1#64) 1).map V) == 0#8) = true := by rw [h1]; rfl
+  have hz0 : (ofBytesLE 8 ((byteAddrs rdi 1).map V) == 0) = false := beq_eq_false_iff_ne.2 h0
+  have hz1 : (ofBytesLE 8 ((byteAddrs (rdi + 1#64) 1).map V) == 0) = true := by rw [h1]; rfl
   wpx [W_0, W_11, W_33, W_88, o0, o1, o2, o6, sw8, BitVec.and_self, hz0, hz1, BitVec.xor_self,
     BitVec.reduceSetWidth, Bool.true_eq_false, Bool.false_eq_true, false_implies, implies_true, Bool.not_true,
     Bool.not_false]
@@ -110,12 +111,13 @@ theorem vc_0a {g : Gprs} {f : Rflags} {V : Addr → Byte} (fa : ∀ j < 1, Foot 
 theorem vc_0b {g : Gprs} {f : Rflags} {V : Addr → Byte} (fa : ∀ j < 1, Foot F.data (Addr.add g.rdi j))
     (fb : ∀ j < 1, Foot F.data (Addr.add (g.rdi + 1#64) j)) (h0 : rb V g.rdi ≠ 0) (h1 : rb V (g.rdi + 1#64) ≠ 0) :
     W_0 F Wl (fun j' g' _ V' => j' = 40 ∧
-      g' = { g with rax := zx (rb V g.rdi), rdx := zx (rb V (g.rdi + 1#64)), rcx := g.rdi + 1#64,
+      g' = { g with
+        rax := zx (rb V g.rdi), rdx := zx (rb V (g.rdi + 1#64)), rcx := g.rdi + 1#64,
         rsi := 18446744069683019775#64 } ∧ V' = V) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only [rb] at fa fb h0 h1 ⊢
-  have hz0 : (ofBytesLE 8 ((byteAddrs rdi 1).map V) == 0#8) = false := beq_eq_false_iff_ne.2 h0
-  have hz1 : (ofBytesLE 8 ((byteAddrs (rdi + 1#64) 1).map V) == 0#8) = false := beq_eq_false_iff_ne.2 h1
+  have hz0 : (ofBytesLE 8 ((byteAddrs rdi 1).map V) == 0) = false := beq_eq_false_iff_ne.2 h0
+  have hz1 : (ofBytesLE 8 ((byteAddrs (rdi + 1#64) 1).map V) == 0) = false := beq_eq_false_iff_ne.2 h1
   wpx [W_0, W_11, W_33, W_88, o0, o1, o2, o6, sw8, BitVec.and_self, hz0, hz1, BitVec.xor_self,
     BitVec.reduceSetWidth, Bool.true_eq_false, Bool.false_eq_true, false_implies, implies_true, Bool.not_true,
     Bool.not_false]
@@ -152,7 +154,7 @@ theorem vc_72c {g : Gprs} {f : Rflags} {V : Addr → Byte} (fa : ∀ j < 1, Foot
     W_72 F Wl (fun j' g' _ V' => j' = 40 ∧ g' = { g with rdx := zx (rb V g.rcx) } ∧ V' = V) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only [rb] at fa h ⊢
-  have hz : (ofBytesLE 8 ((byteAddrs rcx 1).map V) == 0#8) = false := beq_eq_false_iff_ne.2 h
+  have hz : (ofBytesLE 8 ((byteAddrs rcx 1).map V) == 0) = false := beq_eq_false_iff_ne.2 h
   wpx [W_72, o5, sw8, BitVec.and_self, hz, Bool.true_eq_false, Bool.false_eq_true, false_implies, implies_true,
     Bool.not_true, Bool.not_false]
   all_goals repeat' (first | exact fa | exact rfl | exact trivial | apply And.intro | intro _)
@@ -163,7 +165,7 @@ theorem vc_72e {g : Gprs} {f : Rflags} {V : Addr → Byte} (fa : ∀ j < 1, Foot
     W_72 F Wl (fun j' g' _ V' => j' = 79 ∧ g' = { g with rdx := zx (rb V g.rcx) } ∧ V' = V) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only [rb] at fa h ⊢
-  have hz : (ofBytesLE 8 ((byteAddrs rcx 1).map V) == 0#8) = true := by rw [h]; rfl
+  have hz : (ofBytesLE 8 ((byteAddrs rcx 1).map V) == 0) = true := by rw [h]; rfl
   wpx [W_72, o5, sw8, BitVec.and_self, hz, Bool.true_eq_false, Bool.false_eq_true, false_implies, implies_true,
     Bool.not_true, Bool.not_false]
   all_goals repeat' (first | exact fa | exact rfl | exact trivial | apply And.intro | intro _)
@@ -175,7 +177,8 @@ variable {prof : Profile} {L : List (Addr × List Byte)} {s₀ : State} {o : Ora
 
 /-- The registers at 40 after `kk` bytes, at 79 after all `n`. -/
 abbrev Gk (g₀ : Gprs) (V : Addr → Byte) (a : Addr) (kk : Nat) : Gprs :=
-  { g₀ with rax := hashN V a kk, rcx := a + BitVec.ofNat 64 kk, rdx := zx (rb V (a + BitVec.ofNat 64 kk)),
+  { g₀ with
+    rax := hashN V a kk, rcx := a + BitVec.ofNat 64 kk, rdx := zx (rb V (a + BitVec.ofNat 64 kk)),
     rsi := 18446744069683019775#64 }
 
 /-- From 40 with `kk` bytes hashed and `m + 1` left (the `kk`-th not 0): to 79 with the `n` bytes hashed. -/
@@ -204,7 +207,6 @@ theorem loop (c : Seg prof F Wl L s₀ o) (hin : CodeIn L hsh_at hsh) {V : Addr 
     refine k Z t₂ hKZ hAZ hrZ ?_
     rw [hgZ, hg₂, e, hgY, hg, hX, ← hn]
     dsimp only [Gk]
-    rw [adv]
     rfl
   | succ m ih =>
     intro kk hkk X t hK hA hrip hX
@@ -221,7 +223,6 @@ theorem loop (c : Seg prof F Wl L s₀ o) (hin : CodeIn L hsh_at hsh) {V : Addr 
     refine ih (kk + 1) (by omega) Z t₂ hKZ hAZ hrZ ?_
     rw [hgZ, hg₂, e, hgY, hg, hX]
     dsimp only [Gk]
-    rw [adv]
     rfl
 
 /-- The `ret`s: from `Y` at a `ret` with the registers `G` (`rsp` as at the entry) to the return address. -/
@@ -250,8 +251,9 @@ theorem hsh_ok (c : Seg prof F Wl L s₀ o) (hin : CodeIn L hsh_at hsh) {V : Add
     {e₂ : Addr} {code₂ : List Byte} (hin₂ : CodeIn L e₂ code₂) {j₂ : Nat} (h₂ : j₂ < code₂.length)
     (hra : ofBytesLE 64 ((byteAddrs X.cpu.gpr.rsp 8).map V) = e₂.add j₂)
     (k : ∀ (Z : State) (t' : Nat), KeptW Wl s₀ Z → Agree F Z.proc.mm.mem V → Z.cpu.rip = e₂.add j₂ →
-      (∃ cx dx si, Z.cpu.gpr = { X.cpu.gpr with rax := hashN V X.cpu.gpr.rdi n, rcx := cx, rdx := dx,
-        rsi := si }.set 4 (X.cpu.gpr.rsp + 8)) → GoG prof L o gev gP gE Z t') :
+      (∃ cx dx si, Z.cpu.gpr = Gprs.set { X.cpu.gpr with
+        rax := hashN V X.cpu.gpr.rdi n, rcx := cx, rdx := dx, rsi := si } 4 (X.cpu.gpr.rsp + 8)) →
+      GoG prof L o gev gP gE Z t') :
     GoG prof L o gev gP gE X t := by
   have f0 : ∀ j < 1, Foot F.data (Addr.add X.cpu.gpr.rdi j) := ft1 (by rw [← a0 X.cpu.gpr.rdi]; exact fa 0 (by omega))
   have hrip' : X.cpu.rip = hsh_at.add 0 := by rw [addr_add_zero]; exact hrip

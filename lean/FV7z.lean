@@ -387,6 +387,9 @@ import FV7z.Hsh.Holds
 import FV7z.Imb.Blocks
 import FV7z.Imb.Cuts
 import FV7z.Imb.Holds
+import FV7z.Sfs.Blocks
+import FV7z.Sfs.Cuts
+import FV7z.Sfs.Holds
 import FV7z.Fno.Holds
 import FV7z.Pmd.Holds
 import FV7z.Sgw.Holds
