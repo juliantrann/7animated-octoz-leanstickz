@@ -202,6 +202,11 @@ FNS = {
     # 7-Zip's C/LzmaDec.c `LzmaDec_AllocateProbs2 (p, propNew, alloc)` (`lc` = esi, `lp` = edx): `numProbs` = 0x7c0 +
     # (0x300 << (lc + lp)); the same `probs` kept (0x26 to 0x57), else `LzmaDec_FreeProbs` (0x2e), `alloc->Alloc`
     # (0x3b), SZ_ERROR_MEM on NULL (0x60). Stop: the `ret` (0x5b).
+    # 7-Zip's C/LzmaDec.c `LzmaDec_DecodeReal2 (p, limit, bufLimit)`: with `checkDicSize` (the 4 bytes at `p + 0x44`)
+    # 0, `limit` cut to `dicPos + (dicSize - processedPos)`; `LZMA_DECODE_REAL` (call, 40, to `0x6d4040`); then
+    # `checkDicSize` = `dicSize` once `processedPos` reaches it. Stop: the `ret` (64).
+    "dr2": dict(grp="Dr2", cn="LzmaDec_DecodeReal2", a=0x42b5b0, n=65, pos=True, stops=(64,), calls=True,
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `LzmaDec_DecodeReal2` (`C/LzmaDec.c`; `objdump -d`)"),
     "lap": dict(grp="Lap", cn="LzmaDec_AllocateProbs2", a=0x42be00, n=103, pos=True, stops=(0x5b,), calls=True,
                 tag="PLAN.md §M, M1", src="7-Zip 26.06's `LzmaDec_AllocateProbs2` (`C/LzmaDec.c`; `objdump -d`)"),
     "lfp": dict(grp="Lfp", cn="LzmaDec_FreeProbs", a=0x42bde0, n=31, pos=True, stops=(30,), calls=True,
@@ -538,6 +543,22 @@ FNS = {
     # `UString::SetStartLen (len)`: as `AString`'s, `new wchar_t[len + 1]` (the `call` at 0x21). Stop: the `ret` (0x35).
     "usl": dict(grp="Usl", cn="UString::SetStartLen", a=0x44d060, n=54, pos=True, stops=(0x35,), calls=True,
                 tag="PLAN.md §M, M1", src="7-Zip's `UString::SetStartLen` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
+    # `UString::UString (const UString &s)`: `SetStartLen (s._len)` (the `call` at 0x13 to `usl`), then a tail jump
+    # (0x2b) to `wmemcpy (_chars, s._chars, s._len + 1)`.
+    "ucc": dict(grp="Ucc", cn="UString::UString(const UString&)", a=0x44d5d0, n=48, pos=True, stops=(0x2b,),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip's `UString::UString (const UString &)` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
+    # `UString::ReAlloc (newLimit)`: `newBuf = new wchar_t[newLimit + 1]` (the `call` at 0x18), `wmemcpy (newBuf,
+    # _chars, _len + 1)` (0x2c), `delete [] _chars` unless null (0x39), `_chars = newBuf`, `_limit = newLimit`. Stop:
+    # the `ret` (0x48).
+    "ura": dict(grp="Ura", cn="UString::ReAlloc", a=0x44cfc0, n=73, pos=True, stops=(0x48,), calls=True,
+                tag="PLAN.md §M, M1", src="7-Zip's `UString::ReAlloc` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
+    # `UString::ReAlloc2 (newLimit)`: above `0x3ffffffe` a jump to the throw stub (0xe, `0x4013c2`, by hand); else
+    # `newBuf = new wchar_t[newLimit + 1]` (0x23), `newBuf[0] = 0`, `delete [] _chars` unless null (0x39), `_chars =
+    # newBuf`, `_limit = newLimit`, `_len = 0`. Stop: the `ret` (0x4f).
+    "ur2": dict(grp="Ur2", cn="UString::ReAlloc2", a=0x44d010, n=80, pos=True, stops=(0x4f,), calls=True,
+                hand=(0xe,),
+                tag="PLAN.md §M, M1", src="7-Zip's `UString::ReAlloc2` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
     # CPP/UI/Common/EnumDirItems.cpp `CDirItems::ScanProgress (dirPath)`: without a `Callback` (at 0xc0) 0, else a tail
     # jump to `Callback->ScanProgress (Stat, false, dirPath)` (`Stat` at 0x48), its vtable's second entry. Stops: the
     # `jmp rax` (0x26) and the `ret` (0x32).
