@@ -416,6 +416,12 @@ FNS = {
     # `__bsd_signal.part.0` (`Bsg`).
     "bsn": dict(grp="Bsn", cn="__bsd_signal", a=0x6225b0, n=54, pos=True, fs=True, stops=(0x1a, 0x35), calls=True,
                 tag="PLAN.md §M, M1", src="glibc 2.31's `__bsd_signal` (`signal/signal.c`; `objdump -d`)"),
+    # 7-Zip 26.06's CPP/7zip/UI/Common/EnumDirItems.cpp `CDirItems::ReserveDown ()`: `CRecordVector::ReserveDown` of
+    # `Prefixes` (8-byte items, at 0), `PhyParents` (4, 0x10), `LogParents` (4, 0x20) and `Items` (8, 0x30), inlined:
+    # `operator new`, `memcpy` and `operator delete` (the calls). Stop: the `ret` (0x99).
+    "rdn": dict(grp="Rdn", cn="CDirItems::ReserveDown", a=0x5c03e0, n=439, pos=True, stops=(0x99,), calls=True,
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `CDirItems::ReserveDown` (`CPP/7zip/UI/Common/EnumDirItems.cpp`; "
+                    "`objdump -d`)"),
     "cld": dict(grp="Cld", cn="__closedir", a=0x663860, n=45, pos=True, fs=True, stops=(0x14, 0x2c), calls=True,
                 tag="PLAN.md §M, M1", src="glibc 2.31's `__closedir` (`sysdeps/posix/closedir.c`; `objdump -d`)"),
     # 7-Zip 26.06's CPP/Windows/FileFind.cpp `MY_lstat (path, st, followLink)`: the `stat` zeroed (`rep stosq`, 0xd,
