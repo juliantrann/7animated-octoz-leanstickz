@@ -131,6 +131,7 @@ theorem vc_0 {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (hsp : 336 
     | exact fun i hi => e16 ▸ Sga.frm_ft hst (d := 312) (by decide) i hi
     | apply And.intro
     | refine ⟨_, rfl, ?_⟩
+    | ((refine ⟨BitVec.setWidth 64 (BitVec.setWidth 32 rdi), ?_, by bv_omega⟩; rw [BitVec.xor_self]; try rfl); done)
     | refine ⟨fun a ha => ?_, ?_, ?_⟩
     | intro _)
   all_goals first
