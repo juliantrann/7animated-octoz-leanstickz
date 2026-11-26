@@ -365,6 +365,11 @@ FNS = {
     # (0x58)` (the `call`, 0xd, to the body at 0x602970), then the fields and the two vtables stored (to the `ret`).
     "cra": dict(grp="Cra", cn="CreateArc", a=0x49e9c0, n=0x4b, pos=True, stops=(0x4a,), calls=True,
                 tag="PLAN.md §M, M1", src="7-Zip 26.06's lzma `CreateArc` (`CPP/7zip/Archive/LzmaHandler.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 `NWindows::NFile::NFind::CFileInfoBase::SetFrom_stat (st)` (`CPP/Windows/FileFind.cpp`): the size
+    # (0 for a directory: the `je` at 0x17 over the load of `st_size`), the three times through `xmm0..2`, the mode,
+    # the device and inode, `nlink`, `uid`, `gid`, `rdev`; to the `ret` (0x69).
+    "sfst": dict(grp="Sfst", cn="SetFrom_stat", a=0x4559d0, n=0x6a, pos=True, stops=(0x69,),
+                 tag="PLAN.md §M, M1", src="7-Zip 26.06's `CFileInfoBase::SetFrom_stat` (`CPP/Windows/FileFind.cpp`; `objdump -d`)"),
     "sfs": dict(grp="Sfs", cn="SysFreeString", a=0x5a00c0, n=25, pos=True, stops=(0xd, 0x18),
                 tag="PLAN.md §M, M1", src="7-Zip 26.06's `SysFreeString` (`CPP/Common/MyWindows.cpp`; `objdump -d`)"),
     # 7-Zip's CPP/Common/Wildcard.cpp `DoesNameContainWildcard (const UString &)`: the `wchar_t`s (4 bytes, at

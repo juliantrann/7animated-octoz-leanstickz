@@ -1,6 +1,3 @@
-import FV7z.Cra.Holds
-import FV7z.Nst
+import FV7z.Sfst.Holds
 open FV7z
-#print axioms FV7z.Cra.cra_ok
-#print axioms FV7z.Nst.nst_ok
-#print axioms FV7z.Onw.onw_hp
+#print axioms FV7z.Sfst.sfst_ok
