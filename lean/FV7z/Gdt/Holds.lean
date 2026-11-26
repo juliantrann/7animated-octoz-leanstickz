@@ -56,7 +56,7 @@ theorem rd4_rl (W : Addr → Byte) (a : Addr) (r : Rlimit) (ha : a.toNat + 16 �
     simp only [List.length_append, List.length_drop, toBytesLE_length]
   rw [hs, Cxa.Vst_append, toBytesLE_length,
     Tun.rd_Vst _ (Addr.add a 4) _ a 4 (by rw [h4, hl]; omega) (by omega) (Or.inr (by omega)),
-    Tun.rd_Vst_self _ a _ (toBytesLE_length _ _) (by omega), ofBytesLE_toBytesLE rfl]
+    Tun.rd_Vst_self _ a _ (toBytesLE_length _ _) (by omega), ofBytesLE_toBytesLE (w := 32) (n := 4) rfl]
 
 /-! ## The frame -/
 
@@ -213,7 +213,7 @@ guard apart from the frame: the run goes on with the return address popped, the 
 entry, `rax` = the start's `RLIMIT_NOFILE` soft limit's low 32 bits, the bytes `dVf` (the frame), after
 `prlimit64 (0, RLIMIT_NOFILE, 0, rsp - 40)`. -/
 theorem gdt_ok {fb : Addr} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (hin : CodeIn L gdt_at gdt)
-    (hing : CodeIn L grl_at grl) (hK : KeptW Wl s₀ X) (hA : Agree F X.proc.mm.mem V) (hrip : X.cpu.rip = gdt_at)
+    (hing : CodeIn L Grl.grl_at Grl.grl) (hK : KeptW Wl s₀ X) (hA : Agree F X.proc.mm.mem V) (hrip : X.cpu.rip = gdt_at)
     (h48 : 48 ≤ X.cpu.gpr.rsp.toNat) (hup : X.cpu.gpr.rsp.toNat + 8 ≤ userPtrMax prof.feat)
     (hfw : ∀ i < 48, Foot Wl (Addr.add (X.cpu.gpr.rsp - 48#64) i))
     (hfd : ∀ i < 48, Foot F.data (Addr.add (X.cpu.gpr.rsp - 48#64) i))

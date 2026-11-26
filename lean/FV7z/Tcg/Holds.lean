@@ -92,9 +92,13 @@ theorem vc_42_nz {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (he : �
   all_goals first
   | exact fun h => absurd h (by decide)
   | exact ⟨fun h => absurd h (by decide), fun _ => ⟨fun _ => ⟨rfl, rfl⟩, fun h => absurd h (by decide)⟩⟩
-  | repeat' (first | rfl | assumption | (intro h; exact absurd h (by decide)) |
-      (intro h; exact absurd h (by simp only [BitVec.and_self, hnz', Bool.not_false] <;> decide)) |
-      constructor | intro _)
+  | repeat' (first
+      | rfl
+      | assumption
+      | (intro h; exact absurd h (by decide))
+      | (intro h; exact absurd h (by simp only [BitVec.and_self, hnz', Bool.not_false] <;> decide))
+      | constructor
+      | intro _)
 
 /-- The check of the stack guard, to the `ret`: `eax` is `r9d`, the frame dropped. -/
 theorem vc_143 {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte}
