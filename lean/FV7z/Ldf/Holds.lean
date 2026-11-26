@@ -98,8 +98,11 @@ theorem vc_31 {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post}
     (hw : ∀ i < 8, Foot Wl (Addr.add (g.rbx + 24#64) i))
     (hl1 : ∀ i < 8, Foot F.data (Addr.add (g.rsp + 8#64) i))
     (hl2 : ∀ i < 8, Foot F.data (Addr.add (g.rsp + 8#64 + 8) i))
-    (h : ∀ fl, Q 45 { g with rbx := rdq(Vst V (g.rbx + 24#64) (toBytesLE 0#64 8), g.rsp + 8#64),
-      rbp := rdq(Vst V (g.rbx + 24#64) (toBytesLE 0#64 8), g.rsp + 8#64 + 8), rsp := g.rsp + 8#64 + 8 + 8 } fl
+    (h : ∀ fl, Q 45
+      { g with
+        rbx := rdq(Vst V (g.rbx + 24#64) (toBytesLE 0#64 8), g.rsp + 8#64),
+        rbp := rdq(Vst V (g.rbx + 24#64) (toBytesLE 0#64 8), g.rsp + 8#64 + 8),
+        rsp := g.rsp + 8#64 + 8 + 8 } fl
       (Vst V (g.rbx + 24#64) (toBytesLE 0#64 8))) :
     W_31 F Wl Q g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
@@ -152,7 +155,8 @@ theorem ldf_ok {Pc1 Pc2 : State → (Addr → Byte) → Prop} (c : Seg prof F Wl
       Agree F Y.proc.mm.mem (Vst (Vst V' (X.cpu.gpr.rdi + 8#64) (toBytesLE 0#64 8)) (X.cpu.gpr.rsp - 32)
         (toBytesLE (ldf_at.add 31) 8)) →
       Y.cpu.rip = eF₂ →
-      Y.cpu.gpr = { Zc.cpu.gpr with rbx := X.cpu.gpr.rdi, rsp := X.cpu.gpr.rsp - 32,
+      Y.cpu.gpr = { Zc.cpu.gpr with
+        rbx := X.cpu.gpr.rdi, rsp := X.cpu.gpr.rsp - 32,
         rsi := rdq(Vst V' (X.cpu.gpr.rdi + 8#64) (toBytesLE 0#64 8), X.cpu.gpr.rdi + 24#64),
         rdi := X.cpu.gpr.rsi } →
       (∀ (Z : State) (V'' : Addr → Byte) (t'' : Nat), KeptW Wl s₀ Z → Agree F Z.proc.mm.mem V'' →
@@ -237,7 +241,8 @@ theorem ldf_ok {Pc1 Pc2 : State → (Addr → Byte) → Prop} (c : Seg prof F Wl
     have hz's : Z'.cpu.gpr.rsp = X.cpu.gpr.rsp - 24 := by rw [hgZ', hs₂, p32_8]
     have hz'p : Z'.cpu.gpr.rbp = X.cpu.gpr.rsi := by rw [hgZ']; exact hzp
     refine (c_21 prof).run c hin (fun j' g' _ V'' => j' = 28 ∧
-        g' = { Z'.cpu.gpr with rsi := rdq(Vst V' (X.cpu.gpr.rdi + 8#64) (toBytesLE 0#64 8), X.cpu.gpr.rdi + 24#64),
+        g' = { Z'.cpu.gpr with
+          rsi := rdq(Vst V' (X.cpu.gpr.rdi + 8#64) (toBytesLE 0#64 8), X.cpu.gpr.rdi + 24#64),
           rdi := X.cpu.gpr.rsi } ∧ V'' = Vst V' (X.cpu.gpr.rdi + 8#64) (toBytesLE 0#64 8)) hKZ' hAZ' hrZ'
       (vc_21 (by rw [hz'b]; exact fun i hi => c.hws _ (fw24 i hi)) fun _ => ⟨rfl, by rw [hz'b, hz'p], rfl⟩) ?_
     rintro j' g fl V₂ ⟨rfl, rfl, rfl⟩ U t₄ hKU hAU hrU hgU -
