@@ -227,7 +227,8 @@ theorem setup_tls {lim : Nat} {b fsb : Addr} {ks : Kst} {Pm : (Addr → Byte) �
   have hsi₅ : Y₅.cpu.gpr.rsi = 7829360#64 := by rw [hg₅]; exact hsi₄
   have hdx₅ : Y₅.cpu.gpr.rdx = 40#64 := by rw [hg₅]; exact hdx₄
   have hsp₅ : Y₅.cpu.gpr.rsp = q - 8 := by rw [hg₅]; rfl
-  refine hcpy c₁ (fun a h1 h2 => c₁.hws _ (foot_append_iff.2 (.inr (hgl a (by omega) (by omega))))) hK₅ hA₅ hr₅
+  refine hcpy c₁ ⟨fun a h1 h2 => c₁.hws _ (foot_append_iff.2 (.inr (hgl a (by omega) (by omega)))),
+    fun a h1 h2 => c₁.hws _ (foot_append_iff.2 (.inr (hgl a (by omega) (by omega))))⟩ hK₅ hA₅ hr₅
     (hPm _ h5) hin (j := 304) (lt_len (by decide)) ?_ (fun i hi => ?_) (fun i hi => ?_)
     (fun i hi => ?_) (by rw [hsi₅, hdx₅]; decide) (by rw [hdi₅, hdx₅]; bv_omega)
     (by rw [hsi₅, hdi₅, hdx₅]; left; bv_omega) (by rw [hdi₅, hdx₅, hsp₅]; left; bv_omega) (hK₅.df.trans hB₁.df)

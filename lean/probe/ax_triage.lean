@@ -1,4 +1,4 @@
-import FV7z.Memcpy.Entry
+import FV7z.Memcpy.EntryE
 open FV7z
-#print axioms FV7z.Memcpy.sse2At
-#print axioms FV7z.Memcpy.psse2At
+#print axioms FV7z.Memcpy.sse2eAt
+#print axioms FV7z.Memcpy.psse2eAt
