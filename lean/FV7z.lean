@@ -312,6 +312,10 @@ import FV7z.Lemmas.SysLseek
 import FV7z.Lseek.Blocks
 import FV7z.Lseek.Cuts
 import FV7z.Lseek.Holds
+import FV7z.Lemmas.SysDents
+import FV7z.Gdn.Blocks
+import FV7z.Gdn.Cuts
+import FV7z.Gdn.Holds
 import FV7z.Fsk.Blocks
 import FV7z.Fsk.Cuts
 import FV7z.Fsk.Holds
@@ -374,6 +378,9 @@ import FV7z.Dmw.Holds
 import FV7z.Gps.Holds
 import FV7z.Pcp.Holds
 import FV7z.Pco.Holds
+import FV7z.Sdp.Blocks
+import FV7z.Sdp.Cuts
+import FV7z.Sdp.Holds
 import FV7z.Fno.Holds
 import FV7z.Pmd.Holds
 import FV7z.Sgw.Holds
@@ -384,6 +391,10 @@ import FV7z.Lemmas.SysWrite
 import FV7z.Write.Blocks
 import FV7z.Write.Cuts
 import FV7z.Write.Holds
+import FV7z.Lemmas.SysOpen
+import FV7z.Onc.Blocks
+import FV7z.Onc.Cuts
+import FV7z.Onc.Holds
 import FV7z.Statement.Examples
 import FV7z.Lemmas.BlkOps7
 import FV7z.Gts.Holds
