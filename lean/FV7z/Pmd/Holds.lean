@@ -35,8 +35,8 @@ variable {F : Footprint} {Wl : List Rgn}
 
 /-- From the entry to the `ret`, the mutex busy: `EBUSY`. -/
 theorem vc_busy {g : Gprs} {f : Rflags} {V : Addr → Byte}
-    (fk : ∀ i < 4, Foot F.data (Addr.add (Addr.add g.rdi 16) i))
-    (fn : ∀ i < 4, Foot F.data (Addr.add (Addr.add g.rdi 12) i)) (h : Busy V g.rdi) :
+    (fk : ∀ i < 4, Foot F.data (Addr.add (g.rdi + 16#64) i))
+    (fn : ∀ i < 4, Foot F.data (Addr.add (g.rdi + 12#64) i)) (h : Busy V g.rdi) :
     W_0 F Wl (fun j' g' _ V' => j' = 33 ∧ g' = { g with rax := 16#64, rdx := BitVec.setWidth 64 (nu V g.rdi) } ∧
       V' = V) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
@@ -56,8 +56,8 @@ theorem vc_busy {g : Gprs} {f : Rflags} {V : Addr → Byte}
 
 /-- From the entry to the store, the mutex not busy. -/
 theorem vc_free {g : Gprs} {f : Rflags} {V : Addr → Byte}
-    (fk : ∀ i < 4, Foot F.data (Addr.add (Addr.add g.rdi 16) i))
-    (fn : ∀ i < 4, Foot F.data (Addr.add (Addr.add g.rdi 12) i)) (h : ¬ Busy V g.rdi) :
+    (fk : ∀ i < 4, Foot F.data (Addr.add (g.rdi + 16#64) i))
+    (fn : ∀ i < 4, Foot F.data (Addr.add (g.rdi + 12#64) i)) (h : ¬ Busy V g.rdi) :
     W_0 F Wl (fun j' g' _ V' => j' = 24 ∧ (∃ a d, g' = { g with rax := a, rdx := d }) ∧ V' = V) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   unfold Busy at h
@@ -73,8 +73,8 @@ theorem vc_free {g : Gprs} {f : Rflags} {V : Addr → Byte}
     | exact fun e => by simp [e] at hc
 
 /-- The store: `__kind` = -1, `eax` 0. -/
-theorem vc_24 {g : Gprs} {f : Rflags} {V : Addr → Byte} (fw : ∀ i < 4, Foot Wl (Addr.add (Addr.add g.rdi 16) i)) :
-    W_24 F Wl (fun j' g' _ V' => j' = 33 ∧ g' = { g with rax := 0#64 } ∧ V' = Vst V (Addr.add g.rdi 16) kinv)
+theorem vc_24 {g : Gprs} {f : Rflags} {V : Addr → Byte} (fw : ∀ i < 4, Foot Wl (Addr.add (g.rdi + 16#64) i)) :
+    W_24 F Wl (fun j' g' _ V' => j' = 33 ∧ g' = { g with rax := 0#64 } ∧ V' = Vst V ((g.rdi + 16#64)) kinv)
       g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at fw ⊢
@@ -84,6 +84,7 @@ theorem vc_24 {g : Gprs} {f : Rflags} {V : Addr → Byte} (fw : ∀ i < 4, Foot 
   | exact ⟨fw, by simp⟩
   | exact ⟨fw, rfl, rfl, rfl⟩
   | exact ⟨fw, rfl, by simp, rfl⟩
+  | exact ⟨fw, by simp only [kinv, Addr.add]⟩
 
 variable {prof : Profile} {L : List (Addr × List Byte)} {s₀ : State} {o : Oracle}
   {gev : List Event} {gP : State → Nat → List Event → Prop} {gE : Outcome → List Event → Prop} {X : State}
@@ -93,20 +94,20 @@ variable {prof : Profile} {L : List (Addr × List Byte)} {s₀ : State} {o : Ora
 `rax` if the mutex is busy (`Busy`); else `__kind` = -1 and `rax` 0 (`rdx` left to the path). -/
 theorem pmd_ok (c : Seg prof F Wl L s₀ o) (hin : CodeIn L pmd_at pmd) (hK : KeptW Wl s₀ X)
     (hA : Agree F X.proc.mm.mem V) (hrip : X.cpu.rip = pmd_at)
-    (fk : ∀ i < 4, Foot F.data (Addr.add (Addr.add X.cpu.gpr.rdi 16) i))
-    (fn : ∀ i < 4, Foot F.data (Addr.add (Addr.add X.cpu.gpr.rdi 12) i))
-    (fw : ∀ i < 4, Foot Wl (Addr.add (Addr.add X.cpu.gpr.rdi 16) i))
-    (hfw : (Addr.add X.cpu.gpr.rdi 16).toNat + 4 ≤ 2 ^ 64)
+    (fk : ∀ i < 4, Foot F.data (Addr.add (X.cpu.gpr.rdi + 16#64) i))
+    (fn : ∀ i < 4, Foot F.data (Addr.add (X.cpu.gpr.rdi + 12#64) i))
+    (fw : ∀ i < 4, Foot Wl (Addr.add (X.cpu.gpr.rdi + 16#64) i))
+    (hfw : ((X.cpu.gpr.rdi + 16#64)).toNat + 4 ≤ 2 ^ 64)
     (hl : ∀ i < 8, Foot F.data (Addr.add X.cpu.gpr.rsp i)) (hsp : X.cpu.gpr.rsp.toNat + 8 ≤ 2 ^ 64)
-    (hsa : (Addr.add X.cpu.gpr.rdi 16).toNat + 4 ≤ X.cpu.gpr.rsp.toNat ∨
-      X.cpu.gpr.rsp.toNat + 8 ≤ (Addr.add X.cpu.gpr.rdi 16).toNat)
+    (hsa : ((X.cpu.gpr.rdi + 16#64)).toNat + 4 ≤ X.cpu.gpr.rsp.toNat ∨
+      X.cpu.gpr.rsp.toNat + 8 ≤ ((X.cpu.gpr.rdi + 16#64)).toNat)
     {e₂ : Addr} {code₂ : List Byte} (hin₂ : CodeIn L e₂ code₂) {j₂ : Nat} (h₂ : j₂ < code₂.length)
     (hra : ofBytesLE 64 ((byteAddrs X.cpu.gpr.rsp 8).map V) = e₂.add j₂)
     (k : ∀ (Z : State) (t' : Nat), KeptW Wl s₀ Z → Z.cpu.rip = e₂.add j₂ →
       (Busy V X.cpu.gpr.rdi → Agree F Z.proc.mm.mem V ∧
         Z.cpu.gpr = { X.cpu.gpr with rax := 16#64, rdx := BitVec.setWidth 64 (nu V X.cpu.gpr.rdi) }.set 4
           (X.cpu.gpr.rsp + 8)) →
-      (¬ Busy V X.cpu.gpr.rdi → ∃ d, Agree F Z.proc.mm.mem (Vst V (Addr.add X.cpu.gpr.rdi 16) kinv) ∧
+      (¬ Busy V X.cpu.gpr.rdi → ∃ d, Agree F Z.proc.mm.mem (Vst V ((X.cpu.gpr.rdi + 16#64)) kinv) ∧
         Z.cpu.gpr = { X.cpu.gpr with rax := 0#64, rdx := d }.set 4 (X.cpu.gpr.rsp + 8)) →
       GoG prof L o gev gP gE Z t') :
     GoG prof L o gev gP gE X t := by
@@ -131,17 +132,17 @@ theorem pmd_ok (c : Seg prof F Wl L s₀ o) (hin : CodeIn L pmd_at pmd) (hK : Ke
     have hdi : Y.cpu.gpr.rdi = X.cpu.gpr.rdi := by rw [hgY] <;> rfl
     refine (c_24 prof).run c hin
       (fun j' g' _ V' => j' = 33 ∧ g' = { Y.cpu.gpr with rax := 0#64 } ∧
-        V' = Vst V (Addr.add X.cpu.gpr.rdi 16) kinv)
+        V' = Vst V ((X.cpu.gpr.rdi + 16#64)) kinv)
       hKY hAY hrY (by rw [← hdi]; exact vc_24 (by rw [hdi]; exact fw)) ?_
     rintro j' g fl V₂ ⟨rfl, rfl, rfl⟩ Z t₂ hKZ hAZ hrZ hgZ -
     have hspZ : Z.cpu.gpr.rsp = X.cpu.gpr.rsp := by rw [hgZ, hgY] <;> rfl
     refine c.s_ret hKZ hAZ hin (lt_len (by decide)) hrZ (ret_33 _) (fun i hi => by rw [hspZ]; exact hl i hi)
       hin₂ h₂ ?_ ?_
     · have hb4 : kinv.length = 4 := toBytesLE_length _ _
-      have h1 : (Addr.add X.cpu.gpr.rdi 16).toNat + kinv.length ≤ 2 ^ 64 := by rw [hb4]; exact hfw
-      have h2 : (Addr.add X.cpu.gpr.rdi 16).toNat + kinv.length ≤ X.cpu.gpr.rsp.toNat ∨
-          X.cpu.gpr.rsp.toNat + 8 ≤ (Addr.add X.cpu.gpr.rdi 16).toNat := by rw [hb4]; exact hsa
-      rw [hspZ, Tun.rd_Vst V (Addr.add X.cpu.gpr.rdi 16) kinv X.cpu.gpr.rsp 8 h1 hsp h2]
+      have h1 : ((X.cpu.gpr.rdi + 16#64)).toNat + kinv.length ≤ 2 ^ 64 := by rw [hb4]; exact hfw
+      have h2 : ((X.cpu.gpr.rdi + 16#64)).toNat + kinv.length ≤ X.cpu.gpr.rsp.toNat ∨
+          X.cpu.gpr.rsp.toNat + 8 ≤ ((X.cpu.gpr.rdi + 16#64)).toNat := by rw [hb4]; exact hsa
+      rw [hspZ, Tun.rd_Vst V ((X.cpu.gpr.rdi + 16#64)) kinv X.cpu.gpr.rsp 8 h1 hsp h2]
       exact hra
     rintro Z' t₃ hKZ' hAZ' ⟨hrZ', hgZ'⟩
     refine k Z' t₃ hKZ' hrZ' (fun h => absurd h hb) fun _ => ⟨d, hAZ', ?_⟩
