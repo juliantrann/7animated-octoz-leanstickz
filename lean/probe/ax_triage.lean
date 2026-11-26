@@ -1,3 +1,5 @@
-import FV7z.Msi.Holds
+import FV7z.Lemmas.Rmw8
+import FV7z.Sfn.Cuts
 open FV7z
-#print axioms FV7z.Msi.msi_ok
+#print axioms FV7z.Fn.Seg.s_sub_mi64
+#print axioms FV7z.Sfn.spAll

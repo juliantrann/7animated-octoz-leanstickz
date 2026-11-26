@@ -4,9 +4,9 @@ import FV7z.Lemmas.FnFar
 /-!
 # Tail jumps of `7zzs` (PLAN.md §M, M1)
 
-Thirteen functions of 7-Zip 26.06 in `7zzs` that are a tail jump: `endbr64; jmp rel32` (9 bytes: `0x41c160`,
-`0x41c180`, `0x41c1a0`, `0x41c220`, `0x41c860`, `0x41cb70`, `0x41f3f0`, `0x60dfc0`, `0x6014e0`, `0x6014f0`) or
-`endbr64; mov rdi, rsi; jmp rel32` (12 bytes: `0x41f3b0`, `0x41f3e0`, `0x41f400`). The callee is the
+Fourteen functions of 7-Zip 26.06 in `7zzs` that are a tail jump: `endbr64; jmp rel32` (9 bytes: `0x41c160`,
+`0x41c180`, `0x41c1a0`, `0x41c220`, `0x41c860`, `0x41cb70`, `0x41f3f0`, `0x60dfc0`, `0x6014e0`, `0x6014f0`,
+`0x601500`) or `endbr64; mov rdi, rsi; jmp rel32` (12 bytes: `0x41f3b0`, `0x41f3e0`, `0x41f400`). The callee is the
 caller's: a continuation at the target.
 
 - `JmpAt prof L o e e₂ f`: from `e`, the run reaches `e₂` with the registers `f` of the entry's and the bytes as they
@@ -155,6 +155,14 @@ theorem c6014f0_pin : Exe.bytesAt V2606.zzs.blob 0x6014f0 9 = some c6014f0 := by
 theorem t6014f0_ok {code₂ : List Byte} (hin : CodeIn L 0x6014f0#64 c6014f0) (hin₂ : CodeIn L 0x60dfc0#64 code₂)
     (h₂ : 0 < code₂.length) : JmpAt prof L o 0x6014f0#64 0x60dfc0#64 id :=
   ej_go hin (by decide) (by intro f; rfl) (rel := 51911) (by intro f; rfl) hin₂ h₂ (by decide)
+
+/-- `0x601500`: to `0x6014f0` (itself a tail jump to `0x60dfc0`). -/
+def c601500 : List Byte := [0xf3, 0x0f, 0x1e, 0xfa, 0xe9, 0xe7, 0xff, 0xff, 0xff]
+theorem c601500_pin : Exe.bytesAt V2606.zzs.blob 0x601500 9 = some c601500 := by decide +kernel
+
+theorem t601500_ok {code₂ : List Byte} (hin : CodeIn L 0x601500#64 c601500) (hin₂ : CodeIn L 0x6014f0#64 code₂)
+    (h₂ : 0 < code₂.length) : JmpAt prof L o 0x601500#64 0x6014f0#64 id :=
+  ej_go hin (by decide) (by intro f; rfl) (rel := 18446744073709551591) (by intro f; rfl) hin₂ h₂ (by decide)
 
 /-- `0x41f400`: `rdi` = `rsi`, to `0x41f3f0` (a tail jump to `free`). -/
 def c41f400 : List Byte := [0xf3, 0x0f, 0x1e, 0xfa, 0x48, 0x89, 0xf7, 0xe9, 0xe4, 0xff, 0xff, 0xff]
