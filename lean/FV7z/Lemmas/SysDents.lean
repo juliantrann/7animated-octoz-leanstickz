@@ -171,6 +171,16 @@ theorem sysGetdents64_ok (hw : Writable prof s s.cpu.gpr.rsi (arg32 s.cpu.gpr.rd
             | erw [hk (e :: es) h]
           all_goals rfl
 
+example {len : Nat} : dentsRes o t (nx s len (sysGpr s len) (rf0 s)) = dentsRes o t s := rfl
+example {len : Nat} : (nx s len (sysGpr s len) (rf0 s)).proc.files = s.proc.files := rfl
+example {len : Nat} : arg32 (nx s len (sysGpr s len) (rf0 s)).cpu.gpr.rdi = arg32 s.cpu.gpr.rdi := rfl
+example {len : Nat} (R : DnOut) (v : BitVec 64) :
+    (dnSt (nx s len (sysGpr s len) (rf0 s)) R).setRax v = sysSt (dnSt s R) len v := rfl
+example {len : Nat} (R : DnOut) : sysReturn (dnSt (nx s len (sysGpr s len) (rf0 s)) R) R.ret [] (dnBytes R) =
+    .running (sysSt (dnSt s R) len R.ret) (some (dnEv s.cpu.gpr R)) := rfl
+example {len : Nat} : dentsRes o t (nx s len (sysGpr s len) (rf0 s)) = dentsRes o t s := by
+  unfold dentsRes; rfl
+
 /-- `syscall` for `getdents64 (rdi, rsi, rdx)`, `rsi`'s `count` bytes writable and the pieces of any entries that fit
 stored as `wrRuns` from any state with `s`'s memory and keys: the entries in the buffer, `dentsRes`'s answer in
 `rax`. -/
