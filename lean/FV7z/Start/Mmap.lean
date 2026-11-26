@@ -78,8 +78,12 @@ theorem s_mmap_anon (c : Seg prof F Wl L s₀ o) (hK : KeptW Wl s₀ X) (hA : Ag
         obtain ⟨h1, h2⟩ := in_page (hN r hr) hm
         exact foot_mapped hokX c.own (foot_append_iff.2 (.inl hy)) (free_page hfr h1 h2)
       let V' : Addr → Byte := fun y => if Foot (mmN X a) y then 0 else V y
-      have h0 : ∀ y, Foot (mmN X a) y → V' y = 0 := fun y hy => if_pos hy
-      have hV : ∀ y, ¬ Foot (mmN X a) y → V' y = V y := fun y hy => if_neg hy
+      have h0 : ∀ y, Foot (mmN X a) y → V' y = 0 := fun y hy => by
+        show (if Foot (mmN X a) y then 0 else V y) = 0
+        simp only [hy, ↓reduceIte]
+      have hV : ∀ y, ¬ Foot (mmN X a) y → V' y = V y := fun y hy => by
+        show (if Foot (mmN X a) y then 0 else V y) = V y
+        simp only [hy, ↓reduceIte]
       refine ⟨_, _, _, rfl, k₁ a V' _ _ ha1 ha2 ha3' h0 (fun y hy => hV y (hout y hy)) ?_ ?_
         (rip_add hrip M len) rfl rfl⟩
       · exact

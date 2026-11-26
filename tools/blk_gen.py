@@ -21,7 +21,7 @@ import os, re, subprocess, sys, textwrap
 # name -> the function: its group (directory and namespace), C name, address and length in 7zzs 26.06; `pos`: the code
 # is taken where it lies in 7zzs (its instructions have operands `[rip + d]`), else wherever it lies; `stops`: offsets
 # the proof does not go past (exits, like the `ret`: the invariant there says they are not reached, or what holds);
-# `tag`, `src`: for the files' headers.
+# `tag`, `src`: for the files' headers; `cut`: more cut points, to split the proof.
 FNS = {
     "dr3": dict(grp="Lzma", cn="LzmaDec_DecodeReal_3", a=0x6d4040, n=4719, pos=False, stops=(), tag="PLAN.md G2, pilot",
                 src="`C/LzmaDec.c`'s `LzmaDec_DecodeReal_3` (section `.text$LZMADECOPT`, the assembly of "
@@ -119,6 +119,37 @@ FNS = {
     # glibc 2.31 sysdeps/unix/sysv/linux/getdents64.c (`__getdents64`, aliased `__getdents` on x86_64): `count` capped
     # at `INT_MAX` (`cmova`), then `getdents64` (217) as is: no conversion of the entries. Stops: the `ret` (0x23), the
     # padding after it (0x24), the `ret` after `errno` is set (0x3b); the `syscall` (0x19) is a step of its own.
+    # glibc 2.31 malloc/malloc.c (`__libc_calloc`), the way of one thread with `__malloc_hook` null and the tcache
+    # made: `n * m` (`mul`, no overflow), the top chunk's size read, `_int_malloc (&main_arena, n)` (0x7b), the chunk
+    # of the main arena, not mmapped, `perturb_byte` 0, the size to clear (`min` with the old top's size when the
+    # chunk is the old top), cleared inline (to 72 bytes) or by `memset` (0x2cd). Stops: the `ret` (0xd1), the padding
+    # after it (0xd2), the product too big (0x190), `_int_malloc` gave null (0x1b0), the hook set (0x1c0), more than
+    # one thread (0x1f0, 0x260), no tcache (0x240), mmapped and `perturb_byte` set (0x2e0), not of the main arena
+    # (0x13b), the asserts (0x151, 0x366).
+    "cal": dict(grp="Cal", cn="__libc_calloc", a=0x634a60, n=901, pos=True, fs=True,
+                stops=(0xd1, 0xd2, 0x190, 0x1b0, 0x1c0, 0x1f0, 0x260, 0x240, 0x2e0, 0x13b, 0x151, 0x366), calls=True,
+                tag="PLAN.md §M, M1", src="glibc 2.31's `__libc_calloc` (`malloc/malloc.c`; `objdump -d`)"),
+    # glibc 2.31 malloc/malloc.c (`unlink_chunk`, `av` dropped by IPA-SRA: `rdi` = p): the size checked against the
+    # next chunk's `prev_size`, `fd->bk == p` and `bk->fd == p` checked, `p` taken out of its bin; for a large chunk
+    # (size over 0x3ff) with `fd_nextsize` set, the `nextsize` list too, after its checks. Stops: the `ret` (0x6e),
+    # the padding (0x6f, 0x99, 0xac), the calls of `malloc_printerr` (0xa0, 0xbf, 0xcb: corruption).
+    "ulk": dict(grp="Ulk", cn="unlink_chunk.isra.0", a=0x62ea20, n=215, pos=True, fs=True,
+                stops=(0x6e, 0x6f, 0x99, 0xa0, 0xac, 0xbf, 0xcb), calls=True,
+                tag="PLAN.md §M, M1", src="glibc 2.31's `unlink_chunk` (`malloc/malloc.c`; `objdump -d`)"),
+    # glibc 2.31 malloc/malloc.c (`munmap_chunk`): the chunk mmapped (else the assert, 0x7c), its block page-aligned
+    # (else `malloc_printerr`, 0x70), `mp_.n_mmaps` and `mp_.mmapped_mem` updated (`lock`), then the tail call of
+    # `__munmap (p - prev_size, prev_size + size)`. Stops: the `jmp` to `__munmap` (0x63), the padding (0x68), the
+    # failures (0x70, 0x7c).
+    "mck": dict(grp="Mck", cn="munmap_chunk", a=0x62e660, n=155, pos=True, fs=True, stops=(0x63, 0x68, 0x70, 0x7c),
+                calls=True, hand=(0x47, 0x54), tag="PLAN.md §M, M1",
+                src="glibc 2.31's `munmap_chunk` (`malloc/malloc.c`; `objdump -d`)"),
+    # glibc 2.31 malloc/malloc.c (`systrim`, for `main_arena`: `rdi` = pad): the bytes to give back from the top
+    # chunk, a page multiple; `MORECORE (0)` through `__morecore` (0x33); if the top ends at the break,
+    # `MORECORE (-extra)` (0x5e), `__after_morecore_hook` if set (0xa8), `MORECORE (0)` again (0x72) and the top and
+    # `system_mem` made smaller. Stops: the `ret` (0x51), the padding (0x52, 0xa3).
+    "stm": dict(grp="Stm", cn="systrim.isra.0.constprop.0", a=0x62f8e0, n=172, pos=True, fs=True,
+                stops=(0x51, 0x52, 0xa3), calls=True,
+                tag="PLAN.md §M, M1", src="glibc 2.31's `systrim` (`malloc/malloc.c`; `objdump -d`)"),
     "gdn": dict(grp="Gdn", cn="__getdents", a=0x6a2820, n=0x3c, pos=True, fs=True, stops=(0x23, 0x24, 0x3b),
                 calls=True, tag="PLAN.md §M, M1",
                 src="glibc 2.31's `__getdents` (`sysdeps/unix/sysv/linux/getdents64.c`; `objdump -d`)"),
@@ -148,6 +179,62 @@ FNS = {
     # NULL)` as a tail jump through the vtable (`jmp rax`). Stop: the jump (17).
     "isb": dict(grp="Isb", cn="InStream_SeekToBegin", a=0x4631e0, n=19, pos=True, stops=(17,),
                 tag="PLAN.md §M, M1", src="7-Zip 26.06's `InStream_SeekToBegin` (`StreamUtils.cpp`; `objdump -d`)"),
+    # 7-Zip's CPP/7zip/UI/Common/ArchiveExtractCallback.cpp `CArchiveExtractCallback::SetRatioInfo`: forwarded to
+    # `_compressProgress->SetRatioInfo` (at `this + 552`) by a tail jump through its vtable. Stop: the jump (14).
+    "sri": dict(grp="Sri", cn="CArchiveExtractCallback::SetRatioInfo", a=0x5aa190, n=17, pos=True, stops=(14,),
+                tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CArchiveExtractCallback::SetRatioInfo` (`ArchiveExtractCallback.cpp`; `objdump -d`)"),
+    # 7-Zip's C/LzmaDec.c `LzmaDec_FreeProbs (p, alloc)`: `ISzAlloc_Free (alloc, p->probs); p->probs = NULL`, the
+    # free through `alloc->Free` (`call [rax + 8]`, 18; a cut after it). Stop: the `ret` (30).
+    # 7-Zip's C/LzmaDec.c `LzmaDec_Free (p, alloc)`: `LzmaDec_FreeProbs (p, alloc)` (16), then
+    # `ISzAlloc_Free (alloc, p->dic)` (28), `p->dic` = NULL. Stop: the `ret` (45).
+    "ldf": dict(grp="Ldf", cn="LzmaDec_Free", a=0x42be70, n=46, pos=True, stops=(45,), calls=True,
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `LzmaDec_Free` (`C/LzmaDec.c`; `objdump -d`)"),
+    "lfp": dict(grp="Lfp", cn="LzmaDec_FreeProbs", a=0x42bde0, n=31, pos=True, stops=(30,), calls=True,
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `LzmaDec_FreeProbs` (`C/LzmaDec.c`; `objdump -d`)"),
+    # 7-Zip's C/LzmaDec.c `LzmaDec_InitDicAndState (p, initDic, initState)`: `remainLen` = kMatchSpecLenStart + 1,
+    # `tempBufSize` = 0, and with `initDic` `processedPos` = `checkDicSize` = 0 and `remainLen` + 1; with `initState`
+    # `remainLen` + 1. Stop: the `ret` (48).
+    "lid": dict(grp="Lid", cn="LzmaDec_InitDicAndState", a=0x42b600, n=49, pos=True, stops=(48,),
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `LzmaDec_InitDicAndState` (`C/LzmaDec.c`; `objdump -d`)"),
+    # 7-Zip's CPP/7zip/UI/Common/OpenArchive.h `CArcErrorInfo::ClearErrors ()`: the flags and the tail size 0, the
+    # two `UString`s emptied (length 0, first character 0). Stop: the `ret` (60).
+    "cle": dict(grp="Cle", cn="CArcErrorInfo::ClearErrors", a=0x5d2b40, n=61, pos=True, stops=(60,),
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `CArcErrorInfo::ClearErrors` (`OpenArchive.h`; `objdump -d`)"),
+    # 7-Zip's CPP/7zip/Archive/Base64Handler.cpp (by the symbol table `NArchive::NGz::CHandler`)
+    # `GetArchivePropertyInfo (index, name, propID, varType)`: E_INVALIDARG for an index past 1, else the property's
+    # id and type from the tables and `name` = NULL. Stops: the two `ret`s (48, 61).
+    "gpi": dict(grp="Gpi", cn="CHandler::GetArchivePropertyInfo", a=0x49e900, n=62, pos=True, stops=(48, 61),
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `GetArchivePropertyInfo` (`Base64Handler.cpp`; `objdump -d`)"),
+    # 7-Zip's CPP/7zip/Common/ProgressUtils.cpp `CLocalProgress::CLocalProgress ()`: the vtable pointer at 0, 0 in
+    # the 4 bytes at 8 and the 8 bytes at 16, 24, 32, 40, 48, 1 in the bytes at 12 and 13. Stop: the `ret` (74).
+    "lpc": dict(grp="Lpc", cn="CLocalProgress::CLocalProgress", a=0x461fa0, n=75, pos=True, stops=(74,),
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `CLocalProgress` constructor (`ProgressUtils.cpp`; `objdump -d`)"),
+    # 7-Zip's CPP/Windows/FileFind.cpp `CFileInfoBase::ClearBase ()`: size, the times, the attributes and the rest of
+    # the base fields 0 (12 qword stores and a dword at 72). Stop: the `ret` (106).
+    "cfb": dict(grp="Cfb", cn="CFileInfoBase::ClearBase", a=0x4558d0, n=107, pos=True, stops=(106,),
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `CFileInfoBase::ClearBase` (`FileFind.cpp`; `objdump -d`)"),
+    # 7-Zip's CPP/7zip/Compress/LzmaDecoder.cpp `CDecoder::ReleaseInStream ()`: `_inStream.Release ()`, the
+    # `Release` through the vtable (`call [rax + 16]`, 23; a cut after it) when `_inStream` (at `this + 256`) is set,
+    # then 0 (`S_OK`). Stop: the `ret` (40).
+    "ris": dict(grp="Ris", cn="CDecoder::ReleaseInStream", a=0x57f930, n=41, pos=True, stops=(40,), calls=True,
+                tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CDecoder::ReleaseInStream` (`LzmaDecoder.cpp`; `objdump -d`)"),
+    # 7-Zip's CPP/Common/Wildcard.cpp `CCensorNode::NeedCheckSubDirs ()`: over `SubNodes` (items at `this + 40`,
+    # count at `this + 48`), true at the first node with `ExcludeDirItems` (the byte at 16) set or more than one
+    # `IncludeItems` (the count at 8). Stops: the `ret`s (63, 73).
+    "ncs": dict(grp="Ncs", cn="CCensorNode::NeedCheckSubDirs", a=0x452fa0, n=79, pos=True, stops=(63, 73),
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `CCensorNode::NeedCheckSubDirs` (`Wildcard.cpp`; `objdump -d`)"),
+    # 7-Zip's CPP/Common/MyString.cpp `UString::ReverseFind (c)`: from the end of the characters (at `this`, the
+    # length at `this + 8`) back to the first, the index of the last 4-byte character equal to `c` (`esi`), else -1.
+    # Stops: the `ret`s (44, 53).
+    "rfw": dict(grp="Rfw", cn="UString::ReverseFind", a=0x44dd40, n=54, pos=True, stops=(44, 53),
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `UString::ReverseFind` (`MyString.cpp`; `objdump -d`)"),
+    # 7-Zip's CPP/Common/MyString.cpp `UString::ReverseFind_PathSepar ()`: as `ReverseFind ('/')`. Stops: the `ret`s
+    # (35, 47).
+    "rpp": dict(grp="Rpp", cn="UString::ReverseFind_PathSepar", a=0x44dd80, n=48, pos=True, stops=(35, 47),
+                tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `UString::ReverseFind_PathSepar` (`MyString.cpp`; `objdump -d`)"),
     # 7-Zip's C/Alloc.c `MyAlloc (size)`: 0 for size 0, else a tail jump to `malloc`. Stops: the jump (9), the `ret`
     # (18).
     "mya": dict(grp="Mya", cn="MyAlloc", a=0x41f3c0, n=19, pos=True, stops=(9, 18),
@@ -201,6 +288,15 @@ FNS = {
     # glibc 2.31 signal/sigaction.c `__sigaction (sig, act, oact)`: `errno` = `EINVAL` and -1 unless `sig` is from 1 to
     # 64 and not `SIGCANCEL` (32) or `SIGSETXID` (33), else a tail jump to `__libc_sigaction`. Stops: the jump (0x14),
     # the `ret` (0x33).
+    # glibc 2.31 `__fxstat (vers, fd, buf)` and `__xstat (vers, path, buf)` (`sysdeps/unix/sysv/linux/wordsize-64/`):
+    # `vers` above 1 is `EINVAL`, else the `syscall` `fstat` (5) or `stat` (4), the error to `errno`. Stops: the `ret`s,
+    # the padding after the first two; the `syscall` is a step of its own.
+    "fxs": dict(grp="Fxs", cn="__fxstat", a=0x665360, n=84, pos=True, fs=True, stops=(0x21, 0x22, 0x39, 0x3a, 0x53),
+                calls=True, tag="PLAN.md §M, M1",
+                src="glibc 2.31's `__fxstat` (`sysdeps/unix/sysv/linux/wordsize-64/fxstat.c`; `objdump -d`)"),
+    "xst": dict(grp="Xst", cn="__xstat", a=0x665300, n=84, pos=True, fs=True, stops=(0x22, 0x23, 0x39, 0x3a, 0x53),
+                calls=True, tag="PLAN.md §M, M1",
+                src="glibc 2.31's `__xstat` (`sysdeps/unix/sysv/linux/wordsize-64/xstat.c`; `objdump -d`)"),
     "sgw": dict(grp="Sgw", cn="__sigaction", a=0x6011d0, n=52, pos=True, fs=True, stops=(0x14, 0x33),
                 tag="PLAN.md §M, M1", src="glibc 2.31's `__sigaction` (`signal/sigaction.c`; `objdump -d`)"),
     # glibc 2.31 `__wmemcpy (d, s, n)`: `n` scaled to bytes (`shl rdx, 2`), a tail jump to `memcpy`'s PLT entry.
@@ -213,6 +309,13 @@ FNS = {
     # (0xa1) and the call of `tcache_init` (0xe0).
     "fre": dict(grp="Fre", cn="__libc_free", a=0x633750, n=247, pos=True, fs=True, stops=(0x56, 0x82, 0x94, 0xa1, 0xe0),
                 calls=True, tag="PLAN.md G3, `free`", src="glibc 2.31's `__libc_free` (`malloc/malloc.c`; `objdump -d`)"),
+    # glibc 2.31 `_int_free (av, p, have_lock)` (malloc/malloc.c), to its tcache put: the size checks, `tc_idx`, the
+    # double free test (`e->key == tcache`), the bin's count, the put, the canary, the pops, the `ret`. Stops: an
+    # invalid pointer (0x2e0) or size (0x2f0), not put in the tcache (0xa3: no tcache, `tc_idx` too big, the bin
+    # full), the key is the tcache (0x6f8: the scan of the bin), the canary changed (0x987), the `ret` (0x155).
+    "ifr": dict(grp="Ifr", cn="_int_free", a=0x62f990, n=2506, pos=True, fs=True,
+                stops=(0x2e0, 0x2f0, 0xa3, 0x6f8, 0x987, 0x155), calls=True, cut=(90, 696, 307),
+                tag="PLAN.md G3, `free`", src="glibc 2.31's `_int_free` (`malloc/malloc.c`; `objdump -d`)"),
     # glibc 2.31 nptl/cleanup_compat.c `_pthread_cleanup_push (buffer, routine, arg)`: the buffer filled, linked in
     # front of the thread's `cleanup` list (`fs:0x2f8`). Stop: the `ret` (0x21).
     "pcp": dict(grp="Pcp", cn="_pthread_cleanup_push", a=0x5fefe0, n=34, pos=True, fs=True, stops=(0x21,),
@@ -235,6 +338,21 @@ FNS = {
     # (0xd) at the allocation, 4 bytes before.
     "sfs": dict(grp="Sfs", cn="SysFreeString", a=0x5a00c0, n=25, pos=True, stops=(0xd, 0x18),
                 tag="PLAN.md §M, M1", src="7-Zip 26.06's `SysFreeString` (`CPP/Common/MyWindows.cpp`; `objdump -d`)"),
+    # 7-Zip's CPP/Common/Wildcard.cpp `DoesNameContainWildcard (const UString &)`: the `wchar_t`s (4 bytes, at
+    # `[rdi]`, `[rdi+8]` of them) scanned for `*` or `?`; three `ret`s (0x3b found, 0x40 none, 0x43 empty).
+    "dnw": dict(grp="Dnw", cn="DoesNameContainWildcard", a=0x452940, n=68, pos=True, stops=(0x3b, 0x40, 0x43),
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `DoesNameContainWildcard` (`CPP/Common/Wildcard.cpp`; `objdump -d`)"),
+    # 7-Zip's CPP/Common/StringToInt.cpp `ConvertStringToUInt64 (const wchar_t *s, const wchar_t **end)`: decimal
+    # digits (4-byte `wchar_t`s) to a `UInt64`, 0 on overflow; the end stored at `[rsi]` when `rsi` is not 0. Stops:
+    # the `ret`s (0x55 overflow, 0x68 the end stored, 0x77 no end).
+    "lhp": dict(grp="Lhp", cn="CHeader_Parse", a=0x49ec00, n=0xa9, pos=True, stops=(0x43,),
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `NArchive::NLzma::CHeader::Parse` (`CPP/7zip/Archive/LzmaHandler.cpp`; "
+                "`objdump -d`)"),
+    "lpd": dict(grp="Lpd", cn="LzmaProps_Decode", a=0x42bea0, n=0x66, pos=True, stops=(0x56, 0x65),
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `LzmaProps_Decode` (`C/LzmaDec.c`; `objdump -d`)"),
+    "stu": dict(grp="Stu", cn="ConvertStringToUInt64", a=0x451330, n=0x7c, pos=True, stops=(0x55, 0x68, 0x77),
+                tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `ConvertStringToUInt64` (`CPP/Common/StringToInt.cpp`; `objdump -d`)"),
     "sdp": dict(grp="Sdp", cn="__strdup", a=0x635dd0, n=64, pos=True, stops=(0x34, 0x3f), calls=True,
                 tag="PLAN.md §M, M1", src="glibc 2.31's `__strdup` (`string/strdup.c`; `objdump -d`)"),
     # 7-Zip's CPP/Windows/FileIO.cpp `CFileBase::seek (off, whence)`: the descriptor (`this->_handle`, at 0), then
@@ -266,6 +384,11 @@ FNS = {
                 src="glibc 2.31's `__mmap64` (`sysdeps/unix/sysv/linux/mmap64.c`; `objdump -d`)"),
     # glibc 2.31 sysdeps/unix/sysv/linux/getdtsz.c (`__getdtablesize`: `RLIMIT_NOFILE`'s soft limit, or 256). Stops:
     # the `ret` (0x44), `__stack_chk_fail` (0x45); the `call` of `__getrlimit` (0x20) is a cut point.
+    # glibc 2.31 sysdeps/unix/sysv/linux/isatty.c (`__isatty`, `__tcgetattr (fd, &term) == 0`). Stops: the `ret`
+    # (0x3c) and the stack guard's failure call (0x3d).
+    "ity": dict(grp="Ity", cn="__isatty", a=0x665d20, n=0x42, pos=True, fs=True, stops=(0x3c, 0x3d),
+                calls=True, tag="PLAN.md §M, M1",
+                src="glibc 2.31's `__isatty` (`sysdeps/unix/sysv/linux/isatty.c`; `objdump -d`)"),
     "gdt": dict(grp="Gdt", cn="__getdtablesize", a=0x6664a0, n=0x4a, pos=True, fs=True, stops=(0x44, 0x45),
                 calls=True, tag="PLAN.md §M, M1",
                 src="glibc 2.31's `__getdtablesize` (`sysdeps/unix/sysv/linux/getdtsz.c`; `objdump -d`)"),
@@ -562,9 +685,10 @@ FNS = {
     # glibc 2.31 malloc/malloc.c (`__libc_malloc`), the way of a call after the first (`__malloc_hook` null, the
     # tcache made, one thread): `tc_idx`, the tcache's count, `_int_malloc (&main_arena, n)` (0x6d), the chunk's
     # flags. Stops: the `ret` (0xab), `_int_malloc` gave null (0x140), `n` negative (0x150), the hook set (0x170),
-    # more than one thread (0x180), no tcache (0xc8), a chunk in the tcache (0x110), not of the main arena (0x2e6).
+    # more than one thread (0x180), no tcache (0xc8), not of the main arena (0x2e6). A chunk in the tcache (0x110):
+    # `tcache_get`, then 0xa4.
     "mnx": dict(grp="Mnx", cn="__libc_malloc", a=0x633160, n=784, pos=True, fs=True,
-                stops=(0xab, 0x140, 0x150, 0x170, 0x180, 0xc8, 0x110, 0x2e6), calls=True,
+                stops=(0xab, 0x140, 0x150, 0x170, 0x180, 0xc8, 0x2e6), calls=True,
                 tag="PLAN.md G3, `malloc`", src="glibc 2.31's `__libc_malloc` (`malloc/malloc.c`; `objdump -d`)"),
     "eli": dict(grp="Eli", cn="elision_init", a=0x5ffc50, n=0xb1, pos=True, fs=True, stops=(0xab, 0xac),
                 calls=True, tag="PLAN.md G3, startup",
@@ -756,6 +880,8 @@ def effect(mn, sz, ol, pc=None):
         return terms, f"Op.xormf fb {sz} {f[0][1]} {mem(ops[1])}", f"OpIF.xormf {hw2(sz)}"
     if mn == 'xor' and sz == 8 and ks in (('r', 'r'), ('r', 'i')):
         return tsrc(8), f"Op.xor8 {f[0][1]} {src(ops[1])}", f"OpI.xor8 {src(ops[1])}"
+    if mn == 'or' and sz == 8 and ks in (('r', 'r'), ('r', 'i')):   # FV7z/Lemmas/BlkOps23.lean
+        return tsrc(8), f"Op.or8 {f[0][1]} {src(ops[1])}", f"OpI.or8 {src(ops[1])}"
     if mn == 'cbw' and sz == 64 and not ops:   # FV7z/Lemmas/BlkOps7.lean
         return terms, "Op.cdqe", "OpI.cdqe"
     if mn == 'endbr64' and not ops:
@@ -880,8 +1006,16 @@ def effect(mn, sz, ol, pc=None):
         return terms, f"Op.{mn}h {f[0][1]} {f[1][1]}", f"OpI.{mn}h"
     if mn == 'not' and ks == ('r',) and sz == 32:   # FV7z/Lemmas/BlkOps20.lean
         return terms, f"Op.not32 {f[0][1]}", "OpI.not32"
+    if mn == 'not' and ks == ('r',) and sz == 64:   # FV7z/Lemmas/BlkOps23.lean
+        return terms, f"Op.not64 {f[0][1]}", "OpI.not64"
     if mn == 'cwd' and ks == () and sz == 64:
         return terms, "Op.cqo", "OpI.cqo"
+    if mn == 'shr' and ks == ('r', 'i') and sz == 16:   # FV7z/Lemmas/BlkOps24.lean
+        return terms, f"Op.shr16 {f[0][1]} {f[1][1]}", "OpI.shr16"
+    if mn == 'movsx' and ks == ('r', 'r') and sz == 16 and f[1][0] == 8:
+        return terms, f"Op.sxb16 {f[0][1]} {f[1][1]}", "OpI.sxb16"
+    if mn == 'imul' and ks == ('r', 'r', 'i') and sz == 32:
+        return terms, f"Op.imul3d {f[0][1]} {f[1][1]} {f[2][1]}", "OpI.imul3d"
     if mn == 'imul' and ks == ('r', 'r', 'i') and sz == 64:
         return terms, f"Op.imul3 {f[0][1]} {f[1][1]} {f[2][1]}", "OpI.imul3"
     if mn == 'imul' and ks == ('r', 'mr', 'i') and sz == 64:
@@ -935,7 +1069,8 @@ def main():
         r = int(re.search(r'rel (\d+)', ol[-1])[1])
         return off + ln + (r if r < 2 ** 63 else r - 2 ** 64)
     ctl = lambda i: i[1].split()[0] in ('jcc', 'jmp', 'ret')
-    jr = lambda i: i[1] == 'jmp' and i[3][0].startswith('reg')   # `jmp r`: through the jump table
+    # `jmp r` (through the jump table) and `jmp [m]` (through a vtable: `Seg.s_jmp_mx`, at a stop)
+    jr = lambda i: i[1] == 'jmp' and not i[3][0].startswith('rel')
     # calls (`calls`): the proof stops at a `call` and starts again after it, a cut point; the `call` itself is the
     # caller's to do (`SpAt.call`, FV7z/Lemmas/SpCall.lean)
     # (`syscall` likewise: `Seg.s_brk_grow` and its like, FV7z/Start/SysSeg.lean; `div` and the moves of an `xmm`
@@ -1078,7 +1213,7 @@ end FV7z.{grp}
                          f"theorem j{k}_0 : ∀ feat, Dec feat j{k} 0 (FV7z.mk {mnl(mn)} {sz} [{operand(ol[0])[1]}] {ln}) := "
                          "by dec_rfl\n")
     open(out + "/Pats.lean", "w").write(f"""import FV7z.Lemmas.Sp{"Fs" if FSM else ""}
-{"import FV7z.Lemmas.CmovLd" + chr(10) if any("Op.cmovld32" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps22" + chr(10) if any("Op.testmi 32" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps20" + chr(10) if any(k in x for x in P for k in ("Op.not32", "Op.cqo", "Op.imul3", "Op.andh", "Op.testh", "Op.cmpm 8")) else ""}{"import FV7z.Lemmas.BlkOps19" + chr(10) if any("Op.vld 0" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps18" + chr(10) if any("Op.zxr16" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps17" + chr(10) if any("Op.mul64" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps16" + chr(10) if any("Op.bt64" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps15" + chr(10) if any("Op.sxr" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps14" + chr(10) if any(k in x for x in P for k in ("Op.zxr", "Op.test 16", "Op.cmpmif fb 8")) else ""}{"import FV7z.Lemmas.BlkOps13" + chr(10) if any("Op.cmpmif" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps12" + chr(10) if any(k in x for x in P for k in ("Op.cmpmr", "Op.testmi")) else ""}{"import FV7z.Lemmas.BlkOps11" + chr(10) if any(k in x for x in P for k in ("Op.rol64", "Op.ror64")) else ""}{"import FV7z.Lemmas.BlkOps10" + chr(10) if any("Op.cmpm 16" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps9" + chr(10) if any("Op.cmpma" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps8" + chr(10) if any(k in x for x in P for k in ("Op.vla", "Op.vsa", "Op.addma", "Op.cmpmia 8", "Op.stia 8")) else ""}{"import FV7z.Lemmas.BlkOps7" + chr(10) if any(k in x for x in P for k in ("Op.vl", "Op.vs", "Op.cdqe")) else ""}{"import FV7z.Lemmas.BlkOps6" + chr(10) if any(k in x for x in P for k in ("Op.stf8", "Op.stfi", "Op.xormf")) else ""}{("import FV7z.Lemmas.BlkOps5" if any("Op.ldsxb" in x for x in P) else
+{"import FV7z.Lemmas.CmovLd" + chr(10) if any("Op.cmovld32" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps24" + chr(10) if any(k in x for x in P for k in ("Op.shr16", "Op.sxb16", "Op.imul3d")) else ""}{"import FV7z.Lemmas.BlkOps23" + chr(10) if any(k in x for x in P for k in ("Op.or8", "Op.not64")) else ""}{"import FV7z.Lemmas.BlkOps22" + chr(10) if any("Op.testmi 32" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps20" + chr(10) if any(k in x for x in P for k in ("Op.not32", "Op.cqo", "Op.imul3", "Op.andh", "Op.testh", "Op.cmpm 8")) else ""}{"import FV7z.Lemmas.BlkOps19" + chr(10) if any("Op.vld 0" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps18" + chr(10) if any("Op.zxr16" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps17" + chr(10) if any("Op.mul64" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps16" + chr(10) if any("Op.bt64" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps15" + chr(10) if any("Op.sxr" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps14" + chr(10) if any(k in x for x in P for k in ("Op.zxr", "Op.test 16", "Op.cmpmif fb 8")) else ""}{"import FV7z.Lemmas.BlkOps13" + chr(10) if any("Op.cmpmif" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps12" + chr(10) if any(k in x for x in P for k in ("Op.cmpmr", "Op.testmi")) else ""}{"import FV7z.Lemmas.BlkOps11" + chr(10) if any(k in x for x in P for k in ("Op.rol64", "Op.ror64")) else ""}{"import FV7z.Lemmas.BlkOps10" + chr(10) if any("Op.cmpm 16" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps9" + chr(10) if any("Op.cmpma" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps8" + chr(10) if any(k in x for x in P for k in ("Op.vla", "Op.vsa", "Op.addma", "Op.cmpmia 8", "Op.stia 8")) else ""}{"import FV7z.Lemmas.BlkOps7" + chr(10) if any(k in x for x in P for k in ("Op.vl", "Op.vs", "Op.cdqe")) else ""}{"import FV7z.Lemmas.BlkOps6" + chr(10) if any(k in x for x in P for k in ("Op.stf8", "Op.stfi", "Op.xormf")) else ""}{("import FV7z.Lemmas.BlkOps5" if any("Op.ldsxb" in x for x in P) else
   "import FV7z.Lemmas.BlkOps4" if any("Op.imul64" in x for x in P) else
   "import FV7z.Lemmas.BlkOps3" if any(k in x for x in P for k in ("Op.shl64", "Op.shr64", "Op.sar64")) else
   "import FV7z.Lemmas.BlkOps2") + chr(10) if pos else ""}/-!
@@ -1200,7 +1335,7 @@ kernel's memory for the evaluations adds up within a file. Generated by `tools/b
         for s in succs(l): npred[s] = npred.get(s, 0) + 1
     cuts = sorted({E0} | {heads[h][1] for h in heads if h in blocks}
                   | {l for l in nodes if l not in heads and npred.get(l, 0) >= 2} | (set(jtg) & set(nodes))
-                  | ({callat[c] for c in called} & set(nodes)))
+                  | ({callat[c] for c in called} & set(nodes)) | (set(F.get("cut", ())) & set(nodes)))
     cutset = set(cuts)
     C, done, size = [], set(), {}
 
