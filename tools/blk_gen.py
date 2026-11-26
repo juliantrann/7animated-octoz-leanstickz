@@ -202,6 +202,11 @@ FNS = {
     # 7-Zip's C/LzmaDec.c `LzmaDec_AllocateProbs2 (p, propNew, alloc)` (`lc` = esi, `lp` = edx): `numProbs` = 0x7c0 +
     # (0x300 << (lc + lp)); the same `probs` kept (0x26 to 0x57), else `LzmaDec_FreeProbs` (0x2e), `alloc->Alloc`
     # (0x3b), SZ_ERROR_MEM on NULL (0x60). Stop: the `ret` (0x5b).
+    # 7-Zip's C/LzmaDec.c `LzmaDec_TryDummy (p, buf, bufOut)`: the range decoder's dry run of one symbol from `buf`
+    # up to `*bufOut`, reading the probabilities, `dic` and the input, storing only `*bufOut` (the end of the
+    # symbol). Stops: the two `ret`s (354, 765).
+    "tdm": dict(grp="Tdm", cn="LzmaDec_TryDummy", a=0x42af80, n=1570, pos=True, stops=(354, 765),
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `LzmaDec_TryDummy` (`C/LzmaDec.c`; `objdump -d`)"),
     # 7-Zip's C/LzmaDec.c `LzmaDec_DecodeReal2 (p, limit, bufLimit)`: with `checkDicSize` (the 4 bytes at `p + 0x44`)
     # 0, `limit` cut to `dicPos + (dicSize - processedPos)`; `LZMA_DECODE_REAL` (call, 40, to `0x6d4040`); then
     # `checkDicSize` = `dicSize` once `processedPos` reaches it. Stop: the `ret` (64).
