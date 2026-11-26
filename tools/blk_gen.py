@@ -153,6 +153,12 @@ FNS = {
     # Stop: the `jmp` (0x8).
     "wmc": dict(grp="Wmc", cn="__wmemcpy", a=0x65d300, n=13, pos=True, stops=(0x8,),
                 tag="PLAN.md §M, M1", src="glibc 2.31's `__wmemcpy` (`wcsmbs/wmemcpy.c`; `objdump -d`)"),
+    # glibc 2.31 `__libc_free (mem)` (malloc/malloc.c): `__free_hook`, `free (0)`, the mmapped chunk (the dynamic
+    # threshold, then `munmap_chunk`), the tcache made if absent (`tcache_init`), the arena, then `_int_free`.
+    # Stops: the tail jumps to `_int_free` (0x56) and `munmap_chunk` (0x82), the `ret` (0x94), the hook's `jmp`
+    # (0xa1) and the call of `tcache_init` (0xe0).
+    "fre": dict(grp="Fre", cn="__libc_free", a=0x633750, n=247, pos=True, fs=True, stops=(0x56, 0x82, 0x94, 0xa1, 0xe0),
+                calls=True, tag="PLAN.md G3, `free`", src="glibc 2.31's `__libc_free` (`malloc/malloc.c`; `objdump -d`)"),
     # glibc 2.31 nptl/cleanup_compat.c `_pthread_cleanup_push (buffer, routine, arg)`: the buffer filled, linked in
     # front of the thread's `cleanup` list (`fs:0x2f8`). Stop: the `ret` (0x21).
     "pcp": dict(grp="Pcp", cn="_pthread_cleanup_push", a=0x5fefe0, n=34, pos=True, fs=True, stops=(0x21,),
