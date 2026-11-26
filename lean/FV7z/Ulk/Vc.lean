@@ -17,6 +17,7 @@ size word `sz` at `p + 8`, `fd` at `p + 16`, `bk` at `p + 24`; `ulk1`: the bytes
 open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn
 namespace FV7z.Ulk
 
+set_option hygiene false in
 /-- The extra lemmas of the pieces' `wp`. -/
 macro "ulkx" cfg:Lean.Parser.Tactic.optConfig "[" ls:Lean.Parser.Tactic.simpLemma,* "]" : tactic =>
   `(tactic| wpx $cfg [Op.cmpmi, BitVec.and_self, BitVec.reduceAdd, BitVec.reduceAnd, BitVec.reduceBEq,
@@ -67,10 +68,10 @@ theorem vc_0s {fb sz fd bk : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte}
 
 /-- The checks and reads of a large chunk in the `nextsize` list, after `ulk1`. -/
 structure Lg (F : Footprint) (V : Addr → Byte) (p fd bk fdn bkn : Addr) : Prop where
-  fdn : rdq(ulk1 V fd bk, p + 32#64) = fdn
-  fdn0 : (fdn == 0#64) = false
+  hfdn : rdq(ulk1 V fd bk, p + 32#64) = fdn
+  hfdn0 : (fdn == 0#64) = false
   c4 : rdq(ulk1 V fd bk, fdn + 40#64) = p
-  bkn : rdq(ulk1 V fd bk, p + 40#64) = bkn
+  hbkn : rdq(ulk1 V fd bk, p + 40#64) = bkn
   c5 : rdq(ulk1 V fd bk, bkn + 32#64) = p
   g1 : ∀ i < 8, Foot F.data (Addr.add (p + 32#64) i)
   g2 : ∀ i < 8, Foot F.data (Addr.add (fdn + 40#64) i)
