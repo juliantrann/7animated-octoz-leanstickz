@@ -44,22 +44,27 @@ theorem ad4 (D : Addr) (j : Nat) : D + BitVec.ofNat 64 j + 4#64 = D + BitVec.ofN
 /-- The six `push`es. -/
 abbrev S6 (s : Addr) : Addr := s - 8 - 8 - 8 - 8 - 8 - 8
 
+/-- Constant offsets: negate, reassociate, compute the constant. -/
+local macro "kq" : tactic =>
+  `(tactic| (simp only [S6, BitVec.sub_eq_add_neg, BitVec.add_assoc] <;> rfl))
+
 /-- The stack pointer's forms. -/
 theorem k8 (s : Addr) : s - 8 = s - BitVec.ofNat 64 8 := rfl
-theorem k16 (s : Addr) : s - 8 - 8 = s - BitVec.ofNat 64 16 := by bv_omega
-theorem k24 (s : Addr) : s - 8 - 8 - 8 = s - BitVec.ofNat 64 24 := by bv_omega
-theorem k32 (s : Addr) : s - 8 - 8 - 8 - 8 = s - BitVec.ofNat 64 32 := by bv_omega
-theorem k40 (s : Addr) : s - 8 - 8 - 8 - 8 - 8 = s - BitVec.ofNat 64 40 := by bv_omega
-theorem k48 (s : Addr) : S6 s = s - BitVec.ofNat 64 48 := by simp only [S6]; bv_omega
-theorem k56 (s : Addr) : S6 s + 18446744073709551608#64 = s - BitVec.ofNat 64 56 := by simp only [S6]; bv_omega
-theorem k60 (s : Addr) : S6 s + 18446744073709551604#64 = s - BitVec.ofNat 64 60 := by simp only [S6]; bv_omega
+theorem k16 (s : Addr) : s - 8 - 8 = s - BitVec.ofNat 64 16 := by kq
+theorem k24 (s : Addr) : s - 8 - 8 - 8 = s - BitVec.ofNat 64 24 := by kq
+theorem k32 (s : Addr) : s - 8 - 8 - 8 - 8 = s - BitVec.ofNat 64 32 := by kq
+theorem k40 (s : Addr) : s - 8 - 8 - 8 - 8 - 8 = s - BitVec.ofNat 64 40 := by kq
+theorem k48 (s : Addr) : S6 s = s - BitVec.ofNat 64 48 := by kq
+theorem k56 (s : Addr) : S6 s + 18446744073709551608#64 = s - BitVec.ofNat 64 56 := by kq
+theorem k60 (s : Addr) : S6 s + 18446744073709551604#64 = s - BitVec.ofNat 64 60 := by kq
 /-- The `pop`s. -/
-theorem q40 (s : Addr) : S6 s + 8 = s - BitVec.ofNat 64 40 := by simp only [S6]; bv_omega
-theorem q32 (s : Addr) : S6 s + 8 + 8 = s - BitVec.ofNat 64 32 := by simp only [S6]; bv_omega
-theorem q24 (s : Addr) : S6 s + 8 + 8 + 8 = s - BitVec.ofNat 64 24 := by simp only [S6]; bv_omega
-theorem q16 (s : Addr) : S6 s + 8 + 8 + 8 + 8 = s - BitVec.ofNat 64 16 := by simp only [S6]; bv_omega
-theorem q8 (s : Addr) : S6 s + 8 + 8 + 8 + 8 + 8 = s - BitVec.ofNat 64 8 := by simp only [S6]; bv_omega
-theorem q0 (s : Addr) : S6 s + 8 + 8 + 8 + 8 + 8 + 8 = s := by simp only [S6]; bv_omega
+theorem q40 (s : Addr) : S6 s + 8 = s - BitVec.ofNat 64 40 := by kq
+theorem q32 (s : Addr) : S6 s + 8 + 8 = s - BitVec.ofNat 64 32 := by kq
+theorem q24 (s : Addr) : S6 s + 8 + 8 + 8 = s - BitVec.ofNat 64 24 := by kq
+theorem q16 (s : Addr) : S6 s + 8 + 8 + 8 + 8 = s - BitVec.ofNat 64 16 := by kq
+theorem q8 (s : Addr) : S6 s + 8 + 8 + 8 + 8 + 8 = s - BitVec.ofNat 64 8 := by kq
+theorem q0 (s : Addr) : S6 s + 8 + 8 + 8 + 8 + 8 + 8 = s := by
+  rw [q8]; exact BitVec.sub_add_cancel _ _
 
 /-! ## The frame -/
 
