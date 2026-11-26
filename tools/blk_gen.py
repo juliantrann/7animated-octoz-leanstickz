@@ -165,6 +165,10 @@ FNS = {
                 src="7-Zip 26.06's `CArchiveExtractCallback::SetRatioInfo` (`ArchiveExtractCallback.cpp`; `objdump -d`)"),
     # 7-Zip's C/LzmaDec.c `LzmaDec_FreeProbs (p, alloc)`: `ISzAlloc_Free (alloc, p->probs); p->probs = NULL`, the
     # free through `alloc->Free` (`call [rax + 8]`, 18; a cut after it). Stop: the `ret` (30).
+    # 7-Zip's C/LzmaDec.c `LzmaDec_Free (p, alloc)`: `LzmaDec_FreeProbs (p, alloc)` (16), then
+    # `ISzAlloc_Free (alloc, p->dic)` (28), `p->dic` = NULL. Stop: the `ret` (45).
+    "ldf": dict(grp="Ldf", cn="LzmaDec_Free", a=0x42be70, n=46, pos=True, stops=(45,), calls=True,
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `LzmaDec_Free` (`C/LzmaDec.c`; `objdump -d`)"),
     "lfp": dict(grp="Lfp", cn="LzmaDec_FreeProbs", a=0x42bde0, n=31, pos=True, stops=(30,), calls=True,
                 tag="PLAN.md §M, M1", src="7-Zip 26.06's `LzmaDec_FreeProbs` (`C/LzmaDec.c`; `objdump -d`)"),
     # 7-Zip's C/LzmaDec.c `LzmaDec_InitDicAndState (p, initDic, initState)`: `remainLen` = kMatchSpecLenStart + 1,
