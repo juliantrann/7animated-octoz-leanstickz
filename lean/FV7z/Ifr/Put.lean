@@ -159,7 +159,7 @@ theorem tc_put {V : Addr → Byte} {C p ix : Addr} {bins : Nat → List Addr} (h
   have ee := toNat_C (k := 128 + 8 * j) hc (by omega)
   by_cases hji : j = ix.toNat
   · subst hji
-    simp only [bput, eq_self_iff_true, if_true, ↓reduceIte]
+    simp only [bput, ↓reduceIte]
     refine ⟨?_, fun e he' => ?_, fun k hk' => ?_⟩
     · -- the count
       dsimp only [tcnt]
@@ -186,7 +186,7 @@ theorem tc_put {V : Addr → Byte} {C p ix : Addr} {bins : Nat → List Addr} (h
         -- `p`'s `next`: the old head
         simp only [List.getElem_cons_zero, List.getElem_cons_succ]
         have hne : 0 < (bins ix.toNat).length := by simp only [List.length_cons] at hk'; omega
-        have hd : ∀ l : List Addr, 0 < l.length → l.head? = some l[0] := by
+        have hd : ∀ l : List Addr, (hl : 0 < l.length) → l.head? = some (l[0]'hl) := by
           intro l hl
           cases l with
           | nil => simp at hl
@@ -204,7 +204,7 @@ theorem tc_put {V : Addr → Byte} {C p ix : Addr} {bins : Nat → List Addr} (h
         obtain ⟨x8, d1, d2⟩ := ha _ hk _ (List.getElem_mem (by omega : k < (bins ix.toNat).length))
         rw [← h3 k hk2]
         exact congrArg (ofBytesLE 64) (rd4 V p C ix _ _ hp hc hk x8 (by omega) (by omega) (by omega) (by omega))
-  · simp only [bput, hji, if_false, ↓reduceIte]
+  · simp only [bput, hji, ↓reduceIte]
     refine ⟨?_, fun e he' => ?_, fun k hk' => ?_⟩
     · rw [← h1]
       exact congrArg (ofBytesLE 16) (rd4 V p C ix _ _ hp hc hk (by omega) (by omega) (by omega) (by omega)
@@ -240,13 +240,13 @@ theorem put_inv {F : Footprint} {Wl : List Rgn} {fb C p ix S : Addr} {V W : Addr
     (fun a b1 b2 => hW a (by omega))⟩
   by_cases hi' : i = ix.toNat
   · subst hi'
-    simp only [bput, eq_self_iff_true, if_true, ↓reduceIte, List.mem_cons] at he
+    simp only [bput, ↓reduceIte, List.mem_cons] at he
     rcases he with rfl | hm
     · exact ⟨by omega, fun a b1 b2 => hW a (by omega)⟩
     · obtain ⟨x8, -, -⟩ := ha _ hk e hm
       have := se _ hk e hm
       exact ⟨x8, fun a b1 b2 => hW a (by omega)⟩
-  · simp only [bput, hi', if_false, ↓reduceIte] at he
+  · simp only [bput, hi', ↓reduceIte] at he
     obtain ⟨x8, -, -⟩ := ha i hi e he
     have := se i hi e he
     exact ⟨x8, fun a b1 b2 => hW a (by omega)⟩
