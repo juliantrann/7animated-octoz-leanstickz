@@ -144,7 +144,7 @@ structure Pq (F : Footprint) (Wl : List Rgn) (fb : Addr) (g : Gprs) : Prop where
   tb : (fb + 760#64).toNat + 8 ≤ 2 ^ 64
   tf : (fb + 760#64).toNat + 8 ≤ g.rsp.toNat - 80 ∨ g.rsp.toNat + 8 ≤ (fb + 760#64).toNat
 
-variable {F : Footprint} {Wl : List Rgn} {fb : Addr} {g g₀ : Gprs} {V V₀ W W' : Addr → Byte} {f : Rflags}
+variable {F : Footprint} {Wl : List Rgn} {fb : Addr} {g g₀ : Gprs} {V V' V₀ W W' : Addr → Byte} {f : Rflags}
 
 theorem tS8 (lo : 80 ≤ g.rsp.toNat) : (g.rsp - 8).toNat = g.rsp.toNat - 8 := by
   have := g.rsp.isLt
@@ -432,6 +432,11 @@ abbrev Kp (g g' : Gprs) : Prop := g'.rsp = g.rsp ∧ g'.r13 = g.r13 ∧ g'.r14 =
 local macro "vc_fin" : tactic =>
   `(tactic| repeat' (first | rfl | assumption | (intro h; exact absurd h (by decide)) | constructor | intro _))
 
+/-- `vc_fin`, and a witness. -/
+local macro "vc_ex" : tactic =>
+  `(tactic| repeat' (first | rfl | assumption | exact ⟨_, rfl⟩ | (intro h; exact absurd h (by decide)) | constructor |
+    intro _))
+
 /-- From the entry to 45: the pushes, the frame, the stack guard stored, the control word read. -/
 theorem vc_0 (h1 : ∀ i < 8, Foot Wl (Addr.add (g.rsp - 8) i)) (h2 : ∀ i < 8, Foot Wl (Addr.add (g.rsp - 8 - 8) i))
     (h3 : ∀ i < 8, Foot Wl (Addr.add (g.rsp - 8 - 8 - 8) i)) (hcl : ∀ i < 8, Foot F.data (Addr.add (fb + 40#64) i))
@@ -447,7 +452,7 @@ theorem vc_45d (hb : (BitVec.setWidth 8 g.rax &&& 2#8 == 0) = false) :
     W_45 fb F Wl (fun j' g' _ V' => j' = 49 ∧ g' = g ∧ V' = V) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at hb
-  wpx [W_45, hb]
+  wpx [W_45, o2, hb]
   all_goals vc_fin
 
 /-- 45, the word not done: `__fork_generation | 1` into `edx`, to the `lock cmpxchg` at 89. -/
@@ -458,8 +463,7 @@ theorem vc_45i (hb : (BitVec.setWidth 8 g.rax &&& 2#8 == 0) = true)
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at hb
   wpx [W_45, W_80, o2, o5, Op.lda, hb]
-  all_goals repeat' (first | rfl | assumption | exact ⟨_, rfl⟩ | (intro h; exact absurd h (by decide)) |
-    constructor | intro _)
+  all_goals vc_ex
 
 /-- 94, after the `lock cmpxchg` stored: to 168. -/
 theorem vc_94 (hz : f.zf = true) (hax : BitVec.setWidth 32 g.rax = 0#32) (hdx : BitVec.setWidth 32 g.rdx ≠ 0#32) :
@@ -557,7 +561,8 @@ theorem tl49 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (hin 
   have f64 : ∀ i < 8, Foot F.data (Addr.add (X.cpu.gpr.rsp + 48#64 + 8 + 8) i) := by
     rw [hsp, e8']; exact fd_at hP (d := 72) (by omega) (by decide)
   refine (c_49 prof fb).run c hfs hin _ hK hA hr (vc_49 hc f40 hP.cl f48 f56 f64) ?_
-  rintro j' g fl V₁ ⟨rfl, rfl, rfl⟩ Y t₁ hKY hAY hrY hgY -
+  rintro j' g fl V₁ ⟨rfl, rfl, hV⟩ Y t₁ hKY hAY hrY hgY -
+  subst V₁
   have hspY : Y.cpu.gpr.rsp = g₀.rsp := by
     rw [hgY]
     show X.cpu.gpr.rsp + 48#64 + 8 + 8 + 8 = _
@@ -681,8 +686,7 @@ theorem pos_init (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (
   have pk1 : Pk X.cpu.gpr Y₁.cpu.gpr := by rw [hg₁]; exact pk0
   have e0 : eaD Y₁ 5 0 = X.cpu.gpr.rdi := by
     show Y₁.cpu.gpr.rbp + 0 = _
-    rw [BitVec.add_zero]
-    exact pk1.2.1
+    exact (BitVec.add_zero _).trans pk1.2.1
   -- 89: `lock cmpxchg [rbp], edx`, the word 0
   refine c.s_lock_cmpxchg_bd32 hK₁ hA₁ hin (lt_len (by decide)) hr₁ (cx_89 _)
     (by rw [e0]; have := hQ.al; omega) (by rw [e0]; exact hP.ww)
@@ -765,7 +769,8 @@ theorem pos_init (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (
   have hq8 : Z₈.cpu.gpr.r12 = fsp X.cpu.gpr := b4.trans hq7
   -- 191
   refine (c_191 prof fb).run c hfs hin _ hK₈ hA₈ hr₈ vc_191 ?_
-  rintro j' g fl V₁ ⟨rfl, rfl, rfl⟩ Y₉ t₉ hK₉ hA₉ hr₉ hg₉ -
+  rintro j' g fl V₁ ⟨rfl, rfl, hV⟩ Y₉ t₉ hK₉ hA₉ hr₉ hg₉ -
+  subst V₁
   have hsp9 : Y₉.cpu.gpr.rsp = fsp X.cpu.gpr := by rw [hg₉]; exact hsp8
   have pk9 : Pk X.cpu.gpr Y₉.cpu.gpr := by rw [hg₉]; exact pk8
   -- 196: `call _pthread_cleanup_pop`
