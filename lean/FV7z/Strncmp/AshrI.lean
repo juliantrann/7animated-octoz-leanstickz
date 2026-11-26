@@ -1,5 +1,6 @@
 import FV7z.Strncmp.Ashr0
 import FV7z.Strncmp.AshrT
+import FV7z.Lemmas.Signed
 /-!
 # The shifted loops of `__strncmp_sse2`: numbers, addresses and masks (PLAN.md G3, `strncmp`)
 
@@ -18,8 +19,6 @@ namespace FV7z.Strncmp
 open ZellicX86 Decode FV7z.Leaf FV7z.Fn FV7z.Strlen
 
 attribute [-simp] BitVec.getLsbD_eq_getElem
-
-theorem cond_15 (f : Rflags) : f.cond 15 = !(f.zf || (f.sf != f.of)) := rfl
 
 /-! ## Addresses -/
 
