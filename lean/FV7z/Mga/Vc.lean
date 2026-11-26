@@ -251,7 +251,7 @@ theorem vc_254s {fb Z : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte}
   have hlt : ¬ (r15 + 32#64).toNat ≥ (Z &&& 18446744073709551608#64).toNat := by omega
   by_cases ha : rbp = 7940672#64
   · subst ha
-    simp only [nmf, ite_true, eq_self_iff_true, BitVec.or_zero] at hZ' w2 ⊢
+    simp only [nmf, ite_true, BitVec.or_zero] at hZ' w2 ⊢
     mcx +contextual [W_254, W_262, W_275, o14, o15, o16, hZ, hZ', hb, hs, hlt, f1, w1, w2]
   · simp only [nmf, ha, ite_false] at hZ' w2 ⊢
     mcx +contextual [W_254, W_262, W_275, o14, o15, o16, hZ, hZ', hb, hs, hlt, ha, f1, w1, w2]
