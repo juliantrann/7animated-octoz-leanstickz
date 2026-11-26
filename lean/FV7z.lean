@@ -441,6 +441,9 @@ import FV7z.Wmc.Holds
 import FV7z.Tiny.Plt
 import FV7z.Tiny.Tj
 import FV7z.Tiny.Leaf
+import FV7z.Cld.Blocks
+import FV7z.Cld.Cuts
+import FV7z.Cld.Holds
 import FV7z.Ifr.Code
 import FV7z.Fre.Holds
 import FV7z.Lemmas.SysWrite

@@ -262,6 +262,10 @@ FNS = {
     "xst": dict(grp="Xst", cn="__xstat", a=0x665300, n=84, pos=True, fs=True, stops=(0x22, 0x23, 0x39, 0x3a, 0x53),
                 calls=True, tag="PLAN.md §M, M1",
                 src="glibc 2.31's `__xstat` (`sysdeps/unix/sysv/linux/wordsize-64/xstat.c`; `objdump -d`)"),
+    # glibc 2.31 sysdeps/posix/closedir.c (`__closedir (d)`): a null `d` is `EINVAL`, else `fd` = `d->fd`, `free (d)`
+    # (0xc; a cut after it), a tail jump to `__close_nocancel (fd)`. Stops: the `jmp` (0x14), the `ret` (0x2c).
+    "cld": dict(grp="Cld", cn="__closedir", a=0x663860, n=45, pos=True, fs=True, stops=(0x14, 0x2c), calls=True,
+                tag="PLAN.md §M, M1", src="glibc 2.31's `__closedir` (`sysdeps/posix/closedir.c`; `objdump -d`)"),
     "sgw": dict(grp="Sgw", cn="__sigaction", a=0x6011d0, n=52, pos=True, fs=True, stops=(0x14, 0x33),
                 tag="PLAN.md §M, M1", src="glibc 2.31's `__sigaction` (`signal/sigaction.c`; `objdump -d`)"),
     # glibc 2.31 `__wmemcpy (d, s, n)`: `n` scaled to bytes (`shl rdx, 2`), a tail jump to `memcpy`'s PLT entry.
