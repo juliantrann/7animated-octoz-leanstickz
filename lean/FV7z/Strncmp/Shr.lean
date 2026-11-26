@@ -59,7 +59,6 @@ theorem shr_sub_zero (A B : BitVec 128) (c : Nat) :
   constructor
   · intro h j hcj hj
     have e := congrArg (fun z : BitVec 32 => z.getLsbD (j - c)) h
-    simp only at e
     rw [shr_sub_bits, show c + (j - c) = j by omega, decide_eq_true hj, Bool.true_and,
       Strlen.getLsbD_zero'] at e
     simpa using e
