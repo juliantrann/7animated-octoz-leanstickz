@@ -24,7 +24,8 @@ def Cp (W : Addr → Byte) (p d : Addr) : Nat → Addr → Byte
   | k + 1 => Vst (Cp W p d k) (d.add k) [W (p.add k)]
 
 /-- A byte not among the first `k` at `d`: as it was. -/
-theorem Cp_out (W : Addr → Byte) (p d : Addr) : ∀ (k : Nat) (x : Addr), (∀ i < k, x ≠ d.add i) → Cp W p d k x = W x
+theorem Cp_out (W : Addr → Byte) (p d : Addr) :
+    ∀ (k : Nat) (x : Addr), (∀ i < k, x ≠ d.add i) → Cp W p d k x = W x
   | 0, _, _ => rfl
   | k + 1, x, h => by
     show Vst (Cp W p d k) (d.add k) [W (p.add k)] x = W x
@@ -61,7 +62,7 @@ variable {F : Footprint} {Wl : List Rgn}
 
 /-- The loop at a byte not 0: the byte stored, `rax` one on, back to 40. -/
 theorem vc_40n {g : Gprs} {f : Rflags} {V : Addr → Byte}
-    (hz : (BitVec.setWidth 8 (BitVec.setWidth 32 (V (g.rsi + g.rax))) == 0) = false)
+    (hz : (V (g.rsi + g.rax) == 0) = false)
     (hf : ∀ i < 1, Foot F.data (Addr.add (g.rsi + g.rax) i)) (hw : ∀ i < 1, Foot Wl (Addr.add (g.rcx + g.rax) i)) :
     W_40 F Wl (fun j' g' _ V' => j' = 40 ∧ g'.rax = g.rax + 1#64 ∧ g'.rsi = g.rsi ∧ g'.rcx = g.rcx ∧ Kp g g' ∧
       V' = Vst V (g.rcx + g.rax) [V (g.rsi + g.rax)]) g f V := by
@@ -74,7 +75,7 @@ theorem vc_40n {g : Gprs} {f : Rflags} {V : Addr → Byte}
 
 /-- The loop at the 0: the 0 stored, then `add rsp, 8; pop rbx; pop rbp` to the `ret` at 61. -/
 theorem vc_40z {g : Gprs} {f : Rflags} {V : Addr → Byte}
-    (hz : (BitVec.setWidth 8 (BitVec.setWidth 32 (V (g.rsi + g.rax))) == 0) = true)
+    (hz : (V (g.rsi + g.rax) == 0) = true)
     (hf : ∀ i < 1, Foot F.data (Addr.add (g.rsi + g.rax) i)) (hw : ∀ i < 1, Foot Wl (Addr.add (g.rcx + g.rax) i))
     (l1 : ∀ i < 8, Foot F.data (Addr.add (g.rsp + 8#64) i))
     (l2 : ∀ i < 8, Foot F.data (Addr.add (g.rsp + 8#64 + 8) i)) :
@@ -103,7 +104,8 @@ theorem loop (c : Seg prof F Wl L s₀ o) (hin : CodeIn L acp_at acp) {W : Addr 
     (k : ∀ (Z : State) (t' : Nat), KeptW Wl s₀ Z → Agree F Z.proc.mm.mem (Cp W p d (n + 1)) →
       Z.cpu.rip = acp_at.add 61 → Z.cpu.gpr.rbx = rdq(Cp W p d (n + 1), g₀.rsp + 8#64) →
       Z.cpu.gpr.rbp = rdq(Cp W p d (n + 1), g₀.rsp + 8#64 + 8) → Z.cpu.gpr.rsp = g₀.rsp + 8#64 + 8 + 8 →
-      Z.cpu.gpr.r12 = g₀.r12 → Z.cpu.gpr.r13 = g₀.r13 → Z.cpu.gpr.r14 = g₀.r14 → Z.cpu.gpr.r15 = g₀.r15 →
+      Z.cpu.gpr.r12 = g₀.r12 → Z.cpu.gpr.r13 = g₀.r13 → Z.cpu.gpr.r14 = g₀.r14 →
+      Z.cpu.gpr.r15 = g₀.r15 →
       GoG prof L o gev gP gE Z t') :
     ∀ (m j : Nat), j + m = n → ∀ (X : State) (t : Nat), KeptW Wl s₀ X → Agree F X.proc.mm.mem (Cp W p d j) →
       X.cpu.rip = acp_at.add 40 → X.cpu.gpr.rax = BitVec.ofNat 64 j → X.cpu.gpr.rsi = p → X.cpu.gpr.rcx = d →
@@ -118,8 +120,8 @@ theorem loop (c : Seg prof F Wl L s₀ o) (hin : CodeIn L acp_at acp) {W : Addr 
     have ed : X.cpu.gpr.rcx + X.cpu.gpr.rax = d.add j := by rw [hci, hax]; rfl
     have hb : Cp W p d j (p.add j) = W (p.add j) :=
       Cp_out W p d j _ fun i hi => hsep j (Nat.le_refl _) i (by omega)
-    have hz' : (BitVec.setWidth 8 (BitVec.setWidth 32 (Cp W p d j (X.cpu.gpr.rsi + X.cpu.gpr.rax))) == 0) = true := by
-      rw [es, hb, sw8a, hz]; all_goals decide
+    have hz' : (Cp W p d j (X.cpu.gpr.rsi + X.cpu.gpr.rax) == 0) = true := by
+      rw [es, hb]; exact beq_iff_eq.2 hz
     have hf1 : ∀ i < 1, Foot F.data (Addr.add (X.cpu.gpr.rsi + X.cpu.gpr.rax) i) := fun i hi => by
       obtain rfl : i = 0 := by omega
       rw [addr_add_zero, es]
@@ -149,9 +151,8 @@ theorem loop (c : Seg prof F Wl L s₀ o) (hin : CodeIn L acp_at acp) {W : Addr 
     have ed : X.cpu.gpr.rcx + X.cpu.gpr.rax = d.add j := by rw [hci, hax]; rfl
     have hb : Cp W p d j (p.add j) = W (p.add j) :=
       Cp_out W p d j _ fun i hi => hsep j (by omega) i (by omega)
-    have hz' : (BitVec.setWidth 8 (BitVec.setWidth 32 (Cp W p d j (X.cpu.gpr.rsi + X.cpu.gpr.rax))) == 0) =
-        false := by
-      rw [es, hb, sw8a]; exact beq_eq_false_iff_ne.2 (hnz j (by omega))
+    have hz' : (Cp W p d j (X.cpu.gpr.rsi + X.cpu.gpr.rax) == 0) = false := by
+      rw [es, hb]; exact beq_eq_false_iff_ne.2 (hnz j (by omega))
     have hf1 : ∀ i < 1, Foot F.data (Addr.add (X.cpu.gpr.rsi + X.cpu.gpr.rax) i) := fun i hi => by
       obtain rfl : i = 0 := by omega
       rw [addr_add_zero, es]
