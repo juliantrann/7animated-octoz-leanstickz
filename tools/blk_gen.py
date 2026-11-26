@@ -515,9 +515,10 @@ FNS = {
     # glibc 2.31 malloc/malloc.c (`__libc_malloc`), the way of a call after the first (`__malloc_hook` null, the
     # tcache made, one thread): `tc_idx`, the tcache's count, `_int_malloc (&main_arena, n)` (0x6d), the chunk's
     # flags. Stops: the `ret` (0xab), `_int_malloc` gave null (0x140), `n` negative (0x150), the hook set (0x170),
-    # more than one thread (0x180), no tcache (0xc8), a chunk in the tcache (0x110), not of the main arena (0x2e6).
+    # more than one thread (0x180), no tcache (0xc8), not of the main arena (0x2e6). A chunk in the tcache (0x110):
+    # `tcache_get`, then 0xa4.
     "mnx": dict(grp="Mnx", cn="__libc_malloc", a=0x633160, n=784, pos=True, fs=True,
-                stops=(0xab, 0x140, 0x150, 0x170, 0x180, 0xc8, 0x110, 0x2e6), calls=True,
+                stops=(0xab, 0x140, 0x150, 0x170, 0x180, 0xc8, 0x2e6), calls=True,
                 tag="PLAN.md G3, `malloc`", src="glibc 2.31's `__libc_malloc` (`malloc/malloc.c`; `objdump -d`)"),
     "eli": dict(grp="Eli", cn="elision_init", a=0x5ffc50, n=0xb1, pos=True, fs=True, stops=(0xab, 0xac),
                 calls=True, tag="PLAN.md G3, startup",

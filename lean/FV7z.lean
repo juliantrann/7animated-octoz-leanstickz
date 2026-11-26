@@ -596,6 +596,7 @@ import FV7z.Mal.Holds
 import FV7z.Mal.Run
 import FV7z.Mal.RunN
 import FV7z.Mnx.Run
+import FV7z.Mnx.Pop
 import FV7z.Mal.Pre
 import FV7z.Mal.Heap
 import FV7z.Mal.HeapA
