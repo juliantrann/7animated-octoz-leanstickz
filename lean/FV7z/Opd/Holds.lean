@@ -211,7 +211,7 @@ variable {F : Footprint} {Wl : List Rgn}
 
 /-- What is left of a piece's condition: its footprint facts, equations, cases that cannot be. -/
 local macro "vfin" : tactic =>
-  `(tactic| repeat' (first | (with_reducible rfl) | assumption | exact True.intro |
+  `(tactic| repeat' (first | (with_reducible rfl) | (with_reducible assumption) | exact True.intro |
     (intro h; exact absurd h (by omega)) | apply And.intro | intro _))
 
 /-! ## The pieces -/
@@ -253,7 +253,8 @@ theorem vc_80 {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (hs : (Bit
   by_cases h1 : rdq(V, rsp + 56#64).toNat < 32768
   · have d1 : decide (rdq(V, rsp + 56#64).toNat < 32768) = true := decide_eq_true h1
     have hb : bsz rdq(V, rsp + 56#64) = 32768#64 := by rw [bsz, if_pos h1]
-    wpx [W_80, W_88, W_108, o4, o5, o6, Op.cmpmi, Op.cmovld64, cG, hb, BitVec.and_self, hs, hm', d1, s32768,
+    have d3 : decide (32768 ≤ 1048576) = true := by decide
+    wpx [W_80, W_88, W_108, o4, o5, o6, Op.cmpmi, Op.cmovld64, cG, hb, BitVec.and_self, hs, hm', d1, d3, s32768,
       s1048576, be_imm (w := 64) _ 1048576 (by decide), decide_true, decide_false, Bool.not_true, Bool.not_false,
       Bool.true_or, Bool.or_true, Bool.false_or, Bool.or_false, Bool.false_eq_true, ↓reduceIte, false_implies,
       eq_self_iff_true, true_implies]
@@ -418,6 +419,86 @@ theorem opd_alloc {fb : Addr} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.f
   rw [hsY] at hA₂
   exact k Y₂ t₂ hK₂ hA₂ hr₂ (by rw [hg₂, hgY])
 
+/-- From the return of `malloc` (153), the block `p` (`rax`) not null, its 44 bytes in what the run may store into:
+at 219 with the `DIR`'s fields stored (`Vd`) and `r12` = `p`. -/
+theorem opd_dir {fb : Addr} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (hin : CodeIn L opd_at opd)
+    (hK : KeptW Wl s₀ X) (hA : Agree F X.proc.mm.mem V) (hrip : X.cpu.rip = opd_at.add 153)
+    (hnz : X.cpu.gpr.rax ≠ 0#64)
+    (hdw : ∀ i < 44, Foot Wl (Addr.add X.cpu.gpr.rax i)) (hdb : X.cpu.gpr.rax.toNat + 44 ≤ 2 ^ 64)
+    (k : ∀ (Y : State) (t' : Nat), KeptW Wl s₀ Y →
+      Agree F Y.proc.mm.mem (Vd V X.cpu.gpr.rax X.cpu.gpr.rbp X.cpu.gpr.rbx) → Y.cpu.rip = opd_at.add 219 →
+      Y.cpu.gpr = { X.cpu.gpr with r12 := X.cpu.gpr.rax } → GoG prof L o gev gP gE Y t') :
+    GoG prof L o gev gP gE X t := by
+  have hpl := X.cpu.gpr.rax.isLt
+  have a4 : (X.cpu.gpr.rax + 4#64).toNat = X.cpu.gpr.rax.toNat + 4 := tAdd _ 4 (by omega)
+  have a8 : (X.cpu.gpr.rax + 8#64).toNat = X.cpu.gpr.rax.toNat + 8 := tAdd _ 8 (by omega)
+  have a16 : (X.cpu.gpr.rax + 16#64).toNat = X.cpu.gpr.rax.toNat + 16 := tAdd _ 16 (by omega)
+  have a24 : (X.cpu.gpr.rax + 24#64).toNat = X.cpu.gpr.rax.toNat + 24 := tAdd _ 24 (by omega)
+  have a32 : (X.cpu.gpr.rax + 32#64).toNat = X.cpu.gpr.rax.toNat + 32 := tAdd _ 32 (by omega)
+  have a40 : (X.cpu.gpr.rax + 40#64).toNat = X.cpu.gpr.rax.toNat + 40 := tAdd _ 40 (by omega)
+  refine (c_153 prof fb).run c hfs hin (fun j' g' _ V' => j' = 165 ∧ g' = { X.cpu.gpr with r12 := X.cpu.gpr.rax } ∧
+      V' = V) hK hA hrip (vc_153 (g := X.cpu.gpr) hnz) ?_
+  rintro j' g fl V₁ ⟨rfl, rfl, hV⟩ Y₁ t₁ hK₁ hA₁ hr₁ hg₁ -
+  subst V₁
+  have h12 : Y₁.cpu.gpr.r12 = X.cpu.gpr.rax := by rw [hg₁]
+  have hbp : Y₁.cpu.gpr.rbp = X.cpu.gpr.rbp := by rw [hg₁]
+  have hbx : Y₁.cpu.gpr.rbx = X.cpu.gpr.rbx := by rw [hg₁]
+  refine (c_165 prof fb).run c hfs hin _ hK₁ hA₁ hr₁
+    (vc_165 (g := Y₁.cpu.gpr) (by rw [h12]; exact frw hdw (fa (d := 0) (by omega) (by simp)) (by decide))
+      (by rw [h12]; exact frw hdw (fa (d := 4) (by omega) a4) (by decide))
+      (by rw [h12]; exact frw hdw (fa (d := 8) (by omega) a8) (by decide))
+      (by rw [h12]; exact frw hdw (fa (d := 16) (by omega) a16) (by decide))
+      (by rw [h12]; exact frw hdw (fa (d := 24) (by omega) a24) (by decide))
+      (by rw [h12]; exact frw hdw (fa (d := 32) (by omega) a32) (by decide))
+      (by rw [h12]; exact frw hdw (fa (d := 40) (by omega) a40) (by decide))) ?_
+  rintro j' g fl V₂ ⟨rfl, rfl, hV⟩ Y₂ t₂ hK₂ hA₂ hr₂ hg₂ -
+  subst V₂
+  rw [h12, hbp, hbx] at hA₂
+  exact k Y₂ t₂ hK₂ hA₂ hr₂ (hg₂.trans hg₁)
+
+/-- From 219, the frame's 208 bytes at `rsp` in what the run may read, the stack guard at `rsp + 152` the one at
+`fs:0x28`: at the return address (at `rsp + 200`) with `rax` = `r12`, `rsp` 208 above, `rbx`, `rbp`, `r12`, `r13`
+popped from `rsp + 168` … `rsp + 192`. -/
+theorem opd_tail {fb : Addr} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (hin : CodeIn L opd_at opd)
+    (hK : KeptW Wl s₀ X) (hA : Agree F X.proc.mm.mem V) (hrip : X.cpu.rip = opd_at.add 219)
+    (hfd : ∀ i < 208, Foot F.data (Addr.add X.cpu.gpr.rsp i)) (hsb : X.cpu.gpr.rsp.toNat + 208 ≤ 2 ^ 64)
+    (hcl : ∀ i < 8, Foot F.data (Addr.add (fb + 40#64) i))
+    (hc : rdq(V, X.cpu.gpr.rsp + 152#64) = rdq(V, fb + 40#64))
+    {e₂ : Addr} {code₂ : List Byte} (hin₂ : CodeIn L e₂ code₂) {j₂ : Nat} (h₂ : j₂ < code₂.length)
+    (hra : rdq(V, X.cpu.gpr.rsp + 200#64) = e₂.add j₂)
+    (k : ∀ (Z : State) (t' : Nat), KeptW Wl s₀ Z → Agree F Z.proc.mm.mem V → Z.cpu.rip = e₂.add j₂ →
+      Z.cpu.gpr.rsp = X.cpu.gpr.rsp + 208#64 → Z.cpu.gpr.rax = X.cpu.gpr.r12 →
+      Z.cpu.gpr.rbx = rdq(V, X.cpu.gpr.rsp + 168#64) → Z.cpu.gpr.rbp = rdq(V, X.cpu.gpr.rsp + 176#64) →
+      Z.cpu.gpr.r12 = rdq(V, X.cpu.gpr.rsp + 184#64) → Z.cpu.gpr.r13 = rdq(V, X.cpu.gpr.rsp + 192#64) →
+      Z.cpu.gpr.r14 = X.cpu.gpr.r14 → Z.cpu.gpr.r15 = X.cpu.gpr.r15 →
+      GoG prof L o gev gP gE Z t') :
+    GoG prof L o gev gP gE X t := by
+  have q152 : (X.cpu.gpr.rsp + 152#64).toNat = X.cpu.gpr.rsp.toNat + 152 := tAdd _ 152 (by omega)
+  have q168 : (X.cpu.gpr.rsp + 168#64).toNat = X.cpu.gpr.rsp.toNat + 168 := tAdd _ 168 (by omega)
+  have q176 : (X.cpu.gpr.rsp + 168#64 + 8).toNat = X.cpu.gpr.rsp.toNat + 176 :=
+    (tAdd (X.cpu.gpr.rsp + 168#64) 8 (by omega)).trans (by omega)
+  have q184 : (X.cpu.gpr.rsp + 168#64 + 8 + 8).toNat = X.cpu.gpr.rsp.toNat + 184 :=
+    (tAdd (X.cpu.gpr.rsp + 168#64 + 8) 8 (by omega)).trans (by omega)
+  have q192 : (X.cpu.gpr.rsp + 168#64 + 8 + 8 + 8).toNat = X.cpu.gpr.rsp.toNat + 192 :=
+    (tAdd (X.cpu.gpr.rsp + 168#64 + 8 + 8) 8 (by omega)).trans (by omega)
+  have q200 : (X.cpu.gpr.rsp + 168#64 + 8 + 8 + 8 + 8).toNat = X.cpu.gpr.rsp.toNat + 200 :=
+    (tAdd (X.cpu.gpr.rsp + 168#64 + 8 + 8 + 8) 8 (by omega)).trans (by omega)
+  refine (c_219 prof fb).run c hfs hin _ hK hA hrip
+    (vc_219 (g := X.cpu.gpr) hc (frw hfd (fa (d := 152) (by omega) q152) (by decide)) hcl
+      (frw hfd (fa (d := 168) (by omega) q168) (by decide)) (frw hfd (fa (d := 176) (by omega) q176) (by decide))
+      (frw hfd (fa (d := 184) (by omega) q184) (by decide))
+      (frw hfd (fa (d := 192) (by omega) q192) (by decide))) ?_
+  rintro j' g fl V₃ ⟨rfl, rfl, hV⟩ Y₃ t₃ hK₃ hA₃ hr₃ hg₃ -
+  subst V₃
+  have hs3 : Y₃.cpu.gpr.rsp = X.cpu.gpr.rsp + 168#64 + 8 + 8 + 8 + 8 := by rw [hg₃]
+  refine c.s_ret hK₃ hA₃ hin (lt_len (by decide)) hr₃ (ret_254 _)
+    (by rw [hs3]; exact frw hfd (fa (d := 200) (by omega) q200) (by decide)) hin₂ h₂
+    (by rw [hs3, pa4]; exact hra) ?_
+  rintro Z t₄ hKZ hAZ ⟨hrZ, hgZ⟩
+  obtain ⟨z1, z2, z3, z4, z5, z6, z7, z8⟩ := dGs V X.cpu.gpr (Y₃.cpu.gpr.rsp + 8)
+  rw [← hg₃, ← hgZ] at z1 z2 z3 z4 z5 z6 z7 z8
+  exact k Z t₄ hKZ hAZ hrZ (by rw [z1, hs3, pa5]) z2 z3 (by rw [z4, pa1]) (by rw [z5, pa2]) (by rw [z6, pa3]) z7 z8
+
 /-- From the return of `malloc` (153), the block `p` (`rax`) not null, its 44 bytes in what the run may store into
 and apart from the frame's 208 bytes at `rsp` and from the stack guard, the stack guard at `rsp + 152` the one at
 `fs:0x28`: at the return address (at `rsp + 200`) with the `DIR`'s fields stored (`Vd`), `rax` = `p`, `rsp` 208 above,
@@ -442,25 +523,8 @@ theorem opd_ret {fb : Addr} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsB
       GoG prof L o gev gP gE Z t') :
     GoG prof L o gev gP gE X t := by
   have hlt := X.cpu.gpr.rsp.isLt
-  have hpl := X.cpu.gpr.rax.isLt
-  -- the `DIR`'s slots
-  have a4 : (X.cpu.gpr.rax + 4#64).toNat = X.cpu.gpr.rax.toNat + 4 := tAdd _ 4 (by omega)
-  have a8 : (X.cpu.gpr.rax + 8#64).toNat = X.cpu.gpr.rax.toNat + 8 := tAdd _ 8 (by omega)
-  have a16 : (X.cpu.gpr.rax + 16#64).toNat = X.cpu.gpr.rax.toNat + 16 := tAdd _ 16 (by omega)
-  have a24 : (X.cpu.gpr.rax + 24#64).toNat = X.cpu.gpr.rax.toNat + 24 := tAdd _ 24 (by omega)
-  have a32 : (X.cpu.gpr.rax + 32#64).toNat = X.cpu.gpr.rax.toNat + 32 := tAdd _ 32 (by omega)
-  have a40 : (X.cpu.gpr.rax + 40#64).toNat = X.cpu.gpr.rax.toNat + 40 := tAdd _ 40 (by omega)
-  -- the frame's slots
   have q152 : (X.cpu.gpr.rsp + 152#64).toNat = X.cpu.gpr.rsp.toNat + 152 := tAdd _ 152 (by omega)
   have q168 : (X.cpu.gpr.rsp + 168#64).toNat = X.cpu.gpr.rsp.toNat + 168 := tAdd _ 168 (by omega)
-  have q176 : (X.cpu.gpr.rsp + 168#64 + 8).toNat = X.cpu.gpr.rsp.toNat + 176 :=
-    (tAdd (X.cpu.gpr.rsp + 168#64) 8 (by omega)).trans (by omega)
-  have q184 : (X.cpu.gpr.rsp + 168#64 + 8 + 8).toNat = X.cpu.gpr.rsp.toNat + 184 :=
-    (tAdd (X.cpu.gpr.rsp + 168#64 + 8) 8 (by omega)).trans (by omega)
-  have q192 : (X.cpu.gpr.rsp + 168#64 + 8 + 8 + 8).toNat = X.cpu.gpr.rsp.toNat + 192 :=
-    (tAdd (X.cpu.gpr.rsp + 168#64 + 8 + 8) 8 (by omega)).trans (by omega)
-  have q200 : (X.cpu.gpr.rsp + 168#64 + 8 + 8 + 8 + 8).toNat = X.cpu.gpr.rsp.toNat + 200 :=
-    (tAdd (X.cpu.gpr.rsp + 168#64 + 8 + 8 + 8) 8 (by omega)).trans (by omega)
   have r176 : (X.cpu.gpr.rsp + 176#64).toNat = X.cpu.gpr.rsp.toNat + 176 := tAdd _ 176 (by omega)
   have r184 : (X.cpu.gpr.rsp + 184#64).toNat = X.cpu.gpr.rsp.toNat + 184 := tAdd _ 184 (by omega)
   have r192 : (X.cpu.gpr.rsp + 192#64).toNat = X.cpu.gpr.rsp.toNat + 192 := tAdd _ 192 (by omega)
@@ -471,59 +535,22 @@ theorem opd_ret {fb : Addr} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsB
       ofBytesLE 64 ((byteAddrs x n).map (Vd V X.cpu.gpr.rax X.cpu.gpr.rbp X.cpu.gpr.rbx)) =
         ofBytesLE 64 ((byteAddrs x n).map V) := fun x n h1 h2 =>
     congrArg (ofBytesLE 64) (Vd_rd V _ _ _ hdb h1 h2)
-  -- to the stores
-  refine (c_153 prof fb).run c hfs hin (fun j' g' _ V' => j' = 165 ∧ g' = { X.cpu.gpr with r12 := X.cpu.gpr.rax } ∧
-      V' = V) hK hA hrip (vc_153 (g := X.cpu.gpr) hnz) ?_
-  rintro j' g fl V₁ ⟨rfl, rfl, hV⟩ Y₁ t₁ hK₁ hA₁ hr₁ hg₁ -
-  subst V₁
-  have h12 : Y₁.cpu.gpr.r12 = X.cpu.gpr.rax := by rw [hg₁]
-  have hbp : Y₁.cpu.gpr.rbp = X.cpu.gpr.rbp := by rw [hg₁]
-  have hbx : Y₁.cpu.gpr.rbx = X.cpu.gpr.rbx := by rw [hg₁]
-  have hs1 : Y₁.cpu.gpr.rsp = X.cpu.gpr.rsp := by rw [hg₁]
-  refine (c_165 prof fb).run c hfs hin _ hK₁ hA₁ hr₁
-    (vc_165 (g := Y₁.cpu.gpr) (by rw [h12]; exact frw hdw (fa (d := 0) (by omega) (by simp)) (by decide))
-      (by rw [h12]; exact frw hdw (fa (d := 4) (by omega) a4) (by decide))
-      (by rw [h12]; exact frw hdw (fa (d := 8) (by omega) a8) (by decide))
-      (by rw [h12]; exact frw hdw (fa (d := 16) (by omega) a16) (by decide))
-      (by rw [h12]; exact frw hdw (fa (d := 24) (by omega) a24) (by decide))
-      (by rw [h12]; exact frw hdw (fa (d := 32) (by omega) a32) (by decide))
-      (by rw [h12]; exact frw hdw (fa (d := 40) (by omega) a40) (by decide))) ?_
-  rintro j' g fl V₂ ⟨rfl, rfl, hV⟩ Y₂ t₂ hK₂ hA₂ hr₂ hg₂ -
-  subst V₂
-  rw [h12, hbp, hbx] at hA₂
-  have hs2 : Y₂.cpu.gpr.rsp = X.cpu.gpr.rsp := by rw [hg₂, hs1]
-  -- the stack guard
-  have hc' : rdq(Vd V X.cpu.gpr.rax X.cpu.gpr.rbp X.cpu.gpr.rbx, Y₂.cpu.gpr.rsp + 152#64) =
-      rdq(Vd V X.cpu.gpr.rax X.cpu.gpr.rbp X.cpu.gpr.rbx, fb + 40#64) := by
-    rw [hs2, vd (X.cpu.gpr.rsp + 152#64) 8 (by omega) (by omega), vd (fb + 40#64) 8 hcb (by omega)]
+  refine opd_dir c hfs hin hK hA hrip hnz hdw hdb ?_
+  intro Y₂ t₂ hK₂ hA₂ hr₂ hg₂
+  have hs2 : Y₂.cpu.gpr.rsp = X.cpu.gpr.rsp := by rw [hg₂]
+  have h12 : Y₂.cpu.gpr.r12 = X.cpu.gpr.rax := by rw [hg₂]
+  have h14 : Y₂.cpu.gpr.r14 = X.cpu.gpr.r14 := by rw [hg₂]
+  have h15 : Y₂.cpu.gpr.r15 = X.cpu.gpr.r15 := by rw [hg₂]
+  refine opd_tail c hfs hin hK₂ hA₂ hr₂ (by rw [hs2]; exact hfd) (by rw [hs2]; exact hsb) hcl ?_ hin₂ h₂ ?_ ?_
+  · rw [hs2, vd (X.cpu.gpr.rsp + 152#64) 8 (by omega) (by omega), vd (fb + 40#64) 8 hcb (by omega)]
     exact hc
-  refine (c_219 prof fb).run c hfs hin _ hK₂ hA₂ hr₂
-    (vc_219 (g := Y₂.cpu.gpr) hc' (by rw [hs2]; exact frw hfd (fa (d := 152) (by omega) q152) (by decide)) hcl
-      (by rw [hs2]; exact frw hfd (fa (d := 168) (by omega) q168) (by decide))
-      (by rw [hs2]; exact frw hfd (fa (d := 176) (by omega) q176) (by decide))
-      (by rw [hs2]; exact frw hfd (fa (d := 184) (by omega) q184) (by decide))
-      (by rw [hs2]; exact frw hfd (fa (d := 192) (by omega) q192) (by decide))) ?_
-  rintro j' g fl V₃ ⟨rfl, rfl, hV⟩ Y₃ t₃ hK₃ hA₃ hr₃ hg₃ -
-  subst V₃
-  have hs3 : Y₃.cpu.gpr.rsp = X.cpu.gpr.rsp + 168#64 + 8 + 8 + 8 + 8 := by
-    rw [hg₃]
-    show Y₂.cpu.gpr.rsp + 168#64 + 8 + 8 + 8 + 8 = _
-    rw [hs2]
-  refine c.s_ret hK₃ hA₃ hin (lt_len (by decide)) hr₃ (ret_254 _)
-    (by rw [hs3]; exact frw hfd (fa (d := 200) (by omega) q200) (by decide)) hin₂ h₂
-    (by rw [hs3, pa4, vd (X.cpu.gpr.rsp + 200#64) 8 (by omega) (by omega)]; exact hra) ?_
-  rintro Z t₄ hKZ hAZ ⟨hrZ, hgZ⟩
-  obtain ⟨z1, z2, z3, z4, z5, z6, z7, z8⟩ :=
-    dGs (Vd V X.cpu.gpr.rax X.cpu.gpr.rbp X.cpu.gpr.rbx) Y₂.cpu.gpr (Y₃.cpu.gpr.rsp + 8)
-  rw [← hg₃, ← hgZ] at z1 z2 z3 z4 z5 z6 z7 z8
-  refine k Z t₄ hKZ hAZ hrZ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_
-  · rw [z1, hs3, pa5]
-  · rw [z2, hg₂, h12]
+  · rw [hs2, vd (X.cpu.gpr.rsp + 200#64) 8 (by omega) (by omega)]
+    exact hra
+  intro Z t₄ hKZ hAZ hrZ z1 z2 z3 z4 z5 z6 z7 z8
+  refine k Z t₄ hKZ hAZ hrZ (by rw [z1, hs2]) (by rw [z2, h12]) ?_ ?_ ?_ ?_ (by rw [z7, h14]) (by rw [z8, h15])
   · rw [z3, hs2, vd (X.cpu.gpr.rsp + 168#64) 8 (by omega) (by omega)]
-  · rw [z4, hs2, pa1, vd (X.cpu.gpr.rsp + 176#64) 8 (by omega) (by omega)]
-  · rw [z5, hs2, pa2, vd (X.cpu.gpr.rsp + 184#64) 8 (by omega) (by omega)]
-  · rw [z6, hs2, pa3, vd (X.cpu.gpr.rsp + 192#64) 8 (by omega) (by omega)]
-  · rw [z7, hg₂, hg₁]
-  · rw [z8, hg₂, hg₁]
+  · rw [z4, hs2, vd (X.cpu.gpr.rsp + 176#64) 8 (by omega) (by omega)]
+  · rw [z5, hs2, vd (X.cpu.gpr.rsp + 184#64) 8 (by omega) (by omega)]
+  · rw [z6, hs2, vd (X.cpu.gpr.rsp + 192#64) 8 (by omega) (by omega)]
 
 end FV7z.Opd
