@@ -219,7 +219,7 @@ theorem ge {pl pc : List Byte} {Pm : (Addr → Byte) → Prop} {E : Ev} {V W : A
     (hig : CodeIn L Genv.gev_at Genv.gev)
     (hil : CodeIn L 4198664#64 pl) (hl0 : 0 < pl.length) (hlen : Str.LenAt prof L o 4198664#64 Pm)
     (hic : CodeIn L 4198472#64 pc) (hc0 : 0 < pc.length) (hcmp : Str.NcmpAt prof L o 4198472#64 Pm)
-    (hj : j + 5 < 2897) (hd : Dec prof.feat ndi j (FV7z.mk .call 64 [.rel rel] 5))
+    (hgf : GotF F) (hj : j + 5 < 2897) (hd : Dec prof.feat ndi j (FV7z.mk .call 64 [.rel rel] 5))
     (htgt : ndi_at.add (j + 5) + BitVec.ofNat 64 rel = Genv.gev_at)
     (hK : KeptW Wl s₀ X) (hA : Agree F X.proc.mm.mem W) (hrip : X.cpu.rip = ndi_at.add j)
     (hsp : X.cpu.gpr.rsp = sp) (hdi : X.cpu.gpr.rdi = a) (hE : E.Ok V F sp) (hN : NmOk E V F a n)
@@ -253,7 +253,7 @@ theorem ge {pl pc : List Byte} {Pm : (Addr → Byte) → Prop} {E : Ev} {V W : A
     rw [show Y.cpu.gpr.rsp = sp - 8#64 by rw [hgY]; rfl, e8]
     omega
   refine Genv.getenv_none (P := ⟨Y.cpu.gpr, Vst W (sp - 8#64) (toBytesLE (ndi_at.add (j + 5)) 8), n, E.envp, E.N,
-      E.ptr, E.len⟩) c hig hil hl0 hlen hic hc0 hcmp hKY hAY hrY rfl
+      E.ptr, E.len⟩) c hig hil hl0 hlen hic hc0 hcmp hgf hKY hAY hrY rfl
     (par_ok hE hN h72 (fun x hx hx' => (q x hx).trans (hWo x hx hx')) ?_ hstk (fun i hi => c.hws _ (hw8 i hi)) hfe
       (by rw [hgY]; rfl) (by rw [hgY]; exact hdi))
     (fun W' hW' => hPm W' fun x hx => (hW' x (fr x hx)).trans (q x hx)) hin (lt_len hj) ?_ ?_
@@ -378,7 +378,9 @@ theorem gs {pl pc : List Byte} {Pm : (Addr → Byte) → Prop} {E : Ev} {V M W :
       Z.cpu.gpr.r15 = X.cpu.gpr.r15 → GoG prof L o gev gP gE Z t') :
     GoG prof L o gev gP gE X t := by
   have h72 := cx.h72
-  refine ge c cx.hin cx.hig cx.hil cx.hl0 cx.hlen cx.hic cx.hc0 cx.hcmp hj hd htgt hK hA hrip hsp hdi cx.hE hN h72
+  refine ge c cx.hin cx.hig cx.hil cx.hl0 cx.hlen cx.hic cx.hc0 cx.hcmp
+    ⟨fun a h1 h2 => cx.hr a (by omega) (by omega), fun a h1 h2 => cx.hr a (by omega) (by omega)⟩ hj hd htgt hK hA hrip
+    hsp hdi cx.hE hN h72
     (fun x hx hx' => (hM x hx).trans (hG x ?_)) ?_ cx.hstk (gf cx.hr _ 8 (by decide))
     (fun W' hW' => cx.hPm W' (got_kept h72 (hM.scr hW') hG))
     (fun Z t' W' hKZ hAZ hW' => k Z t' W' hKZ hAZ (hM.scr hW'))
