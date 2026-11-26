@@ -50,7 +50,8 @@ hypotheses such as `(g.rsi == 0) = true`:
   `r12 = n`, `r8 = str + n`, `r9 = 0`, `esi = 1`, `edi = 0`.
 - `vc_48n` (byte not alnum: `rb V (rbx + c*2) &&& 8 = 0`): to 74. `vc_48d`, `vc_48x` (alnum, a digit or not:
   `c - 48 < 10` in 32 bits): to 74, `rdi + 1`, `esi` kept or 0 (`cmov` zero-extends).
-- `vc_74l` (`r8 ≠ rdx + 1`): to 48. `vc_74d` (`esi ≠ 0`): to the `call` at 196, `rdi + 4`. `vc_74n`: to 91, `rdi + 1`.
+- `vc_74l` (`r8 ≠ rdx + 1`): to 48. `vc_74d` (`esi ≠ 0`): to the `call` at 196, `rdi + 4`. `vc_74n`: to 91,
+  `rdi + 1`.
 - `vc_96z`, `vc_201z`, `vc_250z` (`rax = 0`): to 224. `vc_224`: the pops, `rax = 0`, to the `ret` at 234.
 - `vc_96n`: to 104, `r9 = rax`. `vc_201n`, `vc_250n`: "iso\0" stored (`0x6f7369`, 4 bytes), `rax = p + 3`, to 104 or
   180. `vc_104`: `r8 = [0x7914d0]` (`__ctype_tolower`), `edx = 0`, to 140.
