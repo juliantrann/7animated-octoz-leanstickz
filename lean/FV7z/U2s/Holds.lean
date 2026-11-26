@@ -470,7 +470,6 @@ theorem at88 {fb : Addr} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase
       bv_eq
     have ersi : X.cpu.gpr.r10 = g₀.rsi + BitVec.ofNat 64 (0 + 1) := by
       rw [hr10]
-      first | rfl | bv_eq
     refine k1 (kk + 1) Y t₁ _ (by omega) (by omega) hKY hAY hrY ?_
       (mi_st hl2 (mi_st hl1 hm (Or.inl ⟨by omega, by omega⟩)) (Or.inr ⟨by omega, by omega⟩))
     rw [hgY]
@@ -621,7 +620,7 @@ theorem u2s_ok {fb : Addr} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBa
     rw [hgY]
     exact ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩
   · refine (c_0 prof fb).run c hfs hin _ hK hA (by rw [addr_add_zero]; exact hrip)
-      (vc_0l (cmp_gt (n := 9) (by decide) (by omega)) H.hcl hfw24) ?_
+      (vc_0l (cmp_gt (n := 9) (by decide) (Nat.lt_of_not_le hsm)) H.hcl hfw24) ?_
     rintro j' g fl V₁ ⟨rfl, ⟨a, c', d, rfl, hc', hd⟩, rfl⟩ Y t₁ hKY hAY hrY hgY -
     have h0 : 10 ≤ nv X.cpu.gpr / 10 ^ 0 := by
       rw [Nat.pow_zero, Nat.div_one]
