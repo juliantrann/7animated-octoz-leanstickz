@@ -504,6 +504,9 @@ FNS = {
     "cpt": dict(grp="Cpt", cn="NWildcard::CCensorNode::CheckPathCurrent", a=0x453050, n=0x6e, pos=True,
                 stops=(0x5d, 0x6c), calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `NWildcard::CCensorNode::CheckPathCurrent` (`CPP/Common/Wildcard.cpp`; `objdump -d`)"),
+    "eex": dict(grp="Eex", cn="NWildcard::CCensor::ExtendExclude", a=0x4535b0, n=0x97, pos=True,
+                stops=(0x83, 0x96), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `NWildcard::CCensor::ExtendExclude` (`CPP/Common/Wildcard.cpp`; `objdump -d`)"),
     "sfs": dict(grp="Sfs", cn="SysFreeString", a=0x5a00c0, n=25, pos=True, stops=(0xd, 0x18),
                 tag="PLAN.md §M, M1", src="7-Zip 26.06's `SysFreeString` (`CPP/Common/MyWindows.cpp`; `objdump -d`)"),
     # 7-Zip's CPP/Common/Wildcard.cpp `DoesNameContainWildcard (const UString &)`: the `wchar_t`s (4 bytes, at

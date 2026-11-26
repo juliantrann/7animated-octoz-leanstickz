@@ -1,5 +1,3 @@
-import FV7z.Cpt.Holds
+import FV7z.Eex.Holds
 open FV7z
-#print axioms FV7z.Cpt.cpt_ok
-#print axioms FV7z.Cpt.lpAll
-#print axioms FV7z.Cpt.lpHead
+#print axioms FV7z.Eex.vc_0p
