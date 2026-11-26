@@ -1,5 +1,5 @@
-import FV7z.Fni.Holds
+import FV7z.Cpp.Holds
 open FV7z
-#print axioms FV7z.Fni.fni_ok
-#print axioms FV7z.Fni.fni_ret
-#print axioms FV7z.Fn.Seg.s_repz_cmpsb
+#print axioms FV7z.Cpp.cpp_ok
+#print axioms FV7z.Cpp.loop1
+#print axioms FV7z.Cpp.loop2
