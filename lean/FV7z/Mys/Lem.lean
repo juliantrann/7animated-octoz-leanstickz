@@ -106,6 +106,6 @@ theorem ret_back {code : List Byte} {e : Addr} {jr : Nat} (c : Seg prof F Wl L s
   obtain ⟨-, h2, h3, h4, h5, h6, h7⟩ := hkp
   refine k Z' t' hK' hA' hr' ?_ (by rw [hg']; rfl)
   rw [hg']
-  exact ⟨by show Z.cpu.gpr.rsp + 8 = _; rw [hsp], h2, h3, h4, h5, h6, h7⟩
+  exact ⟨by show Z.cpu.gpr.rsp + 8 = _; rw [hsp]; rfl, h2, h3, h4, h5, h6, h7⟩
 
 end FV7z.Mys
