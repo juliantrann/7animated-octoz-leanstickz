@@ -120,6 +120,9 @@ theorem vc_36 {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post}
   rintro g₄ f₄ V₄ ⟨d₄, b1, rfl, rfl⟩
   exact h c₂ d₄ b0 b2 b1 f₄
 
+-- The cuts past this point stay folded: `apply And.intro` would otherwise unfold them (`W_36` is 16 ops).
+attribute [local irreducible] W_9 W_36
+
 /-- What the run from the entry gives: at 96, `rax` and `rdx` some values and the memory as it was or `dicSize`
 stored; at 86, `eax` 0 and the four stores. -/
 def P0 (g₀ : Gprs) (V₀ : Addr → Byte) : Post := fun j g _ V =>
