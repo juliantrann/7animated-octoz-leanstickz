@@ -65,7 +65,7 @@ theorem ent_cx {prof : Profile} {L : List (Addr × List Byte)} {o : Oracle} {pl 
     (by omega) hsn
   exact ⟨hLC.ndi, hLC.gev, hil, hl0, hlen, hic, hc0, hcmp,
     fun W₁ h => hPm W₁ (fun x h1 h2 => h x (.inl ⟨h1, h2⟩)) fun i hi => by
-      have t := tab_toNat hi
+      have t := ncmp_tab_toNat hi
       rw [h _ (.inr ⟨by omega, by omega⟩)]
       exact hT i hi, hE,
     nm_ok (o := 0) (by decide) hN hpg hLD, nm_ok (o := 8) (by decide) hN hpg hLD,

@@ -289,6 +289,7 @@ import FV7z.Start.GsMain
 import FV7z.Start.RegZ
 import FV7z.Start.CtorEnv
 import FV7z.Start.Reach
+import FV7z.Start.ReachP
 import FV7z.Start.Text
 import FV7z.Statement.Examples
 import FV7z.Lemmas.BlkOps7
