@@ -196,6 +196,78 @@ theorem vc_25 {g : Gprs} {f : Rflags} {V : Addr → Byte} (hb : ∀ i < 8, Foot 
   wpx [W_25, o1, Op.mul64, Op.mulp, Op.shr64, Op.shl64]
   exact ⟨hb, h0, fun _ _ _ _ _ _ => ⟨h12, hbp, h8, h16, x95 rfl rfl⟩⟩
 
+/-! ## The bytes around the call and the stores -/
+
+theorem tsp {sp : Addr} (hs : 32 ≤ sp.toNat) : (sp - 8).toNat = sp.toNat - 8 ∧ (sp - 8 - 8).toNat = sp.toNat - 16 ∧
+    (sp - 8 - 8 - 8).toNat = sp.toNat - 24 ∧ (sp - 8 - 8 - 8 - 8).toNat = sp.toNat - 32 := by
+  have t8 := tsub8 (a := sp) (by omega)
+  have t16 := tsub8 (a := sp - 8) (by omega)
+  have t24 := tsub8 (a := sp - 8 - 8) (by omega)
+  have t32 := tsub8 (a := sp - 8 - 8 - 8) (by omega)
+  omega
+
+/-- The bytes after the pushes and the call's return address. -/
+abbrev V4 (V : Addr → Byte) (sp : Addr) (b p r ra : BitVec 64) : Addr → Byte :=
+  Vst (Vst (Vst (Vst V (sp - 8) (toBytesLE r 8)) (sp - 8 - 8) (toBytesLE p 8)) (sp - 8 - 8 - 8) (toBytesLE b 8))
+    (sp - 8 - 8 - 8 - 8) (toBytesLE ra 8)
+
+theorem v4_out {V : Addr → Byte} {sp : Addr} {b p r ra : BitVec 64} (hs : 32 ≤ sp.toNat)
+    (hs8 : sp.toNat + 8 ≤ 2 ^ 64) (a : Addr) (h : ¬ (sp.toNat - 32 ≤ a.toNat ∧ a.toNat < sp.toNat)) :
+    V4 V sp b p r ra a = V a := by
+  obtain ⟨t8, t16, t24, t32⟩ := tsp hs
+  dsimp only [V4]
+  rw [vo (by ln) (by omega) (by omega), vo (by ln) (by omega) (by omega), vo (by ln) (by omega) (by omega),
+    vo (by ln) (by omega) (by omega)]
+
+theorem v4_rd {V : Addr → Byte} {sp : Addr} {b p r ra : BitVec 64} (hs : 32 ≤ sp.toNat)
+    (hs8 : sp.toNat + 8 ≤ 2 ^ 64) :
+    rdq(V4 V sp b p r ra, sp - 8 - 8 - 8 - 8) = ra ∧ rdq(V4 V sp b p r ra, sp - 8 - 8 - 8) = b ∧
+      rdq(V4 V sp b p r ra, sp - 8 - 8) = p ∧ rdq(V4 V sp b p r ra, sp - 8) = r := by
+  obtain ⟨t8, t16, t24, t32⟩ := tsp hs
+  dsimp only [V4]
+  refine ⟨?_, ?_, ?_, ?_⟩
+  · rw [vs (by ln) (by omega)]
+    exact ofBytesLE_toBytesLE (n := 8) rfl _
+  · rw [vr (by ln) (by omega) (by omega) (by omega), vs (by ln) (by omega)]
+    exact ofBytesLE_toBytesLE (n := 8) rfl _
+  · rw [vr (by ln) (by omega) (by omega) (by omega), vr (by ln) (by omega) (by omega) (by omega),
+      vs (by ln) (by omega)]
+    exact ofBytesLE_toBytesLE (n := 8) rfl _
+  · rw [vr (by ln) (by omega) (by omega) (by omega), vr (by ln) (by omega) (by omega) (by omega),
+      vr (by ln) (by omega) (by omega) (by omega), vs (by ln) (by omega)]
+    exact ofBytesLE_toBytesLE (n := 8) rfl _
+
+/-- 8 bytes at `x` apart from the pushes. -/
+theorem r3 {V : Addr → Byte} {sp x : Addr} {b p r : BitVec 64} (hs : 32 ≤ sp.toNat) (hs8 : sp.toNat + 8 ≤ 2 ^ 64)
+    (hx : x.toNat + 8 ≤ 2 ^ 64) (hd : x.toNat + 8 ≤ sp.toNat - 24 ∨ sp.toNat ≤ x.toNat) :
+    rdq(Vst (Vst (Vst V (sp - 8) (toBytesLE r 8)) (sp - 8 - 8) (toBytesLE p 8)) (sp - 8 - 8 - 8) (toBytesLE b 8), x) =
+      rdq(V, x) := by
+  obtain ⟨t8, t16, t24, -⟩ := tsp hs
+  rw [vr (by ln) (by omega) (by omega) (by omega), vr (by ln) (by omega) (by omega) (by omega),
+    vr (by ln) (by omega) (by omega) (by omega)]
+
+theorem w5_out {V : Addr → Byte} {q f : Addr} {u : BitVec 32} {w : BitVec 64} (hq : q.toNat + 4 ≤ 2 ^ 64)
+    (hf : f.toNat + 8 ≤ 2 ^ 64) (a : Addr) (h2 : ¬ (q.toNat ≤ a.toNat ∧ a.toNat < q.toNat + 4))
+    (h3 : ¬ (f.toNat ≤ a.toNat ∧ a.toNat < f.toNat + 8)) : Vst (Vst V q (toBytesLE u 4)) f (toBytesLE w 8) a = V a := by
+  rw [vo (by ln) hf (by omega), vo (by ln) hq (by omega)]
+
+theorem w5_rd {V : Addr → Byte} {q f y : Addr} {u : BitVec 32} {w : BitVec 64} (hq : q.toNat + 4 ≤ 2 ^ 64)
+    (hf : f.toNat + 8 ≤ 2 ^ 64) (hy : y.toNat + 8 ≤ 2 ^ 64) (dq : q.toNat + 4 ≤ y.toNat ∨ y.toNat + 8 ≤ q.toNat)
+    (df : f.toNat + 8 ≤ y.toNat ∨ y.toNat + 8 ≤ f.toNat) :
+    rdq(Vst (Vst V q (toBytesLE u 4)) f (toBytesLE w 8), y) = rdq(V, y) := by
+  rw [vr (by ln) hf hy df, vr (by ln) hq hy dq]
+
+theorem w5_f {V : Addr → Byte} {q f : Addr} {u : BitVec 32} {w : BitVec 64} (hf : f.toNat + 8 ≤ 2 ^ 64) :
+    rdq(Vst (Vst V q (toBytesLE u 4)) f (toBytesLE w 8), f) = w := by
+  rw [vs (by ln) hf]
+  exact ofBytesLE_toBytesLE (n := 8) rfl _
+
+theorem w5_q {V : Addr → Byte} {q f : Addr} {u : BitVec 32} {w : BitVec 64} (hq : q.toNat + 4 ≤ 2 ^ 64)
+    (hf : f.toNat + 8 ≤ 2 ^ 64) (d : q.toNat + 4 ≤ f.toNat ∨ f.toNat + 8 ≤ q.toNat) :
+    rdd(Vst (Vst V q (toBytesLE u 4)) f (toBytesLE w 8), q) = u := by
+  rw [vr (by ln) hf hq (by omega), vs (by ln) hq]
+  exact ofBytesLE_toBytesLE (n := 4) rfl _
+
 variable {prof : Profile} {L : List (Addr × List Byte)} {s₀ : State} {o : Oracle}
   {gev : List Event} {gP : State → Nat → List Event → Prop} {gE : Outcome → List Event → Prop}
   {X : State} {t : Nat} {V : Addr → Byte}
@@ -232,16 +304,7 @@ theorem fft_ok (c : Seg prof F Wl L s₀ o) (hin : CodeIn L fft_at fft) (hinu : 
   replace hfd : Sep _ _ := hfd
   replace hnd : Sep _ _ := hnd
   replace hnf : Sep _ _ := hnf
-  have t8 : (X.cpu.gpr.rsp - 8).toNat = X.cpu.gpr.rsp.toNat - 8 := tsub8 (by omega)
-  have t16 : (X.cpu.gpr.rsp - 8 - 8).toNat = X.cpu.gpr.rsp.toNat - 16 := by
-    have := tsub8 (a := X.cpu.gpr.rsp - 8) (by omega)
-    omega
-  have t24 : (X.cpu.gpr.rsp - 8 - 8 - 8).toNat = X.cpu.gpr.rsp.toNat - 24 := by
-    have := tsub8 (a := X.cpu.gpr.rsp - 8 - 8) (by omega)
-    omega
-  have t32 : (X.cpu.gpr.rsp - 8 - 8 - 8 - 8).toNat = X.cpu.gpr.rsp.toNat - 32 := by
-    have := tsub8 (a := X.cpu.gpr.rsp - 8 - 8 - 8) (by omega)
-    omega
+  obtain ⟨t8, t16, t24, t32⟩ := tsp hs
   have t32' : (X.cpu.gpr.rsp - 32#64).toNat = X.cpu.gpr.rsp.toNat - 32 := tsubc (by omega) (by omega)
   have tt8 : (X.cpu.gpr.rdi + 8#64).toNat = X.cpu.gpr.rdi.toNat + 8 := taddc (by omega) (by omega)
   -- to the call
@@ -249,11 +312,8 @@ theorem fft_ok (c : Seg prof F Wl L s₀ o) (hin : CodeIn L fft_at fft) (hinu : 
     (vc_0 (offF (d := 24) hst (by omega) (by omega)) (offF (d := 16) hst (by omega) (by omega))
       (offF (d := 8) hst (by omega) (by omega)) (fun i hi => hts i (by omega))) ?_
   rintro j g fl V₁ ⟨rfl, rfl, rfl⟩ Y₁ t₁ hK₁ hA₁ hr₁ hg₁ -
-  have hR1 : rdq(V3 X.cpu.gpr V, X.cpu.gpr.rdi) = rdq(V, X.cpu.gpr.rdi) := by
-    unfold Sep at htd
-    dsimp only [V3]
-    rw [vr (by ln) (by omega) (by omega) (by omega), vr (by ln) (by omega) (by omega) (by omega),
-      vr (by ln) (by omega) (by omega) (by omega)]
+  have hR1 : rdq(V3 X.cpu.gpr V, X.cpu.gpr.rdi) = rdq(V, X.cpu.gpr.rdi) :=
+    r3 hs hs8 (by omega) (by unfold Sep at htd; omega)
   dsimp only [V3] at hA₁
   have hsp₁ : Y₁.cpu.gpr.rsp = X.cpu.gpr.rsp - 8 - 8 - 8 := by rw [hg₁]
   refine c.s_call hK₁ hA₁ hin (lt_len (by decide)) hr₁ (call_20 _) hinu (Utf.lt_len (by decide)) (by decide)
@@ -269,19 +329,7 @@ theorem fft_ok (c : Seg prof F Wl L s₀ o) (hin : CodeIn L fft_at fft) (hinu : 
       rdq(V₂, X.cpu.gpr.rsp - 8 - 8 - 8 - 8) = fft_at.add 25 ∧
       rdq(V₂, X.cpu.gpr.rsp - 8 - 8 - 8) = X.cpu.gpr.rbx ∧ rdq(V₂, X.cpu.gpr.rsp - 8 - 8) = X.cpu.gpr.rbp ∧
       rdq(V₂, X.cpu.gpr.rsp - 8) = X.cpu.gpr.r12 := by
-    refine ⟨_, hA₂, fun a h => ?_, ?_, ?_, ?_, ?_⟩
-    · rw [vo (by ln) (by omega) (by omega), vo (by ln) (by omega) (by omega), vo (by ln) (by omega) (by omega),
-        vo (by ln) (by omega) (by omega)]
-    · rw [vs (by ln) (by omega)]
-      exact ofBytesLE_toBytesLE (n := 8) rfl _
-    · rw [vr (by ln) (by omega) (by omega) (by omega), vs (by ln) (by omega)]
-      exact ofBytesLE_toBytesLE (n := 8) rfl _
-    · rw [vr (by ln) (by omega) (by omega) (by omega), vr (by ln) (by omega) (by omega) (by omega),
-        vs (by ln) (by omega)]
-      exact ofBytesLE_toBytesLE (n := 8) rfl _
-    · rw [vr (by ln) (by omega) (by omega) (by omega), vr (by ln) (by omega) (by omega) (by omega),
-        vr (by ln) (by omega) (by omega) (by omega), vs (by ln) (by omega)]
-      exact ofBytesLE_toBytesLE (n := 8) rfl _
+    exact ⟨_, hA₂, v4_out (ra := fft_at.add (20 + 5)) hs hs8, v4_rd hs hs8⟩
   -- `UnixTime64_To_FileTime64 (tv_sec)`
   refine Utf.utf_ok c hinu hK₂ hA₂ hr₂
     (by rw [hsp₂]; exact fun i hi => c.hws _ (offF (d := 0) hst (by omega) (by omega) i hi)) hin (j₂ := 25)
@@ -304,12 +352,6 @@ theorem fft_ok (c : Seg prof F Wl L s₀ o) (hin : CodeIn L fft_at fft) (hinu : 
     ⟨(congrArg Gprs.r13 hg₃).trans ((congrArg Gprs.r13 hg₂).trans g1k.1),
       (congrArg Gprs.r14 hg₃).trans ((congrArg Gprs.r14 hg₂).trans g1k.2.1),
       (congrArg Gprs.r15 hg₃).trans ((congrArg Gprs.r15 hg₂).trans g1k.2.2)⟩
-  have ta1 : (X.cpu.gpr.rsp - 8 - 8 - 8 + 8).toNat = X.cpu.gpr.rsp.toNat - 16 := by
-    have := tadd8 (a := X.cpu.gpr.rsp - 8 - 8 - 8) (by omega)
-    omega
-  have ta2 : (X.cpu.gpr.rsp - 8 - 8 - 8 + 8 + 8).toNat = X.cpu.gpr.rsp.toNat - 8 := by
-    have := tadd8 (a := X.cpu.gpr.rsp - 8 - 8 - 8 + 8) (by omega)
-    omega
   have hx2 : rdq(V₂, X.cpu.gpr.rdi + 8#64) = rdq(V, X.cpu.gpr.rdi + 8#64) :=
     congrArg (ofBytesLE 64) (rd_out h2o (by omega) (by unfold Sep at htd; omega))
   -- to the `ret`
@@ -333,41 +375,30 @@ theorem fft_ok (c : Seg prof F Wl L s₀ o) (hin : CodeIn L fft_at fft) (hinu : 
   have g5p : Y₅.cpu.gpr.rbp = X.cpu.gpr.rbp := by
     rw [hg₅]
     show rdq(V5 Z.cpu.gpr V₂, Z.cpu.gpr.rsp + 8) = _
-    unfold Sep at hfd hnd
-    rw [zsp, BitVec.sub_add_cancel]
-    simp only [V5, zr12, zbp]
-    rw [vr (by ln) (by omega) (by omega) (by omega), vr (by ln) (by omega) (by omega) (by omega)]
+    rw [V5, zr12, zbp, zsp, BitVec.sub_add_cancel,
+      w5_rd hnb hfb (by omega) (by unfold Sep at hnd; omega) (by unfold Sep at hfd; omega)]
     exact h2p
   have g5c : Y₅.cpu.gpr.r12 = X.cpu.gpr.r12 := by
     rw [hg₅]
     show rdq(V5 Z.cpu.gpr V₂, Z.cpu.gpr.rsp + 8 + 8) = _
-    unfold Sep at hfd hnd
-    rw [zsp]
-    simp only [BitVec.sub_add_cancel, V5, zr12, zbp]
-    rw [vr (by ln) (by omega) (by omega) (by omega), vr (by ln) (by omega) (by omega) (by omega)]
+    rw [V5, zr12, zbp, zsp, BitVec.sub_add_cancel, BitVec.sub_add_cancel,
+      w5_rd hnb hfb (by omega) (by unfold Sep at hnd; omega) (by unfold Sep at hfd; omega)]
     exact h2c
   have hret : rdq(V5 Z.cpu.gpr V₂, X.cpu.gpr.rsp) = e₂.add j₂ := by
-    unfold Sep at hfd hnd
-    simp only [V5, zr12, zbp]
-    rw [vr (by ln) (by omega) (by omega) (by omega), vr (by ln) (by omega) (by omega) (by omega), ← hra]
+    rw [V5, zr12, zbp, w5_rd hnb hfb (by omega) (by unfold Sep at hnd; omega) (by unfold Sep at hfd; omega), ← hra]
     exact congrArg (ofBytesLE 64) (rd_out h2o (by omega) (by omega))
   have hfr : ∀ a : Addr, ¬ (X.cpu.gpr.rsp.toNat - 32 ≤ a.toNat ∧ a.toNat < X.cpu.gpr.rsp.toNat) →
       ¬ (X.cpu.gpr.rdx.toNat ≤ a.toNat ∧ a.toNat < X.cpu.gpr.rdx.toNat + 4) →
       ¬ (X.cpu.gpr.rsi.toNat ≤ a.toNat ∧ a.toNat < X.cpu.gpr.rsi.toNat + 8) → V5 Z.cpu.gpr V₂ a = V a := by
     intro a h1 h2 h3
-    simp only [V5, zr12, zbp]
-    rw [vo (by ln) (by omega) (by omega), vo (by ln) (by omega) (by omega)]
+    rw [V5, zr12, zbp, w5_out hnb hfb a h2 h3]
     exact h2o a h1
   have hftv : rdq(V5 Z.cpu.gpr V₂, X.cpu.gpr.rsi) =
       ftV rdq(V, X.cpu.gpr.rdi) + rdq(V, X.cpu.gpr.rdi + 8#64) / 100#64 := by
-    simp only [V5, zr12, zbp, zb, zax, hR1, hx2]
-    rw [vs (by ln) (by omega), ofBytesLE_toBytesLE (n := 8) rfl, (m100_eq _).2]
+    rw [V5, zr12, zbp, zb, hx2, w5_f hfb, (m100_eq _).2, zax, hR1]
     exact BitVec.add_comm _ _
   have hnsv : rdd(V5 Z.cpu.gpr V₂, X.cpu.gpr.rdx) = (rdq(V, X.cpu.gpr.rdi + 8#64) % 100#64).setWidth 32 := by
-    unfold Sep at hnf
-    simp only [V5, zr12, zbp, zb, hx2]
-    rw [vr (by ln) (by omega) (by omega) (by omega), vs (by ln) (by omega), ofBytesLE_toBytesLE (n := 4) rfl,
-      (m100_eq _).1]
+    rw [V5, zr12, zbp, zb, hx2, w5_q hnb hfb (by unfold Sep at hnf; omega), (m100_eq _).1]
   refine c.s_ret hK₅ hA₅ hin (lt_len (by decide)) hr₅ (ret_95 _) (by rw [hsp₅]; exact hl) hin₂ h₂
     (by rw [hsp₅]; exact hret) ?_
   rintro Z' t₆ hKZ hAZ ⟨hrZ, hgZ⟩
