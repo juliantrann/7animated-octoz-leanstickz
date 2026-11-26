@@ -1,3 +1,2 @@
-import FV7z.Cnc.Holds
+import FV7z.Fcl.Holds
 open FV7z
-#print axioms FV7z.Cnc.cnc_ok

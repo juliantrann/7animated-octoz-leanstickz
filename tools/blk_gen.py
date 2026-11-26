@@ -116,6 +116,11 @@ FNS = {
     "cnc": dict(grp="Cnc", cn="__close_nocancel", a=0x665f20, n=42, pos=True, fs=True, stops=(0x13, 0x14, 0x29),
                 calls=True, tag="PLAN.md §M, M1",
                 src="glibc 2.31's `__close_nocancel` (`sysdeps/unix/sysv/linux/close_nocancel.c`; `objdump -d`)"),
+    # 7-Zip's CPP/Windows/FileIO.cpp `CFileBase::Close ()`: nothing when `_handle` is -1, else `close (_handle)`,
+    # `_handle` = -1 on success. Stop: the `ret` (0x2f); the `call` of `__close` is at 0x14.
+    "fcl": dict(grp="Fcl", cn="NWindows::NFile::NIO::CFileBase::Close", a=0x456030, n=48, pos=True, stops=(0x2f,),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CFileBase::Close` (`CPP/Windows/FileIO.cpp`; `objdump -d`)"),
     # 7-Zip's CPP/Windows/FileIO.cpp `CFileBase::seek (off, whence)`: the descriptor (`this->_handle`, at 0), then
     # `lseek`. Stop: the `jmp` to `__libc_lseek` (6), a branch to another segment (`Seg.s_jmp_x`).
     "fsk": dict(grp="Fsk", cn="NWindows::NFile::NIO::CFileBase::seek", a=0x4560b0, n=11, pos=True, stops=(6,),
