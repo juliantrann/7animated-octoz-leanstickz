@@ -275,6 +275,11 @@ FNS = {
     "tcg": dict(grp="Tcg", cn="__tcgetattr", a=0x666240, n=0xc9, pos=True, fs=True,
                 stops=(0x4b, 0xa6, 0xa7, 0xc4), calls=True, tag="PLAN.md §M, M1",
                 src="glibc 2.31's `__tcgetattr` (`sysdeps/unix/sysv/linux/tcgetattr.c`; `objdump -d`)"),
+    # The copy of the settings in `__tcgetattr` after the kernel's answer 0, from after the two loads into `xmm0` and
+    # `xmm1` (0x56) to the first `movups` store (0x86): the `xmm` moves are steps of their own (FV7z/Tcg/Copy.lean).
+    "tcc": dict(grp="TcgC", code=("Tcg", "tcg"), cn="__tcgetattr", a=0x666240, n=0xc9, entry=0x56, pos=True,
+                stops=(0x86,), tag="PLAN.md §M, M1",
+                src="glibc 2.31's `__tcgetattr` (`sysdeps/unix/sysv/linux/tcgetattr.c`; `objdump -d`)"),
     # glibc 2.31 sysdeps/unix/sysv/linux/dl-sysdep.c. Stop: `__uname` failed (0xb0: the release is read from
     # `/proc/sys/kernel/osrelease`); the `ret`s are at 0x8a (three parts read) and 0xa9 (fewer).
     "osv": dict(grp="Osv", cn="_dl_discover_osversion", a=0x671d50, n=268, pos=True, stops=(0xb0,), calls=True,
