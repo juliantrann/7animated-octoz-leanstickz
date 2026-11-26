@@ -74,6 +74,7 @@ theorem tailF (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e mc2) {g₀ : Gprs} 
     show Y2.cpu.gpr.get (regOf 1) + BitVec.ofNat 64 18446744073709551600 = _
     rw [get1, hg2, hcx,
       add_back g₀.rdi (g₀.rdx.toNat - 16) (k := 16) (D := 18446744073709551600) (by decide) (by omega)]
+    congr 1
   refine c.s_movups_stv hK2 hA2 hin (by rw [mc2_length]; decide) hr2 (d614 prof.feat) (fun i hi => ?_) ?_
   · rw [he1, addr_add_add]
     exact hst _ (by omega)
@@ -82,6 +83,7 @@ theorem tailF (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e mc2) {g₀ : Gprs} 
     show Y3.cpu.gpr.get (regOf 1) + BitVec.ofNat 64 18446744073709551584 = _
     rw [get1, hg3, hg2, hcx,
       add_back g₀.rdi (g₀.rdx.toNat - 16) (k := 32) (D := 18446744073709551584) (by decide) (by omega)]
+    congr 1
   refine c.s_movups_stv hK3 hA3 hin (by rw [mc2_length]; decide) hr3 (d618 prof.feat) (fun i hi => ?_) ?_
   · rw [he2, addr_add_add]
     exact hst _ (by omega)
@@ -90,6 +92,7 @@ theorem tailF (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e mc2) {g₀ : Gprs} 
     show Y4.cpu.gpr.get (regOf 1) + BitVec.ofNat 64 18446744073709551568 = _
     rw [get1, hg4, hg3, hg2, hcx,
       add_back g₀.rdi (g₀.rdx.toNat - 16) (k := 48) (D := 18446744073709551568) (by decide) (by omega)]
+    congr 1
   refine c.s_movups_stv hK4 hA4 hin (by rw [mc2_length]; decide) hr4 (d622 prof.feat) (fun i hi => ?_) ?_
   · rw [he3, addr_add_add]
     exact hst _ (by omega)
