@@ -111,7 +111,7 @@ theorem vc_42_zero {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (hz :
     | rfl
     | (intro i hi; exact hfr _ i (by omega))
     | (intro i hi; exact hwt _ i (by omega))
-    | (intro y hy; simp only [t_vst_in hr hy, toBytesLE_length, BitVec.toNat_ofNat])
+    | (intro y hy; repeat rw [t_vst_in hr hy (by decide) (by simp)])
     | (subst hz; decide)
     | (intro h; exact absurd h (by decide))
     | constructor
@@ -130,7 +130,7 @@ theorem vc_86 {g : Gprs} {f : Rflags} {V : Addr → Byte}
     | rfl
     | (intro i hi; exact hfr _ i (by omega))
     | (intro i hi; exact hwt _ i (by omega))
-    | (intro y hy; simp only [t_vst_in hr hy, toBytesLE_length, BitVec.toNat_ofNat])
+    | (intro y hy; repeat rw [t_vst_in hr hy (by decide) (by simp)])
     | (intro h; exact absurd h (by decide))
     | constructor
     | intro _)
@@ -360,6 +360,6 @@ theorem tcg_ok {fb : Addr} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBa
       rw [Tun.Vst_out V (X.cpu.gpr.rsp - 56#64 + 40#64) (toBytesLE rdq(V, fb + 40#64) 8) y
         (by rw [hb8, e40]; omega) (by rw [hb8, e40]; omega)]
     exact k 0 bs Z₃ t₃ hKZ₃ hrZ₃ hsp c3
-      (Or.inr ⟨rfl, hb, hx3, W7, hAZ₃, fun y h1 h2 => (hW7 y h2).trans (hout y h1)⟩)
+      (Or.inr ⟨rfl, hb, hx3, _, hAZ₃, fun y h1 h2 => (hW7 y h2).trans (hout y h1)⟩)
 
 end FV7z.Tcg
