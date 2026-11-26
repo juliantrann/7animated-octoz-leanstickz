@@ -135,6 +135,8 @@ theorem vc_50 {g : Gprs} {f : Rflags} {V : Addr → Byte}
   all_goals repeat' (first
     | exact ⟨_, Or.inl rfl, rfl, rfl⟩
     | exact ⟨_, Or.inr rfl, rfl, rfl⟩
+    | exact ⟨_, Or.inl rfl, rfl⟩
+    | exact ⟨_, Or.inr rfl, rfl⟩
     | exact rfl
     | assumption
     | exact trivial
