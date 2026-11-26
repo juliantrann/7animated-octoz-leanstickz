@@ -199,6 +199,6 @@ theorem exit6192 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e' scm) {Y : State
       simp only [hg₄, wr, gv, Src.val, set_rax, set_rcx, get0, get1, sw_64_32, subR_eq]
     refine retN_at c hin (lt_scm (by decide)) (d6211 prof.feat) hK₄ hA₄ hr₄ hkp₄ ?_ hR
     rw [hax₄]
-    exact hP _ (nres_at (by omega) (by rwa [Nat.min_eq_left hlt.le] at hsame) (hstop hlt) (zsub_eq_zero _ _))
+    exact hP _ (nres_at (by omega) (by rwa [Nat.min_eq_left (Nat.le_of_lt hlt)] at hsame) (hstop hlt) (zsub_eq_zero _ _))
 
 end FV7z.Strncmp
