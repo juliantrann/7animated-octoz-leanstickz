@@ -1,6 +1,6 @@
-import FV7z.Lemmas.SysRead
-import FV7z.Read.Holds
+import FV7z.Lemmas.SysDents
+import FV7z.Gdn.Holds
 open FV7z
-#print axioms FV7z.sysRead_ok
-#print axioms FV7z.Fn.Seg.s_read_re
-#print axioms FV7z.Read.read_ok
+#print axioms FV7z.sysGetdents64_ok
+#print axioms FV7z.Fn.Seg.s_getdents_re
+#print axioms FV7z.Gdn.gdn_ok

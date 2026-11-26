@@ -116,6 +116,12 @@ FNS = {
     "lsk": dict(grp="Lseek", cn="__libc_lseek", a=0x5ff440, n=0x2c, pos=True, fs=True, stops=(0x13, 0x14, 0x2b),
                 calls=True, tag="PLAN.md §M, M1",
                 src="glibc 2.31's `__libc_lseek` (`sysdeps/unix/sysv/linux/syscall-template.S`; `objdump -d`)"),
+    # glibc 2.31 sysdeps/unix/sysv/linux/getdents64.c (`__getdents64`, aliased `__getdents` on x86_64): `count` capped
+    # at `INT_MAX` (`cmova`), then `getdents64` (217) as is: no conversion of the entries. Stops: the `ret` (0x23), the
+    # padding after it (0x24), the `ret` after `errno` is set (0x3b); the `syscall` (0x19) is a step of its own.
+    "gdn": dict(grp="Gdn", cn="__getdents", a=0x6a2820, n=0x3c, pos=True, fs=True, stops=(0x23, 0x24, 0x3b),
+                calls=True, tag="PLAN.md §M, M1",
+                src="glibc 2.31's `__getdents` (`sysdeps/unix/sysv/linux/getdents64.c`; `objdump -d`)"),
     # glibc 2.31 sysdeps/unix/sysv/linux/close_nocancel.c via INLINE_SYSCALL (`__close_nocancel`). Stops: the `ret`
     # (0x13), the padding after it (0x14), the `ret` after `errno` is set (0x29); the `syscall` (9) is a step of its own.
     "cnc": dict(grp="Cnc", cn="__close_nocancel", a=0x665f20, n=42, pos=True, fs=True, stops=(0x13, 0x14, 0x29),
@@ -149,6 +155,10 @@ FNS = {
     # the `ret` (0x33).
     "sgw": dict(grp="Sgw", cn="__sigaction", a=0x6011d0, n=52, pos=True, fs=True, stops=(0x14, 0x33),
                 tag="PLAN.md §M, M1", src="glibc 2.31's `__sigaction` (`signal/sigaction.c`; `objdump -d`)"),
+    # glibc 2.31 `__wmemcpy (d, s, n)`: `n` scaled to bytes (`shl rdx, 2`), a tail jump to `memcpy`'s PLT entry.
+    # Stop: the `jmp` (0x8).
+    "wmc": dict(grp="Wmc", cn="__wmemcpy", a=0x65d300, n=13, pos=True, stops=(0x8,),
+                tag="PLAN.md §M, M1", src="glibc 2.31's `__wmemcpy` (`wcsmbs/wmemcpy.c`; `objdump -d`)"),
     # glibc 2.31 nptl/cleanup_compat.c `_pthread_cleanup_push (buffer, routine, arg)`: the buffer filled, linked in
     # front of the thread's `cleanup` list (`fs:0x2f8`). Stop: the `ret` (0x21).
     "pcp": dict(grp="Pcp", cn="_pthread_cleanup_push", a=0x5fefe0, n=34, pos=True, fs=True, stops=(0x21,),
@@ -157,6 +167,12 @@ FNS = {
     # `lseek`. Stop: the `jmp` to `__libc_lseek` (6), a branch to another segment (`Seg.s_jmp_x`).
     "fsk": dict(grp="Fsk", cn="NWindows::NFile::NIO::CFileBase::seek", a=0x4560b0, n=11, pos=True, stops=(6,),
                 tag="PLAN.md §M, M1", src="7-Zip 26.06's `CFileBase::seek` (`CPP/Windows/FileIO.cpp`; `objdump -d`)"),
+    # glibc 2.31 sysdeps/unix/sysv/linux/write.c (`SYSCALL_CANCEL`). Stops: the `ret` (0x1f), the process has more
+    # than one thread (0x20: `multiple_threads` is not 0), the `ret` after `errno` is set (0x83); the `syscall` (0x15)
+    # is a step of its own.
+    "wrt": dict(grp="Write", cn="__libc_write", a=0x5ff270, n=0x99, pos=True, fs=True, stops=(0x1f, 0x20, 0x83),
+                calls=True, tag="PLAN.md §M, M1",
+                src="glibc 2.31's `__libc_write` (`sysdeps/unix/sysv/linux/write.c`; `objdump -d`)"),
     # glibc 2.31 sysdeps/unix/sysv/linux/dl-sysdep.c. Stop: `__uname` failed (0xb0: the release is read from
     # `/proc/sys/kernel/osrelease`); the `ret`s are at 0x8a (three parts read) and 0xa9 (fewer).
     "osv": dict(grp="Osv", cn="_dl_discover_osversion", a=0x671d50, n=268, pos=True, stops=(0xb0,), calls=True,
