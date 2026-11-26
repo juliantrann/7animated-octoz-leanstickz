@@ -30,7 +30,7 @@ theorem vc_794 (hK : Ok K) (hE : Env K F Wl) (hc : Cm K g) (hI : I794 K g) :
   wpx [W_794, o43, M794, Op.not32, Op.cmpmi, BitVec.xor_self, BitVec.and_self]
   repeat' (first
     | exact fD hE (by tfo) (by tfo)
-    | exact x833 (by tcm) rfl (by dsimp only [I833] <;> tfs) (by dsimp only [M833] <;> tfo)
+    | exact x833 (by tcmd) rfl (by dsimp only [I833] <;> tfsd) (by dsimp only [M833] <;> tfo)
     | (with_reducible rfl)
     | apply And.intro
     | intro _)
@@ -123,7 +123,7 @@ theorem vc_960 (hK : Ok K) (hE : Env K F Wl) (hc : Cm K g) (hI : I960 K g) :
   repeat' (first
     | exact fIn hE (by tfo) (by tfo)
     | exact fP hK hE (by tfo) (by tfo)
-    | exact x343 (by tcm) (by dsimp only [I343]; t343) (by dsimp only [M343] <;> tfo)
+    | exact x343 (by tcm) (by dsimp only [I343]; t343a) (by dsimp only [M343] <;> tfo)
     | exact x1024 (by tcm) rfl (by dsimp only [I1024] <;> tfs) (by dsimp only [M1024] <;> tfo)
     | exact x1200 (by tcm) rfl (by dsimp only [I1200] <;> tfs) (by dsimp only [M1200] <;> tfo)
     | (with_reducible rfl)
@@ -192,7 +192,7 @@ theorem vc_1200 (hK : Ok K) (hE : Env K F Wl) (hc : Cm K g) (hI : I1200 K g) :
   repeat' (first
     | exact fIn hE (by tfo) (by tfo)
     | exact fP hK hE (by tfo) (by tfo)
-    | exact x343 (by tcm) (by dsimp only [I343]; t343) (by dsimp only [M343] <;> tfo)
+    | exact x343 (by tcm) (by dsimp only [I343]; t343a) (by dsimp only [M343] <;> tfo)
     | exact x1261 (by tcm) rfl (by dsimp only [I1261] <;> tfs) (by dsimp only [M1261] <;> tfo)
     | exact x1288 (by tcm) rfl (by dsimp only [I1288] <;> tfs) (by dsimp only [M1288] <;> tfo)
     | (with_reducible rfl)
@@ -279,7 +279,7 @@ theorem vc_1420 (hK : Ok K) (hE : Env K F Wl) (hc : Cm K g) (hI : I1420 K g) :
   wpx [W_1420, W_1429, o68, o69, M1420, Op.not32, Op.cmpmi, BitVec.xor_self, BitVec.and_self]
   repeat' (first
     | exact x320 (by tcm) rfl (by dsimp only [I320] <;> tfs) (by dsimp only [M320] <;> tfo)
-    | exact x1432 (by tcm) rfl (by dsimp only [I1432] <;> tfs) (by dsimp only [M1432] <;> tfo)
+    | exact x1432 (by tcmd) rfl (by dsimp only [I1432] <;> tfsd) (by dsimp only [M1432] <;> tfo)
     | (with_reducible rfl)
     | apply And.intro
     | intro _)
@@ -368,7 +368,7 @@ theorem vc_1537 (hK : Ok K) (hE : Env K F Wl) (hc : Cm K g) (hI : I1537 K g) :
   have := hK.hnl1
   wpx [W_1537, W_1560, o75, o76, M1537, Op.not32, Op.cmpmi, BitVec.xor_self, BitVec.and_self]
   repeat' (first
-    | exact x1400 (by tcm) rfl (by dsimp only [I1400] <;> tfs) (by dsimp only [M1400] <;> tfo)
+    | exact x1400 (by tcmd) rfl (by dsimp only [I1400] <;> tfsd) (by dsimp only [M1400] <;> tfo)
     | exact x1504 (by tcm) rfl (by dsimp only [I1504] <;> tfs) (by dsimp only [M1504] <;> tfo)
     | (with_reducible rfl)
     | apply And.intro

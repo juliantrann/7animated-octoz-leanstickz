@@ -122,17 +122,24 @@ def Bnd (a c x X : Nat) : Prop :=
 scoped macro "tfo" : tactic => `(tactic| ((try simp only [Bool.not_eq_true', Bool.not_eq_false', Bool.or_eq_true,
   Bool.or_eq_false_iff, Bool.and_eq_true, decide_eq_true_eq, decide_eq_false_iff_not, beq_iff_eq,
   beq_eq_false_iff_ne, Bnd, ne_eq] at *) <;> bv_omega))
+/-- Triage only: `tfo` that shows the goal after the jumps' conditions, and fails if `simp` does. -/
+scoped macro "tfod" : tactic => `(tactic| ((simp only [Bool.not_eq_true', Bool.not_eq_false', Bool.or_eq_true,
+  Bool.or_eq_false_iff, Bool.and_eq_true, decide_eq_true_eq, decide_eq_false_iff_not, beq_iff_eq,
+  beq_eq_false_iff_ne, Bnd, ne_eq] at *) <;> (trace_state; bv_omega)))
 /-- A cut point's condition: its conjuncts by `assumption`, `rfl` or `tfo`. -/
-scoped macro "tf1" : tactic =>
-  `(tactic| first | assumption | exact trivial | (with_reducible rfl) | (with_reducible apply And.intro))
+scoped macro "tf1" : tactic => `(tactic| first | (with_reducible assumption) | exact trivial | (with_reducible rfl) |
+  (with_reducible apply And.intro))
 scoped macro "tfs" : tactic => `(tactic| ((repeat' tf1) <;> tfo))
+scoped macro "tfsd" : tactic => `(tactic| ((repeat' tf1) <;> (trace_state; tfod)))
 /-- `Cm` after a stretch. -/
 scoped macro "tcm" : tactic => `(tactic| exact ⟨rfl, rfl, rfl, rfl, by tfo, by tfo⟩)
-/-- `I343` after a stretch: no store and `r12d` 0, or the store and the result. -/
-scoped macro "t343" : tactic =>
-  `(tactic| first | exact Or.inl ⟨by tfo, rfl⟩ | exact Or.inr ⟨⟨by tfo, by tfo⟩, rfl⟩)
-/-- `FinR.v` at a `ret`. -/
-scoped macro "tfv" : tactic => `(tactic| first | exact Or.inl ⟨by tfo, rfl⟩ | exact Or.inr ⟨by tfo, by tfo, rfl⟩)
+scoped macro "tcmd" : tactic => `(tactic| exact ⟨rfl, rfl, rfl, rfl, by tfod, by tfod⟩)
+/-- `I343` after a stretch: no store and `r12d` 0 (`t343a`), or the store and the result (`t343b`). -/
+scoped macro "t343a" : tactic => `(tactic| exact Or.inl ⟨by tfo, rfl⟩)
+scoped macro "t343b" : tactic => `(tactic| exact Or.inr ⟨⟨by tfo, by tfo⟩, rfl⟩)
+/-- `FinR.v` at a `ret`, for each case of `I343`. -/
+scoped macro "tfva" : tactic => `(tactic| exact Or.inl ⟨by tfo, rfl⟩)
+scoped macro "tfvb" : tactic => `(tactic| exact Or.inr ⟨by tfo, by tfo, rfl⟩)
 
 /-! ## Bounds -/
 
@@ -179,6 +186,16 @@ theorem ctx_ok {K : Ctx} (hK : Ok K) (r : BitVec 64) :
   intro b
   rw [← hK.elc, ← hK.elp]
   exact ctx_core _ _ _ b (by rw [hK.elc]; exact hK.hlc) (by rw [hK.elp]; exact hK.hlp)
+
+/-- `ctx_ok` with `cx` unfolded, as the stretch from 103 leaves `rbx`. -/
+theorem ctx_ok' {K : Ctx} (hK : Ok K) (r : BitVec 64) :
+    CtxOk K (BitVec.setWidth 64 ((BitVec.setWidth 32 r &&& ~~~(4294967295#32 <<< ((BitVec.setWidth 8
+      (BitVec.setWidth 32 (ofBytesLE 8 (List.map K.V1 (byteAddrs (K.g0.rdi + 1#64) 1))))).toNat % 32))) <<<
+      ((BitVec.setWidth 8 (BitVec.setWidth 32 (ofBytesLE 8 (List.map K.V1 (byteAddrs K.g0.rdi 1))))).toNat % 32)))
+      (BitVec.setWidth 64 (BitVec.setWidth 32 (ofBytesLE 8 (List.map K.V1 (byteAddrs K.g0.rdi 1))))) := by
+  have h := ctx_ok hK r
+  unfold cx at h
+  exact h
 
 /-- The position slot `ps` of a distance: below 4, above 13, or `ps >> 1 - 1` direct bits from `2 * sa` with
 `2 * sa + 2 * 2 ^ (ps >> 1 - 1) ≤ 256`. -/
