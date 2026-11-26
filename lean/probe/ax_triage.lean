@@ -1,15 +1,8 @@
-import FV7z.Opd.Holds
+import FV7z.Opd.Ok
 open FV7z
-#print axioms FV7z.Opd.vc_0
-#print axioms FV7z.Opd.vc_55
-#print axioms FV7z.Opd.vc_80
-#print axioms FV7z.Opd.vc_153
-#print axioms FV7z.Opd.vc_165
-#print axioms FV7z.Opd.vc_219
-#print axioms FV7z.Opd.dGs
-#print axioms FV7z.Opd.opd_open
-#print axioms FV7z.Opd.opd_stat
-#print axioms FV7z.Opd.opd_alloc
-#print axioms FV7z.Opd.opd_dir
-#print axioms FV7z.Opd.opd_tail
-#print axioms FV7z.Opd.opd_ret
+#print axioms FV7z.Opd.vc_0z
+#print axioms FV7z.Opd.vc_80d
+#print axioms FV7z.Opd.vc_337z
+#print axioms FV7z.Opd.vc_371
+#print axioms FV7z.Opd.Vo_reads
+#print axioms FV7z.Opd.opd_join
