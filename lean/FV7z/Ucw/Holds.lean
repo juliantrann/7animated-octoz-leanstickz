@@ -379,6 +379,6 @@ theorem ucw_ok {Pu : State → (Addr → Byte) → Prop}
   refine c.s_jmp_x hKU hAU hin (lt_len (by decide)) hrU (jmp_73 _) hinW (Wmc.lt_len (j := 0) (by decide))
     tgt_73 ?_
   rintro Y₅ t₅ hK₅ hA₅ ⟨hr₅, hg₅⟩
-  exact kr Z V₂ Y₅ t₅ hPu hK₅ hA₅ (by rw [hr₅, addr_add_zero]) (by rw [hg₅, hgU])
+  exact kr Z _ Y₅ t₅ hPu hK₅ hA₅ (by rw [hr₅, addr_add_zero]) (by rw [hg₅, hgU])
 
 end FV7z.Ucw
