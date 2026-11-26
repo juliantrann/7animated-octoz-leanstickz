@@ -371,6 +371,13 @@ FNS = {
     # 7-Zip 26.06's CPP/Common/MyWindows.cpp `SysAllocStringLen (s, len)`: `len` above 0x3ffffffc or `malloc`
     # (the `call`, 0x22) null: 0 (0x6a, the `ret`); else the length word, `memcpy` of `s` (the `call`, 0x41) when
     # `s` is not null, the terminator, `rax` = the string (0x58, the `ret`).
+    # glibc 2.31's libio/genops.c `_IO_doallocbuf (fp)`: `fp->_IO_buf_base` set: the `ret` (0xb); else, unless
+    # `_IO_UNBUFFERED` set and `fp->_mode` at most 0 (0x90), the vtable `fp + 0xd8` range-checked (0x48; outside:
+    # `_IO_vtable_check`, the `call` at 0xb0) and `call qword [vtable + 0x68]` (`_IO_DOALLOCATE`, 0x4d); its result
+    # not EOF: the `ret` (0x8d); else the inlined `_IO_setb (fp, fp->_shortbuf, fp->_shortbuf + 1, 0)` (0x55: `free`
+    # of the old buffer, the `call` at 0xa0; 0x72: the stores).
+    "dab": dict(grp="Dab", cn="_IO_doallocbuf", a=0x62b500, n=183, pos=True, stops=(0xb, 0x8d), calls=True,
+                tag="PLAN.md §M, M1", src="glibc 2.31's `_IO_doallocbuf` (`libio/genops.c`; `objdump -d`)"),
     # glibc 2.31's libio/genops.c `_IO_setb (f, b, eb, a)`: `f->_IO_buf_base` not null and the user-buffer flag
     # clear: `free` of it (the `call`, 0x50, then back to 0x27); the flag set or cleared by `a` (`cmovne`), the two
     # pointers stored by one `movups` (0x3e), the flags word, the `ret` (0x4a).
