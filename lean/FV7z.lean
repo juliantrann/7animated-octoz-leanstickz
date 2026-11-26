@@ -291,6 +291,7 @@ import FV7z.Start.CtorEnv
 import FV7z.Start.Reach
 import FV7z.Start.ReachP
 import FV7z.Start.Text
+import FV7z.Start.TextP
 import FV7z.Statement.Examples
 import FV7z.Lemmas.BlkOps7
 import FV7z.Gts.Holds
