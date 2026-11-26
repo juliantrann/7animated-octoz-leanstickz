@@ -101,7 +101,7 @@ def ntgt (m : Nat) : Addr :=
 /-- Entry `m < 15` goes to the loop at `400 + 384·m`. -/
 theorem ntgt_eq : ∀ m < 15, ntgt m = (0x63a420 : Addr).add (400 + 384 * m) := by decide +kernel
 
-theorem tab_ea {m : Nat} (hm : m < 16) :
+theorem tab_ea (m : Nat) :
     (0x6f0df0 : Addr) + BitVec.ofNat 64 m * BitVec.ofNat 64 4 + BitVec.ofNat 64 0 =
       (0x6f0df0 : Addr).add (4 * m) := by
   apply BitVec.eq_of_toNat_eq
@@ -178,7 +178,7 @@ theorem at163 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e' scm) (he : e' = 0x
     fun _ _ => wpV_reg fun _ _ => wpV_nil ?_
   · show Y₂.cpu.gpr.get (regOf 10) + Y₂.cpu.gpr.get (regOf 9) * BitVec.ofNat 64 4 + BitVec.ofNat 64 0 = _
     rw [get_r10n, get_r9n, h10₂, h9₂]
-    exact tab_ea (by omega)
+    exact tab_ea m
   · rw [addr_add_add]
     exact hTf _ (by omega)
   intro Y₃ t₃ hK₃ hA₃ hr₃ hg₃ _ _
