@@ -202,6 +202,11 @@ FNS = {
     # 7-Zip's C/LzmaDec.c `LzmaDec_AllocateProbs2 (p, propNew, alloc)` (`lc` = esi, `lp` = edx): `numProbs` = 0x7c0 +
     # (0x300 << (lc + lp)); the same `probs` kept (0x26 to 0x57), else `LzmaDec_FreeProbs` (0x2e), `alloc->Alloc`
     # (0x3b), SZ_ERROR_MEM on NULL (0x60). Stop: the `ret` (0x5b).
+    # 7-Zip's C/LzmaDec.c `LzmaDec_DecodeReal2 (p, limit, bufLimit)`: with `checkDicSize` (the 4 bytes at `p + 0x44`)
+    # 0, `limit` cut to `dicPos + (dicSize - processedPos)`; `LZMA_DECODE_REAL` (call, 40, to `0x6d4040`); then
+    # `checkDicSize` = `dicSize` once `processedPos` reaches it. Stop: the `ret` (64).
+    "dr2": dict(grp="Dr2", cn="LzmaDec_DecodeReal2", a=0x42b5b0, n=65, pos=True, stops=(64,), calls=True,
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `LzmaDec_DecodeReal2` (`C/LzmaDec.c`; `objdump -d`)"),
     "lap": dict(grp="Lap", cn="LzmaDec_AllocateProbs2", a=0x42be00, n=103, pos=True, stops=(0x5b,), calls=True,
                 tag="PLAN.md §M, M1", src="7-Zip 26.06's `LzmaDec_AllocateProbs2` (`C/LzmaDec.c`; `objdump -d`)"),
     "lfp": dict(grp="Lfp", cn="LzmaDec_FreeProbs", a=0x42bde0, n=31, pos=True, stops=(30,), calls=True,
@@ -254,6 +259,12 @@ FNS = {
     # throws (the jumps to 0x4176fe, 64 and 89). Stops: the `ret`s (42, 58), the jumps (64, 89).
     "gae": dict(grp="Gae", cn="GetOpenArcErrorFlags", a=0x5d2ae0, n=94, pos=True, stops=(42, 58, 64, 89),
                 tag="PLAN.md §M, M1", src="7-Zip 26.06's `GetOpenArcErrorFlags` (`OpenArchive.cpp`; `objdump -d`)"),
+    # 7-Zip's CPP/Windows/FileFind.cpp `NFind::DoesDirExist (name, followLink)`: a frame of 168 bytes with the stack
+    # guard at `rsp + 152`, `MY_lstat (name, &st, followLink)` (call at 0x25), `S_ISDIR (st.st_mode)`, the guard's
+    # check. Stops: the `ret` (0x5f), the call of `__stack_chk_fail` (0x60).
+    "dde": dict(grp="Dde", cn="NWindows::NFile::NFind::DoesDirExist", a=0x455cf0, n=101, pos=True, fs=True,
+                stops=(0x5f, 0x60), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `NFind::DoesDirExist` (`FileFind.cpp`; `objdump -d`)"),
     # 7-Zip's C/Alloc.c `MyAlloc (size)`: 0 for size 0, else a tail jump to `malloc`. Stops: the jump (9), the `ret`
     # (18).
     "mya": dict(grp="Mya", cn="MyAlloc", a=0x41f3c0, n=19, pos=True, stops=(9, 18),
@@ -446,6 +457,25 @@ FNS = {
     "ffp": dict(grp="Ffp", cn="NWildcard::CCensor::FindPairForPrefix", a=0x453550, n=0x60, pos=True,
                 stops=(0x48, 0x59, 0x5f), calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `NWildcard::CCensor::FindPairForPrefix` (`CPP/Common/Wildcard.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 C/LzmaDec + CPP/7zip/Compress/LzmaDecoder.cpp `CDecoder::SetOutStreamSizeResume (outSize)`: the
+    # flags and sizes, then a tail jump (0x2f) to `LzmaDec_Init (&_state)`.
+    "sos": dict(grp="Sos", cn="NCompress::NLzma::CDecoder::SetOutStreamSizeResume", a=0x57fd80, n=52, pos=True,
+                stops=(0x2f,), calls=True, hand=(0xf,), tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CDecoder::SetOutStreamSizeResume` (`CPP/7zip/Compress/LzmaDecoder.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/Common/Wildcard.cpp `CItem::AreAllAllowed ()`: 0 (the `ret`, 0x1e) unless the three flags are set
+    # and there is one path part; then a tail jump (0x30) to `StringsAreEqual_Ascii (PathParts[0], "*")`.
+    "aaa": dict(grp="Aaa", cn="NWildcard::CItem::AreAllAllowed", a=0x452990, n=53, pos=True, stops=(0x1e, 0x30),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CItem::AreAllAllowed` (`CPP/Common/Wildcard.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/7zip/Crypto/7zAes.h `CKey::Wipe ()`: `memset` of the password's bytes if any (the `call`, 0x3e),
+    # then the 88 bytes of the key zeroed; the `ret` (0x31).
+    "ckw": dict(grp="Ckw", cn="NCrypto::N7z::CKey::Wipe", a=0x59ea70, n=69, pos=True, stops=(0x31,), calls=True,
+                vop=True, tag="PLAN.md §M, M1", src="7-Zip 26.06's `CKey::Wipe` (`CPP/7zip/Crypto/7zAes.h`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/7zip/Compress/LzmaDecoder.cpp `CDecoder::CreateInputBuffer ()`: the buffer kept if its size is
+    # right (the `ret`, 0x41), else `MyFree` (0x1b) and `MyAlloc` (0x2a); S_OK (0x41) or E_OUTOFMEMORY (0x48).
+    "cib": dict(grp="Cib", cn="NCompress::NLzma::CDecoder::CreateInputBuffer", a=0x57fcc0, n=73, pos=True,
+                stops=(0x41, 0x48), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CDecoder::CreateInputBuffer` (`CPP/7zip/Compress/LzmaDecoder.cpp`; `objdump -d`)"),
     "sfs": dict(grp="Sfs", cn="SysFreeString", a=0x5a00c0, n=25, pos=True, stops=(0xd, 0x18),
                 tag="PLAN.md §M, M1", src="7-Zip 26.06's `SysFreeString` (`CPP/Common/MyWindows.cpp`; `objdump -d`)"),
     # 7-Zip's CPP/Common/Wildcard.cpp `DoesNameContainWildcard (const UString &)`: the `wchar_t`s (4 bytes, at
@@ -914,6 +944,12 @@ FNS = {
                 hand=(0x11,),
                 tag="PLAN.md G3, startup",
                 src="glibc 2.31's `_dl_get_origin` (`sysdeps/unix/sysv/linux/dl-origin.c`; `objdump -d`)"),
+    # 7-Zip's `ParseComplexSize` (CPP/7zip/UI/Common/OpenArchive.cpp): a number, then nothing or one of `b`, `k`,
+    # `m`, `g`, `t` (either case). `jt`: the `switch` on the suffix, less 'b'. Stops: the `ret` (0xa6), the padding
+    # after it (0xa7), `__stack_chk_fail` (0x10c); the `call` of `ConvertStringToUInt64` (0x2a) is a cut point.
+    "pcs": dict(grp="Pcs", cn="ParseComplexSize", a=0x5d38f0, n=273, pos=True, fs=True, stops=(0xa6, 0xa7, 0x10c),
+                calls=True, jt=(0x6e8e8c, 19), tag="PLAN.md §M, M1",
+                src="7-Zip's `ParseComplexSize` (`CPP/7zip/UI/Common/OpenArchive.cpp`; `objdump -d`)"),
 }
 
 
