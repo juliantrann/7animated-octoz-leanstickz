@@ -118,10 +118,12 @@ theorem pg_same {z : Addr} (hz : z.toNat % 16 = 0) (h : z.toNat % 4096 ≠ 4080)
 theorem msb_peqb0 (X : BitVec 128) {i : Nat} (hi : i < 16) :
     (lane 8 (peqb 0 X) i).msb = decide (lane 8 X i = 0) := by
   simp only [peqb, lane_ofBytes _ hi, Strlen.lane_zero]
-  by_cases h : (0 : BitVec 8) = lane 8 X i
-  · rw [ite_cond_eq_true _ _ (eq_true h), ← h]
+  split
+  · rename_i h
+    rw [← h]
     decide
-  · rw [ite_cond_eq_false _ _ (eq_false h), decide_eq_false (fun e => h e.symm)]
+  · rename_i h
+    rw [decide_eq_false (fun e => h e.symm)]
     decide
 
 theorem getLsbD_hi {k i : Nat} (hk : k ≤ 16) :
