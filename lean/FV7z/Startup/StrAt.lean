@@ -1,5 +1,6 @@
 import FV7z.Lemmas.FnFar
 import FV7z.Tun.Inv
+import FV7z.Lemmas.Got
 /-!
 # Contracts of `strlen`, `strncmp` and `strrchr` (PLAN.md G3, startup)
 
@@ -42,22 +43,28 @@ def LenAt (prof : Profile) (L : List (Addr × List Byte)) (o : Oracle) (e : Addr
       Z.cpu.gpr.r14 = X.cpu.gpr.r14 → Z.cpu.gpr.r15 = X.cpu.gpr.r15 → GoG prof L o gev gP gE Z t') →
     GoG prof L o gev gP gE X t
 
+/-- The bytes of a string at `a` up to its first 0 or its `n`-th byte: short of `2 ^ 64`, their pages data of the
+footprint. -/
+def StrPg (F : Footprint) (V : Addr → Byte) (a : Addr) (n : Nat) : Prop :=
+  ∀ k < n, (∀ i < k, V (Addr.add a i) ≠ 0) →
+    a.toNat + k < 2 ^ 64 ∧ ∀ x : Addr, x.toNat / 4096 = (a.toNat + k) / 4096 → Foot F.data x
+
 /-- What a call of `strncmp` at `e` does, the bytes at the call with `Pm`: called with a return address in code of
-the list, the first `m ≤ rdx` bytes at `rdi` and at `rsi` equal and not 0, the pages of these and of the next byte
-(if `m < rdx`) to read, the run reaches the return address with `eax` 0 if `m = rdx` or the next bytes are both 0,
-not 0 if the next bytes differ, the registers a call keeps kept, and the bytes as they were. -/
+the list, the first `m ≤ rdx` bytes at `rdi` and at `rsi` equal and not 0, the pages of each string up to its first
+0 or its `rdx`-th byte to read (`StrPg`: an implementation may load a vector of one string ahead of where it
+compares, but not past that string's 0 or its `rdx` bytes), the GOT's slots data of the footprint (`GotF`: the PLT's
+`jmp` reads one), the run reaches the return address with `eax` 0 if `m = rdx` or the next bytes are both 0, not 0
+if the next bytes differ, the registers a call keeps kept, and the bytes as they were. -/
 def NcmpAt (prof : Profile) (L : List (Addr × List Byte)) (o : Oracle) (e : Addr) (Pm : (Addr → Byte) → Prop) :
     Prop :=
   ∀ {F : Footprint} {Wl : List Rgn} {s₀ : State} {gev : List Event} {gP : State → Nat → List Event → Prop}
     {gE : Outcome → List Event → Prop} {X : State} {t : Nat} {V : Addr → Byte} {e' : Addr} {code : List Byte}
-    {j : Nat} (m : Nat), Seg prof F Wl L s₀ o → KeptW Wl s₀ X → Agree F X.proc.mm.mem V → X.cpu.rip = e → Pm V →
-    CodeIn L e' code → j < code.length → rdq(V, X.cpu.gpr.rsp) = e'.add j →
+    {j : Nat} (m : Nat), Seg prof F Wl L s₀ o → GotF F → KeptW Wl s₀ X → Agree F X.proc.mm.mem V → X.cpu.rip = e →
+    Pm V → CodeIn L e' code → j < code.length → rdq(V, X.cpu.gpr.rsp) = e'.add j →
     (∀ i < 8, Foot F.data (Addr.add X.cpu.gpr.rsp i)) →
     m ≤ X.cpu.gpr.rdx.toNat → X.cpu.gpr.rdi.toNat + m < 2 ^ 64 → X.cpu.gpr.rsi.toNat + m < 2 ^ 64 →
     (∀ k < m, V (Addr.add X.cpu.gpr.rdi k) = V (Addr.add X.cpu.gpr.rsi k) ∧ V (Addr.add X.cpu.gpr.rdi k) ≠ 0) →
-    (∀ x : Addr, ∀ k ≤ m, k < X.cpu.gpr.rdx.toNat →
-      x.toNat / 4096 = (X.cpu.gpr.rdi.toNat + k) / 4096 ∨ x.toNat / 4096 = (X.cpu.gpr.rsi.toNat + k) / 4096 →
-      Foot F.data x) →
+    StrPg F V X.cpu.gpr.rdi X.cpu.gpr.rdx.toNat → StrPg F V X.cpu.gpr.rsi X.cpu.gpr.rdx.toNat →
     (∀ Z t', KeptW Wl s₀ Z → Agree F Z.proc.mm.mem V → Z.cpu.rip = e'.add j →
       Z.cpu.gpr.rsp = X.cpu.gpr.rsp + 8 →
       (m = X.cpu.gpr.rdx.toNat → Z.cpu.gpr.rax.setWidth 32 = 0#32) →
