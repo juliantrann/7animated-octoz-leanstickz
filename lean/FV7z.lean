@@ -404,6 +404,15 @@ import FV7z.Lemmas.SysOpen
 import FV7z.Onc.Blocks
 import FV7z.Onc.Cuts
 import FV7z.Onc.Holds
+import FV7z.Lemmas.CmovLd
+import FV7z.Mun.Cuts
+import FV7z.Mun.Holds
+import FV7z.Mmp.Cuts
+import FV7z.Mmp.Holds
+import FV7z.Gdt.Cuts
+import FV7z.Gdt.Holds
+import FV7z.Tcg.Cuts
+import FV7z.Tcg.Holds
 import FV7z.Statement.Examples
 import FV7z.Lemmas.BlkOps7
 import FV7z.Gts.Holds
