@@ -138,18 +138,18 @@ theorem half (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e' scm) {j₀ j₁ j�
     foot_chunk (d := 0) hbl (by decide) (by
       rw [addr_add_zero]
       exact pg_of hpb hu fun i hi h0 => (hsame i hi).2 ((hsame i hi).1.trans h0))
-  have hea : eaBI Y.cpu.gpr 7 1 0 = a.add u := by
+  have hea : VOp.eaBI Y.cpu.gpr 7 1 0 = a.add u := by
     show Y.cpu.gpr.rdi + Y.cpu.gpr.rcx + BitVec.ofNat 64 0 = a.add u
     rw [hI.2.2.2.1, BitVec.add_zero]
     exact hI.2.1
-  have heb : eaBI Y.cpu.gpr 6 1 0 = b.add u := by
+  have heb : VOp.eaBI Y.cpu.gpr 6 1 0 = b.add u := by
     show Y.cpu.gpr.rsi + Y.cpu.gpr.rcx + BitVec.ofNat 64 0 = b.add u
     rw [hI.2.2.2.1, BitVec.add_zero]
     exact hI.2.2.1
-  have hfa' : ∀ i < 16, Foot F.data ((eaBI Y.cpu.gpr 7 1 0).add i) := by rw [hea]; exact hfa
-  have hfb' : ∀ i < 16, Foot F.data ((eaBI Y.cpu.gpr 6 1 0).add i) := by rw [heb]; exact hfb
-  have hal' : (eaBI Y.cpu.gpr 7 1 0).toNat % 16 = 0 := by rw [hea]; exact hal
-  have hbl' : (eaBI Y.cpu.gpr 6 1 0).toNat % 16 = 0 := by rw [heb]; exact hbl
+  have hfa' : ∀ i < 16, Foot F.data ((VOp.eaBI Y.cpu.gpr 7 1 0).add i) := by rw [hea]; exact hfa
+  have hfb' : ∀ i < 16, Foot F.data ((VOp.eaBI Y.cpu.gpr 6 1 0).add i) := by rw [heb]; exact hfb
+  have hal' : (VOp.eaBI Y.cpu.gpr 7 1 0).toNat % 16 = 0 := by rw [hea]; exact hal
+  have hbl' : (VOp.eaBI Y.cpu.gpr 6 1 0).toNat % 16 = 0 := by rw [heb]; exact hbl
   -- `movdqa xmm1, [rsi + rcx]; movdqa xmm2, [rdi + rcx]; pcmpeqb xmm0, xmm1; pcmpeqb xmm1, xmm2; psubb xmm1, xmm0;
   -- pmovmskb edx, xmm1`
   refine c.s_blkV hin hb₀ hK hA hrip ?_
@@ -277,7 +277,7 @@ theorem loop288 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e' scm) {g₀ : Gpr
       InvL g₀ Y.cpu.gpr a b n u k → xsOf Y.cpu.vec.zmm (xmmOf 0) = 0 → u < n → Same V a b u →
       (a.add u).toNat % 16 = 0 → (b.add u).toNat % 16 = 0 → GoG prof L o gev gP gE Y t := by
   intro m
-  induction m using Nat.strong_induction_on with
+  induction m using Nat.strongRecOn with
   | _ m ih =>
   intro u k Y t hm hK hA hrip hI hx0 hu hsame hal hbl
   refine half c hin (b288 prof) (b314 prof) (d320 prof.feat) (lt_scm (by decide)) (by decide) (b326 prof)
@@ -299,5 +299,211 @@ theorem loop288 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e' scm) {g₀ : Gpr
     exact al_add halZ (by decide)
   · rw [← addr_add_add]
     exact al_add hblZ (by decide)
+
+/-- From `192`, the strings' offsets `d` in their 16 bytes the same: the first 16 bytes from `d` on compared, then
+the loop. -/
+theorem ashr0 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e' scm) {Y : State} {t : Nat} {g₀ : Gprs}
+    {a b : Addr} {n q : Nat} {P : BitVec 32 → Prop}
+    (hK : KeptW Wl s₀ Y) (hA : Agree F Y.proc.mm.mem V) (hrip : Y.cpu.rip = e'.add 192)
+    (hab : a.toNat % 16 = b.toNat % 16) (hL : AtL g₀ Y.cpu.gpr a b n q false)
+    (hn64 : n < 2 ^ 64) (hq : q < n) (hsame : Same V a b q) (hpa : Str.StrPg F V a n) (hpb : Str.StrPg F V b n)
+    (hP : ∀ r, NRes V a b n r → P r) (hR : RetN prof F Wl L s₀ o gev gP gE V g₀ P) :
+    GoG prof L o gev gP gE Y t := by
+  obtain ⟨hkp, hdi0, hdi, hsi0, hsi, h11, hcx, hax, hdx, h8⟩ := hL
+  have h80 : Y.cpu.gpr.r8 = 0 := h8
+  rw [hab] at hdi hax
+  generalize hd : b.toNat % 16 = d at hdi hsi hcx hax
+  have hd16 : d < 16 := hd ▸ Nat.mod_lt _ (by decide)
+  have hfa : ∀ i < 16, Foot F.data (Y.cpu.gpr.rdi.add i) :=
+    foot_chunk hdi0 hd16 (by rw [hdi]; exact pg_of hpa hq fun i hi => (hsame i hi).2)
+  have hfb : ∀ i < 16, Foot F.data (Y.cpu.gpr.rsi.add i) :=
+    foot_chunk hsi0 hd16 (by
+      rw [hsi]
+      exact pg_of hpb hq fun i hi h0 => (hsame i hi).2 ((hsame i hi).1.trans h0))
+  have heA : eaB Y.cpu.gpr 7 0 = Y.cpu.gpr.rdi := by
+    show Y.cpu.gpr.rdi + BitVec.ofNat 64 0 = _
+    rw [BitVec.add_zero]
+  have heB : eaB Y.cpu.gpr 6 0 = Y.cpu.gpr.rsi := by
+    show Y.cpu.gpr.rsi + BitVec.ofNat 64 0 = _
+    rw [BitVec.add_zero]
+  have hfa' : ∀ i < 16, Foot F.data ((eaB Y.cpu.gpr 7 0).add i) := by rw [heA]; exact hfa
+  have hfb' : ∀ i < 16, Foot F.data ((eaB Y.cpu.gpr 6 0).add i) := by rw [heB]; exact hfb
+  have hal' : (eaB Y.cpu.gpr 7 0).toNat % 16 = 0 := by rw [heA]; exact hdi0
+  have hbl' : (eaB Y.cpu.gpr 6 0).toNat % 16 = 0 := by rw [heB]; exact hsi0
+  -- `movdqa xmm1, [rsi]; pxor xmm0, xmm0; pcmpeqb xmm0, xmm1; pcmpeqb xmm1, [rdi]; psubb xmm1, xmm0;
+  -- pmovmskb r9d, xmm1`
+  refine c.s_blkV hin (b192 prof) hK hA hrip ?_
+  refine wpV_v hfb' (fun _ => hbl') <| wpV_v0 <| wpV_v0 <| wpV_v hfa' (fun _ => hal') <| wpV_v0 <| wpV_v0 <|
+    wpV_nil ?_
+  intro Y₁ t₁ hK₁ hA₁ hr₁ hg₁ _ _
+  have h9₁ : Y₁.cpu.gpr.r9 = (cmask (rd16 V Y.cpu.gpr.rsi) (rd16 V Y.cpu.gpr.rdi)).setWidth 64 := by
+    rw [hg₁]
+    simp (disch := decide) only [set_r9n, xset_same, xset_ne, xor_z, heB, heA, cmask, rd16]
+  have hdx₁ : Y₁.cpu.gpr.rdx = BitVec.ofNat 64 65535 := by rw [hg₁]; exact hdx
+  have hcx₁ : Y₁.cpu.gpr.rcx = BitVec.ofNat 64 d := by rw [hg₁]; exact hcx
+  generalize hYb : rd16 V Y.cpu.gpr.rsi = Yb at h9₁
+  generalize hXa : rd16 V Y.cpu.gpr.rdi = Xa at h9₁
+  have hYl : ∀ j, d ≤ j → j < 16 → lane 8 Yb j = V (b.add (q + (j - d))) := fun j hdj hj => by
+    rw [← hYb, lane_rd16 V _ hj, add_shift hsi hdj]
+  have hXl : ∀ j, d ≤ j → j < 16 → lane 8 Xa j = V (a.add (q + (j - d))) := fun j hdj hj => by
+    rw [← hXa, lane_rd16 V _ hj, add_shift hdi hdj]
+  -- `shr edx, cl; shr r9d, cl; sub edx, r9d`
+  refine c.s_blkV hin (b217 prof) hK₁ hA₁ hr₁ ?_
+  refine wpV_reg fun _ _ => wpV_reg fun _ _ => wpV_reg fun fl hfl => wpV_nil ?_
+  intro Y₂ t₂ hK₂ hA₂ hr₂ hg₂ hf₂ _
+  have hdx₂ : Y₂.cpu.gpr.rdx = ((BitVec.ofNat 32 65535 >>> d) - (cmask Yb Xa >>> d)).setWidth 64 := by
+    rw [hg₂]
+    simp only [wr, gv, Src.val, set_rdx, set_r9n, get2, get_r9n, get1, hcx₁, hdx₁, h9₁, sw_64_32, shr_cnt hd16,
+      BitVec.setWidth_ofNat_of_le (by decide : 32 ≤ 64), subR_eq]
+  have hz₂ : Y₂.cpu.rflags.zf = decide ((BitVec.ofNat 32 65535 >>> d) - (cmask Yb Xa >>> d) = 0) := by
+    rw [hf₂, hfl, subF_zf]
+    simp only [wr, gv, Src.val, set_rdx, set_r9n, get2, get_r9n, get1, hcx₁, hdx₁, h9₁, sw_64_32, shr_cnt hd16,
+      BitVec.setWidth_ofNat_of_le (by decide : 32 ≤ 64), sub_eq_zero_iff]
+  have hkp₂ : KpN g₀ Y₂.cpu.gpr := by simp only [KpN, hg₂, hg₁, wr, set_rdx, set_r9n]; exact hkp
+  have hdi₂ : Y₂.cpu.gpr.rdi = Y.cpu.gpr.rdi := by simp only [hg₂, hg₁, wr, set_rdx, set_r9n]
+  have hsi₂ : Y₂.cpu.gpr.rsi = Y.cpu.gpr.rsi := by simp only [hg₂, hg₁, wr, set_rdx, set_r9n]
+  have hcx₂ : Y₂.cpu.gpr.rcx = BitVec.ofNat 64 d := by simp only [hg₂, wr, set_rdx, set_r9n]; exact hcx₁
+  have hax₂ : Y₂.cpu.gpr.rax = BitVec.ofNat 64 d := by simp only [hg₂, hg₁, wr, set_rdx, set_r9n]; exact hax
+  have h11₂ : Y₂.cpu.gpr.r11 = BitVec.ofNat 64 (n - q) := by simp only [hg₂, hg₁, wr, set_rdx, set_r9n]; exact h11
+  have h8₂ : Y₂.cpu.gpr.r8 = 0 := by simp only [hg₂, hg₁, wr, set_rdx, set_r9n]; exact h80
+  -- `jne 6165`
+  refine c.s_jcc (tgt := 6165) hK₂ hA₂ hin (lt_scm (by decide)) hr₂ (d225 prof.feat) (by decide)
+    (lt_scm (by decide)) ?_ ?_
+  · -- a stop in the bytes from `d` on
+    intro hcc
+    rw [cond_5, hz₂] at hcc
+    have hne : (BitVec.ofNat 32 65535 >>> d) - (cmask Yb Xa >>> d) ≠ 0 := fun h => by simp [h] at hcc
+    have hex : ∃ j < 16 - d, decide (lane 8 Yb (d + j) = lane 8 Xa (d + j) ∧ lane 8 Yb (d + j) ≠ 0) = false := by
+      refine Classical.byContradiction fun hn => hne ((shr_sub_zero Yb Xa d).2 fun j hdj hj => ?_)
+      have e : d + (j - d) = j := by omega
+      rw [← e]
+      refine of_decide_eq_true ?_
+      cases h : decide (lane 8 Yb (d + (j - d)) = lane 8 Xa (d + (j - d)) ∧ lane 8 Yb (d + (j - d)) ≠ 0)
+      · exact absurd ⟨j - d, by omega, h⟩ hn
+      · rfl
+    obtain ⟨j₀, hj₀, hpf, hpt⟩ := exists_first _ hex
+    have hpf' : ¬ (lane 8 Yb (d + j₀) = lane 8 Xa (d + j₀) ∧ lane 8 Yb (d + j₀) ≠ 0) := of_decide_eq_false hpf
+    have hpt' : ∀ i, d ≤ i → i < d + j₀ → lane 8 Yb i = lane 8 Xa i ∧ lane 8 Yb i ≠ 0 := fun i h1 h2 => by
+      have h := of_decide_eq_true (hpt (i - d) (by omega))
+      rwa [show d + (i - d) = i by omega] at h
+    obtain ⟨hnz, hlow⟩ := shr_sub_low Yb Xa (c := d) (p := d + j₀) (by omega) (by omega) hpf' hpt'
+    rintro Y₃ t₃ hK₃ hA₃ ⟨hr₃, hg₃⟩
+    refine exit6165 (ka := d) (kc := d) (q := q) (R := n - q) (p := j₀) (sw := false) (x := a) (y := b) c hin
+      hK₃ hA₃ hr₃ (by rw [hg₃]; exact hkp₂) (by rw [hg₃]; exact hax₂) (by rw [hg₃]; exact hcx₂)
+      (by rw [hg₃, hdi₂]; exact hdi) (by rw [hg₃, hsi₂]; exact hsi) (by rw [hg₃]; exact h8₂)
+      (Or.inl ⟨rfl, rfl, rfl⟩) (by rw [hg₃]; exact h11₂) (by omega) (by omega) (by rw [hg₃, hdx₂]; exact hnz)
+      (by rw [hg₃, hdx₂, hlow]; omega) (by omega) ?_ (fun _ => ?_) (fun _ => ?_) (fun _ => ?_) hP hR
+    · intro i hi
+      by_cases hiq : i < q
+      · exact hsame i hiq
+      · have h := hpt' (i - q + d) (by omega) (by omega)
+        rw [hYl _ (by omega) (by omega), hXl _ (by omega) (by omega), show q + (i - q + d - d) = i by omega] at h
+        exact ⟨h.1.symm, fun h0 => h.2 (h.1.trans h0)⟩
+    · refine stop_comm ?_
+      rw [show q + j₀ = q + (d + j₀ - d) by omega, ← hYl (d + j₀) (by omega) (by omega),
+        ← hXl (d + j₀) (by omega) (by omega)]
+      exact hpf'
+    · rw [show q + j₀ = q + (d + j₀ - d) by omega, ← add_shift hdi (by omega : d ≤ d + j₀)]
+      exact hfa _ (by omega)
+    · rw [show q + j₀ = q + (d + j₀ - d) by omega, ← add_shift hsi (by omega : d ≤ d + j₀)]
+      exact hfb _ (by omega)
+  · -- the bytes from `d` on the same and not 0
+    intro hcc
+    rw [cond_5, hz₂] at hcc
+    have h0 : (BitVec.ofNat 32 65535 >>> d) - (cmask Yb Xa >>> d) = 0 := by simpa using hcc
+    have hall := (shr_sub_zero Yb Xa d).1 h0
+    have hs : Same V a b (q + (16 - d)) := by
+      intro i hi
+      by_cases hiq : i < q
+      · exact hsame i hiq
+      · have h := hall (i - q + d) (by omega) (by omega)
+        rw [hYl _ (by omega) (by omega), hXl _ (by omega) (by omega), show q + (i - q + d - d) = i by omega] at h
+        exact ⟨h.1.symm, fun h0 => h.2 (h.1.trans h0)⟩
+    rintro Y₃ t₃ hK₃ hA₃ ⟨hr₃, hg₃⟩
+    -- `lea r9, [rcx + r11 - 16]; cmp r11, r9`
+    refine c.s_blkV hin (b231 prof) hK₃ hA₃ hr₃ ?_
+    refine wpV_reg fun _ _ => wpV_reg fun fl hfl => wpV_nil ?_
+    intro Y₄ t₄ hK₄ hA₄ hr₄ hg₄ hf₄ _
+    have h9₄ : Y₄.cpu.gpr.r9 = BitVec.ofNat 64 d + BitVec.ofNat 64 (n - q) * BitVec.ofNat 64 1 +
+        BitVec.ofNat 64 18446744073709551600 := by
+      rw [hg₄]
+      simp only [wr, eaG, optV, set_r9n, get1, get11, BitVec.setWidth_eq, hg₃, hcx₂, h11₂]
+    have hc2 : Y₄.cpu.rflags.cond 2 = decide (n - q < (BitVec.ofNat 64 d + BitVec.ofNat 64 (n - q) *
+        BitVec.ofNat 64 1 + BitVec.ofNat 64 18446744073709551600).toNat) := by
+      rw [hf₄, hfl, cond_2, subF_cf]
+      simp only [wr, gv, Src.val, eaG, optV, set_r9n, get1, get11, get_r9n, BitVec.setWidth_eq, hg₃, hcx₂, h11₂]
+      rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show n - q < 2 ^ 64 by omega)]
+    have hkp₄ : KpN g₀ Y₄.cpu.gpr := by rw [hg₄, hg₃]; exact hkp₂
+    have hdi₄ : Y₄.cpu.gpr.rdi = Y.cpu.gpr.rdi := by rw [hg₄, hg₃]; exact hdi₂
+    have hsi₄ : Y₄.cpu.gpr.rsi = Y.cpu.gpr.rsi := by rw [hg₄, hg₃]; exact hsi₂
+    have h8₄ : Y₄.cpu.gpr.r8 = 0 := by rw [hg₄, hg₃]; exact h8₂
+    -- `jb 6212`
+    refine c.s_jcc (tgt := 6212) hK₄ hA₄ hin (lt_scm (by decide)) hr₄ (d239 prof.feat) (by decide)
+      (lt_scm (by decide)) ?_ ?_
+    · intro hcc
+      have hle : n ≤ q + (16 - d) := by
+        refine Nat.le_of_not_lt fun hgt => ?_
+        rw [hc2, lea_m16 (by omega), BitVec.toNat_ofNat,
+          Nat.mod_eq_of_lt (show d + (n - q) - 16 < 2 ^ 64 by omega)] at hcc
+        exact absurd (of_decide_eq_true hcc) (by omega)
+      rintro Y₅ t₅ hK₅ hA₅ ⟨hr₅, hg₅⟩
+      exact ret0 c hin hK₅ hA₅ hr₅ (by rw [hg₅]; exact hkp₄) (hP 0 (nres_zero hs hle)) hR
+    intro hcc
+    have hge : 16 ≤ d + (n - q) := by
+      refine Nat.le_of_not_lt fun hw => ?_
+      rw [hc2, decide_eq_true (lea_wrap (by omega))] at hcc
+      exact absurd hcc (by decide)
+    rintro Y₅ t₅ hK₅ hA₅ ⟨hr₅, hg₅⟩
+    have h9₅ : Y₅.cpu.gpr.r9 = BitVec.ofNat 64 (d + (n - q) - 16) := by rw [hg₅, h9₄]; exact lea_m16 hge
+    -- `test r9, r9`
+    refine c.s_blkV hin (b245 prof) hK₅ hA₅ hr₅ ?_
+    refine wpV_reg fun fl hfl => wpV_nil ?_
+    intro Y₆ t₆ hK₆ hA₆ hr₆ hg₆ hf₆ _
+    have hz₆ : Y₆.cpu.rflags.cond 4 = decide (d + (n - q) - 16 = 0) := by
+      rw [hf₆, cond4_log hfl]
+      simp only [gv, Src.val, get_r9n, BitVec.setWidth_eq, BitVec.and_self, h9₅]
+      exact ofNat_beq_zero (by omega)
+    have hg₆' : Y₆.cpu.gpr = Y₄.cpu.gpr := by rw [hg₆, hg₅]
+    -- `je 6212`
+    refine c.s_jcc (tgt := 6212) hK₆ hA₆ hin (lt_scm (by decide)) hr₆ (d248 prof.feat) (by decide)
+      (lt_scm (by decide)) ?_ ?_
+    · intro hcc
+      have h16 : d + (n - q) - 16 = 0 := by
+        rw [hz₆] at hcc
+        exact of_decide_eq_true hcc
+      rintro Y₇ t₇ hK₇ hA₇ ⟨hr₇, hg₇⟩
+      exact ret0 c hin hK₇ hA₇ hr₇ (by rw [hg₇, hg₆']; exact hkp₄) (hP 0 (nres_zero hs (by omega))) hR
+    intro hcc
+    have hgt : 16 < d + (n - q) := by
+      rw [hz₆] at hcc
+      have := of_decide_eq_false hcc
+      omega
+    rintro Y₇ t₇ hK₇ hA₇ ⟨hr₇, hg₇⟩
+    -- `mov r11, r9; mov rcx, 16; mov r9, 16; pxor xmm0, xmm0; nop; nop`
+    refine c.s_blkV hin (b254 prof) hK₇ hA₇ hr₇ ?_
+    refine wpV_reg fun _ _ => wpV_reg fun _ _ => wpV_reg fun _ _ => wpV_v0 <| wpV_reg fun _ _ =>
+      wpV_reg fun _ _ => wpV_nil ?_
+    intro Y₈ t₈ hK₈ hA₈ hr₈ hg₈ _ hv₈
+    simp only [wr, gv, Src.val, set11, set_rcx, set_r9n, get_r9n, BitVec.setWidth_eq, hg₇, hg₆'] at hg₈
+    refine loop288 c hin hn64 hpa hpb hP hR _ (q + (16 - d)) 16 Y₈ t₈ rfl hK₈ hA₈ hr₈
+      ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ ?_ (by omega) hs ?_ ?_
+    · simp only [KpN, hg₈]
+      exact hkp₄
+    · simp only [hg₈, hdi₄]
+      exact add_shift hdi (by omega)
+    · simp only [hg₈, hsi₄]
+      exact add_shift hsi (by omega)
+    · simp only [hg₈]
+    · simp only [hg₈]
+    · simp only [hg₈]
+      exact h8₄
+    · simp only [hg₈, h9₄]
+      rw [lea_m16 hge, show d + (n - q) - 16 = n - (q + (16 - d)) by omega]
+    · rw [hv₈]
+      simp only [xset_same, xor_z]
+    · rw [← add_shift hdi (by omega : d ≤ 16)]
+      exact al_add hdi0 (by decide)
+    · rw [← add_shift hsi (by omega : d ≤ 16)]
+      exact al_add hsi0 (by decide)
 
 end FV7z.Strncmp
