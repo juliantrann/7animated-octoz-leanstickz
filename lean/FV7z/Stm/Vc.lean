@@ -107,6 +107,7 @@ theorem vc_100 {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (hhk : rd
     W_100 fb F Wl (fun j' g' _ V' => j' = 112 ∧ V' = V ∧ g' = { g with rax := 0#64 }) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   stx [W_100, o7, hhk, f1]
+  all_goals assumption
 
 /-- `rdi = 0`, to the `call` of `MORECORE (0)` (114). -/
 theorem vc_112 {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} :
@@ -123,7 +124,7 @@ theorem vc_120 {fb T : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (hT : r
       (j' = 75 ∨ (j' = 141 ∧ ¬ g.rbp = g.rax ∧ g'.rbp = g.rbp - g.rax ∧ g'.rax = T ∧
         g'.rbx = g.rbx - (g.rbp - g.rax) ∧ g'.r12 = g.r12))) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
-  stx +contextual [W_120, W_126, W_131, o8, o9, o10, hT, f1]
+  stx +contextual [W_120, W_126, W_131, o8, o9, o10, decide_eq_false_iff_not, hT, f1]
 
 /-- `set_head (top, rbx | PREV_INUSE)`, `eax = 1`, to 77. -/
 theorem vc_148 {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte}
@@ -133,5 +134,6 @@ theorem vc_148 {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte}
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at w ⊢
   stx [W_148, o11, w]
+  all_goals assumption
 
 end FV7z.Stm
