@@ -78,13 +78,12 @@ theorem vc_19 {g : Gprs} {f : Rflags} {V : Addr → Byte} (hz : f.zf = (g.rsi ==
   dsimp only at hz hr hw ⊢
   have hz' : f.zf = decide (rsi = 0) := by
     rw [hz]
-    by_cases h : rsi = 0 <;> simp [h]
+    exact Bool.eq_iff_iff.mpr (by simp)
   by_cases h0 : rsi = 0
   · wpx [W_19, s28G, s28V, hz', h0, decide_true, decide_false, Bool.false_eq_true, Bool.true_eq_false, false_implies,
       implies_true, ↓reduceIte]
     all_goals repeat' (first | exact rfl | assumption | exact trivial | apply And.intro | intro _)
   · have fr := hr h0
-    dsimp only at fr
     wpx [W_19, W_21, o1, s28G, s28V, hz', h0, decide_true, decide_false, Bool.false_eq_true, Bool.true_eq_false,
       false_implies, implies_true, ↓reduceIte]
     all_goals repeat' (first | exact rfl | assumption | exact trivial | apply And.intro | intro _)
