@@ -33,6 +33,7 @@ theorem vc_0 {g : Gprs} {f : Rflags} {V : Addr → Byte} (fa : ∀ i < 4, Foot F
   dsimp only at fa ⊢
   wpx [W_0, o0, Op.ld]
   first
+  | exact fa
   | exact ⟨fa, rfl⟩
   | exact ⟨fa, rfl, rfl⟩
   | exact ⟨fa, fun _ => ⟨rfl, rfl⟩⟩
@@ -45,7 +46,8 @@ variable {prof : Profile} {L : List (Addr × List Byte)} {s₀ : State} {o : Ora
 /-- `CFileBase::seek (off, whence)` from its entry to the return address: `lseek_ok` from the registers at the entry
 with `rdi` the descriptor at `this` (`fdOf`). -/
 theorem seek_ok {fb : Addr} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb)
-    (hrs : s₀.thread.rseq = none) (hin : CodeIn L fsk_at fsk) (hinl : CodeIn L lsk_at lsk) (hK : KeptW Wl s₀ X)
+    (hrs : s₀.thread.rseq = none) (hin : CodeIn L fsk_at fsk) (hinl : CodeIn L Lseek.lsk_at Lseek.lsk)
+    (hK : KeptW Wl s₀ X)
     (hA : Agree F X.proc.mm.mem V) (hrip : X.cpu.rip = fsk_at)
     (fa : ∀ i < 4, Foot F.data (Addr.add X.cpu.gpr.rdi i)) (hw : arg32 X.cpu.gpr.rdx ≤ 2)
     (fe : ∀ i < 4, Foot Wl ((errnoAt fb).add i)) (hfe : (errnoAt fb).toNat + 4 ≤ 2 ^ 64)
@@ -54,7 +56,7 @@ theorem seek_ok {fb : Addr} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsB
     {e₂ : Addr} {code₂ : List Byte} (hin₂ : CodeIn L e₂ code₂) {j₂ : Nat} (h₂ : j₂ < code₂.length)
     (hra : ofBytesLE 64 ((byteAddrs X.cpu.gpr.rsp 8).map V) = e₂.add j₂)
     (k : ∀ (Y S Z : State) (r : BitVec 64) (t' : Nat), KeptW Wl s₀ Y → Agree F Y.proc.mm.mem V →
-      Y.cpu.gpr = { X.cpu.gpr with rdi := fdOf V X.cpu.gpr.rdi }.set 0 8 → Y.cpu.rip = lsk_at.add 9 →
+      Y.cpu.gpr = { X.cpu.gpr with rdi := fdOf V X.cpu.gpr.rdi }.set 0 8 → Y.cpu.rip = Lseek.lsk_at.add 9 →
       S.cpu = (sysSt Y 2 r).cpu → S.proc.mm = Y.proc.mm → S.proc.files = Y.proc.files →
       Seg prof F Wl L S o → KeptW Wl S Z → Z.cpu.rip = e₂.add j₂ →
       (¬ CloseErr r → Agree F Z.proc.mm.mem V ∧
