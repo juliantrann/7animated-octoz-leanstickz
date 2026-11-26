@@ -82,7 +82,7 @@ theorem at6144 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e' scm) {Y : State} 
     · exact hsame i hiu
     · have h := ht (i - u) (by omega)
       rw [hlY _ (by omega), hlX _ (by omega), show u + (i - u) = i by omega] at h
-      exact ⟨h.1.symm, fun h0 => h.2 (h.1.trans h0)⟩
+      exact ⟨h.1.symm, h.2⟩
   by_cases hex : ∃ j < 16 - k, decide (lane 8 Yb j = lane 8 X3 (j + k) ∧ lane 8 X3 (j + k) ≠ 0) = false
   · -- a stop among the bytes of `x` left
     obtain ⟨p, hp, hpf, hpt⟩ := exists_first _ hex
@@ -95,9 +95,8 @@ theorem at6144 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e' scm) {Y : State} 
       hK₁ hA₁ hr₁ hG₁.kp hG₁.r9 hG₁.cx (by omega) (addr_shift hG₁.di (by omega)) hG₁.si hG₁.r8 hxy hG₁.r11
       (by omega) (by omega) (by rw [hdx]; exact hnz) (by rw [hdx]; exact hlow) (by omega) (hsp.mono (by omega))
       (fun _ => ?_) (fun _ => ?_) (fun _ => ?_) hP hR
-    · refine stop_comm ?_
-      rw [← hlY p (by omega), ← hlX p (by omega)]
-      exact hpf'
+    · rw [← hlY p (by omega), ← hlX p (by omega)]
+      exact fun h => hpf' ⟨h.1.symm, h.2⟩
     · exact foot_of hpx (by omega) fun i hi => (hsp i hi).2
     · exact foot_of hpy (by omega) fun i hi h0 => (hsp i hi).2 ((hsp i hi).1.trans h0)
   · -- none: then no more were to be compared
@@ -197,13 +196,13 @@ theorem crossS (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e' scm) {k cL e : Na
   intro Y₁ t₁ hK₁ hA₁ hr₁ hg₁ hf₁ hv₁
   have hz : Y₁.cpu.rflags.cond 4 = (pmsk (peqb 0 X3) &&& BitVec.ofNat 32 (65536 - 2 ^ k) == 0) := by
     rw [hf₁, cond4_log hfl]
-    simp (disch := decide) only [gv, Src.val, get2, set_rdx, sw_64_32, xset_same, xset_ne, hx0, hx3]
+    simp (disch := decide) only [gv, Src.val, get2, set_rdx, sw_64_32, xset_same, hx0, hx3]
   have hx0₁ : xsOf Y₁.cpu.vec.zmm (xmmOf 0) = peqb 0 X3 := by
     rw [hv₁]
-    simp (disch := decide) only [xset_same, xset_ne, hx0, hx3]
+    simp (disch := decide) only [xset_same, hx0, hx3]
   have hx3₁ : xsOf Y₁.cpu.vec.zmm (xmmOf 3) = X3 := by
     rw [hv₁]
-    simp (disch := decide) only [xset_same, xset_ne, hx3]
+    simp (disch := decide) only [xset_ne, hx3]
   simp only [set_rdx] at hg₁
   have hG₁ : RegS g₀ Y₁.cpu.gpr x y sw n k u K := by
     rw [hg₁]
@@ -216,7 +215,7 @@ theorem crossS (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e' scm) {k cL e : Na
   refine c.s_jccV hK₁ hA₁ hin (lt_scm (by omega)) hr₁ hd₁ ht₁ (lt_scm (by omega)) ?_ ?_
   · -- a 0 among the bytes of `x` left: the end
     intro hcc
-    rw [cond_5, hz] at hcc
+    rw [cond_5, ← cond_4, hz] at hcc
     have hne : pmsk (peqb 0 X3) &&& BitVec.ofNat 32 (65536 - 2 ^ k) ≠ 0 := fun h => by simp [h] at hcc
     have hend : ∃ j < 16 - k, V (x.add (u + j)) = 0 := by
       refine Classical.byContradiction fun hn => hne ((test_hi X3 (by omega)).2 fun i hki hi h0 =>
@@ -227,7 +226,7 @@ theorem crossS (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e' scm) {k cL e : Na
     exact tailS c hin A hcl hK₂ hA₂ hr₂ (by rw [hg₂]; exact hG₁) hK16 (by rw [hg₂, hsi₁]; exact hsi16) hk
       (by rw [hv₂]; exact hx3₁) (by rw [hv₂]; exact hx0₁) hX3 hu hsame (Or.inl hend) hn64 hxy hpx hpy hP hR
   · intro hcc
-    rw [cond_5, hz] at hcc
+    rw [cond_5, ← cond_4, hz] at hcc
     have h0 : pmsk (peqb 0 X3) &&& BitVec.ofNat 32 (65536 - 2 ^ k) = 0 := by simpa using hcc
     have hnz3 := (test_hi X3 (by omega)).1 h0
     rintro Y₂ t₂ hK₂ hA₂ ⟨hr₂, hg₂, hv₂⟩
