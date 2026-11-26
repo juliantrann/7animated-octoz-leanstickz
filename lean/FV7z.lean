@@ -305,6 +305,9 @@ import FV7z.Exit.Blocks
 import FV7z.Exit.Cuts
 import FV7z.Exit.Holds
 import FV7z.Lemmas.SysLseek
+import FV7z.Lseek.Blocks
+import FV7z.Lseek.Cuts
+import FV7z.Lseek.Holds
 import FV7z.Statement.Examples
 import FV7z.Lemmas.BlkOps7
 import FV7z.Gts.Holds
