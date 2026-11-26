@@ -159,6 +159,13 @@ FNS = {
                 stops=(0x49, 0x4a, 0x11b, 0x13c, 0x140, 0x14c), calls=True,
                 hand=(0x27, 0x5c, 0x77, 0x7b, 0x82, 0x8b, 0x94),
                 tag="PLAN.md §M, M1", src="glibc 2.31's `malloc_consolidate` (`malloc/malloc.c`; `objdump -d`)"),
+    # glibc 2.31 malloc/malloc.c (`_int_memalign (av, alignment, bytes)`): the request size `nb`, `_int_malloc (av,
+    # nb + alignment + MINSIZE)` (0x3a), the chunk cut at the first aligned spot (`div`, 0x51) with the leader given
+    # back by `_int_free` (0xd8) and the tail past `nb` too (0x150). Stops: the `ret` (0x166), the padding (0x167,
+    # 0x183, 0x196), the failed `assert` (0x1b7). By hand: `or qword [r13 + r14 + 8], 1` (0xba).
+    "mga": dict(grp="Mga", cn="_int_memalign", a=0x631bc0, n=470, pos=True, fs=True,
+                stops=(0x166, 0x167, 0x183, 0x196, 0x1b7), calls=True, hand=(0xba,),
+                tag="PLAN.md §M, M1", src="glibc 2.31's `_int_memalign` (`malloc/malloc.c`; `objdump -d`)"),
     "gdn": dict(grp="Gdn", cn="__getdents", a=0x6a2820, n=0x3c, pos=True, fs=True, stops=(0x23, 0x24, 0x3b),
                 calls=True, tag="PLAN.md §M, M1",
                 src="glibc 2.31's `__getdents` (`sysdeps/unix/sysv/linux/getdents64.c`; `objdump -d`)"),
@@ -571,6 +578,12 @@ FNS = {
     # _chars` unless null (0x32), `_chars`, `_limit`, `_len` = 0. Stop: the `ret` (0x48).
     "arb": dict(grp="Arb", cn="AString::ReAlloc2", a=0x44c010, n=73, pos=True, stops=(0x48,), calls=True, hand=(0xe,),
                 tag="PLAN.md §M, M1", src="7-Zip's `AString::ReAlloc2` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
+    # `AString (const char *s1, unsigned num1, const char *s2, unsigned num2)`: `SetStartLen`, `memcpy`, then a tail
+    # jump to `memcpy` (46).
+    "acs": dict(grp="Acs", cn="AString::AString (s1, num1, s2, num2)", a=0x44c260, n=75, pos=True, stops=(0x46,),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip's `AString (const char *, unsigned, const char *, unsigned)` (`CPP/Common/MyString.cpp`; "
+                    "`objdump -d`)"),
     "asl": dict(grp="Asl", cn="AString::SetStartLen", a=0x44c060, n=50, pos=True, stops=(0x31,), calls=True,
                 tag="PLAN.md §M, M1", src="7-Zip's `AString::SetStartLen` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
     # `UString::UString ()`: `_chars` = NULL, then `_chars` = `new wchar_t[4]` (the `call` at 0x14), `_len` = 0,
