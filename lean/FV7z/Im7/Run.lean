@@ -1,6 +1,7 @@
 import FV7z.Im7.Va
 import FV7z.Im7.Vb
 import FV7z.Im7.Idx
+import FV7z.Im7.Cls
 import FV7z.Im5.Cls
 /-!
 # `_int_malloc`: the second call for every request `4105 ≤ n ≤ 2 ^ 32` (PLAN.md G3, `malloc`)
@@ -8,7 +9,8 @@ import FV7z.Im5.Cls
 - `ixA` … `ixCc`: the index stored at `rsp + 0x28` on each way is `lix nb`.
 - `clsG`: the facts of `request2size` for such a request.
 - `from512`: from 512 with the index `lix nb` (`vcBall`) to 2549, then `Im2.im_from2549`.
-- `im_secondG`: by the way `nb` takes (`vcA` … `vcCc`) to 512, then `from512`; `secG`: as `Im5.SecA`.
+- `im_secondG`: by the way `nb` takes (`vcA` … `vcCc`) to 512, then `from512`; `secG`: as `Im5.SecA`; `secC`: for
+  `ClsG`.
 -/
 open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn FV7z.Start
 open FV7z.Imm (imm imm_at)
@@ -251,5 +253,8 @@ theorem secG {n nb : Addr} (h1 : 4105 ≤ n.toNat) (h2 : n.toNat ≤ 2 ^ 32)
   intro prof F Wl L s₀ X o t gev gP gE V fb S T szw sm c hfs hin hK hA hrip hrsp hsi hdi hS hlo hfb hgm hfc hfz
     hbk hlb htc htb hun hm0 hm1 hm2 hm3
   exact im_secondG c hfs hin hK hA hrip hrsp hsi hdi h1 h2 h hS hlo hfb hgm hfc hlb htc htb hun hm3
+
+/-- `Im5.SecA` for every request of `ClsG`. -/
+theorem secC {n nb : Addr} (h : ClsG n nb) : Im5.SecA n nb := secG h.1 h.2.1 h.2.2
 
 end FV7z.Im7
