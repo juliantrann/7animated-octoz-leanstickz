@@ -46,6 +46,11 @@ theorem vc_0 {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} :
   all_goals repeat' (first
     | exact ⟨Or.inl rfl, ⟨_, rfl⟩, rfl⟩
     | exact ⟨Or.inr rfl, ⟨_, rfl⟩, rfl⟩
+    | exact Or.inl trivial
+    | exact Or.inr trivial
+    | exact ⟨_, rfl⟩
+    | exact trivial
+    | exact rfl
     | apply And.intro
     | intro _)
 
@@ -55,7 +60,9 @@ theorem vc_32 {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (fe : ∀ 
       V' = Vst V (errnoAt fb) einval) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   wpx [W_32, o3, Op.stfi]
-  exact ⟨fe, rfl⟩
+  first
+  | exact fe
+  | exact ⟨fe, rfl⟩
 
 variable {prof : Profile} {L : List (Addr × List Byte)} {s₀ : State} {o : Oracle}
   {gev : List Event} {gP : State → Nat → List Event → Prop} {gE : Outcome → List Event → Prop}
@@ -83,7 +90,7 @@ theorem bsn_ok {fb : Addr} (c : Seg prof F Wl L s₀ o)
   refine (c_0 prof fb).run c hfs hin
     (fun j' g' _ V' => (j' = 26 ∨ j' = 32) ∧ (∃ a, g' = { X.cpu.gpr with rax := a }) ∧ V' = V)
     hK hA hrip' vc_0 ?_
-  rintro j' g fl V₁ ⟨hj | hj, ⟨a, rfl⟩, rfl⟩ Y t₁ hKY hAY hrY hgY - <;> subst hj
+  rintro j' g fl V₁ ⟨hj | hj, ⟨a, rfl⟩, hV₁⟩ Y t₁ hKY hAY hrY hgY - <;> subst hj <;> subst V₁
   · -- the tail jump
     refine c.s_jmp_x hKY hAY hin (lt_len (by decide)) hrY (jmp_26 _) hinB (Bsg.lt_len (j := 0) (by decide))
       (by decide) ?_
