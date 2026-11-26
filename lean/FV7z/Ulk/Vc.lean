@@ -69,7 +69,7 @@ theorem vc_0s {fb sz fd bk : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte}
 /-- The checks and reads of a large chunk in the `nextsize` list, after `ulk1`. -/
 structure Lg (F : Footprint) (V : Addr → Byte) (p fd bk fdn bkn : Addr) : Prop where
   hfdn : rdq(ulk1 V fd bk, p + 32#64) = fdn
-  hfdn0 : (fdn == 0#64) = false
+  hfdn0 : (fdn == 0) = false
   c4 : rdq(ulk1 V fd bk, fdn + 40#64) = p
   hbkn : rdq(ulk1 V fd bk, p + 40#64) = bkn
   c5 : rdq(ulk1 V fd bk, bkn + 32#64) = p
@@ -106,6 +106,7 @@ theorem vc_0a {fb sz fd bk fdn bkn q : Addr} {g : Gprs} {f : Rflags} {V : Addr �
   ulkx [W_0, W_25, W_39, W_45, W_62, W_71, W_77, W_87, W_94, o0, o1, o2, o3, o4, o5, o6, o7, o8, hb,
     hs', hsz, hc1, hfd, hbk, hc2, hc3, l1, l2, l3, l4, l5, hff', hq, f1, f2, f3, f4, f5, f6, g1, g2, g3, g4, g5, w1,
     w2, w3, w4]
+  all_goals (and_intros <;> assumption)
 
 set_option maxHeartbeats 4000000 in
 /-- A large chunk, `fd->fd_nextsize` null, `p->fd_nextsize = p`: to the `movq` at 176, `rax = fd`. -/
@@ -131,6 +132,7 @@ theorem vc_0b {fb sz fd bk fdn bkn : Addr} {g : Gprs} {f : Rflags} {V : Addr →
   ulkx [W_0, W_25, W_39, W_45, W_62, W_71, W_77, W_87, W_112, o0, o1, o2, o3, o4, o5, o6, o7, o10, hb,
     hs', hsz, hc1, hfd, hbk, hc2, hc3, l1, l2, l3, l4, l5, hff, hpe', f1, f2, f3, f4, f5, f6, g1, g2, g3, g4, g5,
     w1, w2]
+  all_goals (and_intros <;> assumption)
 
 set_option maxHeartbeats 4000000 in
 /-- A large chunk, `fd->fd_nextsize` null, `p->fd_nextsize ≠ p`: to the `movq` at 117, `rax = fd`,
@@ -157,6 +159,7 @@ theorem vc_0c {fb sz fd bk fdn bkn : Addr} {g : Gprs} {f : Rflags} {V : Addr →
   ulkx [W_0, W_25, W_39, W_45, W_62, W_71, W_77, W_87, W_112, o0, o1, o2, o3, o4, o5, o6, o7, o10, hb,
     hs', hsz, hc1, hfd, hbk, hc2, hc3, l1, l2, l3, l4, l5, hff, hpe', f1, f2, f3, f4, f5, f6, g1, g2, g3, g4, g5,
     w1, w2]
+  all_goals (and_intros <;> assumption)
 
 /-- After the store of `fd`'s `nextsize` links (`rax = fd`, `rdi = p`): `p->fd_nextsize->bk_nextsize = fd`,
 `p->bk_nextsize->fd_nextsize = fd`, to 106. -/
