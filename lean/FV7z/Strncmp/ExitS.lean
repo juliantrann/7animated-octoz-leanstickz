@@ -22,9 +22,10 @@ theorem stop_comm {V : Addr → Byte} {u v : Addr}
 theorem lea_m16 {k₉ kc : Nat} (h : k₉ + kc < 2 ^ 64) (h16 : 16 ≤ k₉ + kc) :
     BitVec.ofNat 64 k₉ + BitVec.ofNat 64 kc * BitVec.ofNat 64 1 + BitVec.ofNat 64 18446744073709551600 =
       BitVec.ofNat 64 (k₉ + kc - 16) := by
-  apply BitVec.eq_of_toNat_eq
-  simp only [BitVec.toNat_add, BitVec.toNat_mul, BitVec.toNat_ofNat, Nat.reducePow, Nat.reduceMod, Nat.mul_one]
-  omega
+  have e : BitVec.ofNat 64 18446744073709551600 = -BitVec.ofNat 64 16 := by decide
+  rw [e, ← BitVec.sub_eq_add_neg, BitVec.sub_eq_iff_eq_add, BitVec.ofNat_add_ofNat,
+    show k₉ + kc - 16 + 16 = k₉ + kc by omega, BitVec.mul_one]
+  exact BitVec.ofNat_add_ofNat _ _
 
 variable {prof : Profile} {L : List (Addr × List Byte)} {s₀ : State} {o : Oracle} {F : Footprint} {Wl : List Rgn}
   {gev : List Event} {gP : State → Nat → List Event → Prop} {gE : Outcome → List Event → Prop}
@@ -55,7 +56,7 @@ theorem exit6165 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e' scm) {Y : State
     rw [hf₁, cond4_log hfl]
     simp only [gv, Src.val, wr, set_rdi, set_rsi, get_r8n, BitVec.and_self, h8]
     cases sw <;> decide
-  simp only [wr, gv, eaG, optV, set_rdi, set_rsi, get0, get1, get6, get7, BitVec.setWidth_eq, hax, hcx] at hg₁
+  simp only [wr, eaG, optV, set_rdi, set_rsi, get0, get1, get6, get7, BitVec.setWidth_eq, hax, hcx] at hg₁
   have hdi₁ : Y₁.cpu.gpr.rdi = x.add q := by
     rw [← hdi, hg₁]
     simp only [Addr.add, BitVec.mul_one, BitVec.add_zero]
@@ -90,7 +91,7 @@ theorem exit6165 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e' scm) {Y : State
     refine c.s_blkV hin (b6178 prof) hK₂ hA₂ hr₂ ?_
     refine wpV_reg fun _ _ => wpV_reg fun _ _ => wpV_nil ?_
     intro Y₃ t₃ hK₃ hA₃ hr₃ hg₃ _ _
-    simp only [wr, gv, Src.val, set_rdi, set_rsi, get6, get7, BitVec.setWidth_eq] at hg₃
+    simp only [wr, gv, set_rdi, set_rsi, get6, get7, BitVec.setWidth_eq] at hg₃
     refine exit6192 c hin hK₃ hA₃ hr₃ (by simp only [KpN, hg₃, hg₂]; exact hkp₁)
       (by simp only [hg₃, hg₂]; exact hsi₁) (by simp only [hg₃, hg₂]; exact hdi₁)
       (by simp only [hg₃, hg₂]; exact h11₁) hR64 hn (by simp only [hg₃, hg₂, hdx₁]; exact hnz)
@@ -115,8 +116,9 @@ theorem exit6160 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e' scm) {Y : State
   refine c.s_blkV hin (b6160 prof) hK hA hrip ?_
   refine wpV_reg fun _ _ => wpV_nil ?_
   intro Y₁ t₁ hK₁ hA₁ hr₁ hg₁ _ _
-  simp only [wr, gv, eaG, optV, set_rax, get1, get_r9n, BitVec.setWidth_eq, h9, hcx, lea_m16 hk64 h16] at hg₁
-  refine exit6165 c hin hK₁ hA₁ hr₁ (by simp only [KpN, hg₁]; exact hkp) (by simp only [hg₁])
+  simp only [wr, set_rax] at hg₁
+  refine exit6165 (ka := k₉ + kc - 16) (kc := kc) c hin hK₁ hA₁ hr₁ (by simp only [KpN, hg₁]; exact hkp)
+    (by simp only [hg₁, eaG, optV, get1, get_r9n, BitVec.setWidth_eq, h9, hcx]; exact lea_m16 hk64 h16)
     (by simp only [hg₁]; exact hcx) (by simp only [hg₁]; exact hdi) (by simp only [hg₁]; exact hsi)
     (by simp only [hg₁]; exact h8) hxy (by simp only [hg₁]; exact h11) hR64 hn (by simp only [hg₁]; exact hnz)
     (by simp only [hg₁]; exact hp) hp64 hsame hstop hfx hfy hP hR
