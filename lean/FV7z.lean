@@ -591,6 +591,9 @@ import FV7z.Sen.Holds
 import FV7z.Rpl.Blocks
 import FV7z.Rpl.Cuts
 import FV7z.Rpl.Holds
+import FV7z.Caa.Blocks
+import FV7z.Caa.Cuts
+import FV7z.Caa.Holds
 import FV7z.Rfp.Blocks
 import FV7z.Rfp.Cuts
 import FV7z.Rfp.Holds
@@ -886,13 +889,16 @@ import FV7z.Ctor.HO
 import FV7z.Asl.Blocks
 import FV7z.Asl.Cuts
 import FV7z.Asl.Holds
+import FV7z.Asl.New
 import FV7z.Usl.Blocks
 import FV7z.Usl.Cuts
 import FV7z.Usl.Holds
+import FV7z.Usl.New
 import FV7z.Utr.Holds
 import FV7z.Uct.Blocks
 import FV7z.Uct.Cuts
 import FV7z.Uct.Holds
+import FV7z.Uct.New
 import FV7z.Cpc.Holds
 import FV7z.Ucc.Holds
 import FV7z.Ura.Holds
@@ -921,6 +927,7 @@ import FV7z.Isp.Holds
 import FV7z.Arl.Holds
 import FV7z.Arb.Holds
 import FV7z.Acs.Holds
+import FV7z.Acs.New
 import FV7z.Acp.Holds
 import FV7z.Acc.Holds
 import FV7z.Lemmas.Rmw8
