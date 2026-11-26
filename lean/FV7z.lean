@@ -482,6 +482,7 @@ import FV7z.U2s.Cuts
 import FV7z.U2s.Holds
 import FV7z.Mcn.Holds
 import FV7z.Fni.Holds
+import FV7z.Mga.Holds
 import FV7z.Fno.Holds
 import FV7z.Pmd.Holds
 import FV7z.Sgw.Holds
