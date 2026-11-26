@@ -634,17 +634,21 @@ theorem vc_0 (hb : Bd F Wl g₀) (hy : Hy g₀ G C) (h : Ih g₀ V₀ G 0 n g V)
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g₀
   wpx [W_0, W_19, W_216, W_27, W_400, o0, o1, o18, o2, o25, Op.shl64]
   all_goals repeat' (first
-    | exact hb.push1
-    | exact hb.push2
-    | exact hb.push3
-    | exact hb.r (by decide) (by decide)
-    | exact hb.r0 (by decide)
-    | exact Or.inl ⟨_, by decide, rfl, ⟨rfl, rfl, rfl, rfl, rfl, fun _ _ _ => rfl⟩, hH0, ne_dec ‹_›, ne_tst ‹_›, rfl⟩
-    | exact Or.inl ⟨_, by decide, rfl, ⟨rfl, rfl, rfl, rfl, rfl, fun _ _ _ => rfl⟩,
-        h2z (hy.z 0 (by decide) _ hH0 (eq_tst ‹_›) (ne_dec ‹_›) (ne_tst ‹_›)) (xz _)⟩
-    | exact Or.inl ⟨_, by decide, rfl, ⟨rfl, rfl, rfl, rfl, rfl, fun _ _ _ => rfl⟩,
-        hy.e 0 (by decide) _ hH0 (eq_tst ‹_›) (ne_dec ‹_›) (eq_tst ‹_›)⟩
-    | exact Or.inl ⟨_, by decide, rfl, ⟨rfl, rfl, rfl, rfl, rfl, fun _ _ _ => rfl⟩, hH0⟩
+    | with_reducible exact hb.push1
+    | with_reducible exact hb.push2
+    | with_reducible exact hb.push3
+    | with_reducible exact hb.r (by decide) (by decide)
+    | with_reducible exact hb.r0 (by decide)
+    | (show Nx _ _ _ _ 220 _ _ _
+      exact Or.inl ⟨_, by decide, rfl, ⟨rfl, rfl, rfl, rfl, rfl, fun _ _ _ => rfl⟩, hH0, ne_dec ‹_›, ne_tst ‹_›, rfl⟩)
+    | (show Nx _ _ _ _ 249 _ _ _
+      exact Or.inl ⟨_, by decide, rfl, ⟨rfl, rfl, rfl, rfl, rfl, fun _ _ _ => rfl⟩,
+        h2z (hy.z 0 (by decide) _ hH0 (eq_tst ‹_›) (ne_dec ‹_›) (ne_tst ‹_›)) (xz _)⟩)
+    | (show Nx _ _ _ _ 39 _ _ _
+      exact Or.inl ⟨_, by decide, rfl, ⟨rfl, rfl, rfl, rfl, rfl, fun _ _ _ => rfl⟩,
+        hy.e 0 (by decide) _ hH0 (eq_tst ‹_›) (ne_dec ‹_›) (eq_tst ‹_›)⟩)
+    | (show Nx _ _ _ _ 45 _ _ _
+      exact Or.inl ⟨_, by decide, rfl, ⟨rfl, rfl, rfl, rfl, rfl, fun _ _ _ => rfl⟩, hH0⟩)
     | apply And.intro
     | intro _)
 
@@ -940,71 +944,71 @@ theorem vcAll (hb : Bd F Wl g₀) (hy : Hy g₀ G C) (ℓ : Nat) :
     ∀ n g f V, Ih g₀ V₀ G ℓ n g V → WtC F Wl C ℓ (Nx g₀ V₀ G n) g f V := by
   intro n g f V h
   by_cases h0 : ℓ = 0
-  · subst h0; exact vc_0 hb hy h
+  · subst h0; exact vc_0 (f := f) hb hy h
   by_cases h220 : ℓ = 220
-  · subst h220; exact vc_220 hb hy h
+  · subst h220; exact vc_220 (f := f) hb hy h
   by_cases h225 : ℓ = 225
-  · subst h225; exact vc_225 h hb
+  · subst h225; exact vc_225 (f := f) h hb
   by_cases h244 : ℓ = 244
-  · subst h244; exact vc_244 hb hy h
+  · subst h244; exact vc_244 (f := f) hb hy h
   by_cases h249 : ℓ = 249
-  · subst h249; exact vc_249 h
+  · subst h249; exact vc_249 (f := f) h
   by_cases h252 : ℓ = 252
-  · subst h252; exact vc_252 hb hy h
+  · subst h252; exact vc_252 (f := f) hb hy h
   by_cases h257 : ℓ = 257
-  · subst h257; exact vc_257 h hb
+  · subst h257; exact vc_257 (f := f) h hb
   by_cases h39 : ℓ = 39
-  · subst h39; exact vc_39 h hb
+  · subst h39; exact vc_39 (f := f) h hb
   by_cases h45 : ℓ = 45
-  · subst h45; exact vc_45 hb hy h
+  · subst h45; exact vc_45 (f := f) hb hy h
   by_cases h164 : ℓ = 164
-  · subst h164; exact vc_164 hb hy h
+  · subst h164; exact vc_164 (f := f) hb hy h
   by_cases h169 : ℓ = 169
-  · subst h169; exact vc_169 h hb
+  · subst h169; exact vc_169 (f := f) h hb
   by_cases h189 : ℓ = 189
-  · subst h189; exact vc_189 hb hy h
+  · subst h189; exact vc_189 (f := f) hb hy h
   by_cases h194 : ℓ = 194
-  · subst h194; exact vc_194 h
+  · subst h194; exact vc_194 (f := f) h
   by_cases h197 : ℓ = 197
-  · subst h197; exact vc_197 hb hy h
+  · subst h197; exact vc_197 (f := f) hb hy h
   by_cases h202 : ℓ = 202
-  · subst h202; exact vc_202 h hb
+  · subst h202; exact vc_202 (f := f) h hb
   by_cases h70 : ℓ = 70
-  · subst h70; exact vc_70 h hb
+  · subst h70; exact vc_70 (f := f) h hb
   by_cases h77 : ℓ = 77
-  · subst h77; exact vc_77 hb hy h
+  · subst h77; exact vc_77 (f := f) hb hy h
   by_cases h332 : ℓ = 332
-  · subst h332; exact vc_332 hb hy h
+  · subst h332; exact vc_332 (f := f) hb hy h
   by_cases h337 : ℓ = 337
-  · subst h337; exact vc_337 h hb
+  · subst h337; exact vc_337 (f := f) h hb
   by_cases h357 : ℓ = 357
-  · subst h357; exact vc_357 hb hy h
+  · subst h357; exact vc_357 (f := f) hb hy h
   by_cases h362 : ℓ = 362
-  · subst h362; exact vc_362 h
+  · subst h362; exact vc_362 (f := f) h
   by_cases h365 : ℓ = 365
-  · subst h365; exact vc_365 hb hy h
+  · subst h365; exact vc_365 (f := f) hb hy h
   by_cases h370 : ℓ = 370
-  · subst h370; exact vc_370 h hb
+  · subst h370; exact vc_370 (f := f) h hb
   by_cases h106 : ℓ = 106
-  · subst h106; exact vc_106 h hb
+  · subst h106; exact vc_106 (f := f) h hb
   by_cases h113 : ℓ = 113
-  · subst h113; exact vc_113 hb hy h
+  · subst h113; exact vc_113 (f := f) hb hy h
   by_cases h276 : ℓ = 276
-  · subst h276; exact vc_276 hb hy h
+  · subst h276; exact vc_276 (f := f) hb hy h
   by_cases h281 : ℓ = 281
-  · subst h281; exact vc_281 h hb
+  · subst h281; exact vc_281 (f := f) h hb
   by_cases h301 : ℓ = 301
-  · subst h301; exact vc_301 hb hy h
+  · subst h301; exact vc_301 (f := f) hb hy h
   by_cases h306 : ℓ = 306
-  · subst h306; exact vc_306 h
+  · subst h306; exact vc_306 (f := f) h
   by_cases h309 : ℓ = 309
-  · subst h309; exact vc_309 hb hy h
+  · subst h309; exact vc_309 (f := f) hb hy h
   by_cases h314 : ℓ = 314
-  · subst h314; exact vc_314 h hb
+  · subst h314; exact vc_314 (f := f) h hb
   by_cases h142 : ℓ = 142
-  · subst h142; exact vc_142 h hb
+  · subst h142; exact vc_142 (f := f) h hb
   by_cases h149 : ℓ = 149
-  · subst h149; exact vc_149 h hb
+  · subst h149; exact vc_149 (f := f) h hb
   · simp only [Ih, h0, h220, h225, h244, h249, h252, h257, h39, h45, h164, h169, h189, h194, h197,
       h202, h70, h77, h332, h337, h357, h362, h365, h370, h106, h113, h276, h281, h301,
       h306, h309, h314, h142, h149, ↓reduceIte] at h
@@ -1017,43 +1021,46 @@ theorem spC (c : Seg prof F Wl L s₀ o) (hin : CodeIn L rdn_at rdn)
     (fN : FnK prof F Wl L s₀ o 0x6029b0#64 C.Tn C.Rn) (fM : FnK prof F Wl L s₀ o 0x401070#64 C.Tm C.Rm)
     (fD : FnK prof F Wl L s₀ o 0x6014f0#64 C.Td C.Rd) (ℓ : Nat) :
     SpAt prof F Wl L s₀ o rdn_at ℓ (WtC F Wl C ℓ) := by
-  unfold WtC
-  split
-  · subst ℓ
+  by_cases h164 : ℓ = 164
+  · subst h164
     exact SpAt.callKx c hin (lt_len (by decide)) (call_164 _) hinN hjN (by rw [heN]; decide) heN fN
-  split
-  · subst ℓ
+  by_cases h189 : ℓ = 189
+  · subst h189
     exact SpAt.callK c hin (lt_len (by decide)) (call_189 _) hinM hM (by decide) fM
-  split
-  · subst ℓ
+  by_cases h197 : ℓ = 197
+  · subst h197
     exact SpAt.callK c hin (lt_len (by decide)) (call_197 _) hinD hD (by decide) fD
-  split
-  · subst ℓ
+  by_cases h220 : ℓ = 220
+  · subst h220
     exact SpAt.callKx c hin (lt_len (by decide)) (call_220 _) hinN hjN (by rw [heN]; decide) heN fN
-  split
-  · subst ℓ
+  by_cases h244 : ℓ = 244
+  · subst h244
     exact SpAt.callK c hin (lt_len (by decide)) (call_244 _) hinM hM (by decide) fM
-  split
-  · subst ℓ
+  by_cases h252 : ℓ = 252
+  · subst h252
     exact SpAt.callK c hin (lt_len (by decide)) (call_252 _) hinD hD (by decide) fD
-  split
-  · subst ℓ
+  by_cases h276 : ℓ = 276
+  · subst h276
     exact SpAt.callKx c hin (lt_len (by decide)) (call_276 _) hinN hjN (by rw [heN]; decide) heN fN
-  split
-  · subst ℓ
+  by_cases h301 : ℓ = 301
+  · subst h301
     exact SpAt.callK c hin (lt_len (by decide)) (call_301 _) hinM hM (by decide) fM
-  split
-  · subst ℓ
+  by_cases h309 : ℓ = 309
+  · subst h309
     exact SpAt.callK c hin (lt_len (by decide)) (call_309 _) hinD hD (by decide) fD
-  split
-  · subst ℓ
+  by_cases h332 : ℓ = 332
+  · subst h332
     exact SpAt.callKx c hin (lt_len (by decide)) (call_332 _) hinN hjN (by rw [heN]; decide) heN fN
-  split
-  · subst ℓ
+  by_cases h357 : ℓ = 357
+  · subst h357
     exact SpAt.callK c hin (lt_len (by decide)) (call_357 _) hinM hM (by decide) fM
-  split
-  · subst ℓ
+  by_cases h365 : ℓ = 365
+  · subst h365
     exact SpAt.callK c hin (lt_len (by decide)) (call_365 _) hinD hD (by decide) fD
+  have e : WtC F Wl C ℓ = Wt ℓ F Wl := by
+    simp only [WtC, h164, h189, h197, h220, h244, h252, h276, h301, h309,
+      h332, h357, h365, ↓reduceIte]
+  rw [e]
   exact (spAll prof ℓ).at c hin
 
 variable {gev : List Event} {gP : State → Nat → List Event → Prop} {gE : Outcome → List Event → Prop}
