@@ -446,6 +446,7 @@ import FV7z.Wmc.Holds
 import FV7z.Ifr.Code
 import FV7z.Fre.Holds
 import FV7z.Ifr.Holds
+import FV7z.Ifr.Put
 import FV7z.Lemmas.SysWrite
 import FV7z.Write.Blocks
 import FV7z.Write.Cuts
@@ -465,6 +466,9 @@ import FV7z.Tcg.Cuts
 import FV7z.Tcg.Holds
 import FV7z.Tcg.Sys
 import FV7z.Tcg.Ok
+import FV7z.Lemmas.SysMunmap
+import FV7z.Start.Unmap
+import FV7z.Mun.Ok
 import FV7z.TcgC.Cuts
 import FV7z.Statement.Examples
 import FV7z.Lemmas.BlkOps7

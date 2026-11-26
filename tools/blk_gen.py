@@ -320,6 +320,9 @@ FNS = {
     # 7-Zip's CPP/Common/StringToInt.cpp `ConvertStringToUInt64 (const wchar_t *s, const wchar_t **end)`: decimal
     # digits (4-byte `wchar_t`s) to a `UInt64`, 0 on overflow; the end stored at `[rsi]` when `rsi` is not 0. Stops:
     # the `ret`s (0x55 overflow, 0x68 the end stored, 0x77 no end).
+    "lhp": dict(grp="Lhp", cn="CHeader_Parse", a=0x49ec00, n=0xa9, pos=True, stops=(0x43,),
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `NArchive::NLzma::CHeader::Parse` (`CPP/7zip/Archive/LzmaHandler.cpp`; "
+                "`objdump -d`)"),
     "lpd": dict(grp="Lpd", cn="LzmaProps_Decode", a=0x42bea0, n=0x66, pos=True, stops=(0x56, 0x65),
                 tag="PLAN.md §M, M1", src="7-Zip 26.06's `LzmaProps_Decode` (`C/LzmaDec.c`; `objdump -d`)"),
     "stu": dict(grp="Stu", cn="ConvertStringToUInt64", a=0x451330, n=0x7c, pos=True, stops=(0x55, 0x68, 0x77),

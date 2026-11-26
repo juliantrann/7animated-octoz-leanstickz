@@ -112,7 +112,7 @@ theorem vc_36 {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post}
   rw [o2_eq]
   refine wp_append _ _ (wp_mono o2a ?_ (pa g f V))
   rintro g₁ f₁ V₁ ⟨a, c, rfl, rfl⟩
-  refine wp_append _ _ (wp_mono o2b ?_ (pb _ f₁ V fw0))
+  refine wp_append _ _ (wp_mono o2b ?_ (pb _ f₁ _ fw0))
   rintro g₂ f₂ V₂ ⟨a₂, c₂, d₂, b0, rfl, rfl⟩
   refine wp_append _ _ (wp_mono o2c ?_ (pc _ f₂ _ fw2))
   rintro g₃ f₃ V₃ ⟨d₃, b2, rfl, rfl⟩
@@ -127,21 +127,31 @@ def P0 (g₀ : Gprs) (V₀ : Addr → Byte) : Post := fun j g _ V =>
       (V = V₀ ∨ ∃ w : BitVec 32, V = Vst V₀ (g₀.rdi + 4#64) (toBytesLE w 4))) ∨
     (j = 86 ∧ ∃ c d w b0 b2 b1, g = { g₀ with rax := 0#64, rcx := c, rdx := d } ∧ V = props V₀ g₀.rdi w b0 b2 b1)
 
-/-- From the entry: the two exits to 96 and the stretch to 86. -/
-set_option maxHeartbeats 1000000 in
-theorem vc_0 {g : Gprs} {f : Rflags} {V : Addr → Byte}
+/-- From 9: `dicSize` stored, then to 96 or the stretch to 86. -/
+theorem vc_9 {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post}
     (fr1 : ∀ i < 4, Foot F.data (Addr.add (g.rsi + 1#64) i)) (fr0 : ∀ i < 1, Foot F.data (Addr.add g.rsi i))
     (fw4 : ∀ i < 4, Foot Wl (Addr.add (g.rdi + 4#64) i)) (fw0 : ∀ i < 1, Foot Wl (Addr.add g.rdi i))
-    (fw2 : ∀ i < 1, Foot Wl (Addr.add (g.rdi + 2#64) i)) (fw1 : ∀ i < 1, Foot Wl (Addr.add (g.rdi + 1#64) i)) :
-    W_0 F Wl (P0 g V) g f V := by
+    (fw2 : ∀ i < 1, Foot Wl (Addr.add (g.rdi + 2#64) i)) (fw1 : ∀ i < 1, Foot Wl (Addr.add (g.rdi + 1#64) i))
+    (h96 : ∀ (a d : BitVec 64) (w : BitVec 32) fl,
+      Q 96 { g with rax := a, rdx := d } fl (Vst V (g.rdi + 4#64) (toBytesLE w 4)))
+    (h86 : ∀ (c d : BitVec 64) (w : BitVec 32) (b0 b2 b1 : BitVec 8) fl,
+      Q 86 { g with rax := 0#64, rcx := c, rdx := d } fl (props V g.rdi w b0 b2 b1)) :
+    W_9 F Wl Q g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
-  dsimp only at fr1 fr0 fw4 fw0 fw2 fw1 ⊢
-  wpx [W_0, W_9, o0, o1, Op.ldzx]
+  dsimp only at fr1 fr0 fw4 fw0 fw2 fw1 h96 h86 ⊢
+  wpx [W_9, o1, Op.ldzx]
   repeat' (first | exact fr1 | exact fr0 | exact fw4 | apply And.intro | intro _)
   all_goals first
-    | exact Or.inl ⟨rfl, _, _, rfl, Or.inl (by with_reducible rfl)⟩
-    | exact Or.inl ⟨rfl, _, _, rfl, Or.inr ⟨_, by with_reducible rfl⟩⟩
-    | exact vc_36 fw0 fw2 fw1 fun c d b0 b2 b1 _ => Or.inr ⟨rfl, c, d, _, b0, b2, b1, rfl, rfl⟩
+    | exact h96 _ _ _ _
+    | exact vc_36 fw0 fw2 fw1 fun c d b0 b2 b1 fl => h86 c d _ b0 b2 b1 fl
+
+/-- From the entry: `size` ≤ 4 to 96, else to 9. -/
+theorem vc_0 {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post} (h96 : ∀ fl, Q 96 g fl V)
+    (h9 : ∀ fl, W_9 F Wl Q g fl V) : W_0 F Wl Q g f V := by
+  obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
+  wpx [W_0, o0]
+  repeat' (first | apply And.intro | intro _)
+  all_goals first | exact h96 _ | exact h9 _
 
 /-- `mov eax, 4`. -/
 theorem vc_96 {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post} (h : ∀ fl, Q 101 { g with rax := 4#64 } fl V) :
@@ -180,7 +190,9 @@ theorem lpd_ok (c : Seg prof F Wl L s₀ o) (hin : CodeIn L lpd_at lpd) (hK : Ke
       (byteAddrs X.cpu.gpr.rsp 8) = List.map V₀ (byteAddrs X.cpu.gpr.rsp 8) := fun V₀ w =>
     rdK V₀ _ _ _ 4 _ e4 (by rw [toBytesLE_length] <;> decide) hpw hsp hsep
   refine (c_0 prof).run c hin (P0 X.cpu.gpr V) hK hA (by rw [addr_add_zero]; exact hrip)
-    (vc_0 fr1 fr0 fw4 fw0 fw2 fw1) ?_
+    (vc_0 (fun _ => Or.inl ⟨rfl, _, _, rfl, Or.inl rfl⟩) fun _ => vc_9 fr1 fr0 fw4 fw0 fw2 fw1
+      (fun a d w _ => Or.inl ⟨rfl, a, d, rfl, Or.inr ⟨w, rfl⟩⟩)
+      (fun c d w b0 b2 b1 _ => Or.inr ⟨rfl, c, d, w, b0, b2, b1, rfl, rfl⟩)) ?_
   rintro j' g fl V₁ (⟨rfl, a, d, rfl, hV₁⟩ | ⟨rfl, c', d, w, b0, b2, b1, rfl, rfl⟩) Y t₁ hKY hAY hrY hgY -
   · refine (c_96 prof).run c hin (fun j' g' _ V' => j' = 101 ∧ g' = { Y.cpu.gpr with rax := 4#64 } ∧ V' = V₁)
       hKY hAY hrY (vc_96 fun _ => ⟨rfl, rfl, rfl⟩) ?_
