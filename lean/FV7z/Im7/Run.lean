@@ -74,10 +74,11 @@ theorem shr15 (x : BitVec 64) : (x >>> 15).toNat = x.toNat / 32768 := shr_nat x 
 /-- The comparison of `tc = (nb - 17) >> 4` with `mp_.tcache_bins` (64) at 1099. -/
 theorem tcb {nb : BitVec 64} (h : 4112 < nb.toNat) :
     decide (64 < ((nb + 18446744073709551599#64) >>> 4).toNat) = true := by
-  apply decide_eq_true
-  have := nb.isLt
-  simp only [shr_nat, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.reducePow] at this ⊢
-  omega
+  have hl := nb.isLt
+  have e : (nb + 18446744073709551599#64).toNat = nb.toNat - 17 := by
+    rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega
+  rw [shr_nat, e]
+  exact decide_eq_true (show 64 < (nb.toNat - 17) / 16 by omega)
 
 /-- `request2size` of `4105 ≤ n ≤ 2 ^ 32`. -/
 theorem clsG {n : Addr} (h1 : 4105 ≤ n.toNat) (h2 : n.toNat ≤ 2 ^ 32) :
