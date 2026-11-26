@@ -4,9 +4,9 @@ import FV7z.Ctor.Loop
 /-!
 # `csuTg 75`: a table of reversed bytes (PLAN.md §M, constructors)
 
-`csuTg 75`, at offset 1584 of `sti`, fills the 256 bytes at `0x79d340` (`wr75`), each its index with the bits
-reversed, and returns. No later code takes those bytes as an address, so its spec says only where they lie
-(`wrSpec wr75`).
+`csuTg 75` (`_GLOBAL__sub_I_BitlDecoder.cpp`, `0x41c770`), at offset 1584 of `sti`, fills the 256 bytes at
+`0x79d340` (`wr75`), each its index with the bits reversed, and returns. No later code takes those bytes as an
+address, so its spec says only where they lie (`wrSpec wr75`).
 
 - `Inv`: the invariant at the two cut points (`Cuts.lean`): the entry, and the loop's head with `rcx` the count of
   bytes done, `rsi` the table, the registers a call keeps, and the bytes outside the table as at the entry (`Out`).
