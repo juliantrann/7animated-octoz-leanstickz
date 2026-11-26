@@ -474,6 +474,11 @@ FNS = {
     "sis": dict(grp="Sis", cn="NCompress::NLzma::CDecoder::SetInStream", a=0x57f8d0, n=0x40, pos=True,
                 stops=(0x3f,), calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `NCompress::NLzma::CDecoder::SetInStream` (`CPP/7zip/Compress/LzmaDecoder.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 `NWildcard::CCensor::FindPairForPrefix (prefix)`: the loop over `Pairs` with `CompareFileNames`
+    # (0x4522b0) at 0x39; the `ret`s at 0x48 (found), 0x59 (none) and 0x5f (no pairs).
+    "ffp": dict(grp="Ffp", cn="NWildcard::CCensor::FindPairForPrefix", a=0x453550, n=0x60, pos=True,
+                stops=(0x48, 0x59, 0x5f), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `NWildcard::CCensor::FindPairForPrefix` (`CPP/Common/Wildcard.cpp`; `objdump -d`)"),
     # 7-Zip 26.06 C/LzmaDec + CPP/7zip/Compress/LzmaDecoder.cpp `CDecoder::SetOutStreamSizeResume (outSize)`: the
     # flags and sizes, then a tail jump (0x2f) to `LzmaDec_Init (&_state)`.
     "sos": dict(grp="Sos", cn="NCompress::NLzma::CDecoder::SetOutStreamSizeResume", a=0x57fd80, n=52, pos=True,
