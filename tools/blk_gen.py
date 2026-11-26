@@ -224,6 +224,13 @@ FNS = {
                 tag="PLAN.md §M, M1", src="glibc 2.31's `_pthread_cleanup_pop` (`nptl/cleanup_compat.c`; `objdump -d`)"),
     # glibc 2.31 string/strdup.c `__strdup (s)`: `strlen (s) + 1` bytes from `malloc`, then a tail jump to `memcpy`
     # through the PLT; `malloc`'s 0 is the answer. Stops: the `jmp` to `memcpy` (0x34) and the `ret` (0x3f).
+    # glibc's `__hash_string (str)` (`intl/hash-string.c`): the ELF-style hash of the bytes up to the NUL, a loop
+    # from 0x28 back to itself; three `ret`s (0x4f, 0x50, 0x5a: the empty string).
+    "hsh": dict(grp="Hsh", cn="__hash_string", a=0x6222e0, n=91, pos=True, stops=(0x4f, 0x50, 0x5a),
+                tag="PLAN.md §M, M1", src="glibc 2.31's `__hash_string` (`intl/hash-string.c`; `objdump -d`)"),
+    # libio's `_IO_default_imbue`: `endbr64; ret`.
+    "imb": dict(grp="Imb", cn="_IO_default_imbue", a=0x5ab370, n=5, pos=True, stops=(0x4,),
+                tag="PLAN.md §M, M1", src="glibc 2.31's `_IO_default_imbue` (`libio/genops.c`; `objdump -d`)"),
     "sdp": dict(grp="Sdp", cn="__strdup", a=0x635dd0, n=64, pos=True, stops=(0x34, 0x3f), calls=True,
                 tag="PLAN.md §M, M1", src="glibc 2.31's `__strdup` (`string/strdup.c`; `objdump -d`)"),
     # 7-Zip's CPP/Windows/FileIO.cpp `CFileBase::seek (off, whence)`: the descriptor (`this->_handle`, at 0), then
