@@ -1,8 +1,10 @@
-import FV7z.Cld.Code
-import FV7z.Cld.Pats
-import FV7z.Cld.Blocks1
-import FV7z.Cld.Blocks
-import FV7z.Cld.Cuts
-import FV7z.Cld.Holds
+import FV7z.Lemmas.BlkOps25
+import FV7z.Irp.Cuts
+import FV7z.Irp.Holds
+import FV7z.Pic.Cuts
+import FV7z.Pic.Holds
+import FV7z.Pdt.Cuts
+import FV7z.Pvd.Cuts
 open FV7z
-#print axioms FV7z.Cld.cld_ok
+#print axioms FV7z.Irp.irp_ok
+#print axioms FV7z.Pic.pic_ok
