@@ -239,7 +239,8 @@ theorem fclose_ok {fb : Addr} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.f
     rw [BitVec.toNat_add, tn16, tn8]
     simp <;> omega
   have hp' : 8 ≤ X.cpu.gpr.rsp.toNat := by omega
-  have hdp' : X.cpu.gpr.rdi.toNat + 4 ≤ X.cpu.gpr.rsp.toNat - 8 ∨ X.cpu.gpr.rsp.toNat + 8 ≤ X.cpu.gpr.rdi.toNat := by
+  have hdp' : X.cpu.gpr.rdi.toNat + 4 ≤ X.cpu.gpr.rsp.toNat - 8 ∨
+      X.cpu.gpr.rsp.toNat + 8 ≤ X.cpu.gpr.rdi.toNat := by
     omega
   have h8 : ∀ i < 8, Foot F.data (Addr.add (X.cpu.gpr.rsp - 8) i) := fun i hi => c.hws _ (hs1 i hi)
   -- the bytes stored by `push rbx` and the `call`
@@ -287,11 +288,13 @@ theorem fclose_ok {fb : Addr} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.f
   -- `call __close`
   have hsp₁ : Y₁.cpu.gpr.rsp = X.cpu.gpr.rsp - 8 := by rw [hg₁]
   have hs₁ : ∀ i < 8, Foot Wl (Addr.add (Y₁.cpu.gpr.rsp - 8) i) := by rw [hsp₁, e16]; exact hs2
-  refine c.s_call hK₁ hA₁ hin (lt_len (by decide)) hr₁ (call_20 _) hinc (Close.lt_len (by decide)) (by decide) hs₁ ?_
+  refine c.s_call hK₁ hA₁ hin (lt_len (by decide)) hr₁ (call_20 _) hinc (Close.lt_len (by decide)) (by decide)
+    hs₁ ?_
   rintro Y₂ t₂ hK₂ hA₂ ⟨hr₂, hg₂⟩
   rw [hsp₁, e16] at hA₂ hg₂
   have hsp₂ : Y₂.cpu.gpr.rsp = X.cpu.gpr.rsp - 16 := by rw [hg₂]; rfl
-  have hf1 : (fb + 24#64).toNat + 4 ≤ X.cpu.gpr.rsp.toNat - 16 ∨ X.cpu.gpr.rsp.toNat - 8 ≤ (fb + 24#64).toNat := by
+  have hf1 : (fb + 24#64).toNat + 4 ≤ X.cpu.gpr.rsp.toNat - 16 ∨
+      X.cpu.gpr.rsp.toNat - 8 ≤ (fb + 24#64).toNat := by
     omega
   have hf2 : (fb + 24#64).toNat + 4 ≤ X.cpu.gpr.rsp.toNat - 8 ∨ X.cpu.gpr.rsp.toNat ≤ (fb + 24#64).toNat := by
     omega
@@ -302,15 +305,16 @@ theorem fclose_ok {fb : Addr} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.f
   have hl₂ : ∀ i < 8, Foot F.data (Addr.add Y₂.cpu.gpr.rsp i) := by
     rw [hsp₂]; exact fun i hi => c.hws _ (hs2 i hi)
   have hq₂ : Y₂.cpu.gpr.rsp.toNat + 8 ≤ 2 ^ 64 := by rw [hsp₂, tn16]; omega
-  have hsa₂ : (errnoAt fb).toNat + 4 ≤ Y₂.cpu.gpr.rsp.toNat ∨ Y₂.cpu.gpr.rsp.toNat + 8 ≤ (errnoAt fb).toNat := by
+  have hsa₂ : (errnoAt fb).toNat + 4 ≤ Y₂.cpu.gpr.rsp.toNat ∨
+      Y₂.cpu.gpr.rsp.toNat + 8 ≤ (errnoAt fb).toNat := by
     rw [hsp₂, tn16]; omega
   have hra₂ : ofBytesLE 64 ((byteAddrs Y₂.cpu.gpr.rsp 8).map (Vst (Vst V (X.cpu.gpr.rsp - 8)
       (toBytesLE X.cpu.gpr.rbx 8)) (X.cpu.gpr.rsp - 16) (toBytesLE (fcl_at.add (20 + 5)) 8))) = fcl_at.add 25 := by
     have hq : (X.cpu.gpr.rsp - 16).toNat + 8 ≤ 2 ^ 64 := by rw [tn16]; omega
     rw [hsp₂, Tun.rd_Vst_self _ (X.cpu.gpr.rsp - 16) (toBytesLE (fcl_at.add (20 + 5)) 8) (toBytesLE_length _ _) hq]
     exact ofBytesLE_toBytesLE (n := 8) rfl _
-  refine Close.close_ok c hfs hrs hinc hK₂ hA₂ hr₂ hmt₂ fm fe hfe hl₂ hq₂ hsa₂ hin (j₂ := 25) (lt_len (by decide))
-    hra₂ ?_
+  refine Close.close_ok c hfs hrs hinc hK₂ hA₂ hr₂ hmt₂ fm fe hfe hl₂ hq₂ hsa₂ hin (j₂ := 25)
+    (lt_len (by decide)) hra₂ ?_
   intro Y S Z r t' hKY hAY hgY hrY hrr hS cS hKZ hrZ hok herr
   have hev : clsEv Y₂.cpu.gpr r = clsEv { X.cpu.gpr with
       rdi := BitVec.setWidth 64 (ofBytesLE 32 ((byteAddrs X.cpu.gpr.rdi 4).map V)) } r := by
