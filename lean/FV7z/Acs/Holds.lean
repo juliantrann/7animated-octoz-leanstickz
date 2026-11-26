@@ -355,7 +355,8 @@ theorem acs_ok {P1 P2 : State → (Addr → Byte) → Prop} (c : Seg prof F Wl L
           rdi := Z.cpu.gpr.rax
           rdx := zd X.cpu.gpr
           rsi := X.cpu.gpr.rsi } : Gprs).set 4 (X.cpu.gpr.rsp - 48) := by
-    rw [hg₄, hs3', e48, hg₃, hrd, hgZ', hg2, h12, h13, h14] <;> rfl
+    rw [hg₄, hs3', e48, hg₃, hrd, hgZ', hg2]
+    simp only [h14] <;> rfl
   refine km Z V' hP1 Y₄ t₅ hK₄ hA₄ hr₄ hg₄' ?_
   -- back from `memcpy`: the `pop`s and the jump
   intro Z₂ V'' t₆ hK₅ hA₅ hr₅ hz2s hz2b hz2p hz2c hSv hP2
@@ -375,6 +376,6 @@ theorem acs_ok {P1 P2 : State → (Addr → Byte) → Prop} (c : Seg prof F Wl L
   refine kj Z₂ V'' hP2 Y₆ t₈ hK₇ hA₇ (by rw [hr₇, addr_add_zero]) ?_
   rw [hg₇, hg₆]
   dsimp only [gT]
-  rw [hz2b, hz2p, hz2c, hz2s, q32, q24, q16, q8, q0, vbx, vbp, v12, v13, v14, lea1] <;> rfl
+  simp only [hz2b, hz2p, hz2c, hz2s, q32, q24, q16, q8, q0, vbx, vbp, v12, v13, v14, lea1] <;> rfl
 
 end FV7z.Acs
