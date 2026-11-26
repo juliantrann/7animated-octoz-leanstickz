@@ -33,31 +33,16 @@ theorem lseek_cps (u : State) (hw : arg32 u.cpu.gpr.rdx ≤ 2) {P : StepResult �
     P ((sysLseek u).runStream o t) := by
   unfold sysLseek
   dsimp only
-  split
-  · refine hk _ _ _ ?_ ?_ ?_ ?_ <;> rfl
-  · split
-    · refine hk _ _ _ ?_ ?_ ?_ ?_ <;> rfl
-    · split
-      · split
-        · refine hk _ _ _ ?_ ?_ ?_ ?_ <;> rfl
-        · split
-          · exfalso
-            have : SEEK_END = 2 := rfl
-            omega
-          · split
-            · refine hk _ _ _ ?_ ?_ ?_ ?_ <;> rfl
-            · split
-              · refine hk _ _ _ ?_ ?_ ?_ ?_ <;> rfl
-              · rw [runStream_req_bind]
-                dsimp only
-                split
-                · refine hk _ _ _ ?_ ?_ ?_ ?_ <;> rfl
-                · refine hk _ _ _ ?_ ?_ ?_ ?_ <;> rfl
-      · rw [runStream_req_bind]
-        dsimp only
-        split
-        · refine hk _ _ _ ?_ ?_ ?_ ?_ <;> rfl
-        · refine hk _ _ _ ?_ ?_ ?_ ?_ <;> rfl
+  have h0 : SEEK_SET = 0 := rfl
+  have h1 : SEEK_CUR = 1 := rfl
+  have h2 : SEEK_END = 2 := rfl
+  have h4 : SEEK_MAX = 4 := rfl
+  repeat' first
+    | (refine hk _ _ _ ?_ ?_ ?_ ?_ <;> rfl)
+    | contradiction
+    | (exfalso; omega)
+    | (rw [runStream_req_bind]; try dsimp only)
+    | split
 
 /-- `syscall` for `lseek (rdi, rsi, rdx)` with `whence` at most `SEEK_END`: the state after has the processor after
 the `syscall` with `rax` the answer `r`, and the thread, address space and descriptor table of before. -/
