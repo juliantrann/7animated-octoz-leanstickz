@@ -177,7 +177,7 @@ theorem msb_tail (Y X : BitVec 128) {k i : Nat} (hi : i < 16) (hik : i + k < 16)
     decide
   · subst h1
     have h3 : y ≠ 0 := fun h => h2 h.symm
-    simp only [h2, eq_self_iff_true, ↓reduceIte, h3, ne_eq, not_false_eq_true, and_self, decide_true]
+    simp only [h2, ↓reduceIte, h3, ne_eq, not_false_eq_true, and_self, decide_true]
     all_goals decide
   · subst h2
     simp only [h1, ↓reduceIte, false_and, decide_false]
