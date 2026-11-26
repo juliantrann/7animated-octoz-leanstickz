@@ -72,9 +72,11 @@ theorem vc_0 {g : Gprs} {f : Rflags} {V : Addr → Byte}
     (w5 : ∀ i < 8, Foot Wl (Addr.add (g.rsp - 8 - 8 - 8 - 8 - 8) i))
     (w6 : ∀ i < 8, Foot Wl (Addr.add (g.rsp - 8 - 8 - 8 - 8 - 8 - 8) i))
     (fA : ∀ i < 8, Foot F.data (Addr.add 8014768#64 i))
-    (w16 : ∀ i < 8, Foot Wl (Addr.add (bR g.rsp + 16#64) i)) (w24 : ∀ i < 8, Foot Wl (Addr.add (bR g.rsp + 24#64) i))
+    (w16 : ∀ i < 8, Foot Wl (Addr.add (bR g.rsp + 16#64) i))
+    (w24 : ∀ i < 8, Foot Wl (Addr.add (bR g.rsp + 24#64) i))
     (w8 : ∀ i < 8, Foot Wl (Addr.add (bR g.rsp + 8#64) i))
-    (f4 : ∀ i < 2, Foot F.data (Addr.add (cC V g + 4#64) i)) (f6 : ∀ i < 2, Foot F.data (Addr.add (cC V g + 6#64) i)) :
+    (f4 : ∀ i < 2, Foot F.data (Addr.add (cC V g + 4#64) i))
+    (f6 : ∀ i < 2, Foot F.data (Addr.add (cC V g + 6#64) i)) :
     W_0 F Wl (fun j' g' _ V' => j' = 46 ∧ V' = V4 V g ∧
       g' = { g with rsp := bR g.rsp, r14 := cC V g, rax := zw (so0 V g), r12 := zw (ho0 V g) }) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
@@ -84,8 +86,9 @@ theorem vc_0 {g : Gprs} {f : Rflags} {V : Addr → Byte}
 /-- `ebx = hash_size`, `edx = 0`, `edi = cache_size`, `ebp = hval`; to the `div` (66). -/
 theorem vc_51 {g : Gprs} {f : Rflags} {V : Addr → Byte} (f8 : ∀ i < 2, Foot F.data (Addr.add (g.r14 + 8#64) i))
     (fZ : ∀ i < 4, Foot F.data (Addr.add 8014760#64 i)) :
-    W_51 F Wl (fun j' g' _ V' => j' = 66 ∧ V' = V ∧ g' = { g with rbx := zw (rw16 V (g.r14 + 8#64)), rdx := 0#64,
-      rdi := (rdd(V, 8014760#64)).setWidth 64, rbp := (g.rax.setWidth 32).setWidth 64 }) g f V := by
+    W_51 F Wl (fun j' g' _ V' => j' = 66 ∧ V' = V ∧ g' = { g with
+      rbx := zw (rw16 V (g.r14 + 8#64)), rdx := 0#64, rdi := (rdd(V, 8014760#64)).setWidth 64,
+      rbp := (g.rax.setWidth 32).setWidth 64 }) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only [zw, rw16] at f8 ⊢
   mcx +contextual [W_51, o1, f8, fZ]
@@ -103,7 +106,8 @@ theorem vc_80 {g : Gprs} {f : Rflags} {V : Addr → Byte} (f4 : ∀ i < 2, Foot 
     (w4 : ∀ i < 4, Foot Wl (Addr.add (g.rsp + 4#64) i)) :
     W_80 F Wl (fun j' g' _ V' => j' = 147 ∧
       V' = Vst V (g.rsp + 4#64) (toBytesLE (g.rdi.setWidth 32 - (rw16 V (g.r14 + 4#64)).setWidth 32) 4) ∧
-      g' = { g with rax := zw (rw16 V (g.r14 + 4#64)),
+      g' = { g with
+        rax := zw (rw16 V (g.r14 + 4#64)),
         rdi := (g.rdi.setWidth 32 - (rw16 V (g.r14 + 4#64)).setWidth 32).setWidth 64,
         rbp := ((g.rdx + 1#64).setWidth 32).setWidth 64 }) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
@@ -112,7 +116,7 @@ theorem vc_80 {g : Gprs} {f : Rflags} {V : Addr → Byte} (f4 : ∀ i < 2, Foot 
 
 set_option maxHeartbeats 2000000 in
 /-- An empty slot: the epilogue with `eax = -1`; to the `ret` (186). -/
-theorem vc_147e {g : Gprs} {f : Rflags} {V : Addr → Byte} (hz : (rw16 V (sl g) == 0#16) = true)
+theorem vc_147e {g : Gprs} {f : Rflags} {V : Addr → Byte} (hz : (rw16 V (sl g) == 0) = true)
     (fN : ∀ i < 2, Foot F.data (Addr.add (sl g) i))
     (p0 : ∀ i < 8, Foot F.data (Addr.add (g.rsp + 40#64) i))
     (p1 : ∀ i < 8, Foot F.data (Addr.add (g.rsp + 40#64 + 8) i))
@@ -130,7 +134,7 @@ theorem vc_147e {g : Gprs} {f : Rflags} {V : Addr → Byte} (hz : (rw16 V (sl g)
 
 set_option maxHeartbeats 2000000 in
 /-- The name's offset not below the bound: to the next index (127). -/
-theorem vc_147s {g : Gprs} {f : Rflags} {V : Addr → Byte} (hz : (rw16 V (sl g) == 0#16) = false)
+theorem vc_147s {g : Gprs} {f : Rflags} {V : Addr → Byte} (hz : (rw16 V (sl g) == 0) = false)
     (hc : ¬ ((rw16 V (sl g)).setWidth 32).toNat < (rdd(V, g.rsp + 4#64)).toNat)
     (fN : ∀ i < 2, Foot F.data (Addr.add (sl g) i)) (fL : ∀ i < 4, Foot F.data (Addr.add (g.rsp + 4#64) i)) :
     W_147 F Wl (fun j' g' _ V' => j' = 127 ∧ V' = V ∧ Kp g g') g f V := by
@@ -142,12 +146,13 @@ theorem vc_147s {g : Gprs} {f : Rflags} {V : Addr → Byte} (hz : (rw16 V (sl g)
 set_option maxHeartbeats 2000000 in
 /-- The name's offset below the bound: `rdi = str`, `rsi` the name (`cache + string_offset + offset`); to the
 `call` of `strcmp` (118). -/
-theorem vc_147c {g : Gprs} {f : Rflags} {V : Addr → Byte} (hz : (rw16 V (sl g) == 0#16) = false)
+theorem vc_147c {g : Gprs} {f : Rflags} {V : Addr → Byte} (hz : (rw16 V (sl g) == 0) = false)
     (hc : ((rw16 V (sl g)).setWidth 32).toNat < (rdd(V, g.rsp + 4#64)).toNat)
     (fN : ∀ i < 2, Foot F.data (Addr.add (sl g) i)) (fL : ∀ i < 4, Foot F.data (Addr.add (g.rsp + 4#64) i))
-    (f8 : ∀ i < 8, Foot F.data (Addr.add (g.rsp + 8#64) i)) (f16 : ∀ i < 8, Foot F.data (Addr.add (g.rsp + 16#64) i)) :
+    (f8 : ∀ i < 8, Foot F.data (Addr.add (g.rsp + 8#64) i))
+    (f16 : ∀ i < 8, Foot F.data (Addr.add (g.rsp + 16#64) i)) :
     W_147 F Wl (fun j' g' _ V' => j' = 118 ∧ V' = V ∧ Kp g g' ∧ g'.rdi = rdq(V, g.rsp + 16#64) ∧
-      g'.rsi = zw (rw16 V (sl g)) + rdq(V, g.rsp + 8#64) + g.r14) g f V := by
+      g'.rsi = zw (rw16 V (sl g)) + rdq(V, g.rsp + 8#64) + g.r14 ∧ g'.r15 = sl g) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only [sl, sx, rw16, zw, Kp] at hz hc fN fL f8 f16 ⊢
   have hc' := eq_true hc
@@ -155,8 +160,9 @@ theorem vc_147c {g : Gprs} {f : Rflags} {V : Addr → Byte} (hz : (rw16 V (sl g)
 
 set_option maxHeartbeats 2000000 in
 /-- `strcmp` gave 0: `*idxp` the slot's index, the epilogue; to the `ret` (219). -/
-theorem vc_123f {g : Gprs} {f : Rflags} {V : Addr → Byte} (h0 : (g.rax.setWidth 32 == 0#32) = true)
-    (f2 : ∀ i < 2, Foot F.data (Addr.add (g.r15 + 2#64) i)) (f24 : ∀ i < 8, Foot F.data (Addr.add (g.rsp + 24#64) i))
+theorem vc_123f {g : Gprs} {f : Rflags} {V : Addr → Byte} (h0 : (g.rax.setWidth 32 == 0) = true)
+    (f2 : ∀ i < 2, Foot F.data (Addr.add (g.r15 + 2#64) i))
+    (f24 : ∀ i < 8, Foot F.data (Addr.add (g.rsp + 24#64) i))
     (wI : ∀ i < 8, Foot Wl (Addr.add (rdq(V, g.rsp + 24#64)) i))
     (p0 : ∀ i < 8, Foot F.data (Addr.add (g.rsp + 40#64) i))
     (p1 : ∀ i < 8, Foot F.data (Addr.add (g.rsp + 40#64 + 8) i))
@@ -174,7 +180,7 @@ theorem vc_123f {g : Gprs} {f : Rflags} {V : Addr → Byte} (h0 : (g.rax.setWidt
   mcx +contextual [W_123, W_192, o6, o10, h0, f2, f24, wI, p0, p1, p2, p3, p4, p5]
 
 /-- `strcmp` did not give 0: to the next index (127). -/
-theorem vc_123n {g : Gprs} {f : Rflags} {V : Addr → Byte} (h0 : (g.rax.setWidth 32 == 0#32) = false) :
+theorem vc_123n {g : Gprs} {f : Rflags} {V : Addr → Byte} (h0 : (g.rax.setWidth 32 == 0) = false) :
     W_123 F Wl (fun j' g' _ V' => j' = 127 ∧ V' = V ∧ g' = g) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at h0 ⊢
