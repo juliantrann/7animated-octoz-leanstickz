@@ -162,7 +162,8 @@ theorem cpc_ok {P1 P2 : State → (Addr → Byte) → Prop} (c : Seg prof F Wl L
     (kf2 : ∀ (Z : State) (V' : Addr → Byte), P1 Z V' → ∀ (Y : State) (t' : Nat), KeptW Wl s₀ Y →
       Agree F Y.proc.mm.mem (Vst V' (X.cpu.gpr.rsp - 8 - 8 - 8 - 8 - 8#64 - 8) (toBytesLE (cpc_at.add 66) 8)) →
       Y.cpu.rip = Uct.uct_at.add 0 →
-      Y.cpu.gpr = { Z.cpu.gpr with rdi := Z.cpu.gpr.rbx + 48#64 }.set 4 (X.cpu.gpr.rsp - 8 - 8 - 8 - 8 - 8#64 - 8) →
+      Y.cpu.gpr = ({ Z.cpu.gpr with rdi := Z.cpu.gpr.rbx + 48#64 }).set 4
+        (X.cpu.gpr.rsp - 8 - 8 - 8 - 8 - 8#64 - 8) →
       (∀ (Z₂ : State) (V'' : Addr → Byte) (t'' : Nat), KeptW Wl s₀ Z₂ → Agree F Z₂.proc.mm.mem V'' →
         Z₂.cpu.rip = cpc_at.add 66 → Z₂.cpu.gpr.rsp = X.cpu.gpr.rsp - 8 - 8 - 8 - 8 - 8#64 →
         rdq(V'', X.cpu.gpr.rsp - 8 - 8 - 8 - 8) = X.cpu.gpr.rbx →
@@ -172,8 +173,12 @@ theorem cpc_ok {P1 P2 : State → (Addr → Byte) → Prop} (c : Seg prof F Wl L
       GoG prof L o gev gP gE Y t')
     (kr : ∀ (Z₂ : State) (V'' : Addr → Byte) (Z' : State) (t' : Nat), P2 Z₂ V'' → KeptW Wl s₀ Z' →
       Agree F Z'.proc.mm.mem V'' → Z'.cpu.rip = e₂.add j₂ →
-      Z'.cpu.gpr = { Z₂.cpu.gpr with rbx := X.cpu.gpr.rbx, rbp := X.cpu.gpr.rbp, r12 := X.cpu.gpr.r12,
-        r13 := X.cpu.gpr.r13, rsp := X.cpu.gpr.rsp + 8 } →
+      Z'.cpu.gpr = { Z₂.cpu.gpr with
+          rbx := X.cpu.gpr.rbx,
+          rbp := X.cpu.gpr.rbp,
+          r12 := X.cpu.gpr.r12,
+          r13 := X.cpu.gpr.r13,
+          rsp := X.cpu.gpr.rsp + 8 } →
       GoG prof L o gev gP gE Z' t') :
     GoG prof L o gev gP gE X t := by
   have hrip' : X.cpu.rip = cpc_at.add 0 := by rw [addr_add_zero]; exact hrip
@@ -211,8 +216,12 @@ theorem cpc_ok {P1 P2 : State → (Addr → Byte) → Prop} (c : Seg prof F Wl L
   have q1 : ∀ i < 8, Foot F.data (Addr.add (Z₂.cpu.gpr.rsp + 8#64 + 8 + 8 + 8) i) := by
     rw [hzs₂, a5s, a4s, a3s, a2s]; exact fun i hi => c.hws _ (h1 i hi)
   refine (c_66 prof).run c hin (fun j' g' _ V₃ => j' = 76 ∧
-      g' = { Z₂.cpu.gpr with rbx := X.cpu.gpr.rbx, rbp := X.cpu.gpr.rbp, r12 := X.cpu.gpr.r12,
-        r13 := X.cpu.gpr.r13, rsp := X.cpu.gpr.rsp } ∧ V₃ = V'') hKZ₂ hAZ₂ hrZ₂
+      g' = { Z₂.cpu.gpr with
+          rbx := X.cpu.gpr.rbx,
+          rbp := X.cpu.gpr.rbp,
+          r12 := X.cpu.gpr.r12,
+          r13 := X.cpu.gpr.r13,
+          rsp := X.cpu.gpr.rsp } ∧ V₃ = V'') hKZ₂ hAZ₂ hrZ₂
     (vc_66 q4 q3 q2 q1 fun _ => ⟨rfl, by rw [hzs₂, a5s, a4s, a3s, a2s, a1s, hb4, hb3, hb2, hb1], rfl⟩) ?_
   rintro j' g fl V₃ ⟨rfl, rfl, hV₃⟩ U₂ t₆ hKU₂ hAU₂ hrU₂ hgU₂ -
   subst V₃
