@@ -2,14 +2,14 @@ import FV7z.Lemmas.Sp
 import FV7z.Lemmas.BlkOps7
 import FV7z.Lemmas.BlkOps2
 /-!
-# The stretches of straight-line code of `SetFrom_stat` (PLAN.md §M, M1)
+# The stretches of straight-line code of `CFileInfoBase::SetFrom_stat` (PLAN.md §M, M1)
 
 Each distinct stretch between labels and jumps (`p*`, 3 of them) and each distinct jump (`j*`, 1) as its own
 list of bytes: what the model's decoder makes of its instructions on every processor, whatever bytes follow
 (`Leaf.Dec`, by evaluation), their effects (`o*`, `Op`s of `BlkOps.lean`), and the stretch as a `Blk`. Generated from
 the decoder's own output (`decshow`) by `tools/blk_gen.py`.
 -/
-namespace FV7z.Sfst
+namespace FV7z.Sst
 set_option maxRecDepth 20000
 open ZellicX86 Decode FV7z.Leaf
 
@@ -138,4 +138,4 @@ theorem b2 (prof : Profile) : Blk prof p2 0 76 o2 :=
   .cons (p2_72 _) (OpI.st (.inr (.inr (.inr rfl)))) (by decide) <|
   .nil 76
 
-end FV7z.Sfst
+end FV7z.Sst

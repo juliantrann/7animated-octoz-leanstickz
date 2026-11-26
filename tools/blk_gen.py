@@ -365,11 +365,19 @@ FNS = {
     # (0x58)` (the `call`, 0xd, to the body at 0x602970), then the fields and the two vtables stored (to the `ret`).
     "cra": dict(grp="Cra", cn="CreateArc", a=0x49e9c0, n=0x4b, pos=True, stops=(0x4a,), calls=True,
                 tag="PLAN.md §M, M1", src="7-Zip 26.06's lzma `CreateArc` (`CPP/7zip/Archive/LzmaHandler.cpp`; `objdump -d`)"),
-    # 7-Zip 26.06 `NWindows::NFile::NFind::CFileInfoBase::SetFrom_stat (st)` (`CPP/Windows/FileFind.cpp`): the size
-    # (0 for a directory: the `je` at 0x17 over the load of `st_size`), the three times through `xmm0..2`, the mode,
-    # the device and inode, `nlink`, `uid`, `gid`, `rdev`; to the `ret` (0x69).
-    "sfst": dict(grp="Sfst", cn="SetFrom_stat", a=0x4559d0, n=0x6a, pos=True, stops=(0x69,),
-                 tag="PLAN.md §M, M1", src="7-Zip 26.06's `CFileInfoBase::SetFrom_stat` (`CPP/Windows/FileFind.cpp`; `objdump -d`)"),
+    # 7-Zip's CPP/Windows/TimeUtils.cpp `FiTime_To_FILETIME_ns100 (ts, ft, ns100)`: `UnixTime64_To_FileTime64
+    # (ts.tv_sec)` (call, 20), plus `tv_nsec / 100` into `ft`, `tv_nsec % 100` into `ns100`. Stop: the `ret` (95).
+    "fft": dict(grp="Fft", cn="FiTime_To_FILETIME_ns100", a=0x458db0, n=96, pos=True, stops=(95,), calls=True,
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `FiTime_To_FILETIME_ns100` (`TimeUtils.cpp`; `objdump -d`)"),
+    # 7-Zip's CPP/Windows/FileFind.cpp `CFileInfoBase::SetFrom_stat (st)`: the fields of `st` into the object.
+    # Stop: the `ret` (105).
+    "sst": dict(grp="Sst", cn="CFileInfoBase::SetFrom_stat", a=0x4559d0, n=106, pos=True, stops=(105,),
+                tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CFileInfoBase::SetFrom_stat` (`FileFind.cpp`; `objdump -d`)"),
+    # 7-Zip's CPP/Common/MyString.cpp `FindCharPosInString (s, c)` for `char`: the index of the first `c` before the
+    # NUL, else -1. Stops: the `ret`s (45, 50, 53).
+    "fcc": dict(grp="Fcc", cn="FindCharPosInString (char)", a=0x44b960, n=54, pos=True, stops=(45, 50, 53),
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `FindCharPosInString` (`MyString.cpp`; `objdump -d`)"),
     "sfs": dict(grp="Sfs", cn="SysFreeString", a=0x5a00c0, n=25, pos=True, stops=(0xd, 0x18),
                 tag="PLAN.md §M, M1", src="7-Zip 26.06's `SysFreeString` (`CPP/Common/MyWindows.cpp`; `objdump -d`)"),
     # 7-Zip's CPP/Common/Wildcard.cpp `DoesNameContainWildcard (const UString &)`: the `wchar_t`s (4 bytes, at
@@ -448,6 +456,13 @@ FNS = {
     "ity": dict(grp="Ity", cn="__isatty", a=0x665d20, n=0x42, pos=True, fs=True, stops=(0x3c, 0x3d),
                 calls=True, tag="PLAN.md §M, M1",
                 src="glibc 2.31's `__isatty` (`sysdeps/unix/sysv/linux/isatty.c`; `objdump -d`)"),
+    # glibc 2.31 signal/signal.c `__bsd_signal (sig, handler)`, the part after the range check: a frame of 0x148 bytes
+    # with the stack guard, `sa_mask` zeroed (`rep stos`, by hand: 0x39) with `sig`'s bit set, `sa_flags` SA_RESTART
+    # unless `sig` is in `_sigintr`, `__sigaction` (the `call`, 0x67), the old handler or -1. Stops: the `ret` (0x98),
+    # its padding guard `__stack_chk_fail` (0x99).
+    "bsg": dict(grp="Bsg", cn="__bsd_signal.part.0", a=0x622510, n=0x9e, pos=True, fs=True, stops=(0x98, 0x99),
+                calls=True, hand=(0x39,), tag="PLAN.md §M, M1",
+                src="glibc 2.31's `__bsd_signal` (`signal/signal.c`; `objdump -d`)"),
     "gdt": dict(grp="Gdt", cn="__getdtablesize", a=0x6664a0, n=0x4a, pos=True, fs=True, stops=(0x44, 0x45),
                 calls=True, tag="PLAN.md §M, M1",
                 src="glibc 2.31's `__getdtablesize` (`sysdeps/unix/sysv/linux/getdtsz.c`; `objdump -d`)"),
