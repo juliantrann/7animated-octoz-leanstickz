@@ -447,6 +447,25 @@ FNS = {
     "sis": dict(grp="Sis", cn="NCompress::NLzma::CDecoder::SetInStream", a=0x57f8d0, n=0x40, pos=True,
                 stops=(0x3f,), calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `NCompress::NLzma::CDecoder::SetInStream` (`CPP/7zip/Compress/LzmaDecoder.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 C/LzmaDec + CPP/7zip/Compress/LzmaDecoder.cpp `CDecoder::SetOutStreamSizeResume (outSize)`: the
+    # flags and sizes, then a tail jump (0x2f) to `LzmaDec_Init (&_state)`.
+    "sos": dict(grp="Sos", cn="NCompress::NLzma::CDecoder::SetOutStreamSizeResume", a=0x57fd80, n=52, pos=True,
+                stops=(0x2f,), calls=True, hand=(0xf,), tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CDecoder::SetOutStreamSizeResume` (`CPP/7zip/Compress/LzmaDecoder.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/Common/Wildcard.cpp `CItem::AreAllAllowed ()`: 0 (the `ret`, 0x1e) unless the three flags are set
+    # and there is one path part; then a tail jump (0x30) to `StringsAreEqual_Ascii (PathParts[0], "*")`.
+    "aaa": dict(grp="Aaa", cn="NWildcard::CItem::AreAllAllowed", a=0x452990, n=53, pos=True, stops=(0x1e, 0x30),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CItem::AreAllAllowed` (`CPP/Common/Wildcard.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/7zip/Crypto/7zAes.h `CKey::Wipe ()`: `memset` of the password's bytes if any (the `call`, 0x3e),
+    # then the 88 bytes of the key zeroed; the `ret` (0x31).
+    "ckw": dict(grp="Ckw", cn="NCrypto::N7z::CKey::Wipe", a=0x59ea70, n=69, pos=True, stops=(0x31,), calls=True,
+                vop=True, tag="PLAN.md §M, M1", src="7-Zip 26.06's `CKey::Wipe` (`CPP/7zip/Crypto/7zAes.h`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/7zip/Compress/LzmaDecoder.cpp `CDecoder::CreateInputBuffer ()`: the buffer kept if its size is
+    # right (the `ret`, 0x41), else `MyFree` (0x1b) and `MyAlloc` (0x2a); S_OK (0x41) or E_OUTOFMEMORY (0x48).
+    "cib": dict(grp="Cib", cn="NCompress::NLzma::CDecoder::CreateInputBuffer", a=0x57fcc0, n=73, pos=True,
+                stops=(0x41, 0x48), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CDecoder::CreateInputBuffer` (`CPP/7zip/Compress/LzmaDecoder.cpp`; `objdump -d`)"),
     "sfs": dict(grp="Sfs", cn="SysFreeString", a=0x5a00c0, n=25, pos=True, stops=(0xd, 0x18),
                 tag="PLAN.md §M, M1", src="7-Zip 26.06's `SysFreeString` (`CPP/Common/MyWindows.cpp`; `objdump -d`)"),
     # 7-Zip's CPP/Common/Wildcard.cpp `DoesNameContainWildcard (const UString &)`: the `wchar_t`s (4 bytes, at
