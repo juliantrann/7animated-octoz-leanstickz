@@ -909,6 +909,12 @@ FNS = {
                 hand=(0x11,),
                 tag="PLAN.md G3, startup",
                 src="glibc 2.31's `_dl_get_origin` (`sysdeps/unix/sysv/linux/dl-origin.c`; `objdump -d`)"),
+    # 7-Zip's `ParseComplexSize` (CPP/7zip/UI/Common/OpenArchive.cpp): a number, then nothing or one of `b`, `k`,
+    # `m`, `g`, `t` (either case). `jt`: the `switch` on the suffix, less 'b'. Stops: the `ret` (0xa6), the padding
+    # after it (0xa7), `__stack_chk_fail` (0x10c); the `call` of `ConvertStringToUInt64` (0x2a) is a cut point.
+    "pcs": dict(grp="Pcs", cn="ParseComplexSize", a=0x5d38f0, n=273, pos=True, fs=True, stops=(0xa6, 0xa7, 0x10c),
+                calls=True, jt=(0x6e8e8c, 19), tag="PLAN.md §M, M1",
+                src="7-Zip's `ParseComplexSize` (`CPP/7zip/UI/Common/OpenArchive.cpp`; `objdump -d`)"),
 }
 
 
