@@ -75,6 +75,6 @@ theorem Gl.of_split {F : Footprint} {Wl : List Rgn} {fb C : Addr} {V : Addr → 
 
 theorem gl_iff {F : Footprint} {Wl : List Rgn} {fb C : Addr} {V : Addr → Byte} :
     Gl F Wl fb C V ↔ GlB F Wl fb C V ∧ TcSt V C (fun _ => []) :=
-  ⟨Gl.split, fun ⟨h, ht⟩ => h.of_split ht⟩
+  ⟨Gl.split, fun ⟨h, ht⟩ => Gl.of_split h ht⟩
 
 end FV7z.Mal
