@@ -102,6 +102,11 @@ FNS = {
     # is a step of its own.
     "cls": dict(grp="Close", cn="__close", a=0x5ff3b0, n=0x85, pos=True, fs=True, stops=(0x1f, 0x20, 0x71), calls=True,
                 tag="PLAN.md §M, M1", src="glibc 2.31's `__close` (`sysdeps/unix/sysv/linux/close.c`; `objdump -d`)"),
+    # glibc 2.31 sysdeps/unix/sysv/linux/read.c (`SYSCALL_CANCEL`). Stops: the `ret` (0x1a), the process has more
+    # than one thread (0x20: `multiple_threads` is not 0), the `ret` after `errno` is set (0x83); the `syscall` (0x10)
+    # is a step of its own (`eax` is 0, `read`'s number, from the `test` of `multiple_threads`).
+    "rd": dict(grp="Read", cn="__libc_read", a=0x5ff310, n=0x99, pos=True, fs=True, stops=(0x1a, 0x20, 0x83), calls=True,
+               tag="PLAN.md §M, M1", src="glibc 2.31's `__libc_read` (`sysdeps/unix/sysv/linux/read.c`; `objdump -d`)"),
     # glibc 2.31 sysdeps/unix/sysv/linux/_exit.c (`_Exit`): `exit_group`, then (never, as the run ends there) `exit`
     # and `hlt`. Stop: after the `syscall` `exit_group` (0x36); the `syscall` (0x34) is a step of its own.
     "ext": dict(grp="Exit", cn="_Exit", a=0x664a70, n=0x58, pos=True, fs=True, stops=(0x36,), calls=True,
@@ -137,6 +142,15 @@ FNS = {
     # NULL)` as a tail jump through the vtable (`jmp rax`). Stop: the jump (17).
     "isb": dict(grp="Isb", cn="InStream_SeekToBegin", a=0x4631e0, n=19, pos=True, stops=(17,),
                 tag="PLAN.md §M, M1", src="7-Zip 26.06's `InStream_SeekToBegin` (`StreamUtils.cpp`; `objdump -d`)"),
+    # 7-Zip's CPP/7zip/UI/Common/ArchiveExtractCallback.cpp `CArchiveExtractCallback::SetRatioInfo`: forwarded to
+    # `_compressProgress->SetRatioInfo` (at `this + 552`) by a tail jump through its vtable. Stop: the jump (14).
+    "sri": dict(grp="Sri", cn="CArchiveExtractCallback::SetRatioInfo", a=0x5aa190, n=17, pos=True, stops=(14,),
+                tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CArchiveExtractCallback::SetRatioInfo` (`ArchiveExtractCallback.cpp`; `objdump -d`)"),
+    # 7-Zip's C/LzmaDec.c `LzmaDec_FreeProbs (p, alloc)`: `ISzAlloc_Free (alloc, p->probs); p->probs = NULL`, the
+    # free through `alloc->Free` (`call [rax + 8]`, 18; a cut after it). Stop: the `ret` (30).
+    "lfp": dict(grp="Lfp", cn="LzmaDec_FreeProbs", a=0x42bde0, n=31, pos=True, stops=(30,), calls=True,
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `LzmaDec_FreeProbs` (`C/LzmaDec.c`; `objdump -d`)"),
     # 7-Zip's C/Alloc.c `MyAlloc (size)`: 0 for size 0, else a tail jump to `malloc`. Stops: the jump (9), the `ret`
     # (18).
     "mya": dict(grp="Mya", cn="MyAlloc", a=0x41f3c0, n=19, pos=True, stops=(9, 18),
@@ -192,14 +206,29 @@ FNS = {
     # the `ret` (0x33).
     "sgw": dict(grp="Sgw", cn="__sigaction", a=0x6011d0, n=52, pos=True, fs=True, stops=(0x14, 0x33),
                 tag="PLAN.md §M, M1", src="glibc 2.31's `__sigaction` (`signal/sigaction.c`; `objdump -d`)"),
+    # glibc 2.31 `__wmemcpy (d, s, n)`: `n` scaled to bytes (`shl rdx, 2`), a tail jump to `memcpy`'s PLT entry.
+    # Stop: the `jmp` (0x8).
+    "wmc": dict(grp="Wmc", cn="__wmemcpy", a=0x65d300, n=13, pos=True, stops=(0x8,),
+                tag="PLAN.md §M, M1", src="glibc 2.31's `__wmemcpy` (`wcsmbs/wmemcpy.c`; `objdump -d`)"),
     # glibc 2.31 nptl/cleanup_compat.c `_pthread_cleanup_push (buffer, routine, arg)`: the buffer filled, linked in
     # front of the thread's `cleanup` list (`fs:0x2f8`). Stop: the `ret` (0x21).
     "pcp": dict(grp="Pcp", cn="_pthread_cleanup_push", a=0x5fefe0, n=34, pos=True, fs=True, stops=(0x21,),
                 tag="PLAN.md §M, M1", src="glibc 2.31's `_pthread_cleanup_push` (`nptl/cleanup_compat.c`; `objdump -d`)"),
+    # glibc 2.31 nptl/cleanup_compat.c `_pthread_cleanup_pop (buffer, execute)`: the thread's `cleanup` list
+    # (`fs:0x2f8`) set back to `buffer->__prev`; if `execute`, a tail jump to `buffer->__routine (buffer->__arg)`.
+    # Stops: the `jmp rax` (0x1f) and the `ret` (0x28).
+    "pco": dict(grp="Pco", cn="_pthread_cleanup_pop", a=0x5ff010, n=41, pos=True, fs=True, stops=(0x1f, 0x28),
+                tag="PLAN.md §M, M1", src="glibc 2.31's `_pthread_cleanup_pop` (`nptl/cleanup_compat.c`; `objdump -d`)"),
     # 7-Zip's CPP/Windows/FileIO.cpp `CFileBase::seek (off, whence)`: the descriptor (`this->_handle`, at 0), then
     # `lseek`. Stop: the `jmp` to `__libc_lseek` (6), a branch to another segment (`Seg.s_jmp_x`).
     "fsk": dict(grp="Fsk", cn="NWindows::NFile::NIO::CFileBase::seek", a=0x4560b0, n=11, pos=True, stops=(6,),
                 tag="PLAN.md §M, M1", src="7-Zip 26.06's `CFileBase::seek` (`CPP/Windows/FileIO.cpp`; `objdump -d`)"),
+    # glibc 2.31 sysdeps/unix/sysv/linux/write.c (`SYSCALL_CANCEL`). Stops: the `ret` (0x1f), the process has more
+    # than one thread (0x20: `multiple_threads` is not 0), the `ret` after `errno` is set (0x83); the `syscall` (0x15)
+    # is a step of its own.
+    "wrt": dict(grp="Write", cn="__libc_write", a=0x5ff270, n=0x99, pos=True, fs=True, stops=(0x1f, 0x20, 0x83),
+                calls=True, tag="PLAN.md §M, M1",
+                src="glibc 2.31's `__libc_write` (`sysdeps/unix/sysv/linux/write.c`; `objdump -d`)"),
     # glibc 2.31 sysdeps/unix/sysv/linux/dl-sysdep.c. Stop: `__uname` failed (0xb0: the release is read from
     # `/proc/sys/kernel/osrelease`); the `ret`s are at 0x8a (three parts read) and 0xa9 (fewer).
     "osv": dict(grp="Osv", cn="_dl_discover_osversion", a=0x671d50, n=268, pos=True, stops=(0xb0,), calls=True,
@@ -852,7 +881,8 @@ def main():
         r = int(re.search(r'rel (\d+)', ol[-1])[1])
         return off + ln + (r if r < 2 ** 63 else r - 2 ** 64)
     ctl = lambda i: i[1].split()[0] in ('jcc', 'jmp', 'ret')
-    jr = lambda i: i[1] == 'jmp' and i[3][0].startswith('reg')   # `jmp r`: through the jump table
+    # `jmp r` (through the jump table) and `jmp [m]` (through a vtable: `Seg.s_jmp_mx`, at a stop)
+    jr = lambda i: i[1] == 'jmp' and not i[3][0].startswith('rel')
     # calls (`calls`): the proof stops at a `call` and starts again after it, a cut point; the `call` itself is the
     # caller's to do (`SpAt.call`, FV7z/Lemmas/SpCall.lean)
     # (`syscall` likewise: `Seg.s_brk_grow` and its like, FV7z/Start/SysSeg.lean; `div` and the moves of an `xmm`
