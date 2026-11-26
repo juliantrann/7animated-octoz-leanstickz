@@ -1,10 +1,5 @@
-import FV7z.Start.WitnessProf
-import FV7z.Start.WitnessOracle
+import FV7z.Start.Witness
 open FV7z
-#print axioms FV7z.Wit.consistent0
-#print axioms FV7z.Wit.cacheEnds0
-#print axioms FV7z.Wit.modest0
-#print axioms FV7z.Wit.undisturbed0
-#print axioms FV7z.Wit.pse0
-#print axioms FV7z.Wit.ok0
-#print axioms FV7z.Wit.un0
+#print axioms FV7z.Wit.launch_main_witness
+#print axioms FV7z.Wit.good0
+#print axioms FV7z.Wit.exec0
