@@ -171,15 +171,13 @@ theorem sysGetdents64_ok (hw : Writable prof s s.cpu.gpr.rsi (arg32 s.cpu.gpr.rd
             | erw [hk (e :: es) h]
           all_goals rfl
 
-example {len : Nat} : dentsRes o t (nx s len (sysGpr s len) (rf0 s)) = dentsRes o t s := rfl
-example {len : Nat} : (nx s len (sysGpr s len) (rf0 s)).proc.files = s.proc.files := rfl
-example {len : Nat} : arg32 (nx s len (sysGpr s len) (rf0 s)).cpu.gpr.rdi = arg32 s.cpu.gpr.rdi := rfl
-example {len : Nat} (R : DnOut) (v : BitVec 64) :
-    (dnSt (nx s len (sysGpr s len) (rf0 s)) R).setRax v = sysSt (dnSt s R) len v := rfl
-example {len : Nat} (R : DnOut) : sysReturn (dnSt (nx s len (sysGpr s len) (rf0 s)) R) R.ret [] (dnBytes R) =
-    .running (sysSt (dnSt s R) len R.ret) (some (dnEv s.cpu.gpr R)) := rfl
-example {len : Nat} : dentsRes o t (nx s len (sysGpr s len) (rf0 s)) = dentsRes o t s := by
-  unfold dentsRes; rfl
+example {len : Nat} : arg32 (nx s len (sysGpr s len) (rf0 s)).cpu.gpr.rdx = arg32 s.cpu.gpr.rdx := rfl
+
+/-- `dentsRes` reads the descriptor table, `rdi` and `rdx` only. -/
+theorem dentsRes_congr {s' : State} (h1 : s'.proc.files = s.proc.files) (h2 : s'.cpu.gpr.rdi = s.cpu.gpr.rdi)
+    (h3 : s'.cpu.gpr.rdx = s.cpu.gpr.rdx) : dentsRes o t s' = dentsRes o t s := by
+  unfold dentsRes
+  first | rw [h1, h2, h3] | simp only [h1, h2, h3]
 
 /-- `syscall` for `getdents64 (rdi, rsi, rdx)`, `rsi`'s `count` bytes writable and the pieces of any entries that fit
 stored as `wrRuns` from any state with `s`'s memory and keys: the entries in the buffer, `dentsRes`'s answer in
@@ -201,7 +199,8 @@ theorem syscall_getdents {len : Nat} (htf : s.cpu.rflags.tf = false)
   simp only [show ¬ (217 ≥ 2 ^ 31) by decide, show ¬ (217 ≥ x32Bit) by decide,
     show ¬ (217 ≥ nrSyscalls) by decide, show niSyscall 217 = false by decide, ↓reduceIte, Bool.false_eq_true]
   show (sysGetdents64 prof (nx s len (sysGpr s len) (rf0 s))).runStream o t = _
-  rw [sysGetdents64_ok (s := nx s len (sysGpr s len) (rf0 s)) hw fun es h => hk es h _ rfl rfl]
+  rw [sysGetdents64_ok (s := nx s len (sysGpr s len) (rf0 s)) hw fun es h => hk es h _ rfl rfl,
+    dentsRes_congr (s' := nx s len (sysGpr s len) (rf0 s)) (s := s) rfl rfl rfl]
   rfl
 
 end FV7z
