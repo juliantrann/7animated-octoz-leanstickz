@@ -10,7 +10,7 @@ set to `buffer->__prev` (at 24); if `execute` (32 bits) is 0, `ret` (40); else a
 `ret` or to the loads (21), and from 21 to the jump.
 
 - `V1`: the store of `__prev` to the thread's word; `rtn`, `arg`: the routine and its argument, read after it.
-- `pco_ok`: with `execute` 0, at the return address with the store done (`kn`); else at the routine with `rax` the
+- `pco_ok`: with `execute` 0, at the return address with the store done and `rax` the old `__prev` (`kn`); else at the routine with `rax` the
   routine, `rdi` and `r8` its argument (`kx`).
 -/
 open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn
@@ -45,11 +45,13 @@ variable {F : Footprint} {Wl : List Rgn}
 /-- `execute` 0: the store, then the `ret`. -/
 theorem vc_no {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (hz : BitVec.setWidth 32 g.rsi = 0#32)
     (hb : ∀ i < 32, Foot F.data (Addr.add g.rdi i)) (hfw : ∀ i < 8, Foot Wl ((fb + 760#64).add i)) :
-    W_0 fb F Wl (fun j' g' _ V' => j' = 40 ∧ g' = g ∧ V' = V1 fb g.rdi V) g f V := by
+    W_0 fb F Wl (fun j' g' _ V' => j' = 40 ∧ g' = { g with rax := prv V g.rdi } ∧ V' = V1 fb g.rdi V) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at hz hb ⊢
   wpx [W_0, W_21, o0, o1, Op.ld, Op.stf, BitVec.and_self]
-  exact ⟨Pcp.ft8 hb 24 (by decide), hfw, fun hc => absurd hz (by simpa using hc)⟩
+  first
+  | exact ⟨Pcp.ft8 hb 24 (by decide), hfw, fun hc => absurd hz (by simpa using hc)⟩
+  | exact ⟨Pcp.ft8 hb 24 (by decide), hfw, fun _ => rfl, fun hc => absurd hz (by simpa using hc)⟩
 
 /-- `execute` not 0: the store, the loads, up to the jump. -/
 theorem vc_ex {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (hz : BitVec.setWidth 32 g.rsi ≠ 0#32)
@@ -85,7 +87,8 @@ theorem pco_ok {fb : Addr} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBa
       CodeIn L eR codeR ∧ jR < codeR.length ∧ rtn (V1 fb X.cpu.gpr.rdi V) X.cpu.gpr.rdi = eR.add jR)
     (kn : BitVec.setWidth 32 X.cpu.gpr.rsi = 0#32 → ∀ Z t', KeptW Wl s₀ Z →
       Agree F Z.proc.mm.mem (V1 fb X.cpu.gpr.rdi V) → Z.cpu.rip = e₂.add j₂ →
-      Z.cpu.gpr = { X.cpu.gpr with rsp := X.cpu.gpr.rsp + 8 } → GoG prof L o gev gP gE Z t')
+      Z.cpu.gpr = { X.cpu.gpr with rax := prv V X.cpu.gpr.rdi, rsp := X.cpu.gpr.rsp + 8 } →
+      GoG prof L o gev gP gE Z t')
     (kx : BitVec.setWidth 32 X.cpu.gpr.rsi ≠ 0#32 → ∀ Y t', KeptW Wl s₀ Y →
       Agree F Y.proc.mm.mem (V1 fb X.cpu.gpr.rdi V) → Y.cpu.rip = rtn (V1 fb X.cpu.gpr.rdi V) X.cpu.gpr.rdi →
       Y.cpu.gpr = { X.cpu.gpr with
@@ -95,7 +98,8 @@ theorem pco_ok {fb : Addr} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBa
       GoG prof L o gev gP gE Y t') :
     GoG prof L o gev gP gE X t := by
   by_cases hz : BitVec.setWidth 32 X.cpu.gpr.rsi = 0#32
-  · refine (c_0 prof fb).run c hfs hin (fun j' g' _ V' => j' = 40 ∧ g' = X.cpu.gpr ∧ V' = V1 fb X.cpu.gpr.rdi V)
+  · refine (c_0 prof fb).run c hfs hin
+      (fun j' g' _ V' => j' = 40 ∧ g' = { X.cpu.gpr with rax := prv V X.cpu.gpr.rdi } ∧ V' = V1 fb X.cpu.gpr.rdi V)
       hK hA (by rw [addr_add_zero]; exact hrip) (vc_no hz hb hfw) ?_
     rintro j' g fl V₁ ⟨rfl, rfl, hV₁⟩ Y t₁ hKY hAY hrY hgY -
     subst V₁
