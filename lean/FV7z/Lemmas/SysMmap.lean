@@ -25,7 +25,7 @@ theorem fixed_of_free {m : Memory} {P n : Nat} (hf : m.free P n = true)
   intro k hk h
   have hn : (m.mapAt (P + k)).isNone = true := List.all_eq_true.1 hf k hk
   rw [Option.isNone_iff_eq_none] at hn
-  dsimp only at h
+  try dsimp only at h
   simp only [hn, Bool.false_or, List.any_eq_true, decide_eq_true_eq] at h
   obtain ⟨g, hg, he⟩ := h
   apply hgd g hg
@@ -94,18 +94,21 @@ theorem syscall_mmap_anon {len : Nat} (htf : s.cpu.rflags.tf = false)
   · split
     · exact h0 (errRet ENOMEM) t (errRet_err (by decide) (by decide))
     · refine rs_bind_any _ _ fun a t₁ => ?_
-      dsimp only
+      try dsimp only
       split
       · exact h0 (errRet ENOMEM) t₁ (errRet_err (by decide) (by decide))
       · rename_i hc
         have ha1 : a % 4096 = 0 := by
-          by_contra h
+          apply Classical.byContradiction
+          intro h
           exact hc (by simp [h])
         have ha2 : 4096 ≤ a := by
-          by_contra h
+          apply Classical.byContradiction
+          intro h
           exact hc (by simp [h])
         have ha3 : a + pageUp s.cpu.gpr.rsi.toNat ≤ taskSize prof.feat := by
-          by_contra h
+          apply Classical.byContradiction
+          intro h
           exact hc (by simp [h])
         have hfr : s.proc.mm.mem.free (a / 4096) (pageUp s.cpu.gpr.rsi.toNat / 4096) = true := by
           cases h : s.proc.mm.mem.free (a / 4096) (pageUp s.cpu.gpr.rsi.toNat / 4096)
@@ -114,7 +117,7 @@ theorem syscall_mmap_anon {len : Nat} (htf : s.cpu.rflags.tf = false)
         have htx := fixed_of_free hfr hgd
         simp only [htx, Bool.false_eq_true, ↓reduceIte]
         refine rs_bind_any _ _ fun b t₂ => ?_
-        dsimp only
+        try dsimp only
         cases b
         · simp only [Bool.not_false, ↓reduceIte]
           exact h0 (errRet ENOMEM) t₂ (errRet_err (by decide) (by decide))
