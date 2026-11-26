@@ -1302,15 +1302,21 @@ theorem b6144 (prof : Profile) : BlkV prof scm 6144 6160 o6144 :=
   .cons (d6158 _) (OpI.nop) (lt_scm (by decide)) <|
   .nil 6160
 
-/-- The stretch from `6160` to `6176`. -/
+/-- The stretch from `6160` to `6165`. -/
 def o6160 : List VOp := [
-  VOp.op (Op.lea 64 0 (some 9) (some 1) 1 18446744073709551600),
+  VOp.op (Op.lea 64 0 (some 9) (some 1) 1 18446744073709551600)]
+
+theorem b6160 (prof : Profile) : BlkV prof scm 6160 6165 o6160 :=
+  .cons (d6160 _) (OpI.lea (.inr rfl)) (lt_scm (by decide)) <|
+  .nil 6165
+
+/-- The stretch from `6165` to `6176`. -/
+def o6165 : List VOp := [
   VOp.op (Op.lea 64 7 (some 7) (some 0) 1 0),
   VOp.op (Op.lea 64 6 (some 6) (some 1) 1 0),
   VOp.op (Op.test 32 8 (.r 8))]
 
-theorem b6160 (prof : Profile) : BlkV prof scm 6160 6176 o6160 :=
-  .cons (d6160 _) (OpI.lea (.inr rfl)) (lt_scm (by decide)) <|
+theorem b6165 (prof : Profile) : BlkV prof scm 6165 6176 o6165 :=
   .cons (d6165 _) (OpI.lea (.inr rfl)) (lt_scm (by decide)) <|
   .cons (d6169 _) (OpI.lea (.inr rfl)) (lt_scm (by decide)) <|
   .cons (d6173 _) (OpI.test (.r 8) (.inl rfl)) (lt_scm (by decide)) <|
