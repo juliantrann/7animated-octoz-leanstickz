@@ -315,4 +315,74 @@ theorem vc_193 {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte}
   wpx [W_193, o10]
   all_goals vfin
 
+/-! ## Next: `Rdd/Ok.lean`, the whole function (design notes, not yet written)
+
+Imports `FV7z.Rdd.Holds`, `FV7z.Opd.Ok` (`Keeps`, `Keeps.trans`, `set4K`, `set4_rsp`, `rd_ret`, `ER`; `tAdd`, `tSub`,
+`fa`, `frw` are in `Opd.Holds`); add `import FV7z.Rdd.Ok` to `FV7z.lean` after `FV7z.Rdd.Holds`. Below, `T` is
+`S - 8 - 8 - 8 - 8 - 8` (`S` = `rsp` at the entry, `p` = `rdi`, the `DIR`).
+
+Hypotheses to report: one thread (`fs:0x18` = 0, `hmt0 : rdd(V₀, fb + 24#64) = 0#32`, the lock 0 at the entry);
+`NzIno o := ∀ t s, ∀ e ∈ (dentsRes o t s).es, e.ino ≠ 0#64` (the kernel never gives `d_ino` 0: after `getdents` the
+first entry is returned, so no second `getdents`); `errno` may change (`Mut` includes `ER`).
+
+Definitions:
+- `Dir V p A w n k`: `rdd(V, p + 4#64) = w`, `rdq(V, p + 8#64).toNat = A`, `rdq(V, p + 16#64).toNat = n`, `n ≤ A`,
+  `rdq(V, p + 24#64).toNat = k`.
+- `Sv V S g0`: `rdq` at `T`, `S-8-8-8-8`, `S-8-8-8`, `S-8-8`, `S-8` are `g0`'s `rbx`, `rbp`, `r12`, `r13`, `r14`.
+- `Mut S p fb A a` (abbrev): `a` in `[S - 48, S)`, in `[p, p + 48 + A)`, or `ER fb a`. `Fr S p fb A V₀ V`:
+  `∀ a, ¬ Mut … a → V a = V₀ a`. `structure Iv`: `dir`, `sv`, `fr`.
+- `RS V p n k r := (r = 0#64 ∧ Ch V p n k) ∨ ∃ k₀ < n, Ch V p n k₀ ∧ k = k₀ + rl V p k₀ ∧ r = Addr.add p (48 + k₀)`.
+- `structure RdC F Wl S p fb A`: `48 ≤ S.toNat`, `S.toNat + 8 ≤ 2^64`, `sw` (48 bytes from `S - 48#64` in `Wl`),
+  `sr` (8 bytes at `S` in `F.data`), `A ≤ 2147483647`, `p.toNat + 48 + A < 2^64`, `pw` (`48 + A` bytes at `p` in
+  `Wl`), `fe` (`errno` in `Wl`, `(errnoAt fb).add i`), `hfe`, `fm`/`hfm` (`fb + 24#64`, 4 bytes, `F.data`), and the
+  apartness of the stack `[S-48, S+8)`, the `DIR` `[p, p+48+A)`, `errno` and `fb + 24` (`dS eS mS eD mD mE`).
+  Get `F.data` facts for `Wl` bytes from `c.hws`.
+- `RdT gev tr := tr = gev ∨ ∃ G r, tr = gev ++ [Gdn.gdE G r]`.
+- `RddK … S p fb A g0 V₀ e₂ j₂ gev := ∀ s Z tr W t', Seg s → fsBase = fb → rseq = none → KeptW Wl s Z → Agree W →
+  Z.rip = e₂.add j₂ → Z.rsp = S + 8#64 → Keeps g0 Z.gpr → Fr … W → RdT gev tr →
+  (∃ n k, Dir W p A 0#32 n k ∧ RS W p n k Z.rax) → GoG prof L o tr gP gE Z t'`.
+- `structure At109`: `KeptW`, `Agree`, rip 109, `rsp = T`, `rbx = p + 48#64`, `rbp = -72`, `r14 = p`, `r15`,
+  `rax.toNat = n`, `rdx.toNat = k`, `Iv … 1#32 n k`, `Ch W p n k`.
+
+Lemmas, in this order. Get each memory fact by `congrArg (ofBytesLE _) (Sbrk.rd_eq (x := …) (n := …) …)`, or by
+`rd_Vst` with `a`, `x` and `n` explicit. Never pass a `by` argument whose goal still has a metavariable.
+- `stR`: toNat of `S-8` … `T`, `T-8` and `S - 48#64`, via `tSub`.
+- `pT1`–`pT5`: `T + 8 … = S-8-8-8-8 … S`. `pT6`: `T - 8 = S - 48#64`. `pT7`: `S - 48#64 + 8 = T`. Prove each with
+  `bv_omega`, as a standalone lemma.
+- `ea80 p (hd : d.toNat = k) : d + 48#64 + p = Addr.add p (48 + k)`. `ea0 : 48#64 + p = Addr.add p (48 + 0)`, by
+  `BitVec.add_comm`. `aa := addr_add_add'`.
+- `rcl_nat (h : g.r8 + g.r14 = Addr.add p (48 + k)) : (rcl V g).toNat = rl V p k`.
+- `out_of`, `nMut`, `fr_rd`.
+- `Dir_eq`, `Sv_eq` (agreement on `[p+4, p+32)` and `[S-40, S)`), then `Dir_st` and `SvFr_st`.
+- `Iv_lock`, `Iv_size`, `Iv_off`: stores at `p + 4/16/24#64`.
+- `Ch_st`, `rl_st` (explicit `k`), `Ch_inv` (by `cases`), `RS_st`.
+- `P5_out`, `P5_sv`: as `Opd.P4_out` and `Opd.Vo_reads`.
+- `rd_pre` and `ino_dn`: the first entry's `d_ino` after `dnBuf`. Use `← dn_one`, unfold `direntRuns`/`vRuns` by
+  `show`, then `vRuns_apart` with `direntRuns_in`. Take `e.bytes = toBytesLE e.ino 8 ++ rest` from `bytes_split`,
+  then `Cxa.Vst_append`.
+- `set0K`, and `gdK` (as `Opd.sysK`, with `lsErrG`).
+- `ft80`: the five footprint facts of `vc_80*`.
+- `post80`: after `VB`, `Iv … (k + rl W p k)`, the chain kept, `rl` kept and `(gB W g).rdx.toNat`. Generalize the
+  stored values before `rw [h14]`.
+
+Main theorems:
+- `fin176`: from 176, `vc_176` (hmt from `V₀` through `Fr`), then `s_sub_mi32`. For it: `eaD Y₁ 14 4 = p + 4#64`,
+  `rw [ea, hI.dir.1, (1#32 - BitVec.ofNat 32 1 = 0#32)] at hA₂`, and `Iv_lock C hI 0#32`. Then `vc_193` (slots
+  from `sw` with `pT1`–`pT4`), then `s_ret` (`pT5`; the return address from `V₀` through `Fr`). End with `K`:
+  `Keeps` from `Sv` and `set4K`, and `RS_st` through the lock store.
+- `n80`: from 80 with `d_ino` not 0, `vc_80n` with `post80`, then `fin176` with `RS` right.
+- `rdd_gd`: from 128, `s_call` (`call_128`, `tgt_128`, `Gdn.lt_len (j := 0)`), then `Gdn.gdn_ok` with
+  `j₂ := 133`. Generalize the pushed memory as `W₁` once its `Iv` facts are proved.
+  - `CloseErr`: `vc_133e` then `vc_162`, or `vc_133o`; then `fin176` with `RS` left and `Ch.fin`.
+  - Otherwise `dn_ret`, with the sum `≤ A` from `dentsRes_sum` and `arg32`. A sum of 0: `vc_133z`, `vc_162`,
+    `fin176`. A positive sum: `vc_133p` (`Iv_size`), then `n80` at `k = 0` (`ch_dn`, `ino_dn`, `NzIno`).
+- `step109 (ih : ∀ k', n - k' < n - k → …)`:
+  - `k < n`: `vc_109l` to 80. There, `d_ino` 0: `vc_80z` with `post80`, then `ih`. Otherwise `n80`.
+  - `k = n`: `vc_109g`, then `rdd_gd`.
+  `scan : ∀ m k, n - k ≤ m → …`, by `induction m` over `step109`.
+- `rdd_ok`: `subst` `S` and `p`. Then `vc_0` (`e0 := rdd(P5 V₀ g, errnoAt fb)`, by `rfl`), then
+  `s_cmpxchg_bd32` (`rv Y₁ 32 0 = 0#32`, `rv Y₁ 32 2 = 1#32`, `Iv_lock`), then `vc_56`, then
+  `scan (n - k) k le_rfl`.
+-/
+
 end FV7z.Rdd
