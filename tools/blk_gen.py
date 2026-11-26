@@ -102,6 +102,10 @@ FNS = {
     # is a step of its own.
     "cls": dict(grp="Close", cn="__close", a=0x5ff3b0, n=0x85, pos=True, fs=True, stops=(0x1f, 0x20, 0x71), calls=True,
                 tag="PLAN.md §M, M1", src="glibc 2.31's `__close` (`sysdeps/unix/sysv/linux/close.c`; `objdump -d`)"),
+    # glibc 2.31 sysdeps/unix/sysv/linux/_exit.c (`_Exit`): `exit_group`, then (never, as the run ends there) `exit`
+    # and `hlt`. Stop: after the `syscall` `exit_group` (0x36); the `syscall` (0x34) is a step of its own.
+    "ext": dict(grp="Exit", cn="_Exit", a=0x664a70, n=0x58, pos=True, fs=True, stops=(0x36,), calls=True,
+                tag="PLAN.md §M, M1", src="glibc 2.31's `_Exit` (`sysdeps/unix/sysv/linux/_exit.c`; `objdump -d`)"),
     # glibc 2.31 sysdeps/unix/sysv/linux/dl-sysdep.c. Stop: `__uname` failed (0xb0: the release is read from
     # `/proc/sys/kernel/osrelease`); the `ret`s are at 0x8a (three parts read) and 0xa9 (fewer).
     "osv": dict(grp="Osv", cn="_dl_discover_osversion", a=0x671d50, n=268, pos=True, stops=(0xb0,), calls=True,
