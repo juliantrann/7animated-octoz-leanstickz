@@ -445,6 +445,7 @@ import FV7z.Xst.Holds
 import FV7z.Wmc.Holds
 import FV7z.Ifr.Code
 import FV7z.Fre.Holds
+import FV7z.Ifr.Holds
 import FV7z.Lemmas.SysWrite
 import FV7z.Write.Blocks
 import FV7z.Write.Cuts
@@ -741,6 +742,7 @@ import FV7z.C61.Holds
 import FV7z.Lemmas.SysUm
 import FV7z.Ctor.Cx17
 import FV7z.Mal.HeapS
+import FV7z.Mal.Tc
 import FV7z.Mal.HeapF
 import FV7z.Ctor.Gs
 import FV7z.Ctor.GsC
