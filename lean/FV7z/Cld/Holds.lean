@@ -53,6 +53,10 @@ abbrev fdv (V : Addr → Byte) (a : Addr) : BitVec 32 := ofBytesLE 32 ((byteAddr
 /-- The registers at the `call`: `rbp` = `dirp->fd`, `rbp` pushed. -/
 abbrev gC (V : Addr → Byte) (g : Gprs) : Gprs := { g with rbp := (fdv V g.rdi).setWidth 64, rsp := g.rsp - 8 }
 
+/-- The registers at `__close_nocancel`'s entry: `edi` = the descriptor (kept in `ebp`), `rbp` and `rsp` back
+to the caller's. -/
+abbrev gK (z x : Gprs) : Gprs := { z with rdi := (z.rbp.setWidth 32).setWidth 64, rbp := x.rbp, rsp := x.rsp }
+
 variable {F : Footprint} {Wl : List Rgn}
 
 /-- `push rbp; mov ebp, [rdi]`. -/
@@ -137,8 +141,7 @@ theorem cld_ok {fb : Addr} {Pc : State → (Addr → Byte) → Prop} (c : Seg pr
       GoG prof L o gev gP gE Y t')
     (kc : ∀ (Z : State) (V' : Addr → Byte) (Y : State) (t' : Nat), Pc Z V' → KeptW Wl s₀ Y →
       Agree F Y.proc.mm.mem V' → Y.cpu.rip = Cnc.cnc_at →
-      Y.cpu.gpr = { Z.cpu.gpr with rdi := (Z.cpu.gpr.rbp.setWidth 32).setWidth 64, rbp := X.cpu.gpr.rbp,
-        rsp := X.cpu.gpr.rsp } →
+      Y.cpu.gpr = gK Z.cpu.gpr X.cpu.gpr →
       GoG prof L o gev gP gE Y t') :
     GoG prof L o gev gP gE X t := by
   have hrip' : X.cpu.rip = cld_at.add 0 := by rw [addr_add_zero]; exact hrip
@@ -190,8 +193,7 @@ theorem cld_ok {fb : Addr} {Pc : State → (Addr → Byte) → Prop} (c : Seg pr
   -- back from `free`
   intro Z V' t'' hKZ hAZ hrZ hzs hzb hb hPc
   refine (c_17 prof fb).run c hfs hin (fun j' g' _ V'' => j' = 20 ∧
-      g' = { Z.cpu.gpr with rdi := (Z.cpu.gpr.rbp.setWidth 32).setWidth 64, rbp := X.cpu.gpr.rbp,
-        rsp := X.cpu.gpr.rsp } ∧ V'' = V') hKZ hAZ hrZ
+      g' = gK Z.cpu.gpr X.cpu.gpr ∧ V'' = V') hKZ hAZ hrZ
     (vc_17 (by rw [hzs]; exact h8) fun _ => ⟨rfl, by rw [hzs, hb, e8], rfl⟩) ?_
   rintro j' g₃ fl₃ V₃ ⟨rfl, rfl, hV₃⟩ U t₃ hKU hAU hrU hgU -
   subst V₃
