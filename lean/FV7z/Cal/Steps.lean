@@ -43,7 +43,8 @@ theorem mul_hi {x y : BitVec 64} (h : x.toNat * y.toNat < 2 ^ 64) :
   have hy := y.isLt
   rw [BitVec.extractLsb'_toNat, BitVec.toNat_mul, BitVec.toNat_setWidth, BitVec.toNat_setWidth,
     Nat.mod_eq_of_lt (a := x.toNat) (by omega), Nat.mod_eq_of_lt (a := y.toNat) (by omega),
-    Nat.mod_eq_of_lt (by omega), Nat.shiftRight_eq_div_pow, Nat.div_eq_of_lt h]
+    Nat.mod_eq_of_lt (a := x.toNat * y.toNat) (b := 2 ^ 128) (by omega), Nat.shiftRight_eq_div_pow,
+    Nat.div_eq_of_lt h]
   rfl
 
 end FV7z

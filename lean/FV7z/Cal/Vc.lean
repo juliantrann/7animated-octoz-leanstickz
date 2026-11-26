@@ -1,7 +1,6 @@
 import FV7z.Cal.Steps
-import FV7z.Mxi.Holds
 import FV7z.Prepare.Sub
-import FV7z.Sdp.Holds
+import FV7z.Tun.Inv
 /-!
 # `__libc_calloc`: the straight pieces (PLAN.md §M, M1)
 
@@ -39,25 +38,71 @@ macro "cx" cfg:Lean.Parser.Tactic.optConfig "[" ls:Lean.Parser.Tactic.simpLemma,
 
 /-! ## The frame -/
 
-/-- Bytes below the 32 under `S` read through the four pushes. -/
-theorem fr_rd (V : Addr → Byte) (S : Addr) (a b c d : BitVec 64) {x : Addr} {n : Nat} (hS : 32 ≤ S.toNat)
-    (h : x.toNat + n ≤ S.toNat - 32) :
-    List.map (Vst (Vst (Vst (Vst V (S - 8) (toBytesLE a 8)) (S - 8 - 8) (toBytesLE b 8)) (S - 8 - 8 - 8)
-      (toBytesLE c 8)) (S - 8 - 8 - 8 - 8) (toBytesLE d 8)) (byteAddrs x n) = List.map V (byteAddrs x n) := by
-  have hl := S.isLt
+/-- The four pushes under `S`. -/
+abbrev fr4 (V : Addr → Byte) (S : Addr) (a b c d : BitVec 64) : Addr → Byte :=
+  Vst (Vst (Vst (Vst V (S - 8) (toBytesLE a 8)) (S - 8 - 8) (toBytesLE b 8)) (S - 8 - 8 - 8) (toBytesLE c 8))
+    (S - 8 - 8 - 8 - 8) (toBytesLE d 8)
+
+/-- The offsets of the four slots under `S`. -/
+theorem fr_e {S : Addr} (hS : 32 ≤ S.toNat) : (S - 8).toNat = S.toNat - 8 ∧ (S - 8 - 8).toNat = S.toNat - 16 ∧
+    (S - 8 - 8 - 8).toNat = S.toNat - 24 ∧ (S - 8 - 8 - 8 - 8).toNat = S.toNat - 32 := by
   have e1 := Prepare.toNat_sub8 (a := S) (by omega)
   have e2 := Prepare.toNat_sub8 (a := S - 8) (by rw [e1]; omega)
   have e3 := Prepare.toNat_sub8 (a := S - 8 - 8) (by rw [e2, e1]; omega)
   have e4 := Prepare.toNat_sub8 (a := S - 8 - 8 - 8) (by rw [e3, e2, e1]; omega)
-  rw [rd_Vst _ _ _ _ _ (by rw [toBytesLE_length, e4, e3, e2, e1]; omega) (by omega)
-      (.inr (by rw [e4, e3, e2, e1]; omega)),
-    rd_Vst _ _ _ _ _ (by rw [toBytesLE_length, e3, e2, e1]; omega) (by omega) (.inr (by rw [e3, e2, e1]; omega)),
-    rd_Vst _ _ _ _ _ (by rw [toBytesLE_length, e2, e1]; omega) (by omega) (.inr (by rw [e2, e1]; omega)),
-    rd_Vst _ _ _ _ _ (by rw [toBytesLE_length, e1]; omega) (by omega) (.inr (by rw [e1]; omega))]
+  refine ⟨e1, ?_, ?_, ?_⟩
+  · rw [e2, e1]; omega
+  · rw [e3, e2, e1]; omega
+  · rw [e4, e3, e2, e1]; omega
+
+/-- Bytes outside the 32 under `S` read through the four pushes. -/
+theorem fr_rd (V : Addr → Byte) (S : Addr) (a b c d : BitVec 64) {x : Addr} {n : Nat} (hS : 32 ≤ S.toNat)
+    (hx : x.toNat + n ≤ 2 ^ 64) (h : x.toNat + n ≤ S.toNat - 32 ∨ S.toNat ≤ x.toNat) :
+    List.map (Vst (Vst (Vst (Vst V (S - 8) (toBytesLE a 8)) (S - 8 - 8) (toBytesLE b 8)) (S - 8 - 8 - 8)
+      (toBytesLE c 8)) (S - 8 - 8 - 8 - 8) (toBytesLE d 8)) (byteAddrs x n) = List.map V (byteAddrs x n) := by
+  have hl := S.isLt
+  obtain ⟨e1, e2, e3, e4⟩ := fr_e hS
+  rw [rd_Vst _ _ _ _ _ (by rw [toBytesLE_length, e4]; omega) hx (by rw [toBytesLE_length, e4]; omega),
+    rd_Vst _ _ _ _ _ (by rw [toBytesLE_length, e3]; omega) hx (by rw [toBytesLE_length, e3]; omega),
+    rd_Vst _ _ _ _ _ (by rw [toBytesLE_length, e2]; omega) hx (by rw [toBytesLE_length, e2]; omega),
+    rd_Vst _ _ _ _ _ (by rw [toBytesLE_length, e1]; omega) hx (by rw [toBytesLE_length, e1]; omega)]
+
+/-- The four saved registers read back. -/
+theorem fr_slots (V : Addr → Byte) (S : Addr) (a b c d : BitVec 64) (hS : 32 ≤ S.toNat) :
+    rdq(fr4 V S a b c d, S - 8 - 8 - 8 - 8) = d ∧ rdq(fr4 V S a b c d, S - 8 - 8 - 8) = c ∧
+      rdq(fr4 V S a b c d, S - 8 - 8) = b ∧ rdq(fr4 V S a b c d, S - 8) = a := by
+  have hl := S.isLt
+  obtain ⟨e1, e2, e3, e4⟩ := fr_e hS
+  unfold fr4
+  refine ⟨?_, ?_, ?_, ?_⟩
+  · rw [rd_Vst_self _ _ _ (toBytesLE_length _ _) (by rw [e4]; omega)]
+    exact ofBytesLE_toBytesLE (n := 8) rfl _
+  · rw [rd_Vst _ _ _ _ _ (by rw [toBytesLE_length, e4]; omega) (by rw [e3]; omega)
+        (by rw [toBytesLE_length, e4, e3]; omega),
+      rd_Vst_self _ _ _ (toBytesLE_length _ _) (by rw [e3]; omega)]
+    exact ofBytesLE_toBytesLE (n := 8) rfl _
+  · rw [rd_Vst _ _ _ _ _ (by rw [toBytesLE_length, e4]; omega) (by rw [e2]; omega)
+        (by rw [toBytesLE_length, e4, e2]; omega),
+      rd_Vst _ _ _ _ _ (by rw [toBytesLE_length, e3]; omega) (by rw [e2]; omega)
+        (by rw [toBytesLE_length, e3, e2]; omega),
+      rd_Vst_self _ _ _ (toBytesLE_length _ _) (by rw [e2]; omega)]
+    exact ofBytesLE_toBytesLE (n := 8) rfl _
+  · rw [rd_Vst _ _ _ _ _ (by rw [toBytesLE_length, e4]; omega) (by rw [e1]; omega)
+        (by rw [toBytesLE_length, e4, e1]; omega),
+      rd_Vst _ _ _ _ _ (by rw [toBytesLE_length, e3]; omega) (by rw [e1]; omega)
+        (by rw [toBytesLE_length, e3, e1]; omega),
+      rd_Vst _ _ _ _ _ (by rw [toBytesLE_length, e2]; omega) (by rw [e1]; omega)
+        (by rw [toBytesLE_length, e2, e1]; omega),
+      rd_Vst_self _ _ _ (toBytesLE_length _ _) (by rw [e1]; omega)]
+    exact ofBytesLE_toBytesLE (n := 8) rfl _
 
 /-- The size `__libc_calloc` clears from a chunk `p` of size `C`: the old top's `O` (`T` the old top) when `p` was
 cut from it and `O` is smaller, else `C`. -/
 def csz (p T O C : Addr) : Addr := if T = p + 18446744073709551600#64 then (if O.toNat < C.toNat then O else C) else C
+
+/-- `x - 8` in numbers. -/
+theorem t8 {x : Addr} (h : 8 ≤ x.toNat) : (x - 8#64).toNat = x.toNat - 8 := by
+  rw [BitVec.toNat_sub]; simp; omega
 
 variable {F : Footprint} {Wl : List Rgn}
 
@@ -79,12 +124,13 @@ theorem vc_0 {fb T : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte}
     (f2 : ∀ i < 8, Foot F.data (Addr.add (fb + 18446744073709551576#64) i))
     (f3 : ∀ i < 4, Foot F.data (Addr.add (fb + 24#64) i)) (f4 : ∀ i < 8, Foot F.data (Addr.add 7940768#64 i))
     (f5 : ∀ i < 8, Foot F.data (Addr.add (T + 8#64) i)) :
-    W_0' fb F Wl (fun j' g' _ V' => j' = 123 ∧ V' = Mxi.mx4 V g.rsp g.r13 g.r12 g.rbp g.rbx ∧
+    W_0' fb F Wl (fun j' g' _ V' => j' = 123 ∧ V' = fr4 V g.rsp g.r13 g.r12 g.rbp g.rbx ∧
       g'.rsp = g.rsp - 8 - 8 - 8 - 8 - 8#64 ∧ g'.rdi = 7940672#64 ∧ g'.rsi = g.rdi * g.rsi ∧
       g'.rbp = 7940672#64 ∧ g'.r12 = g.rdi * g.rsi ∧ g'.r13 = T ∧
       g'.rbx = rdq(V, T + 8#64) &&& 18446744073709551608#64 ∧ g'.r14 = g.r14 ∧ g'.r15 = g.r15) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at hm hS d1 d2 d3 d4 d5 h1 h2 h3 h4 ⊢
+  have hR := rsp.isLt
   have hlt : rdi.toNat * rsi.toNat < 2 ^ 63 := Nat.lt_of_le_of_lt hm (by decide)
   have hh := mul_hi (x := rdi) (y := rsi) (Nat.lt_trans hlt (by decide))
   have hms : (rdi * rsi).msb = false := by
@@ -92,11 +138,13 @@ theorem vc_0 {fb T : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte}
     exact decide_eq_false (Nat.not_le.2 hlt)
   have htc' := eq_false htc
   have k1 := fr_rd V rsp r13 r12 rbp rbx (x := 7940656#64) (n := 8) hS (by simp only [BitVec.toNat_ofNat]; omega)
-  have k2 := fr_rd V rsp r13 r12 rbp rbx (x := fb + 18446744073709551576#64) (n := 8) hS d2
-  have k3 := fr_rd V rsp r13 r12 rbp rbx (x := fb + 24#64) (n := 4) hS d3
+    (.inl (by simp only [BitVec.toNat_ofNat]; omega))
+  have k2 := fr_rd V rsp r13 r12 rbp rbx (x := fb + 18446744073709551576#64) (n := 8) hS (by omega) (.inl d2)
+  have k3 := fr_rd V rsp r13 r12 rbp rbx (x := fb + 24#64) (n := 4) hS (by omega) (.inl d3)
   have k4 := fr_rd V rsp r13 r12 rbp rbx (x := 7940768#64) (n := 8) hS (by simp only [BitVec.toNat_ofNat]; omega)
-  have k5 := fr_rd V rsp r13 r12 rbp rbx (x := T + 8#64) (n := 8) hS d5
-  cx +contextual [W_0', W_35, W_47, W_63, W_79, W_95, W_117, o0', o1, o2, o3, o4, o5, o6, Mxi.mx4, mul_lo, hh, hms,
+    (.inl (by simp only [BitVec.toNat_ofNat]; omega))
+  have k5 := fr_rd V rsp r13 r12 rbp rbx (x := T + 8#64) (n := 8) hS (by omega) (.inl d5)
+  cx +contextual [W_0', W_35, W_47, W_63, W_79, W_95, W_117, o0', o1, o2, o3, o4, o5, o6, fr4, mul_lo, hh, hms,
     k1, k2, k3, k4, k5, hhk, htc', hmt, hT, h1, h2, h3, h4, f1, f2, f3, f4, f5]
 
 /-- From the return of `_int_malloc` (128) to 148: the chunk `p` (`rax`) not null, its size word `Z` with bits 2
@@ -150,7 +198,7 @@ theorem vc_228m {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (h8 : 8 
       g' = { g with rdx := g.rdx - 8#64, rsi := 0#64, rdi := g.r8 }) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at h8 hbig ⊢
-  have e8 := Sdp.sdT8 (x := rdx) h8
+  have e8 := t8 h8
   have c1 := eq_false (show ¬ (rdx.toNat - 8 < 23) by omega)
   have c2 := eq_false (show ¬ (rdx - 8#64 = 23#64) from fun h => by
     have := congrArg BitVec.toNat h
@@ -171,7 +219,7 @@ theorem vc_228i {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (h8 : 8 
     W_228 fb F Wl (fun j' g' _ V' => j' = 252 ∧ V' = V ∧ g' = { g with rdx := g.rdx - 8#64 }) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at h8 hlo hsm ⊢
-  have e8 := Sdp.sdT8 (x := rdx) h8
+  have e8 := t8 h8
   have c1 := eq_false (show ¬ (rdx.toNat - 8 < 23) by omega)
   have c2 := eq_false (show ¬ (rdx - 8#64 = 23#64) from fun h => by
     have := congrArg BitVec.toNat h
