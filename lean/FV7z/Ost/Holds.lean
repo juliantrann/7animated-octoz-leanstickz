@@ -92,7 +92,7 @@ theorem vc_0 {g : Gprs} {f : Rflags} {V : Addr → Byte} (hF : Ft F Wl g) :
     W_0 F Wl (fun j' g' _ V' => j' = 60 ∧ g' = { g with rax := g'.rax } ∧ V' = Mo V g) g f V := by
   obtain ⟨f249, f64, f72, f240, fs, fd, w248, w16, w240⟩ := hF
   by_cases h0 : rb V (g.rdi + 249#64) = 0#8
-  swap
+  rotate_left
   · rw [Mo, if_neg (fun h => h0 h.1)]
     obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
     dsimp only at h0 f249 ⊢
@@ -108,7 +108,7 @@ theorem vc_0 {g : Gprs} {f : Rflags} {V : Addr → Byte} (hF : Ft F Wl g) :
     wpo [h0', h1']
     opx
   by_cases h2 : rb V (g.rdi + 72#64) = 0#8
-  swap
+  rotate_left
   · rw [Mo, if_neg (fun h => h2 h.2.2)]
     obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
     dsimp only at h0 h1 h2 f249 f64 f72 ⊢
