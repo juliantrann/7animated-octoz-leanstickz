@@ -70,7 +70,7 @@ theorem Kc.trans {g g' g'' : Gprs} (h : Kc g g') (h' : Kc g' g'') : Kc g g'' :=
     h'.2.2.2.2.1.trans h.2.2.2.2.1, h'.2.2.2.2.2.trans h.2.2.2.2.2⟩
 
 /-- `Vfill` differs only in the `8 n` bytes from `a`. -/
-theorem fill_out (v : BitVec 64) : ∀ (n : Nat) (V : Addr → Byte) (a : Addr), a.toNat + 8 * n ≤ 2 ^ 64 →
+theorem fill_out (v : BitVec 64) : ∀ (n : Nat) (V : Addr → Byte) (a : Addr), a.toNat + 8 * n < 2 ^ 64 →
     Raf.Out a.toNat (a.toNat + 8 * n) V (Vfill V a v n)
   | 0, _, _, _ => fun _ _ => rfl
   | n + 1, V, a, h => by
@@ -137,7 +137,10 @@ theorem vc_0 {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (hsp : 336 
     | (repeat pv); done
     | (rw [vs (by ln) (by bv_omega), ofBytesLE_toBytesLE (n := 8) rfl]); done
     | (pv; rw [vs (by ln) (by bv_omega)]; exact ofBytesLE_toBytesLE (n := 8) rfl _)
+    | (repeat pv); rw [vs (by ln) (by bv_omega)]; exact ofBytesLE_toBytesLE (n := 8) rfl _
+    | (repeat pv); rw [vs (by ln) (by bv_omega), ofBytesLE_toBytesLE (n := 8) rfl]; done
     | bv_omega
+    | skip
 
 /-- After the `rep stos`, to the `or`: `ecx` = `sig - 1`, `rax` = `1 << ecx`, `edi` = `sig`. -/
 theorem vc_60 {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} :
