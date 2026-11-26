@@ -52,10 +52,19 @@ theorem vc_0n {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte}
       g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at w1 w2 w3 w4 w5 w6 hms ⊢
-  have hb := be_imm (rdx + 23#64) 31 (by decide)
-  by_cases hc : (rdx + 23#64).toNat ≤ 31
-  · mcx +contextual [W_0, W_23, o0, o1, fr6, nbv, hb, hc, hms, w1, w2, w3, w4, w5, w6]
-  · mcx +contextual [W_0, W_23, o0, o1, fr6, nbv, hb, hc, hms, w1, w2, w3, w4, w5, w6]
+  by_cases h1 : (rdx + 23#64).toNat < 31
+  · have hc : (rdx + 23#64).toNat ≤ 31 := by omega
+    have h1' := eq_true h1
+    mcx +contextual [W_0, W_23, o0, o1, fr6, nbv, h1', hc, hms, w1, w2, w3, w4, w5, w6]
+  · have h1' := eq_false h1
+    by_cases h2 : rdx + 23#64 = 31#64
+    · have hc : (rdx + 23#64).toNat ≤ 31 := by rw [h2]; decide
+      have h2' := eq_true h2
+      mcx +contextual [W_0, W_23, o0, o1, fr6, nbv, h1', h2', hc, hms, w1, w2, w3, w4, w5, w6]
+    · have hc : ¬ (rdx + 23#64).toNat ≤ 31 := fun h =>
+        h2 (BitVec.eq_of_toNat_eq (by rw [BitVec.toNat_ofNat]; omega))
+      have h2' := eq_false h2
+      mcx +contextual [W_0, W_23, o0, o1, fr6, nbv, h1', h2', hc, hms, w1, w2, w3, w4, w5, w6]
 
 set_option maxHeartbeats 2000000 in
 /-- `bytes` above `PTRDIFF_MAX`: `errno = ENOMEM` (`fs:-0x48`), `r12 = 0`; to 341. -/
@@ -83,7 +92,7 @@ theorem vc_63z {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (hz : g.r
   mcx +contextual [W_63, o2]
 
 /-- `_int_malloc` gave `m`, not 0: `r12 = m`, `rdx = 0`, `rsi = p`; to the `div` (81). -/
-theorem vc_63n {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (hz : g.rax ≠ 0#64) :
+theorem vc_63n {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (hz : (g.rax == 0) = false) :
     W_63 fb F Wl (fun j' g' _ V' => j' = 81 ∧ V' = V ∧
       g' = { g with r12 := g.rax, rdx := 0#64, rsi := g.rax + 18446744073709551600#64 }) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
@@ -99,31 +108,40 @@ theorem vc_84a {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (hz : g.r
   mcx +contextual [W_84, o4]
 
 /-- `m` not aligned, `brk - p ≤ 31`: `newp = brk + alignment`, `leadsize = newp - p`; to 127. -/
-theorem vc_84s {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (hz : g.rdx ≠ 0#64)
+theorem vc_84s {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (hz : (g.rdx == 0) = false)
     (hc : (brk g.r12 g.rbx - g.rsi).toNat ≤ 31) :
     W_84 fb F Wl (fun j' g' _ V' => j' = 127 ∧ V' = V ∧ g'.r13 = brk g.r12 g.rbx + g.rbx ∧
       g'.rcx = brk g.r12 g.rbx + g.rbx - g.rsi ∧ g'.r12 = g.r12 ∧ g'.rbx = g.rbx ∧ g'.rbp = g.rbp ∧
       g'.r15 = g.r15 ∧ g'.rsi = g.rsi ∧ g'.rsp = g.rsp ∧ g'.rdi = g.rdi) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only [brk] at hz hc ⊢
-  have hb := be_imm ((r12 + rbx + 18446744073709551615#64 &&& 0 - rbx) - 16#64 - rsi) 31 (by decide)
-  mcx +contextual [W_84, W_93, W_392, o4, o5, o19, hz, hb, hc]
+  by_cases h1 : ((r12 + rbx + 18446744073709551615#64 &&& 0 - rbx) - 16#64 - rsi).toNat < 31
+  · have h1' := eq_true h1
+    mcx +contextual [W_84, W_93, W_392, o4, o5, o19, hz, h1']
+  · have h1' := eq_false h1
+    have h2 : (r12 + rbx + 18446744073709551615#64 &&& 0 - rbx) - 16#64 - rsi = 31#64 :=
+      BitVec.eq_of_toNat_eq (by rw [BitVec.toNat_ofNat]; omega)
+    have h2' := eq_true h2
+    mcx +contextual [W_84, W_93, W_392, o4, o5, o19, hz, h1', h2']
 
 /-- `m` not aligned, `brk - p > 31`: `newp = brk`, `leadsize = newp - p`; to 127. -/
-theorem vc_84b {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (hz : g.rdx ≠ 0#64)
+theorem vc_84b {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (hz : (g.rdx == 0) = false)
     (hc : ¬ (brk g.r12 g.rbx - g.rsi).toNat ≤ 31) :
     W_84 fb F Wl (fun j' g' _ V' => j' = 127 ∧ V' = V ∧ g'.r13 = brk g.r12 g.rbx ∧
       g'.rcx = brk g.r12 g.rbx - g.rsi ∧ g'.r12 = g.r12 ∧ g'.rbx = g.rbx ∧ g'.rbp = g.rbp ∧
       g'.r15 = g.r15 ∧ g'.rsi = g.rsi ∧ g'.rsp = g.rsp ∧ g'.rdi = g.rdi) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only [brk] at hz hc ⊢
-  have hb := be_imm ((r12 + rbx + 18446744073709551615#64 &&& 0 - rbx) - 16#64 - rsi) 31 (by decide)
-  mcx +contextual [W_84, W_93, o4, o5, hz, hb, hc]
+  have h1' := eq_false (show ¬ ((r12 + rbx + 18446744073709551615#64 &&& 0 - rbx) - 16#64 - rsi).toNat < 31 by
+    omega)
+  have h2' := eq_false (show ¬ (r12 + rbx + 18446744073709551615#64 &&& 0 - rbx) - 16#64 - rsi = 31#64 from
+    fun h => hc (by rw [h]; decide))
+  mcx +contextual [W_84, W_93, o4, o5, hz, h1', h2']
 
 /-- `p` mmapped (`Z` its size word): `newp->prev_size = prev_size (p) + leadsize`, `newp`'s size
 `newsize | IS_MMAPPED`, `r12 = newp + 16`; to 341. -/
 theorem vc_127m {fb Z : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte}
-    (hZ : rdq(V, g.r12 + 18446744073709551608#64) = Z) (hb : Z.setWidth 32 &&& 2#32 ≠ 0#32)
+    (hZ : rdq(V, g.r12 + 18446744073709551608#64) = Z) (hb : (Z.setWidth 32 &&& 2#32 == 0) = false)
     (f1 : ∀ i < 8, Foot F.data (Addr.add (g.r12 + 18446744073709551608#64) i))
     (f2 : ∀ i < 8, Foot F.data (Addr.add (g.r12 + 18446744073709551600#64) i))
     (w1 : ∀ i < 8, Foot Wl (Addr.add g.r13 i)) (w2 : ∀ i < 8, Foot Wl (Addr.add (g.r13 + 8#64) i)) :
@@ -138,7 +156,7 @@ theorem vc_127m {fb Z : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte}
 set_option maxHeartbeats 2000000 in
 /-- `p` not mmapped: `newsize`, `rdx = newsize | NON_MAIN_ARENA`; to 175. -/
 theorem vc_127n {fb Z : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte}
-    (hZ : rdq(V, g.r12 + 18446744073709551608#64) = Z) (hb : Z.setWidth 32 &&& 2#32 = 0#32)
+    (hZ : rdq(V, g.r12 + 18446744073709551608#64) = Z) (hb : (Z.setWidth 32 &&& 2#32 == 0) = true)
     (f1 : ∀ i < 8, Foot F.data (Addr.add (g.r12 + 18446744073709551608#64) i)) :
     W_127 fb F Wl (fun j' g' _ V' => j' = 175 ∧ V' = V ∧ g'.rax = nmf g.rbp ∧
       g'.rdx = (Z &&& 18446744073709551608#64) - g.rcx ||| nmf g.rbp ∧
@@ -146,10 +164,11 @@ theorem vc_127n {fb Z : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte}
       g'.rbx = g.rbx ∧ g'.rbp = g.rbp ∧ g'.r15 = g.r15 ∧ g'.rsi = g.rsi ∧ g'.rsp = g.rsp) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at hZ f1 ⊢
+  have hb0 : Z.setWidth 32 &&& 2#32 = 0#32 := by simpa using hb
   by_cases ha : rbp = 7940672#64
   · subst ha
-    mcx +contextual [W_127, W_151, W_166, o6, o7, o8, nmf, hZ, hb, f1]
-  · mcx +contextual [W_127, W_151, W_166, o6, o7, o8, nmf, hZ, hb, ha, f1]
+    mcx +contextual [W_127, W_151, W_166, o6, o7, o8, nmf, hZ, hb, hb0, f1, not_true_eq_false]
+  · mcx +contextual [W_127, W_151, W_166, o6, o7, o8, nmf, hZ, hb, hb0, ha, f1, not_true_eq_false]
 
 /-- `set_head (newp, newsize | PREV_INUSE | …)`, `rdi = av`; to the `or` (186). -/
 theorem vc_175 {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte}
@@ -192,7 +211,7 @@ theorem vc_242 {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (hz : g.r
 
 /-- `p` mmapped (`Z` its size word): to 341. -/
 theorem vc_254m {fb Z : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte}
-    (hZ : rdq(V, g.rsi + 8#64) = Z) (hb : Z.setWidth 8 &&& 2#8 ≠ 0#8)
+    (hZ : rdq(V, g.rsi + 8#64) = Z) (hb : (Z.setWidth 8 &&& 2#8 == 0) = false)
     (f1 : ∀ i < 8, Foot F.data (Addr.add (g.rsi + 8#64) i)) :
     W_254 fb F Wl (fun j' g' _ V' => j' = 341 ∧ V' = V ∧ g' = { g with rax := Z }) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
@@ -201,7 +220,7 @@ theorem vc_254m {fb Z : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte}
 
 /-- `p` not mmapped, `size ≤ nb + MINSIZE`: to 341. -/
 theorem vc_254k {fb Z : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte}
-    (hZ : rdq(V, g.rsi + 8#64) = Z) (hb : Z.setWidth 8 &&& 2#8 = 0#8)
+    (hZ : rdq(V, g.rsi + 8#64) = Z) (hb : (Z.setWidth 8 &&& 2#8 == 0) = true)
     (hk : (Z &&& 18446744073709551608#64).toNat ≤ (g.r15 + 32#64).toNat)
     (f1 : ∀ i < 8, Foot F.data (Addr.add (g.rsi + 8#64) i)) :
     W_254 fb F Wl (fun j' g' _ V' => j' = 341 ∧ V' = V ∧
@@ -215,7 +234,7 @@ set_option maxHeartbeats 2000000 in
 /-- `size > nb + MINSIZE`: the remainder `p + nb` with head `size - nb | PREV_INUSE | …`, `p`'s size `nb` (its low
 bits kept), `rsi` the remainder, `rdi = av`, `rdx = 1`; to the `call` of `_int_free` (336). -/
 theorem vc_254s {fb Z : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte}
-    (hZ : rdq(V, g.rsi + 8#64) = Z) (hb : Z.setWidth 8 &&& 2#8 = 0#8)
+    (hZ : rdq(V, g.rsi + 8#64) = Z) (hb : (Z.setWidth 8 &&& 2#8 == 0) = true)
     (hs : (g.r15 + 32#64).toNat < (Z &&& 18446744073709551608#64).toNat)
     (hZ' : rdq(Vst V (g.rsi + g.r15 + 8#64)
       (toBytesLE ((Z &&& 18446744073709551608#64) - g.r15 ||| nmf g.rbp ||| 1#64) 8), g.rsi + 8#64) = Z)
@@ -232,9 +251,9 @@ theorem vc_254s {fb Z : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte}
   have hlt : ¬ (r15 + 32#64).toNat ≥ (Z &&& 18446744073709551608#64).toNat := by omega
   by_cases ha : rbp = 7940672#64
   · subst ha
-    simp only [nmf, if_true] at hZ' w2 ⊢
+    simp only [nmf, ite_true, eq_self_iff_true, BitVec.or_zero] at hZ' w2 ⊢
     mcx +contextual [W_254, W_262, W_275, o14, o15, o16, hZ, hZ', hb, hs, hlt, f1, w1, w2]
-  · simp only [nmf, ha, if_false] at hZ' w2 ⊢
+  · simp only [nmf, ha, ite_false] at hZ' w2 ⊢
     mcx +contextual [W_254, W_262, W_275, o14, o15, o16, hZ, hZ', hb, hs, hlt, ha, f1, w1, w2]
 
 set_option maxHeartbeats 2000000 in
