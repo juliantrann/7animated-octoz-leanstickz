@@ -172,8 +172,9 @@ theorem xFin {m k : Nat} {V : Addr → Byte} (hk : k ≤ (len V₀ g₀.rdi).toN
 variable {F : Footprint} {Wl : List Rgn}
 
 /-- `omega` past the projections of the registers. -/
-local macro "om" : tactic => `(tactic| ((try dsimp only); omega))
+local macro "om" : tactic => `(tactic| ((try dsimp only at *); omega))
 
+set_option maxHeartbeats 1000000 in
 /-- The entry: the `ret` for the length 0, else the loop's head with all characters left. -/
 theorem vc_0 {f : Rflags} (hF : Fp F V₀ g₀.rdi) :
     W_0 F Wl (Nx g₀ V₀ (2 * (len V₀ g₀.rdi).toNat + 1)) g₀ f V₀ := by
@@ -184,13 +185,14 @@ theorem vc_0 {f : Rflags} (hF : Fp F V₀ g₀.rdi) :
   refine ⟨f8, f0, fun _ => ⟨fun hb => ?_, fun hb _ => ?_⟩⟩
   · have hz : len V₀ rdi = 0 := beq_iff_eq.mp hb
     have hz' : (len V₀ rdi).toNat = 0 := by rw [hz]; rfl
-    exact xFin (k := 0) (by exact Nat.zero_le _) (by exact fun j hj _ => absurd hj (by omega))
+    exact xFin (k := 0) (by exact Nat.zero_le _) (by exact fun j hj _ => absurd hj (by om))
       (by exact Or.inl rfl) (by exact Or.inl ⟨hz'.symm, rfl⟩) rfl
   · have hz : len V₀ rdi ≠ 0 := beq_eq_false_iff_ne.mp hb
     have hz' : (len V₀ rdi).toNat ≠ 0 := fun e => hz (BitVec.eq_of_toNat_eq (by rw [e]; rfl))
     exact x32 (n := (len V₀ rdi).toNat) (by om) (by exact Nat.le_refl _)
-      (by exact fun j hj h => absurd hj (by omega)) (by om) (by exact shl4 _) (by exact swl _) rfl
+      (by exact fun j hj h => absurd hj (by om)) (by om) (by exact shl4 _) (by exact swl _) rfl
 
+set_option maxHeartbeats 3000000 in
 /-- The loop's head, the character `m` blank: the step back. -/
 theorem vc_32w {m : Nat} {g : Gprs} {f : Rflags} {cv : BitVec 32} (hF : Fp F V₀ g₀.rdi)
     (h : I32 g₀ V₀ (m + 1) g) (hc : ch V₀ g₀.rdi m = cv) (hw : Ws cv) :
@@ -222,6 +224,7 @@ theorem vc_32w {m : Nat} {g : Gprs} {f : Rflags} {cv : BitVec 32} (hF : Fp F V�
       | intro)
     all_goals exact x50 (n := m + 1) (by om) (by exact hn) (by exact ht') (by om) (by exact ha) (by exact hd) rfl
 
+set_option maxHeartbeats 2000000 in
 /-- The loop's head, the character `m` not blank: the `ret` if none was passed, else the stores. -/
 theorem vc_32n {m : Nat} {g : Gprs} {f : Rflags} (hF : Fp F V₀ g₀.rdi) (h : I32 g₀ V₀ (m + 1) g)
     (hc : ¬ Ws (ch V₀ g₀.rdi m)) :
@@ -256,7 +259,7 @@ theorem vc_32n {m : Nat} {g : Gprs} {f : Rflags} (hF : Fp F V₀ g₀.rdi) (h : 
       | apply And.intro
       | intro)
     all_goals exact xFin (k := m + 1) (by exact Nat.le_of_eq hL.symm) (by exact ht) (by exact hb)
-      (by exact Or.inl ⟨hL.symm, rfl⟩) rfl
+                (by exact Or.inl ⟨hL.symm, rfl⟩) rfl
   · have e1 := neL hL (by omega)
     have e2 : decide (rdd(V₀, rdi + 8#64) = BitVec.ofNat 32 (m + 1)) = false := e1
     wpx [W_32, W_45, W_80, W_85, o2, o3, o6, o7, hA, hA', hb1, hb1', h32, h32', hd, e1, e2, eq_self_iff_true,
@@ -267,8 +270,9 @@ theorem vc_32n {m : Nat} {g : Gprs} {f : Rflags} (hF : Fp F V₀ g₀.rdi) (h : 
       | apply And.intro
       | intro)
     all_goals exact x59 (k := m + 1) (by om) (by om) (by exact ht) (by exact hb) (by rw [ha]; rfl) (by exact hd)
-      rfl
+                rfl
 
+set_option maxHeartbeats 2000000 in
 /-- The step back: the stores with the length 0 when no character is left, else the loop's head. -/
 theorem vc_50 {m : Nat} {g : Gprs} {f : Rflags} (h : I50 g₀ V₀ (m + 1) g) :
     W_50 F Wl (Nx g₀ V₀ (2 * (m + 1) - 1)) g f V₀ := by
@@ -286,15 +290,16 @@ theorem vc_50 {m : Nat} {g : Gprs} {f : Rflags} (h : I50 g₀ V₀ (m + 1) g) :
       | apply And.intro
       | intro)
     all_goals exact x59 (k := 0) (by om) (by om) (by exact ht0) (by exact Or.inl rfl)
-      (by exact (addr_add_zero _).symm) (by decide) rfl
+                (by exact (addr_add_zero _).symm) (by decide) rfl
   · wpx [W_50, o4, hd, ne1 hm (by omega), Bool.not_false, Bool.true_eq_false, Bool.false_eq_true, false_implies,
       true_implies, true_and, and_true, implies_true]
     all_goals repeat' (first
       | apply And.intro
       | intro)
     all_goals exact x32 (n := m) (by om) (by om) (by exact ht0) (by om) (by rw [ha]; exact sub4 m)
-      (by exact dec32 (by omega)) rfl
+                (by exact dec32 (by omega)) rfl
 
+set_option maxHeartbeats 1000000 in
 /-- The stores: the 0 at the index `k`, the length `k`; the `ret`. -/
 theorem vc_59 {g : Gprs} {f : Rflags} (h : I59 g₀ V₀ g)
     (hw1 : ∀ k < (len V₀ g₀.rdi).toNat, ∀ i < 4, Foot Wl (Addr.add (Addr.add (chs V₀ g₀.rdi) (4 * k)) i))
