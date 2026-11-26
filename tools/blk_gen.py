@@ -485,6 +485,11 @@ FNS = {
     "uct": dict(grp="Uct", cn="UString::UString()", a=0x44d3e0, n=50, pos=True, stops=(0x31,), calls=True,
                 tag="PLAN.md §M, M1", src="7-Zip's `UString::UString` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
     # `UString::SetStartLen (len)`: as `AString`'s, `new wchar_t[len + 1]` (the `call` at 0x21). Stop: the `ret` (0x35).
+    # 7-Zip's CPP/Common/MyString.cpp `UString::TrimRight ()`: from the end back, past the characters 9, 10 and ' '
+    # (the loop at 0x20); none left: `_chars[0]` = 0, `_len` = 0 (0x3b); some trimmed: the 0 after the last kept
+    # (0x55, 0x3b). Stop: the `ret` (0x45).
+    "utr": dict(grp="Utr", cn="UString::TrimRight", a=0x44de20, n=90, pos=True, stops=(0x45,),
+                tag="PLAN.md §M, M1", src="7-Zip's `UString::TrimRight` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
     "usl": dict(grp="Usl", cn="UString::SetStartLen", a=0x44d060, n=54, pos=True, stops=(0x35,), calls=True,
                 tag="PLAN.md §M, M1", src="7-Zip's `UString::SetStartLen` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
     # CPP/UI/Common/EnumDirItems.cpp `CDirItems::ScanProgress (dirPath)`: without a `Callback` (at 0xc0) 0, else a tail
