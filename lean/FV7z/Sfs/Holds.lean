@@ -44,7 +44,7 @@ theorem vc_nz {g : Gprs} {f : Rflags} {V : Addr → Byte} (h : g.rdi ≠ 0) :
     W_0 F Wl (fun j' g' _ V' => j' = 13 ∧ g' = { g with rdi := g.rdi - 4#64 } ∧ V' = V) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at h ⊢
-  have hz : (rdi == 0#64) = false := beq_eq_false_iff_ne.2 h
+  have hz : (rdi == 0) = false := beq_eq_false_iff_ne.2 h
   wpx [W_0, W_9, o0, o1, BitVec.and_self, hz, Bool.true_eq_false, Bool.false_eq_true, false_implies, implies_true]
   all_goals repeat' (first | exact rfl | exact trivial | apply And.intro | intro _)
 
