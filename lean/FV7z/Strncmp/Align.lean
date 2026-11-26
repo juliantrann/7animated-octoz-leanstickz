@@ -266,15 +266,15 @@ theorem align (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e' scm) (he : e' = 0x
   · intro hcc'
     rw [hf₃, hja] at hcc'
     have hlt : a.toNat % 16 < b.toNat % 16 := by
-      simp only [Bool.not_eq_true', decide_eq_false_iff_not, Nat.not_le] at hcc'
-      exact hcc'
+      simp at hcc'
+      omega
     rintro Y₄ t₄ hK₄ hA₄ ⟨hr₄, hg₄⟩
     exact at163 c hin he hT hTf hK₄ hA₄ hr₄ (by rw [hg₄]; exact hL₃) hlt
       fun Z tZ hKZ hAZ hrZ hLZ => KL Z tZ false a b hKZ hAZ (Or.inl ⟨rfl, rfl, rfl⟩) hlt hrZ hLZ
   intro hcc'
   rw [hf₃, hja] at hcc'
   have hlt : b.toNat % 16 < a.toNat % 16 := by
-    simp only [Bool.not_eq_false', decide_eq_true_eq] at hcc'
+    simp at hcc'
     omega
   rintro Y₄ t₄ hK₄ hA₄ ⟨hr₄, hg₄⟩
   obtain ⟨hkp₄, hd1, hd2, hs1, hs2, h11₄, hcx₄, hax₄, hdx₄, -⟩ : AtL g₀ Y₄.cpu.gpr a b n q false := by
