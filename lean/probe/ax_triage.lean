@@ -1,5 +1,4 @@
-import FV7z.Ucu.Holds
-import FV7z.Uc4.Holds
+import FV7z.Gbp.Holds
 open FV7z
-#print axioms FV7z.Ucu.ucu_ok
-#print axioms FV7z.Uc4.uc4_ok
+#print axioms FV7z.Gbp.gbp_ok
+#print axioms FV7z.Gbp.gbp_mid
