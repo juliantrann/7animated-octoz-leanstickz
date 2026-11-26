@@ -71,8 +71,12 @@ theorem vc_0 {g : Gprs} {f : Rflags} {V : Addr → Byte} (hw : ∀ i < 8, Foot W
 /-- Back from `signal`: `mov rsi, [rbx + 8]; mov edi, 15; pop rbx`, to the tail jump. -/
 theorem vc_21 {g : Gprs} {f : Rflags} {V : Addr → Byte} (fb : ∀ i < 8, Foot F.data (Addr.add (g.rbx + 8#64) i))
     (fp : ∀ i < 8, Foot F.data (Addr.add g.rsp i)) :
-    wp F Wl o1 (fun g' _ V' => g' = { g with rsi := rdq(V, g.rbx + 8#64), rdi := 15#64, rbx := rdq(V, g.rsp),
-      rsp := g.rsp + 8 } ∧ V' = V) g f V := by
+    wp F Wl o1 (fun g' _ V' => g' =
+      { g with
+        rsi := rdq(V, g.rbx + 8#64)
+        rdi := 15#64
+        rbx := rdq(V, g.rsp)
+        rsp := g.rsp + 8 } ∧ V' = V) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at fb fp ⊢
   wpx [o1]
@@ -136,8 +140,12 @@ theorem chd_ok (c : Seg prof F Wl L s₀ o) (hin : CodeIn L chd_at chd) {cS : Li
   refine kf Y₂ t₂ hK₂ hA₂ hr₂ hg₂' ?_
   -- back from `signal`
   intro Z V' t'' hKZ hAZ hrZ hzs hzb
-  have eJ : { Z.cpu.gpr with rsi := rdq(V', Z.cpu.gpr.rbx + 8#64), rdi := 15#64, rbx := rdq(V', Z.cpu.gpr.rsp),
-      rsp := Z.cpu.gpr.rsp + 8 } = gJ V' X.cpu.gpr Z.cpu.gpr := by
+  have eJ :
+      { Z.cpu.gpr with
+        rsi := rdq(V', Z.cpu.gpr.rbx + 8#64)
+        rdi := 15#64
+        rbx := rdq(V', Z.cpu.gpr.rsp)
+        rsp := Z.cpu.gpr.rsp + 8 } = gJ V' X.cpu.gpr Z.cpu.gpr := by
     rw [hzb, hzs, e8]
   refine (c_21 prof).run c hin (fun j' g' _ V'' => j' = 31 ∧ g' = gJ V' X.cpu.gpr Z.cpu.gpr ∧ V'' = V') hKZ hAZ hrZ
     (wp_mono o1 (fun _ _ _ h => ⟨rfl, h.1.trans eJ, h.2⟩)
