@@ -192,12 +192,12 @@ theorem lst_add (s : Addr) (c : BitVec 32) (hc : c.toNat ≠ 0) : lstC c + s = s
   rw [lst_eq c hc, BitVec.add_comm]
   all_goals exact ptr_add _ _
 
-theorem p4 (s : Addr) (j : Nat) : s.add (4 * j) + 4#64 = s.add (4 * (j + 1)) := by
+theorem add4j (s : Addr) (j : Nat) : s.add (4 * j) + 4#64 = s.add (4 * (j + 1)) := by
   rw [show 4 * (j + 1) = 4 * j + 4 by omega]
   exact ptr_step s (4 * j) 4
 
 theorem m4s (s : Addr) (i : Nat) : s.add (4 * (i + 1)) + 18446744073709551612#64 = s.add (4 * i) := by
-  rw [← p4, BitVec.add_assoc, show (4#64 : BitVec 64) + 18446744073709551612#64 = 0#64 by decide, BitVec.add_zero]
+  rw [← add4j, BitVec.add_assoc, show (4#64 : BitVec 64) + 18446744073709551612#64 = 0#64 by decide, BitVec.add_zero]
 
 /-- Closes what `wpx` leaves: equalities by `rfl`, footprints from the hypotheses. -/
 macro "cpx" : tactic => `(tactic| (
@@ -370,6 +370,7 @@ theorem vc_77z {g : Gprs} {f : Rflags} {V : Addr → Byte} (he : g.rcx + 4#64 = 
   wpx [W_77, W_64, W_86, o9, o6, o10, Op.cmpmi, Kp, he', hz', Bool.not_true, Bool.not_false, Bool.false_eq_true,
     Bool.true_eq_false, false_implies, true_implies, implies_true, eq_self_iff_true, and_self]
   cpx
+  all_goals (rename_i h; simp [hz] at h)
 
 /-- The end, the byte at `0x79eda0` not 0: `rax` the last character, to 130. -/
 theorem vc_77f {g : Gprs} {f : Rflags} {V : Addr → Byte} (he : g.rcx + 4#64 = g.rdi) (hz : flg V ≠ 0#8)
@@ -382,6 +383,7 @@ theorem vc_77f {g : Gprs} {f : Rflags} {V : Addr → Byte} (he : g.rcx + 4#64 = 
   wpx [W_77, W_64, W_86, o9, o6, o10, Op.cmpmi, Kp, he', hz', Bool.not_true, Bool.not_false, Bool.false_eq_true,
     Bool.true_eq_false, false_implies, true_implies, implies_true, eq_self_iff_true, and_self]
   cpx
+  all_goals (rename_i h; simp [hz] at h)
 
 /-- From 130: '.' or ' ', to 112. -/
 theorem vc_130d {g : Gprs} {f : Rflags} {V : Addr → Byte} (h : rdd(V, g.rax) = 46#32 ∨ rdd(V, g.rax) = 32#32)
@@ -488,13 +490,13 @@ theorem loop1 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L cpp_at cpp) {V : Addr
     have hjn : j + 1 = n := by omega
     rw [hjn] at hAY
     refine k Y t₁ hKY hAY hrY ?_ (by rw [hgY]; exact hk)
-    rw [hgY, hrc, p4, hjn, hd]
+    rw [hgY, hrc, add4j, hjn, hd]
   | succ m ih =>
     intro j hj X t hK hA hrip hrc hsi hk
     refine step66 c hin (by omega) hw hK hA hrip hrc hsi ?_
     intro Y t₁ hKY hAY hrY hgY
     have hkY : K1 g₀ Y.cpu.gpr := by rw [hgY]; exact hk
-    have hrcY : Y.cpu.gpr.rcx + 4#64 = s.add (4 * (j + 1)) := by rw [hgY, hrc, p4]
+    have hrcY : Y.cpu.gpr.rcx + 4#64 = s.add (4 * (j + 1)) := by rw [hgY, hrc, add4j]
     have hdY : Y.cpu.gpr.rdi = s.add (4 * n) := hkY.2.2.1.trans hd
     have he : Y.cpu.gpr.rcx + 4#64 ≠ Y.cpu.gpr.rdi := by
       rw [hrcY, hdY]
@@ -624,7 +626,7 @@ theorem cpp_ok (c : Seg prof F Wl L s₀ o) (hin : CodeIn L cpp_at cpp) {X : Sta
     (hsf : ∀ b' < 1, ∀ i < n, ∀ b < 4, Addr.add 7990688#64 b' ≠ (s.add (4 * i)).add b)
     (hl : ∀ i < 8, Foot F.data (Addr.add X.cpu.gpr.rsp i))
     (hsr : ∀ b' < 8, ∀ i < n, ∀ b < 4, Addr.add X.cpu.gpr.rsp b' ≠ (s.add (4 * i)).add b)
-    (hsd : ∀ b' < 8, ∀ b < 4, Addr.add X.cpu.gpr.rsp b' ≠ (X.cpu.gpr.rdi + 8#64).add b ∧
+    (hsd : ∀ b' < 8, ∀ b < 4, Addr.add X.cpu.gpr.rsp b' ≠ Addr.add (X.cpu.gpr.rdi + 8#64) b ∧
       Addr.add X.cpu.gpr.rsp b' ≠ s.add b)
     {e₂ : Addr} {code₂ : List Byte} {j₂ : Nat} (hin₂ : CodeIn L e₂ code₂) (h₂ : j₂ < code₂.length)
     (hra : rdq(V, X.cpu.gpr.rsp) = e₂.add j₂)
