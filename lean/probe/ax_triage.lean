@@ -1,7 +1,5 @@
-import FV7z.Ucc.Holds
-import FV7z.Ura.Holds
-import FV7z.Ur2.Holds
+import FV7z.Ucu.Holds
+import FV7z.Uc4.Holds
 open FV7z
-#print axioms FV7z.Ucc.ucc_ok
-#print axioms FV7z.Ura.ura_ok
-#print axioms FV7z.Ur2.ur2_ok
+#print axioms FV7z.Ucu.ucu_ok
+#print axioms FV7z.Uc4.uc4_ok

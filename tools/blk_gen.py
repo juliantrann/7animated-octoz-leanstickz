@@ -613,6 +613,17 @@ FNS = {
     "ur2": dict(grp="Ur2", cn="UString::ReAlloc2", a=0x44d010, n=80, pos=True, stops=(0x4f,), calls=True,
                 hand=(0xe,),
                 tag="PLAN.md §M, M1", src="7-Zip's `UString::ReAlloc2` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
+    # `UString::UString (num, s)`: `num` capped at `s._len` (`cmovbe`), `SetStartLen (num)` (0x1b), `wmemcpy (_chars,
+    # s._chars, num)` (0x2b), `_chars[num] = 0`; the `ret` at 0x3f.
+    "ucu": dict(grp="Ucu", cn="UString::UString(unsigned, const UString&)", a=0x44d240, n=64, pos=True, stops=(0x3f,),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip's `UString::UString (unsigned, const UString &)` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
+    # `UString::UString (s1, num1, s2, num2)`: `SetStartLen (num1 + num2)` (0x1e), `wmemcpy (_chars, s1, num1)` (0x30),
+    # a tail jump to `wmemcpy (_chars + num1, s2, num2 + 1)` (0x47).
+    "uc4": dict(grp="Uc4", cn="UString::UString(const wchar_t*, unsigned, const wchar_t*, unsigned)", a=0x44d2e0,
+                n=76, pos=True, stops=(0x47,), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip's `UString::UString (const wchar_t *, unsigned, const wchar_t *, unsigned)` "
+                    "(`CPP/Common/MyString.cpp`; `objdump -d`)"),
     # CPP/UI/Common/EnumDirItems.cpp `CDirItems::ScanProgress (dirPath)`: without a `Callback` (at 0xc0) 0, else a tail
     # jump to `Callback->ScanProgress (Stat, false, dirPath)` (`Stat` at 0x48), its vtable's second entry. Stops: the
     # `jmp rax` (0x26) and the `ret` (0x32).
