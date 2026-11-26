@@ -1,7 +1,5 @@
-import FV7z.Uau.Holds
-import FV7z.Opd.Ok
+import FV7z.Lemmas.Rmw8
+import FV7z.Sfn.Cuts
 open FV7z
-#print axioms FV7z.Uau.uau_ok
-#print axioms FV7z.Opd.opd_okH
-#print axioms FV7z.Opd.opd_ok
-#print axioms FV7z.Opd.omal_hp
+#print axioms FV7z.Seg.s_sub_mi64
+#print axioms FV7z.Sfn.spAll
