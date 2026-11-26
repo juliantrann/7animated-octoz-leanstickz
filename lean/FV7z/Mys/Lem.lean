@@ -39,6 +39,14 @@ theorem sar_sub4 (s : BitVec 64) {m : Nat} (hm : 4 * m < 2 ^ 63) :
   simp only [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.reducePow, Nat.shiftRight_eq_div_pow]
   omega
 
+/-- Two pointers into a string at different indices below `2 ^ 64`: apart. -/
+theorem add_ne' (s : Addr) {i j : Nat} (h : i ≠ j) (hi : i < 2 ^ 64) (hj : j < 2 ^ 64) : s.add i ≠ s.add j := by
+  intro e
+  have := congrArg BitVec.toNat e
+  have hs : s.toNat < 18446744073709551616 := s.isLt
+  simp only [Addr.add, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.reducePow] at this
+  omega
+
 /-- A byte zero-extended to 32 and 64 bits, its low byte: the byte. -/
 theorem sw8b (b : BitVec 8) : BitVec.setWidth 8 (BitVec.setWidth 64 (BitVec.setWidth 32 b)) = b := by
   apply BitVec.eq_of_toNat_eq

@@ -395,6 +395,9 @@ import FV7z.Fcp.Holds
 import FV7z.Fcw.Blocks
 import FV7z.Fcw.Cuts
 import FV7z.Fcw.Holds
+import FV7z.Lwa.Blocks
+import FV7z.Lwa.Cuts
+import FV7z.Lwa.Holds
 import FV7z.Statement.Examples
 import FV7z.Lemmas.BlkOps7
 import FV7z.Gts.Holds

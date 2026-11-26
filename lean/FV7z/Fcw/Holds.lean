@@ -57,8 +57,8 @@ theorem vc_0e {g : Gprs} {f : Rflags} {V : Addr → Byte} (h : BitVec.setWidth 3
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at h hf ⊢
   have d := decide_eq_true h
-  wpx [W_0, W_13, W_48, o0, o5, d, Bool.not_true, Bool.not_false, Bool.false_eq_true, false_implies,
-    true_implies, implies_true, eq_self_iff_true]
+  wpx [W_0, W_13, W_48, o0, o5, d, Bool.not_true, Bool.not_false, Bool.false_eq_true, Bool.true_eq_false, false_implies,
+    true_implies, implies_true, eq_self_iff_true, and_true]
   all_goals first | exact hf | exact ⟨hf, fun _ => trivial⟩ | exact ⟨hf, trivial⟩ |
     exact ⟨hf, fun _ => ⟨rfl, rfl, rfl⟩⟩ | done
 
@@ -70,8 +70,8 @@ theorem vc_0n {g : Gprs} {f : Rflags} {V : Addr → Byte} (h : ¬ BitVec.setWidt
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at h hf ⊢
   have d := decide_eq_false h
-  wpx [W_0, W_13, W_48, o0, o5, d, Bool.not_true, Bool.not_false, Bool.false_eq_true, false_implies,
-    true_implies, implies_true, eq_self_iff_true]
+  wpx [W_0, W_13, W_48, o0, o5, d, Bool.not_true, Bool.not_false, Bool.false_eq_true, Bool.true_eq_false, false_implies,
+    true_implies, implies_true, eq_self_iff_true, and_true]
   all_goals first | exact hf | exact ⟨hf, trivial⟩ | exact ⟨hf, ⟨rfl, rfl, rfl⟩⟩ | exact ⟨hf, rfl, rfl, rfl⟩ | done
 
 /-- The loop at the 0: to the `ret` at 36 with `eax` -1. -/
@@ -81,7 +81,7 @@ theorem vc_27z {g : Gprs} {f : Rflags} {V : Addr → Byte} (hz : (BitVec.setWidt
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at hz ⊢
   wpx [W_27, W_16, W_40, W_31, o1, o2, o3, o4, Op.sar64, BitVec.and_self, hz, Bool.not_true, Bool.not_false,
-    Bool.false_eq_true, false_implies, true_implies, implies_true, eq_self_iff_true]
+    Bool.false_eq_true, Bool.true_eq_false, false_implies, true_implies, implies_true, eq_self_iff_true, and_true]
   all_goals first | trivial | exact fun _ => trivial | exact fun _ => ⟨rfl, rfl, rfl⟩ | done
 
 /-- The loop, the next element `c`: to the `ret` at 47 with its index. -/
@@ -95,7 +95,7 @@ theorem vc_27e {g : Gprs} {f : Rflags} {V : Addr → Byte} (hz : (BitVec.setWidt
   dsimp only at hz hf h ⊢
   have d := decide_eq_true h
   wpx [W_27, W_16, W_40, W_31, o1, o2, o3, o4, Op.sar64, BitVec.and_self, hz, d, Bool.not_true, Bool.not_false,
-    Bool.false_eq_true, false_implies, true_implies, implies_true, eq_self_iff_true]
+    Bool.false_eq_true, Bool.true_eq_false, false_implies, true_implies, implies_true, eq_self_iff_true, and_true]
   all_goals first | exact fun _ => hf | exact fun _ => ⟨hf, trivial⟩ | exact hf |
     exact fun _ => ⟨hf, fun _ => trivial⟩ | exact fun _ => ⟨hf, fun _ _ => ⟨rfl, rfl, rfl⟩⟩ |
     exact ⟨hf, fun _ _ => ⟨rfl, rfl, rfl⟩⟩ | done
@@ -110,7 +110,7 @@ theorem vc_27n {g : Gprs} {f : Rflags} {V : Addr → Byte} (hz : (BitVec.setWidt
   dsimp only at hz hf h ⊢
   have d := decide_eq_false h
   wpx [W_27, W_16, W_40, W_31, o1, o2, o3, o4, Op.sar64, BitVec.and_self, hz, d, Bool.not_true, Bool.not_false,
-    Bool.false_eq_true, false_implies, true_implies, implies_true, eq_self_iff_true]
+    Bool.false_eq_true, Bool.true_eq_false, false_implies, true_implies, implies_true, eq_self_iff_true, and_true]
   all_goals first | exact fun _ => hf | exact fun _ => ⟨hf, trivial⟩ | exact hf |
     exact fun _ => ⟨hf, fun _ => trivial⟩ | exact fun _ => ⟨hf, ⟨rfl, rfl, rfl⟩⟩ | done
 
@@ -163,7 +163,7 @@ theorem loop (c : Seg prof F Wl L s₀ o) (hin : CodeIn L fcw_at fcw) {V : Addr 
       refine ih (j + 1) (by omega) Y t₁ hKY hAY hrY (by rw [hgY]; exact ea) (by rw [hgY]; exact hdi) ?_
         (by rw [hgY]; exact hsi) (fun i hi => ?_) (hkp.trans (kp_w hgY))
       · rw [hgY]
-        show BitVec.setWidth 32 (BitVec.setWidth 64 rdd(V, X.cpu.gpr.rax + 4#64)) = _
+        show BitVec.setWidth 32 (BitVec.setWidth 64 rdd(_, X.cpu.gpr.rax + 4#64)) = _
         rw [sw32, hb]
       · rcases Nat.lt_or_ge i (j + 1) with h | h
         · exact hne i (by omega)
@@ -176,7 +176,7 @@ registers a call keeps (`Str.Back`), the bytes as they were. -/
 theorem fcw_ok (c : Seg prof F Wl L s₀ o) (hin : CodeIn L fcw_at fcw) {X : State} {t : Nat} {V : Addr → Byte}
     (hK : KeptW Wl s₀ X) (hA : Agree F X.proc.mm.mem V) (hrip : X.cpu.rip = fcw_at) {n : Nat} (hn : n < 2 ^ 31)
     (hnz : ∀ i < n, el V X.cpu.gpr.rdi i ≠ 0) (hz : el V X.cpu.gpr.rdi n = 0)
-    (hf : ∀ i, i ≤ n → ∀ b < 4, Foot F.data ((X.cpu.gpr.rdi.add (4 * i)).add b))
+    (hf : ∀ i, i ≤ n → ∀ b < 4, Foot F.data ((Addr.add X.cpu.gpr.rdi (4 * i)).add b))
     (hl : ∀ i < 8, Foot F.data (Addr.add X.cpu.gpr.rsp i))
     {e₂ : Addr} {code₂ : List Byte} {j₂ : Nat} (hin₂ : CodeIn L e₂ code₂) (h₂ : j₂ < code₂.length)
     (hra : rdq(V, X.cpu.gpr.rsp) = e₂.add j₂)
@@ -194,7 +194,7 @@ theorem fcw_ok (c : Seg prof F Wl L s₀ o) (hin : CodeIn L fcw_at fcw) {X : Sta
     have h := hf 0 (Nat.zero_le _) i hi
     rwa [Nat.mul_zero, addr_add_zero] at h
   have hb0 : rdd(V, X.cpu.gpr.rdi) = el V X.cpu.gpr.rdi 0 := by
-    show _ = rdd(V, X.cpu.gpr.rdi.add (4 * 0))
+    show _ = rdd(V, Addr.add X.cpu.gpr.rdi (4 * 0))
     rw [Nat.mul_zero, addr_add_zero]
   by_cases he : el V X.cpu.gpr.rdi 0 = BitVec.setWidth 32 X.cpu.gpr.rsi
   · refine (c_0 prof).run c hin _ hK hA (by rw [addr_add_zero]; exact hrip) (vc_0e (by rw [hb0, he]) hf0) ?_
@@ -209,10 +209,10 @@ theorem fcw_ok (c : Seg prof F Wl L s₀ o) (hin : CodeIn L fcw_at fcw) {X : Sta
     refine loop c hin hn hnz hz hf kr n 0 (Nat.zero_add n) Y t₁ hKY hAY hrY ?_ (by rw [hgY]; try rfl) ?_
       (by rw [hgY]; try rfl) (fun i hi => ?_) (kp_w hgY)
     · rw [hgY]
-      show X.cpu.gpr.rdi = X.cpu.gpr.rdi.add (4 * 0)
+      show X.cpu.gpr.rdi = Addr.add X.cpu.gpr.rdi (4 * 0)
       rw [Nat.mul_zero, addr_add_zero]
     · rw [hgY]
-      show BitVec.setWidth 32 (BitVec.setWidth 64 rdd(V, X.cpu.gpr.rdi)) = _
+      show BitVec.setWidth 32 (BitVec.setWidth 64 rdd(_, X.cpu.gpr.rdi)) = _
       rw [sw32, hb0]
     · obtain rfl : i = 0 := by omega
       exact he
