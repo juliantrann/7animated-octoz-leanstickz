@@ -44,11 +44,8 @@ abbrev bp (a : Addr) : List Byte := toBytesLE a 8
 /-- `lea edx, [rcx - 48]` with `rcx` a zero-extended character. -/
 theorem lea48 (w : BitVec 32) :
     BitVec.setWidth 32 (BitVec.setWidth 64 w + 18446744073709551568#64) = w - 48#32 := by
-  apply BitVec.eq_of_toNat_eq
-  have := w.isLt
-  simp only [BitVec.toNat_setWidth, BitVec.toNat_add, BitVec.toNat_sub, BitVec.toNat_ofNat, Nat.reducePow,
-    Nat.reduceMod]
-  omega
+  have h : BitVec.setWidth 32 (18446744073709551568#64) = -48#32 := by decide
+  rw [BitVec.setWidth_add _ _ (by decide), sw_64_32, h, BitVec.sub_eq_add_neg]
 /-- One character on: `add rdi, 4`. -/
 theorem adv4 (p : Addr) (k : Nat) : p + BitVec.ofNat 64 (4 * k) + 4#64 = p + BitVec.ofNat 64 (4 * (k + 1)) := by
   have e : 4 * (k + 1) = 4 * k + 4 := by omega
