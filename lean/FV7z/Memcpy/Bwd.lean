@@ -55,7 +55,7 @@ theorem tailBAt (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e mc2) {j : Nat} (h
     (hd64 : g₀.rdi.toNat + g₀.rdx.toNat < 2 ^ 64)
     (hsp : g₀.rdi.toNat + g₀.rdx.toNat ≤ g₀.rsp.toNat ∨ g₀.rsp.toNat + 8 ≤ g₀.rdi.toNat)
     (hsp8 : g₀.rsp.toNat + 8 ≤ 2 ^ 64) (h64 : 64 ≤ g₀.rdx.toNat) (hb₀ : g₀.rdx.toNat - 16 ≤ b₀)
-    (hb₀n : b₀ ≤ g₀.rdx.toNat) (hb : b ≤ 64) (hbb : b ≤ b₀)
+    (hb₀n : b₀ ≤ g₀.rdx.toNat) (hb : b ≤ 64) (_hbb : b ≤ b₀)
     (hR : RetC prof F Wl L s₀ o gev gP gE V g₀ r) {Y : State} {t : Nat} {V₂ : Addr → Byte}
     (hK : KeptW Wl s₀ Y) (hA : Agree F Y.proc.mm.mem V₂) (hrip : Y.cpu.rip = e.add j)
     (hdi : Y.cpu.gpr.rdi = g₀.rdi) (h11 : Y.cpu.gpr.r11 = Addr.add g₀.rdi (g₀.rdx.toNat - 16))
