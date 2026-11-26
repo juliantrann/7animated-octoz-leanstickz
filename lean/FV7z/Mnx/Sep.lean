@@ -126,13 +126,13 @@ theorem put (s : TcSep fb C bins) {q : Addr} (hl : (bins i).length < 7) (hq : q.
     · exact ⟨hq, qC, qG⟩
     · exact s.en j hj x hx
   ap := fun j hj x hx j' hj' y hy => by
-    rcases mem_bput hx with rfl | hx <;> rcases mem_bput hy with rfl | hy
+    rcases mem_bput hx with rfl | hx' <;> rcases mem_bput hy with rfl | hy'
     · exact .inl rfl
-    · have := hf j' hj' y hy
+    · have := hf j' hj' y hy'
       omega
-    · have := hf j hj x hx
+    · have := hf j hj x hx'
       omega
-    · exact s.ap j hj x hx j' hj' y hy
+    · exact s.ap j hj x hx' j' hj' y hy'
 
 end TcSep
 
