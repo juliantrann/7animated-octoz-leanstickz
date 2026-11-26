@@ -378,6 +378,8 @@ import FV7z.Fno.Holds
 import FV7z.Pmd.Holds
 import FV7z.Sgw.Holds
 import FV7z.Wmc.Holds
+import FV7z.Ifr.Code
+import FV7z.Fre.Holds
 import FV7z.Lemmas.SysWrite
 import FV7z.Write.Blocks
 import FV7z.Write.Cuts
