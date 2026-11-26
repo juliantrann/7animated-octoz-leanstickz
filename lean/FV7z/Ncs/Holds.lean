@@ -168,89 +168,139 @@ theorem vc_0 {f : Rflags} (hF : Fp F V₀ g₀.rdi) :
       Nat.pos_of_ne_zero fun e => hne (BitVec.eq_of_toNat_eq (by simpa using e))
     exact e47z (by exact hpos) (by dsimp only; omega) rfl
 
+/-- The `ret` at 73: node `i` the first not `Ok`, its byte at 16 0 and its count at 8 past 1; 1. -/
+theorem eFin1 {n i : Nat} (hi : i < (cnt V₀ g₀.rdi).toNat) (hok : ∀ k < i, Ok V₀ g₀.rdi k)
+    (hb : exd V₀ g₀.rdi i = 0) (hB : big (inc V₀ g₀.rdi i) = true) {c d x : BitVec 64} {g' : Gprs} {fl : Rflags}
+    (hg : g' = { g₀ with rax := BitVec.setWidth 64 (BitVec.setWidth 32 (BitVec.setWidth 64 1#32)), rcx := c,
+      rdx := d, r8 := x }) :
+    Nx g₀ V₀ n 73 g' fl V₀ :=
+  eFin (Or.inr rfl) (Or.inr ⟨i, hi, hok, Or.inr ⟨hb, hB, by decide⟩⟩) hg
+
+/-- At the loop's end, `rax + 8 = rcx`: node `i` the last. -/
+theorem end_eq {s : Addr} {c : BitVec 32} {i : Nat} (hi : i < c.toNat)
+    (h : Addr.add s (8 * i) + 8#64 = s + BitVec.setWidth 64 (c - 1#32) * 8#64 + 8#64) : i + 1 = c.toNat := by
+  have := s.isLt
+  have := c.isLt
+  have h' := congrArg BitVec.toNat h
+  simp only [Addr.add, BitVec.toNat_add, BitVec.toNat_mul, BitVec.toNat_setWidth, BitVec.toNat_sub,
+    BitVec.toNat_ofNat] at h'
+  omega
+
+/-- Every node `Ok` when the nodes before `i + 1` are and node `i` is the last. -/
+theorem all_end {V : Addr → Byte} {p : Addr} {i : Nat} (hok : ∀ k < i + 1, Ok V p k)
+    (e : i + 1 = (cnt V p).toNat) : ∀ k < (cnt V p).toNat, Ok V p k :=
+  fun k hk => hok k (Nat.lt_of_lt_of_eq hk e.symm)
+
+/-- Not at the loop's end: a node after `i`. -/
+theorem end_lt {s : Addr} {c : BitVec 32} {i : Nat} (hi : i < c.toNat)
+    (h : ¬ (Addr.add s (8 * i) + 8#64 = s + BitVec.setWidth 64 (c - 1#32) * 8#64 + 8#64)) : i + 1 < c.toNat := by
+  refine Nat.lt_of_le_of_ne hi fun e => h (BitVec.eq_of_toNat_eq ?_)
+  have := s.isLt
+  have := c.isLt
+  simp only [Addr.add, BitVec.toNat_add, BitVec.toNat_mul, BitVec.toNat_setWidth, BitVec.toNat_sub,
+    BitVec.toNat_ofNat]
+  omega
+
+/-- The state at the loop's head, node `i` next. -/
+abbrev G47 (g₀ : Gprs) (V₀ : Addr → Byte) (i : Nat) (d x : BitVec 64) : Gprs :=
+  { g₀ with rax := Addr.add (its V₀ g₀.rdi) (8 * i), rcx := cE V₀ g₀.rdi, rdx := d, r8 := x }
+
+set_option maxHeartbeats 1000000 in
+/-- The loop's head, node `i` with its byte at 16 set: that byte, 60. -/
+theorem vc_47a {i : Nat} {d x : BitVec 64} {f : Rflags} (hF : Fp F V₀ g₀.rdi) (hi : i < (cnt V₀ g₀.rdi).toNat)
+    (hok : ∀ k < i, Ok V₀ g₀.rdi k) (hb0 : ¬ exd V₀ g₀.rdi i = 0) :
+    W_47 F Wl (Nx g₀ V₀ ((cnt V₀ g₀.rdi).toNat - i)) (G47 g₀ V₀ i d x) f V₀ := by
+  obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g₀
+  obtain ⟨-, -, fk⟩ := hF
+  obtain ⟨fa, fb, -⟩ := fk i hi
+  dsimp only [G47] at hi hok fa fb hb0 ⊢
+  have hb := hb0
+  dsimp only [exd, nd, its] at hb
+  have hx : (BitVec.setWidth 64 (BitVec.setWidth 32 (exd V₀ rdi i))).toNat < 2 ^ 32 := by
+    rw [tn88]
+    have := (exd V₀ rdi i).isLt
+    omega
+  have hr : Res V₀ rdi (BitVec.setWidth 64 (BitVec.setWidth 32 (exd V₀ rdi i))).toNat :=
+    Or.inr ⟨i, hi, hok, Or.inl ⟨hb0, tn88 _⟩⟩
+  have hn : 0 < (cnt V₀ rdi).toNat - i := by omega
+  dsimp only [cE, cnt, its] at ⊢
+  wpx [W_47, W_32, W_64, W_38, o4, o2, o6, o3, Op.cmpmi, hb, BitVec.and_self, sw_8_32_8, beq_iff_eq,
+    beq_eq_false_iff_ne, ne_eq, not_true_eq_false, not_false_eq_true, false_implies, Bool.true_eq_false,
+    Bool.false_eq_true, implies_true]
+  all_goals repeat' (first
+    | with_reducible exact fa
+    | with_reducible exact fb
+    | exact e60 (by exact hn) (by exact hx) (by exact hr) rfl
+    | apply And.intro
+    | intro)
+
+set_option maxHeartbeats 1000000 in
+/-- The loop's head, node `i` with its byte at 16 0 and its count at 8 past 1: 1, the `ret` at 73. -/
+theorem vc_47b {i : Nat} {d x : BitVec 64} {f : Rflags} (hF : Fp F V₀ g₀.rdi) (hi : i < (cnt V₀ g₀.rdi).toNat)
+    (hok : ∀ k < i, Ok V₀ g₀.rdi k) (hb0 : exd V₀ g₀.rdi i = 0) (hB0 : big (inc V₀ g₀.rdi i) = true) :
+    W_47 F Wl (Nx g₀ V₀ ((cnt V₀ g₀.rdi).toNat - i)) (G47 g₀ V₀ i d x) f V₀ := by
+  obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g₀
+  obtain ⟨-, -, fk⟩ := hF
+  obtain ⟨fa, fb, fc⟩ := fk i hi
+  dsimp only [G47] at hi hok fa fb fc hb0 hB0 ⊢
+  have hb := hb0
+  dsimp only [exd, nd, its] at hb
+  have hB := hB0
+  dsimp only [inc, nd, its] at hB
+  unfold big at hB
+  dsimp only [cE, cnt, its] at ⊢
+  wpx [W_47, W_32, W_64, W_38, o4, o2, o6, o3, Op.cmpmi, hb, hB, BitVec.and_self, sw_8_32_8,
+    BitVec.setWidth_zero, beq_iff_eq, beq_eq_false_iff_ne, ne_eq, beq_self_eq_true, not_true_eq_false,
+    not_false_eq_true, false_implies, Bool.true_eq_false, Bool.false_eq_true, implies_true]
+  all_goals repeat' (first
+    | with_reducible exact fa
+    | with_reducible exact fb
+    | with_reducible exact fc hb0
+    | exact eFin1 (by exact hi) (by exact hok) (by exact hb0) (by exact hB0) rfl
+    | apply And.intro
+    | intro)
+
+set_option maxHeartbeats 1000000 in
+/-- The loop's head, node `i` `Ok`: the next node, or 60 with `r8` 0 after the last. -/
+theorem vc_47c {i : Nat} {d x : BitVec 64} {f : Rflags} (hF : Fp F V₀ g₀.rdi) (hi : i < (cnt V₀ g₀.rdi).toNat)
+    (hok : ∀ k < i, Ok V₀ g₀.rdi k) (hb0 : exd V₀ g₀.rdi i = 0) (hB1 : big (inc V₀ g₀.rdi i) = false) :
+    W_47 F Wl (Nx g₀ V₀ ((cnt V₀ g₀.rdi).toNat - i)) (G47 g₀ V₀ i d x) f V₀ := by
+  obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g₀
+  obtain ⟨-, -, fk⟩ := hF
+  obtain ⟨fa, fb, fc⟩ := fk i hi
+  dsimp only [G47] at hi hok fa fb fc hb0 hB1 ⊢
+  have hb := hb0
+  dsimp only [exd, nd, its] at hb
+  have hB := hB1
+  dsimp only [inc, nd, its] at hB
+  unfold big at hB
+  have hok' := ok_succ hok hb0 hB1
+  dsimp only [cE, cnt, its] at hi hok' ⊢
+  wpx [W_47, W_32, W_64, W_38, o4, o2, o6, o3, Op.cmpmi, hb, hB, BitVec.and_self, sw_8_32_8,
+    BitVec.setWidth_zero, beq_iff_eq, beq_eq_false_iff_ne, ne_eq, beq_self_eq_true, not_true_eq_false,
+    not_false_eq_true, false_implies, Bool.true_eq_false, Bool.false_eq_true, implies_true]
+  all_goals repeat' (first
+    | with_reducible exact fa
+    | with_reducible exact fb
+    | with_reducible exact fc hb0
+    | apply And.intro
+    | intro)
+  all_goals rename_i hc
+  all_goals first
+    | exact e60 (by omega) (by first | decide | simp)
+        (by exact Or.inl ⟨all_end hok' (end_eq hi (of_decide_eq_true hc)), by first | decide | simp⟩) rfl
+    | exact e47s (by exact end_lt hi (of_decide_eq_false hc)) (by dsimp only [cnt]; omega) (by exact hok') rfl
+
 /-- The loop's head, node `i`: its byte at 16 set, to 60; its count at 8 past 1, to the `ret` at 73; else the next
 node, or 60 with `r8` 0 after the last. -/
 theorem vc_47 {n : Nat} {g : Gprs} {f : Rflags} (hF : Fp F V₀ g₀.rdi) (h : I47 g₀ V₀ n g) :
     W_47 F Wl (Nx g₀ V₀ n) g f V₀ := by
-  obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g₀
   obtain ⟨i, hi, rfl, hok, d, x, rfl⟩ := h
-  obtain ⟨-, -, fk⟩ := hF
-  obtain ⟨fa, fb, fc⟩ := fk i hi
-  dsimp only at hi hok fa fb fc ⊢
-  have ha := (rdq(V₀, rdi + 40#64)).isLt
-  have hc32 := (rdd(V₀, rdi + 48#64)).isLt
-  by_cases hb0 : exd V₀ rdi i = 0
-  · have hb := hb0
-    dsimp only [exd, nd, its] at hb
-    by_cases hB0 : big (inc V₀ rdi i) = true
-    · -- more than one `IncludeItems`: 1, the `ret` at 73
-      have hB := hB0
-      dsimp only [inc, nd, its] at hB
-      unfold big at hB
-      dsimp only [cE, cnt, its] at ⊢
-      wpx [W_47, W_32, W_64, W_38, o4, o2, o6, o3, Op.cmpmi, hb, hB, BitVec.and_self, sw_8_32_8, BitVec.setWidth_zero,
-        beq_iff_eq,
-        beq_eq_false_iff_ne, ne_eq, beq_self_eq_true, not_true_eq_false, not_false_eq_true, false_implies,
-        Bool.true_eq_false, Bool.false_eq_true, implies_true]
-      all_goals repeat' (first
-        | with_reducible exact fa
-        | with_reducible exact fb
-        | with_reducible exact fc hb0
-        | exact eFin (Or.inr rfl) (by exact Or.inr ⟨i, hi, hok, Or.inr ⟨hb0, hB0, by first | decide | simp⟩⟩) rfl
-        | apply And.intro
-        | intro)
-    · have hB1 : big (inc V₀ rdi i) = false := by simpa using hB0
-      have hB := hB1
-      dsimp only [inc, nd, its] at hB
-      unfold big at hB
-      have hok' := ok_succ hok hb0 hB1
-      dsimp only [cE, cnt, its] at hi hok' ⊢
-      wpx [W_47, W_32, W_64, W_38, o4, o2, o6, o3, Op.cmpmi, hb, hB, BitVec.and_self, sw_8_32_8, BitVec.setWidth_zero,
-        beq_iff_eq,
-        beq_eq_false_iff_ne, ne_eq, beq_self_eq_true, not_true_eq_false, not_false_eq_true, false_implies,
-        Bool.true_eq_false, Bool.false_eq_true, implies_true]
-      all_goals repeat' (first
-        | with_reducible exact fa
-        | with_reducible exact fb
-        | with_reducible exact fc hb0
-        | apply And.intro
-        | intro)
-      all_goals rename_i hc
-      all_goals first
-        | exact e60 (by omega) (by first | decide | simp) (by exact Or.inl ⟨fun k hk => hok' k (by
-            have hk' : k < (rdd(V₀, rdi + 48#64)).toNat := hk
-            have h' := congrArg BitVec.toNat (of_decide_eq_true hc)
-            simp only [Addr.add, BitVec.toNat_add, BitVec.toNat_mul, BitVec.toNat_setWidth, BitVec.toNat_sub,
-              BitVec.toNat_ofNat] at h'
-            omega), by first | decide | simp⟩) rfl
-        | exact e47s (by exact show i + 1 < (rdd(V₀, rdi + 48#64)).toNat by
-            have hne : i + 1 ≠ (rdd(V₀, rdi + 48#64)).toNat := fun e => of_decide_eq_false hc
-              (BitVec.eq_of_toNat_eq (by
-                simp only [Addr.add, BitVec.toNat_add, BitVec.toNat_mul, BitVec.toNat_setWidth, BitVec.toNat_sub,
-                  BitVec.toNat_ofNat]
-                omega))
-            omega) (by dsimp only [cnt]; omega) (by exact hok') rfl
-        | (exfalso; done)
-  · -- the byte at 16 set: that byte, 60
-    have hb := hb0
-    dsimp only [exd, nd, its] at hb
-    have hx : (BitVec.setWidth 64 (BitVec.setWidth 32 (exd V₀ rdi i))).toNat < 2 ^ 32 := by
-      rw [tn88]
-      have := (exd V₀ rdi i).isLt
-      omega
-    have hr : Res V₀ rdi (BitVec.setWidth 64 (BitVec.setWidth 32 (exd V₀ rdi i))).toNat :=
-      Or.inr ⟨i, hi, hok, Or.inl ⟨hb0, tn88 _⟩⟩
-    have hn : 0 < (cnt V₀ rdi).toNat - i := by omega
-    dsimp only [cE, cnt, its] at ⊢
-    wpx [W_47, W_32, W_64, W_38, o4, o2, o6, o3, Op.cmpmi, hb, BitVec.and_self, sw_8_32_8, beq_iff_eq,
-      beq_eq_false_iff_ne, ne_eq, not_true_eq_false, not_false_eq_true, false_implies, Bool.true_eq_false,
-      Bool.false_eq_true, implies_true]
-    all_goals repeat' (first
-      | with_reducible exact fa
-      | with_reducible exact fb
-      | exact e60 (by exact hn) (by exact hx) (by exact hr) rfl
-      | apply And.intro
-      | intro)
+  by_cases hb0 : exd V₀ g₀.rdi i = 0
+  · by_cases hB0 : big (inc V₀ g₀.rdi i) = true
+    · exact vc_47b hF hi hok hb0 hB0
+    · exact vc_47c hF hi hok hb0 (by simpa using hB0)
+  · exact vc_47a hF hi hok hb0
 
 /-- 60: `mov eax, r8d`, to the `ret` at 63. -/
 theorem vc_60 {g : Gprs} {f : Rflags} (h : I60 g₀ V₀ g) : W_60 F Wl (Nx g₀ V₀ 0) g f V₀ := by
