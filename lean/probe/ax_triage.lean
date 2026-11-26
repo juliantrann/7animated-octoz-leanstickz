@@ -1,6 +1,4 @@
-import FV7z.Lemmas.SysClose
-import FV7z.Close.Cuts
+import FV7z.Close.Holds
 open FV7z
-#print axioms FV7z.syscall_close
-#print axioms FV7z.Fn.Seg.s_close_re
-#print axioms FV7z.Close.spAll
+#print axioms FV7z.Close.close_ok
+#print axioms FV7z.Close.ja_cmp
