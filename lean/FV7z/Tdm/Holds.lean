@@ -8,6 +8,31 @@ import FV7z.Tun.Inv
 `vcAll`: every cut point's condition holds through its stretch (`Vc1`–`Vc3`). `tdm_ok`: `Seg.cfg` over the 37 cut
 points, then the `ret` at 354 or 765: the five registers popped as pushed (`rd1`), the return address as at the
 entry, `*bufOut` stored or not (`rdv`).
+
+## Status (2026-11-26, kt902 = run 45838042042, not green yet)
+
+The Vc files are generated: `python3 tools/tdm_gen/gen.py lean/FV7z/Tdm` (cuts in `tools/tdm_gen/cuts.py`, the
+head of `Ctx` in `tools/tdm_gen/ctx_head.lean`). Design: `Seg.cfg` with `Inv` = entry ∨ 36 cut disjuncts; each `vc_k`
+is `wpx` then a `repeat' (first | …)` loop of foot closers (`fA`, `fIn`, `fP`, `fD`, frame reads) and exits `xJ`,
+written `(refine xJ ?hc rfl ?hI ?hm; (case hc => tcm); …)` so that the side goals run after `K`/`g` are fixed, and
+with `with_reducible` (default-transparency `exact`/`assumption` hit uncatchable whnf timeouts / maxRecDepth).
+Holds itself has not been compiled yet (the Vc files fail first).
+
+Open in kt902, next steps in order:
+1. The jump hypothesis `(!decide (rsi.toNat < K.B.toNat)) = false` ends as `decide (rsi.toNat < K.B.toNat) = true`
+   after `tfo`'s simp (`decide_eq_true_eq` does not fire, likely a different `Decidable` instance from `subF_cf`),
+   so omega lacks `rsi < B`: the input reads (`fIn`) and `tcm` fail at 248, 320, 443, 481 and in Vc3. Fix: add a
+   lemma `(decide (a < b) = true) = (a < b)` for any instance (`by cases h <;> simp_all`) and its `= false` twin to
+   the simp set of `tfo`/`tfom`/`tfod` in `ctx_head.lean`; check with `TDM_DBG=248:288` traces.
+2. vc_180 → x210 leaves `Nx K 6100 210 {…cv…}`; the uncommitted try is `MOD = {(180, 210)}` (omega after
+   `Nat.mod_eq_of_lt`); else trace it with `TDM_DBG=180:210`.
+3. Vc3 (1420, 1432, 1472, 1504, 1537): unsolved goals and omega failures; add those edges to `MOD`, then read the
+   traces.
+4. Compile Holds; final run without `TDM_DBG`, `#print axioms tdm_ok` (propext, Classical.choice, Quot.sound); add
+   the Tdm imports to `FV7z.lean` after the Dr2 lines.
+
+Triage: `triage.sh kt9NN -L tri10 FV7z.Tdm.Ctx FV7z.Tdm.Vc1 FV7z.Tdm.Vc2 FV7z.Tdm.Vc3 FV7z.Tdm.Holds --
+FV7z.Tdm.tdm_ok @sha`.
 -/
 open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn
 namespace FV7z.Tdm

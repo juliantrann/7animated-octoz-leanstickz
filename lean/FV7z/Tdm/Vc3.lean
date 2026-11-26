@@ -29,9 +29,9 @@ theorem vc_794 (hK : Ok K) (hE : Env K F Wl) (hc : Cm K g) (hI : I794 K g) :
   have := hK.hD
   wpx [W_794, o43, M794, Op.not32, Op.cmpmi, BitVec.xor_self, BitVec.and_self]
   repeat' (first
-    | (refine fD hE ?_ ?_ <;> tfo)
-    | (refine x833 ?hc rfl ?hI ?hm; (case hc => tcm); (case hI => dsimp only [I833] <;> tfs);
-            (case hm => dsimp only [M833] <;> tfo))
+    | (refine fD hE ?_ ?_ <;> exact (by tfo))
+    | (refine x833 ?hc rfl ?hI ?hm; (case hc => tcm); (case hI => exact (by dsimp only [I833] <;> tfs));
+            (case hm => exact (by dsimp only [M833] <;> tfo)))
     | (with_reducible rfl)
     | apply And.intro
     | intro _)
@@ -52,10 +52,10 @@ theorem vc_821 (hK : Ok K) (hE : Env K F Wl) (hc : Cm K g) (hI : I821 K g) :
   have := hK.hnl1
   wpx [W_821, o45, M821, Op.not32, Op.cmpmi, BitVec.xor_self, BitVec.and_self]
   repeat' (first
-    | (refine x314 ?hc rfl ?hI ?hm; (case hc => tcm); (case hI => dsimp only [I314] <;> tfs);
-            (case hm => dsimp only [M314] <;> tfo))
-    | (refine x833 ?hc rfl ?hI ?hm; (case hc => tcm); (case hI => dsimp only [I833] <;> tfs);
-            (case hm => dsimp only [M833] <;> tfo))
+    | (refine x314 ?hc rfl ?hI ?hm; (case hc => tcm); (case hI => exact (by dsimp only [I314] <;> tfs));
+            (case hm => exact (by dsimp only [M314] <;> tfo)))
+    | (refine x833 ?hc rfl ?hI ?hm; (case hc => tcm); (case hI => exact (by dsimp only [I833] <;> tfs));
+            (case hm => exact (by dsimp only [M833] <;> tfo)))
     | (with_reducible rfl)
     | apply And.intro
     | intro _)
@@ -77,12 +77,12 @@ theorem vc_833 (hK : Ok K) (hE : Env K F Wl) (hc : Cm K g) (hI : I833 K g) :
   have ha := and_cases (BitVec.setWidth 32 r10) (BitVec.setWidth 32 rbx + BitVec.setWidth 32 rbx) (by tfo)
   wpx [W_833, W_858, W_863, o46, o11, o12, M833, Op.not32, Op.cmpmi, BitVec.xor_self, BitVec.and_self]
   repeat' (first
-    | (refine fIn hE ?_ ?_ <;> tfo)
-    | (refine fP hK hE ?_ ?_ <;> tfo)
-    | (refine x751 ?hc rfl ?hI ?hm; (case hc => tcm); (case hI => dsimp only [I751] <;> tfs);
-            (case hm => dsimp only [M751] <;> tfo))
-    | (refine x880 ?hc rfl ?hI ?hm; (case hc => tcm); (case hI => dsimp only [I880] <;> tfs);
-            (case hm => dsimp only [M880] <;> tfo))
+    | (refine fIn hE ?_ ?_ <;> exact (by tfo))
+    | (refine fP hK hE ?_ ?_ <;> exact (by tfo))
+    | (refine x751 ?hc rfl ?hI ?hm; (case hc => tcm); (case hI => exact (by dsimp only [I751] <;> tfs));
+            (case hm => exact (by dsimp only [M751] <;> tfo)))
+    | (refine x880 ?hc rfl ?hI ?hm; (case hc => tcm); (case hI => exact (by dsimp only [I880] <;> tfs));
+            (case hm => exact (by dsimp only [M880] <;> tfo)))
     | (with_reducible rfl)
     | apply And.intro
     | intro _)
@@ -104,8 +104,8 @@ theorem vc_880 (hK : Ok K) (hE : Env K F Wl) (hc : Cm K g) (hI : I880 K g) :
   have hx := xor_cases (BitVec.setWidth 32 r10) (BitVec.setWidth 32 rbp) (by tfo)
   wpx [W_880, W_816, W_896, o47, o44, o48, M880, Op.not32, Op.cmpmi, BitVec.xor_self, BitVec.and_self]
   repeat' (first
-    | (refine x821 ?hc rfl ?hI ?hm; (case hc => tcm); (case hI => dsimp only [I821] <;> tfs);
-            (case hm => dsimp only [M821] <;> tfo))
+    | (refine x821 ?hc rfl ?hI ?hm; (case hc => tcm); (case hI => exact (by dsimp only [I821] <;> tfs));
+            (case hm => exact (by dsimp only [M821] <;> tfo)))
     | (with_reducible rfl)
     | apply And.intro
     | intro _)
@@ -127,14 +127,14 @@ theorem vc_960 (hK : Ok K) (hE : Env K F Wl) (hc : Cm K g) (hI : I960 K g) :
   wpx [W_960, W_1152, W_977, W_1171, W_994, W_1183, W_1006, o23, o57, o50, o21, o22, o51, M960, Op.not32, Op.cmpmi,
     BitVec.xor_self, BitVec.and_self]
   repeat' (first
-    | (refine fIn hE ?_ ?_ <;> tfo)
-    | (refine fP hK hE ?_ ?_ <;> tfo)
-    | (refine x343 ?hc ?hI ?hm; (case hc => tcm); (case hI => dsimp only [I343]; t343a);
-            (case hm => dsimp only [M343] <;> tfo))
-    | (refine x1024 ?hc rfl ?hI ?hm; (case hc => tcm); (case hI => dsimp only [I1024] <;> tfs);
-            (case hm => dsimp only [M1024] <;> tfo))
-    | (refine x1200 ?hc rfl ?hI ?hm; (case hc => tcm); (case hI => dsimp only [I1200] <;> tfs);
-            (case hm => dsimp only [M1200] <;> tfo))
+    | (refine fIn hE ?_ ?_ <;> exact (by tfo))
+    | (refine fP hK hE ?_ ?_ <;> exact (by tfo))
+    | (refine x343 ?hc ?hI ?hm; (case hc => tcm); (case hI => exact (by dsimp only [I343]; t343a));
+            (case hm => exact (by dsimp only [M343] <;> tfo)))
+    | (refine x1024 ?hc rfl ?hI ?hm; (case hc => tcm); (case hI => exact (by dsimp only [I1024] <;> tfs));
+            (case hm => exact (by dsimp only [M1024] <;> tfo)))
+    | (refine x1200 ?hc rfl ?hI ?hm; (case hc => tcm); (case hI => exact (by dsimp only [I1200] <;> tfs));
+            (case hm => exact (by dsimp only [M1200] <;> tfo)))
     | (with_reducible rfl)
     | apply And.intro
     | intro _)
@@ -155,10 +155,10 @@ theorem vc_1024 (hK : Ok K) (hE : Env K F Wl) (hc : Cm K g) (hI : I1024 K g) :
   have := hK.hnl1
   wpx [W_1024, W_1344, W_1044, o52, o62, o53, M1024, Op.not32, Op.cmpmi, BitVec.xor_self, BitVec.and_self]
   repeat' (first
-    | (refine x320 ?hc rfl ?hI ?hm; (case hc => tcm); (case hI => dsimp only [I320] <;> tfs);
-            (case hm => dsimp only [M320] <;> tfo))
-    | (refine x1288 ?hc rfl ?hI ?hm; (case hc => tcm); (case hI => dsimp only [I1288] <;> tfs);
-            (case hm => dsimp only [M1288] <;> tfo))
+    | (refine x320 ?hc rfl ?hI ?hm; (case hc => tcm); (case hI => exact (by dsimp only [I320] <;> tfs));
+            (case hm => exact (by dsimp only [M320] <;> tfo)))
+    | (refine x1288 ?hc rfl ?hI ?hm; (case hc => tcm); (case hI => exact (by dsimp only [I1288] <;> tfs));
+            (case hm => exact (by dsimp only [M1288] <;> tfo)))
     | (with_reducible rfl)
     | apply And.intro
     | intro _)
@@ -179,8 +179,8 @@ theorem vc_1105 (hK : Ok K) (hE : Env K F Wl) (hc : Cm K g) (hI : I1105 K g) :
   have := hK.hnl1
   wpx [W_1105, W_1312, W_1122, o27, o61, o56, M1105, Op.not32, Op.cmpmi, BitVec.xor_self, BitVec.and_self]
   repeat' (first
-    | (refine x510 ?hc rfl ?hI ?hm; (case hc => tcm); (case hI => dsimp only [I510] <;> tfs);
-            (case hm => dsimp only [M510] <;> tfo))
+    | (refine x510 ?hc rfl ?hI ?hm; (case hc => tcm); (case hI => exact (by dsimp only [I510] <;> tfs));
+            (case hm => exact (by dsimp only [M510] <;> tfo)))
     | (with_reducible rfl)
     | apply And.intro
     | intro _)
@@ -202,14 +202,14 @@ theorem vc_1200 (hK : Ok K) (hE : Env K F Wl) (hc : Cm K g) (hI : I1200 K g) :
   wpx [W_1200, W_1213, W_1232, W_1244, o23, o58, o21, o22, M1200, Op.not32, Op.cmpmi, BitVec.xor_self,
     BitVec.and_self]
   repeat' (first
-    | (refine fIn hE ?_ ?_ <;> tfo)
-    | (refine fP hK hE ?_ ?_ <;> tfo)
-    | (refine x343 ?hc ?hI ?hm; (case hc => tcm); (case hI => dsimp only [I343]; t343a);
-            (case hm => dsimp only [M343] <;> tfo))
-    | (refine x1261 ?hc rfl ?hI ?hm; (case hc => tcm); (case hI => dsimp only [I1261] <;> tfs);
-            (case hm => dsimp only [M1261] <;> tfo))
-    | (refine x1288 ?hc rfl ?hI ?hm; (case hc => tcm); (case hI => dsimp only [I1288] <;> tfs);
-            (case hm => dsimp only [M1288] <;> tfo))
+    | (refine fIn hE ?_ ?_ <;> exact (by tfo))
+    | (refine fP hK hE ?_ ?_ <;> exact (by tfo))
+    | (refine x343 ?hc ?hI ?hm; (case hc => tcm); (case hI => exact (by dsimp only [I343]; t343a));
+            (case hm => exact (by dsimp only [M343] <;> tfo)))
+    | (refine x1261 ?hc rfl ?hI ?hm; (case hc => tcm); (case hI => exact (by dsimp only [I1261] <;> tfs));
+            (case hm => exact (by dsimp only [M1261] <;> tfo)))
+    | (refine x1288 ?hc rfl ?hI ?hm; (case hc => tcm); (case hI => exact (by dsimp only [I1288] <;> tfs));
+            (case hm => exact (by dsimp only [M1288] <;> tfo)))
     | (with_reducible rfl)
     | apply And.intro
     | intro _)
@@ -230,8 +230,8 @@ theorem vc_1261 (hK : Ok K) (hE : Env K F Wl) (hc : Cm K g) (hI : I1261 K g) :
   have := hK.hnl1
   wpx [W_1261, W_1274, o23, o59, M1261, Op.not32, Op.cmpmi, BitVec.xor_self, BitVec.and_self]
   repeat' (first
-    | (refine x1288 ?hc rfl ?hI ?hm; (case hc => tcm); (case hI => dsimp only [I1288] <;> tfs);
-            (case hm => dsimp only [M1288] <;> tfo))
+    | (refine x1288 ?hc rfl ?hI ?hm; (case hc => tcm); (case hI => exact (by dsimp only [I1288] <;> tfs));
+            (case hm => exact (by dsimp only [M1288] <;> tfo)))
     | (with_reducible rfl)
     | apply And.intro
     | intro _)
@@ -252,8 +252,8 @@ theorem vc_1288 (hK : Ok K) (hE : Env K F Wl) (hc : Cm K g) (hI : I1288 K g) :
   have := hK.hnl1
   wpx [W_1288, o60, M1288, Op.not32, Op.cmpmi, BitVec.xor_self, BitVec.and_self]
   repeat' (first
-    | (refine x443 ?hc rfl ?hI ?hm; (case hc => tcm); (case hI => dsimp only [I443] <;> tfs);
-            (case hm => dsimp only [M443] <;> tfo))
+    | (refine x443 ?hc rfl ?hI ?hm; (case hc => tcm); (case hI => exact (by dsimp only [I443] <;> tfs));
+            (case hm => exact (by dsimp only [M443] <;> tfo)))
     | (with_reducible rfl)
     | apply And.intro
     | intro _)
@@ -274,8 +274,8 @@ theorem vc_1400 (hK : Ok K) (hE : Env K F Wl) (hc : Cm K g) (hI : I1400 K g) :
   have := hK.hnl1
   wpx [W_1400, o66, M1400, Op.not32, Op.cmpmi, BitVec.xor_self, BitVec.and_self]
   repeat' (first
-    | (refine x1432 ?hc rfl ?hI ?hm; (case hc => tcm); (case hI => dsimp only [I1432] <;> tfs);
-            (case hm => dsimp only [M1432] <;> tfo))
+    | (refine x1432 ?hc rfl ?hI ?hm; (case hc => tcm); (case hI => exact (by dsimp only [I1432] <;> tfs));
+            (case hm => exact (by dsimp only [M1432] <;> tfo)))
     | (with_reducible rfl)
     | apply And.intro
     | intro _)
@@ -296,10 +296,10 @@ theorem vc_1420 (hK : Ok K) (hE : Env K F Wl) (hc : Cm K g) (hI : I1420 K g) :
   have := hK.hnl1
   wpx [W_1420, W_1429, o68, o69, M1420, Op.not32, Op.cmpmi, BitVec.xor_self, BitVec.and_self]
   repeat' (first
-    | (refine x320 ?hc rfl ?hI ?hm; (case hc => tcm); (case hI => dsimp only [I320] <;> tfs);
-            (case hm => dsimp only [M320] <;> tfo))
-    | (refine x1432 ?hc rfl ?hI ?hm; (case hc => tcm); (case hI => dsimp only [I1432] <;> tfs);
-            (case hm => dsimp only [M1432] <;> tfo))
+    | (refine x320 ?hc rfl ?hI ?hm; (case hc => tcm); (case hI => exact (by dsimp only [I320] <;> tfs));
+            (case hm => exact (by dsimp only [M320] <;> tfo)))
+    | (refine x1432 ?hc rfl ?hI ?hm; (case hc => tcm); (case hI => exact (by dsimp only [I1432] <;> tfs));
+            (case hm => exact (by dsimp only [M1432] <;> tfo)))
     | (with_reducible rfl)
     | apply And.intro
     | intro _)
@@ -320,12 +320,12 @@ theorem vc_1432 (hK : Ok K) (hE : Env K F Wl) (hc : Cm K g) (hI : I1432 K g) :
   have := hK.hnl1
   wpx [W_1432, W_1446, W_1455, o70, o11, o71, M1432, Op.not32, Op.cmpmi, BitVec.xor_self, BitVec.and_self]
   repeat' (first
-    | (refine fIn hE ?_ ?_ <;> tfo)
-    | (refine fP hK hE ?_ ?_ <;> tfo)
-    | (refine x751 ?hc rfl ?hI ?hm; (case hc => tcm); (case hI => dsimp only [I751] <;> tfs);
-            (case hm => dsimp only [M751] <;> tfo))
-    | (refine x1472 ?hc rfl ?hI ?hm; (case hc => tcm); (case hI => dsimp only [I1472] <;> tfs);
-            (case hm => dsimp only [M1472] <;> tfo))
+    | (refine fIn hE ?_ ?_ <;> exact (by tfo))
+    | (refine fP hK hE ?_ ?_ <;> exact (by tfo))
+    | (refine x751 ?hc rfl ?hI ?hm; (case hc => tcm); (case hI => exact (by dsimp only [I751] <;> tfs));
+            (case hm => exact (by dsimp only [M751] <;> tfo)))
+    | (refine x1472 ?hc rfl ?hI ?hm; (case hc => tcm); (case hI => exact (by dsimp only [I1472] <;> tfs));
+            (case hm => exact (by dsimp only [M1472] <;> tfo)))
     | (with_reducible rfl)
     | apply And.intro
     | intro _)
@@ -346,8 +346,8 @@ theorem vc_1472 (hK : Ok K) (hE : Env K F Wl) (hc : Cm K g) (hI : I1472 K g) :
   have := hK.hnl1
   wpx [W_1472, W_1416, W_1491, o72, o67, o73, M1472, Op.not32, Op.cmpmi, BitVec.xor_self, BitVec.and_self]
   repeat' (first
-    | (refine x1420 ?hc rfl ?hI ?hm; (case hc => tcm); (case hI => dsimp only [I1420] <;> tfs);
-            (case hm => dsimp only [M1420] <;> tfo))
+    | (refine x1420 ?hc rfl ?hI ?hm; (case hc => tcm); (case hI => exact (by dsimp only [I1420] <;> tfs));
+            (case hm => exact (by dsimp only [M1420] <;> tfo)))
     | (with_reducible rfl)
     | apply And.intro
     | intro _)
@@ -368,11 +368,11 @@ theorem vc_1504 (hK : Ok K) (hE : Env K F Wl) (hc : Cm K g) (hI : I1504 K g) :
   have := hK.hnl1
   wpx [W_1504, W_1511, W_1520, o16, o11, o12, M1504, Op.not32, Op.cmpmi, BitVec.xor_self, BitVec.and_self]
   repeat' (first
-    | (refine fIn hE ?_ ?_ <;> tfo)
-    | (refine x751 ?hc rfl ?hI ?hm; (case hc => tcm); (case hI => dsimp only [I751] <;> tfs);
-            (case hm => dsimp only [M751] <;> tfo))
-    | (refine x1537 ?hc rfl ?hI ?hm; (case hc => tcm); (case hI => dsimp only [I1537] <;> tfs);
-            (case hm => dsimp only [M1537] <;> tfo))
+    | (refine fIn hE ?_ ?_ <;> exact (by tfo))
+    | (refine x751 ?hc rfl ?hI ?hm; (case hc => tcm); (case hI => exact (by dsimp only [I751] <;> tfs));
+            (case hm => exact (by dsimp only [M751] <;> tfo)))
+    | (refine x1537 ?hc rfl ?hI ?hm; (case hc => tcm); (case hI => exact (by dsimp only [I1537] <;> tfs));
+            (case hm => exact (by dsimp only [M1537] <;> tfo)))
     | (with_reducible rfl)
     | apply And.intro
     | intro _)
@@ -393,10 +393,10 @@ theorem vc_1537 (hK : Ok K) (hE : Env K F Wl) (hc : Cm K g) (hI : I1537 K g) :
   have := hK.hnl1
   wpx [W_1537, W_1560, o75, o76, M1537, Op.not32, Op.cmpmi, BitVec.xor_self, BitVec.and_self]
   repeat' (first
-    | (refine x1400 ?hc rfl ?hI ?hm; (case hc => tcm); (case hI => dsimp only [I1400] <;> tfs);
-            (case hm => dsimp only [M1400] <;> tfo))
-    | (refine x1504 ?hc rfl ?hI ?hm; (case hc => tcm); (case hI => dsimp only [I1504] <;> tfs);
-            (case hm => dsimp only [M1504] <;> tfo))
+    | (refine x1400 ?hc rfl ?hI ?hm; (case hc => tcm); (case hI => exact (by dsimp only [I1400] <;> tfs));
+            (case hm => exact (by dsimp only [M1400] <;> tfo)))
+    | (refine x1504 ?hc rfl ?hI ?hm; (case hc => tcm); (case hI => exact (by dsimp only [I1504] <;> tfs));
+            (case hm => exact (by dsimp only [M1504] <;> tfo)))
     | (with_reducible rfl)
     | apply And.intro
     | intro _)
