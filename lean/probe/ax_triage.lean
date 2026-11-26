@@ -1,5 +1,3 @@
-import FV7z.Udl.Holds
-import FV7z.Isp.Holds
+import FV7z.Cpc.Holds
 open FV7z
-#print axioms FV7z.Udl.udl_ok
-#print axioms FV7z.Isp.isp_ok
+#print axioms FV7z.Cpc.cpc_ok

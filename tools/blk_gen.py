@@ -371,6 +371,11 @@ FNS = {
     # 7-Zip 26.06's CPP/Common/MyWindows.cpp `SysAllocStringLen (s, len)`: `len` above 0x3ffffffc or `malloc`
     # (the `call`, 0x22) null: 0 (0x6a, the `ret`); else the length word, `memcpy` of `s` (the `call`, 0x41) when
     # `s` is not null, the terminator, `rax` = the string (0x58, the `ret`).
+    # glibc 2.31's libio/genops.c `_IO_setb (f, b, eb, a)`: `f->_IO_buf_base` not null and the user-buffer flag
+    # clear: `free` of it (the `call`, 0x50, then back to 0x27); the flag set or cleared by `a` (`cmovne`), the two
+    # pointers stored by one `movups` (0x3e), the flags word, the `ret` (0x4a).
+    "stb": dict(grp="Stb", cn="_IO_setb", a=0x62b4a0, n=89, pos=True, stops=(0x4a,), calls=True,
+                tag="PLAN.md §M, M1", src="glibc 2.31's `_IO_setb` (`libio/genops.c`; `objdump -d`)"),
     "sas": dict(grp="Sas", cn="SysAllocStringLen", a=0x5a0010, n=107, pos=True, stops=(0x58, 0x6a), calls=True,
                 tag="PLAN.md §M, M1", src="7-Zip 26.06's `SysAllocStringLen` (`CPP/Common/MyWindows.cpp`; `objdump -d`)"),
     "vcl": dict(grp="Vcl", cn="VariantClear", a=0x5a0120, n=50, pos=True, stops=(22, 49), calls=True,
@@ -540,6 +545,12 @@ FNS = {
     # `_limit` = 3, `_chars[0]` = 0. Stop: the `ret` (0x31).
     "uct": dict(grp="Uct", cn="UString::UString()", a=0x44d3e0, n=50, pos=True, stops=(0x31,), calls=True,
                 tag="PLAN.md §M, M1", src="7-Zip's `UString::UString` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06's CPP/Common/CommandLineParser.cpp `CParser::CParser ()`: `_switches` (the vector at 0) empty and
+    # `StopSwitchIndex` (at 0x18) -1, then the `AString` at 0x20 (the `call` at 0x34, to 0x44c360) and the `UString`
+    # at 0x30 (the `call` at 0x3d, `UString::UString ()`). Stop: the `ret` (0x4c).
+    "cpc": dict(grp="Cpc", cn="NCommandLineParser::CParser::CParser", a=0x5a0490, n=77, pos=True, stops=(0x4c,),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CParser::CParser` (`CPP/Common/CommandLineParser.cpp`; `objdump -d`)"),
     # `UString::SetStartLen (len)`: as `AString`'s, `new wchar_t[len + 1]` (the `call` at 0x21). Stop: the `ret` (0x35).
     "usl": dict(grp="Usl", cn="UString::SetStartLen", a=0x44d060, n=54, pos=True, stops=(0x35,), calls=True,
                 tag="PLAN.md §M, M1", src="7-Zip's `UString::SetStartLen` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
