@@ -1,15 +1,8 @@
-import FV7z.Strncmp.Mask
-import FV7z.Strncmp.AshrT
-import FV7z.Strncmp.Ashr1
-import FV7z.Strncmp.Ashr2
-import FV7z.Strncmp.Ashr3
-import FV7z.Strncmp.Ashr4
-import FV7z.Strncmp.Ashr5
-import FV7z.Strncmp.Res
-open FV7z
-#print axioms FV7z.Strncmp.getLsbD_cmask
-#print axioms FV7z.Strncmp.lane_align
-#print axioms FV7z.Strncmp.ashr15
-#print axioms FV7z.Strncmp.ashr1
-#print axioms FV7z.Strncmp.nres_at
-#print axioms FV7z.Strncmp.b6201
+import FV7z.Strncmp.Exit
+import FV7z.Start.ToLif
+import FV7z.Start.ToLifL
+import FV7z.Start.LifL
+open FV7z FV7z.Start
+#print axioms FV7z.Strncmp.exit6192
+#print axioms FV7z.Strncmp.zsub_eq_zero
+#print axioms FV7z.Start.ent_cx

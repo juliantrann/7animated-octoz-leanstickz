@@ -1,8 +1,4 @@
-FV7z.Strncmp.Mask
-FV7z.Strncmp.AshrT
-FV7z.Strncmp.Ashr1
-FV7z.Strncmp.Ashr2
-FV7z.Strncmp.Ashr3
-FV7z.Strncmp.Ashr4
-FV7z.Strncmp.Ashr5
-FV7z.Strncmp.Res
+FV7z.Strncmp.Exit
+FV7z.Start.ToLif
+FV7z.Start.ToLifL
+FV7z.Start.LifL

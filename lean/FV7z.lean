@@ -411,6 +411,7 @@ import FV7z.Strncmp.Ashr4
 import FV7z.Strncmp.Ashr5
 import FV7z.Strncmp.Mask
 import FV7z.Strncmp.Res
+import FV7z.Strncmp.Exit
 import FV7z.Pmi.Holds
 import FV7z.Lemmas.Lock2
 import FV7z.Pml.Holds
