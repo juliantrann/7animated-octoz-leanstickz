@@ -30,6 +30,7 @@ macro "lc7" "[" ls:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| repe
     | intro (_ : Rflags)
     | intro (_ : Rflags.zf _ = false)
     | intro (_ : Rflags.zf _ = true)
+    | intro (_ : Rflags.zf _ = _)
     | decide)
 
 end FV7z.Im7
