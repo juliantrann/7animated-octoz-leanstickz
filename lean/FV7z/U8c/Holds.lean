@@ -685,7 +685,8 @@ theorem vcAll {g₀ : Gprs} {V₀ : Addr → Byte} {n : Nat} (hl : Lim g₀ n)
     · exact x24_67b hk hX
   · refine vc_67 (g := G67 g₀ V₀ k a y) (V := V₀) (Q := Nx g₀ V₀ n (5 * (n - k) + 3)) (c := ch V₀ g₀.rdi k)
       rfl ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_
-    · exact fq67 (F := F) hl hk fa
+    · dsimp only [G67, Gs]
+      exact fq67 (F := F) hl hk fa
     · exact x67_a hk hX hP
     · exact x67_b hk hX hP hl
     · exact x67_c hk hX hP hl
