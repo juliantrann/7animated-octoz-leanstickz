@@ -25,7 +25,7 @@ variable {prof : Profile} {o : Oracle} {t : Nat} {s : State}
 
 /-- Bits `b` within a mask `m` that `x` has none of. -/
 theorem land_sub_zero {x m b : Nat} (hx : x &&& m = 0) (hb : m &&& b = b) : x &&& b = 0 := by
-  rw [← hb, ← Nat.land_assoc, hx, Nat.zero_land]
+  rw [← hb, ← Nat.and_assoc, hx, Nat.zero_and]
 
 /-- The flags as `openat` masks them, without `O_PATH`, have no bits `b` within `0x400240` if the flags have none of
 `0x400240`. -/
@@ -33,13 +33,13 @@ theorem hasFlag_v {x b : Nat} (hx : x &&& 0x400240 = 0)
     (hb : 0x400240 &&& (VALID_OPEN_FLAGS &&& b) = VALID_OPEN_FLAGS &&& b) :
     hasFlag (x &&& VALID_OPEN_FLAGS) b = false := by
   unfold hasFlag
-  rw [Nat.land_assoc, land_sub_zero hx hb]
+  rw [Nat.and_assoc, land_sub_zero hx hb]
   rfl
 
 /-- The flags as `openat` masks them with `O_PATH` have no bits outside `O_PATH_FLAGS`. -/
 theorem hasFlag_pv {y b : Nat} (hb : O_PATH_FLAGS &&& b = 0) : hasFlag (y &&& O_PATH_FLAGS) b = false := by
   unfold hasFlag
-  rw [Nat.land_assoc, hb, Nat.land_zero]
+  rw [Nat.and_assoc, hb, Nat.and_zero]
   rfl
 
 /-- `sysOpenat` with flags (`rdx`) that have none of `O_CREAT`, `O_TRUNC`, `O_TMPFILE` and the path name `p` read
@@ -63,17 +63,17 @@ theorem open_cps (u : State) {p : List Byte} (hx : arg32 u.cpu.gpr.rdx &&& 0x400
   try dsimp only
   by_cases hp : hasFlag (arg32 u.cpu.gpr.rdx &&& VALID_OPEN_FLAGS) O_PATH = true
   · simp only [hp, ↓reduceIte, w1, w2, w3, Bool.and_false, Bool.false_and, Bool.false_eq_true]
+    clear hu v1 v2 v3 w1 w2 w3 hx
     repeat' first
       | (refine hk _ _ _ _ ?_ ?_ ?_ <;> rfl)
-      | contradiction
       | (rw [runStream_req_bind]; try dsimp only)
       | (simp only [bind, pure, Req.request, Req.bind, Req.runStream]; try dsimp only)
       | (refine rs_ite (P := P) _ _ _ _ ?_ ?_)
       | split
   · simp only [hp, ↓reduceIte, v1, v2, v3, Bool.and_false, Bool.false_and, Bool.false_eq_true]
+    clear hu v1 v2 v3 w1 w2 w3 hx
     repeat' first
       | (refine hk _ _ _ _ ?_ ?_ ?_ <;> rfl)
-      | contradiction
       | (rw [runStream_req_bind]; try dsimp only)
       | (simp only [bind, pure, Req.request, Req.bind, Req.runStream]; try dsimp only)
       | (refine rs_ite (P := P) _ _ _ _ ?_ ?_)
