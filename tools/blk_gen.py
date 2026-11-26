@@ -551,6 +551,16 @@ FNS = {
                 src="7-Zip's `AString::ReverseFind_PathSepar` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
     # 7-Zip's CPP/Common/MyString.cpp `AString::SetStartLen (len)`: `_chars` = NULL, then `_chars` = `new char[len + 1]`
     # (`operator new`, the `call` at 0x1d), `_len` = `_limit` = `len`. Stop: the `ret` (0x31).
+    # 7-Zip's CPP/Common/MyString.cpp `AString::ReAlloc (newLimit)`: `newBuf = new char[newLimit + 1]` (the `call` at
+    # 0x1a), `memcpy (newBuf, _chars, _len + 1)` (0x32), `delete [] _chars` (0x3a), then `_chars`, `_limit`. Stop:
+    # the `ret` (0x4f).
+    "arl": dict(grp="Arl", cn="AString::ReAlloc", a=0x44bfc0, n=80, pos=True, stops=(0x4f,), calls=True,
+                tag="PLAN.md §M, M1", src="7-Zip's `AString::ReAlloc` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
+    # `AString::ReAlloc2 (newLimit)`: above `k_Alloc_Len_Limit` (0x3ffffffe) the throw at 0x401350 (0xe); else
+    # `newBuf = new char[newLimit + 1]` (0x1f), `newBuf[0] = 0`, `delete [] _chars` unless null (0x32), `_chars`,
+    # `_limit`, `_len` = 0. Stops: the `ja` (0xe) and the `ret` (0x48).
+    "arb": dict(grp="Arb", cn="AString::ReAlloc2", a=0x44c010, n=73, pos=True, stops=(0x48,), calls=True,
+                tag="PLAN.md §M, M1", src="7-Zip's `AString::ReAlloc2` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
     "asl": dict(grp="Asl", cn="AString::SetStartLen", a=0x44c060, n=50, pos=True, stops=(0x31,), calls=True,
                 tag="PLAN.md §M, M1", src="7-Zip's `AString::SetStartLen` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
     # `UString::UString ()`: `_chars` = NULL, then `_chars` = `new wchar_t[4]` (the `call` at 0x14), `_len` = 0,
