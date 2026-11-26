@@ -392,8 +392,9 @@ theorem arb_ok {P1 P2 : State → (Addr → Byte) → Prop} (c : Seg prof F Wl L
       (byteAddrs x 8).map (Vst V' Z.cpu.gpr.rax (toBytesLE 0#8 1)) = (byteAddrs x 8).map V' := fun x hx h1 h2 =>
     Tun.rd_Vst V' Z.cpu.gpr.rax (toBytesLE 0#8 1) x 8 (by rw [toBytesLE_length]; omega) hx
       (by rw [toBytesLE_length]; omega)
-  refine (c_36 prof).run c hin (fun j' g' _ V'' => g' = { Z.cpu.gpr with rdi := rdq(V', Z.cpu.gpr.rbx),
-      r12 := Z.cpu.gpr.rax } ∧ V'' = Vst V' Z.cpu.gpr.rax (toBytesLE 0#8 1) ∧
+  refine (c_36 prof).run c hin (fun j' g' _ V'' =>
+      g' = { Z.cpu.gpr with rdi := rdq(V', Z.cpu.gpr.rbx), r12 := Z.cpu.gpr.rax } ∧
+      V'' = Vst V' Z.cpu.gpr.rax (toBytesLE 0#8 1) ∧
       ((j' = 55 ∧ rdq(V', X.cpu.gpr.rdi) = 0) ∨ (j' = 50 ∧ rdq(V', X.cpu.gpr.rdi) ≠ 0))) hKZ hAZ hrZ
     (vc_36 (by rw [hzb]; exact f0) hwn (fun h0 _ => ⟨rfl, rfl, .inl ⟨rfl, by rw [← hzb]; exact h0⟩⟩)
       (fun h0 _ => ⟨rfl, rfl, .inr ⟨rfl, by rw [← hzb]; exact h0⟩⟩)) ?_
