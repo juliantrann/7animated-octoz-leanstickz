@@ -424,6 +424,7 @@ import FV7z.Strncmp.AshrL
 import FV7z.Strncmp.AshrE
 import FV7z.Strncmp.AshrS
 import FV7z.Strncmp.Sse2
+import FV7z.Strncmp.Plt
 import FV7z.Pmi.Holds
 import FV7z.Lemmas.Lock2
 import FV7z.Pml.Holds
