@@ -173,6 +173,7 @@ theorem exit6192 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e' scm) {Y : State
     have hkp₄ : KpN g₀ Y₄.cpu.gpr := by simp only [KpN, hg₄, wr, set_rax]; exact hkp₃
     have hax₄ : Y₄.cpu.gpr.rax.setWidth 32 = 0 := by
       simp only [hg₄, wr, gv, Src.val, set_rax, sw_64_32, BitVec.xor_self]
+      all_goals rfl
     refine retN_at c hin (lt_scm (by decide)) (d6214 prof.feat) hK₄ hA₄ hr₄ hkp₄ ?_ hR
     rw [hax₄]
     exact hP 0 (nres_zero hsame (by omega))
