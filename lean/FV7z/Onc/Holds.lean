@@ -275,7 +275,8 @@ theorem onc_ok {fb : Addr} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBa
     (hra : rdq(V, X.cpu.gpr.rsp) = e₂.add j₂)
     (k : ∀ (Y S Z : State) (r : BitVec 64) (bs : List Byte) (t' : Nat), KeptW Wl s₀ Y →
       Agree F Y.proc.mm.mem (oV V X.cpu.gpr fb) → Y.cpu.gpr = g1 X.cpu.gpr → Y.cpu.rip = onc_at.add 74 →
-      S.cpu = (sysSt Y 2 r).cpu → S.proc.mm = Y.proc.mm → Seg prof F Wl L S o → KeptW Wl S Z →
+      S.cpu = (sysSt Y 2 r).cpu → S.proc.mm = Y.proc.mm → Seg prof F Wl L S o → S.thread.rseq = none →
+      KeptW Wl S Z →
       Z.cpu.rip = e₂.add j₂ →
       (Z.cpu.gpr.rsp = X.cpu.gpr.rsp + 8#64 ∧ Z.cpu.gpr.rbx = X.cpu.gpr.rbx ∧ Z.cpu.gpr.rbp = X.cpu.gpr.rbp ∧
         Z.cpu.gpr.r12 = X.cpu.gpr.r12 ∧ Z.cpu.gpr.r13 = X.cpu.gpr.r13 ∧ Z.cpu.gpr.r14 = X.cpu.gpr.r14 ∧
@@ -306,7 +307,7 @@ theorem onc_ok {fb : Addr} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBa
     (by rw [hrsi]; exact htop) (by rw [hrsi]; exact hpl)
     (by rw [hrsi]; exact fun i hi => by rw [hpv i (by omega)]; exact hnz i hi)
     (by rw [hrsi, hpv m (by omega)]; exact hz) ?_
-  intro M S r bs t₂ hKm hcS hmmS c₁ hAS
+  intro M S r bs t₂ hKm hcS hmmS c₁ hrsS hAS
   have hev : (⟨Y.cpu.gpr.rax, syscallArgs Y, r, bs, []⟩ : Event) = oncEv X.cpu.gpr r bs := by
     unfold syscallArgs
     rw [hgY]
@@ -322,7 +323,7 @@ theorem onc_ok {fb : Addr} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBa
     rfl
   have hY : (Y.withMem M).cpu.gpr = g1 X.cpu.gpr := hgY
   have hAm : Agree F (Y.withMem M).proc.mm.mem (oV V X.cpu.gpr fb) := by rw [← hmmS]; exact hAS
-  have kk := fun Z t' => k (Y.withMem M) S Z r bs t' hKm hAm hY hrY hcS hmmS c₁
+  have kk := fun Z t' => k (Y.withMem M) S Z r bs t' hKm hAm hY hrY hcS hmmS c₁ hrsS
   have hr0 : ((sysGpr Y 2).set 0 r).rax = r := rfl
   have hl24 : ∀ i < 8, Foot F.data (Addr.add (((sysGpr Y 2).set 0 r).rsp + 24#64) i) := fun i hi => by
     have h := fr_ft hfd (d := 24) (n := 8) (by decide) i hi
