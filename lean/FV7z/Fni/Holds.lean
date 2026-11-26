@@ -186,7 +186,8 @@ theorem fni_ok (c : Seg prof F Wl L s₀ o) (hin : CodeIn L fni_at fni) (hinF : 
   by_cases hz : ers V = 0
   · -- null: the `ret`
     refine (c_0 prof).run c hin _ hK hA hrip' (vc_0z hle hz) ?_
-    rintro j' g fl V' ⟨rfl, rfl, rfl⟩ Y t₁ hKY hAY hrY hgY -
+    rintro j' g fl V' ⟨rfl, rfl, hV⟩ Y t₁ hKY hAY hrY hgY -
+    subst V'
     have hsp : Y.cpu.gpr.rsp = X.cpu.gpr.rsp := by rw [hgY]; all_goals rfl
     refine c.s_ret hKY hAY hin (lt_len (by decide)) hrY (ret_42 _) (fun i hi => by rw [hsp]; exact hl i hi) hin₂ h₂
       (by rw [hsp]; exact hra) ?_
@@ -194,7 +195,8 @@ theorem fni_ok (c : Seg prof F Wl L s₀ o) (hin : CodeIn L fni_at fni) (hinF : 
     exact k0 (Or.inl hz) Z t₂ hKZ hAZ hrZ (by rw [hgZ, hgY]; exact ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩)
   -- not null: the `repz cmpsb`
   refine (c_0 prof).run c hin _ hK hA hrip' (vc_0nz hle hz) ?_
-  rintro j' g fl V' ⟨rfl, rfl, rfl⟩ Y₁ t₁ hK₁ hA₁ hr₁ hg₁ -
+  rintro j' g fl V' ⟨rfl, rfl, hV⟩ Y₁ t₁ hK₁ hA₁ hr₁ hg₁ -
+  subst V'
   have hsi : Y₁.cpu.gpr.rsi = ers V := by rw [hg₁]; all_goals rfl
   have hdi : Y₁.cpu.gpr.rdi = oom := by rw [hg₁]; all_goals rfl
   refine c.s_repz_cmpsb hdf hin (lt_len (by decide)) (cmps_31 _) 13 hK₁ hA₁ hr₁ (by rw [hg₁]; all_goals rfl)
@@ -219,7 +221,8 @@ theorem fni_ok (c : Seg prof F Wl L s₀ o) (hin : CodeIn L fni_at fni) (hinF : 
     refine (c_33 prof).run c hin _ hK₂ hA₂ hr₂
       (vc_33e (by rw [hf₂, subF_zf]; exact decide_eq_true hxy)
         (by rw [hf₂, subF_cf, hxy]; exact decide_eq_false (Nat.lt_irrefl _))) ?_
-    rintro j' g₃ fl₃ V₃ ⟨rfl, ⟨a, rfl⟩, rfl⟩ Y₃ t₃ hK₃ hA₃ hr₃ hgY₃ -
+    rintro j' g₃ fl₃ V₃ ⟨rfl, ⟨a, rfl⟩, hV⟩ Y₃ t₃ hK₃ hA₃ hr₃ hgY₃ -
+    subst V₃
     have hsp : Y₃.cpu.gpr.rsp = X.cpu.gpr.rsp := by rw [hgY₃]; exact hspZ
     refine c.s_ret hK₃ hA₃ hin (lt_len (by decide)) hr₃ (ret_42 _) (fun i hi => by rw [hsp]; exact hl i hi) hin₂ h₂
       (by rw [hsp]; exact hra) ?_
@@ -234,7 +237,8 @@ theorem fni_ok (c : Seg prof F Wl L s₀ o) (hin : CodeIn L fni_at fni) (hinF : 
   · -- a byte differs: the call of `free`
     refine (c_33 prof).run c hin _ hK₂ hA₂ hr₂
       (vc_33n (by rw [hf₂, subF_zf]; exact decide_eq_false hxy) fun i hi => by rw [hspZ]; exact hs8 i hi) ?_
-    rintro j' g₃ fl₃ V₃ ⟨rfl, a, rfl, rfl⟩ Y₃ t₃ hK₃ hA₃ hr₃ hgY₃ -
+    rintro j' g₃ fl₃ V₃ ⟨rfl, a, rfl, hV⟩ Y₃ t₃ hK₃ hA₃ hr₃ hgY₃ -
+    subst V₃
     rw [hspZ] at hA₃
     have hsp₃ : Y₃.cpu.gpr.rsp = X.cpu.gpr.rsp - 8#64 := by rw [hgY₃]; exact congrArg (· - 8#64) hspZ
     have hdi₃ : Y₃.cpu.gpr.rdi = ers V := by rw [hgY₃]; exact hr8Z
