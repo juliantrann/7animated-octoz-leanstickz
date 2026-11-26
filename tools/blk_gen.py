@@ -265,6 +265,13 @@ FNS = {
     "dde": dict(grp="Dde", cn="NWindows::NFile::NFind::DoesDirExist", a=0x455cf0, n=101, pos=True, fs=True,
                 stops=(0x5f, 0x60), calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `NFind::DoesDirExist` (`FileFind.cpp`; `objdump -d`)"),
+    # 7-Zip's CPP/Windows/FileFind.cpp `CFileInfo::Find_DontFill_Name (path, followLink)`: two pushes, a frame of 168
+    # bytes with the stack guard at `rsp + 152`, `MY_lstat (path, &st, followLink)` (call at 0x30), when it answers 0
+    # `SetFrom_stat (st)` (call at 0x45) and `al` = 1, the guard's check. Stops: the `ret` (0x6c), the call of
+    # `__stack_chk_fail` (0x6d).
+    "fdn": dict(grp="Fdn", cn="NWindows::NFile::NFind::CFileInfo::Find_DontFill_Name", a=0x455b00, n=114, pos=True,
+                fs=True, stops=(0x6c, 0x6d), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CFileInfo::Find_DontFill_Name` (`FileFind.cpp`; `objdump -d`)"),
     # 7-Zip's C/Alloc.c `MyAlloc (size)`: 0 for size 0, else a tail jump to `malloc`. Stops: the jump (9), the `ret`
     # (18).
     "mya": dict(grp="Mya", cn="MyAlloc", a=0x41f3c0, n=19, pos=True, stops=(9, 18),
@@ -371,6 +378,11 @@ FNS = {
     # 7-Zip 26.06's CPP/Common/MyWindows.cpp `SysAllocStringLen (s, len)`: `len` above 0x3ffffffc or `malloc`
     # (the `call`, 0x22) null: 0 (0x6a, the `ret`); else the length word, `memcpy` of `s` (the `call`, 0x41) when
     # `s` is not null, the terminator, `rax` = the string (0x58, the `ret`).
+    # glibc 2.31's libio/genops.c `_IO_setb (f, b, eb, a)`: `f->_IO_buf_base` not null and the user-buffer flag
+    # clear: `free` of it (the `call`, 0x50, then back to 0x27); the flag set or cleared by `a` (`cmovne`), the two
+    # pointers stored by one `movups` (0x3e), the flags word, the `ret` (0x4a).
+    "stb": dict(grp="Stb", cn="_IO_setb", a=0x62b4a0, n=89, pos=True, stops=(0x4a,), calls=True,
+                tag="PLAN.md §M, M1", src="glibc 2.31's `_IO_setb` (`libio/genops.c`; `objdump -d`)"),
     "sas": dict(grp="Sas", cn="SysAllocStringLen", a=0x5a0010, n=107, pos=True, stops=(0x58, 0x6a), calls=True,
                 tag="PLAN.md §M, M1", src="7-Zip 26.06's `SysAllocStringLen` (`CPP/Common/MyWindows.cpp`; `objdump -d`)"),
     "vcl": dict(grp="Vcl", cn="VariantClear", a=0x5a0120, n=50, pos=True, stops=(22, 49), calls=True,
@@ -404,6 +416,12 @@ FNS = {
     # `__bsd_signal.part.0` (`Bsg`).
     "bsn": dict(grp="Bsn", cn="__bsd_signal", a=0x6225b0, n=54, pos=True, fs=True, stops=(0x1a, 0x35), calls=True,
                 tag="PLAN.md §M, M1", src="glibc 2.31's `__bsd_signal` (`signal/signal.c`; `objdump -d`)"),
+    # 7-Zip 26.06's CPP/7zip/UI/Common/EnumDirItems.cpp `CDirItems::ReserveDown ()`: `CRecordVector::ReserveDown` of
+    # `Prefixes` (8-byte items, at 0), `PhyParents` (4, 0x10), `LogParents` (4, 0x20) and `Items` (8, 0x30), inlined:
+    # `operator new`, `memcpy` and `operator delete` (the calls). Stop: the `ret` (0x99).
+    "rdn": dict(grp="Rdn", cn="CDirItems::ReserveDown", a=0x5c03e0, n=439, pos=True, stops=(0x99,), calls=True,
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `CDirItems::ReserveDown` (`CPP/7zip/UI/Common/EnumDirItems.cpp`; "
+                    "`objdump -d`)"),
     "cld": dict(grp="Cld", cn="__closedir", a=0x663860, n=45, pos=True, fs=True, stops=(0x14, 0x2c), calls=True,
                 tag="PLAN.md §M, M1", src="glibc 2.31's `__closedir` (`sysdeps/posix/closedir.c`; `objdump -d`)"),
     # 7-Zip 26.06's CPP/Windows/FileFind.cpp `MY_lstat (path, st, followLink)`: the `stat` zeroed (`rep stosq`, 0xd,
@@ -559,6 +577,16 @@ FNS = {
     # if not 0, else the second's. Stop: the `ret` (0x3a).
     "iag": dict(grp="Iag", cn="InStream_AtBegin_GetSize", a=0x463200, n=59, pos=True, stops=(0x3a,), calls=True,
                 tag="PLAN.md §M, M1", src="7-Zip's `InStream_AtBegin_GetSize` (`C/7zStream.c`; `objdump -d`)"),
+    # 7-Zip's CPP/Common/MyString.cpp `IsString1PrefixedByString2_NoCase_Ascii (u, a)`: each `char` of `a` up to its
+    # 0 equal to the `wchar_t` of `u` at its index, ASCII letters without case: 1, else 0. Stops: the `ret`s (0x5d: 1,
+    # 0x62: 0).
+    "isp": dict(grp="Isp", cn="IsString1PrefixedByString2_NoCase_Ascii", a=0x44bde0, n=99, pos=True,
+                stops=(0x5d, 0x62), tag="PLAN.md §M, M1",
+                src="7-Zip's `IsString1PrefixedByString2_NoCase_Ascii` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
+    # `UString::Delete (index, count)`: `count` cut to `_len - index`; if not 0, `memmove` (the `call` at 0x4f, the
+    # PLT entry) of the rest down and `_len` - `count`. Stops: the `ret`s (0x25, 0x5d).
+    "udl": dict(grp="Udl", cn="UString::Delete", a=0x44e0b0, n=94, pos=True, stops=(0x25, 0x5d), calls=True,
+                hand=(0x54,), tag="PLAN.md §M, M1", src="7-Zip's `UString::Delete` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
     # 7-Zip's CPP/Windows/FileIO.cpp `CFileBase::seek (off, whence)`: the descriptor (`this->_handle`, at 0), then
     # `lseek`. Stop: the `jmp` to `__libc_lseek` (6), a branch to another segment (`Seg.s_jmp_x`).
     "fsk": dict(grp="Fsk", cn="NWindows::NFile::NIO::CFileBase::seek", a=0x4560b0, n=11, pos=True, stops=(6,),
