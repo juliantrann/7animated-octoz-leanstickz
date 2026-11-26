@@ -496,7 +496,7 @@ theorem dab_t (c : Seg prof F Wl L s₀ o) (hin : CodeIn L dab_at dab) {Z : Stat
     have h2 : Y₁.cpu.gpr.get (regOf 12) = fp + 131#64 := by rw [hg₁]; exact h12
     rw [hx₅, e4, e4, hx₃, hk₃ 0 (by decide), hx₂]
     show lane 64 ((Y₂.cpu.gpr.get (regOf 5)).setWidth 64 |>.setWidth 128) 0 ++
-      lane 64 ((Y₁.cpu.gpr.get (regOf 12)).setWidth 64 |>.setWidth 128) 0 = _
+      lane 64 ((Y₁.cpu.gpr.get (regOf 12)).setWidth 64 |>.setWidth 128) 0 = (fp + 132#64) ++ (fp + 131#64)
     rw [h1, h2, BitVec.setWidth_eq, BitVec.setWidth_eq, Cxa.lane_lo, Cxa.lane_lo]
   -- `movups [rbx + 0x38], xmm0`
   have e56 : eaD Y₅ 3 56 = fp + 56#64 := by
@@ -661,7 +661,7 @@ theorem dab_ok {Pd Pf : State → (Addr → Byte) → Prop} (c : Seg prof F Wl L
     rw [rp (X.cpu.gpr.rdi + 216#64) 8 (by rw [t216]; omega) (by rw [t216]; omega)]
   -- the buffer not null: the `ret` at 11
   by_cases hb0 : bb V X.cpu.gpr = 0
-  swap
+  rotate_left
   · refine (c_0 prof).run c hin _ hK hA hrip' (vc_0r l1 rfl (decide_eq_false hb0)) ?_
     rintro j' g₁ fl V₁ ⟨rfl, rfl, hV⟩ Y t₁ hKY hAY hrY hgY -
     subst V₁
@@ -701,7 +701,7 @@ theorem dab_ok {Pd Pf : State → (Addr → Byte) → Prop} (c : Seg prof F Wl L
       -- back from `_IO_DOALLOCATE`
       intro Z V' t'' hKZ hAZ hrZ hzs hzb e3 e5 e12 e6 hPd
       by_cases he1 : Z.cpu.gpr.rax.setWidth 32 = 4294967295#32
-      swap
+      rotate_left
       · -- not EOF: the pops and the `ret`
         refine (c_80 prof).run c hin _ hKZ hAZ hrZ (vc_80n he1) ?_
         rintro j' g₅ fl V₅ ⟨rfl, rfl, hV⟩ Y₅ t₅ hK₅ hA₅ hr₅ hg₅ -
@@ -746,7 +746,7 @@ theorem dab_ok {Pd Pf : State → (Addr → Byte) → Prop} (c : Seg prof F Wl L
         exact t114 U t₅ hKU hAU hrU hgU (.inl hb0')
       have hb0f : (bb V' X.cpu.gpr == 0) = false := by rw [beq_eq_false_iff_ne]; exact hb0'
       by_cases hf1 : (wv V' X.cpu.gpr).setWidth 8 &&& 1#8 = 0
-      swap
+      rotate_left
       · have hf1' : ((wv V' X.cpu.gpr).setWidth 8 &&& 1#8 == 0) = false := by
           rw [beq_eq_false_iff_ne]; exact hf1
         refine (c_80 prof).run c hin _ hKZ hAZ hrZ (vc_80b he1 l1' l2' hb' hw' hb0f hf1') ?_
