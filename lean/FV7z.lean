@@ -396,6 +396,8 @@ import FV7z.Memcpy.FwdE
 import FV7z.Memcpy.FwdN
 import FV7z.Memcpy.BwdP
 import FV7z.Memcpy.Bwd
+import FV7z.Memcpy.BwdE
+import FV7z.Memcpy.BwdN
 import FV7z.Pmi.Holds
 import FV7z.Lemmas.Lock2
 import FV7z.Pml.Holds
