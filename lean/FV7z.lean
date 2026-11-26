@@ -424,6 +424,9 @@ import FV7z.Cpt.Holds
 import FV7z.Eex.Blocks
 import FV7z.Eex.Cuts
 import FV7z.Eex.Holds
+import FV7z.Cdi.Blocks
+import FV7z.Cdi.Cuts
+import FV7z.Cdi.Holds
 import FV7z.Ncs.Blocks
 import FV7z.Ncs.Cuts
 import FV7z.Ncs.Holds
