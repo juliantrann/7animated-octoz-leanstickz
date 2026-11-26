@@ -12,7 +12,7 @@ open ZellicX86 Decode FV7z.Leaf FV7z.Fn
 
 theorem lenAt_sse2 {prof : Profile} {L : List (Addr × List Byte)} {o : Oracle} {e : Addr}
     {Pm : (Addr → Byte) → Prop} (hin : CodeIn L e sl2) : Str.LenAt prof L o e Pm := by
-  intro F Wl s₀ gev gP gE X t V e' code j n c hK hA hrip _ hin₂ hj hra hl hov hnz hz hft K
+  intro F Wl s₀ gev gP gE X t V e' code j n c _ hK hA hrip _ hin₂ hj hra hl hov hnz hz hft K
   exact run c hin hK hA (by rw [hrip, addr_add_zero]) (by unfold Kp; exact ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩)
     hov hnz hz hft (by unfold Ret; exact ⟨hl, e', code, j, hin₂, hj, hra, K⟩)
 

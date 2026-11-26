@@ -6,11 +6,10 @@ import FV7z.Lemmas.CallM
 
 `7zzs` calls `strlen` at `0x401108`: `jmp qword [rip + 0x390ff2]`, through the GOT's slot `0x792100`, which
 `apply_irel` filled with what the resolver at `0x636090` returned (`GotOkB`): `__strlen_sse2` (`0x6546d0`) unless the
-processor has AVX and AVX2. Without both, a call at `0x401108` does what `Str.LenAt` says (`lenAtG_plt`).
+processor has AVX and AVX2. Without both, a call at `0x401108` does what `Str.LenAt` says (`lenAt_plt`).
 
-The jump reads the slot, so the slot has to be a byte of the footprint's data (`GotFoot`), which `Str.LenAt` does not
-ask: `Pm` speaks of the bytes `V` only, and `V` is the memory's only on the footprint. `LenAtG` is `Str.LenAt` with
-`GotFoot F`; the contracts reached through the PLT are to take it (PLAN.md M).
+The jump reads the slot, so the slot has to be a byte of the footprint's data: `Str.LenAt` asks `GotF F` (`Pm` speaks
+of the bytes `V` only, and `V` is the memory's only on the footprint). `GotFoot` is `GotF`'s `got`.
 -/
 namespace FV7z
 open ZellicX86 Decode
@@ -96,41 +95,22 @@ theorem got_strlen {prof : Profile} {W : Addr → Byte} (hG : GotOkB prof W)
     · exact (hb ⟨hf _ (List.Mem.head _), hf _ (List.Mem.tail _ (List.Mem.head _))⟩).elim
     · nomatch hv
 
-/-- `Str.LenAt` with the GOT's slots bytes of the footprint's data (`GotFoot`). -/
-def LenAtG (prof : Profile) (L : List (Addr × List Byte)) (o : Oracle) (e : Addr) (Pm : (Addr → Byte) → Prop) :
-    Prop :=
-  ∀ {F : Footprint} {Wl : List Rgn} {s₀ : State} {gev : List Event} {gP : State → Nat → List Event → Prop}
-    {gE : Outcome → List Event → Prop} {X : State} {t : Nat} {V : Addr → Byte} {e' : Addr} {code : List Byte}
-    {j : Nat} (n : Nat), Seg prof F Wl L s₀ o → GotFoot F → KeptW Wl s₀ X → Agree F X.proc.mm.mem V →
-    X.cpu.rip = e → Pm V →
-    CodeIn L e' code → j < code.length → rdq(V, X.cpu.gpr.rsp) = e'.add j →
-    (∀ i < 8, Foot F.data (Addr.add X.cpu.gpr.rsp i)) →
-    X.cpu.gpr.rdi.toNat + n < 2 ^ 64 →
-    (∀ k < n, V (Addr.add X.cpu.gpr.rdi k) ≠ 0) → V (Addr.add X.cpu.gpr.rdi n) = 0 →
-    (∀ x : Addr, X.cpu.gpr.rdi.toNat / 4096 ≤ x.toNat / 4096 →
-      x.toNat / 4096 ≤ (X.cpu.gpr.rdi.toNat + n) / 4096 → Foot F.data x) →
-    (∀ Z t', KeptW Wl s₀ Z → Agree F Z.proc.mm.mem V → Z.cpu.rip = e'.add j →
-      Z.cpu.gpr.rsp = X.cpu.gpr.rsp + 8 → Z.cpu.gpr.rax = BitVec.ofNat 64 n → Z.cpu.gpr.rbx = X.cpu.gpr.rbx →
-      Z.cpu.gpr.rbp = X.cpu.gpr.rbp → Z.cpu.gpr.r12 = X.cpu.gpr.r12 → Z.cpu.gpr.r13 = X.cpu.gpr.r13 →
-      Z.cpu.gpr.r14 = X.cpu.gpr.r14 → Z.cpu.gpr.r15 = X.cpu.gpr.r15 → GoG prof L o gev gP gE Z t') →
-    GoG prof L o gev gP gE X t
-
 /-- `strlen` through the PLT, on a processor without both AVX and AVX2: the jump through the GOT's slot to
 `__strlen_sse2`, then `lenAt_sse2`. -/
-theorem lenAtG_plt {prof : Profile} {L : List (Addr × List Byte)} {o : Oracle}
+theorem lenAt_plt {prof : Profile} {L : List (Addr × List Byte)} {o : Oracle}
     (hb : ¬ (prof.feat.avx = true ∧ prof.feat.avx2 = true))
     (hinP : CodeIn L 4198664#64 pltLen) (hin : CodeIn L 0x6546d0#64 sl2) :
-    LenAtG prof L o 4198664#64 (GotOkB prof) := by
+    Str.LenAt prof L o 4198664#64 (GotOkB prof) := by
   intro F Wl s₀ gev gP gE X t V e' code j n c hgf hK hA hrip hG hin₂ hj hra hl hov hnz hz hft K
   have he : eaR X 6 3739634 = 0x792100#64 := by simp only [eaR, hrip]; rfl
   refine c.s_jmp_mrip hK hA hinP (j := 0) (by decide) (by rw [hrip, addr_add_zero]) (pd0 prof.feat)
     (fun i hi => ?_) hin (by rw [sl2_length]; decide) (by rw [he]; exact got_strlen hG hb) ?_
   · rw [he]
-    apply hgf
+    apply hgf.got
     · simp only [Addr.add, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.reducePow, Nat.reduceMod]; omega
     · simp only [Addr.add, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.reducePow, Nat.reduceMod]; omega
   · rintro Y t' hKY hAY ⟨hrY, hgY⟩
     rw [← hgY] at hra hl hov hnz hz hft K
-    exact lenAt_sse2 (Pm := fun _ => True) hin n c hKY hAY hrY trivial hin₂ hj hra hl hov hnz hz hft K
+    exact lenAt_sse2 (Pm := fun _ => True) hin n c hgf hKY hAY hrY trivial hin₂ hj hra hl hov hnz hz hft K
 
 end FV7z.Strlen

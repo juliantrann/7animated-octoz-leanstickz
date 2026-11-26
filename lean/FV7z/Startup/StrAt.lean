@@ -8,7 +8,8 @@ glibc's startup calls `strlen`, `strncmp`, `strrchr` through the PLT (`0x401108`
 the implementation chosen by the processor's features). What a call does is a hypothesis here, as `Tls.CpyAt` is of
 `memcpy`; `Pm` is what the contract asks of the bytes at the call (the GOT entry the PLT jumps through, say). The
 implementations read whole vectors, never across the end of a page a byte of the string is not in: the contracts ask
-the pages of the strings' bytes to be read, not only the bytes.
+the pages of the strings' bytes to be read, not only the bytes. The PLT's `jmp` reads a slot of the GOT: the three
+contracts ask the GOT's slots to be data of the footprint (`GotF`).
 
 - `LenAt`: `strlen (s)`, the string of `n` bytes and its 0: `rax` is `n`.
 - `RchrAt`: `strrchr (s, c)`, `c` not 0: `rax` is null or the address of the last `c`. `last_with`: of `n`
@@ -30,7 +31,8 @@ def LenAt (prof : Profile) (L : List (Addr × List Byte)) (o : Oracle) (e : Addr
     Prop :=
   ∀ {F : Footprint} {Wl : List Rgn} {s₀ : State} {gev : List Event} {gP : State → Nat → List Event → Prop}
     {gE : Outcome → List Event → Prop} {X : State} {t : Nat} {V : Addr → Byte} {e' : Addr} {code : List Byte}
-    {j : Nat} (n : Nat), Seg prof F Wl L s₀ o → KeptW Wl s₀ X → Agree F X.proc.mm.mem V → X.cpu.rip = e → Pm V →
+    {j : Nat} (n : Nat), Seg prof F Wl L s₀ o → GotF F → KeptW Wl s₀ X → Agree F X.proc.mm.mem V → X.cpu.rip = e →
+    Pm V →
     CodeIn L e' code → j < code.length → rdq(V, X.cpu.gpr.rsp) = e'.add j →
     (∀ i < 8, Foot F.data (Addr.add X.cpu.gpr.rsp i)) →
     X.cpu.gpr.rdi.toNat + n < 2 ^ 64 →
@@ -85,7 +87,8 @@ def RchrAt (prof : Profile) (L : List (Addr × List Byte)) (o : Oracle) (e : Add
     Prop :=
   ∀ {F : Footprint} {Wl : List Rgn} {s₀ : State} {gev : List Event} {gP : State → Nat → List Event → Prop}
     {gE : Outcome → List Event → Prop} {X : State} {t : Nat} {V : Addr → Byte} {e' : Addr} {code : List Byte}
-    {j : Nat} (n : Nat), Seg prof F Wl L s₀ o → KeptW Wl s₀ X → Agree F X.proc.mm.mem V → X.cpu.rip = e → Pm V →
+    {j : Nat} (n : Nat), Seg prof F Wl L s₀ o → GotF F → KeptW Wl s₀ X → Agree F X.proc.mm.mem V → X.cpu.rip = e →
+    Pm V →
     CodeIn L e' code → j < code.length → rdq(V, X.cpu.gpr.rsp) = e'.add j →
     (∀ i < 8, Foot F.data (Addr.add X.cpu.gpr.rsp i)) → X.cpu.gpr.rdi.toNat + n < 2 ^ 64 →
     (∀ k < n, V (Addr.add X.cpu.gpr.rdi k) ≠ 0) → V (Addr.add X.cpu.gpr.rdi n) = 0 →

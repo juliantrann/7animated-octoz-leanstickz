@@ -1,6 +1,7 @@
 import FV7z.Start.EvEnt
 import FV7z.Start.Nm
 import FV7z.Start.LifCode
+import FV7z.Start.LwTab
 /-!
 # `Cx` of `lif_ok`, from the launch (PLAN.md G3, startup)
 
@@ -24,7 +25,7 @@ theorem ent_cx {prof : Profile} {L : List (Addr × List Byte)} {o : Oracle} {pl 
     (hPm : ∀ W₁ : Addr → Byte, (∀ x : Addr, 7938048 ≤ x.toNat → x.toNat < 7940480 →
       W₁ x =
         Ndi.fV (Vst (Lif.LifMem (Vst W g.rsp (toBytesLE ra₀ 8)) g) (g.rsp - 32#64) (toBytesLE ra 8)) sp gY x) →
-      Pm W₁)
+      NcmpTabV W₁ → Pm W₁)
     (hK : K.Ok) (hI : Img K.V0) (hM : MB K V) (hb : 0x7a9000 ≤ b.toNat) (hb' : b.toNat + 8192 ≤ 2 ^ 63)
     (hW : PtrW K W V b ver D) (hDi : ∀ a : Addr, 0x400000 ≤ a.toNat → a.toNat < 0x791ca0 → D a)
     {lo : Nat} (hbp : K.bp.toNat + 376 ≤ lo)
@@ -60,8 +61,13 @@ theorem ent_cx {prof : Profile} {L : List (Addr × List Byte)} {o : Oracle} {pl 
         toNat_add_of_fits (n := K.len i + 1) (by omega) (by have := hs2 i hi; omega)
       have hl := hls i hi
       exact ent_hi hM hb hb' hW (by omega) (by omega) (by omega) hr0 (by omega) (hDs i hi k hk)) noLD
+  have hT := ent_tab (ra := ra) (ra₀ := ra₀) (g := g) (gY := gY) (sp := sp) hK hI hM hb hb' hW hDi (by omega) hr'
+    (by omega) hsn
   exact ⟨hLC.ndi, hLC.gev, hil, hl0, hlen, hic, hc0, hcmp,
-    fun W₁ h => hPm W₁ (fun x h1 h2 => h x (.inl ⟨h1, h2⟩)), hE,
+    fun W₁ h => hPm W₁ (fun x h1 h2 => h x (.inl ⟨h1, h2⟩)) fun i hi => by
+      have t := ncmp_tab_toNat hi
+      rw [h _ (.inr ⟨by omega, by omega⟩)]
+      exact hT i hi, hE,
     nm_ok (o := 0) (by decide) hN hpg hLD, nm_ok (o := 8) (by decide) hN hpg hLD,
     nm_ok (o := 24) (by decide) hN hpg hLD, nm_ok (o := 36) (by decide) hN hpg hLD,
     nm_ok (o := 48) (by decide) hN hpg hLD, nm_ok (o := 64) (by decide) hN hpg hLD,

@@ -28,6 +28,7 @@ theorem lif_nb {fb lp ct a0 : Addr} {a b cc : BitVec 64} {n : Nat} {pr : List By
     (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb)
     (hin : CodeIn L lif_at lif) (hinI : CodeIn L Ims.ims_at Ims.ims) (hci : CodeIn L Cti.cti_at Cti.cti)
     (hir : CodeIn L 4198480#64 pr) (hr0 : 0 < pr.length) (hrchr : Str.RchrAt prof L o 4198480#64 Pm)
+    (hgf : GotF F)
     (hK : KeptW Wl s₀ X) (hA : Agree F X.proc.mm.mem W₂) (hrip : X.cpu.rip = lif_at.add 70)
     (hR : X.cpu.gpr.rsp = sp + 128#64)
     -- `ndi_ok`'s bytes at the return
@@ -108,7 +109,7 @@ theorem lif_nb {fb lp ct a0 : Addr} {a b cc : BitVec 64} {n : Nat} {pr : List By
   have p2 : BcAp X.cpu.gpr.rsp lp 8 := by unfold BcAp; omega
   have p3 : BcAp X.cpu.gpr.rsp (ct + 64#64) 32 := by unfold BcAp; omega
   refine lif_bc (lp := lp) (ct := ct) (a := a) (b := b) (cc := cc) (a0 := a0) (n := n) (V := W₂) c hfs hin hinI
-    hci hir hr0 hrchr hK hA hrip (by omega) (by omega) hst hl hgl (by omega) hsi fa (q12.trans ha0) hnz hap0 nfit
+    hci hir hr0 hrchr hgf hK hA hrip (by omega) (by omega) hst hl hgl (by omega) hsi fa (q12.trans ha0) hnz hap0 nfit
     (fun j hj => ?_) ?_ npg (fun j hj => ?_) (fun W₁ hW => hPm W₁ fun x hx => ?_) (qlp.trans hlp) (qct.trans hct)
     (qa.trans ha) (qb.trans hb) (qc.trans hc) p1 p2 p3 f1 f2 f3 fw (by omega) (by omega) (by omega) (by omega)
     hin₂ h₂ (by rw [r24]; exact q24.trans hra) ?_

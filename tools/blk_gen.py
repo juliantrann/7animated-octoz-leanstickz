@@ -97,6 +97,17 @@ FNS = {
     "unm": dict(grp="Uname", cn="__uname", a=0x6649e0, n=37, pos=True, stops=(0x13, 0x14), calls=True,
                 tag="PLAN.md G3, startup",
                 src="glibc 2.31's `__uname` (`sysdeps/unix/sysv/linux/syscall-template.S`; `objdump -d`)"),
+    # glibc 2.31 sysdeps/unix/sysv/linux/close.c (`SYSCALL_CANCEL`). Stops: the `ret` (0x1f), the process has more
+    # than one thread (0x20: `multiple_threads` is not 0), the `ret` after `errno` is set (0x71); the `syscall` (0x15)
+    # is a step of its own.
+    "cls": dict(grp="Close", cn="__close", a=0x5ff3b0, n=0x85, pos=True, fs=True, stops=(0x1f, 0x20, 0x71), calls=True,
+                tag="PLAN.md §M, M1", src="glibc 2.31's `__close` (`sysdeps/unix/sysv/linux/close.c`; `objdump -d`)"),
+    # glibc 2.31 sysdeps/unix/sysv/linux/write.c (`SYSCALL_CANCEL`). Stops: the `ret` (0x1f), the process has more
+    # than one thread (0x20: `multiple_threads` is not 0), the `ret` after `errno` is set (0x83); the `syscall` (0x15)
+    # is a step of its own.
+    "wrt": dict(grp="Write", cn="__libc_write", a=0x5ff270, n=0x99, pos=True, fs=True, stops=(0x1f, 0x20, 0x83),
+                calls=True, tag="PLAN.md §M, M1",
+                src="glibc 2.31's `__libc_write` (`sysdeps/unix/sysv/linux/write.c`; `objdump -d`)"),
     # glibc 2.31 sysdeps/unix/sysv/linux/dl-sysdep.c. Stop: `__uname` failed (0xb0: the release is read from
     # `/proc/sys/kernel/osrelease`); the `ret`s are at 0x8a (three parts read) and 0xa9 (fewer).
     "osv": dict(grp="Osv", cn="_dl_discover_osversion", a=0x671d50, n=268, pos=True, stops=(0xb0,), calls=True,

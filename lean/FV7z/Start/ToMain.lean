@@ -94,7 +94,7 @@ theorem launch_to_main {l : Launch} {n : Nat} {o : Oracle} {L : List (Addr × Li
     -- `__libc_init_first`'s code and the contracts of the functions it calls through the PLT
     (hLC : LifCode L) (hMC : MalCode L)
     (hlen : Str.LenAt l.prof L o 4198664#64 (GotOkB l.prof))
-    (hcmp : Str.NcmpAt l.prof L o 4198472#64 (GotOkB l.prof))
+    (hcmp : Str.NcmpAt l.prof L o 4198472#64 (GotTab l.prof))
     (hpcy : Gor.PcpyAt l.prof L o 4198592#64 (GotOkB l.prof))
     (hset : Ipa.SetAt l.prof L o 4198528#64 (GotOkB l.prof))
     (hrchr : Str.RchrAt l.prof L o 4198480#64 (GotOkB l.prof))
