@@ -95,7 +95,8 @@ theorem gpi_ok (c : Seg prof F Wl L s₀ o) (hin : CodeIn L gpi_at gpi) (hK : Ke
       Z.cpu.rip = e₂.add j₂ →
       Z.cpu.gpr = { X.cpu.gpr with rax := BitVec.setWidth 64 2147942487#32 }.set 4 (X.cpu.gpr.rsp + 8) →
       GoG prof L o gev gP gE Z t')
-    (ks : ¬ Big X.cpu.gpr → ∀ (Z : State) (t' : Nat), KeptW Wl s₀ Z → Agree F Z.proc.mm.mem (MG V X.cpu.gpr) →
+    (ks : ¬ Big X.cpu.gpr → ∀ (Z : State) (t' : Nat), KeptW Wl s₀ Z →
+      Agree F Z.proc.mm.mem (MG V X.cpu.gpr) →
       Z.cpu.rip = e₂.add j₂ →
       Z.cpu.gpr = { X.cpu.gpr with rax := 0#64, rcx := 7183264#64, rsi := ix X.cpu.gpr }.set 4
         (X.cpu.gpr.rsp + 8) →

@@ -169,6 +169,16 @@ FNS = {
     # the 4 bytes at 8 and the 8 bytes at 16, 24, 32, 40, 48, 1 in the bytes at 12 and 13. Stop: the `ret` (74).
     "lpc": dict(grp="Lpc", cn="CLocalProgress::CLocalProgress", a=0x461fa0, n=75, pos=True, stops=(74,),
                 tag="PLAN.md §M, M1", src="7-Zip 26.06's `CLocalProgress` constructor (`ProgressUtils.cpp`; `objdump -d`)"),
+    # 7-Zip's CPP/Windows/FileFind.cpp `CFileInfoBase::ClearBase ()`: size, the times, the attributes and the rest of
+    # the base fields 0 (12 qword stores and a dword at 72). Stop: the `ret` (106).
+    "cfb": dict(grp="Cfb", cn="CFileInfoBase::ClearBase", a=0x4558d0, n=107, pos=True, stops=(106,),
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `CFileInfoBase::ClearBase` (`FileFind.cpp`; `objdump -d`)"),
+    # 7-Zip's CPP/7zip/Compress/LzmaDecoder.cpp `CDecoder::ReleaseInStream ()`: `_inStream.Release ()`, the
+    # `Release` through the vtable (`call [rax + 16]`, 23; a cut after it) when `_inStream` (at `this + 256`) is set,
+    # then 0 (`S_OK`). Stop: the `ret` (40).
+    "ris": dict(grp="Ris", cn="CDecoder::ReleaseInStream", a=0x57f930, n=41, pos=True, stops=(40,), calls=True,
+                tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CDecoder::ReleaseInStream` (`LzmaDecoder.cpp`; `objdump -d`)"),
     # 7-Zip's C/Alloc.c `MyAlloc (size)`: 0 for size 0, else a tail jump to `malloc`. Stops: the jump (9), the `ret`
     # (18).
     "mya": dict(grp="Mya", cn="MyAlloc", a=0x41f3c0, n=19, pos=True, stops=(9, 18),

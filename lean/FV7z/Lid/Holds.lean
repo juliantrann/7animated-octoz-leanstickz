@@ -117,7 +117,7 @@ theorem lid_ok (c : Seg prof F Wl L s₀ o) (hin : CodeIn L lid_at lid) (hK : Ke
     intro W Y t₁ hKY hAY hrY hgY hW
     subst hW
     by_cases hd : BitVec.setWidth 32 X.cpu.gpr.rdx = 0
-    · have hM : Mf V X.cpu.gpr = M1 V X.cpu.gpr := if_pos hd
+    · have hM : Mf V X.cpu.gpr = M1 V X.cpu.gpr := ite_eq_left hd
       refine (c_37 prof).run c hin (fun j' g' _ V' => j' = 48 ∧ g' = X.cpu.gpr ∧ V' = M1 V X.cpu.gpr) hKY hAY hrY
         (by rw [hgY]; exact vc_37z hd) ?_
       rintro j' g fl V₁ ⟨rfl, rfl, hV₁⟩ U t₂ hKU hAU hrU hgU -
@@ -127,7 +127,7 @@ theorem lid_ok (c : Seg prof F Wl L s₀ o) (hin : CodeIn L lid_at lid) (hK : Ke
         (by rw [hspU, ← hM]; exact hra) ?_
       rintro Z t₃ hKZ hAZ ⟨hrZ, hgZ⟩
       exact k Z t₃ hKZ (by rw [hM]; exact hAZ) hrZ (by rw [hgZ, hspU, hgU])
-    · have hM : Mf V X.cpu.gpr = MC (M1 V X.cpu.gpr) X.cpu.gpr.rdi := if_neg hd
+    · have hM : Mf V X.cpu.gpr = MC (M1 V X.cpu.gpr) X.cpu.gpr.rdi := ite_eq_right hd
       refine (c_37 prof).run c hin
         (fun j' g' _ V' => j' = 48 ∧ g' = X.cpu.gpr ∧ V' = MC (M1 V X.cpu.gpr) X.cpu.gpr.rdi) hKY hAY hrY
         (by rw [hgY]; exact vc_37n hd w92) ?_
@@ -143,11 +143,11 @@ theorem lid_ok (c : Seg prof F Wl L s₀ o) (hin : CodeIn L lid_at lid) (hK : Ke
       (by rw [addr_add_zero]; exact hrip) (vc_0z hs w92 w100) ?_
     rintro j' g fl V₁ ⟨rfl, rfl, hV₁⟩ Y t₁ hKY hAY hrY hgY -
     subst V₁
-    exact h37 _ Y t₁ hKY hAY hrY hgY (if_pos hs).symm
+    exact h37 _ Y t₁ hKY hAY hrY hgY (ite_eq_left hs).symm
   · refine (c_0 prof).run c hin (fun j' g' _ V' => j' = 37 ∧ g' = X.cpu.gpr ∧ V' = MB V X.cpu.gpr.rdi) hK hA
       (by rw [addr_add_zero]; exact hrip) (vc_0n hs w92 w100 w64) ?_
     rintro j' g fl V₁ ⟨rfl, rfl, hV₁⟩ Y t₁ hKY hAY hrY hgY -
     subst V₁
-    exact h37 _ Y t₁ hKY hAY hrY hgY (if_neg hs).symm
+    exact h37 _ Y t₁ hKY hAY hrY hgY (ite_eq_right hs).symm
 
 end FV7z.Lid

@@ -386,6 +386,12 @@ import FV7z.Gpi.Holds
 import FV7z.Lpc.Blocks
 import FV7z.Lpc.Cuts
 import FV7z.Lpc.Holds
+import FV7z.Cfb.Blocks
+import FV7z.Cfb.Cuts
+import FV7z.Cfb.Holds
+import FV7z.Ris.Blocks
+import FV7z.Ris.Cuts
+import FV7z.Ris.Holds
 import FV7z.Fcl.Blocks
 import FV7z.Fcl.Cuts
 import FV7z.Fcl.Holds
