@@ -129,6 +129,26 @@ FNS = {
     "cal": dict(grp="Cal", cn="__libc_calloc", a=0x634a60, n=901, pos=True, fs=True,
                 stops=(0xd1, 0xd2, 0x190, 0x1b0, 0x1c0, 0x1f0, 0x260, 0x240, 0x2e0, 0x13b, 0x151, 0x366), calls=True,
                 tag="PLAN.md §M, M1", src="glibc 2.31's `__libc_calloc` (`malloc/malloc.c`; `objdump -d`)"),
+    # glibc 2.31 malloc/malloc.c (`unlink_chunk`, `av` dropped by IPA-SRA: `rdi` = p): the size checked against the
+    # next chunk's `prev_size`, `fd->bk == p` and `bk->fd == p` checked, `p` taken out of its bin; for a large chunk
+    # (size over 0x3ff) with `fd_nextsize` set, the `nextsize` list too, after its checks. Stops: the `ret` (0x6e),
+    # the padding (0x6f, 0x99, 0xac), the calls of `malloc_printerr` (0xa0, 0xbf, 0xcb: corruption).
+    "ulk": dict(grp="Ulk", cn="unlink_chunk.isra.0", a=0x62ea20, n=215, pos=True, fs=True,
+                stops=(0x6e, 0x6f, 0x99, 0xa0, 0xac, 0xbf, 0xcb), calls=True,
+                tag="PLAN.md §M, M1", src="glibc 2.31's `unlink_chunk` (`malloc/malloc.c`; `objdump -d`)"),
+    # glibc 2.31 malloc/malloc.c (`munmap_chunk`): the chunk mmapped (else the assert, 0x7c), its block page-aligned
+    # (else `malloc_printerr`, 0x70), `mp_.n_mmaps` and `mp_.mmapped_mem` updated (`lock`), then the tail call of
+    # `__munmap (p - prev_size, prev_size + size)`. Stops: the `jmp` to `__munmap` (0x63), the padding (0x68), the
+    # failures (0x70, 0x7c).
+    "mck": dict(grp="Mck", cn="munmap_chunk", a=0x62e660, n=155, pos=True, fs=True, stops=(0x63, 0x68, 0x70, 0x7c),
+                calls=True, tag="PLAN.md §M, M1", src="glibc 2.31's `munmap_chunk` (`malloc/malloc.c`; `objdump -d`)"),
+    # glibc 2.31 malloc/malloc.c (`systrim`, for `main_arena`: `rdi` = pad): the bytes to give back from the top
+    # chunk, a page multiple; `MORECORE (0)` through `__morecore` (0x33); if the top ends at the break,
+    # `MORECORE (-extra)` (0x5e), `__after_morecore_hook` if set (0xa8), `MORECORE (0)` again (0x72) and the top and
+    # `system_mem` made smaller. Stops: the `ret` (0x51), the padding (0x52, 0xa3).
+    "stm": dict(grp="Stm", cn="systrim.isra.0.constprop.0", a=0x62f8e0, n=172, pos=True, fs=True,
+                stops=(0x51, 0x52, 0xa3), calls=True,
+                tag="PLAN.md §M, M1", src="glibc 2.31's `systrim` (`malloc/malloc.c`; `objdump -d`)"),
     "gdn": dict(grp="Gdn", cn="__getdents", a=0x6a2820, n=0x3c, pos=True, fs=True, stops=(0x23, 0x24, 0x3b),
                 calls=True, tag="PLAN.md §M, M1",
                 src="glibc 2.31's `__getdents` (`sysdeps/unix/sysv/linux/getdents64.c`; `objdump -d`)"),
