@@ -323,6 +323,11 @@ FNS = {
     "lhp": dict(grp="Lhp", cn="CHeader_Parse", a=0x49ec00, n=0xa9, pos=True, stops=(0x43,),
                 tag="PLAN.md §M, M1", src="7-Zip 26.06's `NArchive::NLzma::CHeader::Parse` (`CPP/7zip/Archive/LzmaHandler.cpp`; "
                 "`objdump -d`)"),
+    # 7-Zip's CPP/Common/UTFConvert.cpp `Utf16_To_Utf8_Calc (src, srcLim, flags)` (`wchar_t` 4 bytes): the
+    # UTF-8 size of the characters in [src, srcLim), a loop from 0x18 back to itself; two `ret`s (0x7a, 0x88).
+    "u8c": dict(grp="U8c", cn="Utf16_To_Utf8_Calc", a=0x4518e0, n=0xf9, pos=True, stops=(0x7a, 0x88),
+                tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `Utf16_To_Utf8_Calc` (`CPP/Common/UTFConvert.cpp`; `objdump -d`)"),
     "lpd": dict(grp="Lpd", cn="LzmaProps_Decode", a=0x42bea0, n=0x66, pos=True, stops=(0x56, 0x65),
                 tag="PLAN.md §M, M1", src="7-Zip 26.06's `LzmaProps_Decode` (`C/LzmaDec.c`; `objdump -d`)"),
     "stu": dict(grp="Stu", cn="ConvertStringToUInt64", a=0x451330, n=0x7c, pos=True, stops=(0x55, 0x68, 0x77),
