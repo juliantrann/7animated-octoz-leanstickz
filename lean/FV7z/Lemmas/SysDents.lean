@@ -171,13 +171,17 @@ theorem sysGetdents64_ok (hw : Writable prof s s.cpu.gpr.rsi (arg32 s.cpu.gpr.rd
             | erw [hk (e :: es) h]
           all_goals rfl
 
-example {len : Nat} : arg32 (nx s len (sysGpr s len) (rf0 s)).cpu.gpr.rdx = arg32 s.cpu.gpr.rdx := rfl
-
 /-- `dentsRes` reads the descriptor table, `rdi` and `rdx` only. -/
 theorem dentsRes_congr {s' : State} (h1 : s'.proc.files = s.proc.files) (h2 : s'.cpu.gpr.rdi = s.cpu.gpr.rdi)
     (h3 : s'.cpu.gpr.rdx = s.cpu.gpr.rdx) : dentsRes o t s' = dentsRes o t s := by
+  have h3' : arg32 s'.cpu.gpr.rdx = arg32 s.cpu.gpr.rdx := congrArg arg32 h3
   unfold dentsRes
-  first | rw [h1, h2, h3] | simp only [h1, h2, h3]
+  simp only [h1, h2]
+  revert h3'
+  generalize arg32 s'.cpu.gpr.rdx = n
+  intro h3'
+  subst h3'
+  rfl
 
 /-- `syscall` for `getdents64 (rdi, rsi, rdx)`, `rsi`'s `count` bytes writable and the pieces of any entries that fit
 stored as `wrRuns` from any state with `s`'s memory and keys: the entries in the buffer, `dentsRes`'s answer in
