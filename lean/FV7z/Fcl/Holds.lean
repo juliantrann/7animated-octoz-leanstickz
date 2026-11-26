@@ -42,11 +42,13 @@ variable {F : Footprint} {Wl : List Rgn}
 theorem vc_0 {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post}
     (hst : ∀ i < 8, Foot Wl (Addr.add (g.rsp - 8) i)) (fa : ∀ i < 4, Foot F.data (Addr.add g.rdi i))
     (hm1 : ofBytesLE 32 ((byteAddrs g.rdi 4).map (Vst V (g.rsp - 8) (toBytesLE g.rbx 8))) = 4294967295#32 →
-      ∀ fl, Q 46 { g with rax := BitVec.setWidth 64 1#32, rbx := g.rdi, rsp := g.rsp - 8,
+      ∀ fl, Q 46 { g with
+        rax := BitVec.setWidth 64 1#32, rbx := g.rdi, rsp := g.rsp - 8,
         rdi := BitVec.setWidth 64 (ofBytesLE 32 ((byteAddrs g.rdi 4).map (Vst V (g.rsp - 8) (toBytesLE g.rbx 8)))) }
         fl (Vst V (g.rsp - 8) (toBytesLE g.rbx 8)))
     (hne : ofBytesLE 32 ((byteAddrs g.rdi 4).map (Vst V (g.rsp - 8) (toBytesLE g.rbx 8))) ≠ 4294967295#32 →
-      ∀ fl, Q 20 { g with rax := BitVec.setWidth 64 1#32, rbx := g.rdi, rsp := g.rsp - 8,
+      ∀ fl, Q 20 { g with
+        rax := BitVec.setWidth 64 1#32, rbx := g.rdi, rsp := g.rsp - 8,
         rdi := BitVec.setWidth 64 (ofBytesLE 32 ((byteAddrs g.rdi 4).map (Vst V (g.rsp - 8) (toBytesLE g.rbx 8)))) }
         fl (Vst V (g.rsp - 8) (toBytesLE g.rbx 8))) :
     W_0 F Wl Q g f V := by
@@ -140,12 +142,14 @@ theorem mid {s₁ Z : State} {t : Nat} {Vz : Addr → Byte} (c' : Seg prof F Wl 
     (hra : ofBytesLE 64 ((byteAddrs p 8).map Vz) = e₂.add j₂)
     (k0 : BitVec.setWidth 32 Z.cpu.gpr.rax = 0 → ∀ Z' t', KeptW Wl s₁ Z' →
       Agree F Z'.proc.mm.mem (Vst Vz d (toBytesLE (4294967295#32) 4)) → Z'.cpu.rip = e₂.add j₂ →
-      Z'.cpu.gpr = { Z.cpu.gpr with rax := BitVec.setWidth 64 1#32, rbx := b, rsp := p + 8,
+      Z'.cpu.gpr = { Z.cpu.gpr with
+        rax := BitVec.setWidth 64 1#32, rbx := b, rsp := p + 8,
         r8 := BitVec.setWidth 64 (BitVec.setWidth 32 Z.cpu.gpr.rax) } →
       GoG prof L o gev gP gE Z' t')
     (k1 : BitVec.setWidth 32 Z.cpu.gpr.rax ≠ 0 → ∀ Z' t', KeptW Wl s₁ Z' → Agree F Z'.proc.mm.mem Vz →
       Z'.cpu.rip = e₂.add j₂ →
-      Z'.cpu.gpr = { Z.cpu.gpr with rax := 0#64, rbx := b, rsp := p + 8,
+      Z'.cpu.gpr = { Z.cpu.gpr with
+        rax := 0#64, rbx := b, rsp := p + 8,
         r8 := BitVec.setWidth 64 (BitVec.setWidth 32 Z.cpu.gpr.rax) } →
       GoG prof L o gev gP gE Z' t') :
     GoG prof L o gev gP gE Z t := by
@@ -158,7 +162,8 @@ theorem mid {s₁ Z : State} {t : Nat} {Vz : Addr → Byte} (c' : Seg prof F Wl 
     rw [hbl, tn8]; omega
   have hd3 : d.toNat + (toBytesLE (4294967295#32) 4).length ≤ p.toNat ∨ p.toNat + 8 ≤ d.toNat := by
     rw [hbl]; omega
-  refine (c_25 prof).run c' hin (fun j' g' _ V' => j' = 46 ∧ ∃ a, g' = { Z.cpu.gpr with rax := a,
+  refine (c_25 prof).run c' hin (fun j' g' _ V' => j' = 46 ∧ ∃ a, g' = { Z.cpu.gpr with
+      rax := a,
       r8 := BitVec.setWidth 64 (BitVec.setWidth 32 Z.cpu.gpr.rax) } ∧
       ((BitVec.setWidth 32 Z.cpu.gpr.rax = 0 ∧ a = BitVec.setWidth 64 1#32 ∧
         V' = Vst Vz Z.cpu.gpr.rbx (toBytesLE (4294967295#32) 4)) ∨
@@ -209,7 +214,8 @@ theorem fclose_ok {fb : Addr} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.f
     (hra : ofBytesLE 64 ((byteAddrs X.cpu.gpr.rsp 8).map V) = e₂.add j₂)
     (kn : ofBytesLE 32 ((byteAddrs X.cpu.gpr.rdi 4).map V) = 4294967295#32 → ∀ Z t', KeptW Wl s₀ Z →
       Agree F Z.proc.mm.mem (Vst V (X.cpu.gpr.rsp - 8) (toBytesLE X.cpu.gpr.rbx 8)) → Z.cpu.rip = e₂.add j₂ →
-      Z.cpu.gpr = { X.cpu.gpr with rax := BitVec.setWidth 64 1#32,
+      Z.cpu.gpr = { X.cpu.gpr with
+        rax := BitVec.setWidth 64 1#32,
         rdi := BitVec.setWidth 64 (ofBytesLE 32 ((byteAddrs X.cpu.gpr.rdi 4).map V)), rsp := X.cpu.gpr.rsp + 8 } →
       GoG prof L o gev gP gE Z t')
     (kc : ofBytesLE 32 ((byteAddrs X.cpu.gpr.rdi 4).map V) ≠ 4294967295#32 →
@@ -268,7 +274,8 @@ theorem fclose_ok {fb : Addr} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.f
     rw [m8 X.cpu.gpr.rsp 8 hp8 (by omega)]
     exact hra
   -- to the `je`
-  refine (c_0 prof).run c hin (fun j' g' _ V' => g' = { X.cpu.gpr with rax := BitVec.setWidth 64 1#32,
+  refine (c_0 prof).run c hin (fun j' g' _ V' => g' = { X.cpu.gpr with
+      rax := BitVec.setWidth 64 1#32,
       rbx := X.cpu.gpr.rdi, rsp := X.cpu.gpr.rsp - 8, rdi := BitVec.setWidth 64 (ofBytesLE 32
         ((byteAddrs X.cpu.gpr.rdi 4).map (Vst V (X.cpu.gpr.rsp - 8) (toBytesLE X.cpu.gpr.rbx 8)))) } ∧
       V' = Vst V (X.cpu.gpr.rsp - 8) (toBytesLE X.cpu.gpr.rbx 8) ∧
