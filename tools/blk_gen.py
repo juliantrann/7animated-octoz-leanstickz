@@ -490,6 +490,12 @@ FNS = {
     # (0x55, 0x3b). Stop: the `ret` (0x45).
     "utr": dict(grp="Utr", cn="UString::TrimRight", a=0x44de20, n=90, pos=True, stops=(0x45,),
                 tag="PLAN.md §M, M1", src="7-Zip's `UString::TrimRight` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
+    # 7-Zip's CPP/Common/MyString.cpp `StringsAreEqualNoCase (s1, s2)` for `wchar_t`: each pair of characters equal,
+    # or equal after `MyCharUpper` (`c - 0x20` for 'a'..'z', `towupper` above 0x7f: the `call`s at 0x28, 0x6b), up to
+    # and with the 0. Stops: the `ret`s (0x8d: 1, 0x9a: 0).
+    "sen": dict(grp="Sen", cn="StringsAreEqualNoCase", a=0x44ba80, n=155, pos=True, stops=(0x8d, 0x9a), calls=True,
+                tag="PLAN.md §M, M1",
+                src="7-Zip's `StringsAreEqualNoCase` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
     "usl": dict(grp="Usl", cn="UString::SetStartLen", a=0x44d060, n=54, pos=True, stops=(0x35,), calls=True,
                 tag="PLAN.md §M, M1", src="7-Zip's `UString::SetStartLen` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
     # CPP/UI/Common/EnumDirItems.cpp `CDirItems::ScanProgress (dirPath)`: without a `Callback` (at 0xc0) 0, else a tail
