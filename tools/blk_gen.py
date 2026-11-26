@@ -568,6 +568,9 @@ FNS = {
     # CPP/Common/MyVector.h `CObjectVector<CRecordVector<unsigned>>::~CObjectVector ()`: from the last item down,
     # `delete [] item->_items` (the `call` at 0x32, when not null) and `delete item` (the `call` at 0x3f, 16 bytes),
     # then `delete [] _items` as a tail jump (0x5b) when not null, else the `ret` (0x64).
+    "msi": dict(grp="Msi", cn="CMultiStreams::Init", a=0x5b3260, n=125, pos=True, stops=(0x7c,), calls=True,
+                tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CMultiStreams::Init` (`CPP/7zip/Archive/Common/MultiStream.cpp`; `objdump -d`)"),
     "ocv": dict(grp="Ocv", cn="CObjectVector<CRecordVector<unsigned>>::~CObjectVector", a=0x454600, n=101, pos=True,
                 stops=(0x5b, 0x64), calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `CObjectVector<CRecordVector<unsigned>>::~CObjectVector` (`CPP/Common/MyVector.h`; "
