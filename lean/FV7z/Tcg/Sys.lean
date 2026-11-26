@@ -25,9 +25,15 @@ abbrev tcEv (g : Gprs) (r : BitVec 64) (bs : List Byte) : Event :=
 
 /-- An error number's answer `-e` is an error. -/
 theorem errRet_err {e : Nat} (h0 : 0 < e) (h1 : e < 4096) : WrErr (errRet e) := by
+  have he : e % 2 ^ 64 = e := Nat.mod_eq_of_lt (by omega)
+  have h0 : (0 : BitVec 64).toNat = 0 := rfl
   unfold WrErr errRet
-  simp only [BitVec.toNat_sub, BitVec.toNat_ofNat, Nat.reducePow, Nat.zero_mod, Nat.add_zero]
-  omega
+  first
+  | (rw [BitVec.toNat_sub, BitVec.toNat_ofNat, he, h0]; omega)
+  | (rw [BitVec.toNat_sub, BitVec.toNat_ofNat, he, h0]; simp; omega)
+  | (simp only [bv_toNat]; omega)
+  | (simp only [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.ofNat_eq_ofNat, Nat.zero_mod,
+      Nat.add_zero, Nat.mod_eq_of_lt (show e < 2 ^ 64 by omega)]; omega)
 
 /-- `syscall` for `ioctl (rdi, TCGETS, rdx)`, `rdx`'s 36 bytes writable and below the end of the user address space:
 either an error, nothing copied, or 36 bytes copied to `rdx` and `rax` 0. -/
