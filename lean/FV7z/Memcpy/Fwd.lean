@@ -8,7 +8,8 @@ four aligned stores (`movaps`) at `rdi`, `rdi += 64`, and again while `rdx > 64`
 of the source from `xmm5` to `xmm8` at the end and its first 16 from `xmm4` at the start (`r11`), and `ret`.
 
 - `bF563`, `bF578`, `bF601`, `bF605`: the loop's blocks; `LoopR`: its registers.
-- `tailF`: from `611`; `loopF`: from `563`, by induction on the bytes left.
+- `tailAt`: from `611` (or `849`, the same bytes after the non-temporal loop); `loopF`: from `563`, by induction
+  on the bytes left.
 -/
 namespace FV7z.Memcpy
 open ZellicX86 Decode FV7z.Leaf FV7z.Fn FV7z.Strlen FV7z.Memset
@@ -49,15 +50,24 @@ variable {prof : Profile} {L : List (Addr × List Byte)} {s₀ : State} {o : Ora
   {gev : List Event} {gP : State → Nat → List Event → Prop} {gE : Outcome → List Event → Prop}
   {e : Addr} {V : Addr → Byte}
 
-/-- From `611`, the bytes from `a₀ ≤ 16` to `a ≥ rdx - 64` copied: the last 64 bytes, the first 16, `ret`. -/
-theorem tailF (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e mc2) {g₀ : Gprs} {r : Addr} {a₀ a : Nat}
+/-- From `j` (`611` or `849`), the bytes from `a₀ ≤ 16` to `a ≥ rdx - 64` copied: the last 64 bytes, the first 16,
+`ret`. -/
+theorem tailAt (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e mc2) {j : Nat} (hj : j + 20 < mc2.length)
+    (h0 : Dec prof.feat mc2 j (FV7z.mk (.sse .movups) 32 [.mem (mbd 1 0 128), .xmm 5] 3))
+    (h1 : Dec prof.feat mc2 (j + 3) (FV7z.mk (.sse .movups) 32 [.mem (mbd 1 18446744073709551600 128), .xmm 6] 4))
+    (h2 : Dec prof.feat mc2 (j + 3 + 4)
+      (FV7z.mk (.sse .movups) 32 [.mem (mbd 1 18446744073709551584 128), .xmm 7] 4))
+    (h3 : Dec prof.feat mc2 (j + 3 + 4 + 4)
+      (FV7z.mk (.sse .movups) 32 [.mem (mbd 1 18446744073709551568 128), .xmm 8] 5))
+    (h4 : Dec prof.feat mc2 (j + 3 + 4 + 4 + 5) (FV7z.mk (.sse .movups) 32 [.mem (mbd 11 0 128), .xmm 4] 4))
+    (h5 : Dec prof.feat mc2 (j + 3 + 4 + 4 + 5 + 4) (FV7z.mk .ret 64 [] 1)) {g₀ : Gprs} {r : Addr} {a₀ a : Nat}
     (hst : ∀ i < g₀.rdx.toNat, Foot Wl (Addr.add g₀.rdi i))
     (hd64 : g₀.rdi.toNat + g₀.rdx.toNat < 2 ^ 64)
     (hsp : g₀.rdi.toNat + g₀.rdx.toNat ≤ g₀.rsp.toNat ∨ g₀.rsp.toNat + 8 ≤ g₀.rdi.toNat)
     (hsp8 : g₀.rsp.toNat + 8 ≤ 2 ^ 64) (h64 : 64 ≤ g₀.rdx.toNat) (ha₀ : a₀ ≤ 16)
     (ha : g₀.rdx.toNat ≤ a + 64) (han : a ≤ g₀.rdx.toNat)
     (hR : RetC prof F Wl L s₀ o gev gP gE V g₀ r) {Y : State} {t : Nat} {V₂ : Addr → Byte}
-    (hK : KeptW Wl s₀ Y) (hA : Agree F Y.proc.mm.mem V₂) (hrip : Y.cpu.rip = e.add 611)
+    (hK : KeptW Wl s₀ Y) (hA : Agree F Y.proc.mm.mem V₂) (hrip : Y.cpu.rip = e.add j)
     (hcx : Y.cpu.gpr.rcx = Addr.add g₀.rdi (g₀.rdx.toNat - 16)) (h11 : Y.cpu.gpr.r11 = g₀.rdi)
     (hkp : KpS g₀ Y.cpu.gpr) (hax : Y.cpu.gpr.rax = r)
     (hT : TailX V g₀.rsi g₀.rdx.toNat (xsOf Y.cpu.vec.zmm)) (hF : FwdP V V₂ g₀.rdi g₀.rsi a₀ a) :
@@ -66,7 +76,7 @@ theorem tailF (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e mc2) {g₀ : Gprs} 
     show Y.cpu.gpr.get (regOf 1) + BitVec.ofNat 64 0 = _
     rw [get1, hcx]
     exact BitVec.add_zero _
-  refine c.s_movups_stv hK hA hin (by rw [mc2_length]; decide) hrip (d611 prof.feat) (fun i hi => ?_) ?_
+  refine c.s_movups_stv hK hA hin (by omega) hrip h0 (fun i hi => ?_) ?_
   · rw [he0, addr_add_add]
     exact hst _ (by omega)
   rintro Y2 t2 hK2 hA2 ⟨hr2, hg2, hv2⟩
@@ -75,7 +85,7 @@ theorem tailF (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e mc2) {g₀ : Gprs} 
     rw [get1, hg2, hcx,
       add_back g₀.rdi (g₀.rdx.toNat - 16) (k := 16) (D := 18446744073709551600) (by decide) (by omega)]
     congr 1
-  refine c.s_movups_stv hK2 hA2 hin (by rw [mc2_length]; decide) hr2 (d614 prof.feat) (fun i hi => ?_) ?_
+  refine c.s_movups_stv hK2 hA2 hin (by omega) hr2 h1 (fun i hi => ?_) ?_
   · rw [he1, addr_add_add]
     exact hst _ (by omega)
   rintro Y3 t3 hK3 hA3 ⟨hr3, hg3, hv3⟩
@@ -84,7 +94,7 @@ theorem tailF (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e mc2) {g₀ : Gprs} 
     rw [get1, hg3, hg2, hcx,
       add_back g₀.rdi (g₀.rdx.toNat - 16) (k := 32) (D := 18446744073709551584) (by decide) (by omega)]
     congr 1
-  refine c.s_movups_stv hK3 hA3 hin (by rw [mc2_length]; decide) hr3 (d618 prof.feat) (fun i hi => ?_) ?_
+  refine c.s_movups_stv hK3 hA3 hin (by omega) hr3 h2 (fun i hi => ?_) ?_
   · rw [he2, addr_add_add]
     exact hst _ (by omega)
   rintro Y4 t4 hK4 hA4 ⟨hr4, hg4, hv4⟩
@@ -93,7 +103,7 @@ theorem tailF (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e mc2) {g₀ : Gprs} 
     rw [get1, hg4, hg3, hg2, hcx,
       add_back g₀.rdi (g₀.rdx.toNat - 16) (k := 48) (D := 18446744073709551568) (by decide) (by omega)]
     congr 1
-  refine c.s_movups_stv hK4 hA4 hin (by rw [mc2_length]; decide) hr4 (d622 prof.feat) (fun i hi => ?_) ?_
+  refine c.s_movups_stv hK4 hA4 hin (by omega) hr4 h3 (fun i hi => ?_) ?_
   · rw [he3, addr_add_add]
     exact hst _ (by omega)
   rintro Y5 t5 hK5 hA5 ⟨hr5, hg5, hv5⟩
@@ -101,7 +111,7 @@ theorem tailF (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e mc2) {g₀ : Gprs} 
     show Y5.cpu.gpr.r11 + BitVec.ofNat 64 0 = _
     rw [hg5, hg4, hg3, hg2, h11]
     rfl
-  refine c.s_movups_stv hK5 hA5 hin (by rw [mc2_length]; decide) hr5 (d627 prof.feat) (fun i hi => ?_) ?_
+  refine c.s_movups_stv hK5 hA5 hin (by omega) hr5 h4 (fun i hi => ?_) ?_
   · rw [he4, addr_add_add]
     exact hst _ (by omega)
   rintro Y6 t6 hK6 hA6 ⟨hr6, hg6, _⟩
@@ -132,7 +142,7 @@ theorem tailF (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e mc2) {g₀ : Gprs} 
   have hC := hC.st hn (o := g₀.rdx.toNat - 64) (k := 16) (hl _) (by omega) CopyP.ld
   have hC := hC.st hn (o := 0) (k := 16) (hl _) (by omega) CopyP.ld
   have e6 : Y6.cpu.gpr = Y.cpu.gpr := by rw [hg6, hg5, hg4, hg3, hg2]
-  refine ret_atC c hin (by rw [mc2_length]; decide) (d631 prof.feat) hK6 hA6 hr6 (by rw [e6]; exact hkp)
+  refine ret_atC c hin (by omega) h5 hK6 hA6 hr6 (by rw [e6]; exact hkp)
     (by rw [e6]; exact hax)
     (fun i hi => hC.2 _ fun ⟨h1, h2⟩ => by rw [toNat_add_of_fits (n := 8) hi hsp8] at h1 h2; omega)
     (fun i hi => hC.1 i hi ?_) hC.2 hR
@@ -356,7 +366,8 @@ theorem loopF (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e mc2) {g₀ : Gprs} 
   have h1 := ja_f hfa
   simp only [hq, BitVec.toNat_ofNat, Nat.reducePow, Nat.reduceMod] at h1
   have e9 : Y9.cpu.gpr = Y7.cpu.gpr := by rw [hg9, e8]
-  exact tailF c hin hst hd64 hsp hsp8 (by omega) ha₀ (by omega) (by omega) hR hK9 hA9 hr9
+  exact tailAt c hin (by rw [mc2_length]; decide) (d611 _) (d614 _) (d618 _) (d622 _) (d627 _) (d631 _) hst hd64
+    hsp hsp8 (by omega) ha₀ (by omega) (by omega) hR hK9 hA9 hr9
     (by rw [e9]; exact hcx7) (by rw [e9]; exact h117) (by rw [e9]; exact hkp7) (by rw [e9]; exact hax7)
     (by rw [hv9]; exact hT8) hF6
 

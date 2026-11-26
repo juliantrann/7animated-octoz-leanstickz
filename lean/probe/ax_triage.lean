@@ -1,6 +1,9 @@
-import FV7z.Lemmas.Xmm4
+import FV7z.Memcpy.Fwd
+import FV7z.Memcpy.FwdE
+import FV7z.Memcpy.FwdN
 open FV7z
-#print axioms FV7z.movntdq_st
-#print axioms FV7z.OpI.prefetch
-#print axioms FV7z.OpI.sfence
-#print axioms FV7z.Fn.Seg.s_movntdq_stv
+#print axioms FV7z.Memcpy.tailAt
+#print axioms FV7z.Memcpy.loopF
+#print axioms FV7z.Memcpy.loopN
+#print axioms FV7z.Memcpy.p767
+#print axioms FV7z.Memcpy.fwd498
