@@ -63,7 +63,8 @@ theorem vc_0 {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post} (hr : Rd F g
   obtain ⟨h68, h40, h4, h64⟩ := hr
   dsimp only at h68 h40 h4 h64 hs hQ ⊢
   wpx [W_0, W_11, o0, o1]
-  repeat' (first | exact hs | exact h68 | exact h40 | exact h4 | exact h64 | exact trivial
+  repeat' (first
+    | exact hs | exact h68 | exact h40 | exact h4 | exact h64 | exact trivial
     | exact hQ _ _ _ _ _ (.inl rfl) | exact hQ _ _ _ _ _ (.inr rfl) | (with_reducible apply And.intro) | intro _
     | split)
 
@@ -84,7 +85,8 @@ theorem vc_45 {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post} (hr : Rd F 
   obtain ⟨h68, -, h4, h64⟩ := hr
   dsimp only at h68 h4 h64 hw hQ hQ' ⊢
   wpx [W_45, W_52, W_60, o3, o4, o5, Op.cmpmr]
-  repeat' (first | exact hQ _ _ | exact hQ' _ _ | exact h68 | exact h4 | exact h64 | exact hw | exact trivial
+  repeat' (first
+    | exact hQ _ _ | exact hQ' _ _ | exact h68 | exact h4 | exact h64 | exact hw | exact trivial
     | (with_reducible apply And.intro) | intro _)
 
 /-- `pop rbx`. -/
@@ -139,8 +141,9 @@ theorem dr2_ok (c : Seg prof F Wl L s₀ o) (hin : CodeIn L dr2_at dr2)
       Agree F Y.proc.mm.mem (Vst (Vst V (X.cpu.gpr.rsp - 8) (toBytesLE X.cpu.gpr.rbx 8)) (X.cpu.gpr.rsp - 8 - 8)
         (toBytesLE (dr2_at.add (40 + 5)) 8)) →
       Y.cpu.rip = eT.add tT →
-      Y.cpu.gpr = ({ X.cpu.gpr with rax := a, rcx := c, rsi := si, rbx := X.cpu.gpr.rdi,
-        rsp := X.cpu.gpr.rsp - 8 } : Gprs).set 4 (X.cpu.gpr.rsp - 8 - 8) →
+      Y.cpu.gpr = ({ X.cpu.gpr with
+          rax := a, rcx := c, rsi := si, rbx := X.cpu.gpr.rdi, rsp := X.cpu.gpr.rsp - 8 } : Gprs).set 4
+        (X.cpu.gpr.rsp - 8 - 8) →
       (∀ (Z : State) (V' : Addr → Byte) (t'' : Nat), KeptW Wl s₀ Z → Agree F Z.proc.mm.mem V' →
         Z.cpu.rip = dr2_at.add 45 → Z.cpu.gpr.rsp = X.cpu.gpr.rsp - 8 → Z.cpu.gpr.rbx = X.cpu.gpr.rdi →
         rdq(V', X.cpu.gpr.rsp - 8) = X.cpu.gpr.rbx → rdq(V', X.cpu.gpr.rsp) = rdq(V, X.cpu.gpr.rsp) → Pc Z V' →
@@ -157,8 +160,8 @@ theorem dr2_ok (c : Seg prof F Wl L s₀ o) (hin : CodeIn L dr2_at dr2)
   refine (c_0 prof).run c hin (fun j g _ V' => j = 37 ∧
       V' = Vst V (X.cpu.gpr.rsp - 8) (toBytesLE X.cpu.gpr.rbx 8) ∧ ∃ a c si di : BitVec 64,
         (si = X.cpu.gpr.rsi ∨ si = lim (Vst V (X.cpu.gpr.rsp - 8) (toBytesLE X.cpu.gpr.rbx 8)) X.cpu.gpr.rdi) ∧
-        g = { X.cpu.gpr with rax := a, rcx := c, rsi := si, rdi := di, rbx := X.cpu.gpr.rdi,
-          rsp := X.cpu.gpr.rsp - 8 })
+        g = { X.cpu.gpr with
+          rax := a, rcx := c, rsi := si, rdi := di, rbx := X.cpu.gpr.rdi, rsp := X.cpu.gpr.rsp - 8 })
     hK hA (by rw [addr_add_zero]; exact hrip)
     (vc_0 hr hw1 fun a cc si di _ hsi => ⟨rfl, rfl, a, cc, si, di, hsi, rfl⟩) ?_
   rintro j g fl V₁ ⟨rfl, rfl, a, cc, si, di, hsi, rfl⟩ Y t₁ hKY hAY hrY hgY -
