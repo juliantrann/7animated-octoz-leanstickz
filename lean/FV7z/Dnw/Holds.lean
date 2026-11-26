@@ -101,17 +101,23 @@ theorem atEnd (p : Addr) (c : BitVec 32) (hc : c ≠ 0#32) {k : Nat} (hk : k < c
 theorem z0 (p : Addr) : p + BitVec.ofNat 64 (4 * 0) = p := BitVec.add_zero p
 
 /-- A low byte made of `wrLo`s (`setcc`, `or r8`), bit by bit: equal to a literal. -/
-macro "lob" : tactic => `(tactic| (apply BitVec.eq_of_getLsbD_eq; intro i hi;
+macro "lob" : tactic => `(tactic| (
+  apply BitVec.eq_of_getLsbD_eq
+  intro i hi
   rcases i with _ | _ | _ | _ | _ | _ | _ | _ | i <;>
     simp (config := { decide := true }) [BitVec.getLsbD_ofNat, BitVec.shiftLeft_zero, *] at hi ⊢))
 
 /-- `al ||| cl` with a 1 in `al` or `cl` is not 0: its bit 0. -/
-macro "lo_ne" : tactic => `(tactic| (exfalso;
-  have h0 := congrArg (fun x : BitVec 8 => x.getLsbD 0) (eq_of_beq ‹((_ : BitVec 8) == 0) = true›);
+macro "lo_ne" : tactic => `(tactic| (
+  exfalso
+  have h0 := congrArg (fun x : BitVec 8 => x.getLsbD 0) (eq_of_beq ‹((_ : BitVec 8) == 0) = true›)
   simp (config := { decide := true }) [BitVec.getLsbD_ofNat, BitVec.shiftLeft_zero] at h0))
 
 /-- `al ||| cl` with 0 in both is 0. -/
-macro "lo_eq" : tactic => `(tactic| (exfalso; apply (beq_eq_false_iff_ne.1 ‹((_ : BitVec 8) == 0) = false›); lob))
+macro "lo_eq" : tactic => `(tactic| (
+  exfalso
+  apply (beq_eq_false_iff_ne.1 ‹((_ : BitVec 8) == 0) = false›)
+  lob))
 
 variable {F : Footprint} {Wl : List Rgn}
 
