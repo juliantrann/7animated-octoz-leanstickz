@@ -141,7 +141,8 @@ FNS = {
     # `__munmap (p - prev_size, prev_size + size)`. Stops: the `jmp` to `__munmap` (0x63), the padding (0x68), the
     # failures (0x70, 0x7c).
     "mck": dict(grp="Mck", cn="munmap_chunk", a=0x62e660, n=155, pos=True, fs=True, stops=(0x63, 0x68, 0x70, 0x7c),
-                calls=True, tag="PLAN.md §M, M1", src="glibc 2.31's `munmap_chunk` (`malloc/malloc.c`; `objdump -d`)"),
+                calls=True, hand=(0x47, 0x54), tag="PLAN.md §M, M1",
+                src="glibc 2.31's `munmap_chunk` (`malloc/malloc.c`; `objdump -d`)"),
     # glibc 2.31 malloc/malloc.c (`systrim`, for `main_arena`: `rdi` = pad): the bytes to give back from the top
     # chunk, a page multiple; `MORECORE (0)` through `__morecore` (0x33); if the top ends at the break,
     # `MORECORE (-extra)` (0x5e), `__after_morecore_hook` if set (0xa8), `MORECORE (0)` again (0x72) and the top and
