@@ -170,14 +170,14 @@ theorem ulk_ok {fb : Addr} {X : State} {t : Nat} {V : Addr → Byte}
     have hg₃' : Y₃.cpu.gpr = g₁ := hg₃.trans (hg₂.trans hg₁)
     have hea : eaD Y₃ 0 32 = ufd V X.cpu.gpr.rdi + 32#64 := by
       show Y₃.cpu.gpr.get (regOf 0) + BitVec.ofNat 64 32 = _
-      rw [hg₃']; show g₁.rax + _ = _; rw [hax]; rfl
+      rw [hg₃']; show g₁.rax + _ = _; rw [hax] <;> rfl
     have hxv : xlo Y₃ 0 = ufd V X.cpu.gpr.rdi ++ ufd V X.cpu.gpr.rdi := by
+      have h1 : Y₁.cpu.gpr.get (regOf 0) = ufd V X.cpu.gpr.rdi := by rw [hg₁]; exact hax
       rw [hx₃, hx₂]
       show lane 64 ((Y₁.cpu.gpr.get (regOf 0)).setWidth 64 |>.setWidth 128) 0 ++
-        lane 64 ((Y₁.cpu.gpr.get (regOf 0)).setWidth 64 |>.setWidth 128) 0 = _
-      rw [hg₁]
-      show lane 64 (g₁.rax.setWidth 64 |>.setWidth 128) 0 ++ lane 64 (g₁.rax.setWidth 64 |>.setWidth 128) 0 = _
-      rw [hax, BitVec.setWidth_eq, Cxa.lane_lo]
+        lane 64 ((Y₁.cpu.gpr.get (regOf 0)).setWidth 64 |>.setWidth 128) 0 =
+        ufd V X.cpu.gpr.rdi ++ ufd V X.cpu.gpr.rdi
+      rw [h1, BitVec.setWidth_eq, Cxa.lane_lo]
     refine c.s_movups_stv hK₃ hA₃ hin (lt_len (by decide)) hr₃ (mv_185 _) (by rw [hea]; exact w5) ?_
     rintro Y₄ t₄ hK₄ hA₄ ⟨hr₄, hg₄, -⟩
     rw [hea, hxv] at hA₄
@@ -202,14 +202,15 @@ theorem ulk_ok {fb : Addr} {X : State} {t : Nat} {V : Addr → Byte}
     have hg₄' : Y₄.cpu.gpr = g₁ := hg₄.trans (hg₃.trans (hg₂.trans hg₁))
     have hea : eaD Y₄ 0 32 = ufd V X.cpu.gpr.rdi + 32#64 := by
       show Y₄.cpu.gpr.get (regOf 0) + BitVec.ofNat 64 32 = _
-      rw [hg₄']; show g₁.rax + _ = _; rw [hax]; rfl
+      rw [hg₄']; show g₁.rax + _ = _; rw [hax] <;> rfl
     have hxv : xlo Y₄ 0 = ubkn V X.cpu.gpr.rdi ++ ufdn V X.cpu.gpr.rdi := by
+      have h1 : Y₂.cpu.gpr.get (regOf 1) = ubkn V X.cpu.gpr.rdi := by rw [hg₂, hg₁]; exact hcx
+      have h2 : Y₁.cpu.gpr.get (regOf 2) = ufdn V X.cpu.gpr.rdi := by rw [hg₁]; exact hdx
       rw [hx₄, hx₃, hk₃ 0 (by decide), hx₂]
       show lane 64 ((Y₂.cpu.gpr.get (regOf 1)).setWidth 64 |>.setWidth 128) 0 ++
-        lane 64 ((Y₁.cpu.gpr.get (regOf 2)).setWidth 64 |>.setWidth 128) 0 = _
-      rw [hg₂, hg₁]
-      show lane 64 (g₁.rcx.setWidth 64 |>.setWidth 128) 0 ++ lane 64 (g₁.rdx.setWidth 64 |>.setWidth 128) 0 = _
-      rw [hcx, hdx, BitVec.setWidth_eq, BitVec.setWidth_eq, Cxa.lane_lo, Cxa.lane_lo]
+        lane 64 ((Y₁.cpu.gpr.get (regOf 2)).setWidth 64 |>.setWidth 128) 0 =
+        ubkn V X.cpu.gpr.rdi ++ ufdn V X.cpu.gpr.rdi
+      rw [h1, h2, BitVec.setWidth_eq, BitVec.setWidth_eq, Cxa.lane_lo, Cxa.lane_lo]
     refine c.s_movups_stv hK₄ hA₄ hin (lt_len (by decide)) hr₄ (mv_131 _) (by rw [hea]; exact w5) ?_
     rintro Y₅ t₅ hK₅ hA₅ ⟨hr₅, hg₅, -⟩
     rw [hea, hxv] at hA₅
