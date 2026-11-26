@@ -1,22 +1,9 @@
-import FV7z.Lemmas.LeafRet
-import FV7z.Ar1.Holds
-import FV7z.Ar2.Holds
-import FV7z.Ar3.Holds
-import FV7z.Nrp.Holds
-import FV7z.Gnp.Holds
-import FV7z.Rps.Holds
-import FV7z.Rpw.Holds
-import FV7z.Ifx.Holds
-import FV7z.Gpm.Holds
-import FV7z.Ssl.Holds
+import FV7z.Ar4.Holds
+import FV7z.Utf.Holds
+import FV7z.Csd.Holds
+import FV7z.Mya.Holds
 open FV7z
-#print axioms FV7z.Ar1.ar1_ok
-#print axioms FV7z.Ar2.ar2_ok
-#print axioms FV7z.Ar3.ar3_ok
-#print axioms FV7z.Nrp.nrp_ok
-#print axioms FV7z.Gnp.gnp_ok
-#print axioms FV7z.Rps.rps_ok
-#print axioms FV7z.Rpw.rpw_ok
-#print axioms FV7z.Ifx.ifx_ok
-#print axioms FV7z.Gpm.gpm_ok
-#print axioms FV7z.Ssl.ssl_ok
+#print axioms FV7z.Ar4.ar4_ok
+#print axioms FV7z.Utf.utf_ok
+#print axioms FV7z.Csd.csd_ok
+#print axioms FV7z.Mya.mya_ok

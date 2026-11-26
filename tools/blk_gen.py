@@ -120,6 +120,19 @@ FNS = {
     # count at `this + d` incremented and returned. Stop: the `ret` (13).
     "ar1": dict(grp="Ar1", cn="CArchiveExtractCallback::AddRef", a=0x5b20e0, n=14, pos=True, stops=(13,),
                 tag="PLAN.md §M, M1", src="7-Zip 26.06's `CArchiveExtractCallback::AddRef` (`MyCom.h`; `objdump -d`)"),
+    "ar4": dict(grp="Ar4", cn="CExtractCallbackConsole::AddRef", a=0x5ea370, n=20, pos=True, stops=(19,),
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `CExtractCallbackConsole::AddRef` (`MyCom.h`; `objdump -d`)"),
+    # 7-Zip's CPP/Windows/TimeUtils.cpp `UnixTime64_To_FileTime64 (unixTime)`: `(unixTime + 11644473600) * 10^7`.
+    "utf": dict(grp="Utf", cn="NWindows::NTime::UnixTime64_To_FileTime64", a=0x458880, n=25, pos=True, stops=(24,),
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `UnixTime64_To_FileTime64` (`TimeUtils.cpp`; `objdump -d`)"),
+    # 7-Zip's C/Threads.c `CriticalSection_Delete`, inlined `pthread_mutex_destroy` behind a null test: nothing for
+    # a null pointer, else a tail jump. Stops: the jump (9), the `ret` (16).
+    "csd": dict(grp="Csd", cn="CriticalSection_Delete", a=0x448b60, n=17, pos=True, stops=(9, 16),
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `CriticalSection_Delete` (`C/Threads.c`; `objdump -d`)"),
+    # 7-Zip's C/Alloc.c `MyAlloc (size)`: 0 for size 0, else a tail jump to `malloc`. Stops: the jump (9), the `ret`
+    # (18).
+    "mya": dict(grp="Mya", cn="MyAlloc", a=0x41f3c0, n=19, pos=True, stops=(9, 18),
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `MyAlloc` (`C/Alloc.c`; `objdump -d`)"),
     "ar2": dict(grp="Ar2", cn="CCrcHasher::AddRef", a=0x49fe10, n=14, pos=True, stops=(13,),
                 tag="PLAN.md §M, M1", src="7-Zip 26.06's `CCrcHasher::AddRef` (`MyCom.h`; `objdump -d`)"),
     "ar3": dict(grp="Ar3", cn="CInFileStream::AddRef", a=0x5a48a0, n=14, pos=True, stops=(13,),
