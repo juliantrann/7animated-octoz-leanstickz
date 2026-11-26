@@ -119,6 +119,16 @@ FNS = {
     # glibc 2.31 sysdeps/unix/sysv/linux/getdents64.c (`__getdents64`, aliased `__getdents` on x86_64): `count` capped
     # at `INT_MAX` (`cmova`), then `getdents64` (217) as is: no conversion of the entries. Stops: the `ret` (0x23), the
     # padding after it (0x24), the `ret` after `errno` is set (0x3b); the `syscall` (0x19) is a step of its own.
+    # glibc 2.31 malloc/malloc.c (`__libc_calloc`), the way of one thread with `__malloc_hook` null and the tcache
+    # made: `n * m` (`mul`, no overflow), the top chunk's size read, `_int_malloc (&main_arena, n)` (0x7b), the chunk
+    # of the main arena, not mmapped, `perturb_byte` 0, the size to clear (`min` with the old top's size when the
+    # chunk is the old top), cleared inline (to 72 bytes) or by `memset` (0x2cd). Stops: the `ret` (0xd1), the padding
+    # after it (0xd2), the product too big (0x190), `_int_malloc` gave null (0x1b0), the hook set (0x1c0), more than
+    # one thread (0x1f0, 0x260), no tcache (0x240), mmapped and `perturb_byte` set (0x2e0), not of the main arena
+    # (0x13b), the asserts (0x151, 0x366).
+    "cal": dict(grp="Cal", cn="__libc_calloc", a=0x634a60, n=901, pos=True, fs=True,
+                stops=(0xd1, 0xd2, 0x190, 0x1b0, 0x1c0, 0x1f0, 0x260, 0x240, 0x2e0, 0x13b, 0x151, 0x366), calls=True,
+                tag="PLAN.md §M, M1", src="glibc 2.31's `__libc_calloc` (`malloc/malloc.c`; `objdump -d`)"),
     "gdn": dict(grp="Gdn", cn="__getdents", a=0x6a2820, n=0x3c, pos=True, fs=True, stops=(0x23, 0x24, 0x3b),
                 calls=True, tag="PLAN.md §M, M1",
                 src="glibc 2.31's `__getdents` (`sysdeps/unix/sysv/linux/getdents64.c`; `objdump -d`)"),
@@ -127,6 +137,54 @@ FNS = {
     "cnc": dict(grp="Cnc", cn="__close_nocancel", a=0x665f20, n=42, pos=True, fs=True, stops=(0x13, 0x14, 0x29),
                 calls=True, tag="PLAN.md §M, M1",
                 src="glibc 2.31's `__close_nocancel` (`sysdeps/unix/sysv/linux/close_nocancel.c`; `objdump -d`)"),
+    # 7-Zip 26.06's `AddRef`s of three classes (`Z7_COM_ADDREF_RELEASE`, `CPP/Common/MyCom.h`): the reference
+    # count at `this + d` incremented and returned. Stop: the `ret` (13).
+    "ar1": dict(grp="Ar1", cn="CArchiveExtractCallback::AddRef", a=0x5b20e0, n=14, pos=True, stops=(13,),
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `CArchiveExtractCallback::AddRef` (`MyCom.h`; `objdump -d`)"),
+    "ar4": dict(grp="Ar4", cn="CExtractCallbackConsole::AddRef", a=0x5ea370, n=20, pos=True, stops=(19,),
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `CExtractCallbackConsole::AddRef` (`MyCom.h`; `objdump -d`)"),
+    # 7-Zip's CPP/Windows/TimeUtils.cpp `UnixTime64_To_FileTime64 (unixTime)`: `(unixTime + 11644473600) * 10^7`.
+    "utf": dict(grp="Utf", cn="NWindows::NTime::UnixTime64_To_FileTime64", a=0x458880, n=25, pos=True, stops=(24,),
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `UnixTime64_To_FileTime64` (`TimeUtils.cpp`; `objdump -d`)"),
+    # `CriticalSection_Delete` by the symbol table (C/Threads.c): nothing for a null pointer, else a tail jump to
+    # glibc's `__pthread_mutex_lock`. Stops: the jump (9), the `ret` (16).
+    "csd": dict(grp="Csd", cn="CriticalSection_Delete", a=0x448b60, n=17, pos=True, stops=(9, 16),
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `CriticalSection_Delete` (`C/Threads.c`; `objdump -d`)"),
+    # The second `CriticalSection_Delete` of the symbol table (0x448b80): the same code as `csd`, the tail jump to
+    # glibc's `__pthread_mutex_unlock`. Stops: the jump (9), the `ret` (16).
+    "csx": dict(grp="Csx", cn="CriticalSection_Delete (0x448b80)", a=0x448b80, n=17, pos=True, stops=(9, 16),
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `CriticalSection_Delete` (`C/Threads.c`; `objdump -d`)"),
+    # 7-Zip's CPP/7zip/Common/StreamUtils.cpp `InStream_SeekToBegin (stream)`: `stream->Seek (0, STREAM_SEEK_SET,
+    # NULL)` as a tail jump through the vtable (`jmp rax`). Stop: the jump (17).
+    "isb": dict(grp="Isb", cn="InStream_SeekToBegin", a=0x4631e0, n=19, pos=True, stops=(17,),
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `InStream_SeekToBegin` (`StreamUtils.cpp`; `objdump -d`)"),
+    # 7-Zip's C/Alloc.c `MyAlloc (size)`: 0 for size 0, else a tail jump to `malloc`. Stops: the jump (9), the `ret`
+    # (18).
+    "mya": dict(grp="Mya", cn="MyAlloc", a=0x41f3c0, n=19, pos=True, stops=(9, 18),
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `MyAlloc` (`C/Alloc.c`; `objdump -d`)"),
+    "ar2": dict(grp="Ar2", cn="CCrcHasher::AddRef", a=0x49fe10, n=14, pos=True, stops=(13,),
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `CCrcHasher::AddRef` (`MyCom.h`; `objdump -d`)"),
+    "ar3": dict(grp="Ar3", cn="CInFileStream::AddRef", a=0x5a48a0, n=14, pos=True, stops=(13,),
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `CInFileStream::AddRef` (`MyCom.h`; `objdump -d`)"),
+    # 7-Zip 26.06's handlers' counts of properties (`IMP_IInArchive_Props` etc.): `*n` stored, 0 returned. Stop: `ret`.
+    "nrp": dict(grp="Nrp", cn="NHash::CHandler::GetNumRawProps", a=0x49e940, n=13, pos=True, stops=(12,),
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `NHash::CHandler::GetNumRawProps` (`objdump -d`)"),
+    "gnp": dict(grp="Gnp", cn="NArchive::NGz::CHandler::GetNumberOfArchiveProperties", a=0x49e8f0, n=13, pos=True, stops=(12,),
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `NGz::CHandler::GetNumberOfArchiveProperties` (`objdump -d`)"),
+    # 7-Zip 26.06's CPP/Windows/FileName.cpp `GetRootPrefixSize`: 1 if the path starts with `/`, else 0. Stop: `ret`.
+    "rps": dict(grp="Rps", cn="NWindows::NFile::NName::GetRootPrefixSize(const char *)", a=0x456a60, n=13, pos=True, stops=(12,),
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `GetRootPrefixSize` (`CPP/Windows/FileName.cpp`; `objdump -d`)"),
+    "rpw": dict(grp="Rpw", cn="NWindows::NFile::NName::GetRootPrefixSize(const wchar_t *)", a=0x456a70, n=13, pos=True, stops=(12,),
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `GetRootPrefixSize` (`CPP/Windows/FileName.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06's CPP/7zip/UI/Common/ArchiveCommandLine.h `CArcCommand`'s tests of `CommandType`. Stop: `ret`.
+    "ifx": dict(grp="Ifx", cn="CArcCommand::IsFromExtractGroup", a=0x5a70d0, n=16, pos=True, stops=(15,),
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `CArcCommand::IsFromExtractGroup` (`ArchiveCommandLine.h`; `objdump -d`)"),
+    "gpm": dict(grp="Gpm", cn="CArcCommand::GetPathMode", a=0x5a70e0, n=21, pos=True, stops=(20,),
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `CArcCommand::GetPathMode` (`ArchiveCommandLine.h`; `objdump -d`)"),
+    # 7-Zip 26.06's CPP/Common/MyWindows.cpp `SysStringLen`: 0 for null, else the byte length before `bstr` / 4.
+    # Stops: the two `ret`s (15, 18).
+    "ssl": dict(grp="Ssl", cn="SysStringLen", a=0x5a0100, n=19, pos=True, stops=(15, 18),
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `SysStringLen` (`CPP/Common/MyWindows.cpp`; `objdump -d`)"),
     # 7-Zip's CPP/Windows/FileIO.cpp `CFileBase::Close ()`: nothing when `_handle` is -1, else `close (_handle)`,
     # `_handle` = -1 on success. Stop: the `ret` (0x2f); the `call` of `__close` is at 0x14.
     "fcl": dict(grp="Fcl", cn="NWindows::NFile::NIO::CFileBase::Close", a=0x456030, n=48, pos=True, stops=(0x2f,),
@@ -159,10 +217,25 @@ FNS = {
     # Stop: the `jmp` (0x8).
     "wmc": dict(grp="Wmc", cn="__wmemcpy", a=0x65d300, n=13, pos=True, stops=(0x8,),
                 tag="PLAN.md §M, M1", src="glibc 2.31's `__wmemcpy` (`wcsmbs/wmemcpy.c`; `objdump -d`)"),
+    # glibc 2.31 `__libc_free (mem)` (malloc/malloc.c): `__free_hook`, `free (0)`, the mmapped chunk (the dynamic
+    # threshold, then `munmap_chunk`), the tcache made if absent (`tcache_init`), the arena, then `_int_free`.
+    # Stops: the tail jumps to `_int_free` (0x56) and `munmap_chunk` (0x82), the `ret` (0x94), the hook's `jmp`
+    # (0xa1) and the call of `tcache_init` (0xe0).
+    "fre": dict(grp="Fre", cn="__libc_free", a=0x633750, n=247, pos=True, fs=True, stops=(0x56, 0x82, 0x94, 0xa1, 0xe0),
+                calls=True, tag="PLAN.md G3, `free`", src="glibc 2.31's `__libc_free` (`malloc/malloc.c`; `objdump -d`)"),
     # glibc 2.31 nptl/cleanup_compat.c `_pthread_cleanup_push (buffer, routine, arg)`: the buffer filled, linked in
     # front of the thread's `cleanup` list (`fs:0x2f8`). Stop: the `ret` (0x21).
     "pcp": dict(grp="Pcp", cn="_pthread_cleanup_push", a=0x5fefe0, n=34, pos=True, fs=True, stops=(0x21,),
                 tag="PLAN.md §M, M1", src="glibc 2.31's `_pthread_cleanup_push` (`nptl/cleanup_compat.c`; `objdump -d`)"),
+    # glibc 2.31 nptl/cleanup_compat.c `_pthread_cleanup_pop (buffer, execute)`: the thread's `cleanup` list
+    # (`fs:0x2f8`) set back to `buffer->__prev`; if `execute`, a tail jump to `buffer->__routine (buffer->__arg)`.
+    # Stops: the `jmp rax` (0x1f) and the `ret` (0x28).
+    "pco": dict(grp="Pco", cn="_pthread_cleanup_pop", a=0x5ff010, n=41, pos=True, fs=True, stops=(0x1f, 0x28),
+                tag="PLAN.md §M, M1", src="glibc 2.31's `_pthread_cleanup_pop` (`nptl/cleanup_compat.c`; `objdump -d`)"),
+    # glibc 2.31 string/strdup.c `__strdup (s)`: `strlen (s) + 1` bytes from `malloc`, then a tail jump to `memcpy`
+    # through the PLT; `malloc`'s 0 is the answer. Stops: the `jmp` to `memcpy` (0x34) and the `ret` (0x3f).
+    "sdp": dict(grp="Sdp", cn="__strdup", a=0x635dd0, n=64, pos=True, stops=(0x34, 0x3f), calls=True,
+                tag="PLAN.md §M, M1", src="glibc 2.31's `__strdup` (`string/strdup.c`; `objdump -d`)"),
     # 7-Zip's CPP/Windows/FileIO.cpp `CFileBase::seek (off, whence)`: the descriptor (`this->_handle`, at 0), then
     # `lseek`. Stop: the `jmp` to `__libc_lseek` (6), a branch to another segment (`Seg.s_jmp_x`).
     "fsk": dict(grp="Fsk", cn="NWindows::NFile::NIO::CFileBase::seek", a=0x4560b0, n=11, pos=True, stops=(6,),
@@ -173,6 +246,12 @@ FNS = {
     "wrt": dict(grp="Write", cn="__libc_write", a=0x5ff270, n=0x99, pos=True, fs=True, stops=(0x1f, 0x20, 0x83),
                 calls=True, tag="PLAN.md §M, M1",
                 src="glibc 2.31's `__libc_write` (`sysdeps/unix/sysv/linux/write.c`; `objdump -d`)"),
+    # glibc 2.31 sysdeps/unix/sysv/linux/open64_nocancel.c (`__open64_nocancel`, `openat (AT_FDCWD, …)`). Stops: the
+    # `ret` (0x68), the padding after it (0x69), the flags have `O_CREAT` or `O_TMPFILE` (0x70: the mode from the
+    # `va_list`), the padding after that (0x92), `__stack_chk_fail` (0xab); the `syscall` (0x4a) is a step of its own.
+    "onc": dict(grp="Onc", cn="__open64_nocancel", a=0x666090, n=0xb0, pos=True, fs=True,
+                stops=(0x68, 0x69, 0x70, 0x92, 0xab), calls=True, tag="PLAN.md §M, M1",
+                src="glibc 2.31's `__open64_nocancel` (`sysdeps/unix/sysv/linux/open64_nocancel.c`; `objdump -d`)"),
     # glibc 2.31 sysdeps/unix/sysv/linux/dl-sysdep.c. Stop: `__uname` failed (0xb0: the release is read from
     # `/proc/sys/kernel/osrelease`); the `ret`s are at 0x8a (three parts read) and 0xa9 (fewer).
     "osv": dict(grp="Osv", cn="_dl_discover_osversion", a=0x671d50, n=268, pos=True, stops=(0xb0,), calls=True,
