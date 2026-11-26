@@ -145,9 +145,7 @@ theorem vc_0 {f : Rflags} (h8 : ∀ i < 8, Foot Wl (Addr.add (g.rsp - 8#64) i))
   have h16' : ∀ i < 8, Foot Wl (Addr.add (rsp - 16#64) i) := h16
   wpx [W_0, o0]
   try simp only [sdE16, sdE24]
-  first
-  | exact ⟨h8', h16', rfl, rfl⟩
-  | exact ⟨h8', h16', ⟨rfl, rfl⟩⟩
+  all_goals repeat' (first | exact h8' | exact h16' | exact rfl | exact trivial | apply And.intro)
 
 /-- To the call of `malloc`: `n + 1` in `r12` and `rdi`. -/
 theorem vc_19 {f : Rflags} :
@@ -155,16 +153,15 @@ theorem vc_19 {f : Rflags} :
       g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   wpx [W_19, o1]
-  first
-  | rfl
-  | exact ⟨rfl, rfl⟩
+  all_goals repeat' (first | exact rfl | exact trivial | apply And.intro)
 
 /-- From `malloc`'s return with a block, not 0, to the jump to `memcpy`: the frame given back, the registers
 popped, the arguments `(p, s, n + 1)`. -/
 theorem vc_31 {f : Rflags} (hz : g.rax ≠ 0) (r16 : ∀ i < 8, Foot F.data (Addr.add (g.rsp + 8#64) i))
     (r8 : ∀ i < 8, Foot F.data (Addr.add (g.rsp + 16#64) i)) :
     W_31 F Wl (fun j' g' _ V' => j' = 52 ∧
-      g' = { g with rsp := g.rsp + 24#64, rdx := g.r12, rsi := g.rbp, rdi := g.rax, rbp := rdq(V, g.rsp + 8#64),
+      g' = { g with
+        rsp := g.rsp + 24#64, rdx := g.r12, rsi := g.rbp, rdi := g.rax, rbp := rdq(V, g.rsp + 8#64),
         r12 := rdq(V, g.rsp + 16#64) } ∧ V' = V) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   have r16' : ∀ i < 8, Foot F.data (Addr.add (rsp + 8#64) i) := r16
@@ -173,10 +170,7 @@ theorem vc_31 {f : Rflags} (hz : g.rax ≠ 0) (r16 : ∀ i < 8, Foot F.data (Add
   wpx [W_31, W_36, W_57, o2, o3, o4, BitVec.and_self, BitVec.setWidth_eq]
   try simp only [sdP16, sdP24]
   refine ⟨fun hc => absurd (by simpa using hc) hz', fun _ => ?_⟩
-  first
-  | exact ⟨r16', r8', rfl⟩
-  | exact ⟨r16', r8', rfl, rfl⟩
-  | exact ⟨r16', r8', ⟨rfl, rfl⟩⟩
+  all_goals repeat' (first | exact r16' | exact r8' | exact rfl | exact trivial | apply And.intro)
 
 /-! ## The function -/
 
@@ -301,7 +295,8 @@ theorem sdp_ok {fb : Addr} {hi k n : Nat} {pl pm pc : List Byte} {Pl Pc : (Addr 
     exact c.hws _ (sdSlot hstk (by rw [h16]; omega) (by rw [h16]; omega) i hi)
   · rw [espm, sdA8]
     exact c.hws _ (sdSlot hstk (by rw [h8]; omega) (by rw [h8]; omega) i hi)
-  rintro j' g₅ fl V₆ ⟨rfl, rfl, rfl⟩ Y₅ t₇ hK₅ hA₅ hr₅ hg₅ -
+  rintro j' g₅ fl V₆ ⟨rfl, rfl, hV₆⟩ Y₅ t₇ hK₅ hA₅ hr₅ hg₅ -
+  subst V₆
   refine c.s_jmp_x hK₅ hA₅ hin (lt_len (by decide)) hr₅ (jmp_52 _) hic (tgt := 0) hc0 (by decide) ?_
   rintro Y₆ t₈ hK₆ hA₆ ⟨hr₆, hg₆⟩
   have g6 := hg₆.trans hg₅

@@ -1,4 +1,8 @@
-import FV7z.Cal.Holds
+import FV7z.Ulk.Vc
 open FV7z
-#print axioms FV7z.Cal.inl
-#print axioms FV7z.Cal.cal_ok
+#print axioms FV7z.Ulk.vc_0s
+#print axioms FV7z.Ulk.vc_0a
+#print axioms FV7z.Ulk.vc_0b
+#print axioms FV7z.Ulk.vc_0c
+#print axioms FV7z.Ulk.vc_135
+#print axioms FV7z.Ulk.vc_106
