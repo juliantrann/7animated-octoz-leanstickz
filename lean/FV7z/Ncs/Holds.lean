@@ -161,11 +161,12 @@ theorem vc_0 {f : Rflags} (hF : Fp F V₀ g₀.rdi) :
   · have h0 : (cnt V₀ rdi).toNat = 0 := by
       have e : rdd(V₀, rdi + 48#64) = 0 := by simpa using hc
       simp [cnt, e]
-    exact e60 (by omega) (by decide) (Or.inl ⟨fun k hk => absurd hk (by omega), rfl⟩) rfl
+    exact e60 (by omega) (by decide)
+      (by exact Or.inl ⟨fun k hk => absurd (show k < (cnt V₀ rdi).toNat from hk) (by omega), rfl⟩) rfl
   · have hne : rdd(V₀, rdi + 48#64) ≠ 0 := by simpa using hc
     have hpos : 0 < (cnt V₀ rdi).toNat :=
       Nat.pos_of_ne_zero fun e => hne (BitVec.eq_of_toNat_eq (by simpa using e))
-    exact e47z hpos (by omega) rfl
+    exact e47z (by exact hpos) (by dsimp only; omega) rfl
 
 /-- The loop's head, node `i`: its byte at 16 set, to 60; its count at 8 past 1, to the `ret` at 73; else the next
 node, or 60 with `r8` 0 after the last. -/
@@ -192,10 +193,10 @@ theorem vc_47 {n : Nat} {g : Gprs} {f : Rflags} (hF : Fp F V₀ g₀.rdi) (h : I
         beq_eq_false_iff_ne, ne_eq, beq_self_eq_true, not_true_eq_false, not_false_eq_true, false_implies,
         Bool.true_eq_false, Bool.false_eq_true, implies_true]
       all_goals repeat' (first
-        | exact fa
-        | exact fb
-        | exact fc hb0
-        | exact eFin (Or.inr rfl) (Or.inr ⟨i, hi, hok, Or.inr ⟨hb0, hB0, by first | decide | simp⟩⟩) rfl
+        | with_reducible exact fa
+        | with_reducible exact fb
+        | with_reducible exact fc hb0
+        | exact eFin (Or.inr rfl) (by exact Or.inr ⟨i, hi, hok, Or.inr ⟨hb0, hB0, by first | decide | simp⟩⟩) rfl
         | apply And.intro
         | intro)
     · have hB1 : big (inc V₀ rdi i) = false := by simpa using hB0
@@ -209,26 +210,26 @@ theorem vc_47 {n : Nat} {g : Gprs} {f : Rflags} (hF : Fp F V₀ g₀.rdi) (h : I
         beq_eq_false_iff_ne, ne_eq, beq_self_eq_true, not_true_eq_false, not_false_eq_true, false_implies,
         Bool.true_eq_false, Bool.false_eq_true, implies_true]
       all_goals repeat' (first
-        | exact fa
-        | exact fb
-        | exact fc hb0
+        | with_reducible exact fa
+        | with_reducible exact fb
+        | with_reducible exact fc hb0
         | apply And.intro
         | intro)
       all_goals rename_i hc
       all_goals first
-        | exact e60 (by omega) (by first | decide | simp) (Or.inl ⟨fun k hk => hok' k (by
+        | exact e60 (by omega) (by first | decide | simp) (by exact Or.inl ⟨fun k hk => hok' k (by
             have hk' : k < (rdd(V₀, rdi + 48#64)).toNat := hk
             have h' := congrArg BitVec.toNat (of_decide_eq_true hc)
             simp only [Addr.add, BitVec.toNat_add, BitVec.toNat_mul, BitVec.toNat_setWidth, BitVec.toNat_sub,
               BitVec.toNat_ofNat] at h'
             omega), by first | decide | simp⟩) rfl
-        | exact e47s (show i + 1 < (rdd(V₀, rdi + 48#64)).toNat by
+        | exact e47s (by exact show i + 1 < (rdd(V₀, rdi + 48#64)).toNat by
             have hne : i + 1 ≠ (rdd(V₀, rdi + 48#64)).toNat := fun e => of_decide_eq_false hc
               (BitVec.eq_of_toNat_eq (by
                 simp only [Addr.add, BitVec.toNat_add, BitVec.toNat_mul, BitVec.toNat_setWidth, BitVec.toNat_sub,
                   BitVec.toNat_ofNat]
                 omega))
-            omega) (by omega) hok' rfl
+            omega) (by dsimp only [cnt]; omega) (by exact hok') rfl
         | (exfalso; done)
   · -- the byte at 16 set: that byte, 60
     have hb := hb0
@@ -245,9 +246,9 @@ theorem vc_47 {n : Nat} {g : Gprs} {f : Rflags} (hF : Fp F V₀ g₀.rdi) (h : I
       beq_eq_false_iff_ne, ne_eq, not_true_eq_false, not_false_eq_true, false_implies, Bool.true_eq_false,
       Bool.false_eq_true, implies_true]
     all_goals repeat' (first
-      | exact fa
-      | exact fb
-      | exact e60 hn hx hr rfl
+      | with_reducible exact fa
+      | with_reducible exact fb
+      | exact e60 (by exact hn) (by exact hx) (by exact hr) rfl
       | apply And.intro
       | intro)
 
