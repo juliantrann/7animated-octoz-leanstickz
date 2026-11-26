@@ -16,6 +16,8 @@ the entry `rsp`, `bS S` the body's; `Fr V S g ra`: the six saved registers of `g
 - `mga_254`: from 254 (`rsi` the chunk `q`, `r12` the result): mmapped or no room for a remainder (return), or the
   remainder split off and to `_int_free (av, q + nb, 1)`.
 - `mga_a`: `_int_malloc` gave `m` aligned: to `mga_254` with `q = m - 16`.
+- `mga_u`: `_int_malloc` gave `m` not aligned: `newp`; `p` mmapped (return `newp + 16`), or the heads and to
+  `_int_free (av, p, 1)`, to return to 221.
 - `mga_f1`: where the first `_int_free` returns (221): `newsize ≥ nb` and `newp + 16` aligned (the asserts), to
   `mga_254` with `q = newp`.
 -/
@@ -42,6 +44,20 @@ abbrev Stk (Wl : List Rgn) (S : Addr) : Prop :=
 abbrev rV (V : Addr → Byte) (q nb av Z : Addr) : Addr → Byte :=
   Vst (Vst V (q + nb + 8#64) (toBytesLE ((Z &&& 18446744073709551608#64) - nb ||| nmf av ||| 1#64) 8)) (q + 8#64)
     (toBytesLE (nb ||| (Z.setWidth 32 &&& 7#32).setWidth 64) 8)
+
+/-- `newsize`: the size of `p` (size word `Z`) less `leadsize`. -/
+abbrev nsz (m al Z : Addr) : Addr := (Z &&& 18446744073709551608#64) - (np m al - (m + 18446744073709551600#64))
+
+/-- The bytes after `p` mmapped: `newp`'s `prev_size` and size. -/
+abbrev mV (V : Addr → Byte) (m al Z : Addr) : Addr → Byte :=
+  Vst (Vst V (np m al) (toBytesLE (np m al - (m + 18446744073709551600#64) + rdq(V, m + 18446744073709551600#64)) 8))
+    (np m al + 8#64) (toBytesLE (nsz m al Z ||| 2#64) 8)
+
+/-- The bytes at the first `_int_free`: `newp`'s head, the `inuse` bit of the chunk after it, `p`'s head. -/
+abbrev uV (V : Addr → Byte) (m al av Z : Addr) : Addr → Byte :=
+  Vst (Vst (Vst V (np m al + 8#64) (toBytesLE (nsz m al Z ||| nmf av ||| 1#64) 8)) (np m al + nsz m al Z + 8#64)
+    (toBytesLE (rdq(V, np m al + nsz m al Z + 8#64) ||| 1#64) 8)) (m + 18446744073709551608#64)
+    (toBytesLE (nmf av ||| ((Z.setWidth 32 &&& 7#32).setWidth 64 ||| (np m al - (m + 18446744073709551600#64)))) 8)
 
 /-- The return to `ra` with the bytes `V` and `rax = r`, `rsp = S + 8`, the registers a call keeps those of `g₀`. -/
 abbrev KR (prof : Profile) (F : Footprint) (Wl : List Rgn) (L : List (Addr × List Byte)) (s₀ : State) (o : Oracle)
@@ -259,9 +275,11 @@ theorem mga_254 {fb S q r nb av Z : Addr} {g₀ : Gprs} {X : State} {t : Nat} {V
       rw [hsi, h15, hbp, rdo]
       · exact hZ
       all_goals omega
-    refine (c_254 prof fb).run c hfs hin _ hK hA hrip
-      (vc_254s hZ₀ hb (by rw [h15, e32]; exact hs) hZ' f1 (fun i hi => by rw [hsi]; exact stk hW (by omega)
-        (by omega) hq i hi) (fun i hi => by rw [hsi, h15]; exact stk hW (by omega) (by omega) hq i hi)) ?_
+    have w1 : ∀ i < 8, Foot Wl (Addr.add (X.cpu.gpr.rsi + 8#64) i) := by
+      rw [hsi]; exact stk hW (by omega) (by omega) hq
+    have w2 : ∀ i < 8, Foot Wl (Addr.add (X.cpu.gpr.rsi + X.cpu.gpr.r15 + 8#64) i) := by
+      rw [hsi, h15]; exact stk hW (by omega) (by omega) hq
+    refine (c_254 prof fb).run c hfs hin _ hK hA hrip (vc_254s hZ₀ hb (by rw [h15, e32]; exact hs) hZ' f1 w1 w2) ?_
     rintro j' g₁ fl V' ⟨rfl, rfl, hsi₁, hdi₁, hdx₁, hbx₁, hbp₁, h12₁, hsp₁⟩ Y₁ t₁ hK₁ hA₁ hr₁ hg₁ -
     subst hg₁
     rw [hsi, h15, hbp] at hA₁
@@ -294,7 +312,7 @@ theorem mga_a {fb S m al : Addr} {X : State} {t : Nat} (c : Seg prof F Wl L s₀
     GoG prof L o gev gP gE X t := by
   refine (c_63 prof fb).run c hfs hin _ hK hA hrip (vc_63n (by rw [hax]; exact beq_eq_false_iff_ne.mpr hm)) ?_
   rintro j' g₁ fl V' ⟨rfl, rfl, rfl⟩ Y₁ t₁ hK₁ hA₁ hr₁ hg₁ -
-  refine c.s_div64 hK₁ hA₁ hin (lt_len (by decide)) hr₁ (div_81 _) (by rw [hg₁])
+  refine c.s_div64 hK₁ hA₁ hin (lt_len (by decide)) hr₁ (div_81 _) (by rw [hg₁]; rfl)
     (by rw [rv3, hg₁]; show X.cpu.gpr.rbx ≠ 0; rw [hbx]; exact hal) ?_
   rintro Y₂ t₂ hK₂ hA₂ ⟨hr₂, hg₂⟩
   have hdx : Y₂.cpu.gpr.rdx = 0#64 := by
@@ -321,7 +339,7 @@ theorem mga_f1 {fb n ns nb al : Addr} {X : State} {t : Nat} (c : Seg prof F Wl L
     GoG prof L o gev gP gE X t := by
   refine (c_221 prof fb).run c hfs hin _ hK hA hrip (vc_221 (by rw [h15, h14]; exact hge)) ?_
   rintro j' g₁ fl V' ⟨rfl, rfl, rfl⟩ Y₁ t₁ hK₁ hA₁ hr₁ hg₁ -
-  refine c.s_div64 hK₁ hA₁ hin (lt_len (by decide)) hr₁ (div_239 _) (by rw [hg₁])
+  refine c.s_div64 hK₁ hA₁ hin (lt_len (by decide)) hr₁ (div_239 _) (by rw [hg₁]; rfl)
     (by rw [rv3, hg₁]; show X.cpu.gpr.rbx ≠ 0; rw [hbx]; exact hal) ?_
   rintro Y₂ t₂ hK₂ hA₂ ⟨hr₂, hg₂⟩
   have hdx : Y₂.cpu.gpr.rdx = 0#64 := by
@@ -333,6 +351,179 @@ theorem mga_f1 {fb n ns nb al : Addr} {X : State} {t : Nat} (c : Seg prof F Wl L
   exact k Y₃ t₃ hK₃ hA₃ hr₃ (by rw [hg₃, hg₂, hg₁] <;> rfl) (by rw [hg₃, hg₂, hg₁]; exact h13)
     (by rw [hg₃, hg₂, hg₁]; show X.cpu.gpr.r13 + _ = _; rw [h13]) (by rw [hg₃, hg₂, hg₁]; exact h15)
     (by rw [hg₃, hg₂, hg₁] <;> rfl) (by rw [hg₃, hg₂, hg₁]; exact hbx)
+
+set_option maxHeartbeats 4000000 in
+/-- `_int_malloc` gave `m` not aligned to `alignment = 2 ^ k` (at 63: `rax = m`, `rbx = alignment`, `rbp = av`,
+`r15 = nb`; `Z` the size word of `p = m - 16`, its size room for `nb`, `alignment` and `MINSIZE`): `newp = np m al`;
+`p` mmapped (`mV`, return `newp + 16`), or `newp`'s head, the `inuse` bit after it, `p`'s head (`uV`) and the call
+of `_int_free (av, p, 1)`, to return to 221. -/
+theorem mga_u {fb S m al av nb Z : Addr} {k : Nat} {g₀ : Gprs} {X : State} {t : Nat} {V : Addr → Byte} {e₂ : Addr}
+    {code₂ : List Byte} {j₂ : Nat} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb)
+    (hin : CodeIn L mga_at mga) (hinF : CodeIn L Ifr.ifr_at Ifr.ifr) (hin₂ : CodeIn L e₂ code₂)
+    (h₂ : j₂ < code₂.length) (hS : 80 ≤ S.toNat) (hS8 : S.toNat + 8 ≤ 2 ^ 64) (hstk : Stk Wl S)
+    (hlr : ∀ i < 8, Foot F.data (Addr.add S i))
+    (hK : KeptW Wl s₀ X) (hA : Agree F X.proc.mm.mem V) (hrip : X.cpu.rip = mga_at.add 63)
+    (hsp : X.cpu.gpr.rsp = bS S) (hax : X.cpu.gpr.rax = m) (hbx : X.cpu.gpr.rbx = al) (hbp : X.cpu.gpr.rbp = av)
+    (h15 : X.cpu.gpr.r15 = nb) (hfr : Fr V S g₀ (e₂.add j₂))
+    (hk : k < 64) (h4 : 4 ≤ k) (ha : al.toNat = 2 ^ k) (hm0 : m ≠ 0#64) (h16 : 16 ≤ m.toNat)
+    (hm16 : m.toNat % 16 = 0) (hn : m.toNat % 2 ^ k ≠ 0) (hfit : m.toNat + 2 ^ k + 2 ^ k < 2 ^ 64)
+    (hZ : rdq(V, m + 18446744073709551608#64) = Z) (hsz : nb.toNat + 2 ^ k + 32 ≤ (Z &&& 18446744073709551608#64).toNat)
+    (hend : m.toNat + (Z &&& 18446744073709551608#64).toNat ≤ 2 ^ 64)
+    (hW : ∀ a : Addr, m.toNat - 16 ≤ a.toNat → a.toNat < m.toNat + (Z &&& 18446744073709551608#64).toNat → Foot Wl a)
+    (hap : m.toNat + (Z &&& 18446744073709551608#64).toNat ≤ S.toNat - 48 ∨ S.toNat + 8 ≤ m.toNat - 16)
+    (kMm : (Z.setWidth 32 &&& 2#32 == 0) = false →
+      KR prof F Wl L s₀ o gev gP gE S (e₂.add j₂) g₀ (mV V m al Z) (np m al + 16#64))
+    (kF1 : (Z.setWidth 32 &&& 2#32 == 0) = true → ∀ Y t', KeptW Wl s₀ Y →
+      Agree F Y.proc.mm.mem (Vst (uV V m al av Z) (bS S - 8) (toBytesLE (mga_at.add (216 + 5)) 8)) →
+      Y.cpu.rip = Ifr.ifr_at → Y.cpu.gpr.rsp = bS S - 8 → Y.cpu.gpr.rdi = av →
+      Y.cpu.gpr.rsi = m + 18446744073709551600#64 →
+      Y.cpu.gpr.rdx = 1#64 → Y.cpu.gpr.rbx = al → Y.cpu.gpr.rbp = av → Y.cpu.gpr.r12 = m →
+      Y.cpu.gpr.r13 = np m al → Y.cpu.gpr.r14 = nsz m al Z → Y.cpu.gpr.r15 = nb → GoG prof L o gev gP gE Y t') :
+    GoG prof L o gev gP gE X t := by
+  have hl := S.isLt
+  have hml := m.isLt
+  have eb := bS_toNat hS
+  have hpk : 2 ^ k < 2 ^ 64 := Nat.pow_lt_pow_right (by decide) hk
+  have hal : al ≠ 0#64 := fun h => by
+    have h0 : (0#64 : Addr).toNat = 0 := rfl
+    rw [h, h0] at ha
+    have := Nat.two_pow_pos k
+    omega
+  -- 63 → 81 → 84
+  refine (c_63 prof fb).run c hfs hin _ hK hA hrip (vc_63n (by rw [hax]; exact beq_eq_false_iff_ne.mpr hm0)) ?_
+  rintro j' g₁ fl V' ⟨rfl, hV, rfl⟩ Y₁ t₁ hK₁ hA₁ hr₁ hg₁ -
+  rw [hV] at hA₁
+  refine c.s_div64 hK₁ hA₁ hin (lt_len (by decide)) hr₁ (div_81 _) (by rw [hg₁]; rfl)
+    (by rw [rv3, hg₁]; show X.cpu.gpr.rbx ≠ 0; rw [hbx]; exact hal) ?_
+  rintro Y₂ t₂ hK₂ hA₂ ⟨hr₂, hg₂⟩
+  have hdx : (Y₂.cpu.gpr.rdx == 0) = false := by
+    rw [hg₂, rv3, hg₁]
+    show (X.cpu.gpr.rax % X.cpu.gpr.rbx == 0) = false
+    rw [hax, hbx]
+    refine beq_eq_false_iff_ne.mpr fun h => hn ?_
+    have h' := congrArg BitVec.toNat h
+    rw [BitVec.toNat_umod, ha] at h'
+    exact h'
+  have g2 : Y₂.cpu.gpr.r12 = m ∧ Y₂.cpu.gpr.rbx = al ∧ Y₂.cpu.gpr.rsi = m + 18446744073709551600#64 ∧
+      Y₂.cpu.gpr.rbp = av ∧ Y₂.cpu.gpr.r15 = nb ∧ Y₂.cpu.gpr.rsp = bS S := by
+    rw [hg₂, hg₁]
+    exact ⟨hax, hbx, by show X.cpu.gpr.rax + _ = _; rw [hax], hbp, h15, hsp⟩
+  obtain ⟨a12, abx, asi, abp, a15, asp⟩ := g2
+  suffices K : ∀ (Y₃ : State) (t₃ : Nat), KeptW Wl s₀ Y₃ → Agree F Y₃.proc.mm.mem V →
+      Y₃.cpu.rip = mga_at.add 127 → Y₃.cpu.gpr.r13 = np m al →
+      Y₃.cpu.gpr.rcx = np m al - (m + 18446744073709551600#64) →
+      Y₃.cpu.gpr.r12 = m → Y₃.cpu.gpr.rbx = al → Y₃.cpu.gpr.rbp = av → Y₃.cpu.gpr.r15 = nb →
+      Y₃.cpu.gpr.rsi = m + 18446744073709551600#64 → Y₃.cpu.gpr.rsp = bS S → GoG prof L o gev gP gE Y₃ t₃ by
+    by_cases hc : (brk m al - (m + 18446744073709551600#64)).toNat ≤ 31
+    · refine (c_84 prof fb).run c hfs hin _ hK₂ hA₂ hr₂ (vc_84s hdx (by rw [a12, abx, asi]; exact hc)) ?_
+      rintro j' g₃ fl V' ⟨rfl, hV, h13, hcx, h12, hbx₃, hbp₃, h15₃, hsi₃, hsp₃, -⟩ Y₃ t₃ hK₃ hA₃ hr₃ hg₃ -
+      rw [hV] at hA₃
+      have hnp : np m al = brk m al + al := by
+        unfold np
+        rw [ite_eq_left_of_eq_true _ _ (eq_true hc)]
+      exact K Y₃ t₃ hK₃ hA₃ hr₃ (by rw [hg₃, h13, a12, abx, hnp]) (by rw [hg₃, hcx, a12, abx, asi, hnp])
+        (by rw [hg₃, h12, a12]) (by rw [hg₃, hbx₃, abx]) (by rw [hg₃, hbp₃, abp]) (by rw [hg₃, h15₃, a15])
+        (by rw [hg₃, hsi₃, asi]) (by rw [hg₃, hsp₃, asp])
+    · refine (c_84 prof fb).run c hfs hin _ hK₂ hA₂ hr₂ (vc_84b hdx (by rw [a12, abx, asi]; exact hc)) ?_
+      rintro j' g₃ fl V' ⟨rfl, hV, h13, hcx, h12, hbx₃, hbp₃, h15₃, hsi₃, hsp₃, -⟩ Y₃ t₃ hK₃ hA₃ hr₃ hg₃ -
+      rw [hV] at hA₃
+      have hnp : np m al = brk m al := by
+        unfold np
+        rw [ite_eq_right_of_eq_false _ _ (eq_false hc)]
+      exact K Y₃ t₃ hK₃ hA₃ hr₃ (by rw [hg₃, h13, a12, abx, hnp]) (by rw [hg₃, hcx, a12, abx, asi, hnp])
+        (by rw [hg₃, h12, a12]) (by rw [hg₃, hbx₃, abx]) (by rw [hg₃, hbp₃, abp]) (by rw [hg₃, h15₃, a15])
+        (by rw [hg₃, hsi₃, asi]) (by rw [hg₃, hsp₃, asp])
+  -- 127
+  intro Y₃ t₃ hK₃ hA₃ hr₃ h13 hcx h12 hbx₃ hbp₃ h15₃ hsi₃ hsp₃
+  obtain ⟨Ln, en, eL, hL1, hL2, hL16, hal16⟩ := np_ok hk h4 ha h16 hm16 hn hfit
+  have e8 : (m + 18446744073709551608#64).toNat = m.toNat - 8 := by
+    rw [BitVec.toNat_add, show (18446744073709551608#64).toNat = 2 ^ 64 - 8 from rfl]
+    omega
+  have e16 : (m + 18446744073709551600#64).toNat = m.toNat - 16 := by
+    rw [BitVec.toNat_add, show (18446744073709551600#64).toNat = 2 ^ 64 - 16 from rfl]
+    omega
+  have en8 : (np m al + 8#64).toNat = (np m al).toNat + 8 := by
+    rw [BitVec.toNat_add, show (8#64).toNat = 8 from rfl]
+    exact Nat.mod_eq_of_lt (by omega)
+  have ens : (nsz m al Z).toNat = (Z &&& 18446744073709551608#64).toNat - Ln := by
+    show ((Z &&& 18446744073709551608#64) - (np m al - (m + 18446744073709551600#64))).toNat = _
+    rw [BitVec.toNat_sub, eL]
+    omega
+  have enn : (np m al + nsz m al Z).toNat = m.toNat - 16 + (Z &&& 18446744073709551608#64).toNat := by
+    rw [BitVec.toNat_add, ens, en]
+    omega
+  have enn8 : (np m al + nsz m al Z + 8#64).toNat = m.toNat - 8 + (Z &&& 18446744073709551608#64).toNat := by
+    rw [BitVec.toNat_add, enn, show (8#64).toNat = 8 from rfl]
+    omega
+  have wr : ∀ x : Addr, m.toNat - 16 ≤ x.toNat → x.toNat + 8 ≤ m.toNat + (Z &&& 18446744073709551608#64).toNat →
+      ∀ i < 8, Foot Wl (Addr.add x i) := fun x h1 h2 => stk hW h1 h2 hend
+  cases hb : (Z.setWidth 32 &&& 2#32 == 0)
+  · -- `p` mmapped
+    refine (c_127 prof fb).run c hfs hin _ hK₃ hA₃ hr₃
+      (vc_127m (by rw [h12]; exact hZ) hb (by rw [h12]; exact fun i hi => c.hws _ (wr _ (by omega) (by omega) i hi))
+        (by rw [h12]; exact fun i hi => c.hws _ (wr _ (by omega) (by omega) i hi))
+        (by rw [h13]; exact wr _ (by omega) (by omega)) (by rw [h13]; exact wr _ (by omega) (by omega))) ?_
+    rintro j' g₄ fl V' ⟨rfl, rfl, h12₄, hsp₄⟩ Y₄ t₄ hK₄ hA₄ hr₄ hg₄ -
+    rw [h13, hcx, h12] at hA₄
+    have o1 : Oa S (np m al) 8 := ⟨by omega, by omega⟩
+    have o2 : Oa S (np m al + 8#64) 8 := ⟨by omega, by omega⟩
+    exact ret341 c hfs hin hin₂ h₂ hS hstk hlr hK₄ hA₄ hr₄ (by rw [hg₄, hsp₄, hsp₃]) (by rw [hg₄, h12₄, h13])
+      (Fr_st hS hS8 o2 (Fr_st hS hS8 o1 hfr)) (kMm hb)
+  -- `newsize`, `newp`'s head
+  refine (c_127 prof fb).run c hfs hin _ hK₃ hA₃ hr₃
+    (vc_127n (by rw [h12]; exact hZ) hb (by rw [h12]; exact fun i hi => c.hws _ (wr _ (by omega) (by omega) i hi))) ?_
+  rintro j' g₄ fl V' ⟨rfl, rfl, hax₄, hdx₄, h14₄, hcx₄, h12₄, h13₄, hbx₄, hbp₄, h15₄, hsi₄, hsp₄⟩ Y₄ t₄ hK₄ hA₄ hr₄
+    hg₄ -
+  subst hg₄
+  rw [hbp₃] at hax₄
+  rw [hcx, hbp₃] at hdx₄
+  rw [hcx] at h14₄ hcx₄
+  rw [h12] at h12₄
+  rw [h13] at h13₄
+  rw [hbx₃] at hbx₄
+  rw [hbp₃] at hbp₄
+  rw [h15₃] at h15₄
+  rw [hsi₃] at hsi₄
+  rw [hsp₃] at hsp₄
+  refine (c_175 prof fb).run c hfs hin _ hK₄ hA₄ hr₄ (vc_175 (by rw [h13₄]; exact wr _ (by omega) (by omega))) ?_
+  rintro j' g₅ fl V' ⟨rfl, rfl, rfl⟩ Y₅ t₅ hK₅ hA₅ hr₅ hg₅ -
+  rw [h13₄, hdx₄] at hA₅
+  have b13 : Y₅.cpu.gpr.r13 = np m al := by rw [hg₅]; exact h13₄
+  have b14 : Y₅.cpu.gpr.r14 = nsz m al Z := by rw [hg₅]; exact h14₄
+  -- the `inuse` bit of the chunk after `newp`
+  have eaE : eaI Y₅ 13 14 8 = np m al + nsz m al Z + 8#64 := by
+    show Y₅.cpu.gpr.r13 + Y₅.cpu.gpr.r14 + BitVec.ofNat 64 8 = _
+    rw [b13, b14]
+  refine c.s_or_mi64i hK₅ hA₅ hin (lt_len (by decide)) hr₅ (or_186 _)
+    (fun i hi => by rw [eaE]; exact wr _ (by omega) (by omega) i hi) ?_
+  rintro Y₆ t₆ hK₆ hA₆ ⟨hr₆, hg₆⟩
+  rw [eaE, rdo (a := np m al + 8#64) (x := np m al + nsz m al Z + 8#64) (n := 8) (by omega) (by omega)
+    (by omega)] at hA₆
+  -- `p`'s head
+  have c12 : Y₆.cpu.gpr.r12 = m := by rw [hg₆, hg₅]; exact h12₄
+  have crax : Y₆.cpu.gpr.rax = nmf av := by rw [hg₆, hg₅]; exact hax₄
+  have ccx : Y₆.cpu.gpr.rcx = np m al - (m + 18446744073709551600#64) := by rw [hg₆, hg₅]; exact hcx₄
+  refine (c_192 prof fb).run c hfs hin _ hK₆ hA₆ hr₆
+    (vc_192 (by rw [c12]; exact fun i hi => c.hws _ (wr _ (by omega) (by omega) i hi))
+      (by rw [c12]; exact wr _ (by omega) (by omega))) ?_
+  rintro j' g₇ fl V' ⟨rfl, rfl, rfl⟩ Y₇ t₇ hK₇ hA₇ hr₇ hg₇ -
+  rw [c12, crax, ccx, rdo (a := np m al + nsz m al Z + 8#64) (x := m + 18446744073709551608#64) (n := 8)
+    (by omega) (by omega) (by omega), rdo (a := np m al + 8#64) (x := m + 18446744073709551608#64) (n := 8)
+    (by omega) (by omega) (by omega), hZ] at hA₇
+  -- the call of `_int_free`
+  have r7 : Y₇.cpu.gpr.rsp = bS S := by rw [hg₇, hg₆, hg₅]; exact hsp₄
+  have e8' : (bS S - 8).toNat = S.toNat - 64 := by
+    rw [Prepare.toNat_sub8 (a := bS S) (by omega), eb]
+    omega
+  refine c.s_call hK₇ hA₇ hin (lt_len (by decide)) hr₇ (call_216 _) hinF (Ifr.lt_len (j := 0) (by decide)) if_216
+    (by rw [r7]; exact stk hstk (by omega) (by omega) (by omega)) ?_
+  rintro Z₀ t₀ hK₀ hA₀ ⟨hr₀, hg₀⟩
+  rw [r7] at hA₀
+  exact kF1 hb Z₀ t₀ hK₀ hA₀ hr₀ (by rw [hg₀]; show Y₇.cpu.gpr.rsp - 8 = _; rw [r7])
+    (by rw [hg₀, hg₇, hg₆, hg₅]; exact hbp₄) (by rw [hg₀, hg₇, hg₆, hg₅]; exact hsi₄)
+    (by rw [hg₀, hg₇] <;> rfl) (by rw [hg₀, hg₇, hg₆, hg₅]; exact hbx₄) (by rw [hg₀, hg₇, hg₆, hg₅]; exact hbp₄)
+    (by rw [hg₀, hg₇, hg₆, hg₅]; exact h12₄) (by rw [hg₀, hg₇, hg₆, hg₅]; exact h13₄)
+    (by rw [hg₀, hg₇, hg₆, hg₅]; exact h14₄) (by rw [hg₀, hg₇, hg₆, hg₅]; exact h15₄)
 
 end
 

@@ -6,3 +6,4 @@ open FV7z
 #print axioms FV7z.Mga.mga_254
 #print axioms FV7z.Mga.mga_a
 #print axioms FV7z.Mga.mga_f1
+#print axioms FV7z.Mga.mga_u
