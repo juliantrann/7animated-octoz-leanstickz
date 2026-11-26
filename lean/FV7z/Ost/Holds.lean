@@ -79,15 +79,25 @@ macro "opx" : tactic => `(tactic| (
       | apply And.intro
       | intro _)))
 
-/-- `opx`, and a guard against `h` (a `decide` that `wpx` does not rewrite) closed by `h`. -/
-macro "opk" h:term : tactic => `(tactic| (
+/-- `opx`, and a guard against one of `h0'`, `h1'`, `h2'`, `hs'`, `hd'` (where `wpx` leaves it) closed by defeq. -/
+set_option hygiene false in
+macro "opk" : tactic => `(tactic| (
   all_goals repeat'
     (first
       | exact rfl
       | exact trivial
       | assumption
       | decide
-      | (exfalso; exact absurd (Eq.trans (Eq.symm $h) ‹_›) (by decide))
+      | (exfalso; exact absurd (Eq.trans (Eq.symm h0') ‹_›) (by decide))
+      | (exfalso; exact absurd (Eq.trans (Eq.symm (congrArg Bool.not h0')) ‹_›) (by decide))
+      | (exfalso; exact absurd (Eq.trans (Eq.symm h1') ‹_›) (by decide))
+      | (exfalso; exact absurd (Eq.trans (Eq.symm (congrArg Bool.not h1')) ‹_›) (by decide))
+      | (exfalso; exact absurd (Eq.trans (Eq.symm h2') ‹_›) (by decide))
+      | (exfalso; exact absurd (Eq.trans (Eq.symm (congrArg Bool.not h2')) ‹_›) (by decide))
+      | (exfalso; exact absurd (Eq.trans (Eq.symm hs') ‹_›) (by decide))
+      | (exfalso; exact absurd (Eq.trans (Eq.symm (congrArg Bool.not hs')) ‹_›) (by decide))
+      | (exfalso; exact absurd (Eq.trans (Eq.symm hd') ‹_›) (by decide))
+      | (exfalso; exact absurd (Eq.trans (Eq.symm (congrArg Bool.not hd')) ‹_›) (by decide))
       | apply And.intro
       | intro _)))
 
@@ -118,7 +128,7 @@ theorem vc_0 {g : Gprs} {f : Rflags} {V : Addr → Byte} (hF : Ft F Wl g) :
     have h0' : decide (ofBytesLE 8 (List.map V (byteAddrs (rdi + 249#64) 1)) = 0#8) = true := decide_eq_true h0
     have h1' : decide (ofBytesLE 64 (List.map V (byteAddrs (rdi + 64#64) 8)) = 0#64) = true := decide_eq_true h1
     wpo [h0', h1']
-    opk h1'
+    opk
   by_cases h2 : rb V (g.rdi + 72#64) = 0#8
   rotate_left
   · rw [Mo, ite_cond_eq_false _ _ (eq_false (fun h => h2 h.2.2))]
@@ -128,7 +138,7 @@ theorem vc_0 {g : Gprs} {f : Rflags} {V : Addr → Byte} (hF : Ft F Wl g) :
     have h1' : decide (ofBytesLE 64 (List.map V (byteAddrs (rdi + 64#64) 8)) = 0#64) = false := decide_eq_false h1
     have h2' : decide (ofBytesLE 8 (List.map V (byteAddrs (rdi + 72#64) 1)) = 0#8) = false := decide_eq_false h2
     wpo [h0', h1', h2']
-    opk h1'
+    opk
   rw [Mo, ite_cond_eq_true _ _ (eq_true (show Pc V g.rdi from ⟨h0, h1, h2⟩))]
   by_cases hs : g.rsi = 0#64 <;> by_cases hd : g.rdx = 0#64
   · rw [ite_cond_eq_true _ _ (eq_true hs), ite_cond_eq_true _ _ (eq_true hd)]
@@ -140,7 +150,7 @@ theorem vc_0 {g : Gprs} {f : Rflags} {V : Addr → Byte} (hF : Ft F Wl g) :
     have hs' : (rsi == 0) = true := by rw [hs]; rfl
     have hd' : (rdx == 0) = true := by rw [hd]; rfl
     wpo [h0', h1', h2', hs', hd']
-    opk h1'
+    opk
   · rw [ite_cond_eq_true _ _ (eq_true hs), ite_cond_eq_false _ _ (eq_false hd)]
     have fd' := fd hd
     obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
@@ -151,7 +161,7 @@ theorem vc_0 {g : Gprs} {f : Rflags} {V : Addr → Byte} (hF : Ft F Wl g) :
     have hs' : (rsi == 0) = true := by rw [hs]; rfl
     have hd' : (rdx == 0) = false := beq_eq_false_iff_ne.2 hd
     wpo [h0', h1', h2', hs', hd']
-    opk h1'
+    opk
   · rw [ite_cond_eq_false _ _ (eq_false hs), ite_cond_eq_true _ _ (eq_true hd)]
     have fs' := fs hs
     obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
@@ -162,7 +172,7 @@ theorem vc_0 {g : Gprs} {f : Rflags} {V : Addr → Byte} (hF : Ft F Wl g) :
     have hs' : (rsi == 0) = false := beq_eq_false_iff_ne.2 hs
     have hd' : (rdx == 0) = true := by rw [hd]; rfl
     wpo [h0', h1', h2', hs', hd']
-    opk h1'
+    opk
   · rw [ite_cond_eq_false _ _ (eq_false hs), ite_cond_eq_false _ _ (eq_false hd)]
     have fs' := fs hs
     have fd' := fd hd
@@ -174,7 +184,7 @@ theorem vc_0 {g : Gprs} {f : Rflags} {V : Addr → Byte} (hF : Ft F Wl g) :
     have hs' : (rsi == 0) = false := beq_eq_false_iff_ne.2 hs
     have hd' : (rdx == 0) = false := beq_eq_false_iff_ne.2 hd
     wpo [h0', h1', h2', hs', hd']
-    opk h1'
+    opk
 
 /-- From 60 to the `ret`: `rax` the result `rE` of the break counter. -/
 theorem vc_60 {g : Gprs} {f : Rflags} {V : Addr → Byte} (gb : ∀ i < 4, Foot F.data (Addr.add 7991432#64 i)) :
