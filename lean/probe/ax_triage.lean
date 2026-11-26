@@ -1,10 +1,12 @@
-import FV7z.Lemmas.Sse2d
-import FV7z.Ndi.All
+import FV7z.Strncmp.Code
+import FV7z.Strncmp.AshrT
+import FV7z.Strncmp.Ashr1
+import FV7z.Strncmp.Ashr2
+import FV7z.Strncmp.Ashr3
+import FV7z.Strncmp.Ashr4
+import FV7z.Strncmp.Ashr5
 open FV7z
-#print axioms FV7z.VOpI.movdqa_mi
-#print axioms FV7z.VOpI.movlpd_m
-#print axioms FV7z.VOpI.movhpd_m
-#print axioms FV7z.VOpI.psrldq
-#print axioms FV7z.OpI.xchg
-#print axioms FV7z.Ndi.gs
-#print axioms FV7z.Ndi.Cx.mvg
+#print axioms FV7z.Strncmp.b177
+#print axioms FV7z.Strncmp.b156
+#print axioms FV7z.Strncmp.ashr1
+#print axioms FV7z.Strncmp.ashr15
