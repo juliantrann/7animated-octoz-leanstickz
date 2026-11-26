@@ -1,7 +1,5 @@
-import FV7z.Opd.Ok
-import FV7z.Bsn.Holds
-import FV7z.Arl.Holds
+import FV7z.Utr.Holds
+import FV7z.Cpc.Holds
 open FV7z
-#print axioms FV7z.Opd.opd_ok
-#print axioms FV7z.Bsn.bsn_ok
-#print axioms FV7z.Arl.arl_ok
+#print axioms FV7z.Utr.utr_ok
+#print axioms FV7z.Cpc.cpc_ok
