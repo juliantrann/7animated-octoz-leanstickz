@@ -224,7 +224,7 @@ theorem s_stat (c : Seg prof F Wl L s₀ o) (hK : KeptW Wl s₀ X) (hA : Agree F
     (hl : ∀ i < 8 * (m / 8 + 1), Foot F.data (X.cpu.gpr.rdi.add i))
     (hnz : ∀ i < m, V (X.cpu.gpr.rdi.add i) ≠ 0) (hz : V (X.cpu.gpr.rdi.add m) = 0)
     (hp : (byteAddrs X.cpu.gpr.rdi m).map V = p) (hp0 : p ≠ [])
-    (htw : X.cpu.gpr.rsi.toNat + 144 ≤ userPtrMax prof.feat) (hst : ∀ i < 144, Foot Wl (X.cpu.gpr.rsi.add i))
+    (htw : X.cpu.gpr.rsi.toNat + 144 ≤ userPtrMax prof.feat) (hst : ∀ i < 144, Foot Wl (Addr.add X.cpu.gpr.rsi i))
     (k' : ∀ r : StatResult, FsOk (statRes r).2 (statRes r).1 →
       ContG prof F Wl L s₀ o (gev ++ [linkEv X.cpu.gpr p (statRes r).1 (statRes r).2]) gP gE
         (Vst V X.cpu.gpr.rsi (statRes r).2)
