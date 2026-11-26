@@ -136,6 +136,7 @@ theorem vc_27 {N n : Nat} {g : Gprs} {f : Rflags} (hN32 : N < 2 ^ 32)
         have e := of_decide_eq_true h2
         rw [← add4] at e
         exact e
+      intro _ _
       refine eFin (Or.inr (Or.inl rfl)) ?_ rfl
       rw [← add4]
       exact ⟨i + 1, by simpa only using hok', Or.inl ⟨by simpa only using hc, sar4 _ (by omega)⟩⟩
