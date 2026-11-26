@@ -235,7 +235,7 @@ theorem ptr_lif {prof : Profile} {L : List (Addr × List Byte)} {o : Oracle} {ge
     (h1 := h1) (h2 := h2) (h3 := h3) (h4 := h4) (h5 := h5) (ke := ke)
     (hin := hLC.ipa) (hinh := hLC.hwc) (hcpq := hcpq) (hinm := hinm) (hm0 := hm0) (hinX := hLC.mnx)
     (hinI := hLC.imm) (hinl := hinl) (hl0 := hl0) (hlenA := hlenA) (hinz := hinz) (hz0 := hz0) (hset := hset)
-    (hgf := fun _ h1 h2 => lf_var (by omega) (by omega))
+    (hgf := ⟨fun _ h1 h2 => lf_var (by omega) (by omega), fun _ h1 h2 => lf_var (by omega) (by omega)⟩)
     (hint := hLC.tgv) (hn := hn) (hPq := hPq) (hPk := hPk) (hPs := hPs) (he := by omega) (hal := nal)
     (hFs := hFs) (hpg := hpg) (hx1 := x1) (hx1z := x1z) (hx2 := x2) (hx2z := x2z) (htls := htls) (hU := hU)
     (hm6 := m6) (hhw := hhw') (hfh := hfh) (hfm := hfm) (hpl0 := pl0) (hf1 := hf1) (hf2 := hf2) (hWb := hWb)

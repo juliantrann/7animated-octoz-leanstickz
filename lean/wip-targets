@@ -1,2 +1,6 @@
-FV7z.Memcpy.BwdE
-FV7z.Memcpy.BwdN
+FV7z.Memset.Plt
+FV7z.Ndi.All
+FV7z.Gor.Run
+FV7z.Tls.Holds
+FV7z.Start.ToLif
+FV7z.Start.Text
