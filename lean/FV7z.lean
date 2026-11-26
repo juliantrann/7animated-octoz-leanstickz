@@ -409,6 +409,9 @@ import FV7z.Pop.Holds
 import FV7z.Hcl.Blocks
 import FV7z.Hcl.Cuts
 import FV7z.Hcl.Holds
+import FV7z.Sis.Blocks
+import FV7z.Sis.Cuts
+import FV7z.Sis.Holds
 import FV7z.Ncs.Blocks
 import FV7z.Ncs.Cuts
 import FV7z.Ncs.Holds

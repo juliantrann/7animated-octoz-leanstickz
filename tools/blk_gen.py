@@ -379,6 +379,9 @@ FNS = {
     "hcl": dict(grp="Hcl", cn="NArchive::NLzma::CHandler::Close", a=0x49ea60, n=0x4e, pos=True,
                 stops=(0x4d,), calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `NArchive::NLzma::CHandler::Close` (`CPP/7zip/Archive/LzmaHandler.cpp`; `objdump -d`)"),
+    "sis": dict(grp="Sis", cn="NCompress::NLzma::CDecoder::SetInStream", a=0x57f8d0, n=0x40, pos=True,
+                stops=(0x3f,), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `NCompress::NLzma::CDecoder::SetInStream` (`CPP/7zip/Compress/LzmaDecoder.cpp`; `objdump -d`)"),
     "sfs": dict(grp="Sfs", cn="SysFreeString", a=0x5a00c0, n=25, pos=True, stops=(0xd, 0x18),
                 tag="PLAN.md §M, M1", src="7-Zip 26.06's `SysFreeString` (`CPP/Common/MyWindows.cpp`; `objdump -d`)"),
     # 7-Zip's CPP/Common/Wildcard.cpp `DoesNameContainWildcard (const UString &)`: the `wchar_t`s (4 bytes, at
