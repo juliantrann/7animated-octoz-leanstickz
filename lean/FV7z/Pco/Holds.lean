@@ -49,19 +49,23 @@ theorem vc_no {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (hz : BitV
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at hz hb ⊢
   wpx [W_0, W_21, o0, o1, Op.ld, Op.stf, BitVec.and_self]
-  exact ⟨Pcp.ft8 hb 24 (by decide), hfw, fun _ => trivial, fun hc => absurd hz (by simpa using hc)⟩
+  exact ⟨Pcp.ft8 hb 24 (by decide), hfw, fun hc => absurd hz (by simpa using hc)⟩
 
 /-- `execute` not 0: the store, the loads, up to the jump. -/
 theorem vc_ex {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (hz : BitVec.setWidth 32 g.rsi ≠ 0#32)
     (hb : ∀ i < 32, Foot F.data (Addr.add g.rdi i)) (hfw : ∀ i < 8, Foot Wl ((fb + 760#64).add i)) :
     W_0 fb F Wl (fun j' g' _ V' => j' = 31 ∧
-      g' = { g with rax := rtn (V1 fb g.rdi V) g.rdi, rdi := arg (V1 fb g.rdi V) g.rdi,
-        r8 := arg (V1 fb g.rdi V) g.rdi } ∧ V' = V1 fb g.rdi V) g f V := by
+      g' = { g with
+        rax := rtn (V1 fb g.rdi V) g.rdi, rdi := arg (V1 fb g.rdi V) g.rdi, r8 := arg (V1 fb g.rdi V) g.rdi } ∧
+      V' = V1 fb g.rdi V) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at hz hb ⊢
   wpx [W_0, W_21, o0, o1, Op.ld, Op.stf, BitVec.and_self]
-  exact ⟨Pcp.ft8 hb 24 (by decide), hfw, fun hc => absurd (by simpa using hc) hz,
-    fun _ => ⟨Pcp.ft8 hb 8 (by decide), fun i hi => hb i (by omega), trivial⟩⟩
+  refine ⟨Pcp.ft8 hb 24 (by decide), hfw, fun hc => absurd (by simpa using hc) hz, fun _ => ?_⟩
+  first
+  | exact ⟨Pcp.ft8 hb 8 (by decide), fun i hi => hb i (by omega)⟩
+  | exact ⟨Pcp.ft8 hb 8 (by decide), fun i hi => hb i (by omega), rfl, rfl⟩
+  | exact ⟨Pcp.ft8 hb 8 (by decide), fun i hi => hb i (by omega), rfl⟩
 
 variable {prof : Profile} {L : List (Addr × List Byte)} {s₀ X : State} {o : Oracle} {t : Nat}
   {gev : List Event} {gP : State → Nat → List Event → Prop} {gE : Outcome → List Event → Prop}
@@ -84,8 +88,10 @@ theorem pco_ok {fb : Addr} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBa
       Z.cpu.gpr = { X.cpu.gpr with rsp := X.cpu.gpr.rsp + 8 } → GoG prof L o gev gP gE Z t')
     (kx : BitVec.setWidth 32 X.cpu.gpr.rsi ≠ 0#32 → ∀ Y t', KeptW Wl s₀ Y →
       Agree F Y.proc.mm.mem (V1 fb X.cpu.gpr.rdi V) → Y.cpu.rip = rtn (V1 fb X.cpu.gpr.rdi V) X.cpu.gpr.rdi →
-      Y.cpu.gpr = { X.cpu.gpr with rax := rtn (V1 fb X.cpu.gpr.rdi V) X.cpu.gpr.rdi,
-        rdi := arg (V1 fb X.cpu.gpr.rdi V) X.cpu.gpr.rdi, r8 := arg (V1 fb X.cpu.gpr.rdi V) X.cpu.gpr.rdi } →
+      Y.cpu.gpr = { X.cpu.gpr with
+        rax := rtn (V1 fb X.cpu.gpr.rdi V) X.cpu.gpr.rdi,
+        rdi := arg (V1 fb X.cpu.gpr.rdi V) X.cpu.gpr.rdi,
+        r8 := arg (V1 fb X.cpu.gpr.rdi V) X.cpu.gpr.rdi } →
       GoG prof L o gev gP gE Y t') :
     GoG prof L o gev gP gE X t := by
   by_cases hz : BitVec.setWidth 32 X.cpu.gpr.rsi = 0#32
@@ -106,8 +112,10 @@ theorem pco_ok {fb : Addr} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBa
     try rfl
   · obtain ⟨eR, codeR, jR, hinR, hjR, hRt⟩ := hR hz
     refine (c_0 prof fb).run c hfs hin (fun j' g' _ V' => j' = 31 ∧
-        g' = { X.cpu.gpr with rax := rtn (V1 fb X.cpu.gpr.rdi V) X.cpu.gpr.rdi,
-          rdi := arg (V1 fb X.cpu.gpr.rdi V) X.cpu.gpr.rdi, r8 := arg (V1 fb X.cpu.gpr.rdi V) X.cpu.gpr.rdi } ∧
+        g' = { X.cpu.gpr with
+          rax := rtn (V1 fb X.cpu.gpr.rdi V) X.cpu.gpr.rdi,
+          rdi := arg (V1 fb X.cpu.gpr.rdi V) X.cpu.gpr.rdi,
+          r8 := arg (V1 fb X.cpu.gpr.rdi V) X.cpu.gpr.rdi } ∧
         V' = V1 fb X.cpu.gpr.rdi V)
       hK hA (by rw [addr_add_zero]; exact hrip) (vc_ex hz hb hfw) ?_
     rintro j' g fl V₁ ⟨rfl, rfl, hV₁⟩ Y t₁ hKY hAY hrY hgY -
