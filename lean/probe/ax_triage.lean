@@ -1,5 +1,4 @@
-import FV7z.Lemmas.SysFutex
-import FV7z.Pos.Holds
+import FV7z.Lemmas.BlkOps26
+import FV7z.Stl.Cuts
+import FV7z.Stl.Probe
 open FV7z
-#print axioms FV7z.Pos.pos_init
-#print axioms FV7z.Pos.pos_done

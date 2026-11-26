@@ -128,7 +128,7 @@ theorem s_openat_re (c : Seg prof F Wl L s₀ o) (hrs : s₀.thread.rseq = none)
     (hnz : ∀ i < m, V (X.cpu.gpr.rsi.add i) ≠ 0) (hz : V (X.cpu.gpr.rsi.add m) = 0)
     (k' : ∀ (M : Memory) (Y : State) (r : BitVec 64) (bs : List Byte) (t' : Nat), KeptW Wl s₀ (X.withMem M) →
       Y.cpu = (sysSt (X.withMem M) len r).cpu → Y.proc.mm = (X.withMem M).proc.mm →
-      Seg prof F Wl L Y o → Agree F Y.proc.mm.mem V →
+      Seg prof F Wl L Y o → Y.thread.rseq = none → Agree F Y.proc.mm.mem V →
       GoG prof L o (gev ++ [⟨X.cpu.gpr.rax, syscallArgs X, r, bs, []⟩]) gP gE Y t') :
     GoG prof L o gev gP gE X t :=
   c.stepE hK hin hj hrip fun M hM hK' htf hac => by
@@ -149,6 +149,7 @@ theorem s_openat_re (c : Seg prof F Wl L s₀ o) (hrs : s₀.thread.rseq = none)
       c.reroot hK' hmm ((congrArg (·.pkru) hc).trans rfl) ((congrArg (·.rseq) hth).trans rfl)
         ((congrArg (·.shstk) hth).trans rfl) ((congrArg (·.cpuidFaults) hth).trans rfl)
         ((congrArg (·.rflags.tf) hc).trans htf) ((congrArg (·.rflags.ac) hc).trans hac) hrs
-    exact k' M Y r bs t' hK' hc hmm hY (by rw [hmm]; exact hA')
+    have hrsY : Y.thread.rseq = none := by rw [hth, hK'.thread]; exact hrs
+    exact k' M Y r bs t' hK' hc hmm hY hrsY (by rw [hmm]; exact hA')
 
 end FV7z.Fn.Seg
