@@ -84,7 +84,7 @@ theorem from127 {fb S av fq : Addr} {V : Addr → Byte} {p : Addr} {X : State} {
   rintro j' g₁ fl V' ⟨rfl, rfl, rfl⟩ Y₁ t₁ hK₁ hA₁ hr₁ hg₁ -
   refine c.s_movq_rx hK₁ hA₁ hin (lt_len (by decide)) hr₁ (movq_130 _) ?_
   rintro Y₂ t₂ hK₂ hA₂ ⟨hr₂, hg₂, hx₂, -⟩
-  refine c.runV hfs hin (((blk_135 prof).at mcn_at).fs fb) rfl _ hK₂ hA₂ hr₂ vc_135 ?_
+  refine c.runV hfs hin (((blk_135 prof).at mcn_at).fs fb) rfl _ hK₂ hA₂ hr₂ (vc_135 (fb := fb)) ?_
   rintro g₃ fl V' ⟨-, rfl, rfl⟩ Y₃ t₃ hK₃ hA₃ hr₃ hg₃ hv₃
   have hY₃ : Y₃.cpu.gpr = { X.cpu.gpr with rsi := X.cpu.gpr.rbp ||| 1#64 } := by rw [hg₃, hg₂, hg₁]
   have ea : eaD Y₃ 4 8 = mB S + 8#64 := by
@@ -103,7 +103,8 @@ theorem from127 {fb S av fq : Addr} {V : Addr → Byte} {p : Addr} {X : State} {
     exact congrArg (BitVec.setWidth 128) hax
   rw [ea, h8, hx₃, lane_lo] at hx₄
   have hY₄ : Y₄.cpu.gpr = { X.cpu.gpr with rsi := X.cpu.gpr.rbp ||| 1#64 } := by rw [hg₄, hY₃]
-  refine c.runV hfs hin (((blk_144 prof).at mcn_at).fs fb) rfl _ hK₄ hA₄ hr₄ (vc_144 (by rw [hY₄]; exact (by rw [hbx]; exact r.w4.1))) ?_
+  refine c.runV hfs hin (((blk_144 prof).at mcn_at).fs fb) rfl _ hK₄ hA₄ hr₄
+    (vc_144 (fb := fb) (by rw [hY₄]; exact (by rw [hbx]; exact r.w4.1))) ?_
   rintro g₅ fl V' ⟨-, rfl, rfl⟩ Y₅ t₅ hK₅ hA₅ hr₅ hg₅ hv₅
   have hY₅ : Y₅.cpu.gpr = { X.cpu.gpr with rsi := X.cpu.gpr.rbp ||| 1#64 } := by rw [hg₅, hY₄]
   have e16 : eaD Y₅ 3 16 = cp1 V p + 16#64 := by
