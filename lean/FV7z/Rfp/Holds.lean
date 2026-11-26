@@ -96,7 +96,7 @@ theorem vc_0n {g : Gprs} {f : Rflags} {V : Addr → Byte} (hz : (rdd(V, g.rdi + 
   wpx [W_0, W_11, W_24, o0, o1, Op.cmpmi, Tun.rd1, BitVec.and_self, hz, d, Kp, Bool.not_true, Bool.not_false,
     Bool.false_eq_true, Bool.true_eq_false, false_implies, true_implies, implies_true, eq_self_iff_true, and_self,
     and_true]
-  exact ⟨hh4, hh8, hp, fun e => h (of_decide_eq_true ((Bool.not_eq_false' _).mp e))⟩
+  exact ⟨hh4, hh8, hp, fun e => absurd (of_decide_eq_true ((Bool.not_eq_false' _).mp e)) h⟩
 
 /-- The loop at `_chars`: to 46. -/
 theorem vc_41z {g : Gprs} {f : Rflags} {V : Addr → Byte} (h : g.rdx = g.rax) :
@@ -130,7 +130,7 @@ theorem vc_41n {g : Gprs} {f : Rflags} {V : Addr → Byte} (h : ¬ g.rdx = g.rax
   have ds := decide_eq_false hs
   wpx [W_41, W_32, o2, o3, Op.cmpmi, Tun.rd1, d, ds, Kp, Bool.not_true, Bool.not_false, Bool.false_eq_true,
     Bool.true_eq_false, false_implies, true_implies, implies_true, eq_self_iff_true, and_self, and_true]
-  exact ⟨hf, fun e => hs (of_decide_eq_true e)⟩
+  exact ⟨hf, fun e => absurd (of_decide_eq_true e) hs⟩
 
 /-- At 46: `eax` -1, to the `ret` at 51. -/
 theorem vc_46 {g : Gprs} {f : Rflags} {V : Addr → Byte} :
