@@ -4,14 +4,15 @@ import FV7z.Lemmas.FnFar
 /-!
 # Tail jumps of `7zzs` (PLAN.md §M, M1)
 
-Ten functions of 7-Zip 26.06 in `7zzs` that are a tail jump: `endbr64; jmp rel32` (9 bytes: `0x41c160`, `0x41c180`,
-`0x41c1a0`, `0x41c220`, `0x41c860`, `0x41cb70`, `0x41f3f0`, `0x60dfc0`) or `endbr64; mov rdi, rsi; jmp rel32`
-(12 bytes: `0x41f3b0`, `0x41f3e0`). The callee is the caller's: a continuation at the target.
+Thirteen functions of 7-Zip 26.06 in `7zzs` that are a tail jump: `endbr64; jmp rel32` (9 bytes: `0x41c160`,
+`0x41c180`, `0x41c1a0`, `0x41c220`, `0x41c860`, `0x41cb70`, `0x41f3f0`, `0x60dfc0`, `0x6014e0`, `0x6014f0`) or
+`endbr64; mov rdi, rsi; jmp rel32` (12 bytes: `0x41f3b0`, `0x41f3e0`, `0x41f400`). The callee is the
+caller's: a continuation at the target.
 
 - `JmpAt prof L o e e₂ f`: from `e`, the run reaches `e₂` with the registers `f` of the entry's and the bytes as they
   were (the flags as well).
 - `ej_go`, `emj_go`: the two shapes, given the decoding of each instruction.
-- `t41c160_ok` … `t60dfc0_ok`: each function's `JmpAt`, given its bytes and some code at the target.
+- `t41c160_ok` … `t41f400_ok`: each function's `JmpAt`, given its bytes and some code at the target.
 -/
 open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn
 namespace FV7z.Tiny
@@ -137,6 +138,31 @@ theorem c41f3e0_pin : Exe.bytesAt V2606.zzs.blob 0x41f3e0 12 = some c41f3e0 := b
 theorem t41f3e0_ok {code₂ : List Byte} (hin : CodeIn L 0x41f3e0#64 c41f3e0) (hin₂ : CodeIn L 0x41f3c0#64 code₂)
     (h₂ : 0 < code₂.length) : JmpAt prof L o 0x41f3e0#64 0x41f3c0#64 fun g => { g with rdi := g.rsi } :=
   emj_go hin (by decide) (by intro f; rfl) (by intro f; rfl) (rel := 18446744073709551572) (by intro f; rfl) hin₂
+    h₂ (by decide)
+
+/-- `0x6014e0`: to `0x60dfc0` (itself a tail jump to `free`). -/
+def c6014e0 : List Byte := [0xf3, 0x0f, 0x1e, 0xfa, 0xe9, 0xd7, 0xca, 0x00, 0x00]
+theorem c6014e0_pin : Exe.bytesAt V2606.zzs.blob 0x6014e0 9 = some c6014e0 := by decide +kernel
+
+theorem t6014e0_ok {code₂ : List Byte} (hin : CodeIn L 0x6014e0#64 c6014e0) (hin₂ : CodeIn L 0x60dfc0#64 code₂)
+    (h₂ : 0 < code₂.length) : JmpAt prof L o 0x6014e0#64 0x60dfc0#64 id :=
+  ej_go hin (by decide) (by intro f; rfl) (rel := 51927) (by intro f; rfl) hin₂ h₂ (by decide)
+
+/-- `0x6014f0`: to `0x60dfc0`. -/
+def c6014f0 : List Byte := [0xf3, 0x0f, 0x1e, 0xfa, 0xe9, 0xc7, 0xca, 0x00, 0x00]
+theorem c6014f0_pin : Exe.bytesAt V2606.zzs.blob 0x6014f0 9 = some c6014f0 := by decide +kernel
+
+theorem t6014f0_ok {code₂ : List Byte} (hin : CodeIn L 0x6014f0#64 c6014f0) (hin₂ : CodeIn L 0x60dfc0#64 code₂)
+    (h₂ : 0 < code₂.length) : JmpAt prof L o 0x6014f0#64 0x60dfc0#64 id :=
+  ej_go hin (by decide) (by intro f; rfl) (rel := 51911) (by intro f; rfl) hin₂ h₂ (by decide)
+
+/-- `0x41f400`: `rdi` = `rsi`, to `0x41f3f0` (a tail jump to `free`). -/
+def c41f400 : List Byte := [0xf3, 0x0f, 0x1e, 0xfa, 0x48, 0x89, 0xf7, 0xe9, 0xe4, 0xff, 0xff, 0xff]
+theorem c41f400_pin : Exe.bytesAt V2606.zzs.blob 0x41f400 12 = some c41f400 := by decide +kernel
+
+theorem t41f400_ok {code₂ : List Byte} (hin : CodeIn L 0x41f400#64 c41f400) (hin₂ : CodeIn L 0x41f3f0#64 code₂)
+    (h₂ : 0 < code₂.length) : JmpAt prof L o 0x41f400#64 0x41f3f0#64 fun g => { g with rdi := g.rsi } :=
+  emj_go hin (by decide) (by intro f; rfl) (by intro f; rfl) (rel := 18446744073709551588) (by intro f; rfl) hin₂
     h₂ (by decide)
 
 end FV7z.Tiny
