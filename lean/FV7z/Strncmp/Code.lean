@@ -511,19 +511,27 @@ theorem fetchFrom_app (X Y : List Byte) (f : Nat → Option Byte) :
   funext n
   simp only [fetchFrom, List.length_append]
   by_cases h : n < X.length
-  · simp only [h, if_true, List.getElem?_append_left h, show n < X.length + Y.length by omega]
-  · simp only [h, if_false]
+  · simp only [h, ↓reduceIte, List.getElem?_append_left h, show n < X.length + Y.length by omega]
+  · simp only [h, ↓reduceIte]
+
+theorem drop_app (A B : List Byte) (n : Nat) : (A ++ B).drop n = A.drop n ++ B.drop (n - A.length) := by
+  induction A generalizing n with
+  | nil => simp
+  | cons a A ih =>
+    cases n with
+    | zero => simp
+    | succ n => simp [ih]
 
 /-- What `A` decodes to at `k` is what `A ++ B` does. -/
 theorem dec_appL {feat : Features} {A B : List Byte} {k : Nat} {i : Inst} (hk : k ≤ A.length) (h : Dec feat A k i) :
     Dec feat (A ++ B) k i := fun f => by
-  rw [List.drop_append_eq_append_drop, Nat.sub_eq_zero_of_le hk, List.drop_zero, fetchFrom_app]
+  rw [drop_app, Nat.sub_eq_zero_of_le hk, List.drop_zero, fetchFrom_app]
   exact h _
 
 /-- What `B` decodes to at `k` is what `A ++ B` does at `k + A.length`. -/
 theorem dec_appR {feat : Features} {A B : List Byte} {a k n : Nat} {i : Inst} (hA : A.length = a) (hn : k + a = n)
     (h : Dec feat B k i) : Dec feat (A ++ B) n i := fun f => by
-  rw [List.drop_append_eq_append_drop, List.drop_eq_nil_of_le (as := A) (i := n) (by omega), List.nil_append, hA,
+  rw [drop_app, List.drop_eq_nil_of_le (as := A) (i := n) (by omega), List.nil_append, hA,
     show n - a = k by omega]
   exact h f
 

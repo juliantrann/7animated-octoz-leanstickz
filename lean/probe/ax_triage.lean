@@ -1,15 +1,11 @@
-import FV7z.Strncmp.Code
-import FV7z.Strncmp.AshrT
-import FV7z.Strncmp.Ashr1
-import FV7z.Strncmp.Ashr2
-import FV7z.Strncmp.Ashr3
-import FV7z.Strncmp.Ashr4
-import FV7z.Strncmp.Ashr5
-import FV7z.Tls.Holds
-import FV7z.Start.ToTls
+import FV7z.Strncmp.Exit
+import FV7z.Start.CxEnt
+import FV7z.Start.ToLif
+import FV7z.Start.LifL
+import FV7z.Start.ExitKeep
+import FV7z.Start.ToCxa
 open FV7z FV7z.Start
-#print axioms FV7z.Strncmp.b177
-#print axioms FV7z.Strncmp.d5828
-#print axioms FV7z.Strncmp.ashr15
-#print axioms FV7z.Tls.setup_tls
-#print axioms FV7z.Start.lsm_tls
+#print axioms FV7z.Strncmp.exit6192
+#print axioms FV7z.Strncmp.jbe_ofNat
+#print axioms FV7z.Strncmp.zsub_eq_zero
+#print axioms FV7z.Start.ent_cx
