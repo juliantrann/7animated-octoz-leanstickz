@@ -46,8 +46,7 @@ theorem vc_ok {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (fa : ∀ 
   obtain ⟨h1, h2⟩ := h
   dsimp only at fa fd h1 h2 ⊢
   wpx [W_0, W_12, o0, o1, Op.testmi, Op.ld]
-  refine ⟨fa, fun _ => ⟨fun hc => absurd (by simpa using hc) h1, fun _ => ⟨fd, fun _ => ⟨fun hc => ?_,
-    fun _ => ⟨rfl, rfl, rfl⟩⟩⟩⟩⟩
+  refine ⟨fa, fun hc => absurd (by simpa using hc) h1, fun _ => ⟨fd, fun hc => ?_, fun _ => rfl⟩⟩
   rw [BitVec.and_self] at hc
   exact absurd (hc.symm.trans h2) (by decide)
 
@@ -59,8 +58,7 @@ theorem vc_bad {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (fa : ∀
   unfold FnoOk at h
   dsimp only at fa fd h ⊢
   wpx [W_0, W_12, o0, o1, Op.testmi, Op.ld]
-  refine ⟨fa, fun _ => ⟨fun _ => ⟨rfl, ⟨_, rfl⟩, rfl⟩, fun hc => ⟨fd, fun _ =>
-    ⟨fun _ => ⟨rfl, ⟨_, rfl⟩, rfl⟩, fun hm => (h ⟨?_, ?_⟩).elim⟩⟩⟩⟩
+  refine ⟨fa, fun _ => ⟨_, rfl⟩, fun hc => ⟨fd, fun _ => ⟨_, rfl⟩, fun hm => (h ⟨?_, ?_⟩).elim⟩⟩
   · first
     | simpa using hc
     | exact fun e => by simp [e] at hc
@@ -74,6 +72,8 @@ theorem vc_24 {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (fe : ∀ 
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   wpx [W_24, o2, Op.stfi]
   first
+  | exact ⟨fe, rfl⟩
+  | exact ⟨fe, by rw [show BitVec.setWidth 64 4294967295#32 = 4294967295#64 by decide]⟩
   | exact ⟨fe, rfl, rfl, rfl⟩
   | exact ⟨fe, rfl, by rw [show BitVec.setWidth 64 4294967295#32 = 4294967295#64 by decide], rfl⟩
 

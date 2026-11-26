@@ -134,6 +134,11 @@ FNS = {
     # not negative, else `errno` = `EBADF` and -1. Stops: the `ret` (0x13), the `ret` after `errno` is set (0x2b).
     "fno": dict(grp="Fno", cn="__fileno", a=0x627140, n=44, pos=True, fs=True, stops=(0x13, 0x2b),
                 tag="PLAN.md §M, M1", src="glibc 2.31's `__fileno` (`libio/fileno.c`; `objdump -d`)"),
+    # glibc 2.31 nptl/pthread_mutex_destroy.c `__pthread_mutex_destroy (mutex)`: `EBUSY` if the mutex is not robust
+    # and has users, else `__kind` = -1 and 0. Stop: the `ret` (0x21).
+    "pmd": dict(grp="Pmd", cn="__pthread_mutex_destroy", a=0x5fbd00, n=34, pos=True, stops=(0x21,),
+                tag="PLAN.md §M, M1",
+                src="glibc 2.31's `__pthread_mutex_destroy` (`nptl/pthread_mutex_destroy.c`; `objdump -d`)"),
     # glibc 2.31 nptl/cleanup_compat.c `_pthread_cleanup_push (buffer, routine, arg)`: the buffer filled, linked in
     # front of the thread's `cleanup` list (`fs:0x2f8`). Stop: the `ret` (0x21).
     "pcp": dict(grp="Pcp", cn="_pthread_cleanup_push", a=0x5fefe0, n=34, pos=True, fs=True, stops=(0x21,),
