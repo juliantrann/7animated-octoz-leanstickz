@@ -41,13 +41,13 @@ abbrev fn (V : Addr → Byte) (p : Addr) : BitVec 64 := rdq(V, rdq(V, rdq(V, p +
 variable {F : Footprint} {Wl : List Rgn}
 
 /-- `Callback` NULL: the load, the test, `xor eax, eax`, up to the `ret`. -/
-theorem vc_z {g : Gprs} {f : Rflags} {V : Addr → Byte} (hz : (rdq(V, g.rdi + 192#64) == 0) = true)
+theorem vc_z {g : Gprs} {f : Rflags} {V : Addr → Byte} (h0 : rdq(V, g.rdi + 192#64) = 0#64)
     (hb : ∀ i < 8, Foot F.data (Addr.add (g.rdi + 192#64) i)) :
     W_0 F Wl (fun j' g' _ V' => j' = 50 ∧
       g' = { g with rax := 0#64, rdx := g.rsi, r8 := rdq(V, g.rdi + 192#64) } ∧ V' = V) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
-  dsimp only at hz hb ⊢
-  wpx [W_0, W_19, W_48, o0, o1, o2, hz, BitVec.xor_self, BitVec.reduceSetWidth,
+  dsimp only at h0 hb ⊢
+  wpx [W_0, W_19, W_48, o0, o1, o2, BitVec.xor_self, BitVec.reduceSetWidth,
       Bool.false_eq_true, false_implies, true_implies, and_true, true_and, implies_true]
   all_goals repeat'
     first
@@ -55,12 +55,11 @@ theorem vc_z {g : Gprs} {f : Rflags} {V : Addr → Byte} (hz : (rdq(V, g.rdi + 1
     | assumption
     | exact trivial
     | apply And.intro
-    | (intro hc; simp [hz] at hc)
-    | (intro hc; exact absurd hz (by simp [hc]))
+    | (intro hc; exact absurd h0 hc)
     | intro _
 
 /-- `Callback` not NULL: the load, the test, the loads of the vtable and its entry, up to the jump. -/
-theorem vc_nz {g : Gprs} {f : Rflags} {V : Addr → Byte} (hz : (rdq(V, g.rdi + 192#64) == 0) = false)
+theorem vc_nz {g : Gprs} {f : Rflags} {V : Addr → Byte} (h0 : ¬rdq(V, g.rdi + 192#64) = 0#64)
     (hb : ∀ i < 8, Foot F.data (Addr.add (g.rdi + 192#64) i))
     (h1 : ∀ i < 8, Foot F.data (Addr.add (rdq(V, g.rdi + 192#64)) i))
     (h2 : ∀ i < 8, Foot F.data (Addr.add (rdq(V, rdq(V, g.rdi + 192#64)) + 8#64) i)) :
@@ -73,8 +72,8 @@ theorem vc_nz {g : Gprs} {f : Rflags} {V : Addr → Byte} (hz : (rdq(V, g.rdi + 
           rdi := rdq(V, g.rdi + 192#64),
           r8 := rdq(V, g.rdi + 192#64) } ∧ V' = V) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
-  dsimp only at hz hb h1 h2 ⊢
-  wpx [W_0, W_19, W_48, o0, o1, o2, hz, BitVec.xor_self, BitVec.reduceSetWidth,
+  dsimp only at h0 hb h1 h2 ⊢
+  wpx [W_0, W_19, W_48, o0, o1, o2, BitVec.xor_self, BitVec.reduceSetWidth,
       Bool.false_eq_true, false_implies, true_implies, and_true, true_and, implies_true]
   all_goals repeat'
     first
@@ -82,8 +81,7 @@ theorem vc_nz {g : Gprs} {f : Rflags} {V : Addr → Byte} (hz : (rdq(V, g.rdi + 
     | assumption
     | exact trivial
     | apply And.intro
-    | (intro hc; simp [hz] at hc)
-    | (intro hc; exact absurd hz (by simp [hc]))
+    | (intro hc; exact absurd hc h0)
     | intro _
 
 variable {prof : Profile} {L : List (Addr × List Byte)} {s₀ X : State} {o : Oracle} {t : Nat}
@@ -124,10 +122,9 @@ theorem dsp_ok (c : Seg prof F Wl L s₀ o) (hin : CodeIn L dsp_at dsp)
     GoG prof L o gev gP gE X t := by
   have hrip' : X.cpu.rip = dsp_at.add 0 := by rw [addr_add_zero]; exact hrip
   by_cases h0 : cb V X.cpu.gpr.rdi = 0#64
-  · have hz : (rdq(V, X.cpu.gpr.rdi + 192#64) == 0) = true := beq_iff_eq.2 h0
-    refine (c_0 prof).run c hin (fun j' g' _ V' => j' = 50 ∧
+  · refine (c_0 prof).run c hin (fun j' g' _ V' => j' = 50 ∧
         g' = { X.cpu.gpr with rax := 0#64, rdx := X.cpu.gpr.rsi, r8 := rdq(V, X.cpu.gpr.rdi + 192#64) } ∧ V' = V)
-      hK hA hrip' (vc_z hz hb) ?_
+      hK hA hrip' (vc_z h0 hb) ?_
     rintro j' g fl V₁ ⟨rfl, rfl, hV₁⟩ Y t₁ hKY hAY hrY hgY -
     subst V₁
     have hsp : Y.cpu.gpr.rsp = X.cpu.gpr.rsp := by rw [hgY]
@@ -137,8 +134,7 @@ theorem dsp_ok (c : Seg prof F Wl L s₀ o) (hin : CodeIn L dsp_at dsp)
     refine kn h0 Z t' hKZ hAZ hrZ ?_
     rw [hgZ, hgY]
     try rfl
-  · have hz : (rdq(V, X.cpu.gpr.rdi + 192#64) == 0) = false := beq_eq_false_iff_ne.2 h0
-    obtain ⟨eR, codeR, jR, hinR, hjR, hRt⟩ := hR h0
+  · obtain ⟨eR, codeR, jR, hinR, hjR, hRt⟩ := hR h0
     refine (c_0 prof).run c hin (fun j' g' _ V' => j' = 38 ∧
         g' = { X.cpu.gpr with
           rax := rdq(V, rdq(V, rdq(V, X.cpu.gpr.rdi + 192#64)) + 8#64),
@@ -147,7 +143,7 @@ theorem dsp_ok (c : Seg prof F Wl L s₀ o) (hin : CodeIn L dsp_at dsp)
           rsi := X.cpu.gpr.rdi + 72#64,
           rdi := rdq(V, X.cpu.gpr.rdi + 192#64),
           r8 := rdq(V, X.cpu.gpr.rdi + 192#64) } ∧ V' = V)
-      hK hA hrip' (vc_nz hz hb (h1 h0) (h2 h0)) ?_
+      hK hA hrip' (vc_nz h0 hb (h1 h0) (h2 h0)) ?_
     rintro j' g fl V₁ ⟨rfl, rfl, hV₁⟩ Y t₁ hKY hAY hrY hgY -
     subst V₁
     refine c.s_jmp_rx hKY hAY hin (lt_len (by decide)) hrY (jmp_38 _) hinR hjR (by rw [hgY]; exact hRt) ?_
