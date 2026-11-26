@@ -109,7 +109,8 @@ theorem gdn_ok {fb : Addr} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBa
   -- to the `syscall`
   refine (c_0 prof fb).run c hfs hin (fun j' g' _ V' => j' = 25 ∧ g' = X.cpu.gpr.set 0 217 ∧ V' = V) hK hA
     (by rw [addr_add_zero]; exact hrip) (vc_0 hc) ?_
-  rintro j' g fl V' ⟨rfl, rfl, rfl⟩ Y t₁ hKY hAY hrY hgY -
+  rintro j' g fl V₁ ⟨rfl, rfl, hV₁⟩ Y t₁ hKY hAY hrY hgY -
+  subst V₁
   have hsi : Y.cpu.gpr.rsi = X.cpu.gpr.rsi := by rw [hgY]; rfl
   have hdx : Y.cpu.gpr.rdx = X.cpu.gpr.rdx := by rw [hgY]; rfl
   have h32 : arg32 X.cpu.gpr.rdx = X.cpu.gpr.rdx.toNat := Nat.mod_eq_of_lt (Nat.lt_of_le_of_lt hc (by decide))
