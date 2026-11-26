@@ -113,7 +113,8 @@ theorem vc_90 {fb C ix : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte}
   wpx [W_90, W_107, W_124, W_139, o4, o5, o6, o7, Op.ldf, Op.shr64, Op.cmpmra, Op.cmpma, BitVec.and_self, htc, hz,
       b6, hk, hc', Bool.not_true, Bool.not_false, Bool.false_eq_true, Bool.true_eq_false, false_implies,
       eq_self_iff_true, implies_true]
-  all_goals repeat' first | assumption | with_reducible rfl | exact True.intro | apply And.intro | intro _
+  all_goals repeat' first | with_reducible assumption | with_reducible rfl | exact True.intro | apply And.intro
+    | intro _
 
 /-- The put, 696 to 307: the four stores. -/
 theorem vc_696 {fb p C ix : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (hr12 : g.r12 = p) (hdx : g.rdx = C)
@@ -153,7 +154,8 @@ theorem vc_307 {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte}
     (rw [hcan, BitVec.xor_self]) <;> decide
   wpx [W_307, W_327, o8, o9, Op.xormf, hx, Bool.not_true, Bool.false_eq_true, false_implies, eq_self_iff_true,
       implies_true]
-  all_goals repeat' first | assumption | with_reducible rfl | exact True.intro | apply And.intro | intro _
+  all_goals repeat' first | with_reducible assumption | with_reducible rfl | exact True.intro | apply And.intro
+    | intro _
 
 /-- What `ifr_put_ok` asks, `S` the stack pointer at the entry, `p` the chunk (`rsi`): the size checks pass, the tcache
 put is taken (the tcache made, `tc_idx` below `mp_.tcache_bins` and below 64, the `key` not the tcache, the count below
