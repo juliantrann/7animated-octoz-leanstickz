@@ -673,6 +673,12 @@ FNS = {
     "ucn": dict(grp="Ucn", cn="UString::UString(unsigned, const wchar_t*)", a=0x44d1c0, n=122, pos=True, stops=(0x69,),
                 calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip's `UString::UString (unsigned, const wchar_t *)` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
+    # `UString::SetFrom (s, len)`: for `len` above `_limit` (0x17) the throw stub above `0x3ffffffe` (0x56, by hand),
+    # else `newBuf = new wchar_t[len + 1]` (0x67), `delete [] _chars` unless null (0x78), `_chars = newBuf`, `_limit =
+    # len`; then `wmemcpy (_chars, s, len)` unless `len` = 0 (0x2c), `_chars[len] = 0`, `_len = len`; `ret` (0x48).
+    "usf": dict(grp="Usf", cn="UString::SetFrom", a=0x44d790, n=134, pos=True, stops=(0x48,), calls=True,
+                hand=(0x56,), tag="PLAN.md §M, M1",
+                src="7-Zip's `UString::SetFrom (const wchar_t *, unsigned)` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
     # CPP/UI/Common/EnumDirItems.cpp `CDirItems::ScanProgress (dirPath)`: without a `Callback` (at 0xc0) 0, else a tail
     # jump to `Callback->ScanProgress (Stat, false, dirPath)` (`Stat` at 0x48), its vtable's second entry. Stops: the
     # `jmp rax` (0x26) and the `ret` (0x32).
