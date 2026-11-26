@@ -116,6 +116,33 @@ FNS = {
     "cnc": dict(grp="Cnc", cn="__close_nocancel", a=0x665f20, n=42, pos=True, fs=True, stops=(0x13, 0x14, 0x29),
                 calls=True, tag="PLAN.md §M, M1",
                 src="glibc 2.31's `__close_nocancel` (`sysdeps/unix/sysv/linux/close_nocancel.c`; `objdump -d`)"),
+    # 7-Zip 26.06's `AddRef`s of three classes (`Z7_COM_ADDREF_RELEASE`, `CPP/Common/MyCom.h`): the reference
+    # count at `this + d` incremented and returned. Stop: the `ret` (13).
+    "ar1": dict(grp="Ar1", cn="CArchiveExtractCallback::AddRef", a=0x5b20e0, n=14, pos=True, stops=(13,),
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `CArchiveExtractCallback::AddRef` (`MyCom.h`; `objdump -d`)"),
+    "ar2": dict(grp="Ar2", cn="CCrcHasher::AddRef", a=0x49fe10, n=14, pos=True, stops=(13,),
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `CCrcHasher::AddRef` (`MyCom.h`; `objdump -d`)"),
+    "ar3": dict(grp="Ar3", cn="CInFileStream::AddRef", a=0x5a48a0, n=14, pos=True, stops=(13,),
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `CInFileStream::AddRef` (`MyCom.h`; `objdump -d`)"),
+    # 7-Zip 26.06's handlers' counts of properties (`IMP_IInArchive_Props` etc.): `*n` stored, 0 returned. Stop: `ret`.
+    "nrp": dict(grp="Nrp", cn="NHash::CHandler::GetNumRawProps", a=0x49e940, n=13, pos=True, stops=(12,),
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `NHash::CHandler::GetNumRawProps` (`objdump -d`)"),
+    "gnp": dict(grp="Gnp", cn="NArchive::NGz::CHandler::GetNumberOfArchiveProperties", a=0x49e8f0, n=13, pos=True, stops=(12,),
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `NGz::CHandler::GetNumberOfArchiveProperties` (`objdump -d`)"),
+    # 7-Zip 26.06's CPP/Windows/FileName.cpp `GetRootPrefixSize`: 1 if the path starts with `/`, else 0. Stop: `ret`.
+    "rps": dict(grp="Rps", cn="NWindows::NFile::NName::GetRootPrefixSize(const char *)", a=0x456a60, n=13, pos=True, stops=(12,),
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `GetRootPrefixSize` (`CPP/Windows/FileName.cpp`; `objdump -d`)"),
+    "rpw": dict(grp="Rpw", cn="NWindows::NFile::NName::GetRootPrefixSize(const wchar_t *)", a=0x456a70, n=13, pos=True, stops=(12,),
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `GetRootPrefixSize` (`CPP/Windows/FileName.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06's CPP/7zip/UI/Common/ArchiveCommandLine.h `CArcCommand`'s tests of `CommandType`. Stop: `ret`.
+    "ifx": dict(grp="Ifx", cn="CArcCommand::IsFromExtractGroup", a=0x5a70d0, n=16, pos=True, stops=(15,),
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `CArcCommand::IsFromExtractGroup` (`ArchiveCommandLine.h`; `objdump -d`)"),
+    "gpm": dict(grp="Gpm", cn="CArcCommand::GetPathMode", a=0x5a70e0, n=21, pos=True, stops=(20,),
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `CArcCommand::GetPathMode` (`ArchiveCommandLine.h`; `objdump -d`)"),
+    # 7-Zip 26.06's CPP/Common/MyWindows.cpp `SysStringLen`: 0 for null, else the byte length before `bstr` / 4.
+    # Stops: the two `ret`s (15, 18).
+    "ssl": dict(grp="Ssl", cn="SysStringLen", a=0x5a0100, n=19, pos=True, stops=(15, 18),
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `SysStringLen` (`CPP/Common/MyWindows.cpp`; `objdump -d`)"),
     # 7-Zip's CPP/Windows/FileIO.cpp `CFileBase::seek (off, whence)`: the descriptor (`this->_handle`, at 0), then
     # `lseek`. Stop: the `jmp` to `__libc_lseek` (6), a branch to another segment (`Seg.s_jmp_x`).
     "fsk": dict(grp="Fsk", cn="NWindows::NFile::NIO::CFileBase::seek", a=0x4560b0, n=11, pos=True, stops=(6,),
