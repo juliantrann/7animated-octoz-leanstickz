@@ -9,6 +9,7 @@ untouched by the call.
 
 - `keep_low`: that, for any other disjunct `Q` the frame allows and any side condition `R` it needs.
 -/
+open ZellicX86 FV7z
 namespace FV7z.Mal
 
 /-- The bytes below the old top `T` plus 8, but for `main_arena.top`, as they were: see the module doc. -/
