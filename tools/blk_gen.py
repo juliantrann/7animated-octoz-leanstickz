@@ -256,6 +256,12 @@ FNS = {
     "cpp": dict(grp="Cpp", cn="Correct_PathPart", a=0x5c6ee0, n=156, pos=True, stops=(0x1e, 0x65, 0x8e),
                 tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `Correct_PathPart` (`CPP/7zip/UI/Common/ExtractingFilePath.cpp`; `objdump -d`)"),
+    # 7-Zip's `CStdOutStream::Normalize_UString (s)` (`CPP/Common/StdOutStream.cpp`): with the stream's flag at
+    # `this + 8` set, each `wchar_t` below ' ', from 0x7f to 0x9f, 0x202a..0x202e or 0x2066..0x2069 made '_', else each
+    # '\\n'. Stops: the `ret`s (0x6f, 0x94).
+    "nus": dict(grp="Nus", cn="Normalize_UString", a=0x5a15e0, n=149, pos=True, stops=(0x6f, 0x94),
+                tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CStdOutStream::Normalize_UString` (`CPP/Common/StdOutStream.cpp`; `objdump -d`)"),
     # 7-Zip's C/Alloc.c `MyAlloc (size)`: 0 for size 0, else a tail jump to `malloc`. Stops: the jump (9), the `ret`
     # (18).
     "mya": dict(grp="Mya", cn="MyAlloc", a=0x41f3c0, n=19, pos=True, stops=(9, 18),
