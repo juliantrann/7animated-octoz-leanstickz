@@ -47,9 +47,13 @@ abbrev m100 (x : BitVec 64) : BitVec 64 :=
 
 theorem mh_toNat (x : BitVec 64) : (mh x).toNat = x.toNat / 4 * 2951479051793528259 / 2 ^ 64 := by
   have hx := x.isLt
+  have h1 : x.toNat / 4 < 340282366920938463463374607431768211456 := by omega
+  have h2 : x.toNat / 4 * 2951479051793528259 < 340282366920938463463374607431768211456 := by omega
+  have h3 : x.toNat / 4 * 2951479051793528259 / 18446744073709551616 < 18446744073709551616 := by omega
   simp only [mh, BitVec.extractLsb'_toNat, BitVec.toNat_mul, BitVec.toNat_setWidth, BitVec.toNat_ushiftRight,
-    Nat.shiftRight_eq_div_pow, BitVec.toNat_ofNat, Nat.reducePow, Nat.reduceMod] at hx ⊢
-  omega
+    Nat.shiftRight_eq_div_pow, BitVec.toNat_ofNat, Nat.reducePow, Nat.reduceMod, Nat.mod_eq_of_lt h1,
+    Nat.mod_eq_of_lt h2, Nat.mod_eq_of_lt h3]
+  first | done | omega
 
 /-- `C` = `(2^66 + 11) / 25`: for `y` < `2^62`, `y * C / 2^66` = `y / 25`. -/
 theorem div25 (y : Nat) (hy : y < 4611686018427387904) :
@@ -65,14 +69,26 @@ theorem q_toNat (x : BitVec 64) : (mh x >>> 2).toNat = x.toNat / 100 := by
 theorem and_m4 (h : BitVec 64) : h &&& 18446744073709551612#64 = h >>> 2 <<< 2 := by
   rw [BitVec.shiftLeft_ushiftRight, show BitVec.allOnes 64 <<< 2 = 18446744073709551612#64 by decide]
 
-theorem m100_eq (x : BitVec 64) : x - m100 x = x % 100#64 ∧ mh x >>> 2 = x / 100#64 := by
-  have hq := q_toNat x
+theorem q_eq (x : BitVec 64) : mh x >>> 2 = x / 100#64 := by
+  apply BitVec.eq_of_toNat_eq
+  rw [q_toNat, BitVec.toNat_udiv]
+  simp only [BitVec.toNat_ofNat, Nat.reducePow, Nat.reduceMod]
+
+theorem m100_mul (x : BitVec 64) : m100 x = x / 100#64 * 100#64 := by
   have hx := x.isLt
-  refine ⟨BitVec.eq_of_toNat_eq ?_, BitVec.eq_of_toNat_eq ?_⟩
-  · simp only [m100, and_m4, BitVec.toNat_sub, BitVec.toNat_shiftLeft, BitVec.toNat_add, BitVec.toNat_mul,
-      BitVec.toNat_umod, BitVec.toNat_ofNat, Nat.shiftLeft_eq, hq, Nat.reducePow, Nat.reduceMod] at hx ⊢
-    omega
-  · simp only [hq, BitVec.toNat_udiv, BitVec.toNat_ofNat, Nat.reducePow, Nat.reduceMod]
+  apply BitVec.eq_of_toNat_eq
+  simp only [m100, and_m4, q_eq, BitVec.toNat_shiftLeft, BitVec.toNat_add, BitVec.toNat_mul, BitVec.toNat_udiv,
+    BitVec.toNat_ofNat, Nat.shiftLeft_eq, Nat.reducePow, Nat.reduceMod]
+  omega
+
+theorem m100_eq (x : BitVec 64) : x - m100 x = x % 100#64 ∧ mh x >>> 2 = x / 100#64 := by
+  refine ⟨?_, q_eq x⟩
+  have hx := x.isLt
+  rw [m100_mul]
+  apply BitVec.eq_of_toNat_eq
+  simp only [BitVec.toNat_sub, BitVec.toNat_mul, BitVec.toNat_udiv, BitVec.toNat_umod, BitVec.toNat_ofNat,
+    Nat.reducePow, Nat.reduceMod]
+  omega
 
 /-! ## Addresses -/
 
@@ -117,12 +133,17 @@ abbrev V5 (g : Gprs) (V : Addr → Byte) : Addr → Byte :=
   Vst (Vst V g.r12 (toBytesLE (BitVec.setWidth 32 (rdq(V, g.rbx + 8#64) - m100 rdq(V, g.rbx + 8#64))) 4)) g.rbp
     (toBytesLE (mh rdq(V, g.rbx + 8#64) >>> 2 + g.rax) 8)
 
+/-- `tv_nsec`. -/
+abbrev nsec (g : Gprs) (V : Addr → Byte) : BitVec 64 := rdq(V, g.rbx + 8#64)
+/-- The registers after the division. -/
+abbrev G95a (g : Gprs) (V : Addr → Byte) : Gprs :=
+  { g with rax := mh (nsec g V) >>> 2 + g.rax, rcx := nsec g V - m100 (nsec g V), rdx := m100 (nsec g V) }
+/-- The registers after the first pop. -/
+abbrev G95b (g : Gprs) (V : Addr → Byte) : Gprs :=
+  { G95a g V with rbx := rdq(V, g.rsp), rsp := g.rsp + 8 + 8 + 8, rsi := 2951479051793528259#64, r8 := g.rax }
 /-- The registers at the `ret`. -/
 abbrev G95 (g : Gprs) (V : Addr → Byte) : Gprs :=
-  { g with rax := mh rdq(V, g.rbx + 8#64) >>> 2 + g.rax,
-    rcx := rdq(V, g.rbx + 8#64) - m100 rdq(V, g.rbx + 8#64), rdx := m100 rdq(V, g.rbx + 8#64),
-    rbx := rdq(V, g.rsp), rsp := g.rsp + 8 + 8 + 8, rbp := rdq(V5 g V, g.rsp + 8), rsi := 2951479051793528259#64,
-    r8 := g.rax, r12 := rdq(V5 g V, g.rsp + 8 + 8) }
+  { G95b g V with rbp := rdq(V5 g V, g.rsp + 8), r12 := rdq(V5 g V, g.rsp + 8 + 8) }
 
 /-- At the `ret`. -/
 def P95 (g₀ : Gprs) (V₀ : Addr → Byte) : Post := fun j g _ V => j = 95 ∧ g = G95 g₀ V₀ ∧ V = V5 g₀ V₀
@@ -215,7 +236,10 @@ theorem fft_ok (c : Seg prof F Wl L s₀ o) (hin : CodeIn L fft_at fft) (hinu : 
     (by rw [hsp₁]; exact offF (d := 0) hst (by omega) (by omega)) ?_
   rintro Y₂ t₂ hK₂ hA₂ ⟨hr₂, hg₂⟩
   rw [hsp₁] at hA₂
-  have hsp₂ : Y₂.cpu.gpr.rsp = X.cpu.gpr.rsp - 8 - 8 - 8 - 8 := by rw [hg₂]; rfl
+  have hsp₂ : Y₂.cpu.gpr.rsp = X.cpu.gpr.rsp - 8 - 8 - 8 - 8 := by
+    rw [hg₂]
+    show Y₁.cpu.gpr.rsp - 8 = _
+    rw [hsp₁]
   obtain ⟨V₂, hA₂, h2o, h2r, h2b, h2p, h2c⟩ : ∃ V₂, Agree F Y₂.proc.mm.mem V₂ ∧
       (∀ a : Addr, ¬ (X.cpu.gpr.rsp.toNat - 32 ≤ a.toNat ∧ a.toNat < X.cpu.gpr.rsp.toNat) → V₂ a = V a) ∧
       rdq(V₂, X.cpu.gpr.rsp - 8 - 8 - 8 - 8) = fft_at.add 25 ∧
@@ -249,10 +273,13 @@ theorem fft_ok (c : Seg prof F Wl L s₀ o) (hin : CodeIn L fft_at fft) (hinu : 
     (congrArg Gprs.rax hg₃).trans (congrArg ftV ((congrArg Gprs.rdi hg₂).trans (congrArg Gprs.rdi hg₁)))
   have zsp : Z.cpu.gpr.rsp = X.cpu.gpr.rsp - 8 - 8 - 8 :=
     (congrArg Gprs.rsp hg₃).trans (by rw [hsp₂]; exact BitVec.sub_add_cancel _ _)
+  have g1k : Y₁.cpu.gpr.r13 = X.cpu.gpr.r13 ∧ Y₁.cpu.gpr.r14 = X.cpu.gpr.r14 ∧ Y₁.cpu.gpr.r15 = X.cpu.gpr.r15 := by
+    rw [hg₁]
+    exact ⟨rfl, rfl, rfl⟩
   have zk : Z.cpu.gpr.r13 = X.cpu.gpr.r13 ∧ Z.cpu.gpr.r14 = X.cpu.gpr.r14 ∧ Z.cpu.gpr.r15 = X.cpu.gpr.r15 :=
-    ⟨(congrArg Gprs.r13 hg₃).trans ((congrArg Gprs.r13 hg₂).trans (congrArg Gprs.r13 hg₁)),
-      (congrArg Gprs.r14 hg₃).trans ((congrArg Gprs.r14 hg₂).trans (congrArg Gprs.r14 hg₁)),
-      (congrArg Gprs.r15 hg₃).trans ((congrArg Gprs.r15 hg₂).trans (congrArg Gprs.r15 hg₁))⟩
+    ⟨(congrArg Gprs.r13 hg₃).trans ((congrArg Gprs.r13 hg₂).trans g1k.1),
+      (congrArg Gprs.r14 hg₃).trans ((congrArg Gprs.r14 hg₂).trans g1k.2.1),
+      (congrArg Gprs.r15 hg₃).trans ((congrArg Gprs.r15 hg₂).trans g1k.2.2)⟩
   have ta1 : (X.cpu.gpr.rsp - 8 - 8 - 8 + 8).toNat = X.cpu.gpr.rsp.toNat - 16 := by
     have := tadd8 (a := X.cpu.gpr.rsp - 8 - 8 - 8) (by omega)
     omega

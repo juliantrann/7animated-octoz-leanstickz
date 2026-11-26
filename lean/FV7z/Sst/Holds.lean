@@ -62,10 +62,11 @@ def Ws (Wl : List Rgn) (p : Addr) : Prop :=
   (∀ i < 16, Foot Wl (Addr.add (p + 24#64) i)) ∧ (∀ i < 4, Foot Wl (Addr.add (p + 92#64) i)) ∧
   (∀ i < 8, Foot Wl (Addr.add (p + 96#64) i))
 
+/-- `st_mode`. -/
+abbrev mode (V : Addr → Byte) (s : Addr) : BitVec 32 := rdd(V, s + 24#64)
 /-- The registers where the two ways meet: the mode in `rax`, its type bits in `rcx`, `Size` in `rdx`. -/
 abbrev G29 (g : Gprs) (V : Addr → Byte) : Gprs :=
-  { g with rax := BitVec.setWidth 64 rdd(V, g.rsi + 24#64),
-    rcx := BitVec.setWidth 64 (rdd(V, g.rsi + 24#64) &&& 61440#32), rdx := sz V g.rsi }
+  { g with rax := (mode V g.rsi).setWidth 64, rcx := (mode V g.rsi &&& 61440#32).setWidth 64, rdx := sz V g.rsi }
 
 /-- At the meeting point. -/
 def P29 (g₀ : Gprs) (V₀ : Addr → Byte) : Post := fun j g _ V => j = 29 ∧ g = G29 g₀ V₀ ∧ V = V₀
@@ -93,8 +94,8 @@ theorem vc_0 {g : Gprs} {f : Rflags} {V : Addr → Byte} (hr : Rs F g.rsi) : W_0
   dsimp only at r24 r48 ⊢
   wpx [W_0, W_25, o0, o1]
   refine ⟨r24, fun _ _ => ⟨fun hc => ?_, fun hc => ⟨r48, ?_⟩⟩⟩
-  · exact x29 (by simp only [G29, sz, if_pos (of_decide_eq_true hc), lf_xz])
-  · exact x29 (by simp only [G29, sz, if_neg (of_decide_eq_false hc)])
+  · exact x29 (by simp only [G29, mode, sz, if_pos (of_decide_eq_true hc), lf_xz])
+  · exact x29 (by simp only [G29, mode, sz, if_neg (of_decide_eq_false hc)])
 
 /-- From the meeting point to the `ret`: the stores. -/
 theorem vc_29 {g : Gprs} {f : Rflags} {V : Addr → Byte} (hr : Rs F g.rsi) (hw : Ws Wl g.rdi) :
@@ -129,7 +130,8 @@ theorem sst_ok (c : Seg prof F Wl L s₀ o) (hin : CodeIn L sst_at sst) (hK : Ke
       GoG prof L o gev gP gE Z t') :
     GoG prof L o gev gP gE X t := by
   refine (c_0 prof).run c hin (P29 X.cpu.gpr V) hK hA (by rw [addr_add_zero]; exact hrip) (vc_0 hr) ?_
-  rintro j g fl V₁ ⟨rfl, rfl, rfl⟩ Y t₁ hKY hAY hrY hgY -
+  rintro j g fl V₁ ⟨rfl, rfl, hV₁⟩ Y t₁ hKY hAY hrY hgY -
+  rw [hV₁] at hAY
   refine (c_29 prof).run c hin (P105 Y.cpu.gpr V) hKY hAY hrY
     (vc_29 (by rw [hgY]; exact hr) (by rw [hgY]; exact hw)) ?_
   rintro j g fl V₂ ⟨rfl, ⟨a, d, rfl⟩, b1, b2, b3, h1, h2, h3, rfl⟩ Y₂ t₂ hK₂ hA₂ hr₂ hg₂ -
