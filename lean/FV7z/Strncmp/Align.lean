@@ -28,11 +28,11 @@ theorem s_jccF (c : Seg prof F Wl L s₀ o) (hK : KeptW Wl s₀ X)
     (taken : X.cpu.rflags.cond cc = true →
       ContG prof F Wl L s₀ o gev gP gE V fun Y => Y.cpu.rip = e'.add tgt ∧ Y.cpu.gpr = X.cpu.gpr)
     (fall : X.cpu.rflags.cond cc = false → ContG prof F Wl L s₀ o gev gP gE V fun Y =>
-      Y.cpu.rip = e'.add (j + len) ∧ Y.cpu.gpr = X.cpu.gpr ∧ Y.cpu.rflags = X.cpu.rflags) :
+      Y.cpu.rip = e'.add (j + len) ∧ Y.cpu.gpr = X.cpu.gpr ∧ ∀ c', Y.cpu.rflags.cond c' = X.cpu.rflags.cond c') :
     GoG prof L o gev gP gE X t := by
   cases hcc : X.cpu.rflags.cond cc
   · exact c.next hK hA hin hj hrip (fun M hK' hA' htf _ => ⟨_, _, jcc_n (s := X.withMem M) htf
-      (c.dec hK' hin hrip hd) hcc, hK'.nx rfl rfl rfl, hA', rip_add hrip M len, rfl, rfl⟩) (fall hcc)
+      (c.dec hK' hin hrip hd) hcc, hK'.nx rfl rfl rfl, hA', rip_add hrip M len, rfl, fun _ => rfl⟩) (fall hcc)
   · exact c.s_jcc hK hA hin hj hrip hd htgt ht taken fun h => nomatch hcc.symm.trans h
 
 end FV7z.Fn.Seg
@@ -51,7 +51,7 @@ theorem set_r10n (g : Gprs) (v : BitVec 64) : g.set (regOf 10) v = { g with r10 
 /-- `and r, -16` of `x + q`, `q` a multiple of 16: aligned, `x`'s offset in its 16 bytes below `x + q`. -/
 theorem al_down (x : Addr) {q : Nat} (hq : q % 16 = 0) :
     (x.add q &&& BitVec.ofNat 64 18446744073709551600).toNat % 16 = 0 ∧
-      (x.add q &&& BitVec.ofNat 64 18446744073709551600).add (x.toNat % 16) = x.add q := by
+      Addr.add (x.add q &&& BitVec.ofNat 64 18446744073709551600) (x.toNat % 16) = x.add q := by
   have h := and_m16' (x.add q)
   have hx := x.isLt
   have e : (x.add q).toNat = (x.toNat + q) % 2 ^ 64 := by
@@ -84,6 +84,15 @@ theorem off16_lt (a : Addr) : a.toNat % 16 < 2 ^ 32 := Nat.lt_trans (Nat.mod_lt 
 
 /-! ## The table -/
 
+/-- A load of `n` bytes at `a` into a register (as `Memcpy.wpV_ldA`). -/
+theorem wpV_ldT {F : Footprint} {Wl : List Rgn} {n : Nat} {ea : Gprs → Addr} {h : Gprs → Rflags → List Byte → Gprs}
+    {P : Gprs → Rflags → List Byte → Rflags → Prop} {ops : List VOp}
+    {Q : Gprs → Rflags → XRegs → (Addr → Byte) → Prop} {g : Gprs} {f : Rflags} {x : XRegs} {V : Addr → Byte}
+    {a : Addr} (he : ea g = a) (hf : ∀ i < n, Foot F.data (a.add i))
+    (k : ∀ fl, P g f ((byteAddrs a n).map V) fl → wpV F Wl ops Q (h g f ((byteAddrs a n).map V)) fl x V) :
+    wpV F Wl (.op (.load n ea h P) :: ops) Q g f x V := by
+  subst he; exact ⟨rfl, hf, k⟩
+
 /-- The target of the table's entry `m`: `movsxd r9, dword [r10 + r9·4]; lea r10, [r10 + r9]`. -/
 def ntgt (m : Nat) : Addr :=
   (0x6f0df0 : Addr) + (ofBytesLE 32 ((List.range 4).map fun k => ncmpTab.getD (4 * m + k) 0)).signExtend 64 *
@@ -115,8 +124,8 @@ theorem tab_bytes {V : Addr → Byte} (hT : NcmpTabV V) {m : Nat} (hm : m < 16) 
 offsets in their 16 bytes, `r11` the bytes left, `edx = 0xffff`, `r8` `0xffff` just when the strings were
 swapped. -/
 def AtL (g₀ g : Gprs) (x y : Addr) (n q : Nat) (sw : Bool) : Prop :=
-  KpN g₀ g ∧ g.rdi.toNat % 16 = 0 ∧ g.rdi.add (x.toNat % 16) = x.add q ∧ g.rsi.toNat % 16 = 0 ∧
-    g.rsi.add (y.toNat % 16) = y.add q ∧ g.r11 = BitVec.ofNat 64 (n - q) ∧
+  KpN g₀ g ∧ g.rdi.toNat % 16 = 0 ∧ Addr.add g.rdi (x.toNat % 16) = x.add q ∧ g.rsi.toNat % 16 = 0 ∧
+    Addr.add g.rsi (y.toNat % 16) = y.add q ∧ g.r11 = BitVec.ofNat 64 (n - q) ∧
     g.rcx = BitVec.ofNat 64 (y.toNat % 16) ∧ g.rax = BitVec.ofNat 64 (x.toNat % 16) ∧
     g.rdx = BitVec.ofNat 64 65535 ∧ g.r8 = if sw then BitVec.ofNat 64 65535 else 0
 
@@ -154,7 +163,7 @@ theorem at163 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e' scm) (he : e' = 0x
       hcx]
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_mul, BitVec.toNat_ofNat, BitVec.ofNat_eq_ofNat,
-      Nat.reducePow, Nat.reduceMod, Nat.reduceMul, Nat.zero_mod, Nat.zero_mul, Nat.add_zero]
+      Nat.reducePow, Nat.reduceMod, Nat.zero_mod, Nat.zero_mul, Nat.add_zero]
     omega
   -- `lea r10, [rip + 0xb691f]`: the table
   refine c.s_lea_rip hK₁ hA₁ hin (lt_scm (by decide)) hr₁ (d170 prof.feat) (v := 0x6f0df0) (by decide) ?_
@@ -165,7 +174,7 @@ theorem at163 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e' scm) (he : e' = 0x
   generalize 15 + x.toNat % 16 - y.toNat % 16 = m at hm h9₂ K
   -- `movsxd r9, dword [r10 + r9·4]; lea r10, [r10 + r9]`
   refine c.s_blkV hin (b177 prof) hK₂ hA₂ hr₂ ?_
-  refine wpV_ldA (a := (0x6f0df0 : Addr).add (4 * m)) ?_ (fun i hi => ?_)
+  refine wpV_ldT (a := (0x6f0df0 : Addr).add (4 * m)) ?_ (fun i hi => ?_)
     fun _ _ => wpV_reg fun _ _ => wpV_nil ?_
   · show Y₂.cpu.gpr.get (regOf 10) + Y₂.cpu.gpr.get (regOf 9) * BitVec.ofNat 64 4 + BitVec.ofNat 64 0 = _
     rw [get_r10n, get_r9n, h10₂, h9₂]
@@ -204,7 +213,7 @@ theorem align (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e' scm) (he : e' = 0x
   refine wpV_reg fun _ _ => wpV_reg fun _ _ => wpV_reg fun _ _ => wpV_reg fun _ _ => wpV_reg fun _ _ =>
     wpV_reg fun _ _ => wpV_nil ?_
   intro Y₁ t₁ hK₁ hA₁ hr₁ hg₁ _ _
-  simp only [wr, gv, Src.val, set_rsi, set_rdi, set_rdx, set_r8, set_rcx, set_rax, get0, get1, get2, get6, get7,
+  simp only [wr, gv, Src.val, set_rsi, set_rdi, set_rdx, set_r8, set_rcx, set_rax, get0, get1, get6, get7,
     get_r8n, BitVec.setWidth_eq, BitVec.xor_self] at hg₁
   obtain ⟨ha1, ha2⟩ := al_down a hq
   obtain ⟨hb1, hb2⟩ := al_down b hq
@@ -264,7 +273,7 @@ theorem align (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e' scm) (he : e' = 0x
   refine c.s_jcc (tgt := 163) hK₃ hA₃ hin (lt_scm (by decide)) hr₃ (d154 prof.feat) (by decide)
     (lt_scm (by decide)) ?_ ?_
   · intro hcc'
-    rw [hf₃, hja] at hcc'
+    rw [hf₃ 7, hja] at hcc'
     have hlt : a.toNat % 16 < b.toNat % 16 := by
       simp at hcc'
       omega
@@ -272,7 +281,7 @@ theorem align (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e' scm) (he : e' = 0x
     exact at163 c hin he hT hTf hK₄ hA₄ hr₄ (by rw [hg₄]; exact hL₃) hlt
       fun Z tZ hKZ hAZ hrZ hLZ => KL Z tZ false a b hKZ hAZ (Or.inl ⟨rfl, rfl, rfl⟩) hlt hrZ hLZ
   intro hcc'
-  rw [hf₃, hja] at hcc'
+  rw [hf₃ 7, hja] at hcc'
   have hlt : b.toNat % 16 < a.toNat % 16 := by
     simp at hcc'
     omega
