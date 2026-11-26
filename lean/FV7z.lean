@@ -877,6 +877,7 @@ import FV7z.Ctor.HO
 import FV7z.Asl.Blocks
 import FV7z.Asl.Cuts
 import FV7z.Asl.Holds
+import FV7z.Asl.New
 import FV7z.Usl.Blocks
 import FV7z.Usl.Cuts
 import FV7z.Usl.Holds

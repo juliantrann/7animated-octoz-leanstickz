@@ -23,7 +23,7 @@ theorem uct_okH {fb : Addr} {hi m : Nat} (c : Seg prof F Wl L s₀ o) (hfs : s�
     (hin : CodeIn L uct_at uct) (hinW : CodeIn L Onw.onw_at Onw.onw) (hinM : CodeIn L mnx_at mnx)
     (hinI : CodeIn L imm_at imm) (hK : KeptW Wl s₀ X) (hA : Agree F X.proc.mm.mem V) (hrip : X.cpu.rip = uct_at)
     (hH : Mal.Hp F Wl fb hi (m + 64) V) (hhi : hi + 248 ≤ X.cpu.gpr.rsp.toNat)
-    (hp8 : X.cpu.gpr.rsp.toNat + 8 ≤ 2 ^ 64)
+    (hp8 : X.cpu.gpr.rsp.toNat + 8 ≤ 2 ^ 64) (hR : X.cpu.gpr.rsp.toNat + 24 < 2 ^ 64)
     (hsw : ∀ a : Addr, hi ≤ a.toNat → a.toNat < X.cpu.gpr.rsp.toNat → Foot Wl a)
     (hl : ∀ i < 8, Foot F.data (Addr.add X.cpu.gpr.rsp i))
     (fw0 : ∀ i < 8, Foot Wl (Addr.add X.cpu.gpr.rdi i))
