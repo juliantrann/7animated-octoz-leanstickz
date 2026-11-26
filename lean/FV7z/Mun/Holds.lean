@@ -39,11 +39,12 @@ theorem ret_36 (feat : Features) : Dec feat mun 36 (FV7z.mk .ret 64 [] 1) :=
 
 /-- `jae` after `cmp rax, -4095`: the answer is an error. -/
 theorem jae_cmp (x : BitVec 64) : (!decide (x.toNat < 18446744073709547521)) = decide (WrErr x) := by
-  unfold WrErr
   by_cases h : x.toNat < 18446744073709547521
-  · rw [decide_eq_true h, decide_eq_false (by omega)]
+  · have h' : ¬ WrErr x := by unfold WrErr; omega
+    rw [decide_eq_true h, decide_eq_false h']
     rfl
-  · rw [decide_eq_false h, decide_eq_true (by omega)]
+  · have h' : WrErr x := by unfold WrErr; omega
+    rw [decide_eq_false h, decide_eq_true h']
     rfl
 
 /-- `or rax, -1`. -/

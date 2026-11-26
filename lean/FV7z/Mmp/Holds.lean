@@ -185,9 +185,10 @@ theorem mmp_post {fb : Addr} (c₁ : Seg prof F Wl L S o) (hfs : S.cpu.seg.fsBas
   have a8 : ∀ i < 8, Addr.add (S.cpu.gpr.rsp + 8) i = Addr.add S.cpu.gpr.rsp (8 + i) := fun i _ =>
     addr_add_add' S.cpu.gpr.rsp 8 i
   have a16 : ∀ i < 8, Addr.add (S.cpu.gpr.rsp + 8 + 8) i = Addr.add S.cpu.gpr.rsp (16 + i) := fun i _ => by
-    have h1 := addr_add_add' S.cpu.gpr.rsp 8 8
     have h2 := addr_add_add' (Addr.add S.cpu.gpr.rsp 8) 8 i
-    exact h2.trans (by rw [h1])
+    have h3 := addr_add_add' S.cpu.gpr.rsp 8 (8 + i)
+    have h4 : 8 + (8 + i) = 16 + i := by omega
+    exact h2.trans (h3.trans (by rw [h4]))
   have hl0 : ∀ i < 8, Foot F.data (Addr.add S.cpu.gpr.rsp i) := fun i hi => hl i (by omega)
   have hl8 : ∀ i < 8, Foot F.data (Addr.add (S.cpu.gpr.rsp + 8) i) := fun i hi => by
     rw [a8 i hi]; exact hl (8 + i) (by omega)
