@@ -418,6 +418,8 @@ import FV7z.Strncmp.Align
 import FV7z.Strncmp.ExitS
 import FV7z.Strncmp.Shr
 import FV7z.Strncmp.Ashr0
+import FV7z.Strncmp.AshrI
+import FV7z.Strncmp.AshrB
 import FV7z.Pmi.Holds
 import FV7z.Lemmas.Lock2
 import FV7z.Pml.Holds

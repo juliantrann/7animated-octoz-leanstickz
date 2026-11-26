@@ -43,7 +43,7 @@ theorem exit6165 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e' scm) {Y : State
     (hxy : sw = false ∧ x = a ∧ y = b ∨ sw = true ∧ x = b ∧ y = a)
     (h11 : Y.cpu.gpr.r11 = BitVec.ofNat 64 R) (hR64 : R < 2 ^ 64) (hn : q + R = n)
     (hnz : Y.cpu.gpr.rdx ≠ 0) (hp : lowestSetBit Y.cpu.gpr.rdx = p) (hp64 : p < 64)
-    (hsame : Same V x y (q + p))
+    (hsame : Same V x y (q + min p R))
     (hstop : p < R → ¬ (V (x.add (q + p)) = V (y.add (q + p)) ∧ V (x.add (q + p)) ≠ 0))
     (hfx : p < R → Foot F.data (x.add (q + p))) (hfy : p < R → Foot F.data (y.add (q + p)))
     (hP : ∀ r, NRes V a b n r → P r) (hR : RetN prof F Wl L s₀ o gev gP gE V g₀ P) :
@@ -108,7 +108,7 @@ theorem exit6160 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e' scm) {Y : State
     (hxy : sw = false ∧ x = a ∧ y = b ∨ sw = true ∧ x = b ∧ y = a)
     (h11 : Y.cpu.gpr.r11 = BitVec.ofNat 64 R) (hR64 : R < 2 ^ 64) (hn : q + R = n)
     (hnz : Y.cpu.gpr.rdx ≠ 0) (hp : lowestSetBit Y.cpu.gpr.rdx = p) (hp64 : p < 64)
-    (hsame : Same V x y (q + p))
+    (hsame : Same V x y (q + min p R))
     (hstop : p < R → ¬ (V (x.add (q + p)) = V (y.add (q + p)) ∧ V (x.add (q + p)) ≠ 0))
     (hfx : p < R → Foot F.data (x.add (q + p))) (hfy : p < R → Foot F.data (y.add (q + p)))
     (hP : ∀ r, NRes V a b n r → P r) (hR : RetN prof F Wl L s₀ o gev gP gE V g₀ P) :

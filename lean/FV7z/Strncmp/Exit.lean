@@ -118,15 +118,15 @@ theorem retN_at (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e' scm) {j : Nat} (
   · exact h15
 
 /-- From `6192`: `rdx` the mask of a stop at place `p` of the 16 bytes at offset `q` of the strings at `a` (in `rdi`)
-and `b` (in `rsi`), `r11` the `R` bytes left of `n`; what is returned is what `strncmp` of `a`, `b`, `n` may return,
-and so of `P`. -/
+and `b` (in `rsi`), `r11` the `R` bytes left of `n` (the bytes before the stop the same up to `n` only: past `n` the
+mask is anything); what is returned is what `strncmp` of `a`, `b`, `n` may return, and so of `P`. -/
 theorem exit6192 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e' scm) {Y : State} {t : Nat} {g₀ : Gprs}
     {a b : Addr} {q R p n : Nat} {P : BitVec 32 → Prop}
     (hK : KeptW Wl s₀ Y) (hA : Agree F Y.proc.mm.mem V) (hrip : Y.cpu.rip = e'.add 6192) (hkp : KpN g₀ Y.cpu.gpr)
     (hdi : Y.cpu.gpr.rdi = a.add q) (hsi : Y.cpu.gpr.rsi = b.add q)
     (h11 : Y.cpu.gpr.r11 = BitVec.ofNat 64 R) (hR64 : R < 2 ^ 64) (hn : q + R = n)
     (hnz : Y.cpu.gpr.rdx ≠ 0) (hp : lowestSetBit Y.cpu.gpr.rdx = p) (hp64 : p < 64)
-    (hsame : Same V a b (q + p))
+    (hsame : Same V a b (q + min p R))
     (hstop : p < R → ¬ (V (a.add (q + p)) = V (b.add (q + p)) ∧ V (a.add (q + p)) ≠ 0))
     (hfa : p < R → Foot F.data (a.add (q + p))) (hfb : p < R → Foot F.data (b.add (q + p)))
     (hP : ∀ r, NRes V a b n r → P r) (hR : RetN prof F Wl L s₀ o gev gP gE V g₀ P) :
@@ -199,6 +199,6 @@ theorem exit6192 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e' scm) {Y : State
       simp only [hg₄, wr, gv, Src.val, set_rax, set_rcx, get0, get1, sw_64_32, subR_eq]
     refine retN_at c hin (lt_scm (by decide)) (d6211 prof.feat) hK₄ hA₄ hr₄ hkp₄ ?_ hR
     rw [hax₄]
-    exact hP _ (nres_at (by omega) hsame (hstop hlt) (zsub_eq_zero _ _))
+    exact hP _ (nres_at (by omega) (by rwa [Nat.min_eq_left (Nat.le_of_lt hlt)] at hsame) (hstop hlt) (zsub_eq_zero _ _))
 
 end FV7z.Strncmp

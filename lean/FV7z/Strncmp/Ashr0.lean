@@ -205,7 +205,7 @@ theorem half (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e' scm) {j₀ j₁ j�
       (by rw [hg₃, Nat.add_sub_cancel_left]; exact hdi₂) (by rw [hg₃]; exact hsi₂) (by rw [hg₃]; exact h8₂)
       (Or.inl ⟨rfl, rfl, rfl⟩) (by rw [hg₃]; exact h11₂) (by omega) (by omega) (by rw [hg₃, hdx₂]; exact hnz)
       (by rw [hg₃, hdx₂]; exact hlow) (by omega) ?_ (fun _ => ?_) (fun _ => ?_) (fun _ => ?_) hP hR
-    · refine same_chunk hsame (fun i hi => ?_) (by omega)
+    · refine (same_chunk (p := p) hsame (fun i hi => ?_) (by omega)).mono (by omega)
       rw [hYb, hXa]
       exact hpt' i hi
     · refine stop_comm ?_
