@@ -257,8 +257,8 @@ theorem pop_ok (c : Seg prof F Wl L s₀ o) (hin : CodeIn L pop_at pop) (hK : Ke
     (htB : m V X.cpu.gpr = 0 → ∀ bt,
       rdq(Wb V X.cpu.gpr bt, rdq(Wb V X.cpu.gpr bt, r9v (Wb V X.cpu.gpr bt) X.cpu.gpr.rdi) + 48#64) = e₃.add tg₃)
     (kB : m V X.cpu.gpr = 0 → ∀ (bt : BitVec 8) (si di : BitVec 64) (Y : State) (t' : Nat), KeptW Wl s₀ Y →
-      Agree F Y.proc.mm.mem (Wb V X.cpu.gpr bt) → Y.cpu.rip = e₃.add tg₃ → (si = X.cpu.gpr.rsi ∨ si = 1#64) →
-      (di = 0 ∨ di = X.cpu.gpr.rdi + 400#64) →
+      Agree F Y.proc.mm.mem (Wb V X.cpu.gpr bt) → Y.cpu.rip = e₃.add tg₃ →
+      (si = X.cpu.gpr.rsi ∨ si = 1#64) → (di = 0 ∨ di = X.cpu.gpr.rdi + 400#64) →
       Y.cpu.gpr = gJ (Wb V X.cpu.gpr bt) (gM (Wb V X.cpu.gpr bt) (gB X.cpu.gpr si) di) →
       GoG prof L o gev gP gE Y t') :
     GoG prof L o gev gP gE X t := by
