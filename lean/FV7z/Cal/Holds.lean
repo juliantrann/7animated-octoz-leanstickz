@@ -1,5 +1,6 @@
 import FV7z.Cal.Vc
 import FV7z.Ipa.Set
+import FV7z.Lemmas.CmpImm
 /-!
 # `__libc_calloc`: `_int_malloc`, then `memset` or the inline stores (PLAN.md §M, M1)
 
@@ -136,6 +137,11 @@ theorem csz_ge {p T O C : Addr} (hO : 32 ≤ O.toNat) (hC : 32 ≤ C.toNat) : 32
   · split <;> omega
   · omega
 
+/-- The bytes `__libc_calloc` is to clear from the chunk `p` with size word `Zs`: its `csz` less 8 (`T` the old top
+chunk, `V` the memory at the entry, the old top's size word at `T + 8`). -/
+def clr (V : Addr → Byte) (T p Zs : Addr) : Nat :=
+  (csz p T (rdq(V, T + 8#64) &&& 18446744073709551608#64) (Zs &&& 18446744073709551608#64)).toNat - 8
+
 /-- How many of `c` bytes the stores clear: 24, 40, 56 or 72 inline, all by `memset`. -/
 def cln (c : Nat) : Nat :=
   if c ≤ 39 then 24 else if c ≤ 55 then 40 else if c ≤ 71 then 56 else if c ≤ 79 then 72 else c
@@ -220,7 +226,7 @@ theorem inl (c : Seg prof F Wl L s₀ o) (hin : CodeIn L cal_at cal) {X : State}
   -- `movups [r8], xmm0`
   refine c.s_movups_stv hK2 hA2 hin (lt_len (by decide)) hr2 (mv_264 _) (fun i hi => ?_) ?_
   · rw [ea 0 hg2']; exact hWo 0 i (by omega)
-  intro Y3 t3 hK3 hA3 ⟨hr3, hg3, hv3⟩
+  rintro Y3 t3 hK3 hA3 ⟨hr3, hg3, hv3⟩
   rw [ea 0 hg2', hz2] at hA3
   have hF3 := hF2.st hf (toBytesLE_length _ _) (by omega) z16 (o := 0)
   have hg3' : Y3.cpu.gpr = X.cpu.gpr := hg3.trans hg2'
@@ -252,7 +258,7 @@ theorem inl (c : Seg prof F Wl L s₀ o) (hin : CodeIn L cal_at cal) {X : State}
   -- `movups [r8 + 24], xmm0`
   refine c.s_movups_stv hK5 hA5 hin (lt_len (by decide)) hr5 (mv_274 _) (fun i hi => ?_) ?_
   · rw [ea 24 hg5']; exact hWo 24 i (by omega)
-  intro Y6 t6 hK6 hA6 ⟨hr6, hg6, hv6⟩
+  rintro Y6 t6 hK6 hA6 ⟨hr6, hg6, hv6⟩
   rw [ea 24 hg5', hz5] at hA6
   have hF6 := hF3.st hf (toBytesLE_length _ _) (by omega) z16 (o := 24)
   have hg6' : Y6.cpu.gpr = X.cpu.gpr := hg6.trans hg5'
@@ -285,7 +291,7 @@ theorem inl (c : Seg prof F Wl L s₀ o) (hin : CodeIn L cal_at cal) {X : State}
   -- `movups [r8 + 40], xmm0`
   refine c.s_movups_stv hK8 hA8 hin (lt_len (by decide)) hr8 (mv_285 _) (fun i hi => ?_) ?_
   · rw [ea 40 hg8']; exact hWo 40 i (by omega)
-  intro Y9 t9 hK9 hA9 ⟨hr9, hg9, hv9⟩
+  rintro Y9 t9 hK9 hA9 ⟨hr9, hg9, hv9⟩
   rw [ea 40 hg8', hz8] at hA9
   have hF9 := hF6.st hf (toBytesLE_length _ _) (by omega) z16 (o := 40)
   have hg9' : Y9.cpu.gpr = X.cpu.gpr := hg9.trans hg8'
@@ -318,7 +324,7 @@ theorem inl (c : Seg prof F Wl L s₀ o) (hin : CodeIn L cal_at cal) {X : State}
   -- `movups [r8 + 56], xmm0`, `jmp 196`
   refine c.s_movups_stv hK11 hA11 hin (lt_len (by decide)) hr11 (mv_296 _) (fun i hi => ?_) ?_
   · rw [ea 56 hg11']; exact hWo 56 i (by omega)
-  intro Y12 t12 hK12 hA12 ⟨hr12, hg12, -⟩
+  rintro Y12 t12 hK12 hA12 ⟨hr12, hg12, -⟩
   rw [ea 56 hg11', hz11] at hA12
   have hF12 := hF9.st hf (toBytesLE_length _ _) (by omega) z16 (o := 56)
   refine c.s_jmpV hK12 hA12 hin (lt_len (by decide)) hr12 (Dec.shift (j17_0 _) wj_301 (by decide)) (tgt := 196)
@@ -328,5 +334,241 @@ theorem inl (c : Seg prof F Wl L s₀ o) (hin : CodeIn L cal_at cal) {X : State}
     (hF12.mono fun i hi hc' => by
       rw [cln_d (by omega) hhi] at hc'; try dsimp only at hc' ⊢
       omega)
+
+set_option maxHeartbeats 8000000 in
+/-- `__libc_calloc (n, m)` with `n * m ≤ 1024`, on the way of one thread, the hook null, the `tcache` made and
+`perturb_byte` 0: `_int_malloc` (`ImAt`, at `0x630be0`) and `memset` (`Ipa.SetAt`, the PLT's at `0x401080`) by their
+contracts, the run reaches the return address with `rax` the chunk `p` `_int_malloc` gave, the registers a call keeps
+as at the entry, the first `cln (clr V T p Zs)` bytes at `p` 0 (`Zs` the chunk's size word; all the `clr` bytes but
+for a size the inline stores round down), the other bytes as `_int_malloc` left them (`V₂`) apart from the stack
+frame, and `Pm k` for what follows. -/
+theorem cal_ok {fb T : Addr} {hi k : Nat} {pm ps : List Byte} {Ps : (Addr → Byte) → Prop}
+    {Pm : Nat → (Addr → Byte) → Prop} {X : State} {t : Nat} {V : Addr → Byte}
+    (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (hgf : GotF F) (hin : CodeIn L cal_at cal)
+    (him : CodeIn L 6491104#64 pm) (hm0 : 0 < pm.length) (himal : ImAt prof F Wl L o fb hi 6491104#64 Pm)
+    (his : CodeIn L 4198528#64 ps) (hs0 : 0 < ps.length) (hset : Ipa.SetAt prof L o 4198528#64 Ps)
+    (hK : KeptW Wl s₀ X) (hA : Agree F X.proc.mm.mem V) (hrip : X.cpu.rip = cal_at)
+    (hdf : X.cpu.rflags.df = false) (hhi : hi + 264 ≤ X.cpu.gpr.rsp.toNat)
+    (hs8 : X.cpu.gpr.rsp.toNat + 8 < 2 ^ 64) (hlo : 8013272 ≤ X.cpu.gpr.rsp.toNat)
+    (hstk : ∀ a : Addr, hi ≤ a.toNat → a.toNat < X.cpu.gpr.rsp.toNat → Foot Wl a)
+    (hl : ∀ i < 8, Foot F.data (Addr.add X.cpu.gpr.rsp i))
+    {e₂ : Addr} {code₂ : List Byte} (hin₂ : CodeIn L e₂ code₂) {j₂ : Nat} (h₂ : j₂ < code₂.length)
+    (hra : rdq(V, X.cpu.gpr.rsp) = e₂.add j₂)
+    (hm : X.cpu.gpr.rdi.toNat * X.cpu.gpr.rsi.toNat ≤ 1024)
+    (hhk : rdq(V, 7940656#64) = 0#64) (htc : rdq(V, fb + 18446744073709551576#64) ≠ 0#64)
+    (hmt : rdd(V, fb + 24#64) = 0) (hpt : rdd(V, 8013220#64) = 0) (hT : rdq(V, 7940768#64) = T)
+    (hO : 32 ≤ (rdq(V, T + 8#64) &&& 18446744073709551608#64).toNat)
+    (d2 : (fb + 18446744073709551576#64).toNat + 8 ≤ X.cpu.gpr.rsp.toNat - 48)
+    (d3 : (fb + 24#64).toNat + 4 ≤ X.cpu.gpr.rsp.toNat - 48)
+    (d5 : (T + 8#64).toNat + 8 ≤ X.cpu.gpr.rsp.toNat - 48)
+    (f1 : ∀ i < 8, Foot F.data (Addr.add 7940656#64 i))
+    (f2 : ∀ i < 8, Foot F.data (Addr.add (fb + 18446744073709551576#64) i))
+    (f3 : ∀ i < 4, Foot F.data (Addr.add (fb + 24#64) i)) (f4 : ∀ i < 8, Foot F.data (Addr.add 7940768#64 i))
+    (f5 : ∀ i < 8, Foot F.data (Addr.add (T + 8#64) i)) (f6 : ∀ i < 4, Foot F.data (Addr.add 8013220#64 i))
+    (hPm : ∀ W : Addr → Byte,
+      (∀ a : Addr, ¬ (X.cpu.gpr.rsp.toNat - 48 ≤ a.toNat ∧ a.toNat < X.cpu.gpr.rsp.toNat) → W a = V a) →
+        Pm (k + 1) W)
+    (hPs : ∀ W : Addr → Byte, (∀ a : Addr, a.toNat < 7940480 → W a = V a) → Ps W)
+    (kk : ∀ (Z : State) (t' : Nat) (W V₂ : Addr → Byte) (p Zs : Addr), KeptW Wl s₀ Z →
+      Agree F Z.proc.mm.mem W → Z.cpu.rip = e₂.add j₂ → Z.cpu.gpr.rsp = X.cpu.gpr.rsp + 8 → Z.cpu.gpr.rax = p →
+      Z.cpu.gpr.rbx = X.cpu.gpr.rbx → Z.cpu.gpr.rbp = X.cpu.gpr.rbp → Z.cpu.gpr.r12 = X.cpu.gpr.r12 →
+      Z.cpu.gpr.r13 = X.cpu.gpr.r13 → Z.cpu.gpr.r14 = X.cpu.gpr.r14 → Z.cpu.gpr.r15 = X.cpu.gpr.r15 →
+      7940480 ≤ p.toNat → rdq(V₂, p + 18446744073709551608#64) = Zs →
+      X.cpu.gpr.rdi.toNat * X.cpu.gpr.rsi.toNat + 8 ≤ (Zs &&& 18446744073709551608#64).toNat →
+      p.toNat + (Zs &&& 18446744073709551608#64).toNat ≤ X.cpu.gpr.rsp.toNat - 48 →
+      (∀ i < cln (clr V T p Zs), W (p.add i) = 0) →
+      (∀ a : Addr, ¬ (p.toNat ≤ a.toNat ∧ a.toNat < p.toNat + clr V T p Zs) →
+        ¬ (X.cpu.gpr.rsp.toNat - 48 ≤ a.toNat ∧ a.toNat < X.cpu.gpr.rsp.toNat) → W a = V₂ a) →
+      (∀ a : Addr, a.toNat < 7940480 ∨ X.cpu.gpr.rsp.toNat ≤ a.toNat → V₂ a = V a) →
+      Pm k W → GoG prof L o gev gP gE Z t') :
+    GoG prof L o gev gP gE X t := by
+  have hsl := X.cpu.gpr.rsp.isLt
+  have hS48 : 48 ≤ X.cpu.gpr.rsp.toNat := by omega
+  obtain ⟨e1, e2, e3, e4⟩ := fr_e (S := X.cpu.gpr.rsp) (by omega)
+  have e6 := e6s hS48
+  have hlt : X.cpu.gpr.rdi.toNat * X.cpu.gpr.rsi.toNat < 2 ^ 64 := Nat.lt_of_le_of_lt hm (by decide)
+  have hmul : (X.cpu.gpr.rdi * X.cpu.gpr.rsi).toNat = X.cpu.gpr.rdi.toNat * X.cpu.gpr.rsi.toNat := by
+    rw [BitVec.toNat_mul, Nat.mod_eq_of_lt hlt]
+  -- the prologue, to the call of `_int_malloc`
+  refine (c_0' prof fb).run c hfs hin _ hK hA (by rw [addr_add_zero]; exact hrip)
+    (vc_0 hm (by omega) hhk htc hmt hT (by omega) (by omega) (by omega) (by omega) (by omega)
+      (slot hstk (by rw [e1]; omega) (by rw [e1]; omega)) (slot hstk (by rw [e2]; omega) (by rw [e2]; omega))
+      (slot hstk (by rw [e3]; omega) (by rw [e3]; omega)) (slot hstk (by rw [e4]; omega) (by rw [e4]; omega))
+      f1 f2 f3 f4 f5) ?_
+  rintro j' g₁ fl V₁ ⟨rfl, rfl, hsp, hdi, hsi, hbp, h12, h13, hbx, h14, h15⟩ Y₁ t₁ hK₁ hA₁ hr₁ hg₁ -
+  have hsp₁ : Y₁.cpu.gpr.rsp = X.cpu.gpr.rsp - 8 - 8 - 8 - 8 - 8#64 := by rw [hg₁]; exact hsp
+  refine c.s_call hK₁ hA₁ hin (lt_len (by decide)) hr₁ (call_123 _) him hm0 tgt_123 (fun i hi => ?_) ?_
+  · rw [hsp₁]; exact slot hstk (by rw [e6]; omega) (by rw [e6]; omega) i hi
+  rintro Y₂ t₂ hK₂ hA₂ ⟨hr₂, hg₂⟩
+  rw [hsp₁] at hA₂ hg₂
+  have hsp₂ : Y₂.cpu.gpr.rsp = X.cpu.gpr.rsp - 8 - 8 - 8 - 8 - 8#64 - 8 := by rw [hg₂]; rfl
+  have hrsi : Y₂.cpu.gpr.rsi = X.cpu.gpr.rdi * X.cpu.gpr.rsi := by rw [hg₂, hg₁]; exact hsi
+  have hVc : ∀ a : Addr, ¬ (X.cpu.gpr.rsp.toNat - 48 ≤ a.toNat ∧ a.toNat < X.cpu.gpr.rsp.toNat) →
+      fr5 V X.cpu.gpr.rsp X.cpu.gpr.r13 X.cpu.gpr.r12 X.cpu.gpr.rbp X.cpu.gpr.rbx (cal_at.add (123 + 5)) a = V a :=
+    fun a ha => fr_out V _ _ _ _ _ _ hS48 a ha
+  -- `_int_malloc (&main_arena, n * m)`
+  refine himal c hK₂ hA₂ hr₂ (hPm _ hVc) (by rw [hg₂, hg₁]; exact hdi) (by rw [hrsi, hmul]; exact hm) hfs
+    (by rw [hsp₂, e6]; omega) (by rw [hsp₂, e6]; omega) (fun a h1 h2 => hstk a h1 (by rw [hsp₂, e6] at h2; omega))
+    hin (j := 128) (lt_len (by decide)) ?_ (fun i hi => ?_) ?_
+  · rw [hsp₂, rd_Vst_self _ _ _ (toBytesLE_length _ _) (by rw [e6]; omega), ofBytesLE_toBytesLE (n := 8) rfl]
+    try rfl
+  · rw [hsp₂]; exact c.hws _ (slot hstk (by rw [e6]; omega) (by rw [e6]; omega) i hi)
+  intro Zm tm V₂ p Zs hKm hAm hrm hspm haxm hbxm hbpm h12m h13m h14m h15m hp7 hZs hb2 hb4 hcs hc32 hpC hfoot hV₂
+    hdd hdp hPk
+  rw [hsp₂, e6] at hpC hPk hV₂
+  rw [hrsi, hmul] at hcs
+  have h8p : 8 ≤ p.toNat := by omega
+  have hp0 : p ≠ 0#64 := fun h => by rw [h] at hp7; exact absurd hp7 (by decide)
+  have hfz : ∀ i < 8, Foot F.data (Addr.add (p + 18446744073709551608#64) i) := fun i hi => by
+    have e := toNat_add_of_fits (a := p + 18446744073709551608#64) (n := 8) hi (by rw [tm8 h8p]; omega)
+    exact (hfoot _ (by rw [e, tm8 h8p]; omega) (by rw [e, tm8 h8p]; omega)).2
+  have hmt₂ : rdd(V₂, fb + 24#64) = 0 := by
+    rw [hdd, rd_out (x := fb + 24#64) (n := 4) hVc (by omega) (.inl d3)]; exact hmt
+  have hpt₂ : rdd(V₂, 8013220#64) = 0 := by
+    rw [hdp, rd_out (x := 8013220#64) (n := 4) hVc (by simp only [BitVec.toNat_ofNat]; omega)
+      (.inl (by simp only [BitVec.toNat_ofNat]; omega))]
+    exact hpt
+  -- to 148
+  refine (c_128 prof fb).run c hfs hin _ hKm hAm hrm
+    (vc_128 (by rw [haxm]; exact hp0) (by rw [haxm]; exact hZs) hb2 hb4 (by rw [hbpm, hg₂, hg₁]; exact hbp)
+      (by rw [haxm]; exact hfz)) ?_
+  rintro j' g₂ fl V' ⟨rfl, rfl, rfl⟩ Y₃ t₃ hK₃ hA₃ hr₃ hg₃ -
+  have r8₃ : Y₃.cpu.gpr.r8 = p := by rw [hg₃]; exact haxm
+  -- to 228
+  refine (c_148 prof fb).run c hfs hin _ hK₃ hA₃ hr₃
+    (vc_148 (by rw [r8₃]; exact hp0) hmt₂ (by rw [r8₃]; exact hZs) hb2 hpt₂ f3 (by rw [r8₃]; exact hfz) f6) ?_
+  rintro j' g₄ fl V' ⟨rfl, rfl, hdx4, hsp4, hr84, -, -, -, -, h144, h154⟩ Y₄ t₄ hK₄ hA₄ hr₄ hg₄ -
+  have r13₃ : Y₃.cpu.gpr.r13 = T := by rw [hg₃]; show Zm.cpu.gpr.r13 = T; rw [h13m, hg₂, hg₁]; exact h13
+  have rbx₃ : Y₃.cpu.gpr.rbx = rdq(V, T + 8#64) &&& 18446744073709551608#64 := by
+    rw [hg₃]; show Zm.cpu.gpr.rbx = _; rw [hbxm, hg₂, hg₁]; exact hbx
+  have hdx : Y₄.cpu.gpr.rdx = csz p T (rdq(V, T + 8#64) &&& 18446744073709551608#64)
+      (Zs &&& 18446744073709551608#64) := by rw [hg₄, hdx4, r8₃, r13₃, rbx₃]
+  have hc1 := csz_ge (p := p) (T := T) hO hc32
+  have hc2 := csz_le p T (rdq(V, T + 8#64) &&& 18446744073709551608#64) (Zs &&& 18446744073709551608#64)
+  have hcl : (Y₄.cpu.gpr.rdx - 8#64).toNat = clr V T p Zs := by rw [hdx, t8 (by omega)]; rfl
+  have hcl1 : 24 ≤ clr V T p Zs := by unfold clr; omega
+  have hcl2 : clr V T p Zs + 8 ≤ (Zs &&& 18446744073709551608#64).toNat := by unfold clr; omega
+  have hsp₃ : Y₃.cpu.gpr.rsp = X.cpu.gpr.rsp - 8 - 8 - 8 - 8 - 8#64 := by
+    rw [hg₃]; show Zm.cpu.gpr.rsp = _; rw [hspm, hsp₂]; exact BitVec.sub_add_cancel _ _
+  have hsp₄ : Y₄.cpu.gpr.rsp = X.cpu.gpr.rsp - 8 - 8 - 8 - 8 - 8#64 := by rw [hg₄, hsp4, hsp₃]
+  have r8₄ : Y₄.cpu.gpr.r8 = p := by rw [hg₄, hr84, r8₃]
+  have r14₄ : Y₄.cpu.gpr.r14 = X.cpu.gpr.r14 := by
+    rw [hg₄, h144, hg₃]; show Zm.cpu.gpr.r14 = _; rw [h14m, hg₂, hg₁]; exact h14
+  have r15₄ : Y₄.cpu.gpr.r15 = X.cpu.gpr.r15 := by
+    rw [hg₄, h154, hg₃]; show Zm.cpu.gpr.r15 = _; rw [h15m, hg₂, hg₁]; exact h15
+  have hdst : ∀ i < clr V T p Zs, Foot Wl (p.add i) := fun i hi => by
+    have e := toNat_add_of_fits (a := p) (n := clr V T p Zs) hi (by omega)
+    exact (hfoot _ (by rw [e]; omega) (by rw [e]; omega)).1
+  -- the frame from `S - 40` up, through what `_int_malloc` and the clearing leave
+  have hup : ∀ W : Addr → Byte, (∀ a : Addr, ¬ (p.toNat ≤ a.toNat ∧ a.toNat < p.toNat + clr V T p Zs) →
+      ¬ (X.cpu.gpr.rsp.toNat - 48 ≤ a.toNat ∧ a.toNat < X.cpu.gpr.rsp.toNat - 40) → W a = V₂ a) →
+      ∀ a : Addr, X.cpu.gpr.rsp.toNat - 40 ≤ a.toNat →
+        W a = fr4 V X.cpu.gpr.rsp X.cpu.gpr.r13 X.cpu.gpr.r12 X.cpu.gpr.rbp X.cpu.gpr.rbx a := fun W hout a ha => by
+    rw [hout a (by omega) (by omega), hV₂ a (.inr (by omega))]
+    exact Vst_out _ _ _ _ (by rw [toBytesLE_length, e6]; omega) (.inr (by rw [toBytesLE_length, e6]; omega))
+  -- from 196 to the return address
+  have k196 : ∀ (Y : State) (t' : Nat) (W : Addr → Byte), KeptW Wl s₀ Y → Agree F Y.proc.mm.mem W →
+      Y.cpu.rip = cal_at.add 196 → Y.cpu.gpr.rsp = X.cpu.gpr.rsp - 8 - 8 - 8 - 8 - 8#64 → Y.cpu.gpr.r8 = p →
+      Y.cpu.gpr.r14 = X.cpu.gpr.r14 → Y.cpu.gpr.r15 = X.cpu.gpr.r15 →
+      (∀ i < cln (clr V T p Zs), W (p.add i) = 0) →
+      (∀ a : Addr, ¬ (p.toNat ≤ a.toNat ∧ a.toNat < p.toNat + clr V T p Zs) →
+        ¬ (X.cpu.gpr.rsp.toNat - 48 ≤ a.toNat ∧ a.toNat < X.cpu.gpr.rsp.toNat - 40) → W a = V₂ a) →
+      GoG prof L o gev gP gE Y t' := by
+    intro Y t' W hKY hAY hrY hspY hr8Y h14Y h15Y hz hout
+    have hu := hup W hout
+    refine (c_196 prof fb).run c hfs hin _ hKY hAY hrY (vc_196 (fun i hi => ?_) (fun i hi => ?_)
+      (fun i hi => ?_) (fun i hi => ?_)) ?_
+    · rw [hspY, a5s]; exact c.hws _ (slot hstk (by rw [e4]; omega) (by rw [e4]; omega) i hi)
+    · rw [hspY, a5s, a4s]; exact c.hws _ (slot hstk (by rw [e3]; omega) (by rw [e3]; omega) i hi)
+    · rw [hspY, a5s, a4s, a3s]; exact c.hws _ (slot hstk (by rw [e2]; omega) (by rw [e2]; omega) i hi)
+    · rw [hspY, a5s, a4s, a3s, a2s]; exact c.hws _ (slot hstk (by rw [e1]; omega) (by rw [e1]; omega) i hi)
+    rintro j' g₉ fl V' ⟨rfl, rfl, hax9, hsp9, hbx9, hbp9, h129, h139, h149, h159⟩ Y₉ t₉ hK₉ hA₉ hr₉ hg₉ -
+    have hsp₉ : Y₉.cpu.gpr.rsp = X.cpu.gpr.rsp := by rw [hg₉, hsp9, hspY, a5s, a4s, a3s, a2s, a1s]
+    have rdS : ∀ x : Addr, X.cpu.gpr.rsp.toNat - 40 ≤ x.toNat → x.toNat + 8 ≤ 2 ^ 64 →
+        rdq(W, x) = rdq(fr4 V X.cpu.gpr.rsp X.cpu.gpr.r13 X.cpu.gpr.r12 X.cpu.gpr.rbp X.cpu.gpr.rbx, x) :=
+      fun x h1 h2 => congrArg (ofBytesLE 64) (rd_eq (P := fun a => X.cpu.gpr.rsp.toNat - 40 ≤ a.toNat)
+        (fun a ha => hu a ha) fun i hi => by rw [toNat_add_of_fits (n := 8) hi h2]; omega)
+    obtain ⟨s1, s2, s3, s4⟩ := fr_slots V X.cpu.gpr.rsp X.cpu.gpr.r13 X.cpu.gpr.r12 X.cpu.gpr.rbp X.cpu.gpr.rbx
+      (by omega)
+    refine c.s_ret hK₉ hA₉ hin (lt_len (by decide)) hr₉ (ret_209 _) (fun i hi => ?_) hin₂ h₂ ?_ ?_
+    · rw [hsp₉]; exact hl i hi
+    · rw [hsp₉]
+      refine (congrArg (ofBytesLE 64) (rd_eq (P := fun a => X.cpu.gpr.rsp.toNat ≤ a.toNat)
+        (fun a ha => (hu a (by omega)).trans (fr4_out _ _ _ _ _ _ (by omega) a (by omega)))
+        fun i hi => ?_)).trans hra
+      rw [toNat_add_of_fits (n := 8) hi (by omega)]
+      omega
+    rintro Z t' hKZ hAZ ⟨hrZ, hgZ⟩
+    refine kk Z t' W V₂ p Zs hKZ hAZ hrZ (by rw [hgZ]; show Y₉.cpu.gpr.rsp + 8 = _; rw [hsp₉])
+      (by rw [hgZ]; show Y₉.cpu.gpr.rax = p; rw [hg₉, hax9, hr8Y]) ?_ ?_ ?_ ?_
+      (by rw [hgZ]; show Y₉.cpu.gpr.r14 = _; rw [hg₉, h149, h14Y])
+      (by rw [hgZ]; show Y₉.cpu.gpr.r15 = _; rw [hg₉, h159, h15Y])
+      hp7 hZs hcs hpC hz (fun a h1 _ => hout a h1 (by omega))
+      (fun a ha => (hV₂ a (by omega)).trans (hVc a (by omega)))
+      (hPk W fun a h1 h2 h3 => hout a (by omega) (by omega))
+    · rw [hgZ]; show Y₉.cpu.gpr.rbx = _
+      rw [hg₉, hbx9, hspY, a5s, rdS (X.cpu.gpr.rsp - 8 - 8 - 8 - 8) (by rw [e4]; omega) (by rw [e4]; omega)]
+      exact s1
+    · rw [hgZ]; show Y₉.cpu.gpr.rbp = _
+      rw [hg₉, hbp9, hspY, a5s, a4s, rdS (X.cpu.gpr.rsp - 8 - 8 - 8) (by rw [e3]; omega) (by rw [e3]; omega)]
+      exact s2
+    · rw [hgZ]; show Y₉.cpu.gpr.r12 = _
+      rw [hg₉, h129, hspY, a5s, a4s, a3s, rdS (X.cpu.gpr.rsp - 8 - 8) (by rw [e2]; omega) (by rw [e2]; omega)]
+      exact s3
+    · rw [hgZ]; show Y₉.cpu.gpr.r13 = _
+      rw [hg₉, h139, hspY, a5s, a4s, a3s, a2s, rdS (X.cpu.gpr.rsp - 8) (by rw [e1]; omega) (by rw [e1]; omega)]
+      exact s4
+  by_cases hbig : 79 < clr V T p Zs
+  · -- more than 79 bytes: `memset (p, 0, clr)`
+    refine (c_228 prof fb).run c hfs hin _ hK₄ hA₄ hr₄
+      (vc_228m (by rw [hdx]; omega) (by rw [hdx]; unfold clr at hbig; omega)) ?_
+    rintro j' g₅ fl V' ⟨rfl, rfl, rfl⟩ Y₅ t₅ hK₅ hA₅ hr₅ hg₅ -
+    have hsp₅ : Y₅.cpu.gpr.rsp = X.cpu.gpr.rsp - 8 - 8 - 8 - 8 - 8#64 := by rw [hg₅]; exact hsp₄
+    refine c.s_call hK₅ hA₅ hin (lt_len (by decide)) hr₅ (call_717 _) his hs0 tgt_717 (fun i hi => ?_) ?_
+    · rw [hsp₅]; exact slot hstk (by rw [e6]; omega) (by rw [e6]; omega) i hi
+    rintro Y₆ t₆ hK₆ hA₆ ⟨hr₆, hg₆⟩
+    rw [hsp₅] at hA₆ hg₆
+    have hsp₆ : Y₆.cpu.gpr.rsp = X.cpu.gpr.rsp - 8 - 8 - 8 - 8 - 8#64 - 8 := by rw [hg₆]; rfl
+    have rdi₆ : Y₆.cpu.gpr.rdi = p := by rw [hg₆, hg₅]; exact r8₄
+    have rsi₆ : Y₆.cpu.gpr.rsi = 0#64 := by rw [hg₆, hg₅]; rfl
+    have rdx₆ : Y₆.cpu.gpr.rdx.toNat = clr V T p Zs := by rw [hg₆, hg₅]; exact hcl
+    have hVm : ∀ a : Addr, ¬ (X.cpu.gpr.rsp.toNat - 48 ≤ a.toNat ∧ a.toNat < X.cpu.gpr.rsp.toNat - 40) →
+        Vst V₂ (X.cpu.gpr.rsp - 8 - 8 - 8 - 8 - 8#64 - 8) (toBytesLE (cal_at.add (717 + 5)) 8) a = V₂ a :=
+      fun a ha => Vst_out _ _ _ _ (by rw [toBytesLE_length, e6]; omega) (by rw [toBytesLE_length, e6]; omega)
+    refine hset c hgf hK₆ hA₆ hr₆ (hPs _ fun a ha => ?_) hin (j := 722) (lt_len (by decide)) ?_
+      (fun i hi => ?_) (fun i hi => ?_) (by rw [rdi₆, rdx₆]; omega) (.inl (by rw [rdi₆, rdx₆, hsp₆, e6]; omega))
+      (hK₆.df.trans (hK.df.symm.trans hdf)) (by rw [hsp₆, e6]; omega) ?_
+    · rw [hVm a (by omega), hV₂ a (.inl ha)]; exact hVc a (by omega)
+    · rw [hsp₆, rd_Vst_self _ _ _ (toBytesLE_length _ _) (by rw [e6]; omega), ofBytesLE_toBytesLE (n := 8) rfl]
+      try rfl
+    · rw [hsp₆]; exact c.hws _ (slot hstk (by rw [e6]; omega) (by rw [e6]; omega) i hi)
+    · rw [rdx₆] at hi
+      rw [rdi₆]
+      exact hdst i hi
+    intro Z₇ t₇ V₃ hK₇ hA₇ hr₇ hsp₇ hax₇ - - - - h14₇ h15₇ hset₇ hout₇
+    refine (c_722 prof fb).run c hfs hin _ hK₇ hA₇ hr₇ vc_722 ?_
+    rintro j' g₈ fl V' ⟨rfl, rfl, rfl⟩ Y₈ t₈ hK₈ hA₈ hr₈ hg₈ -
+    refine k196 Y₈ t₈ V₃ hK₈ hA₈ hr₈ ?_ ?_ ?_ ?_ (fun i hi => ?_) (fun a h1 h2 => ?_)
+    · rw [hg₈]; show Z₇.cpu.gpr.rsp = _; rw [hsp₇, hsp₆]; exact BitVec.sub_add_cancel _ _
+    · rw [hg₈]; show Z₇.cpu.gpr.rax = p; rw [hax₇, rdi₆]
+    · rw [hg₈]; show Z₇.cpu.gpr.r14 = _; rw [h14₇, hg₆, hg₅]; exact r14₄
+    · rw [hg₈]; show Z₇.cpu.gpr.r15 = _; rw [h15₇, hg₆, hg₅]; exact r15₄
+    · rw [cln_e hbig] at hi
+      have h := hset₇ i (by rw [rdx₆]; exact hi)
+      rw [rdi₆, rsi₆] at h
+      exact h.trans (by decide)
+    · rw [hout₇ a (by rw [rdi₆, rdx₆]; exact h1)]
+      exact hVm a h2
+  · -- from 24 to 79 bytes: the inline stores
+    refine (c_228 prof fb).run c hfs hin _ hK₄ hA₄ hr₄
+      (vc_228i (by rw [hdx]; omega) (by rw [hdx]; unfold clr at hcl1; omega)
+        (by rw [hdx]; unfold clr at hbig; omega)) ?_
+    rintro j' g₅ fl V' ⟨rfl, rfl, rfl⟩ Y₅ t₅ hK₅ hA₅ hr₅ hg₅ -
+    refine inl c hin hK₅ hA₅ hr₅ (p := p) (by rw [hg₅]; exact r8₄) (by rw [hg₅]; exact hcl) hcl1 (by omega)
+      (by omega) hdst ?_
+    intro Y₆ t₆ W hK₆ hA₆ hr₆ hg₆ hF
+    exact k196 Y₆ t₆ W hK₆ hA₆ hr₆ (by rw [hg₆, hg₅]; exact hsp₄) (by rw [hg₆, hg₅]; exact r8₄)
+      (by rw [hg₆, hg₅]; exact r14₄) (by rw [hg₆, hg₅]; exact r15₄)
+      (fun i hi => hF.1 i (Nat.lt_of_lt_of_le hi (cln_le hcl1)) hi) (fun a h1 _ => hF.2 a h1)
 
 end FV7z.Cal
