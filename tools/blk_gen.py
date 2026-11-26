@@ -258,6 +258,13 @@ FNS = {
     "fdn": dict(grp="Fdn", cn="NWindows::NFile::NFind::CFileInfo::Find_DontFill_Name", a=0x455b00, n=114, pos=True,
                 fs=True, stops=(0x6c, 0x6d), calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `CFileInfo::Find_DontFill_Name` (`FileFind.cpp`; `objdump -d`)"),
+    # 7-Zip's CPP/7zip/Common/StreamUtils.cpp `WriteStream (stream, data, size)`: five pushes, a frame of 16 bytes
+    # with the stack guard at `rsp + 8`; while `size` is not 0, `stream->Write (data, min (size, 2^31), &processed)`
+    # (`call [rax + 0x18]` at 0x5f), `data` += `processed`, `size` -= `processed`; its answer if not 0, `E_FAIL` when
+    # `processed` is 0; the loop's head 0x49; the guard's check. Stops: the `ret` (0x8c), the call of
+    # `__stack_chk_fail` (0x9f).
+    "wst": dict(grp="Wst", cn="WriteStream", a=0x463420, n=164, pos=True, fs=True, stops=(0x8c, 0x9f), calls=True,
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `WriteStream` (`StreamUtils.cpp`; `objdump -d`)"),
     # 7-Zip's C/Alloc.c `MyAlloc (size)`: 0 for size 0, else a tail jump to `malloc`. Stops: the jump (9), the `ret`
     # (18).
     "mya": dict(grp="Mya", cn="MyAlloc", a=0x41f3c0, n=19, pos=True, stops=(9, 18),
