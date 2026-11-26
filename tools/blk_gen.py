@@ -106,6 +106,11 @@ FNS = {
     # and `hlt`. Stop: after the `syscall` `exit_group` (0x36); the `syscall` (0x34) is a step of its own.
     "ext": dict(grp="Exit", cn="_Exit", a=0x664a70, n=0x58, pos=True, fs=True, stops=(0x36,), calls=True,
                 tag="PLAN.md §M, M1", src="glibc 2.31's `_Exit` (`sysdeps/unix/sysv/linux/_exit.c`; `objdump -d`)"),
+    # glibc 2.31 sysdeps/unix/sysv/linux/lseek64.c via syscall-template.S (`__libc_lseek`). Stops: the `ret` (0x13),
+    # the padding after it (0x14), the `ret` after `errno` is set (0x2b); the `syscall` (9) is a step of its own.
+    "lsk": dict(grp="Lseek", cn="__libc_lseek", a=0x5ff440, n=0x2c, pos=True, fs=True, stops=(0x13, 0x14, 0x2b),
+                calls=True, tag="PLAN.md §M, M1",
+                src="glibc 2.31's `__libc_lseek` (`sysdeps/unix/sysv/linux/syscall-template.S`; `objdump -d`)"),
     # glibc 2.31 sysdeps/unix/sysv/linux/dl-sysdep.c. Stop: `__uname` failed (0xb0: the release is read from
     # `/proc/sys/kernel/osrelease`); the `ret`s are at 0x8a (three parts read) and 0xa9 (fewer).
     "osv": dict(grp="Osv", cn="_dl_discover_osversion", a=0x671d50, n=268, pos=True, stops=(0xb0,), calls=True,
