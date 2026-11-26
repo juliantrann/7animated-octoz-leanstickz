@@ -38,8 +38,9 @@ theorem idx4 (u : Addr) (j : Nat) : u + BitVec.ofNat 64 j * 4#64 = u.add (4 * j)
 
 /-- The next byte's address `rsi + (rdx + 1)` at the index `j`: `s2 + (j + 1)`. -/
 theorem idx1 (a : Addr) (j : Nat) : a + (BitVec.ofNat 64 j + 1#64) = a.add (j + 1) := by
-  rw [BitVec.ofNat_add]
-  rfl
+  apply BitVec.eq_of_toNat_eq
+  simp only [Addr.add, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.reducePow]
+  omega
 
 variable {F : Footprint} {Wl : List Rgn}
 
