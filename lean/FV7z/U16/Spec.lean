@@ -36,9 +36,10 @@ theorem ret_335 (feat : Features) : Dec feat u16 335 (FV7z.mk .ret 64 [] 1) :=
 
 /-! ## The bytes and their classes, in the code's terms -/
 
+/-- The byte at `a`. -/
+abbrev b8 (V : Addr → Byte) (a : Addr) : BitVec 8 := ofBytesLE 8 (List.map V (byteAddrs a 1))
 /-- The `k`-th byte from `p`. -/
-abbrev by8 (V : Addr → Byte) (p : Addr) (k : Nat) : BitVec 8 :=
-  ofBytesLE 8 (List.map V (byteAddrs (p + BitVec.ofNat 64 k) 1))
+abbrev by8 (V : Addr → Byte) (p : Addr) (k : Nat) : BitVec 8 := b8 V (p + BitVec.ofNat 64 k)
 
 abbrev s8 (b : BitVec 8) : BitVec 8 := BitVec.setWidth 8 (BitVec.setWidth 32 b)
 /-- `test al, al; js`: not under `0x80`. -/
@@ -74,6 +75,10 @@ abbrev esc (d : BitVec 32) : Bool := decide (d &&& 4294967168#32 = 61312#32)
 /-- Past `0xFFFF`: a surrogate pair. -/
 abbrev big (d : BitVec 32) : Bool := !(decide (d.toNat < 65535) || decide (d = 65535#32))
 abbrev zr (x : BitVec 32) : Bool := x &&& x == 0
+abbrev zq (x : BitVec 64) : Bool := x &&& x == 0
+/-- `edx` from a lead byte, `c` the code's `-0xc0`, `-0xe0`, `-0xf0`. -/
+abbrev dl (b : BitVec 8) (c : BitVec 64) : BitVec 64 :=
+  BitVec.setWidth 64 (BitVec.setWidth 32 (BitVec.setWidth 64 (BitVec.setWidth 32 (s8 b)) + c))
 
 theorem nc_1 {b : BitVec 8} (h : g223 b = false) : nc b = 1 := by simp only [nc, h, cond_false]
 theorem nc_2 {b : BitVec 8} (h : g223 b = true) (h' : g239 b = false) : nc b = 2 := by
