@@ -1070,37 +1070,43 @@ theorem b98 (prof : Profile) : BlkV prof scm 98 102 o98 :=
   .cons (d98 _) (OpI.sub (.i 16) (.inr rfl)) (lt_scm (by decide)) <|
   .nil 102
 
-/-- The stretch from `108` to `136`. -/
+/-- The stretch from `108` to `128`. -/
 def o108 : List VOp := [
   VOp.op (Op.add 64 6 (.i 16)),
   VOp.op (Op.add 64 7 (.i 16)),
   VOp.op (Op.nop),
-  VOp.op (Op.nop),
-  VOp.op (Op.and 64 6 (.i 18446744073709551600)),
-  VOp.op (Op.and 64 7 (.i 18446744073709551600))]
+  VOp.op (Op.nop)]
 
-theorem b108 (prof : Profile) : BlkV prof scm 108 136 o108 :=
+theorem b108 (prof : Profile) : BlkV prof scm 108 128 o108 :=
   .cons (d108 _) (OpI.add (.i 16) (.inr rfl)) (lt_scm (by decide)) <|
   .cons (d112 _) (OpI.add (.i 16) (.inr rfl)) (lt_scm (by decide)) <|
   .cons (d116 _) (OpI.nop) (lt_scm (by decide)) <|
   .cons (d127 _) (OpI.nop) (lt_scm (by decide)) <|
-  .cons (d128 _) (OpI.and (.i 18446744073709551600) (.inr rfl)) (lt_scm (by decide)) <|
-  .cons (d132 _) (OpI.and (.i 18446744073709551600) (.inr rfl)) (lt_scm (by decide)) <|
-  .nil 136
+  .nil 128
 
-/-- The stretch from `136` to `152`. -/
-def o136 : List VOp := [
+/-- The stretch from `128` to `150`. -/
+def o128 : List VOp := [
+  VOp.op (Op.and 64 6 (.i 18446744073709551600)),
+  VOp.op (Op.and 64 7 (.i 18446744073709551600)),
   VOp.op (Op.mov 32 2 (.i 65535)),
   VOp.op (Op.xor 32 8 (.r 8)),
   VOp.op (Op.and 32 1 (.i 15)),
-  VOp.op (Op.and 32 0 (.i 15)),
-  VOp.op (Op.cmp 32 1 (.r 0))]
+  VOp.op (Op.and 32 0 (.i 15))]
 
-theorem b136 (prof : Profile) : BlkV prof scm 136 152 o136 :=
+theorem b128 (prof : Profile) : BlkV prof scm 128 150 o128 :=
+  .cons (d128 _) (OpI.and (.i 18446744073709551600) (.inr rfl)) (lt_scm (by decide)) <|
+  .cons (d132 _) (OpI.and (.i 18446744073709551600) (.inr rfl)) (lt_scm (by decide)) <|
   .cons (d136 _) (OpI.mov (.i 65535) (.inl rfl)) (lt_scm (by decide)) <|
   .cons (d141 _) (OpI.xor (.r 8) (.inl rfl)) (lt_scm (by decide)) <|
   .cons (d144 _) (OpI.and (.i 15) (.inl rfl)) (lt_scm (by decide)) <|
   .cons (d147 _) (OpI.and (.i 15) (.inl rfl)) (lt_scm (by decide)) <|
+  .nil 150
+
+/-- The stretch from `150` to `152`. -/
+def o150 : List VOp := [
+  VOp.op (Op.cmp 32 1 (.r 0))]
+
+theorem b150 (prof : Profile) : BlkV prof scm 150 152 o150 :=
   .cons (d150 _) (OpI.cmp (.r 0) (.inl rfl)) (lt_scm (by decide)) <|
   .nil 152
 
