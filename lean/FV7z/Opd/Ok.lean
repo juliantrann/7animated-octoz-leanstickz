@@ -16,7 +16,7 @@ The ways `Opd.Holds` leaves out, and the join at 219 every way meets at:
   for at least 32 KiB).
 -/
 open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn FV7z.Close
-open FV7z.Tun (rd_Vst rd_Vst_self Vst_out)
+open FV7z.Tun (rd_Vst rd_Vst_self Vst_out rd1)
 namespace FV7z.Opd
 
 /-- The `call __close_nocancel` after `fstat` (275). -/
@@ -745,7 +745,12 @@ theorem opd_mal {fb : Addr} {g : Gprs} {V₀ : Addr → Byte} {Nm : Nat} {Pm : (
   intro S' Z ev V₂ t' c' hfs' hrs' hKZ hAZ hrZ hPe hPm' zsp zk hkeep hblk
   refine k S' Z ev V₂ t' c' hfs' hrs' hKZ hAZ hrZ hPe hPm' ?_ ?_ (hKY.trans zk) ?_
   · intro a ha he
-    rw [hkeep a (by rcases ha with ha | ha; · exact Or.inl (by rw [hYt]; omega); · exact Or.inr ha) he]
+    have ha' : Y₂.cpu.gpr.rsp.toNat ≤ a.toNat ∨
+        ((fb + 40#64).toNat ≤ a.toNat ∧ a.toNat < (fb + 40#64).toNat + 8) := by
+      rcases ha with ha | ha
+      · exact Or.inl (by rw [hYt]; omega)
+      · exact Or.inr ha
+    rw [hkeep a ha' he]
     exact hp₁ a ha he
   · rw [zsp, hsY]
     exact BitVec.sub_add_cancel _ _
@@ -881,7 +886,7 @@ theorem opd_s55 {fb : Addr} {g : Gprs} {Nm : Nat} {Pm : (Addr → Byte) → Prop
     refine Fxs.fxs_ok c hfs hinX hK₁ hA₁ hr₁ fr.fe fr.hfe (by rw [hs₁]; exact frw fr.hfd hx (by decide))
       (by rw [hs₁, hY8]; omega) (by rw [hs₁, hY8]; rcases fr.hed with h | h <;> omega) (by rw [hdx, e5]; omega)
       (by rw [hdx]; exact frw fr.hfw (fa (d := 96) (by omega) (by rw [e5, t296]; omega)) (by decide))
-      (by rw [hdx, hs₁, hY8, e5]; omega) hin (lt_len (by decide))
+      (by rw [hdx, hs₁, hY8, e5]; omega) hin (lt_len (j := 80) (by decide))
       (by rw [hs₁]; exact rd_ret _ _ _ (by rw [hY8]; omega)) (fun hv => absurd hv (by rw [hdi1]; decide)) ?_
     intro _ Y' Z r t' hgY' _ hok hKZ hrZ hsucc herr
     have hlen : r.bs.length ≤ 144 := by
@@ -958,10 +963,13 @@ theorem opd_ok {fb : Addr} {X : State} {Nm : Nat} {Pm : (Addr → Byte) → Prop
   have t296 : (X.cpu.gpr.rsp - 296#64).toNat = X.cpu.gpr.rsp.toNat - 296 := tSub _ 296 (by omega)
   have hcn : rdq(P4 V X.cpu.gpr, fb + 40#64) = rdq(V, fb + 40#64) :=
     congrArg (ofBytesLE 64) (P4_rd V X.cpu.gpr (by omega) fr.hcb (by have := fr.hcd; omega))
+  have hEw : Write.errnoAt fb = errnoAt fb := rfl
+  have e0 : X.cpu.gpr.rdi.add (0 : Nat) = X.cpu.gpr.rdi :=
+    BitVec.eq_of_toNat_eq (toNat_add_of_fits (n := 1) (by omega) (by omega))
   rcases Nat.eq_zero_or_pos m with hm0 | hm0
   · subst hm0
     have hz0 := nm.hz
-    rw [addr_add_zero] at hz0
+    rw [e0] at hz0
     refine (c_0 prof fb).run c hfs hin _ hK hA (by rw [addr_add_zero]; exact hrip)
       (vc_0z hcn (by rw [Vo_rd X.cpu.gpr _ V (by omega) (by omega) (by omega), rd1]; exact hz0)
         (frw fr.hfw (fa (d := 288) (by omega) (by rw [e1, t296]; omega)) (by decide))
@@ -978,7 +986,7 @@ theorem opd_ok {fb : Addr} {X : State} {Nm : Nat} {Pm : (Addr → Byte) → Prop
   · have hne : ofBytesLE 8 ((byteAddrs X.cpu.gpr.rdi 1).map V) ≠ 0#8 := by
       rw [rd1]
       have h := nm.hnz 0 hm0
-      rw [addr_add_zero] at h
+      rw [e0] at h
       exact h
     refine opd_open c hfs hin hinO hK hA hrip (by omega)
       (frw fr.hfw (fa (d := 88) (by omega) (by rw [e8, t296]; omega)) (by decide)) fr.hcl fr.hcb
@@ -1002,10 +1010,10 @@ theorem opd_ok {fb : Addr} {X : State} {Nm : Nat} {Pm : (Addr → Byte) → Prop
       exact Vo_out X.cpu.gpr _ V (by omega) _ (by rw [e]; omega)
     refine Onc.onc_ok c hfs hrs hinO hKY hAY hrY (by rw [hsiY]; decide) (by rw [hY8]; omega) (by rw [hY8]; omega)
       (frw fr.hfw q88 (by decide)) (frw fr.hfd q88 (by decide)) (frw fr.hfd qY (by decide)) fr.hcl fr.hcb
-      (by rw [hY8]; have := fr.hcd; omega) fr.fe fr.hfe (by rw [hY8]; have := fr.hed; omega) fr.hec nm.hm
+      (by rw [hY8]; have := fr.hcd; omega) fr.fe fr.hfe (by rw [hY8, hEw]; have := fr.hed; omega) fr.hec nm.hm
       (by rw [hdY]; exact htop) (by rw [hdY]; exact nm.hpl) (by rw [hdY, hY8]; omega)
       (by rw [hdY]; exact fun i hi => by rw [vn i (by omega)]; exact nm.hnz i hi)
-      (by rw [hdY, vn m (Nat.le_refl _)]; exact nm.hz) hin (lt_len (by decide))
+      (by rw [hdY, vn m (Nat.le_refl _)]; exact nm.hz) hin (lt_len (j := 55) (by decide))
       (by rw [hsY]; exact rd_ret _ _ _ (by rw [e7]; omega)) ?_
     intro Y' S' Z r bs t' hKY' _ _ _ hcpu _ c' hrs' hKZ hrZ hregs hok herr
     obtain ⟨zsp, -, -, -, -, z14, z15⟩ := hregs
