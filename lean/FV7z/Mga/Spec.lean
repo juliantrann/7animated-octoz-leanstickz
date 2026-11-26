@@ -90,7 +90,7 @@ theorem np_ok {m al : Addr} {k : Nat} (hk : k < 64) (h4 : 4 ≤ k) (ha : al.toNa
     omega
   unfold np
   by_cases hc : (brk m al - (m + 18446744073709551600#64)).toNat ≤ 31
-  · rw [ite_cond_eq_true _ _ (eq_true hc)]
+  · rw [ite_eq_left_of_eq_true _ _ (eq_true hc)]
     have e : (brk m al + al).toNat = A - 16 + 2 ^ k := by
       rw [BitVec.toNat_add, hb, ha]
       omega
@@ -98,7 +98,7 @@ theorem np_ok {m al : Addr} {k : Nat} (hk : k < 64) (h4 : 4 ≤ k) (ha : al.toNa
     · rw [BitVec.toNat_sub, e, hp]
       omega
     · rw [e, show A - 16 + 2 ^ k + 16 = A + 2 ^ k by omega, Nat.add_mod_right, hA]
-  · rw [ite_cond_eq_false _ _ (eq_false hc)]
+  · rw [ite_eq_right_of_eq_false _ _ (eq_false hc)]
     refine ⟨A - m.toNat, by rw [hb]; omega, hd, by omega, by omega, by omega, ?_⟩
     rw [hb, show A - 16 + 16 = A by omega, hA]
 
