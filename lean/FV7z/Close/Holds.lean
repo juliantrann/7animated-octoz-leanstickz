@@ -61,22 +61,22 @@ theorem vc_0 {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte}
     W_0 fb F Wl (fun j' g' _ V' => j' = 21 ∧ g' = g.set 0 3 ∧ V' = V) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   wpx [W_0, W_16, o0, o1, Op.ldf, hmt]
-  refine ⟨fm, fun af => ⟨fun h => absurd h (by decide), fun _ => ?_⟩⟩
-  first | rfl | exact ⟨rfl, rfl⟩ | trivial
+  refine ⟨fm, fun h => absurd h (by decide), fun _ => ?_⟩
+  rfl
 
 /-- How `cmp rax, -4096; ja` reads the kernel's answer. -/
 theorem ja_cmp (x : BitVec 64) :
     (!(decide (x.toNat < 18446744073709547520) || decide (x = 18446744073709547520#64))) = decide (CloseErr x) := by
-  unfold CloseErr
   by_cases h1 : x.toNat < 18446744073709547520
-  · have h3 : ¬ 18446744073709547520 < x.toNat := by omega
+  · have h3 : ¬ CloseErr x := by unfold CloseErr; omega
     rw [decide_eq_true h1, decide_eq_false h3]
     rfl
   · by_cases h2 : x = 18446744073709547520#64
-    · have h3 : ¬ 18446744073709547520 < x.toNat := by rw [h2]; decide
+    · have h3 : ¬ CloseErr x := by unfold CloseErr; rw [h2]; decide
       rw [decide_eq_false h1, decide_eq_true h2, decide_eq_false h3]
       rfl
-    · have h3 : 18446744073709547520 < x.toNat := by
+    · have h3 : CloseErr x := by
+        unfold CloseErr
         have : x.toNat ≠ 18446744073709547520 := fun e => h2 (BitVec.eq_of_toNat_eq (by rw [e]; rfl))
         omega
       rw [decide_eq_false h1, decide_eq_false h2, decide_eq_true h3]
@@ -88,7 +88,9 @@ theorem vc_23_ok {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (he : �
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   have he' : decide (CloseErr rax) = false := decide_eq_false he
   wpx [W_23, W_96, o2, o3, Op.stf, ja_cmp, he']
-  first | rfl | exact ⟨rfl, rfl⟩ | trivial
+  first
+  | exact fun h => absurd h (by decide)
+  | exact ⟨fun h => absurd h (by decide), fun _ => ⟨rfl, rfl, rfl⟩⟩
 
 /-- From the `syscall` to the second `ret`, the kernel's answer `rax` an error: `errno` set, `eax` -1. -/
 theorem vc_23_err {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (he : CloseErr g.rax)
@@ -97,11 +99,11 @@ theorem vc_23_err {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (he : 
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   have he' : decide (CloseErr rax) = true := decide_eq_true he
   wpx [W_23, W_96, o2, o3, Op.stf, ja_cmp, he']
-  first | exact ⟨fe, rfl, rfl⟩ | exact ⟨fe, rfl⟩ | exact fe
+  exact ⟨⟨fe, rfl⟩, fun h => absurd h (by decide)⟩
 
 variable {prof : Profile} {L : List (Addr × List Byte)} {s₀ : State} {o : Oracle}
-  {gev : List Event} {gP : State → Nat → List Event → Prop} {gE : Outcome → List Event → Prop} {X : State} {t : Nat}
-  {V : Addr → Byte}
+  {gev : List Event} {gP : State → Nat → List Event → Prop} {gE : Outcome → List Event → Prop} {X : State}
+  {t : Nat} {V : Addr → Byte}
 
 /-- `__close (fd)` from its entry to the return address, in a process of one thread (`multiple_threads` 0): the
 `syscall` `close` from `Y` (the registers at the entry with `eax` 3) answers `r`, `closeRes` of some point of the
@@ -127,7 +129,8 @@ theorem close_ok {fb : Addr} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fs
     GoG prof L o gev gP gE X t := by
   refine (c_0 prof fb).run c hfs hin (fun j' g' _ V' => j' = 21 ∧ g' = X.cpu.gpr.set 0 3 ∧ V' = V) hK hA
     (by rw [addr_add_zero]; exact hrip) (vc_0 hmt fm) ?_
-  rintro j' g fl V₁ ⟨rfl, rfl, rfl⟩ Y t₁ hKY hAY hrY hgY -
+  rintro j' g fl V₁ ⟨rfl, rfl, hV₁⟩ Y t₁ hKY hAY hrY hgY -
+  subst V₁
   refine c.s_close_re hrs hKY hAY hin (lt_len (by decide)) hrY (sys_21 _) (by rw [hgY]; rfl) ?_
   intro M t₂ t₃ hKm c₁ hAm
   have hev : sysEv Y (closeRes o t₂ (Y.withMem M)).1 = clsEv X.cpu.gpr (closeRes o t₂ (Y.withMem M)).1 := by
@@ -164,20 +167,23 @@ theorem close_ok {fb : Addr} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fs
       have h1 : (errnoAt fb).toNat + (errnoB ((sysGpr Y 2).set 0 r).rax).length ≤ 2 ^ 64 := by rw [hb]; exact hfe
       have h2 : (errnoAt fb).toNat + (errnoB ((sysGpr Y 2).set 0 r).rax).length ≤ X.cpu.gpr.rsp.toNat ∨
           X.cpu.gpr.rsp.toNat + 8 ≤ (errnoAt fb).toNat := by rw [hb]; exact hsa
-      rw [hspZ, rd_Vst V (errnoAt fb) (errnoB ((sysGpr Y 2).set 0 r).rax) X.cpu.gpr.rsp 8 h1 hsp h2]
+      rw [hspZ, Tun.rd_Vst V (errnoAt fb) (errnoB ((sysGpr Y 2).set 0 r).rax) X.cpu.gpr.rsp 8 h1 hsp h2]
       exact hra
     rintro Z' t₅ hKZ' hAZ' ⟨hrZ', hgZ'⟩
     rw [hr0] at hAZ'
     refine kk Z' t₅ hKZ' hrZ' (fun h => absurd he h) fun _ => ⟨hAZ', ?_⟩
-    rw [hgZ', hgZ, hspZ]
+    rw [hgZ', hgZ, errG_rsp, hspY]
+    rfl
   · refine (c_23 prof fb).run c₁ hfs₁ hin (fun j' g' _ V' => j' = 31 ∧ g' = (sysGpr Y 2).set 0 r ∧ V' = V)
       (KeptW.refl _ _) hAm hrS (by rw [hgS]; exact vc_23_ok (by rw [hr0]; exact he)) ?_
-    rintro j' g fl V₂ ⟨rfl, rfl, rfl⟩ Z t₄ hKZ hAZ hrZ hgZ -
+    rintro j' g fl V₂ ⟨rfl, rfl, hV₂⟩ Z t₄ hKZ hAZ hrZ hgZ -
+    subst V₂
     have hspZ : Z.cpu.gpr.rsp = X.cpu.gpr.rsp := by rw [hgZ, hspY]
     refine c₁.s_ret hKZ hAZ hin (lt_len (by decide)) hrZ (ret_31 _) (fun i hi => by rw [hspZ]; exact hl i hi)
       hin₂ h₂ (by rw [hspZ]; exact hra) ?_
     rintro Z' t₅ hKZ' hAZ' ⟨hrZ', hgZ'⟩
     refine kk Z' t₅ hKZ' hrZ' (fun _ => ⟨hAZ', ?_⟩) fun h => absurd h he
-    rw [hgZ', hgZ, hspZ]
+    rw [hgZ', hgZ, hspY]
+    rfl
 
 end FV7z.Close
