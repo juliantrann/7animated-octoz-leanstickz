@@ -24,6 +24,13 @@ variable {prof : Profile} {o : Oracle} {t : Nat} {s : State}
 theorem runStream_req_bind {β : Type} (r : Request) (k : r.Answer → Req β) :
     ((Req.request r) >>= k).runStream o t = (k (o t r)).runStream o (t + 1) := rfl
 
+/-- A choice on an answer `b`, both ways. -/
+theorem rs_ite {α : Type} {P : α × Nat → Prop} (b : Bool) (x y : Req α) (t : Nat)
+    (h1 : P (x.runStream o t)) (h2 : P (y.runStream o t)) : P ((if b = true then x else y).runStream o t) := by
+  cases b
+  · exact h2
+  · exact h1
+
 /-- `sysLseek` with `whence` at most `SEEK_END`: the state after has the processor of `u` with `rax` the answer, and
 `u`'s thread, address space and descriptor table. -/
 theorem lseek_cps (u : State) (hw : arg32 u.cpu.gpr.rdx ≤ 2) {P : StepResult × Nat → Prop}
@@ -43,6 +50,7 @@ theorem lseek_cps (u : State) (hw : arg32 u.cpu.gpr.rdx ≤ 2) {P : StepResult �
     | (exfalso; omega)
     | (rw [runStream_req_bind]; try dsimp only)
     | (simp only [bind, pure, Req.request, Req.bind, Req.runStream]; try dsimp only)
+    | (refine rs_ite (P := P) _ _ _ _ ?_ ?_)
     | split
 
 /-- `syscall` for `lseek (rdi, rsi, rdx)` with `whence` at most `SEEK_END`: the state after has the processor after
