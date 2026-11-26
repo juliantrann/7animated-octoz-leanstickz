@@ -70,12 +70,11 @@ theorem t_fr_add (a : Addr) (d i : Nat) : Addr.add (a + BitVec.ofNat 64 d) i = A
   addr_add_add' a d i
 
 /-- A store into the 60 bytes from `a` keeps a byte apart from them. -/
-theorem t_vst_in {W : Addr → Byte} {a y : Addr} {d : Nat} {bs : List Byte} (hr : a.toNat + 60 ≤ 2 ^ 64)
-    (hy : y.toNat < a.toNat ∨ a.toNat + 60 ≤ y.toNat) (hd : d + bs.length ≤ 60) :
-    Vst W (a + BitVec.ofNat 64 d) bs y = W y := by
-  have e : (a + BitVec.ofNat 64 d).toNat = a.toNat + d := by
-    have h1 : d % 2 ^ 64 = d := Nat.mod_eq_of_lt (by omega)
-    rw [BitVec.toNat_add, BitVec.toNat_ofNat, h1]
+theorem t_vst_in {W : Addr → Byte} {a y c : Addr} {bs : List Byte} (hr : a.toNat + 60 ≤ 2 ^ 64)
+    (hy : y.toNat < a.toNat ∨ a.toNat + 60 ≤ y.toNat) (hc0 : c.toNat < 60) (hd : c.toNat + bs.length ≤ 60) :
+    Vst W (a + c) bs y = W y := by
+  have e : (a + c).toNat = a.toNat + c.toNat := by
+    rw [BitVec.toNat_add]
     exact Nat.mod_eq_of_lt (by omega)
   exact Tun.Vst_out W _ bs y (by rw [e]; omega) (by rw [e]; omega)
 
@@ -112,7 +111,7 @@ theorem vc_42_zero {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (hz :
     | rfl
     | (intro i hi; exact hfr _ i (by omega))
     | (intro i hi; exact hwt _ i (by omega))
-    | (intro y hy; simp only [t_vst_in hr hy, toBytesLE_length])
+    | (intro y hy; simp only [t_vst_in hr hy, toBytesLE_length, BitVec.toNat_ofNat])
     | (subst hz; decide)
     | (intro h; exact absurd h (by decide))
     | constructor
@@ -131,7 +130,7 @@ theorem vc_86 {g : Gprs} {f : Rflags} {V : Addr → Byte}
     | rfl
     | (intro i hi; exact hfr _ i (by omega))
     | (intro i hi; exact hwt _ i (by omega))
-    | (intro y hy; simp only [t_vst_in hr hy, toBytesLE_length])
+    | (intro y hy; simp only [t_vst_in hr hy, toBytesLE_length, BitVec.toNat_ofNat])
     | (intro h; exact absurd h (by decide))
     | constructor
     | intro _)
@@ -140,6 +139,7 @@ variable {prof : Profile} {L : List (Addr × List Byte)} {s₀ : State} {o : Ora
   {gev : List Event} {gP : State → Nat → List Event → Prop} {gE : Outcome → List Event → Prop} {X : State}
   {t : Nat} {V : Addr → Byte}
 
+set_option maxHeartbeats 4000000 in
 /-- `__tcgetattr (fd, termios_p)` from its entry to the return address at `rsp`. The frame (`k` = `rsp - 56`, 56
 bytes) is aligned to 16, in what the run may store into (its first 48 bytes) and its data (with the return address);
 `termios_p`'s 60 bytes are in what the run may store into, apart from the frame, the return address and the stack
@@ -222,7 +222,7 @@ theorem tcg_ok {fb : Addr} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBa
   rw [hg1]
   rcases hrb with ⟨he, rfl⟩ | ⟨rfl, hb⟩
   · -- an error
-    change Agree F Y.proc.mm.mem (tV V X.cpu.gpr fb) at hAY
+    simp only [Vst] at hAY
     have heb : (errnoB Y.cpu.gpr.rax).length = 4 := toBytesLE_length _ _
     have hE : (errnoAt fb).toNat + (errnoB Y.cpu.gpr.rax).length ≤ 2 ^ 64 := by rw [heb]; exact hfe
     have hcE : rdq(Vst (tV V X.cpu.gpr fb) (errnoAt fb) (errnoB Y.cpu.gpr.rax), X.cpu.gpr.rsp - 56#64 + 40#64) =
@@ -302,8 +302,10 @@ theorem tcg_ok {fb : Addr} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBa
         show Y5.cpu.gpr.r8 + _ = _; rw [h85]
       have e6 : eaD Y6 8 17 = X.cpu.gpr.rsi + BitVec.ofNat 64 17 := by
         show Y6.cpu.gpr.r8 + _ = _; rw [h86]
-      rw [e6, t_vst_in (d := 17) (bs := toBytesLE (xlo Y6 1) 16) hr hy (by rw [toBytesLE_length]; omega),
-        e5, t_vst_in (d := 0) (bs := toBytesLE (xlo Y5 0) 16) hr hy (by rw [toBytesLE_length]; omega),
+      rw [e6, t_vst_in (c := BitVec.ofNat 64 17) (bs := toBytesLE (xlo Y6 1) 16) hr hy (by decide)
+          (by rw [toBytesLE_length]; decide),
+        e5, t_vst_in (c := BitVec.ofNat 64 0) (bs := toBytesLE (xlo Y5 0) 16) hr hy (by decide)
+          (by rw [toBytesLE_length]; decide),
         hV4 y (by rw [hg4', h83]; exact hy), hV3 y (by rw [h8Y]; exact hy)]
     obtain ⟨W7, hA7', hW7⟩ : ∃ W : Addr → Byte, Agree F Y7.proc.mm.mem W ∧
         ∀ y : Addr, y.toNat < X.cpu.gpr.rsi.toNat ∨ X.cpu.gpr.rsi.toNat + 60 ≤ y.toNat →
