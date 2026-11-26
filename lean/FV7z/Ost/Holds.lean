@@ -79,6 +79,18 @@ macro "opx" : tactic => `(tactic| (
       | apply And.intro
       | intro _)))
 
+/-- `opx`, and a guard against `h` (a `decide` that `wpx` does not rewrite) closed by `h`. -/
+macro "opk" h:term : tactic => `(tactic| (
+  all_goals repeat'
+    (first
+      | exact rfl
+      | exact trivial
+      | assumption
+      | decide
+      | (exfalso; exact absurd (Eq.trans (Eq.symm $h) ‹_›) (by decide))
+      | apply And.intro
+      | intro _)))
+
 /-- The simp set for the branches. -/
 macro "wpo" "[" ls:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic|
   wpx [W_0, W_13, W_20, W_26, W_31, W_50, W_80, W_92, W_112, o0, o1, o2, o3, o4, o5, o7, o8, o9, Op.cmpmi,
@@ -93,33 +105,33 @@ theorem vc_0 {g : Gprs} {f : Rflags} {V : Addr → Byte} (hF : Ft F Wl g) :
   obtain ⟨f249, f64, f72, f240, fs, fd, w248, w16, w240⟩ := hF
   by_cases h0 : rb V (g.rdi + 249#64) = 0#8
   rotate_left
-  · rw [Mo, if_neg (fun h => h0 h.1)]
+  · rw [Mo, ite_cond_eq_false _ _ (eq_false (fun h => h0 h.1))]
     obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
     dsimp only at h0 f249 ⊢
     have h0' : decide (ofBytesLE 8 (List.map V (byteAddrs (rdi + 249#64) 1)) = 0#8) = false := decide_eq_false h0
     wpo [h0']
     opx
   by_cases h1 : rdq(V, g.rdi + 64#64) = 0#64
-  · rw [Mo, if_neg (fun h => h.2.1 h1)]
+  · rw [Mo, ite_cond_eq_false _ _ (eq_false (fun h => h.2.1 h1))]
     obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
     dsimp only at h0 h1 f249 f64 ⊢
     have h0' : decide (ofBytesLE 8 (List.map V (byteAddrs (rdi + 249#64) 1)) = 0#8) = true := decide_eq_true h0
     have h1' : decide (ofBytesLE 64 (List.map V (byteAddrs (rdi + 64#64) 8)) = 0#64) = true := decide_eq_true h1
     wpo [h0', h1']
-    opx
+    opk h1'
   by_cases h2 : rb V (g.rdi + 72#64) = 0#8
   rotate_left
-  · rw [Mo, if_neg (fun h => h2 h.2.2)]
+  · rw [Mo, ite_cond_eq_false _ _ (eq_false (fun h => h2 h.2.2))]
     obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
     dsimp only at h0 h1 h2 f249 f64 f72 ⊢
     have h0' : decide (ofBytesLE 8 (List.map V (byteAddrs (rdi + 249#64) 1)) = 0#8) = true := decide_eq_true h0
     have h1' : decide (ofBytesLE 64 (List.map V (byteAddrs (rdi + 64#64) 8)) = 0#64) = false := decide_eq_false h1
     have h2' : decide (ofBytesLE 8 (List.map V (byteAddrs (rdi + 72#64) 1)) = 0#8) = false := decide_eq_false h2
     wpo [h0', h1', h2']
-    opx
-  rw [Mo, if_pos (show Pc V g.rdi from ⟨h0, h1, h2⟩)]
+    opk h1'
+  rw [Mo, ite_cond_eq_true _ _ (eq_true (show Pc V g.rdi from ⟨h0, h1, h2⟩))]
   by_cases hs : g.rsi = 0#64 <;> by_cases hd : g.rdx = 0#64
-  · rw [if_pos hs, if_pos hd]
+  · rw [ite_cond_eq_true _ _ (eq_true hs), ite_cond_eq_true _ _ (eq_true hd)]
     obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
     dsimp only at h0 h1 h2 hs hd f249 f64 f72 f240 w248 w16 w240 ⊢
     have h0' : decide (ofBytesLE 8 (List.map V (byteAddrs (rdi + 249#64) 1)) = 0#8) = true := decide_eq_true h0
@@ -128,8 +140,8 @@ theorem vc_0 {g : Gprs} {f : Rflags} {V : Addr → Byte} (hF : Ft F Wl g) :
     have hs' : (rsi == 0) = true := by rw [hs]; rfl
     have hd' : (rdx == 0) = true := by rw [hd]; rfl
     wpo [h0', h1', h2', hs', hd']
-    opx
-  · rw [if_pos hs, if_neg hd]
+    opk h1'
+  · rw [ite_cond_eq_true _ _ (eq_true hs), ite_cond_eq_false _ _ (eq_false hd)]
     have fd' := fd hd
     obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
     dsimp only at h0 h1 h2 hs hd f249 f64 f72 fd' w248 w16 w240 ⊢
@@ -139,8 +151,8 @@ theorem vc_0 {g : Gprs} {f : Rflags} {V : Addr → Byte} (hF : Ft F Wl g) :
     have hs' : (rsi == 0) = true := by rw [hs]; rfl
     have hd' : (rdx == 0) = false := beq_eq_false_iff_ne.2 hd
     wpo [h0', h1', h2', hs', hd']
-    opx
-  · rw [if_neg hs, if_pos hd]
+    opk h1'
+  · rw [ite_cond_eq_false _ _ (eq_false hs), ite_cond_eq_true _ _ (eq_true hd)]
     have fs' := fs hs
     obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
     dsimp only at h0 h1 h2 hs hd f249 f64 f72 fs' w248 w16 w240 ⊢
@@ -150,8 +162,8 @@ theorem vc_0 {g : Gprs} {f : Rflags} {V : Addr → Byte} (hF : Ft F Wl g) :
     have hs' : (rsi == 0) = false := beq_eq_false_iff_ne.2 hs
     have hd' : (rdx == 0) = true := by rw [hd]; rfl
     wpo [h0', h1', h2', hs', hd']
-    opx
-  · rw [if_neg hs, if_neg hd]
+    opk h1'
+  · rw [ite_cond_eq_false _ _ (eq_false hs), ite_cond_eq_false _ _ (eq_false hd)]
     have fs' := fs hs
     have fd' := fd hd
     obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
@@ -162,7 +174,7 @@ theorem vc_0 {g : Gprs} {f : Rflags} {V : Addr → Byte} (hF : Ft F Wl g) :
     have hs' : (rsi == 0) = false := beq_eq_false_iff_ne.2 hs
     have hd' : (rdx == 0) = false := beq_eq_false_iff_ne.2 hd
     wpo [h0', h1', h2', hs', hd']
-    opx
+    opk h1'
 
 /-- From 60 to the `ret`: `rax` the result `rE` of the break counter. -/
 theorem vc_60 {g : Gprs} {f : Rflags} {V : Addr → Byte} (gb : ∀ i < 4, Foot F.data (Addr.add 7991432#64 i)) :
@@ -171,12 +183,12 @@ theorem vc_60 {g : Gprs} {f : Rflags} {V : Addr → Byte} (gb : ∀ i < 4, Foot 
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   by_cases hx : rdd(V, 7991432#64) = 0#32
   · have hc : decide ((rdd(V, 7991432#64)).toNat < 1) = true := by rw [hx]; rfl
-    have hr : rE rdd(V, 7991432#64) = 0#64 := if_pos hx
+    have hr : rE rdd(V, 7991432#64) = 0#64 := ite_cond_eq_true _ _ (eq_true hx)
     wpx [W_60, o6, Op.cmpmi, Op.not32, hc, hr]
     opx
   · have hc : decide ((rdd(V, 7991432#64)).toNat < 1) = false :=
       decide_eq_false (fun h => hx (by bv_omega))
-    have hr : rE rdd(V, 7991432#64) = 2147500036#64 := if_neg hx
+    have hr : rE rdd(V, 7991432#64) = 2147500036#64 := ite_cond_eq_false _ _ (eq_false hx)
     wpx [W_60, o6, Op.cmpmi, Op.not32, hc, hr]
     opx
 
