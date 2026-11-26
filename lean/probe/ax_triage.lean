@@ -1,4 +1,3 @@
-import FV7z.Lemmas.RepCmpsb
 import FV7z.Fni.Holds
 open FV7z
 #print axioms FV7z.Fni.fni_ok

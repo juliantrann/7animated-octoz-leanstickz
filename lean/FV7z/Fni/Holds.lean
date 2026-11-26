@@ -36,9 +36,9 @@ theorem ret_64 (feat : Features) : Dec feat fni 64 (FV7z.mk .ret 64 [] 1) :=
 
 /-- The call of `free`. -/
 def pcall : List Byte := [0xe8, 0x2c, 0x76, 0x21, 0x00]
-theorem pcall_0 : ∀ feat, Dec feat pcall 0 (FV7z.mk .call 64 [.rel 2193964] 5) := by dec_rfl
+theorem pcall_0 : ∀ feat, Dec feat pcall 0 (FV7z.mk .call 64 [.rel 2192940] 5) := by dec_rfl
 theorem w_47 : pcall <+: fni.drop 47 := by decide +kernel
-theorem call_47 (feat : Features) : Dec feat fni 47 (FV7z.mk .call 64 [.rel 2193964] 5) :=
+theorem call_47 (feat : Features) : Dec feat fni 47 (FV7z.mk .call 64 [.rel 2192940] 5) :=
   Dec.shift (j := 47) (k := 0) (pcall_0 feat) w_47 (Nat.zero_le _)
 
 /-- `last_result.errstring`. -/
@@ -67,6 +67,10 @@ theorem sb_gt : BitVec.setWidth 8 (BitVec.ofBool true) - BitVec.ofNat 8 0 - BitV
 theorem sb_lt : BitVec.setWidth 8 (BitVec.ofBool false) - BitVec.ofNat 8 0 - BitVec.setWidth 8 (BitVec.ofBool true) =
     255#8 := by decide
 
+theorem z8_beq : ((0#8 : BitVec 8) == 0) = true := by decide
+theorem o8_beq : ((1#8 : BitVec 8) == 0) = false := by decide
+theorem m8_beq : ((255#8 : BitVec 8) == 0) = false := by decide
+
 theorem sub8_8 (a : Addr) : a - 8#64 - 8 = a - 16#64 := by bv_omega
 theorem add8_8 (a : Addr) : a + 8#64 + 8 = a + 16#64 := by bv_omega
 theorem add8_add (a : Addr) (i : Nat) : Addr.add (a + 8#64) i = Addr.add a (8 + i) := by
@@ -89,8 +93,7 @@ theorem vc_0z {g : Gprs} {f : Rflags} {V : Addr → Byte} (hl : ∀ i < 8, Foot 
 theorem vc_0nz {g : Gprs} {f : Rflags} {V : Addr → Byte} (hl : ∀ i < 8, Foot F.data (Addr.add 8014872#64 i))
     (h : ofBytesLE 64 ((byteAddrs 8014872#64 8).map V) ≠ 0) :
     W_0 F Wl (fun j' g' _ V' => j' = 31 ∧
-      g' = { g with rcx := 14#64, rsi := ofBytesLE 64 ((byteAddrs 8014872#64 8).map V), rdi := 7181404#64,
-        r8 := ofBytesLE 64 ((byteAddrs 8014872#64 8).map V) } ∧ V' = V) g f V := by
+      g' = { g with rcx := 14#64, rsi := ers V, rdi := 7181404#64, r8 := ers V } ∧ V' = V) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only
   have hz : (ofBytesLE 64 ((byteAddrs 8014872#64 8).map V) == 0) = false := beq_eq_false_iff_ne.2 h
@@ -104,9 +107,16 @@ theorem vc_33e {g : Gprs} {f : Rflags} {V : Addr → Byte} (hz : f.zf = true) (h
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only
   wpx [W_33, W_43, o2, o3, Op.setcc, Op.sbb8, lo8_wr, BitVec.and_self, hz, hc, Bool.or_true, Bool.true_or,
-    Bool.or_false, Bool.false_or, Bool.not_true, Bool.not_false, sb_e, sb_gt, sb_lt]
-  all_goals repeat' (first | exact rfl | exact trivial | exact ⟨_, rfl⟩ | (intro h; exact absurd h (by decide)) |
-    apply And.intro | intro _)
+    Bool.or_false, Bool.false_or, Bool.not_true, Bool.not_false, sb_e, sb_gt, sb_lt, z8_beq, o8_beq, m8_beq,
+    Bool.false_eq_true, Bool.true_eq_false, false_implies, true_implies, implies_true]
+  all_goals repeat'
+    (first
+      | exact rfl
+      | exact trivial
+      | exact ⟨_, rfl⟩
+      | (intro h; exact absurd h (by decide))
+      | apply And.intro
+      | intro _)
 
 /-- After the `repz cmpsb`, a byte that differs: `al` not 0, `rax` pushed, `rdi` = the message, to the call of
 `free` (47). -/
@@ -118,9 +128,17 @@ theorem vc_33n {g : Gprs} {f : Rflags} {V : Addr → Byte} (hz : f.zf = false)
   dsimp only at hpw ⊢
   cases hc : f.cf
   all_goals wpx [W_33, W_43, o2, o3, Op.setcc, Op.sbb8, lo8_wr, BitVec.and_self, hz, hc, Bool.or_true,
-    Bool.true_or, Bool.or_false, Bool.false_or, Bool.not_true, Bool.not_false, sb_e, sb_gt, sb_lt]
-  all_goals repeat' (first | exact rfl | exact trivial | exact hpw | exact ⟨_, rfl, rfl⟩ |
-    (intro h; exact absurd h (by decide)) | apply And.intro | intro _)
+    Bool.true_or, Bool.or_false, Bool.false_or, Bool.not_true, Bool.not_false, sb_e, sb_gt, sb_lt, z8_beq, o8_beq,
+    m8_beq, Bool.false_eq_true, Bool.true_eq_false, false_implies, true_implies, implies_true]
+  all_goals repeat'
+    (first
+      | exact rfl
+      | exact trivial
+      | exact hpw
+      | exact ⟨_, rfl, rfl⟩
+      | (intro h; exact absurd h (by decide))
+      | apply And.intro
+      | intro _)
 
 /-- After `free`: `errstring` = 0, `pop rdx`, to the `ret` (64). -/
 theorem vc_52 {g : Gprs} {f : Rflags} {V : Addr → Byte} (hpw : ∀ i < 8, Foot Wl (Addr.add 8014872#64 i))
@@ -130,8 +148,15 @@ theorem vc_52 {g : Gprs} {f : Rflags} {V : Addr → Byte} (hpw : ∀ i < 8, Foot
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at hl ⊢
   wpx [W_52, o4, Op.stia]
-  all_goals repeat' (first | exact rfl | exact trivial | exact hpw | exact hl | exact ⟨_, rfl⟩ | apply And.intro |
-    intro _)
+  all_goals repeat'
+    (first
+      | exact rfl
+      | exact trivial
+      | exact hpw
+      | exact hl
+      | exact ⟨_, rfl⟩
+      | apply And.intro
+      | intro _)
 
 variable {prof : Profile} {L : List (Addr × List Byte)} {s₀ : State} {o : Oracle}
   {gev : List Event} {gP : State → Nat → List Event → Prop} {gE : Outcome → List Event → Prop} {X : State}
