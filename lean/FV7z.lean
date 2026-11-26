@@ -750,6 +750,7 @@ import FV7z.Mnx.PopRun
 import FV7z.Mnx.Get
 import FV7z.Mnx.PopInv
 import FV7z.Mnx.PopNext
+import FV7z.Mnx.Sep
 import FV7z.Mal.Pre
 import FV7z.Mal.Heap
 import FV7z.Mal.HeapA
