@@ -211,8 +211,8 @@ variable {F : Footprint} {Wl : List Rgn}
 
 /-- What is left of a piece's condition: its footprint facts, equations, cases that cannot be. -/
 local macro "vfin" : tactic =>
-  `(tactic| repeat' (first | with_reducible rfl | assumption | exact True.intro | (intro h; exact absurd h (by omega)) |
-    apply And.intro | intro _))
+  `(tactic| repeat' (first | (with_reducible rfl) | assumption | exact True.intro |
+    (intro h; exact absurd h (by omega)) | apply And.intro | intro _))
 
 /-! ## The pieces -/
 
@@ -312,6 +312,16 @@ theorem vc_219 {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte}
   wpx [W_219, W_238, o9, o10, Op.xormf, hc, BitVec.xor_self, decide_true, Bool.not_true, Bool.false_eq_true,
     false_implies, eq_self_iff_true, true_implies]
   all_goals vfin
+
+/-- The registers after the `ret` from `dG`. -/
+theorem dGs (V : Addr → Byte) (g : Gprs) (v : BitVec 64) :
+    ((dG V g).set 4 v).rsp = v ∧ ((dG V g).set 4 v).rax = g.r12 ∧
+    ((dG V g).set 4 v).rbx = rdq(V, g.rsp + 168#64) ∧ ((dG V g).set 4 v).rbp = rdq(V, g.rsp + 168#64 + 8) ∧
+    ((dG V g).set 4 v).r12 = rdq(V, g.rsp + 168#64 + 8 + 8) ∧
+    ((dG V g).set 4 v).r13 = rdq(V, g.rsp + 168#64 + 8 + 8 + 8) ∧
+    ((dG V g).set 4 v).r14 = g.r14 ∧ ((dG V g).set 4 v).r15 = g.r15 := by
+  cases g
+  exact ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩
 
 variable {prof : Profile} {L : List (Addr × List Byte)} {s₀ : State} {o : Oracle}
   {gev : List Event} {gP : State → Nat → List Event → Prop} {gE : Outcome → List Event → Prop}
@@ -463,7 +473,7 @@ theorem opd_ret {fb : Addr} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsB
     congrArg (ofBytesLE 64) (Vd_rd V _ _ _ hdb h1 h2)
   -- to the stores
   refine (c_153 prof fb).run c hfs hin (fun j' g' _ V' => j' = 165 ∧ g' = { X.cpu.gpr with r12 := X.cpu.gpr.rax } ∧
-      V' = V) hK hA hrip (vc_153 hnz) ?_
+      V' = V) hK hA hrip (vc_153 (g := X.cpu.gpr) hnz) ?_
   rintro j' g fl V₁ ⟨rfl, rfl, hV⟩ Y₁ t₁ hK₁ hA₁ hr₁ hg₁ -
   subst V₁
   have h12 : Y₁.cpu.gpr.r12 = X.cpu.gpr.rax := by rw [hg₁]
@@ -503,30 +513,17 @@ theorem opd_ret {fb : Addr} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsB
     (by rw [hs3]; exact frw hfd (fa (d := 200) (by omega) q200) (by decide)) hin₂ h₂
     (by rw [hs3, pa4, vd (X.cpu.gpr.rsp + 200#64) 8 (by omega) (by omega)]; exact hra) ?_
   rintro Z t₄ hKZ hAZ ⟨hrZ, hgZ⟩
+  obtain ⟨z1, z2, z3, z4, z5, z6, z7, z8⟩ :=
+    dGs (Vd V X.cpu.gpr.rax X.cpu.gpr.rbp X.cpu.gpr.rbx) Y₂.cpu.gpr (Y₃.cpu.gpr.rsp + 8)
+  rw [← hg₃, ← hgZ] at z1 z2 z3 z4 z5 z6 z7 z8
   refine k Z t₄ hKZ hAZ hrZ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_
-  · rw [hgZ]
-    show Y₃.cpu.gpr.rsp + 8 = _
-    rw [hs3, pa5]
-  · rw [hgZ, hg₃]
-    show Y₂.cpu.gpr.r12 = _
-    rw [hg₂, h12]
-  · rw [hgZ, hg₃]
-    show rdq(Vd V X.cpu.gpr.rax X.cpu.gpr.rbp X.cpu.gpr.rbx, Y₂.cpu.gpr.rsp + 168#64) = _
-    rw [hs2, vd (X.cpu.gpr.rsp + 168#64) 8 (by omega) (by omega)]
-  · rw [hgZ, hg₃]
-    show rdq(Vd V X.cpu.gpr.rax X.cpu.gpr.rbp X.cpu.gpr.rbx, Y₂.cpu.gpr.rsp + 168#64 + 8) = _
-    rw [hs2, pa1, vd (X.cpu.gpr.rsp + 176#64) 8 (by omega) (by omega)]
-  · rw [hgZ, hg₃]
-    show rdq(Vd V X.cpu.gpr.rax X.cpu.gpr.rbp X.cpu.gpr.rbx, Y₂.cpu.gpr.rsp + 168#64 + 8 + 8) = _
-    rw [hs2, pa2, vd (X.cpu.gpr.rsp + 184#64) 8 (by omega) (by omega)]
-  · rw [hgZ, hg₃]
-    show rdq(Vd V X.cpu.gpr.rax X.cpu.gpr.rbp X.cpu.gpr.rbx, Y₂.cpu.gpr.rsp + 168#64 + 8 + 8 + 8) = _
-    rw [hs2, pa3, vd (X.cpu.gpr.rsp + 192#64) 8 (by omega) (by omega)]
-  · rw [hgZ, hg₃]
-    show Y₂.cpu.gpr.r14 = _
-    rw [hg₂, hg₁]
-  · rw [hgZ, hg₃]
-    show Y₂.cpu.gpr.r15 = _
-    rw [hg₂, hg₁]
+  · rw [z1, hs3, pa5]
+  · rw [z2, hg₂, h12]
+  · rw [z3, hs2, vd (X.cpu.gpr.rsp + 168#64) 8 (by omega) (by omega)]
+  · rw [z4, hs2, pa1, vd (X.cpu.gpr.rsp + 176#64) 8 (by omega) (by omega)]
+  · rw [z5, hs2, pa2, vd (X.cpu.gpr.rsp + 184#64) 8 (by omega) (by omega)]
+  · rw [z6, hs2, pa3, vd (X.cpu.gpr.rsp + 192#64) 8 (by omega) (by omega)]
+  · rw [z7, hg₂, hg₁]
+  · rw [z8, hg₂, hg₁]
 
 end FV7z.Opd
