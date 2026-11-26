@@ -1,3 +1,3 @@
-import FV7z.Lap.Holds
+import FV7z.Gae.Holds
 open FV7z
-#print axioms FV7z.Lap.lap_ok
+#print axioms FV7z.Gae.gae_ok
