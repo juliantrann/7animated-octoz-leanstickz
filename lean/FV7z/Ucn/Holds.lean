@@ -150,8 +150,7 @@ theorem vc_0 {g : Gprs} {f : Rflags} {V : Addr → Byte}
       | assumption
       | apply And.intro
       | intro)
-    all_goals exact x62 (c := 0#32) (by omega) (by simp [Mn]) (by first | decide | simp)
-      (by first | decide | simp) (by first | decide | simp) rfl
+    all_goals exact x62 (c := 0#32) (by omega) (by simp [Mn]) (by decide) (by decide) (by decide) rfl
   · have hX : (rdd(V0 V g, g.rdx) == 0) = false := by
       rw [beq_eq_false_iff_ne]
       have e := hnz 0 hp
@@ -400,7 +399,7 @@ theorem ucn_ok {Pu : BitVec 32 → State → (Addr → Byte) → Prop} {Pw : Bit
   intro Z V₂ t₃ hKZ hAZ hrZ hzs hzb hzp hz12 hz13 _ hPu
   refine (c_70 prof).run c hin (fun j' g' _ V' => j' = 79 ∧
       g' = { Z.cpu.gpr with rdi := rdq(V₂, X.cpu.gpr.rdi), rdx := zl cm, rsi := X.cpu.gpr.rdx } ∧ V' = V₂)
-    hKZ hAZ hrZ (vc_70 hzb fd0 fun _ => ⟨rfl, by rw [hz12, hzp], rfl⟩) ?_
+    hKZ hAZ hrZ (vc_70 hzb fd0 fun _ => ⟨rfl, by simp only [hz12, hzp], rfl⟩) ?_
   rintro j' g fl V₃ ⟨rfl, rfl, hV₃⟩ U t₄ hKU hAU hrU hgU -
   subst V₃
   have hsU : U.cpu.gpr.rsp = X.cpu.gpr.rsp - 40 := by rw [hgU]; exact hzs
