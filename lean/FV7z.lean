@@ -390,6 +390,10 @@ import FV7z.Imb.Holds
 import FV7z.Sfs.Blocks
 import FV7z.Sfs.Cuts
 import FV7z.Sfs.Holds
+import FV7z.Lemmas.BlkOps23
+import FV7z.Dnw.Blocks
+import FV7z.Dnw.Cuts
+import FV7z.Dnw.Holds
 import FV7z.Fno.Holds
 import FV7z.Pmd.Holds
 import FV7z.Sgw.Holds
