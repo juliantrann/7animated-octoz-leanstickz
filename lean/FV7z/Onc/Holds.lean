@@ -52,7 +52,6 @@ theorem nc41 {v : BitVec 64} (hx : arg32 v &&& 0x400240 = 0) :
   rw [BitVec.toNat_and, BitVec.toNat_setWidth] at h2
   have h3 : v.toNat % 2 ^ 32 &&& 0x400000 = 0 := land_sub_zero hx (by decide)
   have h5 := congrArg (· &&& 0x400000) h2
-  dsimp only at h5
   rw [Nat.and_assoc, show ((4259840#32).toNat &&& 0x400000 : Nat) = 0x400000 by decide, h3] at h5
   exact absurd h5 (by decide)
 
@@ -71,11 +70,13 @@ theorem fr_toNat {sp : Addr} (h : 88 ≤ sp.toNat) (d : Nat) (hd : d ≤ 88) :
   simp only [BitVec.toNat_add, BitVec.toNat_sub, BitVec.toNat_ofNat]
   omega
 
-theorem fr24 {sp : Addr} (h : 88 ≤ sp.toNat) : (sp - 88#64 + 24#64).toNat = sp.toNat - 64 :=
-  fr_toNat h 24 (by decide)
+theorem fr24 {sp : Addr} (h : 88 ≤ sp.toNat) : (sp - 88#64 + 24#64).toNat = sp.toNat - 64 := by
+  rw [fr_toNat h 24 (by decide)]
+  omega
 
-theorem fr48 {sp : Addr} (h : 88 ≤ sp.toNat) : (sp - 88#64 + 48#64).toNat = sp.toNat - 40 :=
-  fr_toNat h 48 (by decide)
+theorem fr48 {sp : Addr} (h : 88 ≤ sp.toNat) : (sp - 88#64 + 48#64).toNat = sp.toNat - 40 := by
+  rw [fr_toNat h 48 (by decide)]
+  omega
 
 /-- Bytes of the frame, from the frame's 88 bytes. -/
 theorem fr_ft {P : Addr → Prop} {a : Addr} (h : ∀ i < 88, P (Addr.add a i)) {d n : Nat} (hd : d + n ≤ 88) :
@@ -86,9 +87,14 @@ theorem fr_ft {P : Addr → Prop} {a : Addr} (h : ∀ i < 88, P (Addr.add a i)) 
 
 /-- The registers at the `syscall`, the function called with registers `g`. -/
 def g1 (g : Gprs) : Gprs :=
-  { g with rax := BitVec.setWidth 64 257#32, rdx := BitVec.setWidth 64 (BitVec.setWidth 32 g.rsi),
-    rsp := g.rsp - 88#64, rsi := g.rdi, rdi := BitVec.setWidth 64 4294967196#32,
-    r8 := BitVec.setWidth 64 (BitVec.setWidth 32 g.rsi), r9 := g.rdi,
+  { g with
+    rax := BitVec.setWidth 64 257#32
+    rdx := BitVec.setWidth 64 (BitVec.setWidth 32 g.rsi)
+    rsp := g.rsp - 88#64
+    rsi := g.rdi
+    rdi := BitVec.setWidth 64 4294967196#32
+    r8 := BitVec.setWidth 64 (BitVec.setWidth 32 g.rsi)
+    r9 := g.rdi
     r10 := BitVec.setWidth 64 (BitVec.setWidth 32 g.rsi &&& 64#32) }
 
 /-- The bytes at the `syscall`: `rdx` at `rsp - 40`, the stack guard at `rsp - 64`. -/
@@ -157,6 +163,10 @@ theorem can_err {V : Addr → Byte} {g : Gprs} {fb : Addr} {eb : List Byte} (heb
 
 variable {F : Footprint} {Wl : List Rgn}
 
+/-- What is left of a piece's condition: its footprint facts, equations, cases that cannot be. -/
+local macro "vc_fin" : tactic =>
+  `(tactic| repeat' (first | rfl | assumption | (intro h; exact absurd h (by decide)) | constructor | intro _))
+
 /-! ## The pieces -/
 
 /-- From the entry to the `syscall`, flags without `O_CREAT`, `O_TRUNC`, `O_TMPFILE`: `rdx` and the stack guard
@@ -190,8 +200,7 @@ theorem vc_76_ok {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (he : �
   | exact ⟨fun h => absurd h (by decide), fun _ => ⟨rfl, rfl, rfl⟩⟩
   | exact ⟨fun h => absurd h (by decide), fun _ => ⟨rfl, rfl⟩⟩
   | exact ⟨fun h => absurd h (by decide), fun _ => rfl⟩
-  | (repeat' (first | exact trivial | rfl | (intro h; exact absurd h (by decide)) | constructor
-      | intro _))
+  | vc_fin
 
 /-- From the `syscall` to where the ways meet, the kernel's answer `rax` an error: `errno` set, `eax` -1. -/
 theorem vc_76_err {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (he : WrErr g.rax)
@@ -205,12 +214,11 @@ theorem vc_76_err {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (he : 
   | exact ⟨fe, rfl⟩
   | exact ⟨⟨fe, rfl, rfl⟩, fun h => absurd h (by decide)⟩
   | exact ⟨fe, rfl, rfl⟩
-  | (repeat' (first | exact fe | rfl | (intro h; exact absurd h (by decide)) | constructor
-      | intro _))
+  | vc_fin
 
 /-- The check of the stack guard, to the `ret`. -/
 theorem vc_84 {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte}
-    (hl : ∀ i < 8, Foot F.data ((g.rsp + 24#64).add i)) (hfl : ∀ i < 8, Foot F.data ((fb + 40#64).add i))
+    (hl : ∀ i < 8, Foot F.data (Addr.add (g.rsp + 24#64) i)) (hfl : ∀ i < 8, Foot F.data ((fb + 40#64).add i))
     (hc : rdq(V, g.rsp + 24#64) = rdq(V, fb + 40#64)) :
     W_84 fb F Wl (fun j' g' _ V' => j' = 104 ∧ g' = { g with rcx := 0#64, rsp := g.rsp + 88#64 } ∧ V' = V)
       g f V := by
@@ -223,8 +231,7 @@ theorem vc_84 {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte}
   | exact ⟨hl, hfl, fun h => absurd h (by decide), fun _ => ⟨rfl, rfl⟩⟩
   | exact ⟨hl, hfl, fun h => absurd h (by decide), fun _ => ⟨rfl, rfl, rfl⟩⟩
   | exact ⟨hl, hfl⟩
-  | (repeat' (first | exact hl | exact hfl | rfl | (intro h; exact absurd h (by decide)) | constructor
-      | intro _))
+  | vc_fin
 
 /-- The registers a call keeps, after the `ret` (as `Osv.Back`), from the registers at the `syscall`. -/
 theorem oBack {gX gY G : Gprs} (hY : gY = g1 gX)
@@ -291,7 +298,10 @@ theorem onc_ok {fb : Addr} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBa
     rw [arg32_sw]
     exact hx
   have hpv : ∀ i < 8 * (m / 8 + 1), oV V X.cpu.gpr fb (X.cpu.gpr.rdi.add i) = V (X.cpu.gpr.rdi.add i) :=
-    fun i hi => oV_out h88 (by rw [toNat_add_of_fits hi (by omega)]; omega)
+    fun i hi => oV_out h88 (by
+      have e : (X.cpu.gpr.rdi.add i).toNat = X.cpu.gpr.rdi.toNat + i := toNat_add_of_fits hi (by omega)
+      rw [e]
+      omega)
   refine c.s_openat_re hrs hKY hAY hin (lt_len (by decide)) hrY (sys_74 _) (by rw [hgY]; rfl) hxY hm
     (by rw [hrsi]; exact htop) (by rw [hrsi]; exact hpl)
     (by rw [hrsi]; exact fun i hi => by rw [hpv i (by omega)]; exact hnz i hi)
@@ -314,7 +324,7 @@ theorem onc_ok {fb : Addr} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBa
   have hAm : Agree F (Y.withMem M).proc.mm.mem (oV V X.cpu.gpr fb) := by rw [← hmmS]; exact hAS
   have kk := fun Z t' => k (Y.withMem M) S Z r bs t' hKm hAm hY hrY hcS hmmS c₁
   have hr0 : ((sysGpr Y 2).set 0 r).rax = r := rfl
-  have hl24 : ∀ i < 8, Foot F.data ((((sysGpr Y 2).set 0 r).rsp + 24#64).add i) := fun i hi => by
+  have hl24 : ∀ i < 8, Foot F.data (Addr.add (((sysGpr Y 2).set 0 r).rsp + 24#64) i) := fun i hi => by
     have h := fr_ft hfd (d := 24) (n := 8) (by decide) i hi
     rw [← hspS] at h
     exact h
