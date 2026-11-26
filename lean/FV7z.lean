@@ -402,6 +402,13 @@ import FV7z.Memcpy.BwdN
 import FV7z.Memcpy.Entry
 import FV7z.Memcpy.EntryE
 import FV7z.Memcpy.PltC
+import FV7z.Strncmp.Code
+import FV7z.Strncmp.AshrT
+import FV7z.Strncmp.Ashr1
+import FV7z.Strncmp.Ashr2
+import FV7z.Strncmp.Ashr3
+import FV7z.Strncmp.Ashr4
+import FV7z.Strncmp.Ashr5
 import FV7z.Pmi.Holds
 import FV7z.Lemmas.Lock2
 import FV7z.Pml.Holds
