@@ -364,6 +364,7 @@ import FV7z.Strlen.Len
 import FV7z.Strlen.Plt
 import FV7z.Lemmas.Sse2b
 import FV7z.Lemmas.Sse2c
+import FV7z.Lemmas.Sse2d
 import FV7z.Lemmas.CopyP
 import FV7z.Strrchr.Code
 import FV7z.Strrchr.Steps

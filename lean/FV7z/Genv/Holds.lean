@@ -436,7 +436,7 @@ set_option maxHeartbeats 1600000 in
 epilogue is reached with `r12` null. -/
 theorem loop {pc : List Byte} (c : Seg prof F Wl L s₀ o) (hin : CodeIn L gev_at gev)
     (hic : CodeIn L 4198472#64 pc) (hc0 : 0 < pc.length) (hcmp : Str.NcmpAt prof L o 4198472#64 Pm)
-    (hO : P.Ok F Wl) (hPm : ∀ W, (∀ a, ¬ InFr P a → W a = P.V a) → Pm W)
+    (hgf : GotF F) (hO : P.Ok F Wl) (hPm : ∀ W, (∀ a, ¬ InFr P a → W a = P.V a) → Pm W)
     (kx : ∀ (X : State) (t : Nat) (W : Addr → Byte), KeptW Wl s₀ X → Agree F X.proc.mm.mem W → Mem P W →
       X.cpu.rip = gev_at.add 96 → X.cpu.gpr.rsp = P.g.rsp - 56#64 → X.cpu.gpr.r12 = 0 →
       GoG prof L o ev gP gE X t) :
@@ -548,21 +548,28 @@ theorem loop {pc : List Byte} (c : Seg prof F Wl L s₀ o) (hin : CodeIn L gev_a
         rw [hsi]
         simp only [Addr.add]
         bv_omega
-      refine hcmp m c hK₂ hA₂ hr₂ (hPm _ hM₂.out) hin (lt_len (show 188 < 224 by decide)) ?_ (fun k hk => ?_)
-        (by omega) (by omega) (by omega) (fun k hk => ?_) (fun x k hk hkd hx => ?_) ?_
+      refine hcmp m c hgf hK₂ hA₂ hr₂ (hPm _ hM₂.out) hin (lt_len (show 188 < 224 by decide)) ?_ (fun k hk => ?_)
+        (by omega) (by omega) (by omega) (fun k hk => ?_) (fun k hk hnz => ?_) (fun k hk _ => ?_) ?_
       · rw [hsp₂, vs (toBytesLE_length _ _) (by bv_omega)]
         exact ofBytesLE_toBytesLE (w := 64) (n := 8) rfl _
       · rw [hsp₂]
         exact c.hws _ (hO.stk k (by omega))
       · rw [adi, asi, vW _ (by omega), vN _ (by omega)]
         exact ⟨hpre k hk, by rw [hpre k hk]; exact hO.nnz _ (by omega)⟩
-      · rcases hx with hx | hx
-        · rw [edi] at hx
-          exact hO.spg i hi x (by rw [hx]; exact Nat.div_le_div_right (by omega))
-            (by rw [hx]; exact Nat.div_le_div_right (by omega))
-        · rw [esi] at hx
-          exact hO.npg x (by rw [hx]; exact Nat.div_le_div_right (by omega))
-            (by rw [hx]; exact Nat.div_le_div_right (by omega))
+      · -- the string: no 0 before its `k`-th byte from `rdi`, so `2 + k ≤ len i`
+        have hkl : 2 + k ≤ P.len i := by
+          refine Nat.not_lt.1 fun hl => hnz (P.len i - 2) (by omega) ?_
+          rw [adi, show 2 + (P.len i - 2) = P.len i by omega, vW _ (by omega)]
+          exact hO.sz i hi
+        refine ⟨by omega, fun x hx => ?_⟩
+        rw [edi] at hx
+        exact hO.spg i hi x (by rw [hx]; exact Nat.div_le_div_right (by omega))
+          (by rw [hx]; exact Nat.div_le_div_right (by omega))
+      · -- the name
+        refine ⟨by omega, fun x hx => ?_⟩
+        rw [esi] at hx
+        exact hO.npg x (by rw [hx]; exact Nat.div_le_div_right (by omega))
+          (by rw [hx]; exact Nat.div_le_div_right (by omega))
       · intro Z t' hKZ hAZ hrZ hspZ _ _ r3 hbxZ hbpZ h12Z h13Z h14Z h15Z
         have hLZ : Lp P i Z.cpu.gpr := by
           refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
@@ -599,6 +606,7 @@ theorem getenv_none {pl pc : List Byte} {e₂ : Addr} {code₂ : List Byte} {j�
     (c : Seg prof F Wl L s₀ o) (hin : CodeIn L gev_at gev)
     (hil : CodeIn L 4198664#64 pl) (hl0 : 0 < pl.length) (hlen : Str.LenAt prof L o 4198664#64 Pm)
     (hic : CodeIn L 4198472#64 pc) (hc0 : 0 < pc.length) (hcmp : Str.NcmpAt prof L o 4198472#64 Pm)
+    (hgf : GotF F)
     (hK : KeptW Wl s₀ X) (hA : Agree F X.proc.mm.mem P.V) (hrip : X.cpu.rip = gev_at) (hg : X.cpu.gpr = P.g)
     (hO : P.Ok F Wl) (hPm : ∀ W, (∀ a, ¬ InFr P a → W a = P.V a) → Pm W)
     (hin₂ : CodeIn L e₂ code₂) (h₂ : j₂ < code₂.length) (hret : rdq(P.V, P.g.rsp) = e₂.add j₂)
@@ -697,7 +705,7 @@ theorem getenv_none {pl pc : List Byte} {e₂ : Addr} {code₂ : List Byte} {j�
       rcases Nat.eq_zero_or_pos P.N with h | h
       · exact absurd (by rw [← e12] at *; exact hne) (by rw [e12]; have := hO.eend; rw [h] at this; simp [this])
       · exact h
-    exact loop c hin hic hc0 hcmp hO hPm kx P.N 0 rfl h0N Y₃ t₃ _ hK₃ hA₃ hM₂ hr₃ hL
+    exact loop c hin hic hc0 hcmp hgf hO hPm kx P.N 0 rfl h0N Y₃ t₃ _ hK₃ hA₃ hM₂ hr₃ hL
   · exact kx Y₃ t₃ _ hK₃ hA₃ hM₂ hr₃ (by rw [hg₃]; exact esp) (by rw [hg₃]; exact h0)
 
 end FV7z.Genv
