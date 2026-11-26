@@ -54,6 +54,10 @@ theorem bdiv (x : BitVec 32) : ((x.setWidth 64 * 3435973837#64) >>> 35).toNat = 
   rw [BitVec.toNat_ushiftRight, e1, Nat.shiftRight_eq_div_pow]
   exact mdiv _ hx
 
+/-- `imul64_eq` with the width written `128` (as `simp` leaves `2 * 64`). -/
+theorem imul64_eq128 (x y : BitVec 64) : (x.signExtend 128 * y.signExtend 128).setWidth 64 = x * y :=
+  imul64_eq x y
+
 theorem dstep (N k : Nat) : N / 10 ^ (k + 1) = N / 10 ^ k / 10 := by
   rw [Nat.div_div_eq_div_mul]
   first | rfl | rw [Nat.pow_succ] | simp [Nat.pow_succ]
@@ -291,6 +295,7 @@ theorem vc_88c {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (hr : g.r
   wpx [W_88, W_134, o5, o6, Op.imul64, Op.shr64, imul64_eq, hb, Bool.true_eq_false, Bool.false_eq_true,
     false_implies, implies_true, Bool.not_true, Bool.not_false]
   all_goals vcx
+  all_goals (try simp only [imul64_eq128, imul64_eq])
   all_goals (simp only [BitVec.toNat_setWidth, bdiv]; omega)
 
 /-- The first loop, the number at most 99: its last digit in the frame, the first at `rsi`, to the second loop
