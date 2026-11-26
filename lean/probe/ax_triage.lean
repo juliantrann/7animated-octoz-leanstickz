@@ -1,5 +1,4 @@
-import FV7z.Lemmas.TestMr
-import FV7z.Bsg.Cuts
+import FV7z.Bsg.Holds
 open FV7z
-#print axioms FV7z.OpIA.testmr_rip
-#print axioms FV7z.Bsg.spAll
+#print axioms FV7z.Bsg.bsg_ok
+#print axioms FV7z.Bsg.fill_out
