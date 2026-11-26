@@ -1,3 +1,3 @@
-import FV7z.Ckw.Holds
+import FV7z.Cib.Holds
 open FV7z
-#print axioms FV7z.Ckw.ckw_ok
+#print axioms FV7z.Cib.cib_ok
