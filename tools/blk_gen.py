@@ -119,6 +119,16 @@ FNS = {
     # glibc 2.31 sysdeps/unix/sysv/linux/getdents64.c (`__getdents64`, aliased `__getdents` on x86_64): `count` capped
     # at `INT_MAX` (`cmova`), then `getdents64` (217) as is: no conversion of the entries. Stops: the `ret` (0x23), the
     # padding after it (0x24), the `ret` after `errno` is set (0x3b); the `syscall` (0x19) is a step of its own.
+    # glibc 2.31 malloc/malloc.c (`__libc_calloc`), the way of one thread with `__malloc_hook` null and the tcache
+    # made: `n * m` (`mul`, no overflow), the top chunk's size read, `_int_malloc (&main_arena, n)` (0x7b), the chunk
+    # of the main arena, not mmapped, `perturb_byte` 0, the size to clear (`min` with the old top's size when the
+    # chunk is the old top), cleared inline (to 72 bytes) or by `memset` (0x2cd). Stops: the `ret` (0xd1), the padding
+    # after it (0xd2), the product too big (0x190), `_int_malloc` gave null (0x1b0), the hook set (0x1c0), more than
+    # one thread (0x1f0, 0x260), no tcache (0x240), mmapped and `perturb_byte` set (0x2e0), not of the main arena
+    # (0x13b), the asserts (0x151, 0x366).
+    "cal": dict(grp="Cal", cn="__libc_calloc", a=0x634a60, n=901, pos=True, fs=True,
+                stops=(0xd1, 0xd2, 0x190, 0x1b0, 0x1c0, 0x1f0, 0x260, 0x240, 0x2e0, 0x13b, 0x151, 0x366), calls=True,
+                tag="PLAN.md §M, M1", src="glibc 2.31's `__libc_calloc` (`malloc/malloc.c`; `objdump -d`)"),
     "gdn": dict(grp="Gdn", cn="__getdents", a=0x6a2820, n=0x3c, pos=True, fs=True, stops=(0x23, 0x24, 0x3b),
                 calls=True, tag="PLAN.md §M, M1",
                 src="glibc 2.31's `__getdents` (`sysdeps/unix/sysv/linux/getdents64.c`; `objdump -d`)"),
