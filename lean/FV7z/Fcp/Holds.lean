@@ -171,7 +171,7 @@ theorem loop (c : Seg prof F Wl L s₀ o) (hin : CodeIn L fcp_at fcp) {V : Addr 
       refine ih (j + 1) (by omega) Y t₁ hKY hAY hrY (by rw [hgY]; exact ea) (by rw [hgY]; exact hdi) ?_
         (by rw [hgY]; exact hcx) (fun i hi => ?_) (hkp.trans (kp_w hgY))
       · rw [hgY]
-        show BitVec.setWidth 8 (BitVec.setWidth 64 (BitVec.setWidth 32 (_ (X.cpu.gpr.rax + 1#64)))) = _
+        dsimp only
         rw [sw8b, ea]
       · rcases Nat.lt_or_ge i (j + 1) with h | h
         · exact hne i (by omega)
@@ -217,7 +217,7 @@ theorem fcp_ok (c : Seg prof F Wl L s₀ o) (hin : CodeIn L fcp_at fcp) {X : Sta
       (by rw [hgY]; exact (addr_add_zero _).symm) (by rw [hgY]; try rfl) ?_ (by rw [hgY]; exact sw8x _) (fun i hi => ?_)
       (kp_w hgY)
     · rw [hgY]
-      show BitVec.setWidth 8 (BitVec.setWidth 64 (BitVec.setWidth 32 (_ X.cpu.gpr.rdi))) = _
+      dsimp only
       rw [sw8b, addr_add_zero]
     · obtain rfl : i = 0 := by omega
       exact he
