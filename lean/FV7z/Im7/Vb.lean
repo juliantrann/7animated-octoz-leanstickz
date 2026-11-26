@@ -31,13 +31,14 @@ def Pb (F : Footprint) (Wl : List Rgn) (I : Nat) : Prop :=
 
 set_option maxHeartbeats 400000000 in
 set_option maxRecDepth 100000 in
-theorem vcB100 {F : Footprint} {Wl : List Rgn} : Pb F Wl 100 := by
+/-- `Pb I` for every index `97 ≤ I ≤ 126`: one `lwp` per piece for each `I` (`ksplit`). -/
+theorem vcBall {F : Footprint} {Wl : List Rgn} {I : Nat} (h1 : 97 ≤ I) (h2 : I ≤ 126) : Pb F Wl I := by
   intro fb S nb g₀ g f V₀ V hbx h13 hsp hix hF c340 z340 c1099 hS hlo hfb hfc sk htc htb hun hm3 hW htf hsw hsd
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at hbx h13 hsp ⊢
   subst hbx h13 hsp
-  simp only [Nat.reduceMul, Nat.reduceAdd] at sk hix
-  have qk := rd_below (x := 7942368#64) (n := 8) (hx := by rw [BitVec.toNat_ofNat]; omega) (hS := hS)
+  have qk := rd_below (x := BitVec.ofNat 64 (7940768 + 16 * I)) (n := 8) (hx := by rw [BitVec.toNat_ofNat]; omega)
+    (hS := hS)
   have q2 := rd_below (x := 7940680#64) (n := 4) (hx := by rw [BitVec.toNat_ofNat]; omega) (hS := hS)
   have q3 := rd_below (n := 8) (hx := hfb) (hS := hS)
   have q5 := rd_below (x := 7940592#64) (n := 8) (hx := by rw [BitVec.toNat_ofNat]; omega) (hS := hS)
@@ -48,17 +49,20 @@ theorem vcB100 {F : Footprint} {Wl : List Rgn} : Pb F Wl 100 := by
   have D : ∀ (x : Addr) (n : Nat), 7940480 ≤ x.toNat → x.toNat + n ≤ 7943136 →
       ∀ i < n, Foot F.data (Addr.add x i) :=
     fun x n h1 h2 i hi => hW _ (by simp only [Addr.add]; bv_omega) (by simp only [Addr.add]; bv_omega)
-  -- 512 → 1115
-  lwp [W_512, W_1069, W_1099, o9, o10, o11,
-    q2, q3, q5, q6, q8, sk, qk, hix, hS, hS', c340, z340, c1099, hfc, htb, htc, hun, hm3, BitVec.xor_self]
-  lc7 [q2, q3, q5, q6, q8, sk, qk, hix, hS, hS', c340, z340, c1099, hfc, htb, htc, hun, hm3, BitVec.xor_self]
-  -- 1115 → 2012
-  any_goals lwp [W_1115, W_1138, W_1968, W_1977, o12, o13, o14, o15,
-    q2, q3, q5, q6, q8, sk, qk, hix, hS, hS', c340, z340, c1099, hfc, htb, htc, hun, hm3, BitVec.xor_self]
-  lc7 [q2, q3, q5, q6, q8, sk, qk, hix, hS, hS', c340, z340, c1099, hfc, htb, htc, hun, hm3, BitVec.xor_self]
-  -- 2012 → 2549
-  any_goals lwp [W_2012, W_2048, W_2480, W_2488, W_2505, o16, o17, o19, o20, o21,
-    q2, q3, q5, q6, q8, sk, qk, hix, hS, hS', c340, z340, c1099, hfc, htb, htc, hun, hm3, BitVec.xor_self]
-  lc7 [q2, q3, q5, q6, q8, sk, qk, hix, hS, hS', c340, z340, c1099, hfc, htb, htc, hun, hm3, BitVec.xor_self]
+  ksplit I from 97 to 126 using h1 h2
+  all_goals (
+    simp only [Nat.reduceMul, Nat.reduceAdd] at sk qk
+    -- 512 → 1115
+    lwp [W_512, W_1069, W_1099, o9, o10, o11,
+      q2, q3, q5, q6, q8, sk, qk, hix, hS, hS', c340, z340, c1099, hfc, htb, htc, hun, hm3, BitVec.xor_self]
+    lc7 [q2, q3, q5, q6, q8, sk, qk, hix, hS, hS', c340, z340, c1099, hfc, htb, htc, hun, hm3, BitVec.xor_self]
+    -- 1115 → 2012
+    any_goals lwp [W_1115, W_1138, W_1968, W_1977, o12, o13, o14, o15,
+      q2, q3, q5, q6, q8, sk, qk, hix, hS, hS', c340, z340, c1099, hfc, htb, htc, hun, hm3, BitVec.xor_self]
+    lc7 [q2, q3, q5, q6, q8, sk, qk, hix, hS, hS', c340, z340, c1099, hfc, htb, htc, hun, hm3, BitVec.xor_self]
+    -- 2012 → 2549
+    any_goals lwp [W_2012, W_2048, W_2480, W_2488, W_2505, o16, o17, o19, o20, o21,
+      q2, q3, q5, q6, q8, sk, qk, hix, hS, hS', c340, z340, c1099, hfc, htb, htc, hun, hm3, BitVec.xor_self]
+    lc7 [q2, q3, q5, q6, q8, sk, qk, hix, hS, hS', c340, z340, c1099, hfc, htb, htc, hun, hm3, BitVec.xor_self])
 
 end FV7z.Im7
