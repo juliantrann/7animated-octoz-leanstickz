@@ -166,6 +166,17 @@ theorem vX58 (hm : 33 < m) (hO : Ot g₀ V₀ V) (hd : ∀ i < 14, Foot F.data (
   all_goals first
     | exact e64 hO (by omega) rfl
 
+/-- Probe (temporary): the goals of `vX42` after `wpx`. -/
+theorem vX42p {j : Nat} (hj : j ≤ 1) (hm : 33 < m) (hO : Ot g₀ V₀ V) (hb : g₀.rdi.toNat + 14 ≤ 2 ^ 64)
+    (hr : ∀ i < 14, Foot F.data (Addr.add g₀.rsi i)) (hd : ∀ i < 14, Foot F.data (Addr.add g₀.rdi i))
+    (hw : ∀ i < 14, Foot Wl (Addr.add g₀.rdi i)) :
+    W_42 F Wl (Nx g₀ V₀ m) (G6 g₀ a c d (g₀.rsi + BitVec.ofNat 64 j) g₀.rdi x) f V := by
+  obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g₀
+  dsimp only [G6]
+  wpx [W_42, o4, Op.cmpmi, BitVec.xor_self]
+  trace_state
+  all_goals sorry
+
 set_option maxHeartbeats 1000000 in
 /-- 42: `Size` read and stored, the props byte checked, to 64 or 58. -/
 theorem vX42 {j : Nat} (hj : j ≤ 1) (hm : 33 < m) (hO : Ot g₀ V₀ V) (hb : g₀.rdi.toNat + 14 ≤ 2 ^ 64)
@@ -182,7 +193,7 @@ theorem vX42 {j : Nat} (hj : j ≤ 1) (hm : 33 < m) (hO : Ot g₀ V₀ V) (hb : 
     | exact f0
     | exact f5
     | exact f9
-    | (refine vX58 hm ?_ hd; exact oSt0 hO hb (toBytesLE_length _ _) (by decide))
+    | ((with_reducible refine vX58 hm ?_ hd) <;> exact oSt0 hO hb (toBytesLE_length _ _) (by decide))
     | with_reducible rfl
     | apply And.intro
     | intro _)
