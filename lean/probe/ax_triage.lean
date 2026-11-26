@@ -1,5 +1,2 @@
-import FV7z.Fno.Holds
-import FV7z.Pmd.Holds
+import FV7z.Sgw.Probe
 open FV7z
-#print axioms FV7z.Fno.fno_ok
-#print axioms FV7z.Pmd.pmd_ok
