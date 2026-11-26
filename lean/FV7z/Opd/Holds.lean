@@ -183,8 +183,11 @@ abbrev aG (g : Gprs) : Gprs := { g with rax := 0#64, rsp := aQ g.rsp, rsi := 591
 /-- At `__fxstat`'s call: `ebp` and `esi` the descriptor (`eax`), `edi` 1 (`_STAT_VER`), `rdx` the `struct stat`
 (`rsp`). -/
 abbrev bG (g : Gprs) : Gprs :=
-  { g with rdx := g.rsp, rbp := BitVec.setWidth 64 (BitVec.setWidth 32 g.rax),
-    rsi := BitVec.setWidth 64 (BitVec.setWidth 32 g.rax), rdi := 1#64 }
+  { g with
+    rdx := g.rsp
+    rbp := BitVec.setWidth 64 (BitVec.setWidth 32 g.rax)
+    rsi := BitVec.setWidth 64 (BitVec.setWidth 32 g.rax)
+    rdi := 1#64 }
 
 /-- The buffer's size from `st_blksize` (`x`): at least 32 KiB, at most 1 MiB. -/
 def bsz (x : BitVec 64) : BitVec 64 :=
@@ -196,16 +199,20 @@ abbrev cG (V : Addr → Byte) (g : Gprs) : Gprs :=
 
 /-- At the `ret`: `rax` the `DIR` (`r12`), the four registers popped. -/
 abbrev dG (V : Addr → Byte) (g : Gprs) : Gprs :=
-  { g with rax := g.r12, rbx := rdq(V, g.rsp + 168#64), rbp := rdq(V, g.rsp + 168#64 + 8),
-    r12 := rdq(V, g.rsp + 168#64 + 8 + 8), r13 := rdq(V, g.rsp + 168#64 + 8 + 8 + 8),
+  { g with
+    rax := g.r12
+    rbx := rdq(V, g.rsp + 168#64)
+    rbp := rdq(V, g.rsp + 168#64 + 8)
+    r12 := rdq(V, g.rsp + 168#64 + 8 + 8)
+    r13 := rdq(V, g.rsp + 168#64 + 8 + 8 + 8)
     rsp := g.rsp + 168#64 + 8 + 8 + 8 + 8 }
 
 variable {F : Footprint} {Wl : List Rgn}
 
 /-- What is left of a piece's condition: its footprint facts, equations, cases that cannot be. -/
 local macro "vfin" : tactic =>
-  `(tactic| repeat' (first | rfl | assumption | trivial | (intro h; exact absurd h (by decide)) | apply And.intro |
-    intro _))
+  `(tactic| repeat' (first | with_reducible rfl | assumption | exact True.intro | (intro h; exact absurd h (by omega)) |
+    apply And.intro | intro _))
 
 /-! ## The pieces -/
 
@@ -274,7 +281,8 @@ theorem vc_153 {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (hnz : g.
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at hnz ⊢
   have hnz' : rax ≠ (0 : BitVec 64) := hnz
-  wpx [W_153, o7, BitVec.and_self, hnz, hnz', decide_false, Bool.false_eq_true, false_implies, Bool.not_false,
+  have hb0 : (rax == 0) = false := beq_false_of_ne hnz'
+  wpx [W_153, o7, BitVec.and_self, hnz, hnz', hb0, decide_false, Bool.false_eq_true, false_implies, Bool.not_false,
     eq_self_iff_true, true_implies]
   all_goals vfin
 
@@ -343,7 +351,8 @@ theorem opd_open {fb : Addr} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fs
       (frw hfw (fa (d := 184) (by omega) (by rw [e3, e8]; omega)) (by decide))
       (frw hfw (fa (d := 176) (by omega) (by rw [e4, e8]; omega)) (by decide)) hcl
       (frw hfw (fa (d := 160) (by omega) (by rw [e6, e8]; omega)) (by decide)) fr) ?_
-  rintro j' g fl V₁ ⟨rfl, rfl, rfl⟩ Y t₁ hKY hAY hrY hgY -
+  rintro j' g fl V₁ ⟨rfl, rfl, hV⟩ Y t₁ hKY hAY hrY hgY -
+  subst V₁
   have hsY : Y.cpu.gpr.rsp = aQ X.cpu.gpr.rsp := by rw [hgY]
   refine c.s_call hKY hAY hin (lt_len (by decide)) hrY (call_50 _) hinO (Onc.lt_len (j := 0) (by decide))
     (by decide) (by rw [hsY]; exact frw hfw (fa (d := 0) (by omega) (by rw [e7, e8]; omega)) (by decide)) ?_
@@ -364,7 +373,8 @@ theorem opd_stat {fb : Addr} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fs
     GoG prof L o gev gP gE X t := by
   refine (c_55 prof fb).run c hfs hin (fun j' g' _ V' => j' = 75 ∧ g' = bG X.cpu.gpr ∧ V' = V) hK hA hrip
     (vc_55 hs) ?_
-  rintro j' g fl V₁ ⟨rfl, rfl, rfl⟩ Y t₁ hKY hAY hrY hgY -
+  rintro j' g fl V₁ ⟨rfl, rfl, hV⟩ Y t₁ hKY hAY hrY hgY -
+  subst V₁
   have hsY : Y.cpu.gpr.rsp = X.cpu.gpr.rsp := by rw [hgY]
   refine c.s_call hKY hAY hin (lt_len (by decide)) hrY (call_75 _) hinX (Fxs.lt_len (j := 0) (by decide))
     (by decide) (by rw [hsY]; exact hw) ?_
@@ -389,7 +399,8 @@ theorem opd_alloc {fb : Addr} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.f
     GoG prof L o gev gP gE X t := by
   refine (c_80 prof fb).run c hfs hin (fun j' g' _ V' => j' = 148 ∧ g' = cG V X.cpu.gpr ∧ V' = V) hK hA hrip
     (vc_80 hs hm f24 f56) ?_
-  rintro j' g fl V₁ ⟨rfl, rfl, rfl⟩ Y t₁ hKY hAY hrY hgY -
+  rintro j' g fl V₁ ⟨rfl, rfl, hV⟩ Y t₁ hKY hAY hrY hgY -
+  subst V₁
   have hsY : Y.cpu.gpr.rsp = X.cpu.gpr.rsp := by rw [hgY]
   refine c.s_call hKY hAY hin (lt_len (by decide)) hrY (call_148 _) hinM (Mal.lt_len (j := 0) (by decide))
     (by decide) (by rw [hsY]; exact hw) ?_
@@ -453,7 +464,8 @@ theorem opd_ret {fb : Addr} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsB
   -- to the stores
   refine (c_153 prof fb).run c hfs hin (fun j' g' _ V' => j' = 165 ∧ g' = { X.cpu.gpr with r12 := X.cpu.gpr.rax } ∧
       V' = V) hK hA hrip (vc_153 hnz) ?_
-  rintro j' g fl V₁ ⟨rfl, rfl, rfl⟩ Y₁ t₁ hK₁ hA₁ hr₁ hg₁ -
+  rintro j' g fl V₁ ⟨rfl, rfl, hV⟩ Y₁ t₁ hK₁ hA₁ hr₁ hg₁ -
+  subst V₁
   have h12 : Y₁.cpu.gpr.r12 = X.cpu.gpr.rax := by rw [hg₁]
   have hbp : Y₁.cpu.gpr.rbp = X.cpu.gpr.rbp := by rw [hg₁]
   have hbx : Y₁.cpu.gpr.rbx = X.cpu.gpr.rbx := by rw [hg₁]
@@ -466,7 +478,8 @@ theorem opd_ret {fb : Addr} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsB
       (by rw [h12]; exact frw hdw (fa (d := 24) (by omega) a24) (by decide))
       (by rw [h12]; exact frw hdw (fa (d := 32) (by omega) a32) (by decide))
       (by rw [h12]; exact frw hdw (fa (d := 40) (by omega) a40) (by decide))) ?_
-  rintro j' g fl V₂ ⟨rfl, rfl, rfl⟩ Y₂ t₂ hK₂ hA₂ hr₂ hg₂ -
+  rintro j' g fl V₂ ⟨rfl, rfl, hV⟩ Y₂ t₂ hK₂ hA₂ hr₂ hg₂ -
+  subst V₂
   rw [h12, hbp, hbx] at hA₂
   have hs2 : Y₂.cpu.gpr.rsp = X.cpu.gpr.rsp := by rw [hg₂, hs1]
   -- the stack guard
@@ -480,7 +493,8 @@ theorem opd_ret {fb : Addr} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsB
       (by rw [hs2]; exact frw hfd (fa (d := 176) (by omega) q176) (by decide))
       (by rw [hs2]; exact frw hfd (fa (d := 184) (by omega) q184) (by decide))
       (by rw [hs2]; exact frw hfd (fa (d := 192) (by omega) q192) (by decide))) ?_
-  rintro j' g fl V₃ ⟨rfl, rfl, rfl⟩ Y₃ t₃ hK₃ hA₃ hr₃ hg₃ -
+  rintro j' g fl V₃ ⟨rfl, rfl, hV⟩ Y₃ t₃ hK₃ hA₃ hr₃ hg₃ -
+  subst V₃
   have hs3 : Y₃.cpu.gpr.rsp = X.cpu.gpr.rsp + 168#64 + 8 + 8 + 8 + 8 := by
     rw [hg₃]
     show Y₂.cpu.gpr.rsp + 168#64 + 8 + 8 + 8 + 8 = _
