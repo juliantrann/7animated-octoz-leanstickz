@@ -1,2 +1,2 @@
-import FV7z.Strncmp.Sse2
+import FV7z.Strncmp.Plt
 open FV7z
