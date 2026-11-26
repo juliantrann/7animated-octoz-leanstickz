@@ -102,6 +102,11 @@ FNS = {
     # is a step of its own.
     "cls": dict(grp="Close", cn="__close", a=0x5ff3b0, n=0x85, pos=True, fs=True, stops=(0x1f, 0x20, 0x71), calls=True,
                 tag="PLAN.md §M, M1", src="glibc 2.31's `__close` (`sysdeps/unix/sysv/linux/close.c`; `objdump -d`)"),
+    # glibc 2.31 sysdeps/unix/sysv/linux/read.c (`SYSCALL_CANCEL`). Stops: the `ret` (0x1a), the process has more
+    # than one thread (0x20: `multiple_threads` is not 0), the `ret` after `errno` is set (0x83); the `syscall` (0x10)
+    # is a step of its own (`eax` is 0, `read`'s number, from the `test` of `multiple_threads`).
+    "rd": dict(grp="Read", cn="__libc_read", a=0x5ff310, n=0x99, pos=True, fs=True, stops=(0x1a, 0x20, 0x83), calls=True,
+               tag="PLAN.md §M, M1", src="glibc 2.31's `__libc_read` (`sysdeps/unix/sysv/linux/read.c`; `objdump -d`)"),
     # glibc 2.31 sysdeps/unix/sysv/linux/_exit.c (`_Exit`): `exit_group`, then (never, as the run ends there) `exit`
     # and `hlt`. Stop: after the `syscall` `exit_group` (0x36); the `syscall` (0x34) is a step of its own.
     "ext": dict(grp="Exit", cn="_Exit", a=0x664a70, n=0x58, pos=True, fs=True, stops=(0x36,), calls=True,

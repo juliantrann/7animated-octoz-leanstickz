@@ -28,6 +28,7 @@ theorem vc_0 {g : Gprs} {f : Rflags} {V : Addr → Byte} :
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   wpx [W_0, o0, Op.shl64]
   first
+  | exact fun _ => trivial
   | trivial
   | exact ⟨rfl, rfl⟩
   | exact ⟨rfl, rfl, rfl⟩
