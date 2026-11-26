@@ -190,6 +190,11 @@ FNS = {
     # `ISzAlloc_Free (alloc, p->dic)` (28), `p->dic` = NULL. Stop: the `ret` (45).
     "ldf": dict(grp="Ldf", cn="LzmaDec_Free", a=0x42be70, n=46, pos=True, stops=(45,), calls=True,
                 tag="PLAN.md §M, M1", src="7-Zip 26.06's `LzmaDec_Free` (`C/LzmaDec.c`; `objdump -d`)"),
+    # 7-Zip's C/LzmaDec.c `LzmaDec_AllocateProbs2 (p, propNew, alloc)` (`lc` = esi, `lp` = edx): `numProbs` = 0x7c0 +
+    # (0x300 << (lc + lp)); the same `probs` kept (0x26 to 0x57), else `LzmaDec_FreeProbs` (0x2e), `alloc->Alloc`
+    # (0x3b), SZ_ERROR_MEM on NULL (0x60). Stop: the `ret` (0x5b).
+    "lap": dict(grp="Lap", cn="LzmaDec_AllocateProbs2", a=0x42be00, n=103, pos=True, stops=(0x5b,), calls=True,
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `LzmaDec_AllocateProbs2` (`C/LzmaDec.c`; `objdump -d`)"),
     "lfp": dict(grp="Lfp", cn="LzmaDec_FreeProbs", a=0x42bde0, n=31, pos=True, stops=(30,), calls=True,
                 tag="PLAN.md §M, M1", src="7-Zip 26.06's `LzmaDec_FreeProbs` (`C/LzmaDec.c`; `objdump -d`)"),
     # 7-Zip's C/LzmaDec.c `LzmaDec_InitDicAndState (p, initDic, initState)`: `remainLen` = kMatchSpecLenStart + 1,
@@ -390,6 +395,17 @@ FNS = {
     "lhp": dict(grp="Lhp", cn="CHeader_Parse", a=0x49ec00, n=0xa9, pos=True, stops=(0x43,),
                 tag="PLAN.md §M, M1", src="7-Zip 26.06's `NArchive::NLzma::CHeader::Parse` (`CPP/7zip/Archive/LzmaHandler.cpp`; "
                 "`objdump -d`)"),
+    # 7-Zip's CPP/Common/UTFConvert.cpp `Utf16_To_Utf8_Calc (src, srcLim, flags)` (`wchar_t` 4 bytes): the
+    # UTF-8 size of the characters in [src, srcLim), a loop from 0x18 back to itself; two `ret`s (0x7a, 0x88).
+    "u8c": dict(grp="U8c", cn="Utf16_To_Utf8_Calc", a=0x4518e0, n=0xf9, pos=True, stops=(0x7a, 0x88),
+                tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `Utf16_To_Utf8_Calc` (`CPP/Common/UTFConvert.cpp`; `objdump -d`)"),
+    # 7-Zip's CPP/Common/UTFConvert.cpp `Utf16_To_Utf8 (dest, src, srcLim, flags)` (`wchar_t` 4 bytes): the
+    # characters in [src, srcLim) to UTF-8 at dest, the end returned; the outer loop at 0x20, the continuation
+    # bytes' loop at 0x98; one `ret` (0xc1).
+    "u8w": dict(grp="U8w", cn="Utf16_To_Utf8", a=0x4519e0, n=0x241, pos=True, stops=(0xc1,),
+                tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `Utf16_To_Utf8` (`CPP/Common/UTFConvert.cpp`; `objdump -d`)"),
     "lpd": dict(grp="Lpd", cn="LzmaProps_Decode", a=0x42bea0, n=0x66, pos=True, stops=(0x56, 0x65),
                 tag="PLAN.md §M, M1", src="7-Zip 26.06's `LzmaProps_Decode` (`C/LzmaDec.c`; `objdump -d`)"),
     "stu": dict(grp="Stu", cn="ConvertStringToUInt64", a=0x451330, n=0x7c, pos=True, stops=(0x55, 0x68, 0x77),
@@ -1361,8 +1377,8 @@ macro "dec_rfl" : tactic => `(tactic| (intro feat f; rfl))
             w = f"(f.cond {cc} = true → Q {tg} g (rfz f) V) ∧ (f.cond {cc} = false → Q {nx} g (rfz f) V)"
             rule = "Sp.jcc"
         B.append(f"theorem spj_{off} (prof : Profile){EB}{FB} : {SP} prof {nm}{EA}{FA} {off} fun _ _ Q g f V =>\n"
-                 f"    {w} :=\n  {FS0}{rule} (j := {off}) (tgt := {tg}) (Dec.shift (j{jk}_0 _) wj_{off} (by decide)) "
-                 f"(lt_len (by decide)) (by decide) (lt_len (by decide)){FS1}")
+                 f"    {w} :=\n  {FS0}{rule} (j := {off}) (tgt := {tg}) (Dec.shift (j{jk}_0 _) wj_{off} (by decide))\n"
+                 f"    (lt_len (by decide)) (by decide) (lt_len (by decide)){FS1}")
         if run:
             B.append(f"theorem sp_{l} (prof : Profile){EB}{FB} : {SP} prof {nm}{EA}{FA} {l} fun F Wl Q => wp F Wl {ok} fun g f V =>\n"
                      f"    {w} :=\n  {SP}.{bk}_then ({bl}) (spj_{off} prof{ER}{FA})\n")
