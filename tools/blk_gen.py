@@ -380,11 +380,6 @@ FNS = {
     "cib": dict(grp="Cib", cn="NCompress::NLzma::CDecoder::CreateInputBuffer", a=0x57fcc0, n=73, pos=True,
                 stops=(0x41, 0x48), calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `CDecoder::CreateInputBuffer` (`CPP/7zip/Compress/LzmaDecoder.cpp`; `objdump -d`)"),
-    # 7-Zip 26.06 CPP/Windows/TimeUtils.cpp `FiTime_To_FILETIME_ns100 (ts, ft, ns100)`: `UnixTime64_To_FileTime64`
-    # of `ts.tv_sec` (the `call`, 0x14), plus `tv_nsec / 100`; the remainder to `ns100`; the `ret` (0x5f).
-    "ftn": dict(grp="Ftn", cn="NWindows::NTime::FiTime_To_FILETIME_ns100", a=0x458db0, n=96, pos=True, stops=(0x5f,),
-                calls=True, tag="PLAN.md §M, M1",
-                src="7-Zip 26.06's `FiTime_To_FILETIME_ns100` (`CPP/Windows/TimeUtils.cpp`; `objdump -d`)"),
     "sfs": dict(grp="Sfs", cn="SysFreeString", a=0x5a00c0, n=25, pos=True, stops=(0xd, 0x18),
                 tag="PLAN.md §M, M1", src="7-Zip 26.06's `SysFreeString` (`CPP/Common/MyWindows.cpp`; `objdump -d`)"),
     # 7-Zip's CPP/Common/Wildcard.cpp `DoesNameContainWildcard (const UString &)`: the `wchar_t`s (4 bytes, at
