@@ -106,8 +106,8 @@ theorem nok {V : Addr → Byte} {u a : Addr} : Ok V u a 0 := fun _ hk => absurd 
 
 set_option maxHeartbeats 1000000 in
 /-- The entry: byte 0 not character 0, to 56; else the loop's head with index 0. -/
-theorem vc_0 {N : Nat} {f : Rflags} (hFa : ∀ k ≤ N, ∀ j < 1, Foot F.data ((g₀.rsi + BitVec.ofNat 64 k).add j))
-    (hFu : ∀ k ≤ N, ∀ j < 4, Foot F.data ((g₀.rdi + BitVec.ofNat 64 k * 4#64).add j)) :
+theorem vc_0 {N : Nat} {f : Rflags} (hFa : ∀ k ≤ N, ∀ j < 1, Foot F.data (Addr.add (g₀.rsi + BitVec.ofNat 64 k) j))
+    (hFu : ∀ k ≤ N, ∀ j < 4, Foot F.data (Addr.add (g₀.rdi + BitVec.ofNat 64 k * 4#64) j)) :
     W_0 F Wl (Nx g₀ V₀ N (N + 2)) g₀ f V₀ := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g₀
   dsimp only at hFa hFu ⊢
@@ -120,18 +120,24 @@ theorem vc_0 {N : Nat} {f : Rflags} (hFa : ∀ k ≤ N, ∀ j < 1, Foot F.data (
   · have hc : (cb V₀ rsi 0).setWidth 32 ≠ cu V₀ rdi 0 := by
       simp only [cb, cu, BitVec.add_zero, BitVec.zero_mul]
       exact nb_t h
-    exact e56 (by omega) nok hc rfl
+    refine e56 (i := 0) (by omega) ?_ ?_ ?_
+    · exact nok
+    · simpa only using hc
+    · rfl
   · have hc : (cb V₀ rsi 0).setWidth 32 = cu V₀ rdi 0 := by
       simp only [cb, cu, BitVec.add_zero, BitVec.zero_mul]
       exact nb_f h
-    exact e40 (Nat.zero_le _) (by omega) hc nok (by simp only [G40, cb, BitVec.add_zero, z0])
+    refine e40 (i := 0) (Nat.zero_le _) (by omega) ?_ ?_ ?_
+    · simpa only using hc
+    · exact nok
+    · simp only [G40, cb, BitVec.add_zero, z0]
 
 set_option maxHeartbeats 1000000 in
 /-- The loop's head, byte `i`: 0, 1 at 49; else byte `i + 1` not character `i + 1`, to 56; else the head with
 `i + 1`. -/
 theorem vc_40 {N n : Nat} {g : Gprs} {f : Rflags}
-    (hFa : ∀ k ≤ N, ∀ j < 1, Foot F.data ((g₀.rsi + BitVec.ofNat 64 k).add j))
-    (hFu : ∀ k ≤ N, ∀ j < 4, Foot F.data ((g₀.rdi + BitVec.ofNat 64 k * 4#64).add j))
+    (hFa : ∀ k ≤ N, ∀ j < 1, Foot F.data (Addr.add (g₀.rsi + BitVec.ofNat 64 k) j))
+    (hFu : ∀ k ≤ N, ∀ j < 4, Foot F.data (Addr.add (g₀.rdi + BitVec.ofNat 64 k * 4#64) j))
     (hN : cb V₀ g₀.rsi N = 0) (h : I40 g₀ V₀ N n g) : W_40 F Wl (Nx g₀ V₀ N n) g f V₀ := by
   obtain ⟨i, hi, rfl, heq, hok, hg⟩ := h
   rw [hg]
@@ -153,14 +159,21 @@ theorem vc_40 {N n : Nat} {g : Gprs} {f : Rflags}
         have e := nb_t h2
         rw [s1, u1] at e
         exact e
-      exact e56 (by omega) hok' hc rfl
+      refine e56 (i := i + 1) (by omega) ?_ ?_ ?_
+      · simpa only using hok'
+      · simpa only using hc
+      · rfl
     · have hc : (cb V₀ rsi (i + 1)).setWidth 32 = cu V₀ rdi (i + 1) := by
         have e := nb_f h2
         rw [s1, u1] at e
         exact e
-      exact e40 hi1 (by omega) hc hok' (by simp only [G40, cb, s1, u1])
+      refine e40 (i := i + 1) hi1 (by omega) ?_ ?_ ?_
+      · simpa only using hc
+      · simpa only using hok'
+      · simp only [G40, cb, s1, u1]
   · have hz : cb V₀ rsi i = 0 := tz_f h1
-    exact eFin (Or.inl rfl) (by exact ⟨i, hok, Or.inl ⟨heq, hz, by decide⟩⟩) rfl
+    refine eFin (Or.inl rfl) ?_ rfl
+    exact ⟨i, by simpa only using hok, Or.inl ⟨by simpa only using heq, by simpa only using hz, by decide⟩⟩
 
 /-- At 56: 0 at 58. -/
 theorem vc_56 {N : Nat} {g : Gprs} {f : Rflags} (h : I56 g₀ V₀ g) : W_56 F Wl (Nx g₀ V₀ N 0) g f V₀ := by
@@ -173,10 +186,11 @@ theorem vc_56 {N : Nat} {g : Gprs} {f : Rflags} (h : I56 g₀ V₀ g) : W_56 F W
   dsimp only at hok hne ⊢
   wpx [W_56, o1, BitVec.xor_self]
   intro af
-  exact eFin (Or.inr rfl) (by exact ⟨i, hok, Or.inr ⟨hne, by decide⟩⟩) rfl
+  refine eFin (Or.inr rfl) ?_ rfl
+  exact ⟨i, by simpa only using hok, Or.inr ⟨by simpa only using hne, by decide⟩⟩
 
-theorem vcAll {N : Nat} (hFa : ∀ k ≤ N, ∀ j < 1, Foot F.data ((g₀.rsi + BitVec.ofNat 64 k).add j))
-    (hFu : ∀ k ≤ N, ∀ j < 4, Foot F.data ((g₀.rdi + BitVec.ofNat 64 k * 4#64).add j)) (hN : cb V₀ g₀.rsi N = 0)
+theorem vcAll {N : Nat} (hFa : ∀ k ≤ N, ∀ j < 1, Foot F.data (Addr.add (g₀.rsi + BitVec.ofNat 64 k) j))
+    (hFu : ∀ k ≤ N, ∀ j < 4, Foot F.data (Addr.add (g₀.rdi + BitVec.ofNat 64 k * 4#64) j)) (hN : cb V₀ g₀.rsi N = 0)
     (ℓ n : Nat) (g : Gprs) (f : Rflags) (V : Addr → Byte) (h : Inv g₀ V₀ N ℓ n g V) :
     Wt ℓ F Wl (Nx g₀ V₀ N n) g f V := by
   obtain ⟨rfl, ⟨rfl, rfl, rfl⟩ | ⟨rfl, h⟩ | ⟨rfl, rfl, h⟩⟩ := h
@@ -192,8 +206,8 @@ variable {prof : Profile} {L : List (Addr × List Byte)} {s₀ : State} {o : Ora
 characters up to it readable: `rax` the result (`Res`), `rcx`, `rdx` changed, nothing stored. -/
 theorem sea_ok (c : Seg prof F Wl L s₀ o) (hin : CodeIn L sea_at sea) (hK : KeptW Wl s₀ X)
     (hA : Agree F X.proc.mm.mem V) (hrip : X.cpu.rip = sea_at) {N : Nat}
-    (hFa : ∀ k ≤ N, ∀ j < 1, Foot F.data ((X.cpu.gpr.rsi + BitVec.ofNat 64 k).add j))
-    (hFu : ∀ k ≤ N, ∀ j < 4, Foot F.data ((X.cpu.gpr.rdi + BitVec.ofNat 64 k * 4#64).add j))
+    (hFa : ∀ k ≤ N, ∀ j < 1, Foot F.data (Addr.add (X.cpu.gpr.rsi + BitVec.ofNat 64 k) j))
+    (hFu : ∀ k ≤ N, ∀ j < 4, Foot F.data (Addr.add (X.cpu.gpr.rdi + BitVec.ofNat 64 k * 4#64) j))
     (hN : cb V X.cpu.gpr.rsi N = 0) (hl : ∀ i < 8, Foot F.data (Addr.add X.cpu.gpr.rsp i))
     {e₂ : Addr} {code₂ : List Byte} (hin₂ : CodeIn L e₂ code₂) {j₂ : Nat} (h₂ : j₂ < code₂.length)
     (hra : rdq(V, X.cpu.gpr.rsp) = e₂.add j₂)
