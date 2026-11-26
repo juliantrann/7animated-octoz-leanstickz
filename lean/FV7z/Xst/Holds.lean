@@ -16,24 +16,24 @@ the `syscall` (26) to one of the two other `ret`s (34, 57).
   bytes in `buf` and its answer in `rax`, or `errno` set to its error and `eax` -1.
 -/
 open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn FV7z.Close
-open FV7z.Fxs (VerBad psys psys_0 pret pret_0)
+open FV7z.Fxs (VerBad)
 namespace FV7z.Xst
 
 /-- The `syscall`. -/
-theorem w_24 : psys <+: xst.drop 24 := by decide +kernel
+theorem w_24 : Fxs.psys <+: xst.drop 24 := by decide +kernel
 theorem sys_24 (feat : Features) : Dec feat xst 24 (FV7z.mk .syscall 32 [] 2) :=
-  Dec.shift (j := 24) (k := 0) (psys_0 feat) w_24 (Nat.zero_le _)
+  Dec.shift (j := 24) (k := 0) (Fxs.psys_0 feat) w_24 (Nat.zero_le _)
 
 /-- The `ret`s. -/
-theorem w_34 : pret <+: xst.drop 34 := by decide +kernel
+theorem w_34 : Fxs.pret <+: xst.drop 34 := by decide +kernel
 theorem ret_34 (feat : Features) : Dec feat xst 34 (FV7z.mk .ret 64 [] 1) :=
-  Dec.shift (j := 34) (k := 0) (pret_0 feat) w_34 (Nat.zero_le _)
-theorem w_57 : pret <+: xst.drop 57 := by decide +kernel
+  Dec.shift (j := 34) (k := 0) (Fxs.pret_0 feat) w_34 (Nat.zero_le _)
+theorem w_57 : Fxs.pret <+: xst.drop 57 := by decide +kernel
 theorem ret_57 (feat : Features) : Dec feat xst 57 (FV7z.mk .ret 64 [] 1) :=
-  Dec.shift (j := 57) (k := 0) (pret_0 feat) w_57 (Nat.zero_le _)
-theorem w_83 : pret <+: xst.drop 83 := by decide +kernel
+  Dec.shift (j := 57) (k := 0) (Fxs.pret_0 feat) w_57 (Nat.zero_le _)
+theorem w_83 : Fxs.pret <+: xst.drop 83 := by decide +kernel
 theorem ret_83 (feat : Features) : Dec feat xst 83 (FV7z.mk .ret 64 [] 1) :=
-  Dec.shift (j := 83) (k := 0) (pret_0 feat) w_83 (Nat.zero_le _)
+  Dec.shift (j := 83) (k := 0) (Fxs.pret_0 feat) w_83 (Nat.zero_le _)
 
 /-- The registers at the `syscall`: `eax` 4, `path` in `rdi`, `buf` in `rsi`, `vers` in `r8d`. -/
 def xstG (g : Gprs) : Gprs :=
