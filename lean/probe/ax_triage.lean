@@ -1,5 +1,7 @@
 import FV7z.Lemmas.Rmw8
 import FV7z.Sfn.Cuts
+import FV7z.Rpl.Holds
 open FV7z
-#print axioms FV7z.Seg.s_sub_mi64
+#print axioms FV7z.Fn.Seg.s_sub_mi64
 #print axioms FV7z.Sfn.spAll
+#print axioms FV7z.Rpl.rpl_ok
