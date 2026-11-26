@@ -76,19 +76,19 @@ theorem kf_ulk {S : Addr} {V : Addr → Byte} {p : Addr} (h : UlkOut S V p) :
   have k1 : Kf (S.toNat - 80) S.toNat V (Ulk.uV1 V p) := Kf.trans (kf_ow h.o1) (kf_ow h.o2)
   unfold ulkV
   by_cases hs : (usz V p).toNat ≤ 1023 ∨ ufdn V p = 0#64
-  · rw [if_pos hs]; exact k1
-  rw [if_neg hs]
+  · rw [ite_eq_left hs]; exact k1
+  rw [ite_eq_right hs]
   by_cases hf : uff V p ≠ 0#64
-  · rw [if_pos hf]
+  · rw [ite_eq_left hf]
     obtain ⟨a1, a2⟩ := h.la hs hf
     have k2 : Kf (S.toNat - 80) S.toNat V (Ulk.uVa V p) := k1.trans (kf_ow a1)
     exact k2.trans (kf_ow a2)
-  rw [if_neg hf]
+  rw [ite_eq_right hf]
   have hf' : uff V p = 0#64 := Decidable.of_not_not hf
   have k3 : Kf (S.toNat - 80) S.toNat V (Ulk.uVc V p) := k1.trans (kf_ow (h.lb hs hf'))
   by_cases he : p = ufdn V p
-  · rw [if_pos he]; exact k1.trans (kf_ow (h.lb hs hf'))
-  rw [if_neg he]
+  · rw [ite_eq_left he]; exact k1.trans (kf_ow (h.lb hs hf'))
+  rw [ite_eq_right he]
   obtain ⟨a1, a2⟩ := h.lc hs hf' he
   have k4 : Kf (S.toNat - 80) S.toNat V (Ulk.uVc2 V p) := k3.trans (kf_ow a1)
   exact k4.trans (kf_ow a2)
@@ -214,7 +214,7 @@ def MCh (F : Footprint) (Wl : List Rgn) (S av : Addr) : Nat → List (List Addr)
 /-! ## The frame kept -/
 
 theorem mB_toNat {S : Addr} (hS : 80 ≤ S.toNat) : (mB S).toNat = S.toNat - 72 := by
-  obtain ⟨-, -, -, e4⟩ := Cal.fr_e hS
+  obtain ⟨-, -, -, e4⟩ := Cal.fr_e (S := S) (by omega)
   have e5 := Prepare.toNat_sub8 (a := S - 8 - 8 - 8 - 8) (by rw [e4]; omega)
   have e6 := Prepare.toNat_sub8 (a := S - 8 - 8 - 8 - 8 - 8) (by rw [e5, e4]; omega)
   have hl := S.isLt
@@ -236,36 +236,43 @@ theorem kf_hi {S : Addr} {V V' : Addr → Byte} (h : Kf (S.toNat - 80) S.toNat V
 
 variable {F : Footprint} {Wl : List Rgn}
 
-theorem kf_cstep {S av fb : Addr} {V : Addr → Byte} {p : Addr} (hS : 80 ≤ S.toNat) (h : CPre F Wl S av fb V p) :
-    Kf (S.toNat - 64) S.toNat V (cstep S av V p) := by
-  have k1 : Kf (S.toNat - 64) S.toNat V (cV1 S V p) := by
-    unfold cV1
-    by_cases hp : cpf V p = true
-    · rw [if_pos hp]
-      obtain ⟨-, -, -, -, uo⟩ := h.pf hp
-      exact (kf_psh hS V _ _).trans (kf_hi (kf_ulk uo))
-    · rw [if_neg hp]; exact Kf.refl _ _ _
-  unfold cstep
-  by_cases ht : ctop S av V p
-  · rw [if_pos ht]
-    obtain ⟨⟨-, a1⟩, ⟨-, a2⟩⟩ := h.tp ht
-    exact (k1.trans (kf_hi (kf_ow a1))).trans (kf_hi (kf_ow a2))
-  rw [if_neg ht]
-  obtain ⟨-, r⟩ := h.nt ht
+theorem kf_cV1 {S av fb : Addr} {V : Addr → Byte} {p : Addr} (hS : 80 ≤ S.toNat) (h : CPre F Wl S av fb V p) :
+    Kf (S.toNat - 64) S.toNat V (cV1 S V p) := by
+  unfold cV1
+  by_cases hp : cpf V p = true
+  · rw [ite_eq_left hp]
+    obtain ⟨-, -, -, -, uo⟩ := h.pf hp
+    exact (kf_psh hS V _ _).trans (kf_hi (kf_ulk uo))
+  · rw [ite_eq_right hp]; exact Kf.refl _ _ _
+
+theorem kf_cV4 {S av fb : Addr} {V : Addr → Byte} {p : Addr} (hS : 80 ≤ S.toNat) (h : CPre F Wl S av fb V p)
+    (r : CRest F Wl S av V p) : Kf (S.toNat - 64) S.toNat V (cV4 S av V p) := by
+  have k1 := kf_cV1 hS h
   have k2 : Kf (S.toNat - 64) S.toNat V (cV2 S V p) := by
     unfold cV2
     by_cases hn : cnf S V p = true
-    · rw [if_pos hn]
+    · rw [ite_eq_left hn]
       obtain ⟨-, uo⟩ := r.nf hn
       exact (k1.trans (kf_psh hS _ _ _)).trans (kf_hi (kf_ulk uo))
-    · rw [if_neg hn]; exact k1.trans (kf_hi (kf_ow (r.ni (by simpa using hn)).2))
+    · rw [ite_eq_right hn]; exact k1.trans (kf_hi (kf_ow (r.ni (by simpa using hn)).2))
   have k3 : Kf (S.toNat - 64) S.toNat V (cV3 S av V p) :=
     (k2.trans (kf_hi (kf_ow r.w1.2))).trans (kf_hi (kf_ow r.w2.2))
-  have k4 : Kf (S.toNat - 64) S.toNat V (cV4 S av V p) := by
-    unfold cV4
-    by_cases hz : (cz2 S V p).toNat ≤ 1023
-    · rw [if_pos hz]; exact k3
-    · rw [if_neg hz]; exact k3.trans (kf_hi (kf_ow (r.w3 hz).2))
+  unfold cV4
+  by_cases hz : (cz2 S V p).toNat ≤ 1023
+  · rw [ite_eq_left hz]; exact k3
+  · rw [ite_eq_right hz]; exact k3.trans (kf_hi (kf_ow (r.w3 hz).2))
+
+theorem kf_cstep {S av fb : Addr} {V : Addr → Byte} {p : Addr} (hS : 80 ≤ S.toNat) (h : CPre F Wl S av fb V p) :
+    Kf (S.toNat - 64) S.toNat V (cstep S av V p) := by
+  have k1 := kf_cV1 hS h
+  unfold cstep
+  by_cases ht : ctop S av V p
+  · rw [ite_eq_left ht]
+    obtain ⟨⟨-, a1⟩, ⟨-, a2⟩⟩ := h.tp ht
+    exact (k1.trans (kf_hi (kf_ow a1))).trans (kf_hi (kf_ow a2))
+  rw [ite_eq_right ht]
+  obtain ⟨-, r⟩ := h.nt ht
+  have k4 := kf_cV4 hS h r
   have o5 : Ow S (cp1 V p + 16#64) 8 := ⟨by have := r.w5.2.1; omega, by have := r.w5.2.2; omega⟩
   have o6 : Ow S (cp1 V p + 16#64 + 8#64) 8 := by
     obtain ⟨a1, a2⟩ := r.w5.2
