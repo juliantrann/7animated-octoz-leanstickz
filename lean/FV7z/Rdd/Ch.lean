@@ -65,6 +65,10 @@ theorem Ch.congr {V V' : Addr → Byte} {p : Addr} {n k : Nat}
 theorem tna (a : Addr) (i : Nat) (h : a.toNat + i < 2 ^ 64) : (a.add i).toNat = a.toNat + i :=
   toNat_add_of_fits (n := i + 1) (by omega) (by omega)
 
+theorem tna_le (a : Addr) (i : Nat) : (a.add i).toNat ≤ a.toNat + i := by
+  simp only [Addr.add, BitVec.toNat_add, BitVec.toNat_ofNat]
+  exact Nat.le_trans (Nat.mod_le _ _) (Nat.add_le_add_left (Nat.mod_le _ _) _)
+
 /-- Two offsets of a region that fits are two addresses. -/
 theorem add_ne {b : Addr} {N m m' : Nat} (hf : b.toNat + N ≤ 2 ^ 64) (hm : m < N) (hm' : m' < N) (h : m ≠ m') :
     b.add m ≠ b.add m' := fun e => by
@@ -104,10 +108,10 @@ theorem ch_runs {p : Addr} {N : Nat} (hp : p.toNat + 48 + N ≤ 2 ^ 64) :
       Ch (vRuns V (p.add 48) (direntRuns es o)) p (o + (es.map Dirent.reclen).sum) o
   | [], o, V, _ => Ch.fin
   | e :: es, o, V, hs => by
-    have hb : (p.add 48).toNat = p.toNat + 48 := toNat_add_of_fits (n := 49) (by omega) (by omega)
-    have hbN : (p.add 48).toNat + N ≤ 2 ^ 64 := by omega
     simp only [List.map_cons, List.sum_cons] at hs ⊢
     have hr24 := reclen_ge e
+    have hb : (p.add 48).toNat = p.toNat + 48 := tna p 48 (by omega)
+    have hbN : (p.add 48).toNat + N ≤ 2 ^ 64 := by omega
     have hlen := bytes_len e
     have hbl := dirent_bytes_le e
     have ih := ch_runs hp es (o + e.reclen) (Vst V ((p.add 48).add o) e.bytes) (by omega)
@@ -130,19 +134,19 @@ theorem ch_runs {p : Addr} {N : Nat} (hp : p.toNat + 48 + N ≤ 2 ^ 64) :
         apply List.map_congr_left
         intro y hy
         obtain ⟨j, hj, rfl⟩ := mem_byteAddrs.1 hy
-        rw [addr_add_add, show o + 64 + j = 48 + (o + 16 + j) by omega, ← addr_add_add]
+        rw [addr_add_add p (o + 64) j, show o + 64 + j = 48 + (o + 16 + j) by omega, ← addr_add_add p 48]
         exact hap (o + 16 + j) (by omega)
       rw [hm, bytes_split, Cxa.Vst_append (toBytesLE e.ino 8 ++ toBytesLE e.off 8),
         Cxa.Vst_append (toBytesLE (BitVec.ofNat 16 e.reclen) 2)]
       have hl16 : (toBytesLE e.ino 8 ++ toBytesLE e.off 8).length = 16 := by simp [toBytesLE_length]
       have ha16 : ((p.add 48).add o).add (toBytesLE e.ino 8 ++ toBytesLE e.off 8).length = p.add (o + 64) := by
-        rw [hl16, addr_add_add, addr_add_add, show 48 + o + 16 = o + 64 by omega]
+        rw [hl16, addr_add_add, addr_add_add, show 48 + (o + 16) = o + 64 by omega]
       rw [ha16, toBytesLE_length]
-      have hx : (p.add (o + 64)).toNat = p.toNat + 48 + o + 16 := by rw [tna p (o + 64) (by omega)]; omega
-      have hx2 : ((p.add (o + 64)).add 2).toNat = p.toNat + 48 + o + 18 := by
-        rw [tna (p.add (o + 64)) 2 (by rw [hx]; omega), hx]
+      have hx : (p.add (o + 64)).toNat = p.toNat + 48 + o + 16 := (tna p (o + 64) (by omega)).trans (by omega)
+      have hx2 : ((p.add (o + 64)).add 2).toNat = p.toNat + 48 + o + 18 :=
+        (tna (p.add (o + 64)) 2 (by rw [hx]; omega)).trans (by rw [hx])
       rw [Tun.rd_Vst _ ((p.add (o + 64)).add 2) ([BitVec.ofNat 8 e.type.val] ++ e.name ++ [0]) (p.add (o + 64)) 2
-          (by rw [hx2]; simp only [List.length_append, List.length_cons, List.length_nil]; omega)
+          (by rw [hx2]; simp only [List.length_append, List.length_cons, List.length_nil] <;> omega)
           (by rw [hx]; omega) (.inr (by rw [hx, hx2]; omega)),
         Tun.rd_Vst_self _ _ _ (toBytesLE_length _ _) (by rw [hx]; omega), ofBytesLE_toBytesLE (by decide),
         BitVec.toNat_ofNat]
@@ -150,11 +154,12 @@ theorem ch_runs {p : Addr} {N : Nat} (hp : p.toNat + 48 + N ≤ 2 ^ 64) :
     refine Ch.step ⟨by rw [hrl]; omega, 19 + e.name.length, by omega, by rw [hrl]; omega, ?_⟩ (by rw [hrl]; omega)
       (by rw [hrl, ← Nat.add_assoc]; exact ih)
     -- the name's NUL
-    rw [show o + 48 + (19 + e.name.length) = 48 + (o + (19 + e.name.length)) by omega, ← addr_add_add,
-      hap (o + (19 + e.name.length)) (by omega), ← addr_add_add, bytes_nul, Cxa.Vst_append]
+    rw [show o + 48 + (19 + e.name.length) = 48 + (o + (19 + e.name.length)) by omega,
+      ← addr_add_add p 48 (o + (19 + e.name.length)), hap (o + (19 + e.name.length)) (by omega),
+      ← addr_add_add (p.add 48) o (19 + e.name.length), bytes_nul, Cxa.Vst_append]
     have hl : (toBytesLE e.ino 8 ++ toBytesLE e.off 8 ++ toBytesLE (BitVec.ofNat 16 e.reclen) 2 ++
         [BitVec.ofNat 8 e.type.val] ++ e.name).length = 19 + e.name.length := by
-      simp only [List.length_append, toBytesLE_length, List.length_cons, List.length_nil]; omega
+      simp only [List.length_append, toBytesLE_length, List.length_cons, List.length_nil] <;> omega
     rw [hl]
     show upd1 _ _ _ _ = _
     simp [upd1]
@@ -163,7 +168,7 @@ theorem ch_runs {p : Addr} {N : Nat} (hp : p.toNat + 48 + N ≤ 2 ^ 64) :
 theorem ch_dn {p : Addr} {n : Nat} {r : DnOut} (V : Addr → Byte) (hp : p.toNat + 48 + n ≤ 2 ^ 64)
     (hs : (r.es.map Dirent.reclen).sum ≤ n) :
     Ch (Vst V (p.add 48) (dnBuf V (p.add 48) n r)) p (r.es.map Dirent.reclen).sum 0 := by
-  have hb : (p.add 48).toNat = p.toNat + 48 := toNat_add_of_fits (n := 49) (by omega) (by omega)
+  have hb := tna_le p 48
   rw [← dn_one (V := V) (a := p.add 48) hs (by omega)]
   have := ch_runs hp r.es 0 V (by omega)
   rwa [Nat.zero_add] at this
