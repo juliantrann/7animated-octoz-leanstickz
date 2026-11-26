@@ -359,6 +359,11 @@ FNS = {
                 src="glibc 2.31's `__mmap64` (`sysdeps/unix/sysv/linux/mmap64.c`; `objdump -d`)"),
     # glibc 2.31 sysdeps/unix/sysv/linux/getdtsz.c (`__getdtablesize`: `RLIMIT_NOFILE`'s soft limit, or 256). Stops:
     # the `ret` (0x44), `__stack_chk_fail` (0x45); the `call` of `__getrlimit` (0x20) is a cut point.
+    # glibc 2.31 sysdeps/unix/sysv/linux/isatty.c (`__isatty`, `__tcgetattr (fd, &term) == 0`). Stops: the `ret`
+    # (0x3c) and the stack guard's failure call (0x3d).
+    "ity": dict(grp="Ity", cn="__isatty", a=0x665d20, n=0x42, pos=True, fs=True, stops=(0x3c, 0x3d),
+                calls=True, tag="PLAN.md §M, M1",
+                src="glibc 2.31's `__isatty` (`sysdeps/unix/sysv/linux/isatty.c`; `objdump -d`)"),
     "gdt": dict(grp="Gdt", cn="__getdtablesize", a=0x6664a0, n=0x4a, pos=True, fs=True, stops=(0x44, 0x45),
                 calls=True, tag="PLAN.md §M, M1",
                 src="glibc 2.31's `__getdtablesize` (`sysdeps/unix/sysv/linux/getdtsz.c`; `objdump -d`)"),
