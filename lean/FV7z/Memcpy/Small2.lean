@@ -19,8 +19,10 @@ theorem ldzxst {v : Nat} (bs : List Byte) (hw : v = 8 * bs.length) (h : v ≤ 32
     apply BitVec.eq_of_toNat_eq
     have h1 := (ofBytesLE v bs).isLt
     have h2 : 2 ^ v ≤ 2 ^ 32 := Nat.pow_le_pow_right (by decide) h
-    rw [BitVec.toNat_setWidth, BitVec.toNat_setWidth, BitVec.toNat_setWidth,
-      Nat.mod_eq_of_lt (Nat.lt_of_lt_of_le h1 h2), Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt h1]
+    have h3 : (ofBytesLE v bs).toNat < 2 ^ 32 := Nat.lt_of_lt_of_le h1 h2
+    have h4 : (ofBytesLE v bs).toNat < 2 ^ 64 := Nat.lt_of_lt_of_le h3 (by decide)
+    rw [BitVec.toNat_setWidth, BitVec.toNat_setWidth, BitVec.toNat_setWidth, Nat.mod_eq_of_lt h3,
+      Nat.mod_eq_of_lt h4, Nat.mod_eq_of_lt h1]
   rw [e, show v / 8 = bs.length by omega]
   exact toBytesLE_ofBytesLE hw
 
@@ -104,7 +106,7 @@ theorem p336 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e mc2) {X : State} {t 
 theorem p300 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e mc2) {X : State} {t : Nat} {g₀ : Gprs}
     {r : Addr} (hK : KeptW Wl s₀ X) (hA : Agree F X.proc.mm.mem V) (hrip : X.cpu.rip = e.add 300)
     (hkp : KpS g₀ X.cpu.gpr) (hax : X.cpu.gpr.rax = r) (hdi : X.cpu.gpr.rdi = g₀.rdi)
-    (hsi : X.cpu.gpr.rsi = g₀.rsi) (hdx : X.cpu.gpr.rdx = g₀.rdx)
+    (hsi : X.cpu.gpr.rsi = g₀.rsi) (_hdx : X.cpu.gpr.rdx = g₀.rdx)
     (h1 : g₀.rdx.toNat = 1)
     (hsrc : ∀ i < g₀.rdx.toNat, Foot F.data (Addr.add g₀.rsi i))
     (hst : ∀ i < g₀.rdx.toNat, Foot Wl (Addr.add g₀.rdi i))
@@ -132,14 +134,14 @@ theorem p300 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e mc2) {X : State} {t 
 /-- At `305`, `rdx = 0`: `ret`, nothing copied. -/
 theorem p305 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e mc2) {X : State} {t : Nat} {g₀ : Gprs}
     {r : Addr} (hK : KeptW Wl s₀ X) (hA : Agree F X.proc.mm.mem V) (hrip : X.cpu.rip = e.add 305)
-    (hkp : KpS g₀ X.cpu.gpr) (hax : X.cpu.gpr.rax = r) (hdi : X.cpu.gpr.rdi = g₀.rdi)
-    (hsi : X.cpu.gpr.rsi = g₀.rsi) (hdx : X.cpu.gpr.rdx = g₀.rdx)
+    (hkp : KpS g₀ X.cpu.gpr) (hax : X.cpu.gpr.rax = r) (_hdi : X.cpu.gpr.rdi = g₀.rdi)
+    (_hsi : X.cpu.gpr.rsi = g₀.rsi) (_hdx : X.cpu.gpr.rdx = g₀.rdx)
     (h0 : g₀.rdx.toNat = 0)
-    (hsrc : ∀ i < g₀.rdx.toNat, Foot F.data (Addr.add g₀.rsi i))
-    (hst : ∀ i < g₀.rdx.toNat, Foot Wl (Addr.add g₀.rdi i))
-    (hd64 : g₀.rdi.toNat + g₀.rdx.toNat < 2 ^ 64)
-    (hsp : g₀.rdi.toNat + g₀.rdx.toNat ≤ g₀.rsp.toNat ∨ g₀.rsp.toNat + 8 ≤ g₀.rdi.toNat)
-    (hsp8 : g₀.rsp.toNat + 8 ≤ 2 ^ 64)
+    (_hsrc : ∀ i < g₀.rdx.toNat, Foot F.data (Addr.add g₀.rsi i))
+    (_hst : ∀ i < g₀.rdx.toNat, Foot Wl (Addr.add g₀.rdi i))
+    (_hd64 : g₀.rdi.toNat + g₀.rdx.toNat < 2 ^ 64)
+    (_hsp : g₀.rdi.toNat + g₀.rdx.toNat ≤ g₀.rsp.toNat ∨ g₀.rsp.toNat + 8 ≤ g₀.rdi.toNat)
+    (_hsp8 : g₀.rsp.toNat + 8 ≤ 2 ^ 64)
     (hR : RetC prof F Wl L s₀ o gev gP gE V g₀ r) : GoG prof L o gev gP gE X t := by
   exact ret_atC c hin (by rw [mc2_length]; decide) (d305 prof.feat) hK hA hrip hkp hax (fun _ _ => rfl)
     (fun i hi => absurd hi (by omega)) (fun _ _ => rfl) hR
