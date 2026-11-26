@@ -340,6 +340,28 @@ FNS = {
     # `prop->vt` is `VT_BSTR`, then `prop->vt` = `VT_EMPTY`, answer `S_OK`. Stops: the two `ret`s (22, 49).
     "vcl": dict(grp="Vcl", cn="VariantClear", a=0x5a0120, n=50, pos=True, stops=(22, 49), calls=True,
                 tag="PLAN.md §M, M1", src="7-Zip 26.06's `VariantClear` (`CPP/Common/MyWindows.cpp`; `objdump -d`)"),
+    # 7-Zip's CPP/Windows/FileIO.cpp `CInFile::read_part (data, size)`: `read (_handle, data, min (size, 1 << 22))`
+    # (the `call`, 26). Stop: the `ret` (35); the 15 bytes after it are a separate `endbr64` landing pad, left out.
+    "irp": dict(grp="Irp", cn="CInFile::read_part", a=0x4561a0, n=36, pos=True, stops=(35,), calls=True,
+                tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CInFile::read_part` (`CPP/Windows/FileIO.cpp`; `objdump -d`)"),
+    # 7-Zip's CPP/Windows/PropVariant.cpp `CPropVariant::InternalClear ()`: `vt` 0, `wReserved1` = 0 and `S_OK`; else
+    # `PropVariant_Clear (this)` (the `call`, 32) and on an error `vt` = `VT_ERROR`, `scode` = it. Stops: the `ret`s.
+    "pic": dict(grp="Pic", cn="CPropVariant::InternalClear", a=0x457130, n=54, pos=True, stops=(23, 53), calls=True,
+                tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CPropVariant::InternalClear` (`CPP/Windows/PropVariant.cpp`; `objdump -d`)"),
+    # 7-Zip's CPP/Windows/PropVariant.cpp `CPropVariant::Detach (pDest)`: `PropVariant_Clear (pDest)` (the `call`, 51)
+    # if `pDest->vt` is not 0; on success the 16 bytes of `*this` to `*pDest` and `vt` = 0. Stop: the `ret` (45).
+    # `vop`: the copy through `xmm0`.
+    "pdt": dict(grp="Pdt", cn="CPropVariant::Detach", a=0x4570f0, n=62, pos=True, stops=(45,), calls=True, vop=True,
+                tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CPropVariant::Detach` (`CPP/Windows/PropVariant.cpp`; `objdump -d`)"),
+    # 7-Zip's CPP/Windows/PropVariant.h `CPropVariant::~CPropVariant ()`: `VariantClear (this)` (the `call`, 42) unless
+    # `vt` is one of the simple types (`vt` <= 7, or bit `vt - 10` of 0x40000000003fc3). Stops: the `ret`s (51, 52, 56);
+    # the 15 bytes after 56 are a separate `endbr64` landing pad, left out.
+    "pvd": dict(grp="Pvd", cn="CPropVariant::~CPropVariant", a=0x456f60, n=57, pos=True, stops=(51, 52, 56), calls=True,
+                tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CPropVariant::~CPropVariant` (`CPP/Windows/PropVariant.h`; `objdump -d`)"),
     # glibc 2.31 dirent/closedir.c `__closedir (dirp)`: a null `dirp`, `errno` EINVAL and -1 (0x2c, the `ret`); else
     # `fd` = `dirp->fd` kept in `rbp`, `free (dirp)` (the `call`, 0xc), then a tail jump to `__close_nocancel` (0x14).
     "cld": dict(grp="Cld", cn="__closedir", a=0x663860, n=45, pos=True, fs=True, stops=(0x14, 0x2c), calls=True,
@@ -888,6 +910,8 @@ def effect(mn, sz, ol, pc=None):
     if mn == 'cmp' and ks == ('mf', 'i') and sz == 8:   # FV7z/Lemmas/BlkOps14.lean
         assert f[0][4] == 8
         return terms, f"Op.cmpmif fb 8 {mem(ops[0])} {f[1][1]}", "OpIF.cmpmif8"
+    if mn == 'cmp' and sz == 16 and ks == ('r', 'i'):   # FV7z/Lemmas/BlkOps25.lean
+        return tsrc(16), f"Op.cmp 16 {f[0][1]} {src(ops[1])}", f"OpI.cmp16 {src(ops[1])}"
     if mn == 'test' and sz == 16 and ks in (('r', 'r'), ('r', 'i')):
         return tsrc(16), f"Op.test 16 {f[0][1]} {src(ops[1])}", f"OpI.test16 {src(ops[1])}"
     if mn == 'cmp' and ks == ('mf', 'i') and sz in (32, 64):   # FV7z/Lemmas/BlkOps13.lean
@@ -1236,7 +1260,7 @@ end FV7z.{grp}
                          f"theorem j{k}_0 : ∀ feat, Dec feat j{k} 0 (FV7z.mk {mnl(mn)} {sz} [{operand(ol[0])[1]}] {ln}) := "
                          "by dec_rfl\n")
     open(out + "/Pats.lean", "w").write(f"""import FV7z.Lemmas.Sp{"Fs" if FSM else ""}
-{"import FV7z.Lemmas.CmovLd" + chr(10) if any(k in x for x in P for k in ("Op.cmovld32", "Op.cmovld64")) else ""}{"import FV7z.Lemmas.CmpMi16" + chr(10) if any("Op.cmpmi 16" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps24" + chr(10) if any(k in x for x in P for k in ("Op.shr16", "Op.sxb16", "Op.imul3d")) else ""}{"import FV7z.Lemmas.BlkOps23" + chr(10) if any(k in x for x in P for k in ("Op.or8", "Op.not64")) else ""}{"import FV7z.Lemmas.BlkOps22" + chr(10) if any("Op.testmi 32" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps20" + chr(10) if any(k in x for x in P for k in ("Op.not32", "Op.cqo", "Op.imul3", "Op.andh", "Op.testh", "Op.cmpm 8")) else ""}{"import FV7z.Lemmas.BlkOps19" + chr(10) if any("Op.vld 0" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps18" + chr(10) if any("Op.zxr16" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps17" + chr(10) if any("Op.mul64" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps16" + chr(10) if any("Op.bt64" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps15" + chr(10) if any("Op.sxr" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps14" + chr(10) if any(k in x for x in P for k in ("Op.zxr", "Op.test 16", "Op.cmpmif fb 8")) else ""}{"import FV7z.Lemmas.BlkOps13" + chr(10) if any("Op.cmpmif" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps12" + chr(10) if any(k in x for x in P for k in ("Op.cmpmr", "Op.testmi")) else ""}{"import FV7z.Lemmas.BlkOps11" + chr(10) if any(k in x for x in P for k in ("Op.rol64", "Op.ror64")) else ""}{"import FV7z.Lemmas.BlkOps10" + chr(10) if any("Op.cmpm 16" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps9" + chr(10) if any("Op.cmpma" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps8" + chr(10) if any(k in x for x in P for k in ("Op.vla", "Op.vsa", "Op.addma", "Op.cmpmia 8", "Op.stia 8")) else ""}{"import FV7z.Lemmas.BlkOps7" + chr(10) if any(k in x for x in P for k in ("Op.vl", "Op.vs", "Op.cdqe")) else ""}{"import FV7z.Lemmas.BlkOps6" + chr(10) if any(k in x for x in P for k in ("Op.stf8", "Op.stfi", "Op.xormf")) else ""}{("import FV7z.Lemmas.BlkOps5" if any("Op.ldsxb" in x for x in P) else
+{"import FV7z.Lemmas.CmovLd" + chr(10) if any(k in x for x in P for k in ("Op.cmovld32", "Op.cmovld64")) else ""}{"import FV7z.Lemmas.CmpMi16" + chr(10) if any("Op.cmpmi 16" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps25" + chr(10) if any("Op.cmp 16" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps24" + chr(10) if any(k in x for x in P for k in ("Op.shr16", "Op.sxb16", "Op.imul3d")) else ""}{"import FV7z.Lemmas.BlkOps23" + chr(10) if any(k in x for x in P for k in ("Op.or8", "Op.not64")) else ""}{"import FV7z.Lemmas.BlkOps22" + chr(10) if any("Op.testmi 32" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps20" + chr(10) if any(k in x for x in P for k in ("Op.not32", "Op.cqo", "Op.imul3", "Op.andh", "Op.testh", "Op.cmpm 8")) else ""}{"import FV7z.Lemmas.BlkOps19" + chr(10) if any("Op.vld 0" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps18" + chr(10) if any("Op.zxr16" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps17" + chr(10) if any("Op.mul64" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps16" + chr(10) if any("Op.bt64" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps15" + chr(10) if any("Op.sxr" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps14" + chr(10) if any(k in x for x in P for k in ("Op.zxr", "Op.test 16", "Op.cmpmif fb 8")) else ""}{"import FV7z.Lemmas.BlkOps13" + chr(10) if any("Op.cmpmif" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps12" + chr(10) if any(k in x for x in P for k in ("Op.cmpmr", "Op.testmi")) else ""}{"import FV7z.Lemmas.BlkOps11" + chr(10) if any(k in x for x in P for k in ("Op.rol64", "Op.ror64")) else ""}{"import FV7z.Lemmas.BlkOps10" + chr(10) if any("Op.cmpm 16" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps9" + chr(10) if any("Op.cmpma" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps8" + chr(10) if any(k in x for x in P for k in ("Op.vla", "Op.vsa", "Op.addma", "Op.cmpmia 8", "Op.stia 8")) else ""}{"import FV7z.Lemmas.BlkOps7" + chr(10) if any(k in x for x in P for k in ("Op.vl", "Op.vs", "Op.cdqe")) else ""}{"import FV7z.Lemmas.BlkOps6" + chr(10) if any(k in x for x in P for k in ("Op.stf8", "Op.stfi", "Op.xormf")) else ""}{("import FV7z.Lemmas.BlkOps5" if any("Op.ldsxb" in x for x in P) else
   "import FV7z.Lemmas.BlkOps4" if any("Op.imul64" in x for x in P) else
   "import FV7z.Lemmas.BlkOps3" if any(k in x for x in P for k in ("Op.shl64", "Op.shr64", "Op.sar64")) else
   "import FV7z.Lemmas.BlkOps2") + chr(10) if pos else ""}/-!
