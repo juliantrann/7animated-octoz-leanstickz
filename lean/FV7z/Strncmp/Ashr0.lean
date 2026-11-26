@@ -25,7 +25,11 @@ open ZellicX86 Decode FV7z.Leaf FV7z.Fn FV7z.Strlen
 /-- `pcmpeqb` of 0 with 16 bytes none 0. -/
 theorem peqb0_nz {Y : BitVec 128} (h : ∀ j < 16, lane 8 Y j ≠ 0) : peqb 0 Y = 0 := by
   have e : ∀ j < 16, (if lane 8 (0 : BitVec 128) j = lane 8 Y j then BitVec.allOnes 8 else 0) = (0 : BitVec 8) :=
-    fun j hj => by rw [lane_zero, if_neg (fun e => h j hj e.symm)]
+    fun j hj => by
+      rw [lane_zero]
+      split
+      · exact absurd (by assumption : (0 : BitVec 8) = lane 8 Y j).symm (h j hj)
+      · rfl
   simp only [peqb, ofBytes, e 15 (by decide), e 14 (by decide), e 13 (by decide), e 12 (by decide),
     e 11 (by decide), e 10 (by decide), e 9 (by decide), e 8 (by decide), e 7 (by decide), e 6 (by decide),
     e 5 (by decide), e 4 (by decide), e 3 (by decide), e 2 (by decide), e 1 (by decide), e 0 (by decide)]
