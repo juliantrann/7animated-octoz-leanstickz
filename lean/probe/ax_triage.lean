@@ -1,3 +1,2 @@
-import FV7z.Sen.Holds
+import FV7z.Rpl.Holds
 open FV7z
-#print axioms FV7z.Sen.sen_ok
