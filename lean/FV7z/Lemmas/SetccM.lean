@@ -21,8 +21,8 @@ theorem setcc_m8 {c : Cond} {b d len : Nat} (htf : s.cpu.rflags.tf = false) (hac
       (.running (nx (st s (eaD s b d) (toBytesLE ((BitVec.ofBool (s.cpu.rflags.cond c)).setWidth 8) 1)) len
         s.cpu.gpr (rf0 s)) none, t) := by
   refine instruction_next htf hdec ?_
-  simp only [exec, Sem.setcc, mbd, bind, Prog.bind, readOp, Bool.false_eq_true, ↓reduceIte, memRef,
-    effOffset, pure, Prog.readFlags, Prog.write, Prog.run, BitVec.mul_one, writeOp]
+  simp only [exec, Sem.setcc, mbd, bind, Prog.bind, Bool.false_eq_true, ↓reduceIte, memRef,
+    effOffset, pure, Prog.readReg, Prog.readFlags, Prog.write, Prog.run, BitVec.mul_one, writeOp]
   rw [eaD_adv, checkAccess_ok (s := advance s len) hac hwr]
   rfl
 
