@@ -108,7 +108,7 @@ theorem vc_32n {g : Gprs} {f : Rflags} {V : Addr → Byte}
 theorem vc_32zb {g : Gprs} {f : Rflags} {V : Addr → Byte}
     (hf : ∀ i < 1, Foot F.data (Addr.add (g.rbp + nx g) i)) (hz : V (g.rbp + nx g) = 0#8)
     (hl4 : ∀ i < 4, Foot F.data (Addr.add (g.r13 + 12#64) i))
-    (hL : rdd(V, g.r13 + 12#64).toNat < (BitVec.setWidth 32 (nx g)).toNat) :
+    (hL : rdd(V, g.r13 + 12#64).toNat < (BitVec.setWidth 32 (g.rbx + 1#64)).toNat) :
     W_32 F Wl (fun j' g' _ V' => j' = 100 ∧ g' = { g with rdi := nx g + 1#64, rbx := nx g } ∧ V' = V) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at hf hz hl4 hL ⊢
@@ -127,7 +127,7 @@ theorem vc_32zb {g : Gprs} {f : Rflags} {V : Addr → Byte}
 theorem vc_32zs {g : Gprs} {f : Rflags} {V : Addr → Byte}
     (hf : ∀ i < 1, Foot F.data (Addr.add (g.rbp + nx g) i)) (hz : V (g.rbp + nx g) = 0#8)
     (hl4 : ∀ i < 4, Foot F.data (Addr.add (g.r13 + 12#64) i))
-    (hL : ¬ rdd(V, g.r13 + 12#64).toNat < (BitVec.setWidth 32 (nx g)).toNat) :
+    (hL : ¬ rdd(V, g.r13 + 12#64).toNat < (BitVec.setWidth 32 (g.rbx + 1#64)).toNat) :
     W_32 F Wl (fun j' g' _ V' => j' = 51 ∧ g' = { g with rdi := nx g, rbx := nx g } ∧ V' = V) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at hf hz hl4 hL ⊢
@@ -211,13 +211,13 @@ theorem slen (c : Seg prof F Wl L s₀ o) (hin : CodeIn L aac_at aac) {W : Addr 
       exact hf (j + 1) (Nat.le_refl _)
     have h13 : X.cpu.gpr.r13 = g₀.r13 := hks.2.2.2.1
     have hl4' : ∀ i < 4, Foot F.data (Addr.add (X.cpu.gpr.r13 + 12#64) i) := by rw [h13]; exact hl4
-    have hw32 : (BitVec.setWidth 32 (nx X.cpu.gpr)).toNat = j + 1 := by
-      rw [enx]
-      simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
+    have hw32 : (BitVec.setWidth 32 (X.cpu.gpr.rbx + 1#64)).toNat = j + 1 := by
+      rw [hbx]
+      simp only [BitVec.toNat_setWidth, BitVec.toNat_add, BitVec.toNat_ofNat]
       omega
     have hz1 : W (X.cpu.gpr.rbp + nx X.cpu.gpr) = 0#8 := by rw [ea]; exact hz
     by_cases hL : rdd(W, g₀.r13 + 12#64).toNat < j + 1
-    · have hL' : rdd(W, X.cpu.gpr.r13 + 12#64).toNat < (BitVec.setWidth 32 (nx X.cpu.gpr)).toNat := by
+    · have hL' : rdd(W, X.cpu.gpr.r13 + 12#64).toNat < (BitVec.setWidth 32 (X.cpu.gpr.rbx + 1#64)).toNat := by
         rw [hw32, h13]; exact hL
       refine (c_32 prof).run c hin _ hK hA hrip (vc_32zb hf1 hz1 hl4' hL') ?_
       rintro j' g fl V₁ ⟨rfl, rfl, rfl⟩ Y t₁ hKY hAY hrY hgY -
@@ -227,7 +227,7 @@ theorem slen (c : Seg prof F Wl L s₀ o) (hin : CodeIn L aac_at aac) {W : Addr 
         show nx X.cpu.gpr + 1#64 = _
         rw [enx]
         exact (BitVec.ofNat_add (j + 1) 1).symm
-    · have hL' : ¬ rdd(W, X.cpu.gpr.r13 + 12#64).toNat < (BitVec.setWidth 32 (nx X.cpu.gpr)).toNat := by
+    · have hL' : ¬ rdd(W, X.cpu.gpr.r13 + 12#64).toNat < (BitVec.setWidth 32 (X.cpu.gpr.rbx + 1#64)).toNat := by
         rw [hw32, h13]; exact hL
       refine (c_32 prof).run c hin _ hK hA hrip (vc_32zs hf1 hz1 hl4' hL') ?_
       rintro j' g fl V₁ ⟨rfl, rfl, rfl⟩ Y t₁ hKY hAY hrY hgY -
