@@ -70,14 +70,15 @@ theorem vc_0 {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (hfk : rdq(
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   obtain ⟨hm2, -, htc, fsz, ftc⟩ := h
   dsimp only [szw] at h0 hm2 htc fsz ftc ⊢
-  have hz : (rdi == 0#64) = false := beq_eq_false_iff_ne.2 h0
+  have hz : (rdi == 0) = false := beq_eq_false_iff_ne.2 h0
   have hd : decide (rdq(V, fb + 18446744073709551576#64) = 0#64) = false := decide_eq_false htc
   wpx [W_0, W_24, W_29, W_41, o0, o1, o2, o3, Op.lda, Op.cmpmif, BitVec.and_self, hfk, hz, hd, hm2,
       BitVec.reduceBEq, BitVec.reduceAnd, decide_false, decide_true, Bool.not_true, Bool.not_false,
       Bool.false_eq_true, false_implies, true_implies, and_true, true_and, implies_true]
-  trace_state
-  all_goals iterate 8 (first | assumption | apply And.intro | intro _)
-  all_goals first | rfl | trivial
+  first
+  | exact ⟨fh, fsz, ftc⟩
+  | exact ⟨fh, fun _ _ => ⟨fsz, ftc⟩⟩
+  | exact ⟨fh, fun _ _ => ⟨fun h => absurd h (by simp), fun _ => ⟨fsz, ftc⟩⟩⟩
 
 /-- From the arena to 80: a chunk of the main arena (bit 2 of the size word, in `al`, clear). -/
 theorem vc_57 {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte}
