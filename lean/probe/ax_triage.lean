@@ -1,3 +1,7 @@
-import FV7z.Msi.Holds
+import FV7z.Eex.Holds
+import FV7z.Cdi.Holds
 open FV7z
-#print axioms FV7z.Msi.msi_ok
+#print axioms FV7z.Eex.eex_ok
+#print axioms FV7z.Eex.lp1All
+#print axioms FV7z.Eex.lp2All
+#print axioms FV7z.Cdi.cdi_ok
