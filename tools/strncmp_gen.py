@@ -97,8 +97,18 @@ def wrap(line, ind="    "):
     return line[:i] + "\n" + ind + line[i + 1:]
 
 
-def dec_line(off, inst, code='scm'):
-    return wrap(f"theorem d{off} : ∀ feat, Dec feat {code} {off} ({inst}) := by dec_rfl")
+# the bytes in 17 pieces (`ch<j>`): the head, the 15 shifted loops, the end; `scm` is their concatenation, and what
+# an instruction decodes to is evaluated in its piece (evaluating in all 6233 bytes runs out of recursion depth)
+CS = [0] + [400 + 384 * c for c in range(15)] + [6144]
+CE = CS[1:] + [N]
+def chunk(off): return max(j for j in range(17) if CS[j] <= off)
+
+
+def dec_line(off, inst):
+    j = chunk(off)
+    hk = "" if j == 16 else f"(by rw [ch{j}_length]; decide) "
+    return (wrap(f"theorem d{off} : ∀ feat, Dec feat scm {off} ({inst}) :=") +
+            f"\n  fun _ => lift{j} (k := {off - CS[j]}) {hk}(by intro f; rfl)")
 
 
 def pieces(stretches):
@@ -151,16 +161,56 @@ code = ['import FV7z.Lemmas.Sse2d\nimport FV7z.Lemmas.BlkOps21\nimport FV7z.Lemm
     body="""glibc 2.31's `__strncmp_sse2` (`sysdeps/x86_64/multiarch/strcmp-sse2.S`, `strcmp.S` with `USE_AS_STRNCMP`) at
 `0x63a420` in `7zzs`, the variant of `strncmp` that the IFUNC resolver picks on a processor without SSSE3: its bytes
 (`scm`), what each instruction outside the 15 shifted loops (`AshrT.lean`) decodes to on every processor
-(`d<offset>`, by evaluation), and their straight-line stretches as `BlkV`s (`b<start>`), in pieces of at most 6
+(`d<offset>`, by evaluation in its piece `ch<j>`: in all of them it runs out of recursion depth), and
+their straight-line stretches as `BlkV`s (`b<start>`), in pieces of at most 6
 instructions: the entry and the first 16 bytes (`0` to `128`), the alignment and the jump by the table at `0x6f0df0`
 (`128` to `192`), the loop of strings with the same offset in their 16 bytes (`192` to `400`), the shared end of the
 shifted loops (`6144`) and the exits (`6160` to `6233`).""") + '''
-/-- Decoding at a fixed offset, by evaluation. -/
-macro "dec_rfl" : tactic => `(tactic| (intro feat f; rfl))
+''' + "".join(
+    f"/-- The bytes from `{CS[j]}` to `{CE[j]}`. -/\ndef ch{j} : List Byte := [\n" + rows(bs[CS[j]:CE[j]]) +
+    f"]\n\ntheorem ch{j}_length : ch{j}.length = {CE[j] - CS[j]} := rfl\n\n" for j in range(17)) +
+    "/-- The bytes of `__strncmp_sse2`. -/\ndef scm : List Byte :=\n  " +
+    "".join(f"ch{j} ++ (" for j in range(8)) + "\n    " + "".join(f"ch{j} ++ (" for j in range(8, 16)) + "ch16" +
+    ")" * 16 + "\n\n" +
+    "theorem scm_length : scm.length = 6233 := by\n  simp only [scm, List.length_append, " +
+    ", ".join(f"ch{j}_length" for j in range(6)) + ",\n    " +
+    ", ".join(f"ch{j}_length" for j in range(6, 15)) + ",\n    " + ", ".join(f"ch{j}_length" for j in range(15, 17)) + "]\n\n" + '''theorem lt_scm {j : Nat} (h : j < 6233) : j < scm.length := scm_length ▸ h
 
-/-- The bytes of `__strncmp_sse2`. -/
-def scm : List Byte := [
-''' + rows(bs) + f"]\n\ntheorem scm_length : scm.length = {N} := rfl\n" + '''
+/-- The bytes `X`, then `Y`, beyond them `f`: the bytes `X`, beyond them those of `X ++ Y`. -/
+theorem fetchFrom_app (X Y : List Byte) (f : Nat → Option Byte) :
+    fetchFrom (X ++ Y) f = fetchFrom X (fetchFrom (X ++ Y) f) := by
+  funext n
+  simp only [fetchFrom, List.length_append]
+  by_cases h : n < X.length
+  · simp only [h, ↓reduceIte, List.getElem?_append_left h, show n < X.length + Y.length by omega]
+  · simp only [h, ↓reduceIte]
+
+theorem drop_app (A B : List Byte) (n : Nat) : (A ++ B).drop n = A.drop n ++ B.drop (n - A.length) := by
+  induction A generalizing n with
+  | nil => simp
+  | cons a A ih =>
+    cases n with
+    | zero => simp
+    | succ n => simp [ih]
+
+/-- What `A` decodes to at `k` is what `A ++ B` does. -/
+theorem dec_appL {feat : Features} {A B : List Byte} {k : Nat} {i : Inst} (hk : k ≤ A.length) (h : Dec feat A k i) :
+    Dec feat (A ++ B) k i := fun f => by
+  rw [drop_app, Nat.sub_eq_zero_of_le hk, List.drop_zero, fetchFrom_app]
+  exact h _
+
+/-- What `B` decodes to at `k` is what `A ++ B` does at `k + A.length`. -/
+theorem dec_appR {feat : Features} {A B : List Byte} {a k n : Nat} {i : Inst} (hA : A.length = a) (hn : k + a = n)
+    (h : Dec feat B k i) : Dec feat (A ++ B) n i := fun f => by
+  rw [drop_app, List.drop_eq_nil_of_le (as := A) (i := n) (by omega), List.nil_append, hA,
+    show n - a = k by omega]
+  exact h f
+''' + "".join(
+    f"\ntheorem lift{j} {{feat : Features}} {{k : Nat}} {{i : Inst}} " +
+    ("" if j == 16 else f"(hk : k ≤ ch{j}.length) ") + f"(h : Dec feat ch{j} k i) :\n" +
+    f"    Dec feat scm {'k' if j == 0 else f'(k + {CS[j]})'} i :=\n" +
+    "".join(f"  dec_appR (n := k + {CS[j] - CS[i]}) ch{i}_length (by omega) <|\n" for i in range(j)) +
+    ("  h\n" if j == 16 else "  dec_appL hk h\n") for j in range(17)) + '''
 /-- A conditional jump at `j` of `len` bytes to `tgt`. -/
 def JccAt (prof : Profile) (cc : Cond) (j len tgt : Nat) : Prop :=
   ∃ rel, Dec prof.feat scm j (FV7z.mk (.jcc cc) 64 [.rel rel] len) ∧ (j + len + rel) % 2 ^ 64 = tgt % 2 ^ 64
@@ -184,7 +234,7 @@ for (a, b) in hp:
     code.append(f"def o{a} : List VOp := [\n  " + ",\n  ".join(vs) + "]\n")
     code.append(f"theorem b{a} (prof : Profile) : BlkV prof scm {a} {b} o{a} :=")
     for (k, pf) in ps:
-        code.append(f"  .cons (d{k} _) ({pf}) (by decide) <|")
+        code.append(f"  .cons (d{k} _) ({pf}) (lt_scm (by decide)) <|")
     code.append(f"  .nil {b}\n")
 code.append("end FV7z.Strncmp")
 open(f"{OUT}/Code.lean", "w").write(check("\n".join(code) + "\n"))
@@ -308,8 +358,7 @@ GROUPS = [(1, 2, 3), (4, 5, 6), (7, 8, 9), (10, 11, 12), (13, 14, 15)]
 for g, ks in enumerate(GROUPS, 1):
     out = ['import FV7z.Strncmp.AshrT\n' + HEADER.format(
         title=f"The shifted loops `k = {ks[0]}` to `{ks[-1]}` of `__strncmp_sse2` (PLAN.md G3, `strncmp`)",
-        body="What each instruction of the loops decodes to (`d<offset>`, by evaluation) and their `AshrC`s.") +
-        '\n/-- Decoding at a fixed offset, by evaluation. -/\nmacro "dec_rfl" : tactic => `(tactic| (intro feat f; rfl))\n']
+        body="What each instruction of the loops decodes to (`d<offset>`, by evaluation) and their `AshrC`s.") + '\n']
     for k in ks:
         c = cstart(k)
         tl = TAIL_A if k < 15 else TAIL_B
@@ -324,7 +373,7 @@ for g, ks in enumerate(GROUPS, 1):
             _, ps = blk(a, b, None, None)
             s = [f"  have b{a} : BlkV prof scm {a} {b} ({ops}) :="]
             for (o, pf) in ps:
-                s.append(f"    .cons (d{o} _) ({pf}) (by decide) <|")
+                s.append(f"    .cons (d{o} _) ({pf}) (lt_scm (by decide)) <|")
             s.append(f"    .nil {b}")
             return s
         out.append(f"/-- The loop at `{c}`, `k = {k}`. -/")
