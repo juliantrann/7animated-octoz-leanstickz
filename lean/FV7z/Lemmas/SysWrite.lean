@@ -96,7 +96,9 @@ theorem writeFile_np {f : OpenFile} {buf : Addr} {n : Nat} (hw : f.writable = tr
   unfold writeFile
   simp only [hw, hacc, hp, Bool.not_true, Bool.false_eq_true, false_and, ↓reduceIte, Nat.min_eq_left hn,
     fsizeLimit_np hp, req_pure_bind, growFor_ok (acc := .read) hr, writeTarget_np hp, Option.any_none,
-    readableLead_all hr, bne_self_eq_false, eq_self_iff_true]
+    bne_self_eq_false]
+  rw [readableLead_all hr]
+  try rw [if_pos rfl]
   show (Req.bind (Req.request (.write f.id (readBytes s.proc.mm.mem buf n))) _).runStream o t = _
   rw [Req.runStream_bind, show (Req.request (Request.write f.id (readBytes s.proc.mm.mem buf n))).runStream o t =
     (o t (.write f.id (readBytes s.proc.mm.mem buf n)), t + 1) from rfl]
@@ -169,8 +171,8 @@ theorem stepR (c : Seg prof F Wl L s₀ o) (hK : KeptW Wl s₀ X) (hin : CodeIn 
   obtain ⟨-, M, hkd, hc⟩ := envEvents_quiet prof.feat (evsAt prof o t) X (c.quiet hK)
     fun e he => c.env t prof.cpus e he
   obtain ⟨r, t', hr, k⟩ := h M hc (hK.withMem hc) (hK.tf.trans c.ready.plain.1) (hK.ac.trans c.ready.plain.2.1)
-  have hs : (step prof X).runStream o t = (r, t') := by
-    rw [step_runStream prof o t X c.env (c.quiet hK), hkd, hr]
+  have hs : (ZellicX86.step prof X).runStream o t = (r, t') := by
+    rw [FV7z.step_runStream prof o t X c.env (c.quiet hK), hkd, hr]
   cases r with
   | running Y ev => exact runsFrom_step (inCode_of_codeIn hin hj hrip) hs k
   | stopped out => exact runsFrom_stop (inCode_of_codeIn hin hj hrip) hs k
