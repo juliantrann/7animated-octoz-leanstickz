@@ -1,6 +1,6 @@
-import FV7z.Sfst.Blocks1
+import FV7z.Sst.Blocks1
 /-!
-# The basic blocks of `SetFrom_stat` (PLAN.md §M, M1)
+# The basic blocks of `CFileInfoBase::SetFrom_stat` (PLAN.md §M, M1)
 
 Where the stretches of `Pats.lean` lie in the code (`w_*`, `wj_*`: a prefix of the code from an offset, by the kernel's
 evaluation), and for each of the 3 basic blocks that the entry reaches an `Sp` (`sp_*`, by the block's offset): what

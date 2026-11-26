@@ -488,7 +488,9 @@ import FV7z.Vcl.Holds
 import FV7z.Lzi.Holds
 import FV7z.Ifs.Holds
 import FV7z.Cra.Holds
-import FV7z.Sfst.Holds
+import FV7z.Fcc.Holds
+import FV7z.Fft.Holds
+import FV7z.Sst.Holds
 import FV7z.Lemmas.SysMunmap
 import FV7z.Start.Unmap
 import FV7z.Mun.Ok
