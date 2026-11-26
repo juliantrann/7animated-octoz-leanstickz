@@ -200,6 +200,24 @@ FNS = {
     "rpp": dict(grp="Rpp", cn="UString::ReverseFind_PathSepar", a=0x44dd80, n=48, pos=True, stops=(35, 47),
                 tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `UString::ReverseFind_PathSepar` (`MyString.cpp`; `objdump -d`)"),
+    # 7-Zip's CPP/Windows/TimeUtils.cpp `FiTime_To_FILETIME_ns100 (ts, ft, ns100)`: `UnixTime64_To_FileTime64
+    # (ts.tv_sec)` (call, 20), plus `tv_nsec / 100` into `ft`, `tv_nsec % 100` into `ns100`. Stop: the `ret` (95).
+    "fft": dict(grp="Fft", cn="FiTime_To_FILETIME_ns100", a=0x458db0, n=96, pos=True, stops=(95,), calls=True,
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `FiTime_To_FILETIME_ns100` (`TimeUtils.cpp`; `objdump -d`)"),
+    # 7-Zip's CPP/Windows/FileFind.cpp `CFileInfoBase::SetFrom_stat (st)`: the fields of `st` into the object.
+    # Stop: the `ret` (105).
+    "sst": dict(grp="Sst", cn="CFileInfoBase::SetFrom_stat", a=0x4559d0, n=106, pos=True, stops=(105,),
+                tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CFileInfoBase::SetFrom_stat` (`FileFind.cpp`; `objdump -d`)"),
+    # glibc 2.31's `__bsd_signal.part.0 (sig, handler)` (signal/signal.c): a `struct sigaction` on the stack
+    # (`rep stosq`), `__sigaction` (call, 103), the old handler or -1. Stops: the `ret` (152), the canary's
+    # `__stack_chk_fail` (call, 153).
+    "bsg": dict(grp="Bsg", cn="__bsd_signal.part.0", a=0x622510, n=158, pos=True, stops=(152, 153), calls=True,
+                tag="PLAN.md §M, M1", src="glibc 2.31's `__bsd_signal` (`signal/signal.c`; `objdump -d`)"),
+    # sdlerror.o's `fini`: the last `dlerror` buffer freed unless it is the static message (`repz cmpsb`, 31).
+    # Stops: the `ret`s (42, 64), the call of `free` (47).
+    "fni": dict(grp="Fni", cn="fini", a=0x41c0f0, n=65, pos=True, stops=(42, 64), calls=True,
+                tag="PLAN.md §M, M1", src="glibc 2.31's `fini` (`dlfcn/dlerror.c`; `objdump -d`)"),
     # 7-Zip's C/Alloc.c `MyAlloc (size)`: 0 for size 0, else a tail jump to `malloc`. Stops: the jump (9), the `ret`
     # (18).
     "mya": dict(grp="Mya", cn="MyAlloc", a=0x41f3c0, n=19, pos=True, stops=(9, 18),
