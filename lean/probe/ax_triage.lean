@@ -1,2 +1,2 @@
-import FV7z.Strncmp.Head
+import FV7z.Strncmp.Align
 open FV7z
