@@ -560,6 +560,15 @@ FNS = {
     "dsp": dict(grp="Dsp", cn="CDirItems::ScanProgress", a=0x5c01d0, n=51, pos=True, stops=(0x26, 0x32),
                 tag="PLAN.md §M, M1",
                 src="7-Zip's `CDirItems::ScanProgress` (`CPP/UI/Common/EnumDirItems.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06's CPP/UI/Common/OpenArchive.cpp `Archive_GetItemBoolProp (arc, index, propID, result)`: `result`
+    # false, a `CPropVariant` on the stack (`vt` 0), `arc->GetProperty (index, propID, &prop)` (the `call [rax +
+    # 0x30]` at 0x3b); its result if not 0, else `VT_BOOL`: `result` = `boolVal != 0`, `VT_EMPTY`: S_OK, else
+    # E_FAIL; `~CPropVariant` (the `call` at 0x5e), the stack guard. Stops: the `ret` (0x7e), `__stack_chk_fail`
+    # (0x8b).
+    "gbp": dict(grp="Gbp", cn="Archive_GetItemBoolProp", a=0x5d15e0, n=144, pos=True, fs=True, stops=(0x7e, 0x8b),
+                hand=(0x86,),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `Archive_GetItemBoolProp` (`CPP/UI/Common/OpenArchive.cpp`; `objdump -d`)"),
     # C/7zStream.c `InStream_AtBegin_GetSize (stream, sizeRes)`: `stream->Seek (stream, sizeRes, SZ_SEEK_END)` (the
     # `call [rax + 0x20]` at 0x1b), then `InStream_SeekToBegin (stream)` (the `call` at 0x24); the first's result
     # if not 0, else the second's. Stop: the `ret` (0x3a).
