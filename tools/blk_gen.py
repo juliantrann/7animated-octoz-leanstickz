@@ -354,6 +354,13 @@ FNS = {
     # the stack guard's check (0x13d: `__stack_chk_fail`). Stops: the `ret` (0xfe).
     "opd": dict(grp="Opd", cn="__opendir", a=0x6635d0, n=380, pos=True, fs=True, stops=(0xfe,), calls=True,
                 tag="PLAN.md §M, M1", src="glibc 2.31's `__opendir` (`sysdeps/posix/opendir.c`; `objdump -d`)"),
+    # 7-Zip's C/LzmaDec.c `LzmaDec_Init (p)`: `p->dicPos` = 0, then a tail jump (0x16) to
+    # `LzmaDec_InitDicAndState (p, True, True)`.
+    "lzi": dict(grp="Lzi", cn="LzmaDec_Init", a=0x42b640, n=27, pos=True, stops=(0x16,), calls=True,
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `LzmaDec_Init` (`C/LzmaDec.c`; `objdump -d`)"),
+    # glibc 2.31 libio/fileops.c `_IO_file_stat (fp, st)`: a tail jump (0xf) to `__fxstat (1, fp->_fileno, st)`.
+    "ifs": dict(grp="Ifs", cn="_IO_file_stat", a=0x6287b0, n=20, pos=True, stops=(0xf,), calls=True,
+                tag="PLAN.md §M, M1", src="glibc 2.31's `_IO_file_stat` (`libio/fileops.c`; `objdump -d`)"),
     "sfs": dict(grp="Sfs", cn="SysFreeString", a=0x5a00c0, n=25, pos=True, stops=(0xd, 0x18),
                 tag="PLAN.md §M, M1", src="7-Zip 26.06's `SysFreeString` (`CPP/Common/MyWindows.cpp`; `objdump -d`)"),
     # 7-Zip's CPP/Common/Wildcard.cpp `DoesNameContainWildcard (const UString &)`: the `wchar_t`s (4 bytes, at
