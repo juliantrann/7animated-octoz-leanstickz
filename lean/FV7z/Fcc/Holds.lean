@@ -155,7 +155,7 @@ theorem vc_0 {N : Nat} {f : Rflags} (hF : ∀ k ≤ N, Foot F.data (Addr.add g�
       exact (nb_f h).symm
     exact eFin (Or.inr (Or.inr rfl)) (by exact ⟨0, fun k hk => absurd hk (Nat.not_lt_zero _), Or.inl ⟨hc, rfl⟩⟩) rfl
 
-set_option maxHeartbeats 1000000 in
+set_option maxHeartbeats 3000000 in
 /-- The loop's head, byte `i`: 0, -1 at 45; else byte `i + 1` `c`, `i + 1` at 50; else the head with `i + 1`. -/
 theorem vc_36 {N n : Nat} {g : Gprs} {f : Rflags} (hF : ∀ k ≤ N, Foot F.data (Addr.add g₀.rdi k))
     (hN : ch V₀ g₀.rdi N = 0) (h : I36 g₀ V₀ N n g) : W_36 F Wl (Nx g₀ V₀ N n) g f V₀ := by
@@ -175,10 +175,11 @@ theorem vc_36 {N n : Nat} {g : Gprs} {f : Rflags} (hF : ∀ k ≤ N, Foot F.data
         exact e
       exact eFin (Or.inr (Or.inl rfl))
         (by rw [step1, idx]; exact ⟨i + 1, hok', Or.inl ⟨hc, rfl⟩⟩) rfl
-    · refine e36 (i := i + 1) hi1 (by omega) ?_ hok' ?_
+    · refine e36 (i := i + 1) hi1 (by omega) ?_ ?_ ?_
       · have e := of_decide_eq_false h2
         rw [step1] at e
-        exact e
+        simpa only using e
+      · simpa only using hok'
       · simp only [G36, G36a, step1]
   · have hz : ch V₀ rdi i = 0 := tz_f h1
     exact eFin (Or.inl rfl) (by exact ⟨i, hok, Or.inr ⟨hne, hz, rfl⟩⟩) rfl
