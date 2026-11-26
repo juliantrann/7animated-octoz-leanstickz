@@ -232,11 +232,20 @@ theorem out2_ra {g₀ : Gprs} {fb : Addr} (H : Hy F Wl g₀ fb) {i : Nat} (hi : 
 /-- What is left of a piece's condition: footprint facts, equations, cases that cannot be, the registers and bytes
 that are some values. -/
 local macro "vcx" : tactic =>
-  `(tactic| repeat' (first | rfl | exact trivial | assumption | (intro h; exact absurd h (by decide)) |
-    exact ⟨_, rfl⟩ | exact ⟨_, _, rfl⟩ | exact ⟨_, _, _, rfl⟩ |
-    exact ⟨_, rfl, toBytesLE_length _ _⟩ | exact ⟨_, _, rfl, toBytesLE_length _ _, toBytesLE_length _ _⟩ |
-    exact ⟨_, _, _, rfl, by first | rfl | decide, by first | rfl | decide⟩ |
-    refine ⟨_, _, _, _, rfl, ?_⟩ | apply And.intro | intro _))
+  `(tactic| repeat' (first
+    | rfl
+    | exact trivial
+    | assumption
+    | (intro h; exact absurd h (by decide))
+    | exact ⟨_, rfl⟩
+    | exact ⟨_, _, rfl⟩
+    | exact ⟨_, _, _, rfl⟩
+    | exact ⟨_, rfl, toBytesLE_length _ _⟩
+    | exact ⟨_, _, rfl, toBytesLE_length _ _, toBytesLE_length _ _⟩
+    | exact ⟨_, _, _, rfl, (by first | rfl | decide), (by first | rfl | decide)⟩
+    | refine ⟨_, _, _, _, rfl, ?_⟩
+    | apply And.intro
+    | intro _))
 
 /-- From the entry, `edi` below 10: the digit at `rsi`, to the 0 (39). -/
 theorem vc_0s {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte}
@@ -258,8 +267,9 @@ theorem vc_0l {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte}
     (hcl : ∀ i < 8, Foot F.data (Addr.add (fb + 40#64) i))
     (hfw : ∀ i < 8, Foot Wl (Addr.add (g.rsp - 40#64 + 24#64) i)) :
     W_0 fb F Wl (fun j' g' _ V' => j' = 88 ∧
-      (∃ a c d, g' = { g with rax := a, rcx := c, rsp := g.rsp - 40#64, r8 := g.rsp - 40#64,
-          r10 := g.rsi + 1#64, r11 := d } ∧ c = 0#64 ∧ d = 3435973837#64) ∧
+      (∃ a c d, g' = { g with
+          rax := a, rcx := c, rsp := g.rsp - 40#64, r8 := g.rsp - 40#64, r10 := g.rsi + 1#64, r11 := d } ∧
+        c = 0#64 ∧ d = 3435973837#64) ∧
       V' = V1 V g fb) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at hb hfw ⊢
@@ -289,8 +299,8 @@ theorem vc_88e {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (hr : g.r
     (hb : (decide ((BitVec.setWidth 32 g.rdi).toNat < 99) || decide (BitVec.setWidth 32 g.rdi = 99#32)) = true)
     (hw : ∀ i < 1, Foot Wl (Addr.add (g.r8 + (g.rcx + 1#64)) i)) (hw' : ∀ i < 1, Foot Wl (Addr.add g.rsi i)) :
     W_88 fb F Wl (fun j' g' _ V' => j' = 155 ∧
-      (∃ d r di, g' = { g with rax := g.r8 + (g.rcx + 1#64), rdx := d, r9 := r, rcx := g.rcx + 1#64, rdi := di,
-          rsi := g.r10 }) ∧
+      (∃ d r di, g' = { g with
+          rax := g.r8 + (g.rcx + 1#64), rdx := d, r9 := r, rcx := g.rcx + 1#64, rdi := di, rsi := g.r10 }) ∧
       (∃ bs bs', V' = Vst (Vst V (g.r8 + (g.rcx + 1#64)) bs) g.rsi bs' ∧ bs.length = 1 ∧ bs'.length = 1)) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at hr hb hw hw' ⊢
@@ -595,6 +605,7 @@ theorem u2s_ok {fb : Addr} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBa
   have hs := X.cpu.gpr.rsp.isLt
   have a40 := t40 H.h40
   have a24 := t24 H.h40
+  have h40 := H.h40
   have hpb := H.hpb
   have e24 : (X.cpu.gpr.rsp - 40#64 + 24#64).toNat = (X.cpu.gpr.rsp - 40#64).toNat + 24 := by omega
   have hfw24 : ∀ i < 8, Foot Wl (Addr.add (X.cpu.gpr.rsp - 40#64 + 24#64) i) :=
