@@ -496,6 +496,11 @@ FNS = {
     "sen": dict(grp="Sen", cn="StringsAreEqualNoCase", a=0x44ba80, n=155, pos=True, stops=(0x8d, 0x9a), calls=True,
                 tag="PLAN.md §M, M1",
                 src="7-Zip's `StringsAreEqualNoCase` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
+    # 7-Zip's CPP/Common/MyString.cpp `AString::Replace (oldString, newString)`: nothing for an empty `oldString` or
+    # one equal to `newString` (`strcmp`, 0x8f); else from 0, `Find` (0x6b), `Delete` (0x48), `Insert` (0x55), on past
+    # the inserted string while in the string. Stops: the `ret`s (0x84, 0xa6).
+    "rpl": dict(grp="Rpl", cn="AString::Replace", a=0x44ced0, n=167, pos=True, stops=(0x84, 0xa6), calls=True,
+                tag="PLAN.md §M, M1", src="7-Zip's `AString::Replace` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
     "usl": dict(grp="Usl", cn="UString::SetStartLen", a=0x44d060, n=54, pos=True, stops=(0x35,), calls=True,
                 tag="PLAN.md §M, M1", src="7-Zip's `UString::SetStartLen` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
     # CPP/UI/Common/EnumDirItems.cpp `CDirItems::ScanProgress (dirPath)`: without a `Callback` (at 0xc0) 0, else a tail
