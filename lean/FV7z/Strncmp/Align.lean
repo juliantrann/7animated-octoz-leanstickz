@@ -9,34 +9,8 @@ otherwise the strings are swapped when `rsi`'s offset is the smaller (`r8d = 0xf
 result back), and from `163` (`at163`) the jump by the table at `0x6f0df0` (`ntgt_eq`) goes to the loop at
 `400 + 384·j`, `j = 15 - (rsi's offset - rdi's offset)`. `AtL` is what each loop starts from.
 
-- `Seg.s_jccF`: `jcc` whose fall keeps the flags too (`je`, then `ja`, on one `cmp`).
 - `al_down`, `and15`, `sw3264`, `r9_val`: `and r, -16`, `and r32, 15`, a 32-bit write, the table's index.
 -/
-namespace FV7z.Fn.Seg
-open ZellicX86 Decode FV7z.Leaf
-
-variable {prof : Profile} {L : List (Addr × List Byte)} {s₀ : State} {o : Oracle} {F : Footprint} {Wl : List Rgn}
-  {gev : List Event} {gP : State → Nat → List Event → Prop} {gE : Outcome → List Event → Prop}
-  {e' : Addr} {code : List Byte} {X : State} {t j : Nat} {V : Addr → Byte}
-
-/-- `jcc` to the `tgt`-th byte of the same segment, its fall keeping the flags. -/
-theorem s_jccF (c : Seg prof F Wl L s₀ o) (hK : KeptW Wl s₀ X)
-    (hA : Agree F X.proc.mm.mem V) (hin : CodeIn L e' code) (hj : j < code.length)
-    (hrip : X.cpu.rip = e'.add j) {cc : Cond} {rel len tgt : Nat}
-    (hd : Dec prof.feat code j (FV7z.mk (.jcc cc) 64 [.rel rel] len))
-    (htgt : (j + len + rel) % 2 ^ 64 = tgt % 2 ^ 64) (ht : tgt < code.length)
-    (taken : X.cpu.rflags.cond cc = true →
-      ContG prof F Wl L s₀ o gev gP gE V fun Y => Y.cpu.rip = e'.add tgt ∧ Y.cpu.gpr = X.cpu.gpr)
-    (fall : X.cpu.rflags.cond cc = false → ContG prof F Wl L s₀ o gev gP gE V fun Y =>
-      Y.cpu.rip = e'.add (j + len) ∧ Y.cpu.gpr = X.cpu.gpr ∧ ∀ c', Y.cpu.rflags.cond c' = X.cpu.rflags.cond c') :
-    GoG prof L o gev gP gE X t := by
-  cases hcc : X.cpu.rflags.cond cc
-  · exact c.next hK hA hin hj hrip (fun M hK' hA' htf _ => ⟨_, _, jcc_n (s := X.withMem M) htf
-      (c.dec hK' hin hrip hd) hcc, hK'.nx rfl rfl rfl, hA', rip_add hrip M len, rfl, fun _ => rfl⟩) (fall hcc)
-  · exact c.s_jcc hK hA hin hj hrip hd htgt ht taken fun h => nomatch hcc.symm.trans h
-
-end FV7z.Fn.Seg
-
 namespace FV7z.Strncmp
 open ZellicX86 Decode FV7z.Leaf FV7z.Fn FV7z.Strlen
 
@@ -261,19 +235,20 @@ theorem align (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e' scm) (he : e' = 0x
     have heq : b.toNat % 16 = a.toNat % 16 := by
       rw [hz] at hcc
       exact of_decide_eq_true hcc
-    rintro Z tZ hKZ hAZ ⟨hrZ, hgZ⟩
+    rintro Z tZ hKZ hAZ ⟨hrZ, hgZ, -⟩
     exact K0 Z tZ hKZ hAZ hrZ heq.symm (by rw [hgZ]; exact hL₂)
   intro hcc
   have hne : b.toNat % 16 ≠ a.toNat % 16 := by
     rw [hz] at hcc
     exact of_decide_eq_false hcc
-  rintro Y₃ t₃ hK₃ hA₃ ⟨hr₃, hg₃, hf₃⟩
+  rintro Y₃ t₃ hK₃ hA₃ ⟨hr₃, hg₃, -, hf₃⟩
+  have h7 : Y₃.cpu.rflags.cond 7 = Y₂.cpu.rflags.cond 7 := by rw [hf₃]; rfl
   have hL₃ : AtL g₀ Y₃.cpu.gpr a b n q false := by rw [hg₃]; exact hL₂
   -- `ja 163`
   refine c.s_jcc (tgt := 163) hK₃ hA₃ hin (lt_scm (by decide)) hr₃ (d154 prof.feat) (by decide)
     (lt_scm (by decide)) ?_ ?_
   · intro hcc'
-    rw [hf₃ 7, hja] at hcc'
+    rw [h7, hja] at hcc'
     have hlt : a.toNat % 16 < b.toNat % 16 := by
       simp at hcc'
       omega
@@ -281,7 +256,7 @@ theorem align (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e' scm) (he : e' = 0x
     exact at163 c hin he hT hTf hK₄ hA₄ hr₄ (by rw [hg₄]; exact hL₃) hlt
       fun Z tZ hKZ hAZ hrZ hLZ => KL Z tZ false a b hKZ hAZ (Or.inl ⟨rfl, rfl, rfl⟩) hlt hrZ hLZ
   intro hcc'
-  rw [hf₃ 7, hja] at hcc'
+  rw [h7, hja] at hcc'
   have hlt : b.toNat % 16 < a.toNat % 16 := by
     simp at hcc'
     omega
