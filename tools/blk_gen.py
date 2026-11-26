@@ -343,6 +343,11 @@ FNS = {
     # (0xd) at the allocation, 4 bytes before.
     # 7-Zip's CPP/Common/MyWindows.cpp `VariantClear (PROPVARIANT *prop)`: `SysFreeString (prop->bstrVal)` if
     # `prop->vt` is `VT_BSTR`, then `prop->vt` = `VT_EMPTY`, answer `S_OK`. Stops: the two `ret`s (22, 49).
+    # 7-Zip 26.06's CPP/Common/MyWindows.cpp `SysAllocStringLen (s, len)`: `len` above 0x3ffffffc or `malloc`
+    # (the `call`, 0x22) null: 0 (0x6a, the `ret`); else the length word, `memcpy` of `s` (the `call`, 0x41) when
+    # `s` is not null, the terminator, `rax` = the string (0x58, the `ret`).
+    "sas": dict(grp="Sas", cn="SysAllocStringLen", a=0x5a0010, n=107, pos=True, stops=(0x58, 0x6a), calls=True,
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `SysAllocStringLen` (`CPP/Common/MyWindows.cpp`; `objdump -d`)"),
     "vcl": dict(grp="Vcl", cn="VariantClear", a=0x5a0120, n=50, pos=True, stops=(22, 49), calls=True,
                 tag="PLAN.md §M, M1", src="7-Zip 26.06's `VariantClear` (`CPP/Common/MyWindows.cpp`; `objdump -d`)"),
     # 7-Zip's CPP/Windows/FileIO.cpp `CInFile::read_part (data, size)`: `read (_handle, data, min (size, 1 << 22))`
