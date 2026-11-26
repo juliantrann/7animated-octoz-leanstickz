@@ -34,7 +34,10 @@ theorem vc_0 {g : Gprs} {f : Rflags} :
   first
   | rfl
   | exact fun _ => rfl
-  | (intro _; rw [← imul64_eq]; rfl)
+  | (intro _; unfold ftV; rw [← imul64_eq]; rfl)
+  | (intro _; unfold ftV; rw [← imul64_eq]; exact rfl)
+  | (intro _; rw [show ftV rdi = BitVec.setWidth 64 (BitVec.signExtend 128 (11644473600#64 + rdi) *
+      BitVec.signExtend 128 10000000#64) from (imul64_eq _ _).symm]; rfl)
   | (trace_state; done)
 
 /-- `rsp` after `rax` is written (by the structure, not by the value: the kernel would evaluate it). -/
