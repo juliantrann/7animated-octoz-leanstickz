@@ -1,2 +1,2 @@
-import FV7z.Strncmp.AshrE
+import FV7z.Strncmp.AshrS
 open FV7z
