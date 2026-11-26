@@ -424,6 +424,23 @@ FNS = {
     # NUL, else -1. Stops: the `ret`s (45, 50, 53).
     "fcc": dict(grp="Fcc", cn="FindCharPosInString (char)", a=0x44b960, n=54, pos=True, stops=(45, 50, 53),
                 tag="PLAN.md §M, M1", src="7-Zip 26.06's `FindCharPosInString` (`MyString.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 `CArchiveExtractCallback::PrepareOperation (askExtractMode)`: with `_extractCallback2`... the inner
+    # callback (0xc0) a tail jump through its vtable (0x16, slot 0x28); else the flags at 0x6d and the tail jump through
+    # `_extractCallback3`'s slot 0x30 (0x66, `jmp r10`).
+    "pop": dict(grp="Pop", cn="CArchiveExtractCallback::PrepareOperation", a=0x5aa500, n=0x77, pos=True,
+                stops=(0x16, 0x66), tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CArchiveExtractCallback::PrepareOperation` (`CPP/7zip/UI/Common/ArchiveExtractCallback.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 `COpenCallbackImp::SetTotal (files, bytes)`: through `ReOpenCallback` (0x60) a tail `jmp rax` (0x17,
+    # slot 0x18); else through `Callback` (0x68) a call of slot 8 (0x30) and its answer (`ret` 0x37); else 0 (0x42).
+    "sto": dict(grp="Sto", cn="COpenCallbackImp::SetTotal", a=0x5b2c80, n=0x43, pos=True,
+                stops=(0x17, 0x37, 0x42), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `COpenCallbackImp::SetTotal` (`CPP/7zip/UI/Common/ArchiveOpenCallback.cpp`; `objdump -d`)"),
+    "hcl": dict(grp="Hcl", cn="NArchive::NLzma::CHandler::Close", a=0x49ea60, n=0x4e, pos=True,
+                stops=(0x4d,), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `NArchive::NLzma::CHandler::Close` (`CPP/7zip/Archive/LzmaHandler.cpp`; `objdump -d`)"),
+    "sis": dict(grp="Sis", cn="NCompress::NLzma::CDecoder::SetInStream", a=0x57f8d0, n=0x40, pos=True,
+                stops=(0x3f,), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `NCompress::NLzma::CDecoder::SetInStream` (`CPP/7zip/Compress/LzmaDecoder.cpp`; `objdump -d`)"),
     "sfs": dict(grp="Sfs", cn="SysFreeString", a=0x5a00c0, n=25, pos=True, stops=(0xd, 0x18),
                 tag="PLAN.md §M, M1", src="7-Zip 26.06's `SysFreeString` (`CPP/Common/MyWindows.cpp`; `objdump -d`)"),
     # 7-Zip's CPP/Common/Wildcard.cpp `DoesNameContainWildcard (const UString &)`: the `wchar_t`s (4 bytes, at
