@@ -291,7 +291,7 @@ theorem loop288 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e' scm) {g₀ : Gpr
     hP hR ?_
   intro W tW hKW hAW hrW hIW hxW huW hsW
   -- `jmp 288`
-  refine c.s_jmpV hKW hAW hin (lt_scm (by decide)) hrW (d392 prof.feat) (by decide) (lt_scm (by decide)) ?_
+  refine c.s_jmpV (tgt := 288) hKW hAW hin (lt_scm (by decide)) hrW (d392 prof.feat) (by decide) (lt_scm (by decide)) ?_
   rintro X tX hKX hAX ⟨hrX, hgX, hvX⟩
   refine ih (n - (u + 16 + 16)) (by omega) (u + 16 + 16) (k + 16 + 16) X tX rfl hKX hAX hrX (by rw [hgX]; exact hIW)
     (by rw [hvX]; exact hxW) huW hsW ?_ ?_
@@ -314,9 +314,9 @@ theorem ashr0 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e' scm) {Y : State} {
   rw [hab] at hdi hax
   generalize hd : b.toNat % 16 = d at hdi hsi hcx hax
   have hd16 : d < 16 := hd ▸ Nat.mod_lt _ (by decide)
-  have hfa : ∀ i < 16, Foot F.data (Y.cpu.gpr.rdi.add i) :=
+  have hfa : ∀ i < 16, Foot F.data (Addr.add Y.cpu.gpr.rdi i) :=
     foot_chunk hdi0 hd16 (by rw [hdi]; exact pg_of hpa hq fun i hi => (hsame i hi).2)
-  have hfb : ∀ i < 16, Foot F.data (Y.cpu.gpr.rsi.add i) :=
+  have hfb : ∀ i < 16, Foot F.data (Addr.add Y.cpu.gpr.rsi i) :=
     foot_chunk hsi0 hd16 (by
       rw [hsi]
       exact pg_of hpb hq fun i hi h0 => (hsame i hi).2 ((hsame i hi).1.trans h0))
@@ -433,10 +433,10 @@ theorem ashr0 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e' scm) {Y : State} {
       rw [hf₄, hfl, cond_2, subF_cf]
       simp only [wr, gv, Src.val, eaG, optV, set_r9n, get1, get11, get_r9n, BitVec.setWidth_eq, hg₃, hcx₂, h11₂]
       rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show n - q < 2 ^ 64 by omega)]
-    have hkp₄ : KpN g₀ Y₄.cpu.gpr := by rw [hg₄, hg₃]; exact hkp₂
-    have hdi₄ : Y₄.cpu.gpr.rdi = Y.cpu.gpr.rdi := by rw [hg₄, hg₃]; exact hdi₂
-    have hsi₄ : Y₄.cpu.gpr.rsi = Y.cpu.gpr.rsi := by rw [hg₄, hg₃]; exact hsi₂
-    have h8₄ : Y₄.cpu.gpr.r8 = 0 := by rw [hg₄, hg₃]; exact h8₂
+    have hkp₄ : KpN g₀ Y₄.cpu.gpr := by simp only [KpN, hg₄, hg₃, wr, set_r9n]; exact hkp₂
+    have hdi₄ : Y₄.cpu.gpr.rdi = Y.cpu.gpr.rdi := by simp only [hg₄, hg₃, wr, set_r9n]; exact hdi₂
+    have hsi₄ : Y₄.cpu.gpr.rsi = Y.cpu.gpr.rsi := by simp only [hg₄, hg₃, wr, set_r9n]; exact hsi₂
+    have h8₄ : Y₄.cpu.gpr.r8 = 0 := by simp only [hg₄, hg₃, wr, set_r9n]; exact h8₂
     -- `jb 6212`
     refine c.s_jcc (tgt := 6212) hK₄ hA₄ hin (lt_scm (by decide)) hr₄ (d239 prof.feat) (by decide)
       (lt_scm (by decide)) ?_ ?_
