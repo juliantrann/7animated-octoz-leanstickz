@@ -102,6 +102,7 @@ theorem lsm_tls {lim : Nat} {b fsb : Addr} {ks : Kst} (c : Seg prof F Wl L s₀ 
     (hst : ∀ i < 136, Foot Wl (Addr.add (Y.cpu.gpr.rsp - 136) i))
     (hgl : ∀ a : Addr, 0x777000 ≤ a.toNat → a.toNat < 0x7a9000 → Foot Wl a)
     (hhd : ∀ a : Addr, 0x400000 ≤ a.toNat → a.toNat < 0x401000 → Foot F.data a)
+    (hntb : ∀ a : Addr, 0x6f0df0 ≤ a.toNat → a.toNat < 0x6f0e30 → Foot F.reads a)
     (hbl : 0x7a9000 ≤ b.toNat) (hbp : b.toNat % 4096 = 0) (hsp : b.toNat + 8192 + 136 ≤ Y.cpu.gpr.rsp.toNat)
     (hmg : ∀ t p, o t (.memFail p) = none) (hlim : b.toNat / 4096 + 2 ≤ lim)
     (k : ∀ s₂ Z t' W (d r10 r8 r9 : BitVec 64), Seg prof (withNew F [⟨b, 8192⟩]) ([⟨b, 8192⟩] ++ Wl) L s₂ o →
@@ -129,7 +130,7 @@ theorem lsm_tls {lim : Nat} {b fsb : Addr} {ks : Kst} (c : Seg prof F Wl L s₀ 
     intro a ha
     rw [Vst_out _ _ _ _ (by sd) (by simp only [toBytesLE_length]; bv_omega)]
   refine Tls.setup_tls c hB hT.tls hT.sbk hT.brk hc1 hc2 hcpy hK₁ hA₁ hr₁ (hI _ fun a ha => hV₁ a (by omega))
-    (fun i hi => ?_) hgl hhd hbl hbp (by rw [hsp₁]; bv_omega) hmg hlim (fun W hW => ?_) ?_
+    (fun i hi => ?_) hgl hhd hntb hbl hbp (by rw [hsp₁]; bv_omega) hmg hlim (fun W hW => ?_) ?_
   · rw [hsp₁]
     exact slot _ i (by omega) (by simp only [Addr.add]; bv_omega)
   · refine hG.congr fun a h1 h2 => ?_
@@ -264,7 +265,8 @@ theorem launch_to_tls {l : Launch} {n : Nat}
     · exact hc h2
   refine lsm_tls hsg (launch_base h hroom hM hnp hlu) hC.lsm hT hcpy hKY (V := fun a => Y.proc.mm.mem.readByte a)
     (fun _ _ => rfl) (hripY.trans (by decide)) (fun V₁ hV₁ => ?_) (GotOkB.of_mem hgot) (fun i hi => ?_)
-    (fun a h1 h2 => zzsFoot_var h1 h2) (fun a h1 h2 => foot_reads (zzsFoot_hdr h1 h2)) hb1 hb0 (by omega) hmg
+    (fun a h1 h2 => zzsFoot_var h1 h2) (fun a h1 h2 => foot_reads (zzsFoot_hdr h1 h2))
+    (fun a h1 h2 => zzsFoot_ro (by omega) (by omega)) hb1 hb0 (by omega) hmg
     (by unfold pageUp; omega) ?_
   · refine tls_in hK hI0 hB0 hMB hph hpn fun a ha hc => ?_
     rw [hV₁ a (by omega)]
