@@ -85,15 +85,15 @@ theorem syscall_mmap_anon {len : Nat} (htf : s.cpu.rflags.tf = false)
   show P ((sysMmap prof (nx s len (sysGpr s len) (rf0 s))).runStream o t)
   dsimp only [sysMmap]
   simp only [hrsi, hr10, hrdx, hr9, hme, hl0', mm_b5, mm_huge, mm_fixed, mm_32, mm_nore, mm_lock, mm_gd, mm_ty,
-    mm_drop, mm_priv, mm_shared, mm_p4, ne_eq, eq_self_iff_true, not_true_eq_false, not_false_eq_true,
+    mm_drop, mm_priv, mm_shared, mm_p4, ne_eq, not_true_eq_false, not_false_eq_true,
     ↓reduceIte, Bool.false_eq_true, Bool.not_true, Bool.not_false, Bool.false_and, Bool.and_false,
-    Bool.true_and, Bool.and_true, Option.map, Option.isNone, decide_false, decide_true, Bool.or_false,
-    Bool.false_or]
+    Bool.true_and, Bool.and_true, Option.map, Option.isNone, decide_false, decide_true]
   split
   · exact h0 (errRet ENOMEM) t (errRet_err (by decide) (by decide))
   · split
     · exact h0 (errRet ENOMEM) t (errRet_err (by decide) (by decide))
-    · refine rs_bind_any _ _ fun a t₁ => ?_
+    · refine rs_bind_any _ _ fun _ t₀ => ?_
+      refine rs_bind_any (t := t₀) _ _ fun a t₁ => ?_
       try dsimp only
       split
       · exact h0 (errRet ENOMEM) t₁ (errRet_err (by decide) (by decide))
