@@ -311,6 +311,14 @@ FNS = {
                 tag="PLAN.md §M, M1", src="glibc 2.31's `_IO_default_imbue` (`libio/genops.c`; `objdump -d`)"),
     # 7-Zip's CPP/Common/MyWindows.cpp `SysFreeString (bstr)`: null, a `ret` (0x18); else a tail jump to `free`
     # (0xd) at the allocation, 4 bytes before.
+    # glibc 2.31 dirent/closedir.c `__closedir (dirp)`: a null `dirp`, `errno` EINVAL and -1 (0x2c, the `ret`); else
+    # `fd` = `dirp->fd` kept in `rbp`, `free (dirp)` (the `call`, 0xc), then a tail jump to `__close_nocancel` (0x14).
+    "cld": dict(grp="Cld", cn="__closedir", a=0x663860, n=45, pos=True, fs=True, stops=(0x14, 0x2c), calls=True,
+                tag="PLAN.md §M, M1", src="glibc 2.31's `__closedir` (`sysdeps/posix/closedir.c`; `objdump -d`)"),
+    # 7-Zip 26.06's CPP/Windows/FileFind.cpp `MY_lstat (path, st, followLink)`: the `stat` zeroed (`rep stosq`, 0xd,
+    # 18 quadwords; by hand), then a tail jump to `__xstat (1, path, st)` (0x28) with `followLink`, else to `__lxstat` (0x1f).
+    "mls": dict(grp="Mls", cn="MY_lstat", a=0x4558a0, n=45, pos=True, stops=(0x1f, 0x28), calls=True, hand=(0xd,),
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `MY_lstat` (`CPP/Windows/FileFind.cpp`; `objdump -d`)"),
     "sfs": dict(grp="Sfs", cn="SysFreeString", a=0x5a00c0, n=25, pos=True, stops=(0xd, 0x18),
                 tag="PLAN.md §M, M1", src="7-Zip 26.06's `SysFreeString` (`CPP/Common/MyWindows.cpp`; `objdump -d`)"),
     # 7-Zip's CPP/Common/Wildcard.cpp `DoesNameContainWildcard (const UString &)`: the `wchar_t`s (4 bytes, at
