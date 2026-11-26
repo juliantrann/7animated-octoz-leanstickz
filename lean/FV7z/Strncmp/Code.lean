@@ -1242,31 +1242,37 @@ theorem b326 (prof : Profile) : BlkV prof scm 326 330 o326 :=
   .cons (d326 _) (OpI.sub (.i 16) (.inr rfl)) (lt_scm (by decide)) <|
   .nil 330
 
-/-- The stretch from `336` to `362`. -/
+/-- The stretch from `336` to `340`. -/
 def o336 : List VOp := [
-  VOp.op (Op.add 64 1 (.i 16)),
+  VOp.op (Op.add 64 1 (.i 16))]
+
+theorem b336 (prof : Profile) : BlkV prof scm 336 340 o336 :=
+  .cons (d336 _) (OpI.add (.i 16) (.inr rfl)) (lt_scm (by decide)) <|
+  .nil 340
+
+/-- The stretch from `340` to `366`. -/
+def o340 : List VOp := [
   VOp.movdqa_mi 1 6 1,
   VOp.movdqa_mi 2 7 1,
   VOp.pcmpeqb 0 1,
   VOp.pcmpeqb 1 2,
-  VOp.psubb 1 0]
+  VOp.psubb 1 0,
+  VOp.pmovmskb 2 1]
 
-theorem b336 (prof : Profile) : BlkV prof scm 336 362 o336 :=
-  .cons (d336 _) (OpI.add (.i 16) (.inr rfl)) (lt_scm (by decide)) <|
+theorem b340 (prof : Profile) : BlkV prof scm 340 366 o340 :=
   .cons (d340 _) (VOpI.movdqa_mi) (lt_scm (by decide)) <|
   .cons (d345 _) (VOpI.movdqa_mi) (lt_scm (by decide)) <|
   .cons (d350 _) (VOpI.pcmpeqb) (lt_scm (by decide)) <|
   .cons (d354 _) (VOpI.pcmpeqb) (lt_scm (by decide)) <|
   .cons (d358 _) (VOpI.psubb) (lt_scm (by decide)) <|
-  .nil 362
+  .cons (d362 _) (VOpI.pmovmskb) (lt_scm (by decide)) <|
+  .nil 366
 
-/-- The stretch from `362` to `372`. -/
-def o362 : List VOp := [
-  VOp.pmovmskb 2 1,
+/-- The stretch from `366` to `372`. -/
+def o366 : List VOp := [
   VOp.op (Op.sub 32 2 (.i 65535))]
 
-theorem b362 (prof : Profile) : BlkV prof scm 362 372 o362 :=
-  .cons (d362 _) (VOpI.pmovmskb) (lt_scm (by decide)) <|
+theorem b366 (prof : Profile) : BlkV prof scm 366 372 o366 :=
   .cons (d366 _) (OpI.sub (.i 65535) (.inl rfl)) (lt_scm (by decide)) <|
   .nil 372
 
