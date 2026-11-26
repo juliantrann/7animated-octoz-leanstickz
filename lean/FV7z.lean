@@ -520,6 +520,7 @@ import FV7z.Tcg.Ok
 import FV7z.Ity.Holds
 import FV7z.Vcl.Holds
 import FV7z.Sas.Holds
+import FV7z.Stb.Holds
 import FV7z.Lzi.Holds
 import FV7z.Ifs.Holds
 import FV7z.Cra.Holds
