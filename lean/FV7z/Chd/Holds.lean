@@ -18,6 +18,13 @@ memo_sig_term)` (`rsi` the 8 bytes at `this + 8`), `pop rbx` and a tail jump to 
 - `vc_0`, `vc_21`: the two pieces.
 - `chd_ok`: from the entry through the first `signal` to the second.
 -/
+/- Next (fork N's batch, not started): the constructor `CCtrlHandlerSetter::CCtrlHandlerSetter` at `0x5e7750`
+(71 bytes; `ret` at 70). Same shape as `chd_ok` with two `call`s of `signal` (20, 50; `rsi` = `memo_sig_int` at
+`0x5e7720` by `lea [rip + d]`, see `s_mov_rip_i64`/`OpIA`), `rax` stored at `this` and `this + 8` after each, and
+`cmp rax, -1; je` to the cold throw paths `0x419502` (32) and `0x419527` (63): blk_gen `hand=(32, 63)` and
+`c.s_jcc_x` with the throws as hypotheses, as in `FV7z/Arb/Holds.lean` (`kt`). Then the rest of the list from main:
+`0x49fef0`, `0x5ac010`, `0x5e7950`, `0x461ed0`, `0x5d0720`, `0x5d07d0`, `0x49fcb0`, `0x5aa0a0`, `0x5d2880`. -/
+
 open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn
 namespace FV7z.Chd
 
