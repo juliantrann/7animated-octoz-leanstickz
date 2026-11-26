@@ -1,8 +1,4 @@
-import FV7z.Memcpy.BwdP
-import FV7z.Memcpy.Bwd
+import FV7z.Memcpy.Entry
 open FV7z
-#print axioms FV7z.Memcpy.FwdP.stB
-#print axioms FV7z.Memcpy.FwdP.rdB
-#print axioms FV7z.Memcpy.sub_back
-#print axioms FV7z.Memcpy.tailBAt
-#print axioms FV7z.Memcpy.loopB
+#print axioms FV7z.Memcpy.sse2At
+#print axioms FV7z.Memcpy.psse2At
