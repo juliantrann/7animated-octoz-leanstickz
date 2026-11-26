@@ -253,6 +253,15 @@ FNS = {
     # glibc 2.31 signal/sigaction.c `__sigaction (sig, act, oact)`: `errno` = `EINVAL` and -1 unless `sig` is from 1 to
     # 64 and not `SIGCANCEL` (32) or `SIGSETXID` (33), else a tail jump to `__libc_sigaction`. Stops: the jump (0x14),
     # the `ret` (0x33).
+    # glibc 2.31 `__fxstat (vers, fd, buf)` and `__xstat (vers, path, buf)` (`sysdeps/unix/sysv/linux/wordsize-64/`):
+    # `vers` above 1 is `EINVAL`, else the `syscall` `fstat` (5) or `stat` (4), the error to `errno`. Stops: the `ret`s,
+    # the padding after the first two; the `syscall` is a step of its own.
+    "fxs": dict(grp="Fxs", cn="__fxstat", a=0x665360, n=84, pos=True, fs=True, stops=(0x21, 0x22, 0x39, 0x3a, 0x53),
+                calls=True, tag="PLAN.md §M, M1",
+                src="glibc 2.31's `__fxstat` (`sysdeps/unix/sysv/linux/wordsize-64/fxstat.c`; `objdump -d`)"),
+    "xst": dict(grp="Xst", cn="__xstat", a=0x665300, n=84, pos=True, fs=True, stops=(0x22, 0x23, 0x39, 0x3a, 0x53),
+                calls=True, tag="PLAN.md §M, M1",
+                src="glibc 2.31's `__xstat` (`sysdeps/unix/sysv/linux/wordsize-64/xstat.c`; `objdump -d`)"),
     "sgw": dict(grp="Sgw", cn="__sigaction", a=0x6011d0, n=52, pos=True, fs=True, stops=(0x14, 0x33),
                 tag="PLAN.md §M, M1", src="glibc 2.31's `__sigaction` (`signal/sigaction.c`; `objdump -d`)"),
     # glibc 2.31 `__wmemcpy (d, s, n)`: `n` scaled to bytes (`shl rdx, 2`), a tail jump to `memcpy`'s PLT entry.
