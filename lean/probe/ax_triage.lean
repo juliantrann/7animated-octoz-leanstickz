@@ -1,4 +1,5 @@
-import FV7z.Pos.Probe
-import FV7z.Pcs.Holds
+import FV7z.Lemmas.SysFutex
+import FV7z.Pos.Holds
 open FV7z
-#print axioms FV7z.Pcs.pcs_ok
+#print axioms FV7z.Pos.pos_init
+#print axioms FV7z.Pos.pos_done
