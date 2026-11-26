@@ -239,9 +239,10 @@ theorem stm_pre {fb : Addr} {lim : Nat} {b fsb : Addr} {ks : Kst} {T Z ps : Addr
     exact k0 _ Z' t' hKz hAz hrz hax hspz ⟨hbx.trans r3, hbp.trans r2, h12.trans r1, h13.trans h13₁,
       h14.trans h14₁, h15.trans h15₁⟩ o₁
   -- `MORECORE (0)`
+  have hst₁ : ∀ i < 8, Foot Wl (Addr.add (Y₁.cpu.gpr.rsp - 8) i) := by
+    rw [hsp₁]; exact stk hstk (by rw [e4]; omega) (by rw [e4]; omega) (by omega)
   refine c.s_callR hK₁ hA₁ hin (lt_len (by decide)) hr₁ (call_51 _) (by rw [mc_51]; exact f4) hinD
-    (Dmc.lt_len (j := 0) (by decide)) ?_ (by rw [hsp₁]; exact stk hstk (by rw [e4]; omega) (by rw [e4]; omega)
-      (by omega)) ?_
+    (Dmc.lt_len (j := 0) (by decide)) ?_ hst₁ ?_
   · rw [mc_51, Cal.rd_out (x := 7942872#64) (n := 8) o₁ (by tn) (.inl (by tn))]
     exact hmc
   rintro Y₂ t₂ hK₂ hA₂ ⟨hr₂, hg₂⟩
@@ -283,9 +284,10 @@ theorem stm_pre {fb : Addr} {lim : Nat} {b fsb : Addr} {ks : Kst} {T Z ps : Addr
   have h14Z : Z'.cpu.gpr.r14 = X.cpu.gpr.r14 := s6.trans (by rw [hg₂]; exact h14₁)
   have h15Z : Z'.cpu.gpr.r15 = X.cpu.gpr.r15 := s7.trans (by rw [hg₂]; exact h15₁)
   -- the break against the top chunk's end
+  have hT₃ : rdq(V₃, 7940768#64) = T := by
+    rw [Cal.rd_out (x := 7940768#64) (n := 8) o₃ (by tn) (.inl (by tn))]; exact hT
   refine (c_57 prof fb).run c hfs hin _ hKz hAz hrz
-    (vc_57 (T := T) (by rw [Cal.rd_out (x := 7940768#64) (n := 8) o₃ (by tn)
-      (.inl (by tn))]; exact hT) f1) ?_
+    (vc_57 (T := T) hT₃ f1) ?_
   rintro j' g₄ fl V₄ ⟨hVV, hsp₄, hbx₄, h12₄, h13₄, h14₄, h15₄, hj⟩ Y₄ t₄ hK₄ hA₄ hr₄ hg₄ -
   subst V₄
   subst hg₄
@@ -411,9 +413,10 @@ theorem stm_post {fb : Addr} {lim : Nat} {b fsb : Addr} {ks : Kst} {T sm : Addr}
   have q3 : ∀ i < 8, Foot F.data (Addr.add (X.cpu.gpr.rsp + 8 + 8 + 8) i) :=
     stk hfr (by omega) (by omega) (by omega)
   -- the new break
+  have hT₃ : rdq(V₃, 7940768#64) = T := by
+    rw [Cal.rd_out (x := 7940768#64) (n := 8) o₃ (by tn) (.inl (by tn))]; exact hT
   refine (c_120 prof fb).run c hfs hin _ hKz hAz hrz
-    (vc_120 (T := T) (by rw [Cal.rd_out (x := 7940768#64) (n := 8) o₃ (by tn)
-      (.inl (by tn))]; exact hT) f2) ?_
+    (vc_120 (T := T) hT₃ f2) ?_
   rintro j' g₄ fl V₄ ⟨hVV, hsp₄, h13₄, h14₄, h15₄, hj⟩ Y₄ t₅ hK₄ hA₄ hr₄ hg₄ -
   subst V₄
   subst hg₄
