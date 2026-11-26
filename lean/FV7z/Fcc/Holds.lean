@@ -146,11 +146,10 @@ theorem vc_0 {N : Nat} {f : Rflags} (hF : ∀ k ≤ N, Foot F.data (Addr.add g�
   dsimp only at hF ⊢
   wpx [W_0, W_17, W_51, o0, o5, sw_8_32_8, sw_8_32_64_8, sw8r, sw32r, BitVec.xor_self]
   refine ⟨f0 (hF 0 (Nat.zero_le _)), fun h => ?_, fun h af => ?_⟩
-  · have hc : ch V₀ rdi 0 ≠ rsi.setWidth 8 := by
-      simp only [ch, addr_add_zero]
+  · refine e36 (i := 0) (Nat.zero_le _) (by omega) ?_ (fun k hk => absurd hk (Nat.not_lt_zero _)) ?_
+    · simp only [ch, addr_add_zero]
       exact fun e => nb_t h e.symm
-    exact e36 (Nat.zero_le _) (by omega) hc (fun k hk => absurd hk (Nat.not_lt_zero _))
-      (by simp only [G36, G36a, ch, addr_add_zero])
+    · simp only [G36, G36a, ch, addr_add_zero]
   · have hc : ch V₀ rdi 0 = rsi.setWidth 8 := by
       simp only [ch, addr_add_zero]
       exact (nb_f h).symm
@@ -176,11 +175,11 @@ theorem vc_36 {N n : Nat} {g : Gprs} {f : Rflags} (hF : ∀ k ≤ N, Foot F.data
         exact e
       exact eFin (Or.inr (Or.inl rfl))
         (by rw [step1, idx]; exact ⟨i + 1, hok', Or.inl ⟨hc, rfl⟩⟩) rfl
-    · have hc : ch V₀ rdi (i + 1) ≠ rsi.setWidth 8 := by
-        have e := of_decide_eq_false h2
+    · refine e36 (i := i + 1) hi1 (by omega) ?_ hok' ?_
+      · have e := of_decide_eq_false h2
         rw [step1] at e
         exact e
-      exact e36 hi1 (by omega) hc hok' (by simp only [G36, G36a, step1])
+      · simp only [G36, G36a, step1]
   · have hz : ch V₀ rdi i = 0 := tz_f h1
     exact eFin (Or.inl rfl) (by exact ⟨i, hok, Or.inr ⟨hne, hz, rfl⟩⟩) rfl
 
