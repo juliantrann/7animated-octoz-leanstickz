@@ -326,7 +326,7 @@ theorem g278 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L gor_at gor)
       (by rw [Tci.at_add _ _ (by omega), hpN]; omega))
     (fun i hi => foot_append_iff.2 (.inr (slot8 hst i hi))) (fun i hi => foot_wn mc.hown (hBw i hi))
     (fun i hi => foot_wn mc.hown (hf i hi)) hinc hc0 hcpy
-    ⟨fun a h1 h2 => foot_wn mc.hown (hgf.got a h1 h2), fun a h1 h2 => foot_wn mc.hown (hgf.thr a h1 h2)⟩
+    (hgf.mono fun _ => foot_wn mc.hown)
     hB'.df
     (hPm _ fun a ha => by
       rw [Tun.Vst_out _ _ _ _ (by rw [toBytesLE_length, hb8]; omega) (.inl (by rw [hb8]; omega)),

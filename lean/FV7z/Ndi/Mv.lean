@@ -120,7 +120,10 @@ theorem Cx.mvg {prof : Profile} {F F' : Footprint} {Wl Wl' : List Rgn} {L : List
     hic := cx.hic
     hc0 := cx.hc0
     hcmp := cx.hcmp
-    hPm := fun W hW' => cx.hPm W fun x h1 h2 => (hW' x h1 h2).trans (hs x (.inr (.inr (.inl ⟨h1, h2⟩))))
+    hPm := fun W hW' => cx.hPm W fun x hx => (hW' x hx).trans (hs x (by
+      rcases hx with ⟨h1, h2⟩ | ⟨h1, h2⟩
+      · exact .inr (.inr (.inl ⟨h1, h2⟩))
+      · exact .inr (.inl (by omega))))
     hE := cx.hE.mvg hF hs
     n1 := cx.n1.mvg cx.hE hF hs
     n2 := cx.n2.mvg cx.hE hF hs
@@ -132,6 +135,7 @@ theorem Cx.mvg {prof : Profile} {F F' : Footprint} {Wl Wl' : List Rgn} {L : List
     h72 := cx.h72
     hstk := fun i hi => hW _ (cx.hstk i hi)
     hr := fun x h1 h2 => hF _ (cx.hr x h1 h2)
+    hro := fun x h1 h2 => hF _ (cx.hro x h1 h2)
     hw := fun x h1 h2 => hW _ (cx.hw x h1 h2) }
 
 /-- `Cx` on bytes `Same` as its own, the footprint grown by new pages `N`. -/
