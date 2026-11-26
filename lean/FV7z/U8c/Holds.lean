@@ -88,15 +88,15 @@ theorem ex_n : ex V p n e n = 0 := by
   rw [ex.eq_1 V p n e n, dif_neg (Nat.lt_irrefl n)]
 
 theorem ex_a (hk : k < n) (h1 : le127 (ch V p k) = true) : ex V p n e k = ex V p n e (k + 1) := by
-  simp only [ex.eq_1 V p n e k, dif_pos hk, h1, cond_true]
+  simp only [ex.eq_1 V p n e k, dif_pos hk, h1, Bool.cond_true]
 
 theorem ex_b (hk : k < n) (h1 : le127 (ch V p k) = false) (h2 : le2047 (ch V p k) = true) :
     ex V p n e k = 1 + ex V p n e (k + 1) := by
-  simp only [ex.eq_1 V p n e k, dif_pos hk, h1, h2, cond_true, cond_false]
+  simp only [ex.eq_1 V p n e k, dif_pos hk, h1, h2, Bool.cond_true, Bool.cond_false]
 
 theorem ex_c (hk : k < n) (h1 : le127 (ch V p k) = false) (h2 : le2047 (ch V p k) = false)
     (h3 : (nz e && m51 (ch V p k)) = true) : ex V p n e k = ex V p n e (k + 1) := by
-  simp only [ex.eq_1 V p n e k, dif_pos hk, h1, h2, h3, cond_true, cond_false]
+  simp only [ex.eq_1 V p n e k, dif_pos hk, h1, h2, h3, Bool.cond_true, Bool.cond_false]
 
 /-- Past the first three classes. -/
 abbrev Past (V : Addr → Byte) (p : Addr) (e : BitVec 32) (k : Nat) : Prop :=
@@ -105,51 +105,51 @@ abbrev Past (V : Addr → Byte) (p : Addr) (e : BitVec 32) (k : Nat) : Prop :=
 theorem ex_d (hk : k < n) (h : Past V p e k) (h4 : sur (ch V p k) = true) (h5 : hi (ch V p k) = true) :
     ex V p n e k = 2 + ex V p n e (k + 1) := by
   obtain ⟨h1, h2, h3⟩ := h
-  simp only [ex.eq_1 V p n e k, dif_pos hk, h1, h2, h3, h4, h5, cond_true, cond_false]
+  simp only [ex.eq_1 V p n e k, dif_pos hk, h1, h2, h3, h4, h5, Bool.cond_true, Bool.cond_false]
 
 theorem ex_e (hk : k < n) (h : Past V p e k) (h4 : sur (ch V p k) = true) (h5 : hi (ch V p k) = false)
     (h6 : k + 1 = n) : ex V p n e k = 2 + ex V p n e (k + 1) := by
   obtain ⟨h1, h2, h3⟩ := h
-  simp only [ex.eq_1 V p n e k, dif_pos hk, h1, h2, h3, h4, h5, cond_true, cond_false,
+  simp only [ex.eq_1 V p n e k, dif_pos hk, h1, h2, h3, h4, h5, Bool.cond_true, Bool.cond_false,
     dif_neg (show ¬k + 1 < n by omega)]
 
 theorem ex_f (hk : k < n) (h : Past V p e k) (h4 : sur (ch V p k) = true) (h5 : hi (ch V p k) = false)
     (h6 : k + 1 < n) (h7 : lo2 (ch V p (k + 1)) = true) : ex V p n e k = 2 + ex V p n e (k + 2) := by
   obtain ⟨h1, h2, h3⟩ := h
-  simp only [ex.eq_1 V p n e k, dif_pos hk, h1, h2, h3, h4, h5, cond_true, cond_false, dif_pos h6, h7]
+  simp only [ex.eq_1 V p n e k, dif_pos hk, h1, h2, h3, h4, h5, Bool.cond_true, Bool.cond_false, dif_pos h6, h7]
 
 theorem ex_g (hk : k < n) (h : Past V p e k) (h4 : sur (ch V p k) = true) (h5 : hi (ch V p k) = false)
     (h6 : k + 1 < n) (h7 : lo2 (ch V p (k + 1)) = false) : ex V p n e k = 2 + ex V p n e (k + 1) := by
   obtain ⟨h1, h2, h3⟩ := h
-  simp only [ex.eq_1 V p n e k, dif_pos hk, h1, h2, h3, h4, h5, cond_true, cond_false, dif_pos h6, h7]
+  simp only [ex.eq_1 V p n e k, dif_pos hk, h1, h2, h3, h4, h5, Bool.cond_true, Bool.cond_false, dif_pos h6, h7]
 
 theorem ex_h (hk : k < n) (h : Past V p e k) (h4 : sur (ch V p k) = false) (h5 : le65535 (ch V p k) = true) :
     ex V p n e k = 2 + ex V p n e (k + 1) := by
   obtain ⟨h1, h2, h3⟩ := h
-  simp only [ex.eq_1 V p n e k, dif_pos hk, h1, h2, h3, h4, h5, cond_true, cond_false]
+  simp only [ex.eq_1 V p n e k, dif_pos hk, h1, h2, h3, h4, h5, Bool.cond_true, Bool.cond_false]
 
 theorem ex_i (hk : k < n) (h : Past V p e k) (h4 : sur (ch V p k) = false) (h5 : le65535 (ch V p k) = false)
     (h6 : le2097151 (ch V p k) = true) : ex V p n e k = 3 + ex V p n e (k + 1) := by
   obtain ⟨h1, h2, h3⟩ := h
-  simp only [ex.eq_1 V p n e k, dif_pos hk, h1, h2, h3, h4, h5, h6, cond_true, cond_false]
+  simp only [ex.eq_1 V p n e k, dif_pos hk, h1, h2, h3, h4, h5, h6, Bool.cond_true, Bool.cond_false]
 
 theorem ex_j (hk : k < n) (h : Past V p e k) (h4 : sur (ch V p k) = false) (h5 : le65535 (ch V p k) = false)
     (h6 : le2097151 (ch V p k) = false) (h7 : gt26 (ch V p k) = true) (h8 : ns (ch V p k) = true) :
     ex V p n e k = 5 + ex V p n e (k + 1) := by
   obtain ⟨h1, h2, h3⟩ := h
-  simp only [ex.eq_1 V p n e k, dif_pos hk, h1, h2, h3, h4, h5, h6, h7, h8, cond_true, cond_false]
+  simp only [ex.eq_1 V p n e k, dif_pos hk, h1, h2, h3, h4, h5, h6, h7, h8, Bool.cond_true, Bool.cond_false]
 
 theorem ex_k (hk : k < n) (h : Past V p e k) (h4 : sur (ch V p k) = false) (h5 : le65535 (ch V p k) = false)
     (h6 : le2097151 (ch V p k) = false) (h7 : gt26 (ch V p k) = true) (h8 : ns (ch V p k) = false) :
     ex V p n e k = 3 + ex V p n e (k + 1) := by
   obtain ⟨h1, h2, h3⟩ := h
-  simp only [ex.eq_1 V p n e k, dif_pos hk, h1, h2, h3, h4, h5, h6, h7, h8, cond_true, cond_false]
+  simp only [ex.eq_1 V p n e k, dif_pos hk, h1, h2, h3, h4, h5, h6, h7, h8, Bool.cond_true, Bool.cond_false]
 
 theorem ex_l (hk : k < n) (h : Past V p e k) (h4 : sur (ch V p k) = false) (h5 : le65535 (ch V p k) = false)
     (h6 : le2097151 (ch V p k) = false) (h7 : gt26 (ch V p k) = false) :
     ex V p n e k = 4 + ex V p n e (k + 1) := by
   obtain ⟨h1, h2, h3⟩ := h
-  simp only [ex.eq_1 V p n e k, dif_pos hk, h1, h2, h3, h4, h5, h6, h7, cond_true, cond_false]
+  simp only [ex.eq_1 V p n e k, dif_pos hk, h1, h2, h3, h4, h5, h6, h7, Bool.cond_false]
 
 end ex
 
@@ -545,7 +545,7 @@ theorem x67_c (hl : Lim g₀ n) : sur (ch V g₀.rdi k) = true → hi (ch V g₀
       g₀.rdi + BitVec.ofNat 64 (4 * k) + 8#64, BitVec.setWidth 64 (ch V g₀.rdi k &&& 4294965248#32),
       by rw [← adv8], by rw [← ex_f hk hP h4 h5 h7 h8]; exact hX⟩)))⟩
   · rw [if_neg h8]
-    have h8' := eq_false_of_ne_true h8
+    have h8' := Bool.eq_false_of_ne_true h8
     rw [adv4] at h8'
     exact Or.inl ⟨5 * (n - (k + 1)) + 6, by omega, rfl, Or.inr (Or.inr (Or.inr (Or.inl ⟨2,
       Or.inr (Or.inl ⟨rfl, rfl⟩), k + 1, by omega, rfl, a,
@@ -669,16 +669,32 @@ end exits
 theorem vcAll {g₀ : Gprs} {V₀ : Addr → Byte} {n : Nat} (hl : Lim g₀ n)
     (fa : ∀ k < n, ∀ i < 4, Foot F.data (Addr.add (g₀.rdi + BitVec.ofNat 64 (4 * k)) i)) (ℓ m : Nat) (g : Gprs)
     (f : Rflags) (V : Addr → Byte) (h : Inv g₀ V₀ n ℓ m g V) : Wt ℓ F Wl (Nx g₀ V₀ n m) g f V := by
-  rcases h with ⟨rfl, ⟨rfl, rfl, rfl⟩ | ⟨rfl, k, hk, rfl, a, c, x, y, rfl, hX⟩ |
+  obtain ⟨hV, h⟩ := h
+  subst V
+  rcases h with ⟨rfl, rfl, rfl⟩ | ⟨rfl, k, hk, rfl, a, c, x, y, rfl, hX⟩ |
     ⟨rfl, k, hk, rfl, a, y, rfl, hX, hP⟩ |
     ⟨d, ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩, k, hk, rfl, a, c, i, y, rfl, hX⟩ |
-    ⟨rfl, k, hk, rfl, a, c, y, rfl, hX⟩⟩
+    ⟨rfl, k, hk, rfl, a, c, y, rfl, hX⟩
   · exact vc_0 (x0_122 hl) (x0_24 hl)
-  · exact vc_24 (e := E g₀) rfl (fa k hk) (x24_128 hk hX) (x24_131 hk hX) (x24_128b hk hX) (x24_67a hk hX)
-      (x24_67b hk hX)
-  · exact vc_67 (c := ch _ g₀.rdi k) rfl (fq67 hl hk fa) (x67_a hk hX hP) (x67_b hk hX hP hl)
-      (x67_c hk hX hP hl) (x67_h hk hX hP) (x67_i hk hX hP) (x67_j hk hX hP) (x67_k hk hX hP)
-      (x67_l hk hX hP hl) (x67_m hk hX hP hl)
+  · refine vc_24 (g := G24 g₀ k a c x y) (V := V₀) (Q := Nx g₀ V₀ n (5 * (n - k) + 4)) (e := E g₀) rfl (fa k hk)
+      ?_ ?_ ?_ ?_ ?_
+    · exact x24_128 hk hX
+    · exact x24_131 hk hX
+    · exact x24_128b hk hX
+    · exact x24_67a hk hX
+    · exact x24_67b hk hX
+  · refine vc_67 (g := G67 g₀ V₀ k a y) (V := V₀) (Q := Nx g₀ V₀ n (5 * (n - k) + 3)) (c := ch V₀ g₀.rdi k)
+      rfl ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_
+    · exact fq67 hl hk fa
+    · exact x67_a hk hX hP
+    · exact x67_b hk hX hP hl
+    · exact x67_c hk hX hP hl
+    · exact x67_h hk hX hP
+    · exact x67_i hk hX hP
+    · exact x67_j hk hX hP
+    · exact x67_k hk hX hP
+    · exact x67_l hk hX hP hl
+    · exact x67_m hk hX hP hl
   · exact vc_128 (xd_128 hk hX)
   · exact vc_184 (xd_184 hk hX)
   · exact vc_224 (xd_224 hk hX)
