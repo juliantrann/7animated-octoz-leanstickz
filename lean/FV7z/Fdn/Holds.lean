@@ -32,9 +32,9 @@ theorem fdn_108 : ∀ feat, Dec feat fdn 108 (FV7z.mk .ret 64 [] 1) := by intro 
 theorem M_out {V : Addr → Byte} {s p z : BitVec 64} {m : BitVec 32} {b1 b2 b3 : List Byte} (h1 : b1.length = 16)
     (h2 : b2.length = 16) (h3 : b3.length = 16) (hp : p.toNat + 104 ≤ 2 ^ 64) :
     Raf.Out p.toNat (p.toNat + 104) V (Sst.M V s p z m b1 b2 b3) := by
-  have w : ∀ {U : Addr → Byte} {k n : Nat} {bs : List Byte}, bs.length = n → k + n ≤ 104 →
+  have w : ∀ {U : Addr → Byte} {k n : Nat} {bs : List Byte}, bs.length = n → k < 104 ∧ k + n ≤ 104 →
       Raf.Out p.toNat (p.toNat + 104) U (Vst U (p + BitVec.ofNat 64 k) bs) := by
-    intro U k n bs hn hkn
+    intro U k n bs hn ⟨hk, hkn⟩
     have q : (p + BitVec.ofNat 64 k).toNat = p.toNat + k := by
       rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega
     exact (Raf.Out.vst hn (by omega)).mono (by omega) (by omega)
@@ -279,7 +279,8 @@ theorem fdn_ret {fb : Addr} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsB
   by_cases hz : X.cpu.gpr.rax.setWidth 32 = 0#32
   · -- `SetFrom_stat`
     refine (c_53 prof fb).run c hfs hin _ hK hA hrip (vc_53z hz) ?_
-    rintro j' g fl V₁ ⟨rfl, ⟨rr, rfl⟩, rfl⟩ Y t₁ hKY hAY hrY hgY -
+    rintro j' g fl V₁ ⟨rfl, ⟨rr, rfl⟩, hV₁⟩ Y t₁ hKY hAY hrY hgY -
+    subst V₁
     have hsY : Y.cpu.gpr.rsp = X.cpu.gpr.rsp := by rw [hgY]
     refine c.s_call hKY hAY hin (lt_len (by decide)) hrY (fdn_69 _) hinS (Sst.lt_len (j := 0) (by decide))
       (by decide) (by rw [hsY]; exact w8) ?_
