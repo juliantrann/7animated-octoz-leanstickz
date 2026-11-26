@@ -153,7 +153,11 @@ theorem p498 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e mc2) {X : State} {t 
   have hsi2 : Y2.cpu.gpr.rsi = g₀.rsi := by rw [hg2, hg1]; exact hsi
   have hdx2 : Y2.cpu.gpr.rdx = g₀.rdx := by rw [hg2, hg1]; exact hdx
   have h112 : Y2.cpu.gpr.r11 = g₀.rdi := by rw [hg2, hg1]; exact hdi
-  have hkp2 : KpS g₀ Y2.cpu.gpr := by rw [hg2, hg1]; exact hkp
+  have hkp2 : KpS g₀ Y2.cpu.gpr := by
+    have h := hkp
+    unfold KpS at h ⊢
+    rw [hg2, hg1]
+    exact h
   have hax2 : Y2.cpu.gpr.rax = r := by rw [hg2, hg1]; exact hax
   have hcx2 : Y2.cpu.gpr.rcx = Addr.add g₀.rdi (g₀.rdx.toNat - 16) := by
     rw [hg2]
@@ -183,9 +187,13 @@ theorem p498 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e mc2) {X : State} {t 
     show (Y2.cpu.gpr.rdx + Y2.cpu.gpr.r8).toNat = _
     rw [hdx2, hr82]
     exact add_r8 _ (by omega)
+  have hkp3 : KpS g₀ Y3.cpu.gpr := by
+    have h := hkp2
+    unfold KpS at h ⊢
+    rw [hg3]
+    exact h
   have hL3 : LoopR g₀ r (16 - g₀.rdi.toNat % 16) Y3.cpu.gpr :=
-    ⟨hdi3, hsi3, hdx3, by rw [hg3]; exact hcx2, by rw [hg3]; exact h112, by rw [hg3]; exact hkp2,
-      by rw [hg3]; exact hax2⟩
+    ⟨hdi3, hsi3, hdx3, by rw [hg3]; exact hcx2, by rw [hg3]; exact h112, hkp3, by rw [hg3]; exact hax2⟩
   have hT3 : TailX V g₀.rsi g₀.rdx.toNat (xsOf Y3.cpu.vec.zmm) := by
     rw [hx3]
     exact hT2
