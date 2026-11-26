@@ -103,7 +103,7 @@ theorem vc_0a {fb sz fd bk fdn bkn q : Addr} {g : Gprs} {f : Rflags} {V : Addr �
   have hb := be_imm sz 1023 (by decide)
   have hs' := eq_false (show ¬ sz.toNat ≤ 1023 by omega)
   have hff' := eq_false hff
-  ulkx +contextual [W_0, W_25, W_39, W_45, W_62, W_71, W_77, W_87, W_94, o0, o1, o2, o3, o4, o5, o6, o7, o8, hb,
+  ulkx [W_0, W_25, W_39, W_45, W_62, W_71, W_77, W_87, W_94, o0, o1, o2, o3, o4, o5, o6, o7, o8, hb,
     hs', hsz, hc1, hfd, hbk, hc2, hc3, l1, l2, l3, l4, l5, hff', hq, f1, f2, f3, f4, f5, f6, g1, g2, g3, g4, g5, w1,
     w2, w3, w4]
 
@@ -128,7 +128,7 @@ theorem vc_0b {fb sz fd bk fdn bkn : Addr} {g : Gprs} {f : Rflags} {V : Addr →
   have hb := be_imm sz 1023 (by decide)
   have hs' := eq_false (show ¬ sz.toNat ≤ 1023 by omega)
   have hpe' := eq_true hpe
-  ulkx +contextual [W_0, W_25, W_39, W_45, W_62, W_71, W_77, W_87, W_112, o0, o1, o2, o3, o4, o5, o6, o7, o10, hb,
+  ulkx [W_0, W_25, W_39, W_45, W_62, W_71, W_77, W_87, W_112, o0, o1, o2, o3, o4, o5, o6, o7, o10, hb,
     hs', hsz, hc1, hfd, hbk, hc2, hc3, l1, l2, l3, l4, l5, hff, hpe', f1, f2, f3, f4, f5, f6, g1, g2, g3, g4, g5,
     w1, w2]
 
@@ -154,7 +154,7 @@ theorem vc_0c {fb sz fd bk fdn bkn : Addr} {g : Gprs} {f : Rflags} {V : Addr →
   have hb := be_imm sz 1023 (by decide)
   have hs' := eq_false (show ¬ sz.toNat ≤ 1023 by omega)
   have hpe' := eq_false hpe
-  ulkx +contextual [W_0, W_25, W_39, W_45, W_62, W_71, W_77, W_87, W_112, o0, o1, o2, o3, o4, o5, o6, o7, o10, hb,
+  ulkx [W_0, W_25, W_39, W_45, W_62, W_71, W_77, W_87, W_112, o0, o1, o2, o3, o4, o5, o6, o7, o10, hb,
     hs', hsz, hc1, hfd, hbk, hc2, hc3, l1, l2, l3, l4, l5, hff, hpe', f1, f2, f3, f4, f5, f6, g1, g2, g3, g4, g5,
     w1, w2]
 
