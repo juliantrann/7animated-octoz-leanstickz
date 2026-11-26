@@ -1,3 +1,3 @@
-import FV7z.Lemmas.BlkOps22
-import FV7z.Fno.Probe
+import FV7z.Fno.Holds
 open FV7z
+#print axioms FV7z.Fno.fno_ok
