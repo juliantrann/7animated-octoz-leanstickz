@@ -19,6 +19,20 @@ just when `Same k`, as `Ffp.Cmp`. Equal: `*idxp` is the slot's module index and 
 - `fmi_ok`: the function, for a first `N` with `Stop N`: at the first slot `k` with `Stop k`, `kE` (empty, `rax` -1)
   or `kF` (found, `eax` 0, `*idxp` stored).
 -/
+/-! ## Not built yet: the errors of triage kt788 (run 45838289885), to fix next
+- `m2w`: (kernel) excessive memory. `omega` over `18446744073709551614#64`; prove it by `BitVec` lemmas (`x + -2`
+  as `x - 2`, `setWidth_sub`) or with `Nat.mod` lemmas stated on `2 ^ 64` kept symbolic.
+- `t127` (`refine kn Z t' V …`) and `lpHead`'s empty-slot case (`exact kE … W t'' V …`): `V` is unknown, since the
+  `rfl` in `rintro … ⟨rfl, rfl, …⟩` substituted it. Name the bytes `_` there, or `rintro j' g fl V' ⟨rfl, hV, …⟩` and
+  `subst hV`.
+- `lpE`, `edi₂`/`e14₂`/`e12₂`: `(congrArg Gprs.rdi hg₂).trans (congrArg Gprs.rdi hg₁)` mis-unifies, because `hg₂` is
+  `Y₂.gpr = Y₁.gpr.set 4 _`. Ascribe the middle, as in `(congrArg Gprs.rdi hg₁ : Y₁.cpu.gpr.rdi = _)`, or use
+  `show (Y₁.cpu.gpr.set 4 _).rdi = _` first. The same applies to every `hg₂` chain in `lpHead`.
+- `lpHead`, `swap` after `by_cases hc`: "unknown tactic". Write the negative case with `by_cases hc : ¬ …` first, or
+  use `rcases Decidable.em … with hc | hc`.
+- `lpHead`, the `Same k` case (line ~542): unsolved goals. Check the `Kret` arguments (`hM₂.fo.vst`, and `rax` via
+  `hax`) once the errors above are gone.
+-/
 open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn
 open FV7z.Mcn (fr6 fr_e6 rdo rds)
 open FV7z.Stm (Km stk)
