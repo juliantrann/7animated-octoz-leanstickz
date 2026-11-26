@@ -16,6 +16,7 @@ the top can be in it. `AtH` is the form that holds:
 - `at_of`: `AtH` gives `Mal.At` (the form the callers in `Hwc`, `Ipa`, `Ndi` use); `at_ok`: `Mal.At` of `malloc`.
 - `at_hp`: `AtH` of `malloc` (`0x633160`) with `Pm k = Hp … (1072 k + m₀)` (`mal_hp`; callers keep `16 ≤ m₀`
   for the top's size word below `hi`).
+- `AtHW`, `at_hpW`: the same for every request `n ≤ 2 ^ 32` (`MalB n B`), `Pm k = Hp … (k + m₀)` (`mal_hpW`).
 -/
 open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn FV7z.Start
 open FV7z.Sbrk (rd_eq)
@@ -31,6 +32,30 @@ def AtH (prof : Profile) (F : Footprint) (Wl : List Rgn) (L : List (Addr × List
     {X : State} {t : Nat} {V : Addr → Byte} {e' : Addr} {code : List Byte} {j k : Nat},
     Seg prof F Wl L s₀ o → s₀.cpu.seg.fsBase = fb → KeptW Wl s₀ X → Agree F X.proc.mm.mem V → X.cpu.rip = e →
     Pm (k + 1) V → X.cpu.gpr.rdi.toNat ≤ 1024 → hi + 216 ≤ X.cpu.gpr.rsp.toNat →
+    X.cpu.gpr.rsp.toNat + 40 < 2 ^ 64 → (∀ i < 224, Foot Wl (Addr.add (X.cpu.gpr.rsp - 216#64) i)) →
+    CodeIn L e' code → j < code.length → rdq(V, X.cpu.gpr.rsp) = e'.add j →
+    (∀ Z t' (V₂ : Addr → Byte) (p : Addr), KeptW Wl s₀ Z → Agree F Z.proc.mm.mem V₂ → Z.cpu.rip = e'.add j →
+      Z.cpu.gpr.rsp = X.cpu.gpr.rsp + 8 → Z.cpu.gpr.rax = p →
+      Z.cpu.gpr.rbx = X.cpu.gpr.rbx → Z.cpu.gpr.rbp = X.cpu.gpr.rbp → Z.cpu.gpr.r12 = X.cpu.gpr.r12 →
+      Z.cpu.gpr.r13 = X.cpu.gpr.r13 → Z.cpu.gpr.r14 = X.cpu.gpr.r14 → Z.cpu.gpr.r15 = X.cpu.gpr.r15 →
+      8032256 + 16 ≤ p.toNat → fb.toNat + 64 ≤ p.toNat → p.toNat + X.cpu.gpr.rdi.toNat ≤ hi →
+      (∀ a : Addr, p.toNat ≤ a.toNat → a.toNat < p.toNat + X.cpu.gpr.rdi.toNat → Foot Wl a ∧ Foot F.data a) →
+      (∀ a : Addr, a.toNat < 7940768 ∨ 7940776 ≤ a.toNat ∧ a.toNat + 8 < p.toNat ∨
+        hi ≤ a.toNat ∧ (a.toNat + 208 < X.cpu.gpr.rsp.toNat ∨ X.cpu.gpr.rsp.toNat ≤ a.toNat) → V₂ a = V a) →
+      (∀ W : Addr → Byte, (∀ a : Addr, 7940480 ≤ a.toNat → a.toNat < hi →
+        (a.toNat < p.toNat ∨ p.toNat + X.cpu.gpr.rdi.toNat ≤ a.toNat) → W a = V₂ a) → Pm k W) →
+      rdq(V, 7940768#64).toNat + 16 ≤ p.toNat → p.toNat + X.cpu.gpr.rdi.toNat ≤ rdq(V₂, 7940768#64).toNat + 8 →
+      (∀ a : Addr, a.toNat < rdq(V, 7940768#64).toNat + 8 → ¬ (7940768 ≤ a.toNat ∧ a.toNat < 7940776) → V₂ a = V a) →
+      GoG prof L o gev gP gE Z t') →
+    GoG prof L o gev gP gE X t
+
+/-- `AtH` for every request `n` with `MalB n B` (`n ≤ 2 ^ 32`): `Pm (k + B)` at the call, `Pm k` after. -/
+def AtHW (prof : Profile) (F : Footprint) (Wl : List Rgn) (L : List (Addr × List Byte)) (o : Oracle) (fb : Addr)
+    (hi : Nat) (e : Addr) (Pm : Nat → (Addr → Byte) → Prop) : Prop :=
+  ∀ {s₀ : State} {gev : List Event} {gP : State → Nat → List Event → Prop} {gE : Outcome → List Event → Prop}
+    {X : State} {t : Nat} {V : Addr → Byte} {e' : Addr} {code : List Byte} {j k B : Nat},
+    Seg prof F Wl L s₀ o → s₀.cpu.seg.fsBase = fb → KeptW Wl s₀ X → Agree F X.proc.mm.mem V → X.cpu.rip = e →
+    Pm (k + B) V → MalB X.cpu.gpr.rdi B → hi + 216 ≤ X.cpu.gpr.rsp.toNat →
     X.cpu.gpr.rsp.toNat + 40 < 2 ^ 64 → (∀ i < 224, Foot Wl (Addr.add (X.cpu.gpr.rsp - 216#64) i)) →
     CodeIn L e' code → j < code.length → rdq(V, X.cpu.gpr.rsp) = e'.add j →
     (∀ Z t' (V₂ : Addr → Byte) (p : Addr), KeptW Wl s₀ Z → Agree F Z.proc.mm.mem V₂ → Z.cpu.rip = e'.add j →
@@ -76,6 +101,14 @@ theorem at_hp {prof : Profile} {F : Footprint} {Wl : List Rgn} {L : List (Addr �
   have e : 1072 * (k + 1) + m₀ = 1072 * k + m₀ + 1072 := by omega
   rw [e] at hH
   exact mal_hp c hfs hin hinI hK hA hrip hH (.inl ⟨hn, rfl⟩) hhi hR hsw hin₂ hj hra kc
+
+/-- `malloc` after the first call: `AtHW` with `Pm k` the heap with a top of at least `k + m₀` bytes. -/
+theorem at_hpW {prof : Profile} {F : Footprint} {Wl : List Rgn} {L : List (Addr × List Byte)} {o : Oracle}
+    {fb : Addr} {hi m₀ : Nat} (hin : CodeIn L mnx_at mnx) (hinI : CodeIn L imm_at imm) :
+    AtHW prof F Wl L o fb hi mnx_at fun k W => Hp F Wl fb hi (k + m₀) W := by
+  intro s₀ gev gP gE X t V e' code j k B c hfs hK hA hrip hH hn hhi hR hsw hin₂ hj hra kc
+  rw [show k + B + m₀ = k + m₀ + B by omega] at hH
+  exact mal_hpW c hfs hin hinI hK hA hrip hH hn hhi hR hsw hin₂ hj hra kc
 
 /-- The bytes of `Kf fb` are kept by `malloc` (`AtH`'s frame: below the chunk, apart from `main_arena.top`). -/
 theorem kn_kept {fb : Addr} {V V₂ : Addr → Byte} {p : Addr} (hp : 8032256 + 16 ≤ p.toNat)

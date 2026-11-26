@@ -1,6 +1,4 @@
-import FV7z.Acc.Loop
-import FV7z.Acc.Holds
+import FV7z.Aac.Loop
 open FV7z
-#print axioms FV7z.Acc.slen
-#print axioms FV7z.Acc.loop
-#print axioms FV7z.Acc.acc_ok
+#print axioms FV7z.Aac.slen
+#print axioms FV7z.Aac.loop
