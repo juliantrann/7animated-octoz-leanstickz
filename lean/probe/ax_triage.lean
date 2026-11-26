@@ -6,7 +6,10 @@ open FV7z
 #print axioms FV7z.Opd.vc_153
 #print axioms FV7z.Opd.vc_165
 #print axioms FV7z.Opd.vc_219
+#print axioms FV7z.Opd.dGs
 #print axioms FV7z.Opd.opd_open
 #print axioms FV7z.Opd.opd_stat
 #print axioms FV7z.Opd.opd_alloc
+#print axioms FV7z.Opd.opd_dir
+#print axioms FV7z.Opd.opd_tail
 #print axioms FV7z.Opd.opd_ret
