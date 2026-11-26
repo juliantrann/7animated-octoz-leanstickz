@@ -39,15 +39,12 @@ theorem vc_0 {g : Gprs} {f : Rflags} (fa : ∀ i < 8, Foot F.data (Addr.add (g.r
     wp F Wl o0 (fun g' _ V' => g' = gJ V g ∧ V' = V) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at fa fb ⊢
-  wpx [o0]
+  wpx [o0, gJ, obj, vtb, BitVec.add_zero]
   first
-  | rfl
   | exact ⟨fa, fb⟩
-  | exact ⟨fa, fb, rfl⟩
-  | exact ⟨fa, fb, rfl, rfl⟩
   | exact ⟨fa, by simpa using fb⟩
-  | exact ⟨fa, by simpa using fb, rfl⟩
-  | repeat' (first | exact fa | exact fb | (simpa using fb) | rfl | trivial | (refine ⟨?_, ?_⟩) | (intro _))
+  | exact ⟨fa, fb, rfl, rfl⟩
+  | (refine ⟨fa, ?_⟩; simpa using fb)
 
 /-- `CArchiveExtractCallback::SetRatioInfo` from its entry: at the vtable's entry (`e₂.add tgt`), the registers
 `gJ`. -/
@@ -63,7 +60,8 @@ theorem sri_ok (c : Seg prof F Wl L s₀ o) (hin : CodeIn L sri_at sri) (hK : Ke
     GoG prof L o gev gP gE X t := by
   refine (c_0 prof).run c hin (fun j' g' _ V' => j' = 14 ∧ g' = gJ V X.cpu.gpr ∧ V' = V) hK hA
     (by rw [addr_add_zero]; exact hrip) (wp_mono o0 (fun _ _ _ h => ⟨rfl, h⟩) (vc_0 fa fb)) ?_
-  rintro j' g fl V₁ ⟨rfl, rfl, rfl⟩ Y t₁ hKY hAY hrY hgY -
+  rintro j' g fl V₁ ⟨rfl, rfl, hV₁⟩ Y t₁ hKY hAY hrY hgY -
+  subst V₁
   have he : eaD Y 0 24 = vtb V X.cpu.gpr + 24#64 := by
     show Y.cpu.gpr.get (regOf 0) + BitVec.ofNat 64 24 = _
     rw [hgY]
