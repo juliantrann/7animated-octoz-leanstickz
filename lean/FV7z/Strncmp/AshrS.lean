@@ -16,6 +16,12 @@ theorem sw32_ofNat {k : Nat} (hk : k < 16) : (BitVec.ofNat 32 k).setWidth 64 = B
   simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
   omega
 
+/-- `lea r, [b + k]`: no index. -/
+theorem lea_nb (r v : BitVec 64) : r + (0 : BitVec 64) * BitVec.ofNat 64 1 + v = r + v := by
+  have h : (0 : BitVec 64) * BitVec.ofNat 64 1 = 0 := by decide
+  rw [h]
+  exact congrArg (· + v) (BitVec.add_zero r)
+
 /-- Aligned `r` and `r + d`, `d < 16`, in the same page. -/
 theorem pg_off {r : Addr} {d : Nat} (hr : r.toNat % 16 = 0) (hd : d < 16) :
     (Addr.add r d).toNat / 4096 = r.toNat / 4096 := by
@@ -80,8 +86,10 @@ theorem entryS (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e' scm) {k cL e : Na
   have hYl : ∀ j, cy ≤ j → j < 16 → lane 8 Yb j = V (y.add (q + (j - cy))) := fun j hcj hj => by
     rw [← hYb, lane_rd16 V _ hj, add_shift hsi hcj]
   have hXl : ∀ j, cy ≤ j → j < 16 → lane 8 Xs j = V (x.add (q + (j - cy))) := fun j hcj hj => by
-    rw [← hXs, lane_shl _ _ hj, if_pos (show 16 - k ≤ j by omega), lane_rd16 V _ (by omega), add_shift hdi (by omega),
-      show q + (j - (16 - k) - d) = q + (j - cy) by omega]
+    have h1 : 16 - k ≤ j := by omega
+    rw [← hXs, lane_shl _ _ hj]
+    simp only [h1, ↓reduceIte]
+    rw [lane_rd16 V _ (by omega), add_shift hdi (by omega), show q + (j - (16 - k) - d) = q + (j - cy) by omega]
   -- `psubb xmm2, xmm0; pmovmskb r9d, xmm2; shr edx, cl; shr r9d, cl; sub edx, r9d`
   refine c.s_blkV hin A.p25 hK₁ hA₁ hr₁ ?_
   refine wpV_v0 <| wpV_v0 <| wpV_reg fun _ _ => wpV_reg fun _ _ => wpV_reg fun fl hfl => wpV_nil ?_
@@ -241,7 +249,7 @@ theorem entryS (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e' scm) {k cL e : Na
     refine wpV_reg fun _ _ => wpV_reg fun _ _ => wpV_reg fun _ _ => wpV_nil ?_
     intro Y₉ t₉ hK₉ hA₉ hr₉ hg₉ _ hv₉
     simp only [wr, gv, Src.val, eaG, optV, set11, set_rcx, set_r9n, set_r10n, get_r9n, get_r10n, get7,
-      BitVec.setWidth_eq, BitVec.zero_mul, BitVec.add_zero, subR_eq, hg₇, hg₆'] at hg₈ hg₉
+      BitVec.setWidth_eq, subR_eq, hg₇, hg₆'] at hg₈ hg₉
     have hkp₉ : KpN g₀ Y₉.cpu.gpr := by simp only [KpN, hg₉, hg₈]; exact hkp₄
     have hdi₉ : Y₉.cpu.gpr.rdi = Y.cpu.gpr.rdi := by simp only [hg₉, hg₈]; exact hdi₄
     have hsi₉ : Y₉.cpu.gpr.rsi = Y.cpu.gpr.rsi := by simp only [hg₉, hg₈]; exact hsi₄
@@ -254,6 +262,7 @@ theorem entryS (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e' scm) {k cL e : Na
     have h10₉ : Y₉.cpu.gpr.r10 =
         ((Y.cpu.gpr.rdi + BitVec.ofNat 64 k) &&& BitVec.ofNat 64 4095) - BitVec.ofNat 64 4096 := by
       simp only [hg₉, hg₈, hdi₄]
+      rw [lea_nb]
     have hx0₉ : xsOf Y₉.cpu.vec.zmm (xmmOf 0) = 0 := by
       rw [hv₉, hv₈]
       simp only [xset_same, xor_z]
@@ -267,7 +276,7 @@ theorem entryS (c : Seg prof F Wl L s₀ o) (hin : CodeIn L e' scm) {k cL e : Na
     have hu : q + (16 - cy) < n := by omega
     refine at128 c hin A hcl hk1 hk hK₉ hA₉ hr₉ ?_ hn64 hxy hpx hpy hP hR
       fun Z t' => (loopS c hin A hcl he hk1 hk hn64 hxy hpx hpy hP hR (n - (q + (16 - cy))) (q + (16 - cy))
-        le_rfl).1 Z t' 16
+        (Nat.le_refl _)).1 Z t' 16
     exact
       { reg :=
           { kp := hkp₉
