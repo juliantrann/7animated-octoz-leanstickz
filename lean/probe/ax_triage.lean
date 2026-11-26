@@ -1,5 +1,5 @@
-import FV7z.Ifr.Holds
-import FV7z.Mal.Tc
+import FV7z.Ifr.Put
 open FV7z
-#print axioms FV7z.Ifr.ifr_put_ok
-#print axioms FV7z.Mal.gl_iff
+#print axioms FV7z.Ifr.tc_put
+#print axioms FV7z.Ifr.put_inv
+#print axioms FV7z.Ifr.ifr_put_inv
