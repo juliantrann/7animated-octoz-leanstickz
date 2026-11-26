@@ -1,6 +1,5 @@
-import FV7z.Pop.Holds
+import FV7z.Ffp.Holds
 open FV7z
-#print axioms FV7z.Pop.pop_t
-#print axioms FV7z.Pop.pop_b
-#print axioms FV7z.Pop.pop_m
-#print axioms FV7z.Pop.pop_ok
+#print axioms FV7z.Ffp.vc_0z
+#print axioms FV7z.Ffp.vc_0n
+#print axioms FV7z.Ffp.vc_40
