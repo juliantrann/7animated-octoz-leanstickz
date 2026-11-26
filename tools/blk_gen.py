@@ -467,6 +467,13 @@ FNS = {
     # `name`, `errno` ENOENT (0x120); `__open_nocancel` (0x32), `__fxstat` (0x4b), not a directory `errno` ENOTDIR
     # (0x100), `malloc` of the buffer (0x94, again smaller at 0x14c), `__close_nocancel` on the errors (0x113, 0x16e);
     # the stack guard's check (0x13d: `__stack_chk_fail`). Stops: the `ret` (0xfe).
+    # glibc 2.31 sysdeps/posix/readdir.c (`__readdir64`, aliased `__readdir`): `dirp->lock` taken, then the next entry
+    # of the buffer, refilled by `__getdents` (0x80) when used up; `errno` kept unless the call failed with other than
+    # `ENOENT`. Stops: the `ret` (0xcc), the process has more than one thread (0xd9: the lock is released with `xchg`;
+    # 0xfd: it is taken with `lock cmpxchg`). By hand: `cmpxchg [rdi + 4], edx` (0x34), `sub dword [r14 + 4], 1` (0xbc).
+    "rdd": dict(grp="Rdd", cn="__readdir", a=0x6638a0, n=285, pos=True, fs=True, stops=(0xcc, 0xd9, 0xfd), calls=True,
+                hand=(0x34, 0xbc), tag="PLAN.md §M, M1",
+                src="glibc 2.31's `__readdir` (`sysdeps/posix/readdir.c`; `objdump -d`)"),
     "opd": dict(grp="Opd", cn="__opendir", a=0x6635d0, n=380, pos=True, fs=True, stops=(0xfe,), calls=True,
                 tag="PLAN.md §M, M1", src="glibc 2.31's `__opendir` (`sysdeps/posix/opendir.c`; `objdump -d`)"),
     # 7-Zip's C/LzmaDec.c `LzmaDec_Init (p)`: `p->dicPos` = 0, then a tail jump (0x16) to
