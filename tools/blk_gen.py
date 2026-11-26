@@ -216,6 +216,31 @@ FNS = {
     # Stops: the `jmp rax` (0x1f) and the `ret` (0x28).
     "pco": dict(grp="Pco", cn="_pthread_cleanup_pop", a=0x5ff010, n=41, pos=True, fs=True, stops=(0x1f, 0x28),
                 tag="PLAN.md §M, M1", src="glibc 2.31's `_pthread_cleanup_pop` (`nptl/cleanup_compat.c`; `objdump -d`)"),
+    # 7-Zip's CPP/Common/MyString.cpp `FindCharPosInString (s, c)` for `char`: the index of the first `c` in `s` up to
+    # its 0, else -1. Stops: the three `ret`s (0x2d: -1, 0x32: the index, 0x35: 0); the loop's head is a cut (0x24).
+    "fcp": dict(grp="Fcp", cn="FindCharPosInString(const char *, char)", a=0x44b960, n=54, pos=True,
+                stops=(0x2d, 0x32, 0x35), tag="PLAN.md §M, M1",
+                src="7-Zip's `FindCharPosInString` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
+    # The same for `wchar_t` (4 bytes). Stops: the `ret`s (0x24: -1, 0x2f: the index, 0x32: 0); loop head 0x1b.
+    "fcw": dict(grp="Fcw", cn="FindCharPosInString(const wchar_t *, wchar_t)", a=0x44b9a0, n=51, pos=True,
+                stops=(0x24, 0x2f, 0x32), tag="PLAN.md §M, M1",
+                src="7-Zip's `FindCharPosInString` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
+    # `MyStringLower_Ascii (s)` for `char`: 'A'..'Z' to 'a'..'z' up to the 0. Stop: the `ret` (0x2a); loop head 0x23.
+    "lwa": dict(grp="Lwa", cn="MyStringLower_Ascii(char *)", a=0x44b9e0, n=43, pos=True, stops=(0x2a,),
+                tag="PLAN.md §M, M1", src="7-Zip's `MyStringLower_Ascii` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
+    # The same for `wchar_t`. Stop: the `ret` (0x29); loop head 0x23.
+    "lww": dict(grp="Lww", cn="MyStringLower_Ascii(wchar_t *)", a=0x44ba10, n=42, pos=True, stops=(0x29,),
+                tag="PLAN.md §M, M1", src="7-Zip's `MyStringLower_Ascii` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
+    # `StringsAreEqual_Ascii (u, a)`: the `wchar_t`s of `u` those of the `char`s of `a`, its 0 included. Stops: the
+    # `ret`s (0x31: 1, 0x3a: 0); cuts at the loop's head (0x28) and the answer 0 (0x38).
+    "sea": dict(grp="Sea", cn="StringsAreEqual_Ascii(const wchar_t *, const char *)", a=0x44bb60, n=59, pos=True,
+                stops=(0x31, 0x3a), tag="PLAN.md §M, M1",
+                src="7-Zip's `StringsAreEqual_Ascii` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
+    # `AString::ReverseFind_PathSepar ()`: the index of the last `/` of the string (`_chars` at 0, `_len` at 8), else
+    # -1. Stops: the `ret`s (0x33: -1, 0x3a: the index); cuts at 0x29 (the loop's head), 0x2e and 0x38.
+    "rfp": dict(grp="Rfp", cn="AString::ReverseFind_PathSepar", a=0x44cb50, n=59, pos=True, stops=(0x33, 0x3a),
+                tag="PLAN.md §M, M1",
+                src="7-Zip's `AString::ReverseFind_PathSepar` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
     # 7-Zip's CPP/Windows/FileIO.cpp `CFileBase::seek (off, whence)`: the descriptor (`this->_handle`, at 0), then
     # `lseek`. Stop: the `jmp` to `__libc_lseek` (6), a branch to another segment (`Seg.s_jmp_x`).
     "fsk": dict(grp="Fsk", cn="NWindows::NFile::NIO::CFileBase::seek", a=0x4560b0, n=11, pos=True, stops=(6,),
