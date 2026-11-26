@@ -19,6 +19,8 @@ open ZellicX86 Decode FV7z.Leaf FV7z.Fn FV7z.Strlen
 
 attribute [-simp] BitVec.getLsbD_eq_getElem
 
+theorem cond_15 (f : Rflags) : f.cond 15 = !(f.zf || (f.sf != f.of)) := rfl
+
 /-! ## Addresses -/
 
 /-- `r + A` is `z + B`: so is `r + A'` `z + B'` when `A' + B = A + B'`. -/
@@ -91,7 +93,7 @@ theorem r10_add {w k : Nat} :
   omega
 
 /-- `add r10, 16; jg` taken, then `sub r10, 4096`: the next 16 bytes at 0 in their page. -/
-theorem r10_cross {k : Nat} (hk : k < 16) :
+theorem r10_cross {k : Nat} :
     BitVec.ofNat 64 (2 ^ 64 - 4096 + 4080 + k) + BitVec.ofNat 64 16 - BitVec.ofNat 64 4096 =
       BitVec.ofNat 64 (2 ^ 64 - 4096 + 0 + k) := by
   apply BitVec.eq_of_toNat_eq
@@ -118,9 +120,9 @@ theorem msb_peqb0 (X : BitVec 128) {i : Nat} (hi : i < 16) :
     (lane 8 (peqb 0 X) i).msb = decide (lane 8 X i = 0) := by
   simp only [peqb, lane_ofBytes _ hi, Strlen.lane_zero]
   by_cases h : (0 : BitVec 8) = lane 8 X i
-  · rw [if_pos h, ← h]
+  · rw [ite_cond_eq_true _ _ (eq_true h), ← h]
     decide
-  · rw [if_neg h, decide_eq_false (fun e => h e.symm)]
+  · rw [ite_cond_eq_false _ _ (eq_false h), decide_eq_false (fun e => h e.symm)]
     decide
 
 theorem getLsbD_hi {k i : Nat} (hk : k ≤ 16) :
@@ -130,13 +132,13 @@ theorem getLsbD_hi {k i : Nat} (hk : k ≤ 16) :
   rw [BitVec.getLsbD_ofNat, e, Nat.testBit_shiftLeft, Nat.testBit_two_pow_sub_one]
   by_cases h1 : k ≤ i <;> by_cases h2 : i < 16
   · rw [decide_eq_true (by omega : i < 32), decide_eq_true (by omega : i ≥ k),
-      decide_eq_true (by omega : i - k < 16 - k), decide_eq_true h1, decide_eq_true h2]
+      decide_eq_true (by omega : i - k < 16 - k), decide_eq_true h2]
     rfl
   · rw [decide_eq_false (by omega : ¬ i - k < 16 - k), decide_eq_false h2]
     cases decide (i < 32) <;> cases decide (i ≥ k) <;> rfl
-  · rw [decide_eq_false (by omega : ¬ i ≥ k), decide_eq_false h1]
+  · rw [decide_eq_false (by omega : ¬ i ≥ k)]
     cases decide (i < 32) <;> rfl
-  · rw [decide_eq_false (by omega : ¬ i ≥ k), decide_eq_false h1]
+  · rw [decide_eq_false (by omega : ¬ i ≥ k)]
     cases decide (i < 32) <;> rfl
 
 /-- `pcmpeqb xmm0, xmm3; pmovmskb edx, xmm0; test edx, 0x10000 - 2 ^ k` (`xmm0` 0): 0 just when the bytes of `xmm3`
@@ -166,7 +168,7 @@ theorem test_hi (X : BitVec 128) {k : Nat} (hk : k ≤ 16) :
 theorem msb_tail (Y X : BitVec 128) {k i : Nat} (hi : i < 16) (hik : i + k < 16) :
     (lane 8 (psb (peqb Y (X >>> (8 * k))) ((peqb 0 X) >>> (8 * k))) i).msb =
       decide (lane 8 Y i = lane 8 X (i + k) ∧ lane 8 X (i + k) ≠ 0) := by
-  simp only [psb, peqb, lane_ofBytes _ hi, lane_shr _ k hi, if_pos hik, lane_ofBytes _ hik, Strlen.lane_zero]
+  simp only [psb, peqb, lane_ofBytes _ hi, lane_shr _ k hi, hik, ↓reduceIte, lane_ofBytes _ hik, Strlen.lane_zero]
   generalize lane 8 Y i = y
   generalize lane 8 X (i + k) = x
   by_cases h1 : y = x <;> by_cases h2 : (0 : BitVec 8) = x
