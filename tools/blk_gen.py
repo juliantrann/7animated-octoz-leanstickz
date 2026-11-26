@@ -600,6 +600,10 @@ FNS = {
     "acp": dict(grp="Acp", cn="AString::AString (const AString &)", a=0x44c420, n=62, pos=True, stops=(0x3d,),
                 calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip's `AString (const AString &)` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
+    # `AString (const char *s)`: the length loop (32), `SetStartLen (len)`, then the copy loop (64) through the 0.
+    "acc": dict(grp="Acc", cn="AString::AString (const char *)", a=0x44c3c0, n=86, pos=True, stops=(0x55,),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip's `AString (const char *)` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
     "asl": dict(grp="Asl", cn="AString::SetStartLen", a=0x44c060, n=50, pos=True, stops=(0x31,), calls=True,
                 tag="PLAN.md §M, M1", src="7-Zip's `AString::SetStartLen` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
     # `UString::UString ()`: `_chars` = NULL, then `_chars` = `new wchar_t[4]` (the `call` at 0x14), `_len` = 0,
