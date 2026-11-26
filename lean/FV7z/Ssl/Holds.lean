@@ -42,8 +42,9 @@ theorem vc_z {g : Gprs} {f : Rflags} (h : g.rdi = 0) :
   first
   | rfl
   | exact ⟨rfl, rfl⟩
-  | repeat' (first | rfl | trivial | (refine ⟨?_, ?_⟩) | (intro hh; exact absurd hh (by decide))
-    | (intro _))
+  | exact fun _ => rfl
+  | exact ⟨fun _ => rfl, fun hh => absurd hh (by decide)⟩
+  | repeat' (first | rfl | trivial | (refine ⟨?_, ?_⟩) | (intro hh; exact absurd hh (by decide)) | intro _)
 
 /-- A `bstr` not null: `test rdi, rdi; je`, `mov eax, [rdi - 4]; shr eax, 2`. -/
 theorem vc_n {g : Gprs} {f : Rflags} (h : g.rdi ≠ 0)
@@ -56,9 +57,9 @@ theorem vc_n {g : Gprs} {f : Rflags} (h : g.rdi ≠ 0)
   first
   | exact fa
   | exact ⟨fa, rfl⟩
+  | exact ⟨fa, fun _ => rfl⟩
   | exact ⟨fa, fun _ => ⟨rfl, rfl⟩⟩
-  | repeat' (first | exact fa | rfl | trivial | (refine ⟨?_, ?_⟩) | (intro hh; exact absurd hh h)
-    | (intro _))
+  | repeat' (first | exact fa | rfl | trivial | (refine ⟨?_, ?_⟩) | (intro hh; exact absurd hh h) | intro _)
 
 /-- `SysStringLen (bstr)` from its entry to the return address: `rax` 0 for a null `bstr`, else `sLen`. -/
 theorem ssl_ok (c : Seg prof F Wl L s₀ o) (hin : CodeIn L ssl_at ssl) (hK : KeptW Wl s₀ X)

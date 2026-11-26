@@ -10,8 +10,6 @@ import FV7z.Ifx.Holds
 import FV7z.Gpm.Holds
 import FV7z.Ssl.Holds
 open FV7z
-#print axioms FV7z.Fn.leaf_ok
-#print axioms FV7z.Fn.addref_ok
 #print axioms FV7z.Ar1.ar1_ok
 #print axioms FV7z.Ar2.ar2_ok
 #print axioms FV7z.Ar3.ar3_ok

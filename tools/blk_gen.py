@@ -143,6 +143,38 @@ FNS = {
     # Stops: the two `ret`s (15, 18).
     "ssl": dict(grp="Ssl", cn="SysStringLen", a=0x5a0100, n=19, pos=True, stops=(15, 18),
                 tag="PLAN.md §M, M1", src="7-Zip 26.06's `SysStringLen` (`CPP/Common/MyWindows.cpp`; `objdump -d`)"),
+    # 7-Zip's CPP/Windows/FileIO.cpp `CFileBase::Close ()`: nothing when `_handle` is -1, else `close (_handle)`,
+    # `_handle` = -1 on success. Stop: the `ret` (0x2f); the `call` of `__close` is at 0x14.
+    "fcl": dict(grp="Fcl", cn="NWindows::NFile::NIO::CFileBase::Close", a=0x456030, n=48, pos=True, stops=(0x2f,),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CFileBase::Close` (`CPP/Windows/FileIO.cpp`; `objdump -d`)"),
+    # glibc 2.31 elf/dl-profstub.c `_dl_mcount_wrapper_check (selfpc)`: nothing unless
+    # `GLRO(dl_profile_map)` is set. Stops: the tail jump to `_dl_mcount` (0x15), the `ret` (0x20).
+    "dmw": dict(grp="Dmw", cn="_dl_mcount_wrapper_check", a=0x670700, n=33, pos=True, stops=(0x15, 0x20),
+                tag="PLAN.md §M, M1", src="glibc 2.31's `_dl_mcount_wrapper_check` (`elf/dl-profstub.c`; `objdump -d`)"),
+    # glibc 2.31 sysdeps/unix/sysv/linux/getpagesize.c `__getpagesize ()`: `GLRO(dl_pagesize)`, asserted not 0.
+    # Stops: the `ret` (0x10), the call of `__assert_fail` (0x2c).
+    "gps": dict(grp="Gps", cn="__getpagesize", a=0x666460, n=49, pos=True, stops=(0x10, 0x2c), calls=True,
+                tag="PLAN.md §M, M1",
+                src="glibc 2.31's `__getpagesize` (`sysdeps/unix/sysv/linux/getpagesize.c`; `objdump -d`)"),
+    # glibc 2.31 libio/fileno.c `__fileno (fp)`: `fp->_fileno` when the stream is open (`_IO_IS_FILEBUF`) and it is
+    # not negative, else `errno` = `EBADF` and -1. Stops: the `ret` (0x13), the `ret` after `errno` is set (0x2b).
+    "fno": dict(grp="Fno", cn="__fileno", a=0x627140, n=44, pos=True, fs=True, stops=(0x13, 0x2b),
+                tag="PLAN.md §M, M1", src="glibc 2.31's `__fileno` (`libio/fileno.c`; `objdump -d`)"),
+    # glibc 2.31 nptl/pthread_mutex_destroy.c `__pthread_mutex_destroy (mutex)`: `EBUSY` if the mutex is not robust
+    # and has users, else `__kind` = -1 and 0. Stop: the `ret` (0x21).
+    "pmd": dict(grp="Pmd", cn="__pthread_mutex_destroy", a=0x5fbd00, n=34, pos=True, stops=(0x21,),
+                tag="PLAN.md §M, M1",
+                src="glibc 2.31's `__pthread_mutex_destroy` (`nptl/pthread_mutex_destroy.c`; `objdump -d`)"),
+    # glibc 2.31 signal/sigaction.c `__sigaction (sig, act, oact)`: `errno` = `EINVAL` and -1 unless `sig` is from 1 to
+    # 64 and not `SIGCANCEL` (32) or `SIGSETXID` (33), else a tail jump to `__libc_sigaction`. Stops: the jump (0x14),
+    # the `ret` (0x33).
+    "sgw": dict(grp="Sgw", cn="__sigaction", a=0x6011d0, n=52, pos=True, fs=True, stops=(0x14, 0x33),
+                tag="PLAN.md §M, M1", src="glibc 2.31's `__sigaction` (`signal/sigaction.c`; `objdump -d`)"),
+    # glibc 2.31 nptl/cleanup_compat.c `_pthread_cleanup_push (buffer, routine, arg)`: the buffer filled, linked in
+    # front of the thread's `cleanup` list (`fs:0x2f8`). Stop: the `ret` (0x21).
+    "pcp": dict(grp="Pcp", cn="_pthread_cleanup_push", a=0x5fefe0, n=34, pos=True, fs=True, stops=(0x21,),
+                tag="PLAN.md §M, M1", src="glibc 2.31's `_pthread_cleanup_push` (`nptl/cleanup_compat.c`; `objdump -d`)"),
     # 7-Zip's CPP/Windows/FileIO.cpp `CFileBase::seek (off, whence)`: the descriptor (`this->_handle`, at 0), then
     # `lseek`. Stop: the `jmp` to `__libc_lseek` (6), a branch to another segment (`Seg.s_jmp_x`).
     "fsk": dict(grp="Fsk", cn="NWindows::NFile::NIO::CFileBase::seek", a=0x4560b0, n=11, pos=True, stops=(6,),
@@ -638,6 +670,9 @@ def effect(mn, sz, ol, pc=None):
     if mn == 'test' and ks == ('m', 'i') and sz == 8:
         assert f[0][4] == 8
         return terms, f"Op.testmi 8 {mem(ops[0])} {f[1][1]}", "OpI.testmi8"
+    if mn == 'test' and ks == ('m', 'i') and sz == 32:   # FV7z/Lemmas/BlkOps22.lean
+        assert f[0][4] == 32
+        return terms, f"Op.testmi 32 {mem(ops[0])} {f[1][1]}", "OpI.testmi32"
     if mn == 'test' and ks == ('mr', 'i') and sz == 8:
         return terms, f"Op.testmia 8 {absa(ops[0])} {f[1][1]}", "OpIA.testmi8_rip (by decide)"
     if mn == 'cmp' and ks == ('m', 'i') and sz in (8, 32):
@@ -939,7 +974,7 @@ end FV7z.{grp}
                          f"theorem j{k}_0 : ∀ feat, Dec feat j{k} 0 (FV7z.mk {mnl(mn)} {sz} [{operand(ol[0])[1]}] {ln}) := "
                          "by dec_rfl\n")
     open(out + "/Pats.lean", "w").write(f"""import FV7z.Lemmas.Sp{"Fs" if FSM else ""}
-{"import FV7z.Lemmas.BlkOps20" + chr(10) if any(k in x for x in P for k in ("Op.not32", "Op.cqo", "Op.imul3", "Op.andh", "Op.testh", "Op.cmpm 8")) else ""}{"import FV7z.Lemmas.BlkOps19" + chr(10) if any("Op.vld 0" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps18" + chr(10) if any("Op.zxr16" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps17" + chr(10) if any("Op.mul64" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps16" + chr(10) if any("Op.bt64" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps15" + chr(10) if any("Op.sxr" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps14" + chr(10) if any(k in x for x in P for k in ("Op.zxr", "Op.test 16", "Op.cmpmif fb 8")) else ""}{"import FV7z.Lemmas.BlkOps13" + chr(10) if any("Op.cmpmif" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps12" + chr(10) if any(k in x for x in P for k in ("Op.cmpmr", "Op.testmi")) else ""}{"import FV7z.Lemmas.BlkOps11" + chr(10) if any(k in x for x in P for k in ("Op.rol64", "Op.ror64")) else ""}{"import FV7z.Lemmas.BlkOps10" + chr(10) if any("Op.cmpm 16" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps9" + chr(10) if any("Op.cmpma" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps8" + chr(10) if any(k in x for x in P for k in ("Op.vla", "Op.vsa", "Op.addma", "Op.cmpmia 8", "Op.stia 8")) else ""}{"import FV7z.Lemmas.BlkOps7" + chr(10) if any(k in x for x in P for k in ("Op.vl", "Op.vs", "Op.cdqe")) else ""}{"import FV7z.Lemmas.BlkOps6" + chr(10) if any(k in x for x in P for k in ("Op.stf8", "Op.stfi", "Op.xormf")) else ""}{("import FV7z.Lemmas.BlkOps5" if any("Op.ldsxb" in x for x in P) else
+{"import FV7z.Lemmas.BlkOps22" + chr(10) if any("Op.testmi 32" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps20" + chr(10) if any(k in x for x in P for k in ("Op.not32", "Op.cqo", "Op.imul3", "Op.andh", "Op.testh", "Op.cmpm 8")) else ""}{"import FV7z.Lemmas.BlkOps19" + chr(10) if any("Op.vld 0" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps18" + chr(10) if any("Op.zxr16" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps17" + chr(10) if any("Op.mul64" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps16" + chr(10) if any("Op.bt64" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps15" + chr(10) if any("Op.sxr" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps14" + chr(10) if any(k in x for x in P for k in ("Op.zxr", "Op.test 16", "Op.cmpmif fb 8")) else ""}{"import FV7z.Lemmas.BlkOps13" + chr(10) if any("Op.cmpmif" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps12" + chr(10) if any(k in x for x in P for k in ("Op.cmpmr", "Op.testmi")) else ""}{"import FV7z.Lemmas.BlkOps11" + chr(10) if any(k in x for x in P for k in ("Op.rol64", "Op.ror64")) else ""}{"import FV7z.Lemmas.BlkOps10" + chr(10) if any("Op.cmpm 16" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps9" + chr(10) if any("Op.cmpma" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps8" + chr(10) if any(k in x for x in P for k in ("Op.vla", "Op.vsa", "Op.addma", "Op.cmpmia 8", "Op.stia 8")) else ""}{"import FV7z.Lemmas.BlkOps7" + chr(10) if any(k in x for x in P for k in ("Op.vl", "Op.vs", "Op.cdqe")) else ""}{"import FV7z.Lemmas.BlkOps6" + chr(10) if any(k in x for x in P for k in ("Op.stf8", "Op.stfi", "Op.xormf")) else ""}{("import FV7z.Lemmas.BlkOps5" if any("Op.ldsxb" in x for x in P) else
   "import FV7z.Lemmas.BlkOps4" if any("Op.imul64" in x for x in P) else
   "import FV7z.Lemmas.BlkOps3" if any(k in x for x in P for k in ("Op.shl64", "Op.shr64", "Op.sar64")) else
   "import FV7z.Lemmas.BlkOps2") + chr(10) if pos else ""}/-!
