@@ -46,7 +46,8 @@ theorem vc_0 {g : Gprs} {f : Rflags} {V : Addr → Byte} (hr : ∀ i < 120, Foot
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at hr ⊢
   wpx [W_0, W_25, o0, o1, Kp]
-  all_goals repeat' (first | exact rfl | exact Raf.off_ft hr _ rfl (by decide) | apply And.intro | intro _)
+  all_goals repeat' (first | exact rfl | exact trivial | exact Raf.off_ft hr _ rfl (by decide) | apply And.intro
+    | intro _)
 
 /-- The copy. -/
 theorem vc_29 {g : Gprs} {f : Rflags} {V : Addr → Byte} (hr : ∀ i < 120, Foot F.data (Addr.add g.rsi i))
@@ -54,9 +55,10 @@ theorem vc_29 {g : Gprs} {f : Rflags} {V : Addr → Byte} (hr : ∀ i < 120, Foo
     W_29 F Wl (fun j' g' _ V' => j' = 105 ∧ Kp g g' ∧ Raf.Out g.rdi.toNat (g.rdi.toNat + 104) V V') g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at hr hw hx ⊢
-  wpx [W_29, o2, Kp]
+  wpx [W_29, o2, Kp, Op.vl, Op.vs]
   all_goals repeat' (first
     | exact rfl
+    | exact trivial
     | exact fun i hi => hr i (by omega)
     | exact fun i hi => hw i (by omega)
     | exact Raf.off_ft hr _ rfl (by decide)
