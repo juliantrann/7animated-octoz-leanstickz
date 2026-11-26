@@ -206,7 +206,7 @@ theorem ity_ok {fb : Addr} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBa
       (∃ W : Addr → Byte, Agree F Z.proc.mm.mem W ∧ ∀ y : Addr,
         (y.toNat < X.cpu.gpr.rsp.toNat - 152 ∨ X.cpu.gpr.rsp.toNat ≤ y.toNat) →
         (y.toNat < (errnoAt fb).toNat ∨ (errnoAt fb).toNat + 4 ≤ y.toNat) → W y = V y) →
-      GoG prof L o (gev ++ [Tcg.tcEv (Tcg.tg1 (ig2 X.cpu.gpr rdq(V, fb + 40#64))) rc bs]) gP gE Z t') :
+      GoG prof L o (gev ++ [tcEv (Tcg.tg1 (ig2 X.cpu.gpr rdq(V, fb + 40#64))) rc bs]) gP gE Z t') :
     GoG prof L o gev gP gE X t := by
   have hlt := X.cpu.gpr.rsp.isLt
   have hpm : userPtrMax prof.feat ≤ 2 ^ 64 := by unfold userPtrMax; split <;> decide
