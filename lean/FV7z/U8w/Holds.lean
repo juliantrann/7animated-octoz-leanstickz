@@ -278,7 +278,8 @@ theorem vc_32 {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post} {e : BitVec
   dsimp only at he fq h200a fw1 fw0 h184 h83a h200b h83b ⊢
   subst he
   wpx [W_32, W_50, W_216, W_62, W_67, o2, o3, o15, o4, o5]
-  repeat' (first | exact fq | (apply fw1 <;> assumption) | (apply fw0 <;> assumption) | apply And.intro | intro _)
+  repeat' (first | with_reducible exact fq | with_reducible (apply fw1 <;> assumption) |
+    with_reducible (apply fw0 <;> assumption) | apply And.intro | intro _)
   all_goals first
     | (apply h200a <;> assumption)
     | (apply h184 <;> assumption)
@@ -328,8 +329,9 @@ theorem vc_83 {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post} {c : BitVec
   subst hc
   wpx [W_83, W_256, W_264, W_269, W_488, W_106, W_352, W_118, W_384, W_416, W_464, W_420, W_392, W_130, o6, o16,
       o17, o18, o29, o7, o22, o8, o23, o25, o28, o26, o24, o9]
-  repeat' (first | (apply fq2 <;> assumption) | (apply fp0 <;> assumption) | (apply fp1 <;> assumption) |
-    (apply fp2 <;> assumption) | (apply fp3 <;> assumption) | apply And.intro | intro _)
+  repeat' (first | with_reducible (apply fq2 <;> assumption) | with_reducible (apply fp0 <;> assumption) |
+    with_reducible (apply fp1 <;> assumption) | with_reducible (apply fp2 <;> assumption) |
+    with_reducible (apply fp3 <;> assumption) | apply And.intro | intro _)
   all_goals first
     | (apply h296a <;> assumption)
     | (apply h296b <;> assumption)
@@ -349,7 +351,7 @@ theorem vc_141 {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post}
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at fw h ⊢
   wpx [W_141, o10]
-  repeat' (first | exact fw | apply And.intro | intro _)
+  repeat' (first | with_reducible exact fw | apply And.intro | intro _)
   all_goals apply h
 
 /-- 152: the next byte; `ecx` less 6, to 152 again or to 184. -/
@@ -367,7 +369,7 @@ theorem vc_152 {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post} {c : BitVe
   dsimp only at hc fw h152 h184 ⊢
   subst hc
   wpx [W_152, W_178, o11, o12]
-  repeat' (first | exact fw | apply And.intro | intro _)
+  repeat' (first | with_reducible exact fw | apply And.intro | intro _)
   all_goals first
     | (apply h152 <;> assumption)
     | (apply h184 <;> assumption)
@@ -392,7 +394,7 @@ theorem vc_200 {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post}
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at fw h ⊢
   wpx [W_200, o14]
-  repeat' (first | exact fw | apply And.intro | intro _)
+  repeat' (first | with_reducible exact fw | apply And.intro | intro _)
   all_goals apply h
 
 /-- 296: the three bytes of an unpaired surrogate (by the flag bit 8), to 328. -/
@@ -416,7 +418,8 @@ theorem vc_328 {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post}
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at fa fb fc h ⊢
   wpx [W_328, o21]
-  repeat' (first | exact fa | exact fb | exact fc | apply And.intro | intro _)
+  repeat' (first | with_reducible exact fa | with_reducible exact fb | with_reducible exact fc | apply And.intro |
+    intro _)
   all_goals apply h
 
 attribute [local irreducible] W_0 W_32 W_83 W_141 W_152 W_184 W_200 W_296 W_328
