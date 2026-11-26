@@ -413,6 +413,7 @@ import FV7z.Strncmp.Mask
 import FV7z.Strncmp.Res
 import FV7z.Strncmp.Exit
 import FV7z.Strncmp.Vec16
+import FV7z.Strncmp.Head
 import FV7z.Pmi.Holds
 import FV7z.Lemmas.Lock2
 import FV7z.Pml.Holds
