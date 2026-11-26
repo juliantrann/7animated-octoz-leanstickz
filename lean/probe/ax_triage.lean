@@ -1,4 +1,5 @@
 import FV7z.Ulk.Holds
+import FV7z.Mck.Holds
 open FV7z
 #print axioms FV7z.Ulk.ulk_ok
 #print axioms FV7z.Ulk.vc_0s
@@ -7,3 +8,7 @@ open FV7z
 #print axioms FV7z.Ulk.vc_0c
 #print axioms FV7z.Ulk.vc_135
 #print axioms FV7z.Ulk.vc_106
+#print axioms FV7z.Mck.mck_ok
+#print axioms FV7z.Mck.vc_0
+#print axioms FV7z.Mck.vc_78
+#print axioms FV7z.Mck.vc_92
