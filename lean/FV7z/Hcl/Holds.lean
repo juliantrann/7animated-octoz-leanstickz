@@ -19,7 +19,7 @@ left, so the run is cut where the two ways meet (51):
 - `hcl_mid`: from 51 (any state there with `rsp` 8 below `S`, the saved `rbx` at `S - 8` and the return address at
   `S`, as `kM` gives) through the second callee when `_stream` is set, to the return address with `rax` 0.
 
-- `V0`: the bytes after `push rbx` and the stores; `p0`, `vt1`, `gC1`: `_seqStream`, its vtable and the registers at
+- `V0`: the bytes after `push rbx` and the stores; `sq`, `vt1`, `gC1`: `_seqStream`, its vtable and the registers at
   the first `call`; `s2`, `vt2`, `gC2`: `_stream`, its vtable and the registers at the second `call`.
 - `vc_0z`, `vc_0n`, `vc_43`, `vc_51z`, `vc_51n`, `vc_66`, `vc_74`: the verification conditions of the pieces.
 -/
@@ -48,12 +48,12 @@ abbrev V0 (V : Addr → Byte) (g : Gprs) : Addr → Byte :=
   Vst (Vst (Vst (Vst V (g.rsp - 8) (toBytesLE g.rbx 8)) (g.rdi + 21#64) (toBytesLE 0#64 8)) (g.rdi + 29#64)
     (toBytesLE 0#8 1)) (g.rdi + 64#64) (toBytesLE 0#64 8)
 /-- `_seqStream`, read from `V0`. -/
-abbrev p0 (V : Addr → Byte) (g : Gprs) : Addr := rdq(V0 V g, g.rdi + 48#64)
+abbrev sq (V : Addr → Byte) (g : Gprs) : Addr := rdq(V0 V g, g.rdi + 48#64)
 /-- Its vtable. -/
-abbrev vt1 (V : Addr → Byte) (g : Gprs) : Addr := rdq(V0 V g, p0 V g)
+abbrev vt1 (V : Addr → Byte) (g : Gprs) : Addr := rdq(V0 V g, sq V g)
 /-- The registers at the first `call`. -/
 abbrev gC1 (V : Addr → Byte) (g : Gprs) : Gprs :=
-  { g with rax := vt1 V g, rbx := g.rdi, rsp := g.rsp - 8, rdi := p0 V g }
+  { g with rax := vt1 V g, rbx := g.rdi, rsp := g.rsp - 8, rdi := sq V g }
 /-- `_stream` (`rbx` = `this` at 51). -/
 abbrev s2 (V : Addr → Byte) (g : Gprs) : Addr := rdq(V, g.rbx + 56#64)
 /-- Its vtable. -/
@@ -67,14 +67,14 @@ theorem b16 (S : Addr) : S - 8 - 8 = S - 16 := by bv_omega
 variable {F : Footprint} {Wl : List Rgn}
 
 /-- `_seqStream` not set: `push rbx; mov rbx, rdi`, the stores, `mov rdi, [rdi + 48]; test rdi, rdi; je` taken. -/
-theorem vc_0z {g : Gprs} {f : Rflags} {V : Addr → Byte} (h : p0 V g = 0)
+theorem vc_0z {g : Gprs} {f : Rflags} {V : Addr → Byte} (h : sq V g = 0)
     (hst : ∀ i < 8, Foot Wl (Addr.add (g.rsp - 8) i)) (w21 : ∀ i < 8, Foot Wl (Addr.add (g.rdi + 21#64) i))
     (w29 : ∀ i < 1, Foot Wl (Addr.add (g.rdi + 29#64) i)) (w64 : ∀ i < 8, Foot Wl (Addr.add (g.rdi + 64#64) i))
     (fa : ∀ i < 8, Foot F.data (Addr.add (g.rdi + 48#64) i)) :
     W_0 F Wl (fun j' g' _ V' => j' = 51 ∧ g' = { g with rbx := g.rdi, rsp := g.rsp - 8, rdi := 0#64 } ∧
       V' = V0 V g) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
-  dsimp only [p0, V0] at h hst w21 w29 w64 fa ⊢
+  dsimp only [sq, V0] at h hst w21 w29 w64 fa ⊢
   wpx [W_0, W_37, o0, o1, h, BitVec.and_self, beq_iff_eq, beq_eq_false_iff_ne, ne_eq, beq_self_eq_true,
     not_true_eq_false, not_false_eq_true, false_implies, Bool.true_eq_false, Bool.false_eq_true, implies_true]
   all_goals repeat' (first
@@ -86,13 +86,13 @@ theorem vc_0z {g : Gprs} {f : Rflags} {V : Addr → Byte} (h : p0 V g = 0)
     | intro _)
 
 /-- `_seqStream` set: `je` not taken, `mov rax, [rdi]`, up to the first `call`. -/
-theorem vc_0n {g : Gprs} {f : Rflags} {V : Addr → Byte} (h : p0 V g ≠ 0)
+theorem vc_0n {g : Gprs} {f : Rflags} {V : Addr → Byte} (h : sq V g ≠ 0)
     (hst : ∀ i < 8, Foot Wl (Addr.add (g.rsp - 8) i)) (w21 : ∀ i < 8, Foot Wl (Addr.add (g.rdi + 21#64) i))
     (w29 : ∀ i < 1, Foot Wl (Addr.add (g.rdi + 29#64) i)) (w64 : ∀ i < 8, Foot Wl (Addr.add (g.rdi + 64#64) i))
-    (fa : ∀ i < 8, Foot F.data (Addr.add (g.rdi + 48#64) i)) (fs : ∀ i < 8, Foot F.data (Addr.add (p0 V g) i)) :
+    (fa : ∀ i < 8, Foot F.data (Addr.add (g.rdi + 48#64) i)) (fs : ∀ i < 8, Foot F.data (Addr.add (sq V g) i)) :
     W_0 F Wl (fun j' g' _ V' => j' = 40 ∧ g' = gC1 V g ∧ V' = V0 V g) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
-  dsimp only [gC1, vt1, p0, V0] at h hst w21 w29 w64 fa fs ⊢
+  dsimp only [gC1, vt1, sq, V0] at h hst w21 w29 w64 fa fs ⊢
   wpx [W_0, W_37, o0, o1, h, BitVec.and_self, beq_iff_eq, beq_eq_false_iff_ne, ne_eq,
     not_true_eq_false, not_false_eq_true, false_implies, Bool.true_eq_false, Bool.false_eq_true, implies_true]
   all_goals repeat' (first
@@ -181,7 +181,7 @@ variable {prof : Profile} {L : List (Addr × List Byte)} {s₀ : State} {o : Ora
 
 /-- `CHandler::Close ()` (`this` = `rdi`) from its entry to where the two ways meet (51, `kM`): `rsp` 8 below the
 entry's, `rbx` = `this`, the saved `rbx` and the return address as they were (`hb0`, `hr0` for the bytes `V0`), and
-either `_seqStream` (`p0`) not set and the bytes `V0`, or the run through its `Release`: at the callee's entry `eF`
+either `_seqStream` (`sq`) not set and the bytes `V0`, or the run through its `Release`: at the callee's entry `eF`
 the registers `gC1` with `rsp` 16 below the entry's and the bytes `V0` with the return address into `Close` pushed
 (`kf`); the callee returns to `hcl_at + 43` with `rsp`, `rbx`, the saved `rbx` and the return address as they were
 and its own post `Pc`, and then `_seqStream` = 0. -/
@@ -201,18 +201,18 @@ theorem hcl_ok {Pc : State → (Addr → Byte) → Prop} (c : Seg prof F Wl L s�
     (kM : ∀ (Z : State) (V' : Addr → Byte) (t' : Nat), KeptW Wl s₀ Z → Agree F Z.proc.mm.mem V' →
       Z.cpu.rip = hcl_at.add 51 → Z.cpu.gpr.rsp = X.cpu.gpr.rsp - 8 → Z.cpu.gpr.rbx = X.cpu.gpr.rdi →
       rdq(V', X.cpu.gpr.rsp - 8) = X.cpu.gpr.rbx → rdq(V', X.cpu.gpr.rsp) = e₂ →
-      ((p0 V X.cpu.gpr = 0 ∧ V' = V0 V X.cpu.gpr ∧
+      ((sq V X.cpu.gpr = 0 ∧ V' = V0 V X.cpu.gpr ∧
           Z.cpu.gpr = { X.cpu.gpr with rbx := X.cpu.gpr.rdi, rsp := X.cpu.gpr.rsp - 8, rdi := 0#64 }) ∨
         (∃ (Zc : State) (Vc : Addr → Byte), Pc Zc Vc ∧
           V' = Vst Vc (X.cpu.gpr.rdi + 48#64) (toBytesLE 0#64 8) ∧ Z.cpu.gpr = Zc.cpu.gpr)) →
       GoG prof L o gev gP gE Z t')
-    (hs2 : p0 V X.cpu.gpr ≠ 0 → ∀ i < 8, Foot Wl (Addr.add (X.cpu.gpr.rsp - 16) i))
-    (fs : p0 V X.cpu.gpr ≠ 0 → ∀ i < 8, Foot F.data (Addr.add (p0 V X.cpu.gpr) i))
-    (fb : p0 V X.cpu.gpr ≠ 0 → ∀ i < 8, Foot F.data (Addr.add (vt1 V X.cpu.gpr + 16#64) i))
-    (fw : p0 V X.cpu.gpr ≠ 0 → ∀ i < 8, Foot Wl (Addr.add (X.cpu.gpr.rdi + 48#64) i))
+    (hs2 : sq V X.cpu.gpr ≠ 0 → ∀ i < 8, Foot Wl (Addr.add (X.cpu.gpr.rsp - 16) i))
+    (fs : sq V X.cpu.gpr ≠ 0 → ∀ i < 8, Foot F.data (Addr.add (sq V X.cpu.gpr) i))
+    (fb : sq V X.cpu.gpr ≠ 0 → ∀ i < 8, Foot F.data (Addr.add (vt1 V X.cpu.gpr + 16#64) i))
+    (fw : sq V X.cpu.gpr ≠ 0 → ∀ i < 8, Foot Wl (Addr.add (X.cpu.gpr.rdi + 48#64) i))
     {eF : Addr} {codeF : List Byte} (hinF : CodeIn L eF codeF) (hF0 : 0 < codeF.length)
-    (htgt : p0 V X.cpu.gpr ≠ 0 → rdq(V0 V X.cpu.gpr, vt1 V X.cpu.gpr + 16#64) = eF)
-    (kf : p0 V X.cpu.gpr ≠ 0 → ∀ (Y : State) (t' : Nat), KeptW Wl s₀ Y →
+    (htgt : sq V X.cpu.gpr ≠ 0 → rdq(V0 V X.cpu.gpr, vt1 V X.cpu.gpr + 16#64) = eF)
+    (kf : sq V X.cpu.gpr ≠ 0 → ∀ (Y : State) (t' : Nat), KeptW Wl s₀ Y →
       Agree F Y.proc.mm.mem (Vst (V0 V X.cpu.gpr) (X.cpu.gpr.rsp - 16) (toBytesLE (hcl_at.add 43) 8)) →
       Y.cpu.rip = eF → Y.cpu.gpr = (gC1 V X.cpu.gpr).set 4 (X.cpu.gpr.rsp - 16) →
       (∀ (Z : State) (V' : Addr → Byte) (t'' : Nat), KeptW Wl s₀ Z → Agree F Z.proc.mm.mem V' →
@@ -230,7 +230,7 @@ theorem hcl_ok {Pc : State → (Addr → Byte) → Prop} (c : Seg prof F Wl L s�
       ((X.cpu.gpr.rdi + 48#64).toNat + 8 ≤ x.toNat ∨ x.toNat + 8 ≤ (X.cpu.gpr.rdi + 48#64).toNat) →
       (byteAddrs x 8).map (Vst W (X.cpu.gpr.rdi + 48#64) (toBytesLE 0#64 8)) = (byteAddrs x 8).map W :=
     fun W x hx h => Tun.rd_Vst W _ _ x 8 (by rw [toBytesLE_length]; exact hq) hx (by rw [toBytesLE_length]; exact h)
-  by_cases hs : p0 V X.cpu.gpr = 0
+  by_cases hs : sq V X.cpu.gpr = 0
   · -- `_seqStream` not set
     refine (c_0 prof).run c hin (fun j' g' _ V' => j' = 51 ∧
         g' = { X.cpu.gpr with rbx := X.cpu.gpr.rdi, rsp := X.cpu.gpr.rsp - 8, rdi := 0#64 } ∧
