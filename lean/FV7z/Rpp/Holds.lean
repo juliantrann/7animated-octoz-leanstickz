@@ -76,10 +76,11 @@ theorem vc_25z {f : Rflags} (hall : ∀ j < (len V₀ g₀.rdi).toNat, 0 ≤ j �
   wpx [W_25, W_16, W_40, W_30, o2, o1, o4, o3, Op.cmpmi, eq_self_iff_true, decide_true, Bool.not_true,
     Bool.false_eq_true, false_implies, true_implies, true_and, and_true, implies_true]
   all_goals repeat' (first
-    | exact xFin (Or.inl rfl) (by exact Or.inl ⟨hall', m1⟩) rfl
     | apply And.intro
     | intro)
+  exact xFin (Or.inl rfl) (by exact Or.inl ⟨hall', m1⟩) rfl
 
+set_option maxHeartbeats 1000000 in
 /-- The loop's head, character `m` a `/`: its index, the `ret` at 47. -/
 theorem vc_25f {m : Nat} {f : Rflags} (hF : Fp F V₀ g₀.rdi) (hm : m + 1 ≤ (len V₀ g₀.rdi).toNat)
     (hall : ∀ j < (len V₀ g₀.rdi).toNat, m + 1 ≤ j → ch V₀ g₀.rdi j ≠ 47#32) (hch : ch V₀ g₀.rdi m = 47#32) :
@@ -102,9 +103,9 @@ theorem vc_25f {m : Nat} {f : Rflags} (hF : Fp F V₀ g₀.rdi) (hm : m + 1 ≤ 
     true_implies, true_and, and_true, implies_true]
   all_goals repeat' (first
     | with_reducible exact fm
-    | exact xFin (Or.inr rfl) (by exact hr) rfl
     | apply And.intro
     | intro)
+  exact xFin (Or.inr rfl) (by exact hr) rfl
 
 /-- The loop's head, character `m` not a `/`: the one before. -/
 theorem vc_25s {m : Nat} {f : Rflags} (hF : Fp F V₀ g₀.rdi) (hm : m + 1 ≤ (len V₀ g₀.rdi).toNat)
@@ -131,9 +132,9 @@ theorem vc_25s {m : Nat} {f : Rflags} (hF : Fp F V₀ g₀.rdi) (hm : m + 1 ≤ 
     Bool.true_eq_false, Bool.false_eq_true, false_implies, true_implies, true_and, and_true, implies_true]
   all_goals repeat' (first
     | with_reducible exact fm
-    | exact x25 (by exact Nat.le_of_succ_le hm) (by exact hall') (by omega) rfl
     | apply And.intro
     | intro)
+  exact x25 (by exact Nat.le_of_succ_le hm) (by exact hall') (by omega) rfl
 
 theorem vc_25 {n : Nat} {g : Gprs} {f : Rflags} (hF : Fp F V₀ g₀.rdi) (h : I25 g₀ V₀ n g) :
     W_25 F Wl (Nx g₀ V₀ n) g f V₀ := by

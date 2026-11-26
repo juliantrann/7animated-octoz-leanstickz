@@ -170,11 +170,10 @@ theorem vc_0 {f : Rflags} (hF : Fp F V₀ g₀.rdi) :
 
 /-- The `ret` at 73: node `i` the first not `Ok`, its byte at 16 0 and its count at 8 past 1; 1. -/
 theorem eFin1 {n i : Nat} (hi : i < (cnt V₀ g₀.rdi).toNat) (hok : ∀ k < i, Ok V₀ g₀.rdi k)
-    (hb : exd V₀ g₀.rdi i = 0) (hB : big (inc V₀ g₀.rdi i) = true) {c d x : BitVec 64} {g' : Gprs} {fl : Rflags}
-    (hg : g' = { g₀ with rax := BitVec.setWidth 64 (BitVec.setWidth 32 (BitVec.setWidth 64 1#32)), rcx := c,
-      rdx := d, r8 := x }) :
+    (hb : exd V₀ g₀.rdi i = 0) (hB : big (inc V₀ g₀.rdi i) = true) {a c d x : BitVec 64} (ha : a.toNat = 1)
+    {g' : Gprs} {fl : Rflags} (hg : g' = { g₀ with rax := a, rcx := c, rdx := d, r8 := x }) :
     Nx g₀ V₀ n 73 g' fl V₀ :=
-  eFin (Or.inr rfl) (Or.inr ⟨i, hi, hok, Or.inr ⟨hb, hB, by decide⟩⟩) hg
+  eFin (Or.inr rfl) (Or.inr ⟨i, hi, hok, Or.inr ⟨hb, hB, ha⟩⟩) hg
 
 /-- At the loop's end, `rax + 8 = rcx`: node `i` the last. -/
 theorem end_eq {s : Addr} {c : BitVec 32} {i : Nat} (hi : i < c.toNat)
@@ -230,9 +229,9 @@ theorem vc_47a {i : Nat} {d x : BitVec 64} {f : Rflags} (hF : Fp F V₀ g₀.rdi
   all_goals repeat' (first
     | with_reducible exact fa
     | with_reducible exact fb
-    | exact e60 (by exact hn) (by exact hx) (by exact hr) rfl
     | apply And.intro
     | intro)
+  exact e60 (by exact hn) (by exact hx) (by exact hr) rfl
 
 set_option maxHeartbeats 1000000 in
 /-- The loop's head, node `i` with its byte at 16 0 and its count at 8 past 1: 1, the `ret` at 73. -/
@@ -256,9 +255,9 @@ theorem vc_47b {i : Nat} {d x : BitVec 64} {f : Rflags} (hF : Fp F V₀ g₀.rdi
     | with_reducible exact fa
     | with_reducible exact fb
     | with_reducible exact fc hb0
-    | exact eFin1 (by exact hi) (by exact hok) (by exact hb0) (by exact hB0) rfl
     | apply And.intro
     | intro)
+  exact eFin1 (by exact hi) (by exact hok) (by exact hb0) (by exact hB0) (by first | decide | simp) rfl
 
 set_option maxHeartbeats 1000000 in
 /-- The loop's head, node `i` `Ok`: the next node, or 60 with `r8` 0 after the last. -/
