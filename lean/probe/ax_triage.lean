@@ -1,3 +1,3 @@
-import FV7z.Dr2.Holds
+import FV7z.Pop.Holds
 open FV7z
-#print axioms FV7z.Dr2.dr2_ok
+#print axioms FV7z.Pop.pop_ok
