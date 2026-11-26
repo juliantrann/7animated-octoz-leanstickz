@@ -54,8 +54,11 @@ theorem lf_xz (x : BitVec 64) : BitVec.setWidth 64 (BitVec.setWidth 32 x ^^^ Bit
 /-- `setcc al` after `xor eax, eax`: `rax` is the condition. -/
 theorem lf_setb (g : Gprs) (c : Bool) :
     wrLo (g.set 0 0) 0 ((BitVec.ofBool c).setWidth 8) = g.set 0 ((BitVec.ofBool c).setWidth 64) := by
-  cases g
-  cases c <;> rfl
+  obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
+  rw [show (0 : Reg) = regOf 0 from rfl]
+  simp only [wrLo, sk0, gk0]
+  congr 1
+  cases c <;> first | decide | decide +kernel
 
 /-! ## `AddRef` -/
 
