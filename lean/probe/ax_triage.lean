@@ -1,5 +1,7 @@
-import FV7z.Tcg.Ok
-open FV7z
-#print axioms FV7z.Tcg.tcg_ok
-#print axioms FV7z.Tcg.vc_42_zero
-#print axioms FV7z.Tcg.vc_86
+import FV7z.Lemmas.SysMunmap
+import FV7z.Start.Unmap
+import FV7z.Mun.Ok
+open FV7z FV7z.Start
+#print axioms FV7z.syscall_munmap
+#print axioms FV7z.Fn.Seg.s_munmap
+#print axioms FV7z.Mun.mun_ok
