@@ -1,4 +1,5 @@
-import FV7z.Mal.Ok
-import FV7z.Onw
+import FV7z.Im7.Va
+import FV7z.Im7.Vb
 open FV7z
-#print axioms FV7z.Mal.at_hp
+#print axioms FV7z.Im7.vcA
+#print axioms FV7z.Im7.vcB100
