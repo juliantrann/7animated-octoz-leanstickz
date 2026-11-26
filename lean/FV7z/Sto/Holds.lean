@@ -78,8 +78,13 @@ theorem vc_0r {g : Gprs} {f : Rflags} {V : Addr → Byte} (h : q V g ≠ 0)
   dsimp only [gR, q] at h fa fq fv ⊢
   wpx [W_0, W_13, o0, o1, h, BitVec.and_self, beq_iff_eq, beq_eq_false_iff_ne, ne_eq,
     not_true_eq_false, not_false_eq_true, false_implies, Bool.true_eq_false, Bool.false_eq_true, implies_true]
-  all_goals repeat' (first | exact rfl | assumption | exact trivial | (intro hh; exact absurd hh h)
-    | apply And.intro | intro _)
+  all_goals repeat' (first
+    | exact rfl
+    | assumption
+    | exact trivial
+    | (intro hh; exact absurd hh h)
+    | apply And.intro
+    | intro _)
 
 /-- `ReOpenCallback` not set, `Callback` set: `je` taken, `je` not taken, `sub rsp, 8; mov rax, [rdi]`. -/
 theorem vc_0c {g : Gprs} {f : Rflags} {V : Addr → Byte} (h0 : q V g = 0) (h : s V g ≠ 0)
@@ -91,8 +96,14 @@ theorem vc_0c {g : Gprs} {f : Rflags} {V : Addr → Byte} (h0 : q V g = 0) (h : 
   wpx [W_0, W_32, W_41, o0, o2, o3, h0, h, BitVec.and_self, beq_iff_eq, beq_eq_false_iff_ne, ne_eq,
     beq_self_eq_true, not_true_eq_false, not_false_eq_true, false_implies, Bool.true_eq_false, Bool.false_eq_true,
     implies_true]
-  all_goals repeat' (first | exact rfl | assumption | exact trivial | (intro hh; exact absurd hh h)
-    | (intro hh; exact absurd hh (by decide)) | apply And.intro | intro _)
+  all_goals repeat' (first
+    | exact rfl
+    | assumption
+    | exact trivial
+    | (intro hh; exact absurd hh h)
+    | (intro hh; exact absurd hh (by decide))
+    | apply And.intro
+    | intro _)
 
 /-- Neither set: `je` taken twice, `xor eax, eax`. -/
 theorem vc_0z {g : Gprs} {f : Rflags} {V : Addr → Byte} (h0 : q V g = 0) (h1 : s V g = 0)
@@ -104,8 +115,13 @@ theorem vc_0z {g : Gprs} {f : Rflags} {V : Addr → Byte} (h0 : q V g = 0) (h1 :
   wpx [W_0, W_32, W_64, o0, o2, o5, h0, h1, lf_xz, BitVec.xor_self, BitVec.setWidth_zero, BitVec.and_self,
     beq_iff_eq, beq_self_eq_true, not_true_eq_false, not_false_eq_true, false_implies, Bool.true_eq_false,
     Bool.false_eq_true, implies_true, decide_false, decide_true]
-  all_goals repeat' (first | exact rfl | assumption | exact trivial | (intro hh; exact absurd hh (by decide))
-    | apply And.intro | intro _)
+  all_goals repeat' (first
+    | exact rfl
+    | assumption
+    | exact trivial
+    | (intro hh; exact absurd hh (by decide))
+    | apply And.intro
+    | intro _)
 
 /-- `add rsp, 8`. -/
 theorem vc_51 {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post}
@@ -197,7 +213,8 @@ theorem sto_c {Pc : State → (Addr → Byte) → Prop} (c : Seg prof F Wl L s�
   -- to the `call`
   refine (c_0 prof).run c hin (fun j' g' _ V' => j' = 48 ∧ g' = gC V X.cpu.gpr ∧ V' = V) hK hA
     (by rw [addr_add_zero]; exact hrip) (vc_0c h0 h fa fb fs) ?_
-  rintro j' g fl V₁ ⟨rfl, rfl, rfl⟩ Y t₁ hKY hAY hrY hgY -
+  rintro j' g fl V₁ ⟨rfl, rfl, hV₁⟩ Y t₁ hKY hAY hrY hgY -
+  subst V₁
   have hsY : Y.cpu.gpr.rsp = X.cpu.gpr.rsp - 8#64 := by rw [hgY]
   have he : eaD Y 0 8 = rdq(V, s V X.cpu.gpr) + 8#64 := by
     show Y.cpu.gpr.get (regOf 0) + BitVec.ofNat 64 8 = _
@@ -216,7 +233,8 @@ theorem sto_c {Pc : State → (Addr → Byte) → Prop} (c : Seg prof F Wl L s�
   intro Z V' t'' hKZ hAZ hrZ hzs hr' hPc
   refine (c_51 prof).run c hin (fun j' g' _ V'' => j' = 55 ∧ g' = { Z.cpu.gpr with rsp := X.cpu.gpr.rsp } ∧
       V'' = V') hKZ hAZ hrZ (vc_51 fun _ => ⟨rfl, by rw [hzs, e8], rfl⟩) ?_
-  rintro j' g fl V₂ ⟨rfl, rfl, rfl⟩ U t₃ hKU hAU hrU hgU -
+  rintro j' g fl V₂ ⟨rfl, rfl, hV₂⟩ U t₃ hKU hAU hrU hgU -
+  subst V₂
   have hsU : U.cpu.gpr.rsp = X.cpu.gpr.rsp := by rw [hgU]
   refine c.s_ret hKU hAU hin (lt_len (by decide)) hrU (ret_55 _) (by rw [hsU]; exact hl) hin₂ h₂
     (by rw [hsU]; exact hr') ?_
