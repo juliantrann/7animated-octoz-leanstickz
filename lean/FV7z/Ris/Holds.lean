@@ -62,6 +62,7 @@ theorem vc_0z {g : Gprs} {f : Rflags} {V : Addr → Byte} (h : s V g = 0)
   | exact ⟨hst, fa, fun _ => ⟨rfl, rfl, rfl⟩⟩
   | exact ⟨hst, fa, fun _ => ⟨rfl, rfl, rfl⟩, fun hh => absurd hh (by decide)⟩
   | exact ⟨hst, fa, ⟨rfl, rfl, rfl⟩⟩
+  | exact ⟨hst, fa, rfl⟩
   | (refine ⟨hst, fa, ?_⟩; done)
 
 /-- `_inStream` set: `je` not taken, `mov rax, [rdi]`, up to the `call`. -/
@@ -102,6 +103,7 @@ theorem vc_37 {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post}
   dsimp only at hl h ⊢
   wpx [W_37, o3, BitVec.xor_self, BitVec.setWidth_zero]
   first
+  | exact fun _ => ⟨hl, h _⟩
   | exact ⟨hl, h _⟩
   | exact ⟨by simpa using hl, h _⟩
   | (refine ⟨hl, ?_⟩; simpa using h _)

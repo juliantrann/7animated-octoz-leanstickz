@@ -179,6 +179,11 @@ FNS = {
     "ris": dict(grp="Ris", cn="CDecoder::ReleaseInStream", a=0x57f930, n=41, pos=True, stops=(40,), calls=True,
                 tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `CDecoder::ReleaseInStream` (`LzmaDecoder.cpp`; `objdump -d`)"),
+    # 7-Zip's CPP/Common/Wildcard.cpp `CCensorNode::NeedCheckSubDirs ()`: over `SubNodes` (items at `this + 40`,
+    # count at `this + 48`), true at the first node with `ExcludeDirItems` (the byte at 16) set or more than one
+    # `IncludeItems` (the count at 8). Stops: the `ret`s (63, 73).
+    "ncs": dict(grp="Ncs", cn="CCensorNode::NeedCheckSubDirs", a=0x452fa0, n=79, pos=True, stops=(63, 73),
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `CCensorNode::NeedCheckSubDirs` (`Wildcard.cpp`; `objdump -d`)"),
     # 7-Zip's C/Alloc.c `MyAlloc (size)`: 0 for size 0, else a tail jump to `malloc`. Stops: the jump (9), the `ret`
     # (18).
     "mya": dict(grp="Mya", cn="MyAlloc", a=0x41f3c0, n=19, pos=True, stops=(9, 18),
