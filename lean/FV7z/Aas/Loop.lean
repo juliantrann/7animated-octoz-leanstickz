@@ -104,8 +104,8 @@ theorem vc_0b {g : Gprs} {f : Rflags} {V : Addr → Byte} {L M : BitVec 32}
 theorem vc_38 {g : Gprs} {f : Rflags} {V : Addr → Byte}
     (hw : ∀ i < 4, Foot Wl (Addr.add (g.r12 + 8#64) i)) (f0 : ∀ i < 8, Foot F.data (Addr.add g.rbp i)) :
     W_38 F Wl (fun j' g' _ V' => j' = 56 ∧
-      g' = { g with rax := rdq(Vst V (g.r12 + 8#64) (toBytesLE (BitVec.setWidth 32 g.r13) 4), g.rbp),
-        rdx := 0#64 } ∧
+      g' = { g with
+        rax := rdq(Vst V (g.r12 + 8#64) (toBytesLE (BitVec.setWidth 32 g.r13) 4), g.rbp), rdx := 0#64 } ∧
       V' = Vst V (g.r12 + 8#64) (toBytesLE (BitVec.setWidth 32 g.r13) 4)) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at hw f0 ⊢
