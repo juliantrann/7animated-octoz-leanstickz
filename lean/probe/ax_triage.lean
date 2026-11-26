@@ -1,5 +1,3 @@
-import FV7z.Opd.Ok
+import FV7z.Uct.New
 open FV7z
-#print axioms FV7z.Opd.opd_okH
-#print axioms FV7z.Opd.opd_ok
-#print axioms FV7z.Opd.omal_hp
+#print axioms FV7z.Uct.uct_okH
