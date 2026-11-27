@@ -37,7 +37,7 @@ theorem ur2_okH {Pd : State → State → (Addr → Byte) → Prop}
     (hH : Mal.Hp F Wl fb hi (m + B) V) (hB : Mal.MalB (zl X.cpu.gpr * 4#64 + 4#64) B)
     (hhi : hi + 264 ≤ X.cpu.gpr.rsp.toNat)
     (hsw : ∀ a : Addr, hi ≤ a.toNat → a.toNat < X.cpu.gpr.rsp.toNat → Foot Wl a)
-    (hp8 : X.cpu.gpr.rsp.toNat + 8 ≤ 2 ^ 64)
+    (hp8 : X.cpu.gpr.rsp.toNat + 8 < 2 ^ 64)
     (hl : ∀ i < 8, Foot F.data (Addr.add X.cpu.gpr.rsp i))
     (fr0 : ∀ i < 8, Foot F.data (Addr.add X.cpu.gpr.rdi i))
     (fw0 : ∀ i < 8, Foot Wl (Addr.add X.cpu.gpr.rdi i))
@@ -116,7 +116,8 @@ theorem ur2_okH {Pd : State → State → (Addr → Byte) → Prop}
     exact s0.trans (s3.trans (s2.trans (s1)))
   have hH' : Mal.Hp F Wl fb hi (m + B) (VR V X.cpu.gpr) :=
     Mal.Hp.mv hH (by omega) fun a _ a2 => hVo a (.inl (by omega))
-  refine ur2_ok (Pn := PnH F Wl fb hi m X.cpu.gpr V) (Pd := Pd) c hin hinN hinT hT hinD hD hK hA hrip (by omega) hp8
+  refine ur2_ok (Pn := PnH F Wl fb hi m X.cpu.gpr V) (Pd := Pd) c hin hinN hinT hT hinD hD hK hA hrip (by
+      omega) (Nat.le_of_lt hp8)
     (hfw _ 8 tn8 (by omega) (by omega)) (hfw _ 16 tn16 (by omega) (by omega)) (hfw _ 24 tn24 (by omega)
         (by omega)) (hfw _ 32 tn32 (by omega) (by omega))
     hl fr0 fw0 fw8 fw12 hq hd hin₂ h₂ kt ?_
@@ -139,7 +140,7 @@ theorem ur2_okH {Pd : State → State → (Addr → Byte) → Prop}
     (by rw [hYt]; omega) (fun a h1 h2 => hsw a h1 (by rw [hYt] at h2; omega)) hin (j := 40) (lt_len (by decide)) hra' ?_
   intro Z V₂ t'' hKZ hAZ hrZ zsp zbx zbp _ _ _ _ hP
   rw [hYt] at hP
-  have hsv : Sv (VN V X.cpu.gpr) X.cpu.gpr (e₂.add j₂) := Ura.sv3 (by omega) hp8 hra
+  have hsv : Sv (VN V X.cpu.gpr) X.cpu.gpr (e₂.add j₂) := Ura.sv3 (by omega) (Nat.le_of_lt hp8) hra
   obtain ⟨v24, v16, v8, v0⟩ := hsv
   have hrd : ∀ (x : Addr) (dx : Nat), x.toNat = X.cpu.gpr.rsp.toNat - dx → dx ≤ 24 →
       rdq(V₂, x) = rdq(VN V X.cpu.gpr, x) := fun x dx hx hdx => by

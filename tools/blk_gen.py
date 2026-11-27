@@ -751,6 +751,18 @@ FNS = {
     "usf": dict(grp="Usf", cn="UString::SetFrom", a=0x44d790, n=134, pos=True, stops=(0x48,), calls=True,
                 hand=(0x56,), tag="PLAN.md §M, M1",
                 src="7-Zip's `UString::SetFrom (const wchar_t *, unsigned)` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
+    # `UString::operator= (const wchar_t *s)`: the length `n` of `s` (`s[0]` at 0x12, the loop at 0x20 from the index
+    # 1); for `n` above `_limit` (0x38) `newBuf = new wchar_t[n + 1]` (0x68), `delete [] _chars` unless null (0x79),
+    # `_chars = newBuf`, `_limit = n`; then `_len = n` (0x3e), `wmemcpy (_chars, s, n + 1)` (0x4b). Stop: the `ret` (0x5b).
+    "uaw": dict(grp="Uaw", cn="UString::operator=(const wchar_t*)", a=0x44d670, n=155, pos=True, stops=(0x5b,),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip's `UString::operator= (const wchar_t *)` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
+    # `UString::SetFromBstr (s)`: `len = SysStringLen (s)` (0x17); for `len` above `_limit` (0x21) `newBuf = new
+    # wchar_t[len + 1]` (0x52), `delete [] _chars` unless null (0x63), `_chars = newBuf`, `_limit = len`; then `_len =
+    # len` (0x27) and a tail jump to `wmemcpy (_chars, s, len + 1)`. Stop: the tail jump (0x3d).
+    "usb": dict(grp="Usb", cn="UString::SetFromBstr", a=0x44d820, n=113, pos=True, stops=(0x3d,), calls=True,
+                tag="PLAN.md §M, M1",
+                src="7-Zip's `UString::SetFromBstr (LPCOLESTR)` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
     # CPP/UI/Common/EnumDirItems.cpp `CDirItems::ScanProgress (dirPath)`: without a `Callback` (at 0xc0) 0, else a tail
     # jump to `Callback->ScanProgress (Stat, false, dirPath)` (`Stat` at 0x48), its vtable's second entry. Stops: the
     # `jmp rax` (0x26) and the `ret` (0x32).
