@@ -14,7 +14,8 @@ of the exits (with the branch's condition when a later read needs it), so no bra
 the form the `wp` prints it. The result value is not followed.
 
 - `vc_0`: the pushes, the `E` slot, the base check (to 432), the first byte; a space to 80, else to 99.
-- `vc_80`: the next byte; a space to 80, else 99. `vc_99`: no byte (to 790 or 448), the sign, to 133.
+- `vc_80`: the next byte; a space to 80, else 99.
+  `vc_99z`, `vc_99n`: no byte (to 448 if `E = 0`, else 790), the sign, to 133.
 - `vc_150`: base 10 (`eax = 8`), to 171. `vc_216`, `vc_223`: `CU`, `CB`, `rdi = rbx`, to the digit loop (296).
 - the digit loop: `vc_296` (a digit or a letter to 332, else 368), `vc_332` (to 368, 265 or 345), `vc_265`,
   `vc_345` (the next byte; 0 ends at 368), `vc_291` (to 296).
@@ -87,25 +88,42 @@ theorem vc_80 {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte}
   mcx +contextual [W_80, o4, Op.ldsxq, Op.ldzx, Op.lda, Op.lea, Op.cmpmi, Op.zxr, Op.testmi, Op.stfi, Op.ldzxa,
     Op.sxr, f1, f2]
 
+/-- The ways from 99 to 133: the sign `-` (`[rsp + 20] = 1`), `+`, or none (`[rsp + 20] = 0`). -/
+abbrev P133 (V : Addr → Byte) (g g' : Gprs) (V' : Addr → Byte) : Prop :=
+  (V' = Vst V (g.rsp + 20#64) (toBytesLE (1#32) 4) ∧ g'.rbx = g.rbx + 1#64 ∧
+      g'.rcx = BitVec.setWidth 64 (BitVec.setWidth 32 (rb V (g.rbx + 1#64)))) ∨
+    (V' = Vst V (g.rsp + 20#64) (toBytesLE (0#32) 4) ∧ g'.rbx = g.rbx + 1#64 ∧
+      g'.rcx = BitVec.setWidth 64 (BitVec.setWidth 32 (rb (Vst V (g.rsp + 20#64) (toBytesLE (0#32) 4))
+        (g.rbx + 1#64)))) ∨
+    (V' = Vst V (g.rsp + 20#64) (toBytesLE (0#32) 4) ∧ g' = g)
+
 set_option maxHeartbeats 2000000 in
-/-- No byte (to 790 if `E ≠ 0`, else 448), or the sign; to 133. -/
-theorem vc_99 {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte}
+/-- `E = 0`: no byte to 448, or the sign; to 133. -/
+theorem vc_99z {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (hz : rdq(V, g.rsp + 8#64) = 0#64)
     (fE : ∀ i < 8, Foot F.data (Addr.add (g.rsp + 8#64) i))
     (f1m : BitVec.setWidth 8 g.rcx = 45#8 → ∀ i < 1, Foot F.data (Addr.add (g.rbx + 1#64) i))
     (f1p : BitVec.setWidth 8 g.rcx = 43#8 → ∀ i < 1, Foot F.data (Addr.add (g.rbx + 1#64) i))
     (w20 : ∀ i < 4, Foot Wl (Addr.add (g.rsp + 20#64) i)) :
     W_99 fb F Wl (fun j g' _ V' => g'.rsp = g.rsp ∧ g'.r13 = g.r13 ∧ g'.r14 = g.r14 ∧ g'.rdx = g.rdx ∧
-      ((j = 790 ∧ V' = V ∧ g' = g ∧ (!decide (rdq(V, g.rsp + 8#64) = 0#64)) = true) ∨ (j = 448 ∧ V' = V) ∨
-       (j = 133 ∧ ((V' = Vst V (g.rsp + 20#64) (toBytesLE (1#32) 4) ∧ g'.rbx = g.rbx + 1#64 ∧
-          g'.rcx = BitVec.setWidth 64 (BitVec.setWidth 32 (rb V (g.rbx + 1#64)))) ∨
-        (V' = Vst V (g.rsp + 20#64) (toBytesLE (0#32) 4) ∧ g'.rbx = g.rbx + 1#64 ∧
-          g'.rcx = BitVec.setWidth 64 (BitVec.setWidth 32 (rb (Vst V (g.rsp + 20#64) (toBytesLE (0#32) 4))
-            (g.rbx + 1#64)))) ∨
-        (V' = Vst V (g.rsp + 20#64) (toBytesLE (0#32) 4) ∧ g' = g))))) g f V := by
+      ((j = 448 ∧ V' = V) ∨ (j = 133 ∧ P133 V g g' V'))) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
-  dsimp only [rb] at fE f1m f1p w20 ⊢
+  dsimp only [rb, P133] at hz fE f1m f1p w20 ⊢
   mcx +contextual [W_99, W_107, W_116, W_496, W_672, W_969, W_981, o5, o6, o7, o38, o41, o43, o52, Op.ldsxq,
-    Op.ldzx, Op.lda, Op.lea, Op.cmpmi, Op.zxr, Op.testmi, Op.stfi, Op.ldzxa, Op.sxr, Op.cmpm, fE, f1m, f1p, w20]
+    Op.ldzx, Op.lda, Op.lea, Op.cmpmi, Op.zxr, Op.testmi, Op.stfi, Op.ldzxa, Op.sxr, Op.cmpm, hz, fE, f1m, f1p, w20]
+
+set_option maxHeartbeats 2000000 in
+/-- `E ≠ 0`: no byte to 790, or the sign; to 133. -/
+theorem vc_99n {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (hn : ¬ rdq(V, g.rsp + 8#64) = 0#64)
+    (fE : ∀ i < 8, Foot F.data (Addr.add (g.rsp + 8#64) i))
+    (f1m : BitVec.setWidth 8 g.rcx = 45#8 → ∀ i < 1, Foot F.data (Addr.add (g.rbx + 1#64) i))
+    (f1p : BitVec.setWidth 8 g.rcx = 43#8 → ∀ i < 1, Foot F.data (Addr.add (g.rbx + 1#64) i))
+    (w20 : ∀ i < 4, Foot Wl (Addr.add (g.rsp + 20#64) i)) :
+    W_99 fb F Wl (fun j g' _ V' => g'.rsp = g.rsp ∧ g'.r13 = g.r13 ∧ g'.r14 = g.r14 ∧ g'.rdx = g.rdx ∧
+      ((j = 790 ∧ V' = V ∧ g' = g) ∨ (j = 133 ∧ P133 V g g' V'))) g f V := by
+  obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
+  dsimp only [rb, P133] at hn fE f1m f1p w20 ⊢
+  mcx +contextual [W_99, W_107, W_116, W_496, W_672, W_969, W_981, o5, o6, o7, o38, o41, o43, o52, Op.ldsxq,
+    Op.ldzx, Op.lda, Op.lea, Op.cmpmi, Op.zxr, Op.testmi, Op.stfi, Op.ldzxa, Op.sxr, Op.cmpm, hn, fE, f1m, f1p, w20]
 
 /-- Base 10 (or 0 without a `0`): `eax = 8`, `edx = 10`; to 171. -/
 theorem vc_150 {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (hr : g.r14 = 0#64) :
@@ -218,7 +236,7 @@ theorem vc_368z {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (hz : rd
 set_option maxHeartbeats 2000000 in
 /-- No digit: to 748; else (`E ≠ 0`) the end stored at `E`, to 390. -/
 theorem vc_368n {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte}
-    (hn : (rdq(V, g.rsp + 8#64) == 0#64) = false) (fE : ∀ i < 8, Foot F.data (Addr.add (g.rsp + 8#64) i))
+    (hn : (rdq(V, g.rsp + 8#64) == 0) = false) (fE : ∀ i < 8, Foot F.data (Addr.add (g.rsp + 8#64) i))
     (wE : ∀ i < 8, Foot Wl (Addr.add (rdq(V, g.rsp + 8#64)) i)) :
     W_368 fb F Wl (fun j g' _ V' => (j = 748 ∧ V' = V ∧ g' = g) ∨
       (j = 390 ∧ V' = Vst V (rdq(V, g.rsp + 8#64)) (toBytesLE g.rdi 8) ∧ g'.rsp = g.rsp ∧ g'.r9 = g.r9))
