@@ -109,10 +109,12 @@ theorem t127 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (E : 
         (by rw [hgZ]; exact hLr) hag'
     · refine (c_127 prof fb).run c hfs E.hin _ hK hA hr (vc_127e hz hn w1 w2 w3 w4 w5 w6) ?_
       rintro j' g fl V' ⟨rfl, rfl, rfl⟩ Z t₁ hKZ hAZ hrZ hgZ -
-      exact t264 c hfs E hKZ hAZ hrZ (by rw [hgZ]; exact hsp) hag' ⟨8 * Y.cpu.gpr.r13.toNat + 64, by rw [hgZ]; exact hres⟩ kr
+      exact t264 c hfs E hKZ hAZ hrZ (by rw [hgZ]; exact hsp) hag'
+        ⟨8 * Y.cpu.gpr.r13.toNat + 64, by rw [hgZ]; exact hres⟩ kr
   · refine (c_127 prof fb).run c hfs E.hin _ hK hA hr (vc_127z hz) ?_
     rintro j' g fl V' ⟨rfl, rfl, rfl⟩ Z t₁ hKZ hAZ hrZ hgZ -
-    exact t264 c hfs E hKZ hAZ hrZ (by rw [hgZ]; exact hsp) hag ⟨8 * Y.cpu.gpr.r13.toNat + 64, by rw [hgZ]; exact hres⟩ kr
+    exact t264 c hfs E hKZ hAZ hrZ (by rw [hgZ]; exact hsp) hag
+      ⟨8 * Y.cpu.gpr.r13.toNat + 64, by rw [hgZ]; exact hres⟩ kr
 
 set_option maxHeartbeats 4000000 in
 /-- From 122: the `call` of `malloc` with `rdi = 8N + 64`, then 127. -/
