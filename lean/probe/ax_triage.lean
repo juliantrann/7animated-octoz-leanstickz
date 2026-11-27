@@ -1,3 +1,3 @@
-import FV7z.Ucn.Holds
+import FV7z.Usf.Holds
 open FV7z
-#print axioms FV7z.Ucn.ucn_ok
+#print axioms FV7z.Usf.usf_ok
