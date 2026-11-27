@@ -4,9 +4,10 @@ import FV7z.Stl.Vz
 # `____strtoul_l_internal`: the digit loop (PLAN.md §M, M1)
 
 The loop at 296 keeps the registers `Dr` (the frame, `rbp = 0`, `CU` in `r10`, `CB` in `r11`, `p` in `r13`,
-`rdi = p + k`) with `cl` the byte at `p + k`, the bytes kept (`Ag (Kr Kk S) (Vf V0 g0)`) and `E` in its slot. At the
-NUL (`k = n`) it leaves to 368 (`vc_296x`: `CB[0]` is not a letter); past a byte that is not 0 (`k < n`) it reads
-`p + k + 1` (265, 345) and comes back to 296 with `k + 1` (291), or leaves to 368. By induction on `n - k`.
+`rdi = p + k`) with `rcx = 0` if the byte at `p + k` is the NUL (`rcx` may hold it sign- or zero-extended), the
+bytes kept (`Ag (Kr Kk S) (Vf V0 g0)`) and `E` in its slot. At the NUL (`k = n`) it leaves to 368 (`vc_296x`:
+`CB[0]` is not a letter); past a byte that is not 0 (`k < n`) it reads `p + k + 1` (265, 345) and comes back to 296
+with `k + 1` (291), or leaves to 368. By induction on `n - k`.
 
 - `Sl`: the tables the loop reads. `Dr`, `LpG`: the registers, the goal at 296 with `k`.
 - `ap1`, `rbS`: the next address; a byte of the string reads the entry's.
@@ -63,7 +64,7 @@ def LpG (prof : Profile) (F : Footprint) (Wl : List Rgn) (L : List (Addr × List
     (Kk : Addr → Prop) (V0 : Addr → Byte) (g0 : Gprs) (k : Nat) : Prop :=
   ∀ (Y : State) (t : Nat) (V : Addr → Byte), KeptW Wl s₀ Y → Agree F Y.proc.mm.mem V →
     Y.cpu.rip = stl_at.add 296 → Dr g0 Y.cpu.gpr V0 k →
-    Y.cpu.gpr.rcx = BitVec.setWidth 64 (BitVec.setWidth 32 (rb V (Addr.add g0.rdi k))) →
+    (rb V (Addr.add g0.rdi k) = 0#8 → Y.cpu.gpr.rcx = 0#64) →
     Ag (Kr Kk g0.rsp) (Vf V0 g0) V → rdq(V, S88 g0.rsp + 8#64) = g0.rsi → GoG prof L o gev gP gE Y t
 
 section
@@ -79,7 +80,7 @@ theorem t291 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (E : 
     (Sw : Sv F Kk V0 g0 n) {k : Nat} (hk : k ≤ n)
     {Y : State} {t : Nat} {V : Addr → Byte} (hK : KeptW Wl s₀ Y) (hA : Agree F Y.proc.mm.mem V)
     (hr : Y.cpu.rip = stl_at.add 291) (hD : Dr g0 Y.cpu.gpr V0 k)
-    (hrc : Y.cpu.gpr.rcx = BitVec.setWidth 64 (BitVec.setWidth 32 (rb V (Addr.add g0.rdi k))))
+    (hrc : rb V (Addr.add g0.rdi k) = 0#8 → Y.cpu.gpr.rcx = 0#64)
     (hag : Ag (Kr Kk g0.rsp) (Vf V0 g0) V) (hEs : rdq(V, S88 g0.rsp + 8#64) = g0.rsi)
     (ih : LpG prof F Wl L s₀ o gev gP gE Kk V0 g0 k)
     (kr : Kret prof F Wl L s₀ o gev gP gE Kk V0 g0 (e₂.add j₂)) :
@@ -117,7 +118,8 @@ theorem t265 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (E : 
     exact ⟨l1.trans h1, l3.trans h2, l4.trans h3, l5.trans h4, l6.trans h5, by rw [hd1, hdi, ap1]⟩
   rcases hj with rfl | ⟨rfl, -⟩
   · exact t368 c hfs E Sw (by omega) hKZ hAZ hrZ hD'.1 hag hEs hD'.2.2.2.2.1 hD'.2.2.2.2.2 kr
-  · exact t291 c hfs E Sw (by omega) hKZ hAZ hrZ hD' (by rw [hgZ, hrc, hdi, ap1]) hag hEs ih kr
+  · exact t291 c hfs E Sw (by omega) hKZ hAZ hrZ hD' (fun h0 => by rw [hgZ, hrc, hdi, ap1, h0] <;> decide) hag hEs
+      ih kr
 
 set_option maxHeartbeats 4000000 in
 /-- From 345 (an overflow seen) with `rdi = p + k`, `k < n`: as 265. -/
@@ -143,7 +145,8 @@ theorem t345 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (E : 
     exact ⟨l1.trans h1, l3.trans h2, l4.trans h3, l5.trans h4, l6.trans h5, by rw [hd1, hdi, ap1]⟩
   rcases hj with rfl | ⟨rfl, -⟩
   · exact t368 c hfs E Sw (by omega) hKZ hAZ hrZ hD'.1 hag hEs hD'.2.2.2.2.1 hD'.2.2.2.2.2 kr
-  · exact t291 c hfs E Sw (by omega) hKZ hAZ hrZ hD' (by rw [hgZ, hrc, hdi, ap1]) hag hEs ih kr
+  · exact t291 c hfs E Sw (by omega) hKZ hAZ hrZ hD' (fun h0 => by rw [hgZ, hrc, hdi, ap1, h0] <;> decide) hag hEs
+      ih kr
 
 set_option maxHeartbeats 4000000 in
 /-- From 332 (a digit value) with `rdi = p + k`, `k < n`: to 368, 265 or 345. -/
@@ -182,7 +185,7 @@ theorem s296 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (E : 
   have hS : 80 ≤ g0.rsp.toNat := by omega
   have hb := rbS hS Sw hag hk
   by_cases hb0 : rb V0 (Addr.add g0.rdi k) = 0
-  · have hz : Y.cpu.gpr.rcx = 0#64 := by rw [hrc, hb, hb0] <;> decide
+  · have hz : Y.cpu.gpr.rcx = 0#64 := hrc (hb.trans hb0)
     have hC : rb V (Cb V0 + 1#64) = rb V0 (Cb V0 + 1#64) := congrArg (ofBytesLE 8) (rdK hS hag St.kC0)
     have fC : ∀ i < 1, Foot F.data (Addr.add (Y.cpu.gpr.r11 +
         BitVec.setWidth 64 (BitVec.setWidth 32 (BitVec.setWidth 8 Y.cpu.gpr.rcx)) * 2#64 + 1#64) i) := by
