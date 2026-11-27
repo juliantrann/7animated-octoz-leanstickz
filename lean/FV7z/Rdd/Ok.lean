@@ -19,11 +19,9 @@ kernel never gives `d_ino` 0, so after a `getdents` the first entry is returned 
 - `RddK`: the run after the return.
 - `fin176`: from 176 (the lock given back, the pops, the `ret`) to `RddK`.
 
-Next (not yet written; the design): `n80` (from 80 with `d_ino` not 0: `vc_80n`, then `fin176` with `RS` right),
-`rdd_gd` (from 128: `s_call`, `Gdn.gdn_ok` with `j₂ := 133`; errors by `vc_133e`/`vc_162` or `vc_133o`, the sum 0 by
-`vc_133z`/`vc_162`, then `fin176` with `RS` left; a positive sum by `vc_133p`, `ch_dn` and `NzIno`, then `n80` at
-`k = 0`), `step109` (`vc_109l` to 80: `vc_80z` and the loop, or `n80`; `vc_109g` then `rdd_gd`), `scan` (by
-induction on `n - k`), `rdd_ok` (`vc_0`, `s_cmpxchg_bd32` at 52, `vc_56`, `scan`).
+The rest of the function is in the modules after this one: `n80`, `z80` (`Rdd.Scan`, from 80), `gd_err`, `gd_zero`,
+`gd_pos` (`Rdd.Br`, after `getdents64`), `step109` and `scan` (`Rdd.Loop`, the loop at 109 by induction on `n - k`),
+`rdd_gd` and `rdd_ok` (`Rdd.Main`, `__getdents` from 128, and the entry to 109).
 -/
 open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn FV7z.Close
 open FV7z.Tun (rd_Vst rd_Vst_self Vst_out)
