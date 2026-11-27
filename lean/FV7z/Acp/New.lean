@@ -159,7 +159,7 @@ theorem acp_okH {fb : Addr} {hi m B n : Nat} (c : Seg prof F Wl L s₀ o) (hfs :
     (R := fun a => a.toNat < X.cpu.gpr.rdi.toNat ∨ X.cpu.gpr.rdi.toNat + 8 ≤ a.toNat) hT1 hfr
   refine k' Z V' t'' h1 h2 h3 h4 h5 h6 h7 h8 h9 ?_
   unfold Pk
-  refine ⟨hb1, hb2, ?_, by rw [z12], by rw [z13], by rw [z14], by rw [z15], hsrc, ?_, ?_,
+  refine ⟨hb1, hb2, ?_, z12.trans rfl, z13.trans rfl, z14.trans rfl, z15.trans rfl, hsrc, ?_, ?_,
     by omega, .inr (by omega), .inl (by omega), hT1, hp1, hpe, hft, hPm, ?_⟩
   · rw [Sbrk.rd_eq (V := VY V X.cpu.gpr) (x := X.cpu.gpr.rsp) (n := 8) hp8 fun a a1 a2 => hVr a (by omega) (by omega)]
     rw [Sbrk.rd_eq (V := V) (x := X.cpu.gpr.rsp) (n := 8) hp8 fun a a1 _ => hVa a (.inr a1)]
