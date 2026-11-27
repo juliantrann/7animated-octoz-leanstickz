@@ -98,7 +98,7 @@ theorem vcAll (hO : Ok K) (hE : Env K F Wl) (ℓ m : Nat) (g : Gprs) (f : Rflags
   · exact vc_1432 hO hE hc hI
   · exact vc_1472 hO hE hc hI
   · exact vc_1504 hO hE hc hI
-  · exact vc_1537 hO hE hc hI
+  · exact vc_1537 (f := f) hO hE hc hI
 
 /-! ## The stack at the `ret` -/
 
@@ -117,6 +117,7 @@ theorem rds {V : Addr → Byte} {a x : Addr} {r : BitVec 64} (ha : a.toNat + 8 �
 /-- The address arithmetic of the frame. -/
 local macro "tbo" : tactic => `(tactic| ((try simp only [Ctx.sp] at *) <;> bv_omega))
 
+set_option maxHeartbeats 2000000 in
 /-- The five saved registers and the return address under `V1`. -/
 theorem rd1 (hO : Ok K) (hs : 40 ≤ K.g0.rsp.toNat) (hs8 : K.g0.rsp.toNat + 8 ≤ 2 ^ 64) :
     rdq(K.V1, K.sp) = K.g0.rbx ∧ rdq(K.V1, K.sp + 8) = K.g0.rbp ∧ rdq(K.V1, K.sp + 8 + 8) = K.g0.r12 ∧
@@ -141,6 +142,7 @@ variable {prof : Profile} {L : List (Addr × List Byte)} {s₀ : State} {o : Ora
   {gev : List Event} {gP : State → Nat → List Event → Prop} {gE : Outcome → List Event → Prop}
   {X : State} {t : Nat}
 
+set_option maxHeartbeats 2000000 in
 /-- `LzmaDec_TryDummy (p, buf, bufOut)` from its entry, with `Ok K` and `Env K F Wl` of the names `K` (the registers
 `K.g0` and bytes `K.V0` at the entry): at the return address, the return address popped, `rbx`, `rbp`, `r12`–`r15`
 and `rdx` as they were, `r9 = *bufOut`, `rax` the result (at most 3) and `rsi` between `buf` and `*bufOut`; the bytes
@@ -155,8 +157,9 @@ theorem tdm_ok (c : Seg prof F Wl L s₀ o) (hin : CodeIn L tdm_at tdm) (hO : Ok
     (hra : rdq(K.V0, K.g0.rsp) = e₂.add j₂)
     (k : ∀ (V' : Addr → Byte) (Z : State) (t' : Nat), KeptW Wl s₀ Z → Agree F Z.proc.mm.mem V' →
       Z.cpu.rip = e₂.add j₂ →
-      (∃ a cc si di x8 x10 x11 : BitVec 64, Z.cpu.gpr = ({ K.g0 with rax := a, rcx := cc, rsi := si, rdi := di,
-          r8 := x8, r9 := K.B, r10 := x10, r11 := x11 } : Gprs).set 4 (K.g0.rsp + 8) ∧
+      (∃ a cc si di x8 x10 x11 : BitVec 64, Z.cpu.gpr =
+        ({ K.g0 with rax := a, rcx := cc, rsi := si, rdi := di, r8 := x8, r9 := K.B, r10 := x10, r11 := x11 } :
+          Gprs).set 4 (K.g0.rsp + 8) ∧
         a.toNat ≤ 3 ∧ K.g0.rsi.toNat ≤ si.toNat ∧ si.toNat ≤ K.B.toNat ∧
         ((a.toNat = 0 ∧ V' = K.V1) ∨ (1 ≤ a.toNat ∧ V' = Vst K.V1 K.g0.rdx (toBytesLE si 8)))) →
       GoG prof L o gev gP gE Z t') :
