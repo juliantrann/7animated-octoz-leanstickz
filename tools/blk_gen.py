@@ -166,6 +166,18 @@ FNS = {
     "mga": dict(grp="Mga", cn="_int_memalign", a=0x631bc0, n=470, pos=True, fs=True,
                 stops=(0x166, 0x167, 0x183, 0x196, 0x1b7), calls=True, hand=(0xba,),
                 tag="PLAN.md §M, M1", src="glibc 2.31's `_int_memalign` (`malloc/malloc.c`; `objdump -d`)"),
+    # glibc 2.31 iconv/gconv_cache.c `find_module_idx (str, idxp)`: `__hash_string (str)` (the `call`, 0x2e), the
+    # probes of the cache's hash table from `hval % hash_size` by `1 + hval % (hash_size - 2)`, `strcmp` (the
+    # `call` through the PLT, 0x76) of each name inside the string table. Stops: the `ret`s (0xba: an empty slot,
+    # -1; 0xdb: found, `*idxp` set, 0).
+    "fmi": dict(grp="Fmi", cn="find_module_idx", a=0x67ce30, n=220, pos=True, stops=(0xba, 0xdb), calls=True,
+                tag="PLAN.md §M, M1", src="glibc 2.31's `find_module_idx` (`iconv/gconv_cache.c`; `objdump -d`)"),
+    # glibc 2.31 intl/l10nflist.c `_nl_normalize_codeset (codeset, name_len)`: the count of the name's alphanumerics
+    # and whether all are digits (the loop at 0x30, `__ctype_b` at 0x7914c8), `malloc` (the `call`s, 0x5b, 0xc4,
+    # 0xf5), "iso" before an all-digit name, then the copy of the alphanumerics, letters lowered by `__ctype_tolower`
+    # (0x7914d0; the loop at 0x8c). Stops: the `ret`s (0xbe: the new name; 0xea: `malloc` failed, 0).
+    "nlc": dict(grp="Nlc", cn="_nl_normalize_codeset", a=0x619f30, n=271, pos=True, stops=(0xbe, 0xea), calls=True,
+                tag="PLAN.md §M, M1", src="glibc 2.31's `_nl_normalize_codeset` (`intl/l10nflist.c`; `objdump -d`)"),
     "gdn": dict(grp="Gdn", cn="__getdents", a=0x6a2820, n=0x3c, pos=True, fs=True, stops=(0x23, 0x24, 0x3b),
                 calls=True, tag="PLAN.md §M, M1",
                 src="glibc 2.31's `__getdents` (`sysdeps/unix/sysv/linux/getdents64.c`; `objdump -d`)"),
@@ -1239,6 +1251,16 @@ FNS = {
     "pos": dict(grp="Pos", cn="__pthread_once_slow", a=0x5fee60, n=261, pos=True, fs=True,
                 stops=(0x4f, 0x76, 0x95, 0x100), calls=True, hand=(0x59,), tag="PLAN.md §M, M1",
                 src="glibc 2.31's `__pthread_once_slow` (`nptl/pthread_once.c`; `objdump -d`)"),
+    # glibc 2.31 locale/loadlocale.c `_nl_intern_locale_data (category, data, datasize)`: the file's magic for the
+    # category, `nstrings` at least `_nl_category_num_items[category]` (0x6ef020) and the index in the data, the
+    # `struct __locale_data` from `malloc` (the `call`, 0x7a), its fields, then for each string its offset in the data
+    # (the loop at 0xc4): through the `switch` on the category (`jt`, 13 entries), the bound of the category's
+    # `_nl_value_types` (0x7804c0); a word (type 5) aligned and read, else the address. A bad offset: `free` (the
+    # `call`, 0xf3), `errno` = EINVAL, NULL. Stops: the `ret` (0x116); `LC_ALL` or a category above 12 (0x1c6, the
+    # `__assert_fail`).
+    "ild": dict(grp="Ild", cn="_nl_intern_locale_data", a=0x615210, n=485, pos=True, fs=True, stops=(0x116, 0x1c6),
+                calls=True, jt=(0x6ee9e0, 13), cut=(0xc4, 0x108, 0x120, 0x133, 0xf0), tag="PLAN.md §M, M1",
+                src="glibc 2.31's `_nl_intern_locale_data` (`locale/loadlocale.c`; `objdump -d`)"),
 }
 
 
