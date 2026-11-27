@@ -342,7 +342,8 @@ theorem vc_180 {g : Gprs} {f : Rflags} {V : Addr → Byte} (w : ∀ i < 1, Foot 
     W_180 F Wl (fun j' g' _ V' => j' = 190 ∧ V' = Vst V g.rax (toBytesLE 0#8 1) ∧ g'.rsp = g.rsp + 8 + 8 + 8 ∧
       g'.rax = g.r9 ∧ g'.rbx = rdq(Vst V g.rax (toBytesLE 0#8 1), g.rsp) ∧
       g'.rbp = rdq(Vst V g.rax (toBytesLE 0#8 1), g.rsp + 8) ∧
-      g'.r12 = rdq(Vst V g.rax (toBytesLE 0#8 1), g.rsp + 8 + 8)) g f V := by
+      g'.r12 = rdq(Vst V g.rax (toBytesLE 0#8 1), g.rsp + 8 + 8) ∧ g'.r13 = g.r13 ∧ g'.r14 = g.r14 ∧
+      g'.r15 = g.r15) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at w p0 p1 p2 ⊢
   mcx +contextual [W_180, o15, w, p0, p1, p2]
@@ -353,7 +354,8 @@ theorem vc_224 {g : Gprs} {f : Rflags} {V : Addr → Byte}
     (p0 : ∀ i < 8, Foot F.data (Addr.add g.rsp i)) (p1 : ∀ i < 8, Foot F.data (Addr.add (g.rsp + 8) i))
     (p2 : ∀ i < 8, Foot F.data (Addr.add (g.rsp + 8 + 8) i)) :
     W_224 F Wl (fun j' g' _ V' => j' = 234 ∧ V' = V ∧ g'.rsp = g.rsp + 8 + 8 + 8 ∧ g'.rax = 0#64 ∧
-      g'.rbx = rdq(V, g.rsp) ∧ g'.rbp = rdq(V, g.rsp + 8) ∧ g'.r12 = rdq(V, g.rsp + 8 + 8)) g f V := by
+      g'.rbx = rdq(V, g.rsp) ∧ g'.rbp = rdq(V, g.rsp + 8) ∧ g'.r12 = rdq(V, g.rsp + 8 + 8) ∧
+      g'.r13 = g.r13 ∧ g'.r14 = g.r14 ∧ g'.r15 = g.r15) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at p0 p1 p2 ⊢
   mcx +contextual [W_224, o19, p0, p1, p2]
