@@ -393,8 +393,8 @@ theorem vc_1537 (hK : Ok K) (hE : Env K F Wl) (hc : Cm K g) (hI : I1537 K g) :
   have := hK.hnl1
   wpx [W_1537, W_1560, o75, o76, M1537, Op.not32, Op.cmpmi, BitVec.xor_self, BitVec.and_self]
   repeat' (first
-    | (refine x1400 ?hc rfl ?hI ?hm; (case hc => tcmm); (case hI => exact (by dsimp only [I1400] <;> tfsm));
-            (case hm => exact (by dsimp only [M1400] <;> tfom)))
+    | (refine x1400 ?hc rfl ?hI ?hm; (case hc => tcmd); (case hI => exact (by dsimp only [I1400] <;> tfsd));
+            (case hm => exact (by dsimp only [M1400] <;> tfod)))
     | (refine x1504 ?hc rfl ?hI ?hm; (case hc => tcm); (case hI => exact (by dsimp only [I1504] <;> tfs));
             (case hm => exact (by dsimp only [M1504] <;> tfo)))
     | (with_reducible rfl)

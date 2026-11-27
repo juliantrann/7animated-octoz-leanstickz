@@ -131,7 +131,7 @@ MOD = {(180, 210), (1420, 1432), (1472, 1420), (1537, 1400)}
 
 
 def dbg(src, j, s):
-    if (src, j) in MOD:
+    if (src, j) in MOD and (src, j) not in DBG:
         s = s.replace("=> tcm)", "=> tcmm)").replace("tfs)", "tfsm)").replace("<;> tfo)", "<;> tfom)").replace("by tfo)", "by tfom)")
     if (src, j) not in DBG:
         return s
