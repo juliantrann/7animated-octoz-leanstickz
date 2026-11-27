@@ -460,7 +460,6 @@ theorem at56 {fb : Addr} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase
       bv_eq
     have ersi : X.cpu.gpr.rsi + 1#64 = g₀.rsi + BitVec.ofNat 64 (0 + 1) := by
       rw [hsi]
-      rfl
     have erax : X.cpu.gpr.rsi + 1#64 = g₀.rsi + 1#64 := by rw [hsi]
     refine k1 (kk + 1) Y t₁ _ (by omega) (by omega) hKY hAY hrY ?_
       (mi_st hl2 (mi_st hl1 hm (Or.inl ⟨by omega, by omega⟩)) (Or.inr ⟨by omega, by omega⟩))
