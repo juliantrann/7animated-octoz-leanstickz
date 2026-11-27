@@ -709,6 +709,18 @@ FNS = {
     "efn": dict(grp="Efn", cn="ExtractFileNameFromPath(const UString &)", a=0x4528f0, n=54, pos=True, stops=(0x35,),
                 calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `ExtractFileNameFromPath` (`CPP/Common/Wildcard.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/Common/MyString.cpp `UString::Grow_1 ()`: `next = _len + _len / 2 + 16`, rounded down to 16, less
+    # 1, capped at `0x3ffffffe` (and so when below `_len`); not above `_len`: a jump to the throw stub (0x2c, `0x4013e4`,
+    # by hand); else a tail jump to `ReAlloc (next)` (0x36).
+    "ug1": dict(grp="Ug1", cn="UString::Grow_1", a=0x44d0a0, n=59, pos=True, stops=(0x36,), calls=True, hand=(0x2c,),
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `UString::Grow_1` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/Common/MyString.cpp `UString::Grow (n)`: nothing (the `ret`, 0x58) when `_limit - _len` is at
+    # least `n`; else `next = _len + n`, `next + next / 2 + 16` rounded down to 16, less 1, capped at `0x3ffffffe`
+    # (and so when below `_len`); not above `_len`, or less than `n` above it: jumps to the throw stub (0x37, 0x43,
+    # `0x401406`, by hand); else a tail jump to `ReAlloc (next - 1)` (0x50).
+    "ugr": dict(grp="Ugr", cn="UString::Grow", a=0x44d0e0, n=89, pos=True, stops=(0x50, 0x58), calls=True,
+                hand=(0x37, 0x43), tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `UString::Grow` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
     "usl": dict(grp="Usl", cn="UString::SetStartLen", a=0x44d060, n=54, pos=True, stops=(0x35,), calls=True,
                 tag="PLAN.md §M, M1", src="7-Zip's `UString::SetStartLen` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
     # `UString::UString (const UString &s)`: `SetStartLen (s._len)` (the `call` at 0x13 to `usl`), then a tail jump
