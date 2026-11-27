@@ -929,6 +929,7 @@ import FV7z.Ucw.Holds
 import FV7z.Msi.Holds
 import FV7z.Uau.Holds
 import FV7z.Ucn.Holds
+import FV7z.Usf.Holds
 import FV7z.Dsp.Blocks
 import FV7z.Dsp.Cuts
 import FV7z.Dsp.Holds
@@ -952,4 +953,8 @@ import FV7z.Lemmas.Rmw8
 import FV7z.Sfn.Cuts
 import FV7z.Aac.Holds
 import FV7z.Aas.Holds
+import FV7z.C64.Holds
 import FV7z.Sfn.Mem
+import FV7z.Acc.New
+import FV7z.Acp.New
+import FV7z.Ucw.New
