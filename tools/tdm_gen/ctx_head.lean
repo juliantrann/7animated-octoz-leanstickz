@@ -159,6 +159,7 @@ scoped elab "lits" : tactic => withMainContext do
     if e.isAppOfArity ``BitVec.toNat 2 && !e.hasFVar && !e.hasMVar then
       let v ← whnf e
       if let some n := v.rawNatLit? <|> v.nat? then return .done (mkNatLit n)
+      logInfo m!"lits: {e} ↦ {v}"
     return .continue)
   if t' == t then throwError "lits: no closed `BitVec.toNat` in the goal"
   replaceMainGoal [← g.change t']
@@ -169,7 +170,7 @@ scoped macro "tfo" : tactic => `(tactic| (((try lits) <;>
     at *)) <;>
   bv_omega))
 /-- Triage only: `tfo` that shows the goal after the jumps' conditions. -/
-scoped macro "tfod" : tactic => `(tactic| (((try lits) <;>
+scoped macro "tfod" : tactic => `(tactic| (((first | lits | (set_option pp.explicit true in trace_state)) <;>
   (try simp only [Bool.not_eq_true', Bool.not_eq_false', Bool.or_eq_true, Bool.or_eq_false_iff, Bool.and_eq_true,
   decide_eq_true_eq, decide_eq_false_iff_not, dec_true, dec_false, beq_iff_eq, beq_eq_false_iff_ne, Bnd, ne_eq]
     at *)) <;>
