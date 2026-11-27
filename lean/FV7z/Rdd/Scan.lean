@@ -201,7 +201,7 @@ theorem n80 {g0 : Gprs} {V₀ W : Addr → Byte} {Y : State} {t : Nat} {tr : Lis
     (K : RddK prof F Wl L o gP gE S p fb A g0 V₀ e₂ j₂ gev) :
     GoG prof L o tr gP gE Y t := by
   have hpA := C.hpA
-  obtain ⟨-, hD⟩ := M.dir
+  obtain ⟨_, hD⟩ := M.dir
   have hnA := hD.nA
   obtain ⟨⟨h18, -⟩, hkn, -⟩ := M.ch.inv hk
   obtain ⟨f0, f8, f16, w24, w32⟩ := ft80 c.hws C R.di he (by omega)
@@ -228,7 +228,7 @@ theorem z80 {g0 : Gprs} {V₀ W : Addr → Byte} {Y : State} {t : Nat} {tr : Lis
       Y'.cpu.rip = rdd_at.add 109 → LR S p g0 n Y'.cpu.gpr → LM S p fb A g0 V₀ W' n (k + rl W p k) →
       Dir W' p A 1#32 n (k + rl W p k) → Y'.cpu.gpr.rdx.toNat = k + rl W p k → GoG prof L o tr gP gE Y' t') :
     GoG prof L o tr gP gE Y t := by
-  obtain ⟨-, hD⟩ := M.dir
+  obtain ⟨_, hD⟩ := M.dir
   have hnA := hD.nA
   obtain ⟨⟨h18, -⟩, hkn, hch⟩ := M.ch.inv hk
   obtain ⟨f0, f8, f16, w24, w32⟩ := ft80 c.hws C R.di he (by omega)
