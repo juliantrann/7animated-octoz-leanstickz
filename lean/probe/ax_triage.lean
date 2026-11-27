@@ -1,8 +1,6 @@
-import FV7z.Rdd.Br
 import FV7z.Rdd.Main
 open FV7z
-#print axioms FV7z.Rdd.at162
-#print axioms FV7z.Rdd.gd_err
-#print axioms FV7z.Rdd.gd_zero
-#print axioms FV7z.Rdd.gd_pos
-#print axioms FV7z.Rdd.rdd_gd
+#print axioms FV7z.Rdd.rdd_ok
+#print axioms FV7z.Rdd.P5_out
+#print axioms FV7z.Rdd.P5_sv
+#print axioms FV7z.Rdd.Dir_mk
