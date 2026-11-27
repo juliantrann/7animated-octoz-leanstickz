@@ -249,7 +249,7 @@ theorem vc_92 {g x : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post} (hg : g =
     (h : ∀ fl, Q 103 (gN x) fl V) : W_92 F Wl Q g f V := by
   subst hg
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := x
-  dsimp only at h ⊢
+  dsimp only [g5, gN] at h ⊢
   wpx [W_92, o7]
   all_goals repeat' (first | exact h _ | assumption | exact trivial | apply And.intro | intro _)
 
