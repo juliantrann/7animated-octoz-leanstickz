@@ -590,6 +590,10 @@ FNS = {
     "u8w": dict(grp="U8w", cn="Utf16_To_Utf8", a=0x4519e0, n=0x241, pos=True, stops=(0xc1,),
                 tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `Utf16_To_Utf8` (`CPP/Common/UTFConvert.cpp`; `objdump -d`)"),
+    # 7-Zip's CPP/Common/UTFConvert.cpp. Stop: the `ret` (0x14f).
+    "u16": dict(grp="U16", cn="Utf8_To_Utf16", a=0x451690, n=0x24b, pos=True, stops=(0x14f,),
+                tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `Utf8_To_Utf16` (`CPP/Common/UTFConvert.cpp`; `objdump -d`)"),
     "lpd": dict(grp="Lpd", cn="LzmaProps_Decode", a=0x42bea0, n=0x66, pos=True, stops=(0x56, 0x65),
                 tag="PLAN.md §M, M1", src="7-Zip 26.06's `LzmaProps_Decode` (`C/LzmaDec.c`; `objdump -d`)"),
     "stu": dict(grp="Stu", cn="ConvertStringToUInt64", a=0x451330, n=0x7c, pos=True, stops=(0x55, 0x68, 0x77),
