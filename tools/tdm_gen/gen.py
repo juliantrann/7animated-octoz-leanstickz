@@ -127,7 +127,7 @@ DBG = {tuple(map(int, x.split(":"))) for x in os.environ.get("TDM_DBG", "").spli
 
 
 # `src:dst` exits whose conditions need `tfom` (the wraps dropped first).
-MOD = {(180, 210)}
+MOD = {(180, 210), (1420, 1432), (1472, 1420), (1537, 1400)}
 
 
 def dbg(src, j, s):
