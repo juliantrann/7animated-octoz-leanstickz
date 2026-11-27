@@ -284,7 +284,7 @@ theorem t264 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (E : 
   refine c.s_ret hKZ hAZ E.hin (lt_len (by decide)) hrZ (ret_278 _) (by rw [hsp']; exact E.fra) hcR hjR
     (by rw [hsp']; exact gra) ?_
   rintro W t₂ hKW hAW ⟨hrW, hgW⟩
-  refine k W t₂ hKW hAW hag hrW (by rw [hgW]; show Z.cpu.gpr.rsp + 8 = _; rw [hsp'])
+  refine k W t₂ _ hKW hAW hag hrW (by rw [hgW]; show Z.cpu.gpr.rsp + 8 = _; rw [hsp'])
     ⟨(congrArg Gprs.rbx hgW).trans hbx, (congrArg Gprs.rbp hgW).trans hbp, (congrArg Gprs.r12 hgW).trans h12,
       (congrArg Gprs.r13 hgW).trans h13, (congrArg Gprs.r14 hgW).trans h14, (congrArg Gprs.r15 hgW).trans h15⟩ ?_
   rw [hgW]

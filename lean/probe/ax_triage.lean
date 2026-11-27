@@ -1,6 +1,7 @@
 import FV7z.Ild.Steps
 import FV7z.Ild.Vc
 import FV7z.Ild.Holds
+import FV7z.Ild.Loop
 open FV7z
 #print axioms FV7z.Ild.call_122
 #print axioms FV7z.Ild.call_243
@@ -67,3 +68,12 @@ open FV7z
 #print axioms FV7z.Ild.t264
 #print axioms FV7z.Ild.t248
 #print axioms FV7z.Ild.t240
+#print axioms FV7z.Ild.sa
+#print axioms FV7z.Ild.aI
+#print axioms FV7z.Ild.ne64
+#print axioms FV7z.Ild.fr6_out
+#print axioms FV7z.Ild.rdK
+#print axioms FV7z.Ild.t307
+#print axioms FV7z.Ild.t299
+#print axioms FV7z.Ild.t336
+#print axioms FV7z.Ild.t288
