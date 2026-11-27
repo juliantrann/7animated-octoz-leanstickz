@@ -1251,6 +1251,16 @@ FNS = {
     "pos": dict(grp="Pos", cn="__pthread_once_slow", a=0x5fee60, n=261, pos=True, fs=True,
                 stops=(0x4f, 0x76, 0x95, 0x100), calls=True, hand=(0x59,), tag="PLAN.md §M, M1",
                 src="glibc 2.31's `__pthread_once_slow` (`nptl/pthread_once.c`; `objdump -d`)"),
+    # glibc 2.31 locale/loadlocale.c `_nl_intern_locale_data (category, data, datasize)`: the file's magic for the
+    # category, `nstrings` at least `_nl_category_num_items[category]` (0x6ef020) and the index in the data, the
+    # `struct __locale_data` from `malloc` (the `call`, 0x7a), its fields, then for each string its offset in the data
+    # (the loop at 0xc4): through the `switch` on the category (`jt`, 13 entries), the bound of the category's
+    # `_nl_value_types` (0x7804c0); a word (type 5) aligned and read, else the address. A bad offset: `free` (the
+    # `call`, 0xf3), `errno` = EINVAL, NULL. Stops: the `ret` (0x116); `LC_ALL` or a category above 12 (0x1c6, the
+    # `__assert_fail`).
+    "ild": dict(grp="Ild", cn="_nl_intern_locale_data", a=0x615210, n=485, pos=True, fs=True, stops=(0x116, 0x1c6),
+                calls=True, jt=(0x6ee9e0, 13), cut=(0xc4, 0x108, 0x120, 0x133, 0xf0), tag="PLAN.md §M, M1",
+                src="glibc 2.31's `_nl_intern_locale_data` (`locale/loadlocale.c`; `objdump -d`)"),
 }
 
 
