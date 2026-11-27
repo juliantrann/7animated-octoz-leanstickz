@@ -90,4 +90,31 @@ with n < 2^62.
 (8 ∘ sext 64, 8 ∘ zext 32 ∘ zext 64, 32 ∘ 64); `Tun.rd1` turns 1-byte reads into `V a`; frame `toNat` facts
 (`(fsp g + d).toNat = rsp - 88 + d`); `pVf_out`, `pop_rd` for the 6 pops; `jle2` (cond 14 false → 2 ≤ k);
 `ax2` ((setWidth 32 (d - 2)).toNat ≤ 34 for a valid base). Exit lemmas `eJ` per cut point (generated).
+## Status and the plan for `Stl/Main.lean` (`stl_ok`)
+
+Green (kt3211, kt3213): `Steps` (rets 429, 462), `Vc1`/`Vc2`/`Vz` (every cut's VC, with `vc_99z`/`vc_99n`,
+`vc_368z`/`vc_368n`, `vc_748z`/`s`/`l` split by `E = 0`, and `vc_296x` for a byte that is neither a digit nor a
+letter), `Holds` (`Kr`, `Vf`, `Env`, `Kret`, frame numbers), `Exits` (`t448`, `t432`, `t927`, `t790`), `Tail`
+(`Sv`, `t390`, `t748`, `t368`, `c14_1`), `Loop` (`Sl`, `Dr`, `LpG`, `lpAll`: the digit loop from every `k ≤ n`).
+
+Lessons: a hypothesis rewrites the goal only in the form the `wp` prints it (`== 0`, not `== 0#64`; copy the text
+from `notes/Wp.lean`); split a VC by a plain equality, not by a post `(!decide P) = true`; never `subst` a register
+to a literal before `stlx` (vc_296z hung > 12 min).
+
+Left, in `Stl/Main.lean` (import `Stl.Loop`), in the style of `Ild/Main.lean`:
+1. `t223` (rdi := rbx, `[rsp + 24] = rbp - 1`, `r11 = CB V`): needs `rbx = p + k`, `rbp = 0`, `r10 = CU V0`; gives
+   `LpG k` through `lpAll` (`Cb V = Cb V0`, `Cu V = Cu V0` by `rdK` with `Sl.kB`, `Sv.kU`; `[rsp + 24]` is in the
+   frame, `Ag.st` not needed). `t216` (r10 := CU) then `t223`.
+2. `t171` (base tables at 7353696/7353760, store at `[rsp + 18]`): 745 (`cl = 0`) to `t745` (`vc_745`, then `t748`
+   with `rdi = rbx`), else 216. Needs `(setWidth 32 rax).toNat ≤ 34` for the table footprints (an `Sv` field over
+   all indices ≤ 34). `t150` (base 10) to `t171`. `t604` to 216 / 223.
+3. `t133`: five ways (`vc_133`); the `0x` case advances `rbx` by 2 (needs `p[k] = '0'`, `p[k+1]` with `CU = 'X'`,
+   so `k + 2 ≤ n` from `u0`: `CU[0] ≠ 88`). `t99` (`vc_99z`/`n` by `E = 0`): 448 / 790 / 133 with the sign stored at
+   `[rsp + 20]` (frame).
+4. The space loop `t80` by induction on `n - k` (as `lpAll`): `vc_80`'s 80 case gives the space bit of `p[k+1]`,
+   so `p[k+1] ≠ 0` by `b0` (`B[0]` has bit 32 clear: add to `Sv` as `(rb V0 (B0 + signExtend 64 0#8 * 2#64 +
+   1#64) &&& 32#8 == 0) = true`, `B0 = rdq(V0, r8 + 104)`, with `kB`-style keep fields for `r8 + 104` and the entries).
+5. `t0` (`vc_0`: pushes `w1..w6` from `E.wf`, `w7` the `E` slot, `hEs : rdq(V1, S88 + 8) = rsi` by a read of the
+   store) to 432 (`t432`) / 99 / 80; then `stl_ok` = `t0` at `stl_at.add 0`, as `ild_ok`.
+The `Ag` invariant after `vc_0` is `Ag (Kr Kk S) (Vf V0 g0) (V1 V0 g0)`: `V1` = `fr6` + the `E` slot, outside `Kr`.
 -/
