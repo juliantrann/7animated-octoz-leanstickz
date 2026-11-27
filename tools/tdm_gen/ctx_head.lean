@@ -149,18 +149,37 @@ scoped elab "dcd " h:ident : tactic => withMainContext do
   let v := mkApp4 (mkConst ``cast [levelZero]) t ty (mkApp2 (mkConst lem) p i) (mkFVar d.fvarId)
   let res ← (← getMainGoal).replace d.fvarId v (some ty)
   replaceMainGoal [res.mvarId]
+open Lean Elab Tactic Meta in
+/-- Closed `BitVec.toNat` terms in the goal as numerals, by `whnf` and `change`
+(`bv_omega` leaves `(BitVec.setWidth 64 4#32).toNat` from a 32-bit `mov` of an immediate, kt2305). -/
+scoped elab "lits" : tactic => withMainContext do
+  let g ← getMainGoal
+  let t ← instantiateMVars (← g.getType)
+  let t' ← Meta.transform t (post := fun e => do
+    if e.isAppOfArity ``BitVec.toNat 2 && !e.hasFVar && !e.hasMVar then
+      let v ← whnf e
+      if let some n := v.rawNatLit? <|> v.nat? then return .done (mkNatLit n)
+    return .continue)
+  if t' == t then throwError "lits: no closed `BitVec.toNat` in the goal"
+  replaceMainGoal [← g.change t']
 /-- The jumps' conditions as facts, then `bv_omega`. -/
-scoped macro "tfo" : tactic => `(tactic| ((try simp only [Bool.not_eq_true', Bool.not_eq_false', Bool.or_eq_true,
-  Bool.or_eq_false_iff, Bool.and_eq_true, decide_eq_true_eq, decide_eq_false_iff_not, dec_true, dec_false, beq_iff_eq,
-  beq_eq_false_iff_ne, Bnd, ne_eq] at *) <;> bv_omega))
+scoped macro "tfo" : tactic => `(tactic| (((try lits) <;>
+  (try simp only [Bool.not_eq_true', Bool.not_eq_false', Bool.or_eq_true, Bool.or_eq_false_iff, Bool.and_eq_true,
+  decide_eq_true_eq, decide_eq_false_iff_not, dec_true, dec_false, beq_iff_eq, beq_eq_false_iff_ne, Bnd, ne_eq]
+    at *)) <;>
+  bv_omega))
 /-- Triage only: `tfo` that shows the goal after the jumps' conditions. -/
-scoped macro "tfod" : tactic => `(tactic| ((try simp only [Bool.not_eq_true', Bool.not_eq_false', Bool.or_eq_true,
-  Bool.or_eq_false_iff, Bool.and_eq_true, decide_eq_true_eq, decide_eq_false_iff_not, dec_true, dec_false, beq_iff_eq,
-  beq_eq_false_iff_ne, Bnd, ne_eq] at *) <;> (trace_state; bv_omega)))
+scoped macro "tfod" : tactic => `(tactic| (((try lits) <;>
+  (try simp only [Bool.not_eq_true', Bool.not_eq_false', Bool.or_eq_true, Bool.or_eq_false_iff, Bool.and_eq_true,
+  decide_eq_true_eq, decide_eq_false_iff_not, dec_true, dec_false, beq_iff_eq, beq_eq_false_iff_ne, Bnd, ne_eq]
+    at *)) <;>
+  (trace_state; bv_omega)))
 /-- `tfo` with the wraps that `omega` proves away dropped first (`omega` alone gives up on many of them). -/
-scoped macro "tfom" : tactic => `(tactic| ((try simp only [Bool.not_eq_true', Bool.not_eq_false', Bool.or_eq_true,
-  Bool.or_eq_false_iff, Bool.and_eq_true, decide_eq_true_eq, decide_eq_false_iff_not, dec_true, dec_false, beq_iff_eq,
-  beq_eq_false_iff_ne, Bnd, ne_eq] at *) <;> (try simp -implicitDefEqProofs only [bitvec_to_nat] at *) <;>
+scoped macro "tfom" : tactic => `(tactic| (((try lits) <;>
+  (try simp only [Bool.not_eq_true', Bool.not_eq_false', Bool.or_eq_true, Bool.or_eq_false_iff, Bool.and_eq_true,
+  decide_eq_true_eq, decide_eq_false_iff_not, dec_true, dec_false, beq_iff_eq, beq_eq_false_iff_ne, Bnd, ne_eq]
+    at *)) <;>
+  (try simp -implicitDefEqProofs only [bitvec_to_nat] at *) <;>
   (try simp (disch := omega) only [Nat.mod_eq_of_lt] at *) <;> omega))
 /-- A cut point's condition: its conjuncts by `assumption`, `rfl` or `tfo`. -/
 scoped macro "tf1" : tactic => `(tactic| first | (with_reducible assumption) | exact trivial | (with_reducible rfl) |
