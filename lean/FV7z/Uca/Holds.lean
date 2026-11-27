@@ -608,10 +608,11 @@ theorem uca_ok {Pu : State → (Addr → Byte) → Prop}
     refine (c_65 prof).run c hin (fun j' g' _ V' => j' = 80 ∧
         g' = { Z.cpu.gpr with rcx := rdq(V₂, X.cpu.gpr.rdi), rax := 0#64 } ∧ V' = V₂) hKZ hAZ hrZ
       (vc_65 (p := X.cpu.gpr.rdi) k6 k2 hn0 hw.1 fd0 fun _ => ⟨rfl, rfl, rfl⟩) ?_
-    rintro j' g fl V₃ ⟨rfl, rfl, rfl⟩ U t₄ hKU hAU hrU hgU -
+    rintro j' g fl V₃ ⟨rfl, rfl, hV₃⟩ U t₄ hKU hAU hrU hgU -
+    subst V₃
     refine loop c hin (W := V₂) (s := X.cpu.gpr.rsi) (d := rdq(V₂, X.cpu.gpr.rdi)) (g₀ := Z.cpu.gpr) hw.1
-      hw.2.2.2 hD.1 k3 k5 ?_ (n - 1) 0 (by omega) U t₄ hKU (by rw [Cw_zero]; exact hAU) hrU (by rw [hgU])
-      (by rw [hgU]) (kp_w hgU)
+      hw.2.2.2 hD.1 k3 k5 ?_ (n - 1) 0 (by omega) U t₄ hKU (by rw [Cw_zero]; exact hAU) hrU
+      (by rw [hgU]; try rfl) (by rw [hgU]; try rfl) (kp_w hgU)
     intro Z₁ t₅ hK₅ hA₅ hr₅ hcx₅ hkp₅
     refine (c_100 prof).run c hin (fun j' g' _ V' => j' = 103 ∧
         g' = { Z₁.cpu.gpr with r12 := Z₁.cpu.gpr.r12 + Z₁.cpu.gpr.rcx } ∧
@@ -640,12 +641,14 @@ theorem uca_ok {Pu : State → (Addr → Byte) → Prop}
     refine (c_135 prof).run c hin (fun j' g' _ V' => j' = 103 ∧
         g' = { Z.cpu.gpr with r12 := rdq(V₂, X.cpu.gpr.rdi) } ∧ V' = V₂) hKZ hAZ hrZ
       (vc_135 (p := X.cpu.gpr.rdi) k6 fd0 fun _ => ⟨rfl, rfl, rfl⟩) ?_
-    rintro j' g fl V₃ ⟨rfl, rfl, rfl⟩ U t₄ hKU hAU hrU hgU -
+    rintro j' g fl V₃ ⟨rfl, rfl, hV₃⟩ U t₄ hKU hAU hrU hgU -
+    subst V₃
     refine fin U V₂ (rdq(V₂, X.cpu.gpr.rdi)) t₄ hKU (by rw [Cw_zero]; exact hAU) hrU ?_ ?_ ?_ (hPu Z V₂ hPZ) hsv
       fun Z' t'' hK' hA' hr' hB => kr Z V₂ Z' t'' hPZ hK' hA' hr' hB
     · rw [hgU]
       exact k1.trans e40
     · rw [hgU, Nat.mul_zero, addr_add_zero]
+      try rfl
     · rw [hgU]
       exact k7
 
