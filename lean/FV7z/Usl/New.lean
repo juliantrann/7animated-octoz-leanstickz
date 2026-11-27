@@ -10,7 +10,8 @@ into, the object apart from the heap's bytes, the run reaches the return address
 the bytes outside the heap's words, the block, the frame and `_chars` as at the entry.
 - `Po`, `kf_hpW`: `usl_ok`'s `kf` alone, for the registers and the bytes at `SetStartLen`'s entry, with `r12`-`r15`
   kept and the block above the old top, for the callers of `usl_ok` (`FV7z/Ucc`).
-- `usl_okH`: `usl_ok` with `kf_hpW`; `kr` also has `r12` as at the entry (for `FV7z/Ucw`).
+- `usl_okH`: `usl_ok` with `kf_hpW`; `kr` also has `r12`, `r13` as at the entry (for `FV7z/Ucw`,
+  `FV7z/Ucn`).
 -/
 open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn
 open FV7z.Imm (imm imm_at)
@@ -210,6 +211,7 @@ theorem usl_okH {fb : Addr} {hi m B : Nat} (c : Seg prof F Wl L s₀ o) (hfs : s
     {e₂ : Addr} {code₂ : List Byte} (hin₂ : CodeIn L e₂ code₂) {j₂ : Nat} (h₂ : j₂ < code₂.length)
     (hra : rdq(V, X.cpu.gpr.rsp) = e₂.add j₂)
     (kr : ∀ (Z : State) (V' : Addr → Byte) (Z' : State) (t' : Nat), Z.cpu.gpr.r12 = X.cpu.gpr.r12 →
+      Z.cpu.gpr.r13 = X.cpu.gpr.r13 →
       fb.toNat + 64 ≤ Z.cpu.gpr.rax.toNat →
       Z.cpu.gpr.rax.toNat + (4 * (BitVec.setWidth 32 X.cpu.gpr.rsi).toNat + 4) ≤ hi →
       (∀ a : Addr, Z.cpu.gpr.rax.toNat ≤ a.toNat →
@@ -252,8 +254,8 @@ theorem usl_okH {fb : Addr} {hi m B : Nat} (c : Seg prof F Wl L s₀ o) (hfs : s
   refine usl_ok (Pc := Po F Wl fb hi m X.cpu.gpr V) c hin hinW hK hA hrip (by omega) hp8
     (hfw _ 8 tn8 (by omega) (by omega)) (hfw _ 16 tn16 (by omega) (by omega)) (hfw _ 32 tn32 (by omega) (by omega))
     hl fw0 fw8 fw12 hq hd hin₂ h₂ (kf_hpW c hfs hin hinW hinM hinI hH hB hhi hR hsw hq hd hdh hra) ?_
-  intro Z V' Z' t' ⟨h12, _, _, _, _, hp1, hp2, hft, hPm, hfr⟩ hKZ' hAZ' hrZ' hgZ'
-  refine kr Z V' Z' t' h12 hp1 hp2 hft (hPm _ fun a a1 a2 a3 => ?_) hfr hKZ' hAZ' hrZ' hgZ'
+  intro Z V' Z' t' ⟨h12, h13, _, _, _, hp1, hp2, hft, hPm, hfr⟩ hKZ' hAZ' hrZ' hgZ'
+  refine kr Z V' Z' t' h12 h13 hp1 hp2 hft (hPm _ fun a a1 a2 a3 => ?_) hfr hKZ' hAZ' hrZ' hgZ'
   have s1 := Tun.Vst_out (Vst (Vst V' (X.cpu.gpr.rdi + 8#64) (toBytesLE (BitVec.setWidth 32 X.cpu.gpr.rsi) 4))
     (X.cpu.gpr.rdi + 12#64) (toBytesLE (BitVec.setWidth 32 X.cpu.gpr.rsi) 4)) X.cpu.gpr.rdi
     (toBytesLE Z.cpu.gpr.rax 8) a (by rw [l8]; omega) (by rw [l8]; rcases hdh with h | h <;> omega)
