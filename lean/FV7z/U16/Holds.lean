@@ -126,8 +126,9 @@ theorem u16_ok (c : Seg prof F Wl L s₀ o) (hin : CodeIn L u16_at u16) (hK : Ke
     (k : ∀ (Z : State) (t' : Nat) (V' : Addr → Byte), FinM X.cpu.gpr V W V' →
       rdq(V', X.cpu.gpr.rsi) = BitVec.ofNat 64 (NN X.cpu.gpr V n) → KeptW Wl s₀ Z →
       Agree F Z.proc.mm.mem V' → Z.cpu.rip = e₂.add j₂ →
-      (∃ c d s i x y u v, Z.cpu.gpr = ({ X.cpu.gpr with rax := w64(1#32), rcx := c, rdx := d, rsi := s,
-          rdi := i, r8 := x, r9 := y, r10 := u, r11 := v } : Gprs).set 4 (X.cpu.gpr.rsp + 8)) →
+      (∃ c d s i x y u v, Z.cpu.gpr = ({ X.cpu.gpr with
+          rax := w64(1#32), rcx := c, rdx := d, rsi := s, rdi := i, r8 := x, r9 := y, r10 := u,
+          r11 := v } : Gprs).set 4 (X.cpu.gpr.rsp + 8)) →
       GoG prof L o gev gP gE Z t') :
     GoG prof L o gev gP gE X t := by
   refine c.cfg hin (fun ℓ => spAll prof ℓ) (fun ℓ m g _ V' => Inv X.cpu.gpr V n W ℓ m g V')
