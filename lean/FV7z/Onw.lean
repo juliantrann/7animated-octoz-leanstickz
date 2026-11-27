@@ -19,6 +19,8 @@ new handler: not reached, `malloc` after the first call does not fail on `n ≤ 
   the bytes outside the heap's words and the frame as at the entry, and `Mal.Hp … m` for every byte map that agrees
   with the one at the return but for `[p, p + n)`.
 - `onw_hp`: the same from `0x6029b0`, the `endbr64` and the `jmp` first.
+- `onw_hp0W`, `onw_hpW`: the same for every `n ≠ 0` with `Mal.MalB n B` (`n ≤ 2 ^ 32`, a top of at least `m + B`);
+  `onw_hp0WT`, `onw_hpWT` also give the block above the old top (`main_arena.top` at the entry, plus 16).
 -/
 open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn
 open FV7z.Imm (imm imm_at)
@@ -131,12 +133,12 @@ variable {prof : Profile} {F : Footprint} {Wl : List Rgn} {L : List (Addr × Lis
   {gev : List Event} {gP : State → Nat → List Event → Prop} {gE : Outcome → List Event → Prop}
 
 set_option maxHeartbeats 2000000 in
-/-- `operator new (n)`, `0 < n ≤ 1024`, after the first `malloc`: see the module doc. -/
-theorem onw_hp0 {fb : Addr} {hi m : Nat} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb)
+/-- `operator new (n)`, `n ≠ 0` and `Mal.MalB n B` (`n ≤ 2 ^ 32`), after the first `malloc`: see the module doc. -/
+theorem onw_hp0WT {fb : Addr} {hi m B : Nat} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb)
     (hin : CodeIn L onw_at onw) (hinM : CodeIn L mnx_at mnx) (hinI : CodeIn L imm_at imm)
     {X : State} {t : Nat} {V : Addr → Byte} (hK : KeptW Wl s₀ X) (hA : Agree F X.proc.mm.mem V)
-    (hrip : X.cpu.rip = onw_at) (hH : Mal.Hp F Wl fb hi (m + 1072) V)
-    (hn0 : X.cpu.gpr.rdi ≠ 0) (hn : X.cpu.gpr.rdi.toNat ≤ 1024)
+    (hrip : X.cpu.rip = onw_at) (hH : Mal.Hp F Wl fb hi (m + B) V)
+    (hn0 : X.cpu.gpr.rdi ≠ 0) (hn : Mal.MalB X.cpu.gpr.rdi B)
     (hhi : hi + 232 ≤ X.cpu.gpr.rsp.toNat) (hR : X.cpu.gpr.rsp.toNat + 40 < 2 ^ 64)
     (hsw : ∀ a : Addr, hi ≤ a.toNat → a.toNat < X.cpu.gpr.rsp.toNat + 8 → Foot Wl a)
     {e' : Addr} {code : List Byte} {j : Nat} (hin₂ : CodeIn L e' code) (hj : j < code.length)
@@ -151,7 +153,7 @@ theorem onw_hp0 {fb : Addr} {hi m : Nat} (c : Seg prof F Wl L s₀ o) (hfs : s�
         hi ≤ a.toNat ∧ (a.toNat + 224 < X.cpu.gpr.rsp.toNat ∨ X.cpu.gpr.rsp.toNat ≤ a.toNat) → V₂ a = V a) →
       (∀ W : Addr → Byte, (∀ a : Addr, 7940480 ≤ a.toNat → a.toNat < hi →
         (a.toNat < p.toNat ∨ p.toNat + X.cpu.gpr.rdi.toNat ≤ a.toNat) → W a = V₂ a) → Mal.Hp F Wl fb hi m W) →
-      GoG prof L o gev gP gE Z t') :
+      rdq(V, 7940768#64).toNat + 16 ≤ p.toNat → GoG prof L o gev gP gE Z t') :
     GoG prof L o gev gP gE X t := by
   have hS8 : X.cpu.gpr.rsp.toNat + 8 < 2 ^ 64 := by omega
   have e8 := b8 X.cpu.gpr.rsp (by omega)
@@ -182,10 +184,10 @@ theorem onw_hp0 {fb : Addr} {hi m : Nat} (c : Seg prof F Wl L s₀ o) (hfs : s�
       Tun.Vst_out _ _ _ _ (by rw [toBytesLE_length, e8]; omega) (by rw [toBytesLE_length, e8]; omega)
     rw [← h1]
     exact Tun.Vst_out _ _ _ _ (by rw [toBytesLE_length, e16]; omega) (by rw [toBytesLE_length, e16]; omega)
-  have hH4 : Mal.Hp F Wl fb hi (m + 1072) (Vst (Vst V (X.cpu.gpr.rsp - 8) (toBytesLE X.cpu.gpr.rbx 8))
+  have hH4 : Mal.Hp F Wl fb hi (m + B) (Vst (Vst V (X.cpu.gpr.rsp - 8) (toBytesLE X.cpu.gpr.rbx 8))
       (X.cpu.gpr.rsp - 8 - 8) (toBytesLE (onw_at.add (20 + 5)) 8)) :=
-    Mal.Hp.mv hH (by omega) fun a _ h2 => hV1 a (.inl (by omega))
-  refine Mal.mal_hp c hfs hinM hinI hK4 hA4 hr4 hH4 (.inl ⟨by rw [hdi4]; exact hn, rfl⟩) (by rw [hsp4, e16]; omega)
+    Mal.Hp.mv hH (by have := hn.2.2; omega) fun a _ h2 => hV1 a (.inl (by omega))
+  refine Mal.mal_hpW c hfs hinM hinI hK4 hA4 hr4 hH4 (by rw [hdi4]; exact hn) (by rw [hsp4, e16]; omega)
     (by rw [hsp4, e16]; omega)
     (fun i hi' => by
       rw [hsp4]
@@ -194,7 +196,17 @@ theorem onw_hp0 {fb : Addr} {hi m : Nat} (c : Seg prof F Wl L s₀ o) (hfs : s�
   · rw [hsp4, Tun.rd_Vst_self _ (X.cpu.gpr.rsp - 8 - 8) _ (toBytesLE_length _ _) (by rw [e16]; omega),
       ofBytesLE_toBytesLE (n := 8) rfl]
     try rfl
-  intro Z t5 V₂ p hKZ hAZ hrZ hspZ haxZ hbxZ hbpZ h12Z h13Z h14Z h15Z hp1 hp2 hpn hpF hV₂ hHp _ _ _
+  intro Z t5 V₂ p hKZ hAZ hrZ hspZ haxZ hbxZ hbpZ h12Z h13Z h14Z h15Z hp1 hp2 hpn hpF hV₂ hHp hT1 _ _
+  -- the old top, as at the entry (the two stores lie on the stack)
+  have hTop : rdq(Vst (Vst V (X.cpu.gpr.rsp - 8) (toBytesLE X.cpu.gpr.rbx 8)) (X.cpu.gpr.rsp - 8 - 8)
+      (toBytesLE (onw_at.add (20 + 5)) 8), 7940768#64) = rdq(V, 7940768#64) := by
+    have hT0 : 8032256 ≤ hi := by
+      obtain ⟨_, T, _, _, _, -, -, -, -, hT, hTh, -⟩ := hH
+      omega
+    have et : (7940768#64 : Addr).toNat = 7940768 := rfl
+    rw [Sbrk.rd_eq (V := V) (x := 7940768#64) (n := 8) (by rw [et]; omega) fun a _ a2 =>
+      hV1 a (.inl (by rw [et] at a2; omega))]
+  rw [hTop] at hT1
   rw [hsp4, e16] at hV₂
   rw [hdi4] at hpn hpF hHp
   have hp0 : p ≠ 0 := by rintro rfl; exact absurd hp1 (by decide)
@@ -236,7 +248,7 @@ theorem onw_hp0 {fb : Addr} {hi m : Nat} (c : Seg prof F Wl L s₀ o) (hfs : s�
     (by rw [hg9, hg8']; exact haxZ) (by rw [hg9, hg8']; show rdq(V₂, Z.cpu.gpr.rsp) = _; rw [hspZ']; exact hbx)
     (by rw [hg9, hg8']; exact hbpZ.trans hbp4) (by rw [hg9, hg8']; exact h12Z.trans h124)
     (by rw [hg9, hg8']; exact h13Z.trans h134) (by rw [hg9, hg8']; exact h14Z.trans h144)
-    (by rw [hg9, hg8']; exact h15Z.trans h154) hp1 hp2 hpn hpF (fun a ha => ?_) hHp
+    (by rw [hg9, hg8']; exact h15Z.trans h154) hp1 hp2 hpn hpF (fun a ha => ?_) hHp hT1
   have hpS : p.toNat + 232 ≤ X.cpu.gpr.rsp.toNat := by omega
   refine (hV₂ a ?_).trans (hV1 a ?_)
   · rcases ha with ha | ha | ⟨h1, ha | ha⟩
@@ -250,7 +262,113 @@ theorem onw_hp0 {fb : Addr} {hi m : Nat} (c : Seg prof F Wl L s₀ o) (hfs : s�
     · exact .inl (by omega)
     · exact .inr ha
 
-/-- `onw_hp0` from `0x6029b0`: the `endbr64` and the `jmp` to `0x602970` first. -/
+/-- `onw_hp0WT` without the old top's bound. -/
+theorem onw_hp0W {fb : Addr} {hi m B : Nat} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb)
+    (hin : CodeIn L onw_at onw) (hinM : CodeIn L mnx_at mnx) (hinI : CodeIn L imm_at imm)
+    {X : State} {t : Nat} {V : Addr → Byte} (hK : KeptW Wl s₀ X) (hA : Agree F X.proc.mm.mem V)
+    (hrip : X.cpu.rip = onw_at) (hH : Mal.Hp F Wl fb hi (m + B) V)
+    (hn0 : X.cpu.gpr.rdi ≠ 0) (hn : Mal.MalB X.cpu.gpr.rdi B)
+    (hhi : hi + 232 ≤ X.cpu.gpr.rsp.toNat) (hR : X.cpu.gpr.rsp.toNat + 40 < 2 ^ 64)
+    (hsw : ∀ a : Addr, hi ≤ a.toNat → a.toNat < X.cpu.gpr.rsp.toNat + 8 → Foot Wl a)
+    {e' : Addr} {code : List Byte} {j : Nat} (hin₂ : CodeIn L e' code) (hj : j < code.length)
+    (hra : rdq(V, X.cpu.gpr.rsp) = e'.add j)
+    (kc : ∀ Z t' (V₂ : Addr → Byte) (p : Addr), KeptW Wl s₀ Z → Agree F Z.proc.mm.mem V₂ → Z.cpu.rip = e'.add j →
+      Z.cpu.gpr.rsp = X.cpu.gpr.rsp + 8 → Z.cpu.gpr.rax = p →
+      Z.cpu.gpr.rbx = X.cpu.gpr.rbx → Z.cpu.gpr.rbp = X.cpu.gpr.rbp → Z.cpu.gpr.r12 = X.cpu.gpr.r12 →
+      Z.cpu.gpr.r13 = X.cpu.gpr.r13 → Z.cpu.gpr.r14 = X.cpu.gpr.r14 → Z.cpu.gpr.r15 = X.cpu.gpr.r15 →
+      8032256 + 16 ≤ p.toNat → fb.toNat + 64 ≤ p.toNat → p.toNat + X.cpu.gpr.rdi.toNat ≤ hi →
+      (∀ a : Addr, p.toNat ≤ a.toNat → a.toNat < p.toNat + X.cpu.gpr.rdi.toNat → Foot Wl a ∧ Foot F.data a) →
+      (∀ a : Addr, a.toNat < 7940768 ∨ 7940776 ≤ a.toNat ∧ a.toNat + 8 < p.toNat ∨
+        hi ≤ a.toNat ∧ (a.toNat + 224 < X.cpu.gpr.rsp.toNat ∨ X.cpu.gpr.rsp.toNat ≤ a.toNat) → V₂ a = V a) →
+      (∀ W : Addr → Byte, (∀ a : Addr, 7940480 ≤ a.toNat → a.toNat < hi →
+        (a.toNat < p.toNat ∨ p.toNat + X.cpu.gpr.rdi.toNat ≤ a.toNat) → W a = V₂ a) → Mal.Hp F Wl fb hi m W) →
+      GoG prof L o gev gP gE Z t') :
+    GoG prof L o gev gP gE X t :=
+  onw_hp0WT c hfs hin hinM hinI hK hA hrip hH hn0 hn hhi hR hsw hin₂ hj hra
+    fun Z t' V₂ p a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 a15 a16 a17 _ =>
+      kc Z t' V₂ p a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 a15 a16 a17
+
+/-- `onw_hp0WT` from `0x6029b0`: the `endbr64` and the `jmp` to `0x602970` first. -/
+theorem onw_hpWT {fb : Addr} {hi m B : Nat} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb)
+    (hin : CodeIn L onw_at onw) (hinM : CodeIn L mnx_at mnx) (hinI : CodeIn L imm_at imm)
+    {X : State} {t : Nat} {V : Addr → Byte} (hK : KeptW Wl s₀ X) (hA : Agree F X.proc.mm.mem V)
+    (hrip : X.cpu.rip = onw_at.add 64) (hH : Mal.Hp F Wl fb hi (m + B) V)
+    (hn0 : X.cpu.gpr.rdi ≠ 0) (hn : Mal.MalB X.cpu.gpr.rdi B)
+    (hhi : hi + 232 ≤ X.cpu.gpr.rsp.toNat) (hR : X.cpu.gpr.rsp.toNat + 40 < 2 ^ 64)
+    (hsw : ∀ a : Addr, hi ≤ a.toNat → a.toNat < X.cpu.gpr.rsp.toNat + 8 → Foot Wl a)
+    {e' : Addr} {code : List Byte} {j : Nat} (hin₂ : CodeIn L e' code) (hj : j < code.length)
+    (hra : rdq(V, X.cpu.gpr.rsp) = e'.add j)
+    (kc : ∀ Z t' (V₂ : Addr → Byte) (p : Addr), KeptW Wl s₀ Z → Agree F Z.proc.mm.mem V₂ → Z.cpu.rip = e'.add j →
+      Z.cpu.gpr.rsp = X.cpu.gpr.rsp + 8 → Z.cpu.gpr.rax = p →
+      Z.cpu.gpr.rbx = X.cpu.gpr.rbx → Z.cpu.gpr.rbp = X.cpu.gpr.rbp → Z.cpu.gpr.r12 = X.cpu.gpr.r12 →
+      Z.cpu.gpr.r13 = X.cpu.gpr.r13 → Z.cpu.gpr.r14 = X.cpu.gpr.r14 → Z.cpu.gpr.r15 = X.cpu.gpr.r15 →
+      8032256 + 16 ≤ p.toNat → fb.toNat + 64 ≤ p.toNat → p.toNat + X.cpu.gpr.rdi.toNat ≤ hi →
+      (∀ a : Addr, p.toNat ≤ a.toNat → a.toNat < p.toNat + X.cpu.gpr.rdi.toNat → Foot Wl a ∧ Foot F.data a) →
+      (∀ a : Addr, a.toNat < 7940768 ∨ 7940776 ≤ a.toNat ∧ a.toNat + 8 < p.toNat ∨
+        hi ≤ a.toNat ∧ (a.toNat + 224 < X.cpu.gpr.rsp.toNat ∨ X.cpu.gpr.rsp.toNat ≤ a.toNat) → V₂ a = V a) →
+      (∀ W : Addr → Byte, (∀ a : Addr, 7940480 ≤ a.toNat → a.toNat < hi →
+        (a.toNat < p.toNat ∨ p.toNat + X.cpu.gpr.rdi.toNat ≤ a.toNat) → W a = V₂ a) → Mal.Hp F Wl fb hi m W) →
+      rdq(V, 7940768#64).toNat + 16 ≤ p.toNat → GoG prof L o gev gP gE Z t') :
+    GoG prof L o gev gP gE X t := by
+  refine c.s_endbr hK hA hin (lt_len (by decide)) hrip (onw_64 _) ?_
+  rintro Y1 t1 hK1 hA1 ⟨hr1, hg1⟩
+  refine c.s_jmp hK1 hA1 hin (lt_len (by decide)) hr1 (onw_68 _) (tgt := 0) (by decide) (lt_len (by decide)) ?_
+  rintro Y2 t2 hK2 hA2 ⟨hr2, hg2⟩
+  have hg : Y2.cpu.gpr = X.cpu.gpr := hg2.trans hg1
+  rw [← hg] at hn0 hn hhi hR hsw hra kc
+  exact onw_hp0WT c hfs hin hinM hinI hK2 hA2 (by rw [hr2, addr_add_zero]) hH hn0 hn hhi hR hsw hin₂ hj hra kc
+
+/-- `onw_hpWT` without the old top's bound. -/
+theorem onw_hpW {fb : Addr} {hi m B : Nat} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb)
+    (hin : CodeIn L onw_at onw) (hinM : CodeIn L mnx_at mnx) (hinI : CodeIn L imm_at imm)
+    {X : State} {t : Nat} {V : Addr → Byte} (hK : KeptW Wl s₀ X) (hA : Agree F X.proc.mm.mem V)
+    (hrip : X.cpu.rip = onw_at.add 64) (hH : Mal.Hp F Wl fb hi (m + B) V)
+    (hn0 : X.cpu.gpr.rdi ≠ 0) (hn : Mal.MalB X.cpu.gpr.rdi B)
+    (hhi : hi + 232 ≤ X.cpu.gpr.rsp.toNat) (hR : X.cpu.gpr.rsp.toNat + 40 < 2 ^ 64)
+    (hsw : ∀ a : Addr, hi ≤ a.toNat → a.toNat < X.cpu.gpr.rsp.toNat + 8 → Foot Wl a)
+    {e' : Addr} {code : List Byte} {j : Nat} (hin₂ : CodeIn L e' code) (hj : j < code.length)
+    (hra : rdq(V, X.cpu.gpr.rsp) = e'.add j)
+    (kc : ∀ Z t' (V₂ : Addr → Byte) (p : Addr), KeptW Wl s₀ Z → Agree F Z.proc.mm.mem V₂ → Z.cpu.rip = e'.add j →
+      Z.cpu.gpr.rsp = X.cpu.gpr.rsp + 8 → Z.cpu.gpr.rax = p →
+      Z.cpu.gpr.rbx = X.cpu.gpr.rbx → Z.cpu.gpr.rbp = X.cpu.gpr.rbp → Z.cpu.gpr.r12 = X.cpu.gpr.r12 →
+      Z.cpu.gpr.r13 = X.cpu.gpr.r13 → Z.cpu.gpr.r14 = X.cpu.gpr.r14 → Z.cpu.gpr.r15 = X.cpu.gpr.r15 →
+      8032256 + 16 ≤ p.toNat → fb.toNat + 64 ≤ p.toNat → p.toNat + X.cpu.gpr.rdi.toNat ≤ hi →
+      (∀ a : Addr, p.toNat ≤ a.toNat → a.toNat < p.toNat + X.cpu.gpr.rdi.toNat → Foot Wl a ∧ Foot F.data a) →
+      (∀ a : Addr, a.toNat < 7940768 ∨ 7940776 ≤ a.toNat ∧ a.toNat + 8 < p.toNat ∨
+        hi ≤ a.toNat ∧ (a.toNat + 224 < X.cpu.gpr.rsp.toNat ∨ X.cpu.gpr.rsp.toNat ≤ a.toNat) → V₂ a = V a) →
+      (∀ W : Addr → Byte, (∀ a : Addr, 7940480 ≤ a.toNat → a.toNat < hi →
+        (a.toNat < p.toNat ∨ p.toNat + X.cpu.gpr.rdi.toNat ≤ a.toNat) → W a = V₂ a) → Mal.Hp F Wl fb hi m W) →
+      GoG prof L o gev gP gE Z t') :
+    GoG prof L o gev gP gE X t :=
+  onw_hpWT c hfs hin hinM hinI hK hA hrip hH hn0 hn hhi hR hsw hin₂ hj hra
+    fun Z t' V₂ p a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 a15 a16 a17 _ =>
+      kc Z t' V₂ p a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 a15 a16 a17
+
+/-- `onw_hp0W` for `0 < n ≤ 1024` (`B` = 1072). -/
+theorem onw_hp0 {fb : Addr} {hi m : Nat} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb)
+    (hin : CodeIn L onw_at onw) (hinM : CodeIn L mnx_at mnx) (hinI : CodeIn L imm_at imm)
+    {X : State} {t : Nat} {V : Addr → Byte} (hK : KeptW Wl s₀ X) (hA : Agree F X.proc.mm.mem V)
+    (hrip : X.cpu.rip = onw_at) (hH : Mal.Hp F Wl fb hi (m + 1072) V)
+    (hn0 : X.cpu.gpr.rdi ≠ 0) (hn : X.cpu.gpr.rdi.toNat ≤ 1024)
+    (hhi : hi + 232 ≤ X.cpu.gpr.rsp.toNat) (hR : X.cpu.gpr.rsp.toNat + 40 < 2 ^ 64)
+    (hsw : ∀ a : Addr, hi ≤ a.toNat → a.toNat < X.cpu.gpr.rsp.toNat + 8 → Foot Wl a)
+    {e' : Addr} {code : List Byte} {j : Nat} (hin₂ : CodeIn L e' code) (hj : j < code.length)
+    (hra : rdq(V, X.cpu.gpr.rsp) = e'.add j)
+    (kc : ∀ Z t' (V₂ : Addr → Byte) (p : Addr), KeptW Wl s₀ Z → Agree F Z.proc.mm.mem V₂ → Z.cpu.rip = e'.add j →
+      Z.cpu.gpr.rsp = X.cpu.gpr.rsp + 8 → Z.cpu.gpr.rax = p →
+      Z.cpu.gpr.rbx = X.cpu.gpr.rbx → Z.cpu.gpr.rbp = X.cpu.gpr.rbp → Z.cpu.gpr.r12 = X.cpu.gpr.r12 →
+      Z.cpu.gpr.r13 = X.cpu.gpr.r13 → Z.cpu.gpr.r14 = X.cpu.gpr.r14 → Z.cpu.gpr.r15 = X.cpu.gpr.r15 →
+      8032256 + 16 ≤ p.toNat → fb.toNat + 64 ≤ p.toNat → p.toNat + X.cpu.gpr.rdi.toNat ≤ hi →
+      (∀ a : Addr, p.toNat ≤ a.toNat → a.toNat < p.toNat + X.cpu.gpr.rdi.toNat → Foot Wl a ∧ Foot F.data a) →
+      (∀ a : Addr, a.toNat < 7940768 ∨ 7940776 ≤ a.toNat ∧ a.toNat + 8 < p.toNat ∨
+        hi ≤ a.toNat ∧ (a.toNat + 224 < X.cpu.gpr.rsp.toNat ∨ X.cpu.gpr.rsp.toNat ≤ a.toNat) → V₂ a = V a) →
+      (∀ W : Addr → Byte, (∀ a : Addr, 7940480 ≤ a.toNat → a.toNat < hi →
+        (a.toNat < p.toNat ∨ p.toNat + X.cpu.gpr.rdi.toNat ≤ a.toNat) → W a = V₂ a) → Mal.Hp F Wl fb hi m W) →
+      GoG prof L o gev gP gE Z t') :
+    GoG prof L o gev gP gE X t :=
+  onw_hp0W c hfs hin hinM hinI hK hA hrip hH hn0 ⟨by omega, by omega, by omega⟩ hhi hR hsw hin₂ hj hra kc
+
+/-- `onw_hpW` for `0 < n ≤ 1024` (`B` = 1072). -/
 theorem onw_hp {fb : Addr} {hi m : Nat} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb)
     (hin : CodeIn L onw_at onw) (hinM : CodeIn L mnx_at mnx) (hinI : CodeIn L imm_at imm)
     {X : State} {t : Nat} {V : Addr → Byte} (hK : KeptW Wl s₀ X) (hA : Agree F X.proc.mm.mem V)
@@ -271,13 +389,7 @@ theorem onw_hp {fb : Addr} {hi m : Nat} (c : Seg prof F Wl L s₀ o) (hfs : s₀
       (∀ W : Addr → Byte, (∀ a : Addr, 7940480 ≤ a.toNat → a.toNat < hi →
         (a.toNat < p.toNat ∨ p.toNat + X.cpu.gpr.rdi.toNat ≤ a.toNat) → W a = V₂ a) → Mal.Hp F Wl fb hi m W) →
       GoG prof L o gev gP gE Z t') :
-    GoG prof L o gev gP gE X t := by
-  refine c.s_endbr hK hA hin (lt_len (by decide)) hrip (onw_64 _) ?_
-  rintro Y1 t1 hK1 hA1 ⟨hr1, hg1⟩
-  refine c.s_jmp hK1 hA1 hin (lt_len (by decide)) hr1 (onw_68 _) (tgt := 0) (by decide) (lt_len (by decide)) ?_
-  rintro Y2 t2 hK2 hA2 ⟨hr2, hg2⟩
-  have hg : Y2.cpu.gpr = X.cpu.gpr := hg2.trans hg1
-  rw [← hg] at hn0 hn hhi hR hsw hra kc
-  exact onw_hp0 c hfs hin hinM hinI hK2 hA2 (by rw [hr2, addr_add_zero]) hH hn0 hn hhi hR hsw hin₂ hj hra kc
+    GoG prof L o gev gP gE X t :=
+  onw_hpW c hfs hin hinM hinI hK hA hrip hH hn0 ⟨by omega, by omega, by omega⟩ hhi hR hsw hin₂ hj hra kc
 
 end FV7z.Onw
