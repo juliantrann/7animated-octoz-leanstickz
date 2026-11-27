@@ -134,8 +134,8 @@ theorem gd_pos {g0 : Gprs} {V₀ W W₁ : Addr → Byte} {Z : State} {t : Nat} {
   have d1 : Dir (Vst W (p + 16#64) (toBytesLE Z.cpu.gpr.rax 8)) p A 1#32 (r.es.map Dirent.reclen).sum
       (rdq(Vst W (p + 16#64) (toBytesLE Z.cpu.gpr.rax 8), p + 24#64)).toNat := by
     refine ⟨?_, ?_, ?_, hs, rfl⟩
-    · rw [rd_Vst W _ (p + 4#64) 4 hal (by omega) (by omega)]; exact hD.lk
-    · rw [rd_Vst W _ (p + 8#64) 8 hal (by omega) (by omega)]; exact hD.al
+    · rw [rd_Vst W (p + 16#64) (toBytesLE Z.cpu.gpr.rax 8) (p + 4#64) 4 hal (by omega) (by omega)]; exact hD.lk
+    · rw [rd_Vst W (p + 16#64) (toBytesLE Z.cpu.gpr.rax 8) (p + 8#64) 8 hal (by omega) (by omega)]; exact hD.al
     · rw [rd_Vst_self W (p + 16#64) _ hl8 (by omega), ofBytesLE_toBytesLE (by decide), hax, hsN]
   have hch : Ch W p (r.es.map Dirent.reclen).sum 0 := by
     rw [hW]; exact ch_dn W₁ (by omega) hs
@@ -150,7 +150,8 @@ theorem gd_pos {g0 : Gprs} {V₀ W W₁ : Addr → Byte} {Z : State} {t : Nat} {
   have hdx : Y₁.cpu.gpr.rdx.toNat = 0 := by rw [hg₁]; try rfl
   have hnz : rdq(Vst W (p + 16#64) (toBytesLE Z.cpu.gpr.rax 8), Addr.add p (48 + 0)) ≠ 0#64 := by
     show rdq(Vst W (p + 16#64) (toBytesLE Z.cpu.gpr.rax 8), p.add 48) ≠ 0#64
-    rw [rd_Vst W _ (p.add 48) 8 hal (by omega) (by omega), hW, ← dn_one (V := W₁) (a := p.add 48) hs (by omega)]
+    rw [rd_Vst W (p + 16#64) (toBytesLE Z.cpu.gpr.rax 8) (p.add 48) 8 hal (by omega) (by omega), hW,
+      ← dn_one (V := W₁) (a := p.add 48) hs (by omega)]
     show rdq(vRuns W₁ (p.add 48) (direntRuns r.es 0), p.add 48) ≠ 0#64
     cases hr : r.es with
     | nil => rw [hr] at hpos; simp at hpos
