@@ -126,8 +126,8 @@ theorem dec_false {p : Prop} {i : Decidable p} : (@decide p i = false) = ¬ p :=
 /-- A jump's condition `h` as a fact: `decide p = true` as `p` (`simp at *` leaves some of them, kt2301), by
 `cast dec_true` if `simp` does not. -/
 scoped macro "dcd " h:ident : tactic => `(tactic| ((try simp only [Bool.not_eq_true', Bool.not_eq_false',
-  decide_eq_true_eq, decide_eq_false_iff_not, dec_true, dec_false] at $h:ident);
-  (try with_reducible replace $h:ident := cast dec_true $h:ident);
+  decide_eq_true_eq, decide_eq_false_iff_not, dec_true, dec_false] at $h:ident) <;>
+  (try with_reducible replace $h:ident := cast dec_true $h:ident) <;>
   (try with_reducible replace $h:ident := cast dec_false $h:ident)))
 /-- The jumps' conditions as facts, then `bv_omega`. -/
 scoped macro "tfo" : tactic => `(tactic| ((try simp only [Bool.not_eq_true', Bool.not_eq_false', Bool.or_eq_true,
