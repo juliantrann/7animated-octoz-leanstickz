@@ -51,9 +51,11 @@ theorem ret_119 (feat : Features) : Dec feat uca 119 (FV7z.mk .ret 64 [] 1) :=
   Dec.shift (j := 119) (k := 0) (pret_0 feat) w_119 (Nat.zero_le _)
 
 /-- An equation of 64-bit values by their numbers. -/
-macro "uca_tn" : tactic => `(tactic| (apply BitVec.eq_of_toNat_eq;
+macro "uca_tn" : tactic => `(tactic| (
+  apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth, BitVec.toNat_add, BitVec.toNat_ofNat, BitVec.toNat_shiftLeft, Nat.shiftLeft_eq,
-    BitVec.toNat_mul, Nat.reducePow, Nat.reduceMod]; omega))
+    BitVec.toNat_mul, Nat.reducePow, Nat.reduceMod]
+  omega))
 
 /-! ## The invariant -/
 
@@ -556,8 +558,9 @@ theorem uca_ok {Pu : State → (Addr → Byte) → Prop}
       rw [addr_add_add]
       exact hdw _ (by omega)
     refine (c_103 prof).run c hin (fun j' g' _ V' => j' = 119 ∧
-        g' = { U.cpu.gpr with rbx := X.cpu.gpr.rbx, rbp := X.cpu.gpr.rbp, r12 := X.cpu.gpr.r12,
-          r13 := X.cpu.gpr.r13, r14 := X.cpu.gpr.r14, rsp := X.cpu.gpr.rsp } ∧ V' = Mf V₁ X.cpu.gpr.rsi d n)
+        g' = { U.cpu.gpr with
+            rbx := X.cpu.gpr.rbx, rbp := X.cpu.gpr.rbp, r12 := X.cpu.gpr.r12, r13 := X.cpu.gpr.r13,
+            r14 := X.cpu.gpr.r14, rsp := X.cpu.gpr.rsp } ∧ V' = Mf V₁ X.cpu.gpr.rsi d n)
       hKU hAU hrU
       (vc_103 h12 hw4 (by rw [hs]; exact h40) (by rw [hs, a40]; exact h32) (by rw [hs, a40, a32]; exact h24)
         (by rw [hs, a40, a32, a24]; exact h16) (by rw [hs, a40, a32, a24, a16]; exact h8)
