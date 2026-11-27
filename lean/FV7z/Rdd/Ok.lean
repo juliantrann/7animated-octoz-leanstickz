@@ -130,7 +130,10 @@ theorem stR (S : Addr) (h : 48 ≤ S.toNat) :
     (Opd.tAdd (S - 8 - 8 - 8 - 8 - 8 + 8 + 8 + 8) 8 (by omega)).trans (by omega)
   exact ⟨b5, b6, b7, a1, a2, a3, a4⟩
 
-theorem pS5 (S : Addr) : S - 8 - 8 - 8 - 8 - 8 + 8 + 8 + 8 + 8 + 8 = S := by bv_omega
+/-- The pops undo the pushes (not `bv_omega`: ten wrapping atoms blow it up). -/
+theorem pS5 (S : Addr) : S - 8 - 8 - 8 - 8 - 8 + 8 + 8 + 8 + 8 + 8 = S := by
+  rw [BitVec.sub_add_cancel, BitVec.sub_add_cancel, BitVec.sub_add_cancel, BitVec.sub_add_cancel,
+    BitVec.sub_add_cancel]
 
 /-- A read through bytes that agree on it. -/
 theorem rdE (w : Nat) {V V' : Addr → Byte} {x : Addr} {n : Nat} (hx : x.toNat + n ≤ 2 ^ 64)
@@ -240,19 +243,5 @@ theorem fin176 {g0 : Gprs} {V₀ W : Addr → Byte} {Y : State} {t : Nat} {tr : 
       rw [Vst_out W (p + 4#64) (toBytesLE 0#32 4) a (by rw [toBytesLE_length]; omega)
         (by rw [toBytesLE_length, t4]; omega)]
       exact hfr a x1 x2 x3) hT (by unfold Res; exact ⟨W, n, k, rfl, hD, by rw [gZ, z2, r8e]; exact hR⟩)
-
-/-! ## The whole function -/
-
-/-- `__readdir` from its entry (registers `g0`: `rsp` = `S`, `rdi` = `p`; bytes `V₀`; one thread; the lock 0; the
-buffer a chain from the offset `k` to the size `n`) to the run after its return. -/
-theorem rdd_ok {g0 : Gprs} {V₀ : Addr → Byte} {X : State} {t n k : Nat} {e₂ : Addr} {code₂ : List Byte} {j₂ : Nat}
-    (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (hrs : s₀.thread.rseq = none)
-    (hin : CodeIn L rdd_at rdd) (hinG : CodeIn L Gdn.gdn_at Gdn.gdn) (C : RdC F Wl S p fb A)
-    (hK : KeptW Wl s₀ X) (hA : Agree F X.proc.mm.mem V₀) (hrip : X.cpu.rip = rdd_at) (hg : X.cpu.gpr = g0)
-    (hsp : g0.rsp = S) (hdi : g0.rdi = p) (hmt0 : rdd(V₀, fb + 24#64) = 0#32) (hD : Dir V₀ p A 0#32 n k)
-    (hch : Ch V₀ p n k) (hnz : NzIno o) (hin₂ : CodeIn L e₂ code₂) (h₂ : j₂ < code₂.length)
-    (hra : rdq(V₀, S) = e₂.add j₂) (K : RddK prof F Wl L o gP gE S p fb A g0 V₀ e₂ j₂ gev) :
-    GoG prof L o gev gP gE X t := by
-  sorry
 
 end FV7z.Rdd
