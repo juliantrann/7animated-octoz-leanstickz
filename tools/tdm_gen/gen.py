@@ -165,7 +165,7 @@ def loop(k, case=None):
     for t in tags:
         alts += FOOT[t]
     alts += [exit_closer(k, j, case) for j in exits]
-    alts += ["(with_reducible rfl)", "apply And.intro", "intro _"]
+    alts += ["(with_reducible rfl)", "apply And.intro", "(intro h; dcd h)"]
     o = ["  repeat' (first"]
     for a in alts:
         o.append("    | " + a)
