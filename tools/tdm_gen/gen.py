@@ -102,8 +102,8 @@ FOOT = {
           "(with_reducible exact hE.f3)", "(with_reducible exact hE.f4)"],
     "fA": ["((with_reducible refine fA hE.hp ?_) <;> omega)"],
     "fA0": ["((with_reducible refine fA0 hE.hp ?_) <;> omega)"],
-    "fIn": ["(refine fIn hE ?_ ?_ <;> tfo)"], "fP": ["(refine fP hK hE ?_ ?_ <;> tfo)"],
-    "fD": ["(refine fD hE ?_ ?_ <;> tfo)"],
+    "fIn": ["(refine fIn hE ?_ ?_ <;> exact (by tfo))"], "fP": ["(refine fP hK hE ?_ ?_ <;> exact (by tfo))"],
+    "fD": ["(refine fD hE ?_ ?_ <;> exact (by tfo))"],
 }
 OKF = ["have := hK.hP1", "have := hK.hP2", "have := hK.hnl", "have := hK.hnl1"]
 PRE = {
@@ -127,15 +127,15 @@ DBG = {tuple(map(int, x.split(":"))) for x in os.environ.get("TDM_DBG", "").spli
 
 
 # `src:dst` exits whose conditions need `tfom` (the wraps dropped first).
-MOD = set()
+MOD = {(180, 210)}
 
 
 def dbg(src, j, s):
     if (src, j) in MOD:
-        s = s.replace("=> tcm)", "=> tcmm)").replace("tfs)", "tfsm)").replace("<;> tfo)", "<;> tfom)")
+        s = s.replace("=> tcm)", "=> tcmm)").replace("tfs)", "tfsm)").replace("<;> tfo)", "<;> tfom)").replace("by tfo)", "by tfom)")
     if (src, j) not in DBG:
         return s
-    return s.replace("=> tcm)", "=> tcmd)").replace("tfs)", "tfsd)").replace("<;> tfo)", "<;> tfod)")
+    return s.replace("=> tcm)", "=> tcmd)").replace("tfs)", "tfsd)").replace("<;> tfo)", "<;> tfod)").replace("by tfo)", "by tfod)")
 
 
 def exit_closer(src, j, case=None):
@@ -144,19 +144,19 @@ def exit_closer(src, j, case=None):
 
 def exit_closer0(src, j, case):
     if j in FIN:
-        return ("(refine xFin ?hj ?hF; (case hj => decide);\n"
+        return ("(refine xFin ?hj ?hF; (case hj => exact (by decide));\n"
                 f"            (case hF => exact ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, by tfo, by tfo, by tfv{case or 'a'}⟩))")
     if j == 343:
         t = "t343b" if src == 340 else "t343a"
-        return ("(refine x343 ?hc ?hI ?hm; (case hc => tcm); (case hI => dsimp only [I343]; " + t + ");\n"
-                "            (case hm => dsimp only [M343] <;> tfo))")
+        return ("(refine x343 ?hc ?hI ?hm; (case hc => tcm); (case hI => exact (by dsimp only [I343]; " + t + "));\n"
+                "            (case hm => exact (by dsimp only [M343] <;> tfo)))")
     if (src, j) == (103, 180):
         return ("(refine x180 ?hc rfl ?hI ?hm; (case hc => tcm);\n"
-                "            (case hI => dsimp only [I180]; refine ⟨?_, ?_, ?_, ?_, ?_⟩ <;>\n"
-                "              (first | (with_reducible exact ctx_ok' hK _) | tfs));\n"
-                "            (case hm => dsimp only [M180] <;> tfo))")
-    return (f"(refine x{j} ?hc rfl ?hI ?hm; (case hc => tcm); (case hI => dsimp only [I{j}] <;> tfs);\n"
-            f"            (case hm => dsimp only [M{j}] <;> tfo))")
+                "            (case hI => exact (by dsimp only [I180]; refine ⟨?_, ?_, ?_, ?_, ?_⟩ <;>\n"
+                "              (first | (with_reducible exact ctx_ok' hK _) | tfs)));\n"
+                "            (case hm => exact (by dsimp only [M180] <;> tfo)))")
+    return (f"(refine x{j} ?hc rfl ?hI ?hm; (case hc => tcm); (case hI => exact (by dsimp only [I{j}] <;> tfs));\n"
+            f"            (case hm => exact (by dsimp only [M{j}] <;> tfo)))")
 
 
 def loop(k, case=None):

@@ -116,19 +116,24 @@ def Bnd (a c x X : Nat) : Prop :=
   (c = 0 ∧ a + 2 * x ≤ X) ∨ (c = 1 ∧ a + 4 * x ≤ X) ∨ (c = 2 ∧ a + 8 * x ≤ X) ∨ (c = 3 ∧ a + 16 * x ≤ X) ∨
   (c = 4 ∧ a + 32 * x ≤ X) ∨ (c = 5 ∧ a + 64 * x ≤ X)
 
+/-- `decide p = true` as `p`, for any instance (the jumps' `decide`s need not carry `instDecidableLtNat`). -/
+theorem dec_true {p : Prop} {i : Decidable p} : (@decide p i = true) = p := by cases i <;> simp_all
+/-- `decide p = false` as `¬ p`, for any instance. -/
+theorem dec_false {p : Prop} {i : Decidable p} : (@decide p i = false) = ¬ p := by cases i <;> simp_all
+
 /-! ## Tactics -/
 
 /-- The jumps' conditions as facts, then `bv_omega`. -/
 scoped macro "tfo" : tactic => `(tactic| ((try simp only [Bool.not_eq_true', Bool.not_eq_false', Bool.or_eq_true,
-  Bool.or_eq_false_iff, Bool.and_eq_true, decide_eq_true_eq, decide_eq_false_iff_not, beq_iff_eq,
+  Bool.or_eq_false_iff, Bool.and_eq_true, decide_eq_true_eq, decide_eq_false_iff_not, dec_true, dec_false, beq_iff_eq,
   beq_eq_false_iff_ne, Bnd, ne_eq] at *) <;> bv_omega))
 /-- Triage only: `tfo` that shows the goal after the jumps' conditions, and fails if `simp` does. -/
 scoped macro "tfod" : tactic => `(tactic| ((simp only [Bool.not_eq_true', Bool.not_eq_false', Bool.or_eq_true,
-  Bool.or_eq_false_iff, Bool.and_eq_true, decide_eq_true_eq, decide_eq_false_iff_not, beq_iff_eq,
+  Bool.or_eq_false_iff, Bool.and_eq_true, decide_eq_true_eq, decide_eq_false_iff_not, dec_true, dec_false, beq_iff_eq,
   beq_eq_false_iff_ne, Bnd, ne_eq] at *) <;> (trace_state; bv_omega)))
 /-- `tfo` with the wraps that `omega` proves away dropped first (`omega` alone gives up on many of them). -/
 scoped macro "tfom" : tactic => `(tactic| ((try simp only [Bool.not_eq_true', Bool.not_eq_false', Bool.or_eq_true,
-  Bool.or_eq_false_iff, Bool.and_eq_true, decide_eq_true_eq, decide_eq_false_iff_not, beq_iff_eq,
+  Bool.or_eq_false_iff, Bool.and_eq_true, decide_eq_true_eq, decide_eq_false_iff_not, dec_true, dec_false, beq_iff_eq,
   beq_eq_false_iff_ne, Bnd, ne_eq] at *) <;> (try simp -implicitDefEqProofs only [bitvec_to_nat] at *) <;>
   (try simp (disch := omega) only [Nat.mod_eq_of_lt] at *) <;> omega))
 /-- A cut point's condition: its conjuncts by `assumption`, `rfl` or `tfo`. -/
