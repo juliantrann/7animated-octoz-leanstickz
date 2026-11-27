@@ -1,3 +1,5 @@
-import FV7z.Fmi.Holds
+import FV7z.Nlc.Steps
 open FV7z
-#print axioms FV7z.Fmi.fmi_ok
+#print axioms FV7z.Nlc.call_91
+#print axioms FV7z.Nlc.ret_190
+#print axioms FV7z.Nlc.ml_245
