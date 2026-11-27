@@ -931,6 +931,7 @@ import FV7z.Uau.Holds
 import FV7z.Ucn.Holds
 import FV7z.Usf.Holds
 import FV7z.Usb.Holds
+import FV7z.Uaw.Holds
 import FV7z.Dsp.Blocks
 import FV7z.Dsp.Cuts
 import FV7z.Dsp.Holds
