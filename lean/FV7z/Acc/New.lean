@@ -15,10 +15,9 @@ words from the old top up and the block, so the string is as it was (`Mal.keep_l
   the heap's words, the block and `_chars` and from the return address up as at the entry.
 - `acc_okH`: `acc_ok` with `Asl.kf_hpW`.
 
-Status (2026-11-26): written, not built yet, and not imported in `FV7z.lean`. Next: add `import FV7z.Acc.New` after
-`FV7z.Acs.New`, triage `FV7z.Acc.New -- FV7z.Acc.acc_okH`. Then `FV7z/Acp/New.lean` (`acp_okH`) the same way: `Acp`'s
-`Pk` reads the source at `rdq(V, g.rsi)`, so `hsT` is on that pointer, and `Acp.V0`/`gY` replace `Acc.V0`. After that,
-`…okH` wrappers for the other callers of `operator new` (`Ctor.*`, `Rdn`'s `ReserveDown`, `Ucw`/`Uau`/`Ucn`).
+Status (2026-11-27): built and axioms clean (kt2702, run 45948639733), imported after `FV7z.Sfn.Mem`; `Acp.acp_okH`
+(`FV7z/Acp/New.lean`) the same way. The other callers of `operator new`: `Ucw.ucw_okH` (`FV7z/Ucw/New.lean`), then
+`Ctor.*`, `Rdn`'s `ReserveDown`, `Uau`/`Ucn`.
 -/
 open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn FV7z.Mys
 open FV7z.Imm (imm imm_at)
