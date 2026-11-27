@@ -192,7 +192,7 @@ theorem vc_196c {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Pos
   have hj := nja12 hc
   mcx +contextual [W_196, W_208, o10, o11, hb, hj, f1]
   -- `hj` is not used by `simp` (the generated literal `12#32` differs); unify by `Eq.trans`
-  exact ⟨fun h => absurd (h.symm.trans hj) Bool.true_ne_false, fun _ => hk _⟩
+  exact ⟨fun h => absurd (h.symm.trans hj).symm Bool.false_ne_true, fun _ => hk _⟩
 
 /-- The jump through the table to `ℓ`. -/
 theorem vc_217 {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post} {ℓ : Nat}
@@ -404,7 +404,7 @@ theorem vc_435b {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (hz : (B
   mcx +contextual [W_435, W_439, W_449, o34, o35, hz, h]
   intro hC
   have e : (!(decide (rcx.toNat < 85) || decide (rcx = 85#64))) = false := by simp only [h, Bool.not_true]
-  exact absurd (hC.symm.trans e) Bool.true_ne_false
+  exact absurd (hC.symm.trans e).symm Bool.false_ne_true
 
 /-! ## The value -/
 

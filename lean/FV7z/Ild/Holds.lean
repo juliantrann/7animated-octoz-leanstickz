@@ -78,6 +78,7 @@ theorem up6 {S : Addr} (hS : 80 ≤ S.toNat) (hS8 : S.toNat + 8 ≤ 2 ^ 64) :
     (S56 S + 8#64 + 8 + 8).toNat = S.toNat - 32 ∧ (S56 S + 8#64 + 8 + 8 + 8).toNat = S.toNat - 24 ∧
     (S56 S + 8#64 + 8 + 8 + 8 + 8).toNat = S.toNat - 16 ∧ (S56 S + 8#64 + 8 + 8 + 8 + 8 + 8).toNat = S.toNat - 8 ∧
     (S56 S + 8#64 + 8 + 8 + 8 + 8 + 8 + 8).toNat = S.toNat := by
+  have hl := S.isLt
   have e := s56_e hS
   have e0 : (S56 S + 8#64).toNat = S.toNat - 48 := by
     rw [BitVec.toNat_add, e, show (8#64).toNat = 8 from rfl]
@@ -134,8 +135,11 @@ theorem agC {Kk : Addr → Prop} {V0 V V' : Addr → Byte} {g0 : Gprs} {ra : Add
     rcases hy with ⟨h1, h2⟩ | ⟨h1, -⟩
     · exact hkf y h1 h2
     · exact h1
-  rw [h y hk, Vst_out _ _ _ _ (by rw [toBytesLE_length, e]; omega)
-    (by rw [toBytesLE_length, e]; rcases hy with ⟨h1, -⟩ | ⟨-, h1⟩ <;> omega)]
+  have ha : (S56 g0.rsp - 8).toNat + (toBytesLE ra 8).length ≤ 2 ^ 64 := by rw [toBytesLE_length, e]; omega
+  have ho : y.toNat < (S56 g0.rsp - 8).toNat ∨ (S56 g0.rsp - 8).toNat + (toBytesLE ra 8).length ≤ y.toNat := by
+    rw [toBytesLE_length, e]
+    rcases hy with ⟨h1, -⟩ | ⟨-, h1⟩ <;> omega
+  rw [h y hk, Vst_out V (S56 g0.rsp - 8) (toBytesLE ra 8) y ha ho]
   exact hag y hy
 
 /-- Stores in `[p, p + sz)`, apart from `Kk`, are apart from the bytes kept. -/
