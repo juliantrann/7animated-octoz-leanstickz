@@ -762,6 +762,14 @@ FNS = {
     "upe": dict(grp="Upe", cn="UString::operator+=(const UString &)", a=0x44db90, n=71, pos=True, stops=(0x46,),
                 hand=(0x37,), calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `UString::operator+= (const UString &)` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
+    # 7-Zip's C/LzmaDec.c `LzmaDec_AllocateProbs (p, props, propsSize, alloc)`: two pushes (`r12` = `alloc`, `rbx` =
+    # `p`), a frame of 24 bytes with the stack guard at `rsp + 8`, `LzmaProps_Decode (&propNew, props, propsSize)`
+    # (call at 0x24, `propNew` at `rsp`); when it answers 0, `LzmaDec_AllocateProbs2 (p, &propNew, alloc)` (call at
+    # 0x57) and, when that answers 0, `p->prop = propNew` (8 bytes); the guard's check. Stops: the `ret` (0x44), the
+    # call of `__stack_chk_fail` (0x69).
+    "lpb": dict(grp="Lpb", cn="LzmaDec_AllocateProbs", a=0x42bf10, n=0x6e, pos=True, fs=True, stops=(0x44, 0x69),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `LzmaDec_AllocateProbs` (`C/LzmaDec.c`; `objdump -d`)"),
     "usl": dict(grp="Usl", cn="UString::SetStartLen", a=0x44d060, n=54, pos=True, stops=(0x35,), calls=True,
                 tag="PLAN.md §M, M1", src="7-Zip's `UString::SetStartLen` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
     # `UString::UString (const UString &s)`: `SetStartLen (s._len)` (the `call` at 0x13 to `usl`), then a tail jump
