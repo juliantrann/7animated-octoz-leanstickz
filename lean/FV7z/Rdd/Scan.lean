@@ -8,7 +8,8 @@ From 80, the entry at offset `k` (`r8 + r14` = `p + 48 + k`): `d_reclen` added t
 - `LR`, `LM`: the registers and the bytes in the loop (at 80 and 109), the offset `k`, the size `n`.
 - `dst`: a store into the `DIR`'s first 48 bytes keeps `RSv`, `RFr` and the buffer; `st80`: the two stores at 80.
 - `bufR`, `rlB`, `Ch.inv`, `rcl_rl`: reads in the buffer, `d_reclen` through stores, a chain's first entry.
-- `n80`: `d_ino` not 0, to `RddK`; `z80`: `d_ino` 0, to the state at 109 with the offset past the entry.
+- `n80`: `d_ino` not 0, to `RddK`; `z80`: `d_ino` 0, to the state at 109 with the offset past the entry (there the
+  offset in memory is the one in `rdx`: `Dir … n k`).
 -/
 open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn FV7z.Close
 open FV7z.Tun (rd_Vst rd_Vst_self Vst_out)
@@ -26,11 +27,12 @@ structure LR (S p : Addr) (g0 : Gprs) (n : Nat) (g : Gprs) : Prop where
   r15 : g.r15 = g0.r15
   ax : g.rax.toNat = n
 
-/-- The bytes in the loop: the saved registers, the rest as in `V₀`, the `DIR` locked, a chain from `k` to `n`. -/
+/-- The bytes in the loop: the saved registers, the rest as in `V₀`, the `DIR` locked with the size `n` (the offset
+in memory is stale after `getdents`: 80 stores it), a chain from `k` to `n`. -/
 structure LM (S p fb : Addr) (A : Nat) (g0 : Gprs) (V₀ W : Addr → Byte) (n k : Nat) : Prop where
   sv : RSv S g0 W
   fr : RFr S p fb A V₀ W
-  dir : Dir W p A 1#32 n k
+  dir : ∃ k', Dir W p A 1#32 n k'
   ch : Ch W p n k
 
 /-- A store into the `DIR`'s first 48 bytes keeps the saved registers, the bytes outside the `DIR`, the buffer. -/
@@ -107,7 +109,7 @@ theorem bufR (w : Nat) {V V' : Addr → Byte} {j m : Nat} (hpA : p.toNat + 48 + 
       ofBytesLE w (List.map V (byteAddrs (Addr.add p (48 + j)) m)) := by
   have hx := toNat_add_of_fits (a := p) (i := 48 + j) (n := 48 + j + 1) (by omega) (by omega)
   refine rdE w (by omega) fun a x1 x2 => ?_
-  rw [Opd.fa (B := p) (d := 48 + (a.toNat - p.toNat - 48)) (by omega) (by omega)]
+  rw [Opd.fa (B := p) (x := a) (d := 48 + (a.toNat - p.toNat - 48)) (by omega) (by omega)]
   exact hb _ (by omega)
 
 /-- `d_reclen` through bytes that agree on the buffer. -/
@@ -164,7 +166,8 @@ theorem post80 {g0 : Gprs} {V₀ W : Addr → Byte} {g : Gprs} {Z : State} {n k 
     ∃ W' : Addr → Byte, Agree F Z.proc.mm.mem W' ∧ RSv S g0 W' ∧ RFr S p fb A V₀ W' ∧
       Dir W' p A 1#32 n (k + rl W p k) ∧ (∀ i < A, W' (p.add (48 + i)) = W (p.add (48 + i))) ∧
       (gB W g).rdx.toNat = k + rl W p k := by
-  have hnA := M.dir.nA
+  obtain ⟨k₁, hD⟩ := M.dir
+  have hnA := hD.nA
   have hA31 := C.hA
   obtain ⟨-, hkn, -⟩ := M.ch.inv hk
   have hv : (g.rdx + rcl W g).toNat = k + rl W p k := by
@@ -174,7 +177,7 @@ theorem post80 {g0 : Gprs} {V₀ W : Addr → Byte} {g : Gprs} {Z : State} {n k 
       (toBytesLE rdq(W, g.r8 + g.r14 + 8#64) 8) := by
     show Vst (Vst W (g.r14 + 24#64) _) (g.r14 + 32#64) _ = _
     rw [R.di]
-  obtain ⟨s1, r1, d1, b1⟩ := st80 rdq(W, g.r8 + g.r14 + 8#64) C M.sv M.fr M.dir hv
+  obtain ⟨s1, r1, d1, b1⟩ := st80 rdq(W, g.r8 + g.r14 + 8#64) C M.sv M.fr hD hv
   refine ⟨_, ?_, s1, r1, d1, b1, hv⟩
   rw [← e1]
   exact hA
@@ -198,7 +201,8 @@ theorem n80 {g0 : Gprs} {V₀ W : Addr → Byte} {Y : State} {t : Nat} {tr : Lis
     (K : RddK prof F Wl L o gP gE S p fb A g0 V₀ e₂ j₂ gev) :
     GoG prof L o tr gP gE Y t := by
   have hpA := C.hpA
-  have hnA := M.dir.nA
+  obtain ⟨-, hD⟩ := M.dir
+  have hnA := hD.nA
   obtain ⟨⟨h18, -⟩, hkn, -⟩ := M.ch.inv hk
   obtain ⟨f0, f8, f16, w24, w32⟩ := ft80 c.hws C R.di he (by omega)
   refine (c_80 prof fb).run c hfs hin _ hK hA hrip
@@ -222,9 +226,10 @@ theorem z80 {g0 : Gprs} {V₀ W : Addr → Byte} {Y : State} {t : Nat} {tr : Lis
     (hz : rdq(W, Addr.add p (48 + k)) = 0#64)
     (ih : ∀ (Y' : State) (W' : Addr → Byte) (t' : Nat), KeptW Wl s₀ Y' → Agree F Y'.proc.mm.mem W' →
       Y'.cpu.rip = rdd_at.add 109 → LR S p g0 n Y'.cpu.gpr → LM S p fb A g0 V₀ W' n (k + rl W p k) →
-      Y'.cpu.gpr.rdx.toNat = k + rl W p k → GoG prof L o tr gP gE Y' t') :
+      Dir W' p A 1#32 n (k + rl W p k) → Y'.cpu.gpr.rdx.toNat = k + rl W p k → GoG prof L o tr gP gE Y' t') :
     GoG prof L o tr gP gE Y t := by
-  have hnA := M.dir.nA
+  obtain ⟨-, hD⟩ := M.dir
+  have hnA := hD.nA
   obtain ⟨⟨h18, -⟩, hkn, hch⟩ := M.ch.inv hk
   obtain ⟨f0, f8, f16, w24, w32⟩ := ft80 c.hws C R.di he (by omega)
   refine (c_80 prof fb).run c hfs hin _ hK hA hrip
@@ -233,7 +238,6 @@ theorem z80 {g0 : Gprs} {V₀ W : Addr → Byte} {Y : State} {t : Nat} {tr : Lis
   subst V₁
   obtain ⟨W', hA', s1, r1, d1, b1, hdx'⟩ := post80 C R M hk he hdx hA₁
   exact ih Y₁ W' t₁ hK₁ hA' hr₁ (by rw [hg₁]; exact R.gB W)
-    ⟨s1, r1, d1, Ch.congr (fun i hi => b1 i (by omega)) hch⟩
-    (by rw [hg₁]; exact hdx')
+    ⟨s1, r1, ⟨_, d1⟩, Ch.congr (fun i hi => b1 i (by omega)) hch⟩ d1 (by rw [hg₁]; exact hdx')
 
 end FV7z.Rdd
