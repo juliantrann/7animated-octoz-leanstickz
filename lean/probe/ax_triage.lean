@@ -1,5 +1,3 @@
-import FV7z.Apl.Ok
-import FV7z.Upl.Ok
+import FV7z.Upe.Ok
 open FV7z
-#print axioms FV7z.Apl.apl_acs
-#print axioms FV7z.Upl.upl_uc4
+#print axioms FV7z.Upe.upe_ugr
