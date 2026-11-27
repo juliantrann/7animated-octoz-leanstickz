@@ -150,24 +150,24 @@ theorem rm_fin {r : Res} {a b : Nat} (h : fin k (Z2 g₀) (Z4 g₀) r = (a, b)) 
   try rfl
 
 theorem rm_e1 {e : Nat} (h : Z2 g₀ = true) : Rm g₀ V₀ n k (.err e) = 1 + Ct g₀ V₀ n (k + 1 + e) :=
-  rm_fin (by show (1, bif Z2 g₀ then k + 1 + e else k + 1) = _; rw [h, cond_true])
+  rm_fin (by show (1, bif Z2 g₀ then k + 1 + e else k + 1) = _; rw [h, Bool.cond_true])
 theorem rm_e2 {e : Nat} (h : Z2 g₀ = false) : Rm g₀ V₀ n k (.err e) = 1 + Ct g₀ V₀ n (k + 1) :=
-  rm_fin (by show (1, bif Z2 g₀ then k + 1 + e else k + 1) = _; rw [h, cond_false])
+  rm_fin (by show (1, bif Z2 g₀ then k + 1 + e else k + 1) = _; rw [h, Bool.cond_false])
 theorem rm_esc {d : BitVec 32} {e : Nat} (h : (!Z4 g₀ && esc d) = true) :
     Rm g₀ V₀ n k (.ok d e) = 1 + Ct g₀ V₀ n (k + 1) :=
   rm_fin (by
     show (bif !Z4 g₀ && esc d then (1, k + 1) else bif big d then (2, k + 1 + e) else (1, k + 1 + e)) = _
-    rw [h, cond_true])
+    rw [h, Bool.cond_true])
 theorem rm_ok2 {d : BitVec 32} {e : Nat} (h : (!Z4 g₀ && esc d) = false) (hb : big d = true) :
     Rm g₀ V₀ n k (.ok d e) = 2 + Ct g₀ V₀ n (k + 1 + e) :=
   rm_fin (by
     show (bif !Z4 g₀ && esc d then (1, k + 1) else bif big d then (2, k + 1 + e) else (1, k + 1 + e)) = _
-    rw [h, cond_false, hb, cond_true])
+    rw [h, Bool.cond_false, hb, Bool.cond_true])
 theorem rm_ok1 {d : BitVec 32} {e : Nat} (h : (!Z4 g₀ && esc d) = false) (hb : big d = false) :
     Rm g₀ V₀ n k (.ok d e) = 1 + Ct g₀ V₀ n (k + 1 + e) :=
   rm_fin (by
     show (bif !Z4 g₀ && esc d then (1, k + 1) else bif big d then (2, k + 1 + e) else (1, k + 1 + e)) = _
-    rw [h, cond_false, hb, cond_false])
+    rw [h, Bool.cond_false, hb, Bool.cond_false])
 
 /-! The inner loop's steps in `Ib`'s form. -/
 variable {j m e : Nat} {d : BitVec 32}
