@@ -324,7 +324,9 @@ theorem rdd_ok {V₀ : Addr → Byte} {X : State} {t : Nat} {n k : Nat} {e₂ : 
       bx := (congrArg Gprs.rbx hg₃).trans (congrArg (fun x : Addr => x + 48#64) r14₂)
       bp := (congrArg Gprs.rbp hg₃).trans ((congrArg Gprs.rbp hg₂).trans (congrArg Gprs.rbp hg₁))
       di := (congrArg Gprs.r14 hg₃).trans r14₂
-      r15 := (congrArg Gprs.r15 hg₃).trans ((congrArg Gprs.r15 hg₂).trans (congrArg Gprs.r15 hg₁))
+      r15 := by
+        have h := (congrArg Gprs.r15 hg₃).trans ((congrArg Gprs.r15 hg₂).trans (congrArg Gprs.r15 hg₁))
+        exact h
       ax := by rw [a3]; exact D₁.sz }
   exact scan (g0 := X.cpu.gpr) (V₀ := V₀) (tr := gev) (n := n) c hfs hrs hin C (Or.inl rfl) hmt0 hin₂ h₂ hra K
     (fun Y W t hK hA hr R M hD hdx => rdd_gd c hfs hrs hin hinG C hK hA hr R M hD hdx hni hmt0 hin₂ h₂ hra K)
