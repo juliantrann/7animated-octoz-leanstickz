@@ -10,7 +10,7 @@ those of `Ugr.ugr_ok` at that state: the throw stub (`gkt`) and the tail jump to
 and the return address, read through the three stores of `Wb`), and `hP1` gives `P1` there. The second call, to
 `wmemcpy` (`k2`), stays a hypothesis.
 -/
-open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn
+open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn FV7z.Fr24
 namespace FV7z.Upe
 
 theorem e24 (s : BitVec 64) : s - 32 + 8 = s - 24 := by bv_omega
