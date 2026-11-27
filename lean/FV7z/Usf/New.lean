@@ -11,7 +11,7 @@ by `Onw.onw_pnW`, with `Mal.MalB (4 n + 4) B`, `Mal.Hp` with a top of at least `
 open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn
 open FV7z.Imm (imm imm_at)
 open FV7z.Mnx (mnx mnx_at)
-open FV7z.Uau (zl)
+open FV7z.Uau (zl VB)
 namespace FV7z.Usf
 
 variable {F : Footprint} {Wl : List Rgn} {prof : Profile} {L : List (Addr × List Byte)} {s₀ : State} {o : Oracle}
@@ -155,7 +155,8 @@ theorem usf_okH {Pd : State → State → (Addr → Byte) → Prop} {Pw : State 
       (by rw [tn48]; omega), ofBytesLE_toBytesLE (by rfl : (64 : Nat) = 8 * 8)]
   refine Onw.onw_pnW (B := B) (m := m) (n := 4 * (lnd X.cpu.gpr).toNat + 4) c hfs hinN hinM
     hinI hKY hAY hrY hH' (by rw [hYd]; exact hz) (by omega) (by rw [hYd]; exact hB) (by rw [hYt]; omega)
-    (by rw [hYt]; omega) (fun a h1 h2 => hsw a h1 (by rw [hYt] at h2; omega)) hin (j := 108) (by decide) hra' ?_
+    (by rw [hYt]; omega) (fun a h1 h2 => hsw a h1 (by rw [hYt] at h2; omega)) hin (j := 108) (lt_len
+        (by decide)) hra' ?_
   intro Z V₂ t'' hKZ hAZ hrZ zsp zbx zbp _ _ _ _ hP
   rw [hYt] at hP
   have zsp' : Z.cpu.gpr.rsp = X.cpu.gpr.rsp - 40 := by

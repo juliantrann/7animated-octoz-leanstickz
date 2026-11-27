@@ -136,7 +136,7 @@ theorem ur2_okH {Pd : State → State → (Addr → Byte) → Prop}
       (by rw [tn32]; omega), ofBytesLE_toBytesLE (by rfl : (64 : Nat) = 8 * 8)]
   refine Onw.onw_pnW (B := B) (m := m) (n := 4 * (BitVec.setWidth 32 X.cpu.gpr.rsi).toNat + 4) c hfs hinN hinM
     hinI hKY hAY hrY hH' (by rw [hYd]; exact hz) (by omega) (by rw [hYd]; exact hB) (by rw [hYt]; omega)
-    (by rw [hYt]; omega) (fun a h1 h2 => hsw a h1 (by rw [hYt] at h2; omega)) hin (j := 40) (by decide) hra' ?_
+    (by rw [hYt]; omega) (fun a h1 h2 => hsw a h1 (by rw [hYt] at h2; omega)) hin (j := 40) (lt_len (by decide)) hra' ?_
   intro Z V₂ t'' hKZ hAZ hrZ zsp zbx zbp _ _ _ _ hP
   rw [hYt] at hP
   have hsv : Sv (VN V X.cpu.gpr) X.cpu.gpr (e₂.add j₂) := Ura.sv3 (by omega) hp8 hra
