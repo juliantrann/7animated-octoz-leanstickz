@@ -15,10 +15,10 @@ words from the old top up and the block, so the string is as it was (`Mal.keep_l
   the heap's words, the block and `_chars` and from the return address up as at the entry.
 - `acc_okH`: `acc_ok` with `Asl.kf_hpW`.
 
-Status (2026-11-26): written, not built yet, and not imported in `FV7z.lean`. Next: add `import FV7z.Acc.New` after
-`FV7z.Acs.New`, triage `FV7z.Acc.New -- FV7z.Acc.acc_okH`. Then `FV7z/Acp/New.lean` (`acp_okH`) the same way: `Acp`'s
-`Pk` reads the source at `rdq(V, g.rsi)`, so `hsT` is on that pointer, and `Acp.V0`/`gY` replace `Acc.V0`. After that,
-`…okH` wrappers for the other callers of `operator new` (`Ctor.*`, `Rdn`'s `ReserveDown`, `Ucw`/`Uau`/`Ucn`).
+Status (2026-11-27): built and axioms clean (kt2702, run 45948639733), imported after `FV7z.Sfn.Mem`; `Acp.acp_okH`
+(`FV7z/Acp/New.lean`) the same way. The other callers of `operator new`: `Ucw.ucw_okH`, `Ucn.ucn_okH`,
+`Uau.uau_okH` (kt2703, kt2704), `Ura`/`Ur2`/`Usf` by `Onw.onw_pnW` (`FV7z/OnwP.lean`). `Ctor.*` calls it through
+`Nst.nst_ok` with `operator new` run inline; there is no module yet for `ReserveDown`.
 -/
 open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn FV7z.Mys
 open FV7z.Imm (imm imm_at)
@@ -139,12 +139,13 @@ theorem acc_okH {fb : Addr} {hi m B n : Nat} (c : Seg prof F Wl L s₀ o) (hfs :
   rw [hGn, hsn] at hpe hft hPm
   rw [hGs, hGd, tn32] at hfr
   -- the bytes after `operator new` from `SetStartLen`'s return address up
-  have hVr : ∀ a : Addr, X.cpu.gpr.rsp.toNat - 32 ≤ a.toNat →
-      V' a = Vst (V0 V X.cpu.gpr) (X.cpu.gpr.rsp - 32) (toBytesLE (acc_at.add 52) 8) a := fun a ha =>
+  have hVr : ∀ a : Addr, X.cpu.gpr.rsp.toNat - 32 ≤ a.toNat → a.toNat < X.cpu.gpr.rsp.toNat + 8 →
+      V' a = Vst (V0 V X.cpu.gpr) (X.cpu.gpr.rsp - 32) (toBytesLE (acc_at.add 52) 8) a := fun a ha hb =>
     hfr a (.inr (.inr ha)) (by omega)
   have hb1 : rdq(V', X.cpu.gpr.rsp - 16) = X.cpu.gpr.rbx := by
     rw [Sbrk.rd_eq (V := Vst (V0 V X.cpu.gpr) (X.cpu.gpr.rsp - 32) (toBytesLE (acc_at.add 52) 8))
-      (x := X.cpu.gpr.rsp - 16) (n := 8) (by rw [tn16]; omega) fun a a1 _ => hVr a (by rw [tn16] at a1; omega)]
+      (x := X.cpu.gpr.rsp - 16) (n := 8) (by rw [tn16]; omega) fun a a1 a2 =>
+      hVr a (by rw [tn16] at a1; omega) (by rw [tn16] at a2; omega)]
     rw [Tun.rd_Vst (V0 V X.cpu.gpr) (X.cpu.gpr.rsp - 32) (toBytesLE (acc_at.add 52) 8) (X.cpu.gpr.rsp - 16) 8
       (by rw [l8, tn32]; omega) (by rw [tn16]; omega) (by rw [l8, tn32, tn16]; omega)]
     rw [← e16, Tun.rd_Vst_self (Vst V (X.cpu.gpr.rsp - 8) (toBytesLE X.cpu.gpr.rbp 8)) (X.cpu.gpr.rsp - 8 - 8)
@@ -152,7 +153,8 @@ theorem acc_okH {fb : Addr} {hi m B n : Nat} (c : Seg prof F Wl L s₀ o) (hfs :
       ofBytesLE_toBytesLE (by rfl : (64 : Nat) = 8 * 8)]
   have hb2 : rdq(V', X.cpu.gpr.rsp - 8) = X.cpu.gpr.rbp := by
     rw [Sbrk.rd_eq (V := Vst (V0 V X.cpu.gpr) (X.cpu.gpr.rsp - 32) (toBytesLE (acc_at.add 52) 8))
-      (x := X.cpu.gpr.rsp - 8) (n := 8) (by rw [tn8]; omega) fun a a1 _ => hVr a (by rw [tn8] at a1; omega)]
+      (x := X.cpu.gpr.rsp - 8) (n := 8) (by rw [tn8]; omega) fun a a1 a2 =>
+      hVr a (by rw [tn8] at a1; omega) (by rw [tn8] at a2; omega)]
     rw [Tun.rd_Vst (V0 V X.cpu.gpr) (X.cpu.gpr.rsp - 32) (toBytesLE (acc_at.add 52) 8) (X.cpu.gpr.rsp - 8) 8
       (by rw [l8, tn32]; omega) (by rw [tn8]; omega) (by rw [l8, tn32, tn8]; omega)]
     rw [Tun.rd_Vst (Vst V (X.cpu.gpr.rsp - 8) (toBytesLE X.cpu.gpr.rbp 8)) (X.cpu.gpr.rsp - 8 - 8)
@@ -162,7 +164,7 @@ theorem acc_okH {fb : Addr} {hi m B n : Nat} (c : Seg prof F Wl L s₀ o) (hfs :
       ofBytesLE_toBytesLE (by rfl : (64 : Nat) = 8 * 8)]
   have hr : rdq(V', X.cpu.gpr.rsp) = e₂.add j₂ := by
     rw [Sbrk.rd_eq (V := Vst (V0 V X.cpu.gpr) (X.cpu.gpr.rsp - 32) (toBytesLE (acc_at.add 52) 8))
-      (x := X.cpu.gpr.rsp) (n := 8) hp8 fun a a1 _ => hVr a (by omega)]
+      (x := X.cpu.gpr.rsp) (n := 8) hp8 fun a a1 a2 => hVr a (by omega) (by omega)]
     rw [Sbrk.rd_eq (V := V) (x := X.cpu.gpr.rsp) (n := 8) hp8 fun a a1 _ => hVa a (.inr a1)]
     exact hra
   -- the string, below the old top plus 8 (`Mal.keep_low`)
