@@ -283,8 +283,9 @@ theorem vc_56e {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (hr : g.r
     (hb : (decide (g.rdi.toNat < 99) || decide (g.rdi = 99#64)) = true)
     (hw : ∀ i < 1, Foot Wl (Addr.add (g.r9 + (g.r8 + 1#64)) i)) (hw' : ∀ i < 1, Foot Wl (Addr.add g.rsi i)) :
     W_56 fb F Wl (fun j' g' _ V' => j' = 131 ∧
-      (∃ c di, g' = { g with rax := g.rsi + 1#64, rcx := c, rdx := g.r9 + (g.r8 + 1#64), r8 := g.r8 + 1#64,
-        rdi := di, rsi := g.rsi + 1#64 }) ∧
+      (∃ c di, g' = { g with
+          rax := g.rsi + 1#64, rcx := c, rdx := g.r9 + (g.r8 + 1#64), r8 := g.r8 + 1#64, rdi := di,
+          rsi := g.rsi + 1#64 }) ∧
       (∃ bs bs', V' = Vst (Vst V (g.r9 + (g.r8 + 1#64)) bs) g.rsi bs' ∧ bs.length = 1 ∧ bs'.length = 1)) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at hr hb hw hw' ⊢
