@@ -132,7 +132,7 @@ theorem ucw_okH {fb : Addr} {hi m B n : Nat} (c : Seg prof F Wl L s₀ o) (hfs :
     (fun a h1 h2 => hsw a h1 (by rw [hYt] at h2; omega)) (by rw [hYs]; exact hl4)
     (by rw [hYd]; exact fw0) (by rw [hYd]; exact fw8) (by rw [hYd]; exact fw12) (by rw [hYd]; exact hqd)
     (by rw [hYd, hYt]; omega) (by rw [hYd]; exact hdh) hin (j₂ := 60) (by decide) hra ?_
-  intro Z V' Z' t'' h12 hp1 hp2 hft hHp hfr hKZ' hAZ' hrZ' hgZ'
+  intro Z V' Z' t'' h12 _ hp1 hp2 hft hHp hfr hKZ' hAZ' hrZ' hgZ'
   rw [hYd] at hHp hAZ'
   rw [hYn] at hp2 hft
   rw [hYd] at hfr
