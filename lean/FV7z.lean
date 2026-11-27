@@ -542,6 +542,8 @@ import FV7z.Rdd.Ok
 import FV7z.Rdd.Scan
 import FV7z.Rdd.Gd
 import FV7z.Rdd.Loop
+import FV7z.Rdd.Br
+import FV7z.Rdd.Main
 import FV7z.Wmc.Holds
 import FV7z.Tiny.Plt
 import FV7z.Tiny.Tj
