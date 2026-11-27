@@ -11,6 +11,7 @@ The cut points with nested tests (names as in `Stl/Vc1.lean`):
 - `vc_604`: a `0` without `x`: base 10 to 216, else to 223 (`ecx = '0'`), `[rsp + 18]` the cut digit.
 - `vc_390`: overflow (`r9d ≠ 0`): `errno = ERANGE`, to 448; else the sign's `cmov` (on `rax` alone: `ite_mk0`), the
   pops, to the `ret` (429).
+- `vc_296z`: the digit loop at the NUL (`CB[0]` not a letter), to 368.
 - `vc_748z`, `vc_748s`, `vc_748l`: no digits. `E = 0`: to 927. Else (`k = rdi - r13`) `k ≤ 1` (`jle`) to 790;
   `k ≥ 2`: a `0x` before (`CU[p[k - 1]] = 88`, `p[k - 2] = '0'`) stores `rdi - 1` at `E`, to 927; else 790.
 -/
@@ -141,5 +142,16 @@ theorem vc_748l {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (hn : ¬
   dsimp only [Cu, rb] at hn fE wE hk fm1 fm2 fU fUe ⊢
   stlx +contextual [W_748, W_760, W_772, W_909, W_915, o43, o44, o45, o50, o51, hn, fE, wE, hk, fm1, fm2, fU,
     fUe]
+
+set_option maxHeartbeats 2000000 in
+/-- The digit loop at the NUL (`rcx = 0`, and `CB[0]` says not a letter): to 368. -/
+theorem vc_296z {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (hz : g.rcx = 0#64) (hbp : g.rbp = 0#64)
+    (fC : ∀ i < 1, Foot F.data (Addr.add (g.r11 + 1#64) i)) (ha : (rb V (g.r11 + 1#64) &&& 4#8 == 0) = true) :
+    W_296 fb F Wl (fun j g' _ V' => j = 368 ∧ V' = V ∧ Lg g g' ∧ g'.rdi = g.rdi) g f V := by
+  obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
+  dsimp only [Lg, rb] at hz hbp fC ha ⊢
+  subst hz
+  stlx +contextual [W_296, W_305, W_314, W_317, W_325, o20, o21, o22, o23, o24, BitVec.zero_mul, BitVec.add_zero,
+    hbp, fC, ha]
 
 end FV7z.Stl
