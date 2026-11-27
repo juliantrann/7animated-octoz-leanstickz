@@ -226,7 +226,7 @@ theorem fin176 {g0 : Gprs} {V₀ W : Addr → Byte} {Y : State} {t : Nat} {tr : 
       rdq(Vst W (p + 4#64) (toBytesLE 0#32 4), x) = rdq(W, x) := fun x d hd hx => by
     rw [rd_Vst W (p + 4#64) (toBytesLE 0#32 4) x 8 (by rw [toBytesLE_length]; omega) (by omega)
       (by rw [toBytesLE_length, t4, hx]; omega)]
-  have r8e : Y₂.cpu.gpr.r8 = Y.cpu.gpr.r8 := congrArg Gprs.r8 g2
+  have r8e : Y₂.cpu.gpr.r8 = Y.cpu.gpr.r8 := by rw [g2]
   refine K s₀ Z tr _ t' c hfs hrs hKZ hAZ hrZ (by rw [gZ]; exact z1) (by
     unfold Opd.Keeps
     exact ⟨by rw [gZ, z3, sp2, sl (S - 8 - 8 - 8 - 8 - 8) 0 (by omega) (by rw [b5]; omega)]; exact hsv.1,
