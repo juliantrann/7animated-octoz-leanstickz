@@ -578,6 +578,14 @@ FNS = {
     "stu": dict(grp="Stu", cn="ConvertStringToUInt64", a=0x451330, n=0x7c, pos=True, stops=(0x55, 0x68, 0x77),
                 tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `ConvertStringToUInt64` (`CPP/Common/StringToInt.cpp`; `objdump -d`)"),
+    # 7-Zip's CPP/Common/IntToString.cpp `ConvertUInt64ToString (UInt64 val, char *s)`: a value to `0xffffffff` by a
+    # tail jump to `ConvertUInt32ToString` (0xc4), else the digits from the last into a stack buffer (0x38, `x / 10`
+    # by `mul` with `0xcccccccccccccccd` and `shr 3`), the first at `s`, the others copied out in reverse (0x80); the
+    # stack guard (`fs:0x28`). Stops: the `ret` (0xac), the tail jump (0xc4), `__stack_chk_fail` (0xc9).
+    "c64": dict(grp="C64", cn="ConvertUInt64ToString", a=0x44ac30, n=206, pos=True, fs=True, stops=(0xac, 0xc4, 0xc9),
+                cut=(146, 176),
+                tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `ConvertUInt64ToString` (`CPP/Common/IntToString.cpp`; `objdump -d`)"),
     # 7-Zip's CPP/Common/IntToString.cpp `ConvertUInt32ToString (UInt32, char *)`: one digit at once (0x21), or the
     # digits from the last into a stack buffer (0x58, `x / 10` by `0xcccccccd` and `shr 35`), then copied out in
     # reverse (0x98); the stack guard (`fs:0x28`). Stops: the `ret` (0x42), `__stack_chk_fail` (0xb2).
@@ -737,6 +745,12 @@ FNS = {
     "ucn": dict(grp="Ucn", cn="UString::UString(unsigned, const wchar_t*)", a=0x44d1c0, n=122, pos=True, stops=(0x69,),
                 calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip's `UString::UString (unsigned, const wchar_t *)` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
+    # `UString::SetFrom (s, len)`: for `len` above `_limit` (0x17) the throw stub above `0x3ffffffe` (0x56, by hand),
+    # else `newBuf = new wchar_t[len + 1]` (0x67), `delete [] _chars` unless null (0x78), `_chars = newBuf`, `_limit =
+    # len`; then `wmemcpy (_chars, s, len)` unless `len` = 0 (0x2c), `_chars[len] = 0`, `_len = len`; `ret` (0x48).
+    "usf": dict(grp="Usf", cn="UString::SetFrom", a=0x44d790, n=134, pos=True, stops=(0x48,), calls=True,
+                hand=(0x56,), tag="PLAN.md §M, M1",
+                src="7-Zip's `UString::SetFrom (const wchar_t *, unsigned)` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
     # CPP/UI/Common/EnumDirItems.cpp `CDirItems::ScanProgress (dirPath)`: without a `Callback` (at 0xc0) 0, else a tail
     # jump to `Callback->ScanProgress (Stat, false, dirPath)` (`Stat` at 0x48), its vtable's second entry. Stops: the
     # `jmp rax` (0x26) and the `ret` (0x32).
