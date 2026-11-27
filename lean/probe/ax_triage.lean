@@ -1,5 +1,3 @@
-import FV7z.Ug1.Holds
-import FV7z.Ugr.Holds
+import FV7z.Pvu.Holds
 open FV7z
-#print axioms FV7z.Ug1.ug1_ok
-#print axioms FV7z.Ugr.ugr_ok
+#print axioms FV7z.Pvu.pvu_ok
