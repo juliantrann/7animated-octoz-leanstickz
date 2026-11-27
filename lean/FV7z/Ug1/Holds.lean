@@ -161,7 +161,7 @@ theorem ug1_ok (c : Seg prof F Wl L s₀ o) (hin : CodeIn L ug1_at ug1) (hinR : 
           (BitVec.setWidth 32 (BitVec.setWidth 64 rdd(V, X.cpu.gpr.rdi + 8#64))))
       hKY hAY hrY (by rw [hgY]; exact vc_42 ⟨rfl, rfl, rfl, rfl⟩) ?_
     rintro j' g fl V₁ ⟨rfl, hg, hV, hfl⟩ Y₂ t₂ hK₂ hA₂ hr₂ hg₂ hf₂
-    subst g V₁ fl
+    subst hg hfl; subst V₁
     refine c.s_jcc_x hK₂ hA₂ hin (lt_len (by decide)) hr₂ (jbe_44 _) hinT (tgt := 0) hT tgt_44 ?_ ?_
     · intro hc
       rintro Y₃ t₃ hK₃ hA₃ ⟨hr₃, hg₃⟩
@@ -181,7 +181,7 @@ theorem ug1_ok (c : Seg prof F Wl L s₀ o) (hin : CodeIn L ug1_at ug1) (hinR : 
           V' = V)
         hK₃ hA₃ hr₃ (by rw [hg₃, hg₂]; exact vc_50 fun _ => ⟨rfl, gq_back V X.cpu.gpr n d, rfl⟩) ?_
       rintro j' g fl V₁ ⟨rfl, hg, hV⟩ Y₄ t₄ hK₄ hA₄ hr₄ hg₄ -
-      subst g V₁
+      subst hg; subst V₁
       refine c.s_jmp_x hK₄ hA₄ hin (lt_len (by decide)) hr₄ (jmp_54 _) hinR (Ura.lt_len (j := 0) (by decide))
         (by decide) ?_
       rintro Y₅ t₅ hK₅ hA₅ ⟨hr₅, hg₅⟩
@@ -197,13 +197,13 @@ theorem ug1_ok (c : Seg prof F Wl L s₀ o) (hin : CodeIn L ug1_at ug1) (hinR : 
   rintro j' g fl V₁ ⟨hV₁, h⟩ Y t₁ hKY hAY hrY hgY -
   subst V₁
   rcases h with ⟨rfl, d, s, hg⟩ | ⟨rfl, d, n, hn, hg⟩
-  · subst g
+  · subst hg
     refine (c_37 prof).run c hin (fun j' g' _ V' => j' = 42 ∧ g' = gq V X.cpu.gpr 1073741822#32 d ∧ V' = V)
       hKY hAY hrY (by rw [hgY]; exact vc_37 fun _ => ⟨rfl, rfl, rfl⟩) ?_
     rintro j' g fl V₁ ⟨rfl, hg, hV⟩ Y₂ t₂ hK₂ hA₂ hr₂ hg₂ -
-    subst g V₁
+    subst hg; subst V₁
     exact k42 d 1073741822#32 (by decide) Y₂ t₂ hK₂ hA₂ hr₂ hg₂
-  · subst g
+  · subst hg
     exact k42 d n hn Y t₁ hKY hAY hrY hgY
 
 end FV7z.Ug1
