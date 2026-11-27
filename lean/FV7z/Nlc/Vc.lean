@@ -82,7 +82,8 @@ theorem vc_0n {T : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (hz : (g.rs
     (h1 : ∀ i < 8, Foot Wl (Addr.add (g.rsp - 8) i)) (h2 : ∀ i < 8, Foot Wl (Addr.add (g.rsp - 8 - 8) i))
     (h3 : ∀ i < 8, Foot Wl (Addr.add (g.rsp - 8 - 8 - 8) i)) (f1 : ∀ i < 8, Foot F.data (Addr.add 7935176#64 i)) :
     W_0 F Wl (fun j' g' _ V' => j' = 48 ∧ V' = fr3 V g.rsp g.r12 g.rbp g.rbx ∧
-      g' = { g with rsp := g.rsp - 8 - 8 - 8, rbx := T, rbp := g.rdi, r12 := g.rsi, rdx := g.rdi,
+      g' = { g with
+        rsp := g.rsp - 8 - 8 - 8, rbx := T, rbp := g.rdi, r12 := g.rsi, rdx := g.rdi,
         r8 := g.rsi + g.rdi, r9 := 0#64, rsi := 1#64, rdi := 0#64 }) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at hz hS d1 h1 h2 h3 ⊢
@@ -109,7 +110,8 @@ theorem vc_48d {g : Gprs} {f : Rflags} {V : Addr → Byte}
     (fc : ∀ i < 1, Foot F.data (Addr.add g.rdx i))
     (ft : ∀ i < 1, Foot F.data (Addr.add (g.rbx + zb (rb V g.rdx) * 2#64) i)) :
     W_48 F Wl (fun j' g' _ V' => j' = 74 ∧ V' = V ∧
-      g' = { g with rcx := zb (rb V g.rdx), rax := (d32 (rb V g.rdx)).setWidth 64, rdi := g.rdi + 1#64,
+      g' = { g with
+        rcx := zb (rb V g.rdx), rax := (d32 (rb V g.rdx)).setWidth 64, rdi := g.rdi + 1#64,
         rsi := (g.rsi.setWidth 32).setWidth 64 }) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only [rb, zb, d32] at hb hd fc ft ⊢
@@ -123,7 +125,8 @@ theorem vc_48x {g : Gprs} {f : Rflags} {V : Addr → Byte}
     (fc : ∀ i < 1, Foot F.data (Addr.add g.rdx i))
     (ft : ∀ i < 1, Foot F.data (Addr.add (g.rbx + zb (rb V g.rdx) * 2#64) i)) :
     W_48 F Wl (fun j' g' _ V' => j' = 74 ∧ V' = V ∧
-      g' = { g with rcx := zb (rb V g.rdx), rax := (d32 (rb V g.rdx)).setWidth 64, rdi := g.rdi + 1#64,
+      g' = { g with
+        rcx := zb (rb V g.rdx), rax := (d32 (rb V g.rdx)).setWidth 64, rdi := g.rdi + 1#64,
         rsi := (g.r9.setWidth 32).setWidth 64 }) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only [rb, zb, d32] at hb hd fc ft ⊢
@@ -263,7 +266,8 @@ theorem vc_140dl {g : Gprs} {f : Rflags} {V : Addr → Byte} (ha : (rb V (ca V g
     (fc : ∀ i < 1, Foot F.data (Addr.add (g.rbp + g.rdx) i)) (fa : ∀ i < 1, Foot F.data (Addr.add (ca V g) i))
     (w : ∀ i < 1, Foot Wl (Addr.add g.rax i)) :
     W_140 F Wl (fun j' g' _ V' => j' = 140 ∧ V' = Vst V g.rax (toBytesLE (cn V g) 1) ∧
-      g' = { g with rdi := zb (cn V g), rsi := (d32 (cn V g)).setWidth 64, rdx := g.rdx + 1#64,
+      g' = { g with
+        rdi := zb (cn V g), rsi := (d32 (cn V g)).setWidth 64, rdx := g.rdx + 1#64,
         rax := g.rax + 1#64 }) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only [cn, ca, d32, rb, zb] at ha hd hl fc fa w ⊢
@@ -285,7 +289,8 @@ theorem vc_140de {g : Gprs} {f : Rflags} {V : Addr → Byte} (ha : (rb V (ca V g
     (fc : ∀ i < 1, Foot F.data (Addr.add (g.rbp + g.rdx) i)) (fa : ∀ i < 1, Foot F.data (Addr.add (ca V g) i))
     (w : ∀ i < 1, Foot Wl (Addr.add g.rax i)) :
     W_140 F Wl (fun j' g' _ V' => j' = 180 ∧ V' = Vst V g.rax (toBytesLE (cn V g) 1) ∧
-      g' = { g with rdi := zb (cn V g), rsi := (d32 (cn V g)).setWidth 64, rdx := g.rdx + 1#64,
+      g' = { g with
+        rdi := zb (cn V g), rsi := (d32 (cn V g)).setWidth 64, rdx := g.rdx + 1#64,
         rax := g.rax + 1#64 }) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only [cn, ca, d32, rb, zb] at ha hd hl fc fa w ⊢
