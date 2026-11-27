@@ -47,7 +47,7 @@ theorem vc_0 {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post}
     (h40 : ∀ fl, Q 40 g fl V) (h28 : ∀ fl, Q 28 (gs g) fl V) : W_0 F Wl Q g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at f1 f2 h40 h28 ⊢
-  wpx [W_0, W_11, W_17, o0, o1, o2]
+  wpx [W_0, W_11, W_17, o0, o1, o2, Op.cmpmi]
   all_goals repeat' (first | exact h40 _ | exact h28 _ | exact f1 | exact f2 | apply And.intro | intro _)
 
 variable {prof : Profile} {L : List (Addr × List Byte)} {s₀ : State} {o : Oracle}
