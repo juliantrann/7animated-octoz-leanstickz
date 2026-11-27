@@ -91,8 +91,8 @@ structure Sv (F : Footprint) (Kk : Addr → Prop) (V0 : Addr → Byte) (g0 : Gpr
   fp : ∀ k ≤ n, Foot F.data (Addr.add g0.rdi k)
   kp : ∀ k ≤ n, Kk (Addr.add g0.rdi k) ∧
     ((Addr.add g0.rdi k).toNat < g0.rsp.toNat - 88 ∨ g0.rsp.toNat ≤ (Addr.add g0.rdi k).toNat)
-  nz : ∀ k < n, V0 (Addr.add g0.rdi k) ≠ 0
-  z : V0 (Addr.add g0.rdi n) = 0
+  nz : ∀ k < n, rb V0 (Addr.add g0.rdi k) ≠ 0
+  z : rb V0 (Addr.add g0.rdi n) = 0
   fU : ∀ i < 8, Foot F.data (Addr.add 7935192#64 i)
   kU : ∀ i < 8, Kk (Addr.add 7935192#64 i) ∧
     ((Addr.add 7935192#64 i).toNat < g0.rsp.toNat - 88 ∨ g0.rsp.toNat ≤ (Addr.add 7935192#64 i).toNat)
