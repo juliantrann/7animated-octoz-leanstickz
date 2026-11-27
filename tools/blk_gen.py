@@ -756,6 +756,12 @@ FNS = {
                 calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `operator+ (const UString &, const UString &)` (`CPP/Common/MyString.cpp`; "
                     "`objdump -d`)"),
+    # 7-Zip 26.06 CPP/Common/MyString.cpp `UString::operator+= (const UString &s)`: `Grow (s._len)` (the `call` at
+    # 0x14, to `ugr`), `wmemcpy (_chars + _len, s._chars, s._len + 1)` (the `call` at 0x2f), `_len += s._len`,
+    # `this` back in `rax`. Stop: the `ret` (0x46). By hand: `add dword [r12 + 8], eax` (0x37).
+    "upe": dict(grp="Upe", cn="UString::operator+=(const UString &)", a=0x44db90, n=71, pos=True, stops=(0x46,),
+                hand=(0x37,), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `UString::operator+= (const UString &)` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
     "usl": dict(grp="Usl", cn="UString::SetStartLen", a=0x44d060, n=54, pos=True, stops=(0x35,), calls=True,
                 tag="PLAN.md §M, M1", src="7-Zip's `UString::SetStartLen` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
     # `UString::UString (const UString &s)`: `SetStartLen (s._len)` (the `call` at 0x13 to `usl`), then a tail jump
