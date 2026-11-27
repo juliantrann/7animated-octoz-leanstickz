@@ -200,6 +200,25 @@ FNS = {
     "sri": dict(grp="Sri", cn="CArchiveExtractCallback::SetRatioInfo", a=0x5aa190, n=17, pos=True, stops=(14,),
                 tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `CArchiveExtractCallback::SetRatioInfo` (`ArchiveExtractCallback.cpp`; `objdump -d`)"),
+    # The thunk of `CArchiveExtractCallback::SetRatioInfo` for its `ICompressProgressInfo` base: `this` - 24, then a
+    # jump to `sri` (0x5aa190). Stop: the jump (8).
+    "srt": dict(grp="Srt", cn="CArchiveExtractCallback::SetRatioInfo (thunk)", a=0x5aa1b0, n=10, pos=True, stops=(8,),
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `SetRatioInfo` thunk (`objdump -d`)"),
+    # 7-Zip's CPP/7zip/UI/Common/OpenArchive.cpp `Archive_IsItem_Dir (arc, index, result)`: a tail jump to
+    # `Archive_GetItemBoolProp (arc, index, kpidIsDir, result)` (0x5d15e0). Stop: the jump (12).
+    "aid": dict(grp="Aid", cn="Archive_IsItem_Dir", a=0x5d1670, n=17, pos=True, stops=(12,),
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `Archive_IsItem_Dir` (`OpenArchive.cpp`; `objdump -d`)"),
+    # 7-Zip's CPP/7zip/UI/Console/OpenCallbackConsole.cpp `COpenCallbackConsole::Open_SetTotal (files, bytes)`: the
+    # totals into the percent printer when it is on, then `CheckBreak2 ()` (`NConsoleClose::g_BreakCounter` at
+    # 0x79f088). Stop: the `ret` (0x4f).
+    "ost": dict(grp="Ost", cn="COpenCallbackConsole::Open_SetTotal", a=0x5f65b0, n=0x7d, pos=True, stops=(0x4f,),
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `Open_SetTotal` (`OpenCallbackConsole.cpp`; `objdump -d`)"),
+    # 7-Zip's CPP/7zip/UI/Console/ConsoleClose.cpp `CCtrlHandlerSetter::~CCtrlHandlerSetter ()`: `signal (SIGINT,
+    # memo_sig_int)` (the `call`, 16; a cut after it) and `signal (SIGTERM, memo_sig_term)` as a tail jump. Stop: the
+    # `jmp` (31).
+    "chd": dict(grp="Chd", cn="CCtrlHandlerSetter::~CCtrlHandlerSetter", a=0x5e77a0, n=36, pos=True, stops=(31,),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `~CCtrlHandlerSetter` (`ConsoleClose.cpp`; `objdump -d`)"),
     # 7-Zip's C/LzmaDec.c `LzmaDec_FreeProbs (p, alloc)`: `ISzAlloc_Free (alloc, p->probs); p->probs = NULL`, the
     # free through `alloc->Free` (`call [rax + 8]`, 18; a cut after it). Stop: the `ret` (30).
     # 7-Zip's C/LzmaDec.c `LzmaDec_Free (p, alloc)`: `LzmaDec_FreeProbs (p, alloc)` (16), then
@@ -209,6 +228,11 @@ FNS = {
     # 7-Zip's C/LzmaDec.c `LzmaDec_AllocateProbs2 (p, propNew, alloc)` (`lc` = esi, `lp` = edx): `numProbs` = 0x7c0 +
     # (0x300 << (lc + lp)); the same `probs` kept (0x26 to 0x57), else `LzmaDec_FreeProbs` (0x2e), `alloc->Alloc`
     # (0x3b), SZ_ERROR_MEM on NULL (0x60). Stop: the `ret` (0x5b).
+    # 7-Zip's C/LzmaDec.c `LzmaDec_TryDummy (p, buf, bufOut)`: the range decoder's dry run of one symbol from `buf`
+    # up to `*bufOut`, reading the probabilities, `dic` and the input, storing only `*bufOut` (the end of the
+    # symbol). Stops: the two `ret`s (354, 765).
+    "tdm": dict(grp="Tdm", cn="LzmaDec_TryDummy", a=0x42af80, n=1570, pos=True, stops=(354, 765),
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `LzmaDec_TryDummy` (`C/LzmaDec.c`; `objdump -d`)"),
     # 7-Zip's C/LzmaDec.c `LzmaDec_DecodeReal2 (p, limit, bufLimit)`: with `checkDicSize` (the 4 bytes at `p + 0x44`)
     # 0, `limit` cut to `dicPos + (dicSize - processedPos)`; `LZMA_DECODE_REAL` (call, 40, to `0x6d4040`); then
     # `checkDicSize` = `dicSize` once `processedPos` reaches it. Stop: the `ret` (64).
@@ -448,6 +472,13 @@ FNS = {
     # `name`, `errno` ENOENT (0x120); `__open_nocancel` (0x32), `__fxstat` (0x4b), not a directory `errno` ENOTDIR
     # (0x100), `malloc` of the buffer (0x94, again smaller at 0x14c), `__close_nocancel` on the errors (0x113, 0x16e);
     # the stack guard's check (0x13d: `__stack_chk_fail`). Stops: the `ret` (0xfe).
+    # glibc 2.31 sysdeps/posix/readdir.c (`__readdir64`, aliased `__readdir`): `dirp->lock` taken, then the next entry
+    # of the buffer, refilled by `__getdents` (0x80) when used up; `errno` kept unless the call failed with other than
+    # `ENOENT`. Stops: the `ret` (0xcc), the process has more than one thread (0xd9: the lock is released with `xchg`;
+    # 0xfd: it is taken with `lock cmpxchg`). By hand: `cmpxchg [rdi + 4], edx` (0x34), `sub dword [r14 + 4], 1` (0xbc).
+    "rdd": dict(grp="Rdd", cn="__readdir", a=0x6638a0, n=285, pos=True, fs=True, stops=(0xcc, 0xd9, 0xfd), calls=True,
+                hand=(0x34, 0xbc), tag="PLAN.md §M, M1",
+                src="glibc 2.31's `__readdir` (`sysdeps/posix/readdir.c`; `objdump -d`)"),
     "opd": dict(grp="Opd", cn="__opendir", a=0x6635d0, n=380, pos=True, fs=True, stops=(0xfe,), calls=True,
                 tag="PLAN.md §M, M1", src="glibc 2.31's `__opendir` (`sysdeps/posix/opendir.c`; `objdump -d`)"),
     # 7-Zip's C/LzmaDec.c `LzmaDec_Init (p)`: `p->dicPos` = 0, then a tail jump (0x16) to
@@ -552,6 +583,14 @@ FNS = {
     "stu": dict(grp="Stu", cn="ConvertStringToUInt64", a=0x451330, n=0x7c, pos=True, stops=(0x55, 0x68, 0x77),
                 tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `ConvertStringToUInt64` (`CPP/Common/StringToInt.cpp`; `objdump -d`)"),
+    # 7-Zip's CPP/Common/IntToString.cpp `ConvertUInt64ToString (UInt64 val, char *s)`: a value to `0xffffffff` by a
+    # tail jump to `ConvertUInt32ToString` (0xc4), else the digits from the last into a stack buffer (0x38, `x / 10`
+    # by `mul` with `0xcccccccccccccccd` and `shr 3`), the first at `s`, the others copied out in reverse (0x80); the
+    # stack guard (`fs:0x28`). Stops: the `ret` (0xac), the tail jump (0xc4), `__stack_chk_fail` (0xc9).
+    "c64": dict(grp="C64", cn="ConvertUInt64ToString", a=0x44ac30, n=206, pos=True, fs=True, stops=(0xac, 0xc4, 0xc9),
+                cut=(146, 176),
+                tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `ConvertUInt64ToString` (`CPP/Common/IntToString.cpp`; `objdump -d`)"),
     # 7-Zip's CPP/Common/IntToString.cpp `ConvertUInt32ToString (UInt32, char *)`: one digit at once (0x21), or the
     # digits from the last into a stack buffer (0x58, `x / 10` by `0xcccccccd` and `shr 35`), then copied out in
     # reverse (0x98); the stack guard (`fs:0x28`). Stops: the `ret` (0x42), `__stack_chk_fail` (0xb2).
@@ -611,6 +650,17 @@ FNS = {
     "acc": dict(grp="Acc", cn="AString::AString (const char *)", a=0x44c3c0, n=86, pos=True, stops=(0x55,),
                 calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip's `AString (const char *)` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
+    # `AString::operator= (const AString &s)`: the self test (je 71), the limit test (jb 88), the copy loop (56)
+    # through the 0, the epilogue (71); at 88 `operator new []` (95), `operator delete []` (112) unless null, the
+    # stores at 117 and the `jmp` back to 38.
+    "aas": dict(grp="Aas", cn="AString::operator= (const AString &)", a=0x44c550, n=128, pos=True, stops=(0x54,),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip's `AString::operator= (const AString &)` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
+    # `AString::operator= (const char *s)`: the length loop (32), `ReAlloc` inline (96) through `operator new []`
+    # (100) and `operator delete []` (117) when the limit is below the length, then the copy loop (64) through the 0.
+    "aac": dict(grp="Aac", cn="AString::operator= (const char *)", a=0x44c4c0, n=132, pos=True, stops=(0x5e,),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip's `AString::operator= (const char *)` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
     "asl": dict(grp="Asl", cn="AString::SetStartLen", a=0x44c060, n=50, pos=True, stops=(0x31,), calls=True,
                 tag="PLAN.md §M, M1", src="7-Zip's `AString::SetStartLen` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
     # `UString::UString ()`: `_chars` = NULL, then `_chars` = `new wchar_t[4]` (the `call` at 0x14), `_len` = 0,
@@ -707,6 +757,32 @@ FNS = {
     "uau": dict(grp="Uau", cn="UString::operator=(const UString&)", a=0x44d710, n=115, pos=True, stops=(0x44,),
                 calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip's `UString::operator= (const UString &)` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
+    # `UString::UString (num, s)`: the length `n` of `s` (`s[0]` at 0x16, then the loop at 0x20 from the index 1),
+    # `min (num, n)` (0x2e), `SetStartLen` (0x41), `wmemcpy (_chars, s, num)` (0x4f), `_chars[num] = 0`, `ret` (0x69).
+    "ucn": dict(grp="Ucn", cn="UString::UString(unsigned, const wchar_t*)", a=0x44d1c0, n=122, pos=True, stops=(0x69,),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip's `UString::UString (unsigned, const wchar_t *)` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
+    # `UString::SetFrom (s, len)`: for `len` above `_limit` (0x17) the throw stub above `0x3ffffffe` (0x56, by hand),
+    # else `newBuf = new wchar_t[len + 1]` (0x67), `delete [] _chars` unless null (0x78), `_chars = newBuf`, `_limit =
+    # len`; then `wmemcpy (_chars, s, len)` unless `len` = 0 (0x2c), `_chars[len] = 0`, `_len = len`; `ret` (0x48).
+    "usf": dict(grp="Usf", cn="UString::SetFrom", a=0x44d790, n=134, pos=True, stops=(0x48,), calls=True,
+                hand=(0x56,), tag="PLAN.md §M, M1",
+                src="7-Zip's `UString::SetFrom (const wchar_t *, unsigned)` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
+    # `UString::operator= (const wchar_t *s)`: the length `n` of `s` (`s[0]` at 0x12, the loop at 0x20 from the index
+    # 1); for `n` above `_limit` (0x38) `newBuf = new wchar_t[n + 1]` (0x68), `delete [] _chars` unless null (0x79),
+    # `_chars = newBuf`, `_limit = n`; then `_len = n` (0x3e), `wmemcpy (_chars, s, n + 1)` (0x4b). Stop: the `ret` (0x5b).
+    "uaw": dict(grp="Uaw", cn="UString::operator=(const wchar_t*)", a=0x44d670, n=155, pos=True, stops=(0x5b,),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip's `UString::operator= (const wchar_t *)` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
+    # `UString::SetFromBstr (s)`: `len = SysStringLen (s)` (0x17); for `len` above `_limit` (0x21) `newBuf = new
+    # wchar_t[len + 1]` (0x52), `delete [] _chars` unless null (0x63), `_chars = newBuf`, `_limit = len`; then `_len =
+    # len` (0x27) and a tail jump to `wmemcpy (_chars, s, len + 1)`. Stop: the tail jump (0x3d).
+    "usb": dict(grp="Usb", cn="UString::SetFromBstr", a=0x44d820, n=113, pos=True, stops=(0x3d,), calls=True,
+                tag="PLAN.md §M, M1",
+                src="7-Zip's `UString::SetFromBstr (LPCOLESTR)` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
+    "uca": dict(grp="Uca", cn="UString::UString(const char*)", a=0x44d4e0, n=140, pos=True, stops=(0x77,), calls=True,
+                tag="PLAN.md §M, M1",
+                src="7-Zip's `UString::UString (const char *)` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
     # CPP/UI/Common/EnumDirItems.cpp `CDirItems::ScanProgress (dirPath)`: without a `Callback` (at 0xc0) 0, else a tail
     # jump to `Callback->ScanProgress (Stat, false, dirPath)` (`Stat` at 0x48), its vtable's second entry. Stops: the
     # `jmp rax` (0x26) and the `ret` (0x32).
