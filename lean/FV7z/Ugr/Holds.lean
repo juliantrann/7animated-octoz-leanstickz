@@ -117,9 +117,14 @@ theorem gU_back (V : Addr → Byte) (g : Gprs) (nx : BitVec 32) (c : BitVec 64) 
         rax := BitVec.setWidth 64 nx, rcx := c, rdx := BitVec.setWidth 64 rdd(V, g.rdi + 8#64),
         rsi := BitVec.setWidth 64 (nx - 1#32) } := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
-  show Gprs.mk _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ = Gprs.mk _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
-  congr 1
-  all_goals first | rfl | exact BitVec.sub_add_cancel _ _ | exact congrArg (BitVec.setWidth 64) (m1 nx)
+  have e1 : rsp - 8#64 + 8#64 = rsp := BitVec.sub_add_cancel _ _
+  have e2 : BitVec.setWidth 32 (BitVec.setWidth 64 nx + 18446744073709551615#64) = nx - 1#32 := m1 nx
+  show Gprs.mk (BitVec.setWidth 64 nx) c (BitVec.setWidth 64 rdd(V, rdi + 8#64)) rbx (rsp - 8#64 + 8#64) rbp
+      (BitVec.setWidth 64 (BitVec.setWidth 32 (BitVec.setWidth 64 nx + 18446744073709551615#64)))
+      rdi r8 r9 r10 r11 r12 r13 r14 r15 =
+    Gprs.mk (BitVec.setWidth 64 nx) c (BitVec.setWidth 64 rdd(V, rdi + 8#64)) rbx rsp rbp
+      (BitVec.setWidth 64 (nx - 1#32)) rdi r8 r9 r10 r11 r12 r13 r14 r15
+  rw [e1, e2]
 
 variable {F : Footprint} {Wl : List Rgn}
 
@@ -232,7 +237,7 @@ theorem ugr_ok (c : Seg prof F Wl L s₀ o) (hin : CodeIn L ugr_at ugr) (hinR : 
           (BitVec.setWidth 32 (BitVec.setWidth 64 nx)))
       hKY hAY hrY (by rw [hgY]; exact vc_53 ⟨rfl, rfl, rfl, rfl⟩) ?_
     rintro j' g fl V₁ ⟨rfl, hg, hV, hfl⟩ Y₂ t₂ hK₂ hA₂ hr₂ hg₂ hf₂
-    subst g V₁ fl
+    subst hg hfl; subst V₁
     refine c.s_jcc_x hK₂ hA₂ hin (lt_len (by decide)) hr₂ (jae_55 _) hinT (tgt := 0) hT tgt_55 ?_ ?_
     · intro _
       rintro Y₃ t₃ hK₃ hA₃ ⟨hr₃, hg₃⟩
@@ -252,7 +257,7 @@ theorem ugr_ok (c : Seg prof F Wl L s₀ o) (hin : CodeIn L ugr_at ugr) (hinR : 
           (BitVec.setWidth 32 X.cpu.gpr.rsi))
       hK₃ hA₃ hr₃ (by rw [hg₃, hg₂]; exact vc_61 ⟨rfl, rfl, rfl, rfl⟩) ?_
     rintro j' g fl V₁ ⟨rfl, hg, hV, hfl⟩ Y₄ t₄ hK₄ hA₄ hr₄ hg₄ hf₄
-    subst g V₁ fl
+    subst hg hfl; subst V₁
     refine c.s_jcc_x hK₄ hA₄ hin (lt_len (by decide)) hr₄ (jb_67 _) hinT (tgt := 0) hT tgt_67 ?_ ?_
     · intro _
       rintro Y₅ t₅ hK₅ hA₅ ⟨hr₅, hg₅⟩
@@ -275,7 +280,7 @@ theorem ugr_ok (c : Seg prof F Wl L s₀ o) (hin : CodeIn L ugr_at ugr) (hinR : 
       hK₅ hA₅ hr₅
       (by rw [hg₅, hg₄]; exact vc_73 fun _ => ⟨rfl, gU_back V X.cpu.gpr nx (cx61 V X.cpu.gpr nx), rfl⟩) ?_
     rintro j' g fl V₁ ⟨rfl, hg, hV⟩ Y₆ t₆ hK₆ hA₆ hr₆ hg₆ -
-    subst g V₁
+    subst hg; subst V₁
     refine c.s_jmp_x hK₆ hA₆ hin (lt_len (by decide)) hr₆ (jmp_80 _) hinR (Ura.lt_len (j := 0) (by decide))
       (by decide) ?_
     rintro Y₇ t₇ hK₇ hA₇ ⟨hr₇, hg₇⟩
@@ -300,7 +305,7 @@ theorem ugr_ok (c : Seg prof F Wl L s₀ o) (hin : CodeIn L ugr_at ugr) (hinR : 
   subst V₁
   rcases h with ⟨rfl, hle, hg⟩ | ⟨rfl, a, cx, hg⟩ | ⟨rfl, cx, nx, hn, hg⟩
   · -- `ret`
-    subst g
+    subst hg
     have hsY : Y.cpu.gpr.rsp = X.cpu.gpr.rsp := by rw [hgY]
     refine c.s_ret hKY hAY hin (lt_len (by decide)) hrY (ret_88 _) (by rw [hsY]; exact hl) hin₂ h₂
       (by rw [hsY]; exact hra) ?_
@@ -309,13 +314,13 @@ theorem ugr_ok (c : Seg prof F Wl L s₀ o) (hin : CodeIn L ugr_at ugr) (hinR : 
     rw [hgZ, hgY]
     try rfl
   · -- `mov eax, 0x3ffffffe`
-    subst g
+    subst hg
     refine (c_48 prof).run c hin (fun j' g' _ V' => j' = 53 ∧ g' = gU V X.cpu.gpr 1073741822#32 cx ∧ V' = V)
       hKY hAY hrY (by rw [hgY]; exact vc_48 fun _ => ⟨rfl, rfl, rfl⟩) ?_
     rintro j' g fl V₁ ⟨rfl, hg, hV⟩ Y₂ t₂ hK₂ hA₂ hr₂ hg₂ -
-    subst g V₁
+    subst hg; subst V₁
     exact k53 cx 1073741822#32 (by decide) Y₂ t₂ hK₂ hA₂ hr₂ hg₂
-  · subst g
+  · subst hg
     exact k53 cx nx hn Y t₁ hKY hAY hrY hgY
 
 end FV7z.Ugr
