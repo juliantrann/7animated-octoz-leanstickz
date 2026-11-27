@@ -99,7 +99,7 @@ theorem vc_20 {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post}
 theorem vc_34 {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post}
     (h : ∀ g', (g' = gA g ∨ g' = gB g) → ∀ fl, Q 57 g' fl V) : W_34 F Wl Q g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
-  dsimp only at h ⊢
+  try dsimp only at h ⊢
   wpx [W_34, o2, Op.cmov64]
   all_goals repeat'
     first
