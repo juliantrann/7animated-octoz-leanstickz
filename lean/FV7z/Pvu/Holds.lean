@@ -1,5 +1,6 @@
 import FV7z.Pvu.Cuts
 import FV7z.Lemmas.LeafRet
+import FV7z.Lemmas.Fr24
 /-!
 # `CPropVariant::operator=(UInt32)` (PLAN.md §M, M1)
 
@@ -25,13 +26,13 @@ Design (as `FV7z/Pic/Holds.lean`): the callee is a hypothesis (`kf`), a continua
 from its return (`pvu_at + 27`, `rsp` 24 below the entry's, `rbx` = `u`, `r12` = `p`, the saved `rbx`, `r12` and the
 return address left as they were, and the callee's own post `Pc`) to the return address (`kr`). The pieces' VCs take
 an opaque `Q` and the post as a hypothesis (`h37`/`h22` for the branch, as `Caa.vc_0`); the run posts are closed
-with `⟨rfl, …⟩` and `show`-free `rw` on the named register equations. Address facts are standalone `bv_omega`
-lemmas (`pe16` …), rewritten before `omega`.
+with `⟨rfl, …⟩` and `show`-free `rw` on the named register equations. Address facts are the standalone `bv_omega`
+lemmas of `FV7z/Lemmas/Fr24.lean` (`pe16` …), rewritten before `omega`.
 - `vtw V a`: the 2 bytes at `a` (the type tag `vt` at `p`); `gN g`: the registers after the prologue.
 - `pvu_ok`: from the entry to the return address, directly when `vt` is already `VT_UI4` (19, `kz`), else through
   the callee (`kf`, `kr`).
 -/
-open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn
+open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn FV7z.Fr24
 namespace FV7z.Pvu
 
 theorem pvu_22 : ∀ feat, Dec feat pvu 22 (FV7z.mk .call 64 [.rel 18446744073709550821] 5) := by intro feat f; rfl
@@ -53,14 +54,6 @@ theorem sw19b : (19#64).setWidth 16 = 19#16 := by decide
 
 /-! ## Address arithmetic, one small fact each -/
 
-theorem pe16 (s : BitVec 64) : s - 8 - 8 = s - 16 := by bv_omega
-theorem pe32 (s : BitVec 64) : s - 8 - 8 - 8#64 - 8 = s - 32 := by bv_omega
-theorem peA (s : BitVec 64) : s - 8 - 8 - 8#64 + 8#64 = s - 16 := by bv_omega
-theorem peA' (s : BitVec 64) : s - 24 + 8#64 = s - 16 := by bv_omega
-theorem peB (s : BitVec 64) : s - 16 + 8 = s - 8 := by bv_omega
-theorem peC (s : BitVec 64) : s - 8 + 8 = s := by bv_omega
-theorem pt8 (s : BitVec 64) (h : 32 ≤ s.toNat) : (s - 8).toNat = s.toNat - 8 := by bv_omega
-theorem pt16 (s : BitVec 64) (h : 32 ≤ s.toNat) : (s - 16).toNat = s.toNat - 16 := by bv_omega
 theorem pd2 (p : BitVec 64) (h : p.toNat + 12 ≤ 2 ^ 64) : (p + 2#64).toNat = p.toNat + 2 := by bv_omega
 theorem pd8 (p : BitVec 64) (h : p.toNat + 12 ≤ 2 ^ 64) : (p + 8#64).toNat = p.toNat + 8 := by bv_omega
 
