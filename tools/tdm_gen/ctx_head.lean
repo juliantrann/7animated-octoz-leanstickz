@@ -120,13 +120,17 @@ def Bnd (a c x X : Nat) : Prop :=
 theorem dec_true {p : Prop} {i : Decidable p} : (@decide p i = true) = p := by cases i <;> simp_all
 /-- `decide p = false` as `¬ p`, for any instance. -/
 theorem dec_false {p : Prop} {i : Decidable p} : (@decide p i = false) = ¬ p := by cases i <;> simp_all
+/-- `(!decide p) = false` as `p`, for any instance. -/
+theorem nd_false {p : Prop} {i : Decidable p} : ((!@decide p i) = false) = p := by cases i <;> simp_all
+/-- `(!decide p) = true` as `¬ p`, for any instance. -/
+theorem nd_true {p : Prop} {i : Decidable p} : ((!@decide p i) = true) = ¬ p := by cases i <;> simp_all
 
 /-! ## Tactics -/
 
-/-- A jump's condition `h` as a fact: `decide p = true` as `p` (`simp at *` leaves some of them, kt2301), by
-`cast dec_true` if `simp` does not. -/
-scoped macro "dcd " h:ident : tactic => `(tactic| ((try simp only [Bool.not_eq_true', Bool.not_eq_false',
-  decide_eq_true_eq, decide_eq_false_iff_not, dec_true, dec_false] at $h:ident) <;>
+/-- A jump's condition `h` as a fact: `(!decide p) = false`, `decide p = true` and the like as `p` or `¬ p`, by `cast`
+(`simp at *` leaves some of them, kt2301; `simp at h` with its simprocs hits maxRecDepth at 648, kt2303). -/
+scoped macro "dcd " h:ident : tactic => `(tactic| ((try with_reducible replace $h:ident := cast nd_false $h:ident) <;>
+  (try with_reducible replace $h:ident := cast nd_true $h:ident) <;>
   (try with_reducible replace $h:ident := cast dec_true $h:ident) <;>
   (try with_reducible replace $h:ident := cast dec_false $h:ident)))
 /-- The jumps' conditions as facts, then `bv_omega`. -/
