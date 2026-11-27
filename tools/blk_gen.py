@@ -1308,6 +1308,33 @@ FNS = {
     "ild": dict(grp="Ild", cn="_nl_intern_locale_data", a=0x615210, n=485, pos=True, fs=True, stops=(0x116, 0x1c6),
                 calls=True, jt=(0x6ee9e0, 13), cut=(0xc4, 0x108, 0x120, 0x133, 0xf0), tag="PLAN.md §M, M1",
                 src="glibc 2.31's `_nl_intern_locale_data` (`locale/loadlocale.c`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/UI/Common/ArchiveExtractCallback.cpp `CArchiveExtractCallback::GetUnpackSize ()`: the arguments
+    # of `CArc::GetItem_Size (_index, _fi.Size, _fi.SizeDefined)` from `this` (`_arc` at `this + 0x40`, `_index` at
+    # `this + 0x1a8`, `&_fi.Size` = `this + 0x198`, `&_fi.SizeDefined` = `this + 0x6a`), then a tail jump to it (0x19).
+    "gus": dict(grp="Gus", cn="CArchiveExtractCallback::GetUnpackSize", a=0x5abac0, n=30, pos=True, stops=(0x19,),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CArchiveExtractCallback::GetUnpackSize` (`CPP/UI/Common/ArchiveExtractCallback.cpp`; "
+                    "`objdump -d`)"),
+    # 7-Zip 26.06 CPP/UI/Console/ExtractCallbackConsole.cpp `CExtractScanConsole::StartScanning ()`: when the 8 bytes
+    # at `this + 0x50` are not 0 and the byte at `this + 0x58` is 0, a tail jump (0x1c) to `AString::operator= (const
+    # char *)` with the `AString` at `this + 0x30` and the string "Scan" at `0x6e9b63`; else the `ret` (0x28).
+    "sts": dict(grp="Sts", cn="CExtractScanConsole::StartScanning", a=0x5e85c0, n=41, pos=True, stops=(0x1c, 0x28),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CExtractScanConsole::StartScanning` (`CPP/UI/Console/ExtractCallbackConsole.cpp`; "
+                    "`objdump -d`)"),
+    # 7-Zip 26.06 CPP/Windows/FileName.cpp `NormalizeDirPathPrefix (UString &dirPath)`: nothing (the `ret`, 0x1f)
+    # when `dirPath` is empty or ends in `/`; else (a frame of 24 bytes) `Grow_1 ()` (the `call` at 0x4d, to `ug1`)
+    # when `_len == _limit`, then `_chars[_len] = '/'`, `_chars[_len + 1] = 0`, `_len += 1` (the `ret`, 0x41).
+    "ndp": dict(grp="Ndp", cn="NWindows::NFile::NName::NormalizeDirPathPrefix", a=0x4568a0, n=102, pos=True,
+                stops=(0x1f, 0x41), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `NormalizeDirPathPrefix` (`CPP/Windows/FileName.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/Windows/FileDir.cpp `MyGetTempPath (AString &path)`: `path = "/tmp"` (the `call` at 0xf, to
+    # `AString::operator= (const char *)`, the string at `0x6d944d`), `NFind::DoesDirExist (path._chars, true)` (0x1d),
+    # then `path = "/tmp/"` (`0x6d9447`) when it answers true, else `path = "./"` (`0x6ee956`; the `call` at 0x39),
+    # `true` in `eax`. Stop: the `ret` (0x44).
+    "mgt": dict(grp="Mgt", cn="NWindows::NFile::NDir::MyGetTempPath", a=0x454b40, n=69, pos=True, stops=(0x44,),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `MyGetTempPath` (`CPP/Windows/FileDir.cpp`; `objdump -d`)"),
 }
 
 
