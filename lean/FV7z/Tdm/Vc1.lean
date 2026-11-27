@@ -156,8 +156,8 @@ theorem vc_248 (hK : Ok K) (hE : Env K F Wl) (hc : Cm K g) (hI : I248 K g) :
   repeat' (first
     | (refine fIn hE ?_ ?_ <;> exact (by tfo))
     | (refine fP hK hE ?_ ?_ <;> exact (by tfo))
-    | (refine x288 ?hc rfl ?hI ?hm; (case hc => tcm); (case hI => exact (by dsimp only [I288] <;> tfs));
-            (case hm => exact (by dsimp only [M288] <;> tfo)))
+    | (refine x288 ?hc rfl ?hI ?hm; (case hc => tcmd); (case hI => exact (by dsimp only [I288] <;> tfsd));
+            (case hm => exact (by dsimp only [M288] <;> tfod)))
     | (refine x751 ?hc rfl ?hI ?hm; (case hc => tcm); (case hI => exact (by dsimp only [I751] <;> tfs));
             (case hm => exact (by dsimp only [M751] <;> tfo)))
     | (with_reducible rfl)
