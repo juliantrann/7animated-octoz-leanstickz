@@ -126,6 +126,7 @@ theorem lpb_ok {fb : Addr} {P : State → (Addr → Byte) → Prop} (c : Seg pro
     (by rw [hsY]; exact fl) (by rw [hsY]; omega) (by rw [hdY, hsY]; omega) hin (lt_len (j := 41) (by decide))
     (by rw [hsY]; exact hra41) ?_
   intro Z t₂ V' r cx d hres hKZ hAZ hrZ hgZ
+  rw [hdY] at hres
   have hg41 : Z.cpu.gpr = g41 X.cpu.gpr r cx d := by
     rw [hgZ, hsY, e8, hgY]
     try rfl

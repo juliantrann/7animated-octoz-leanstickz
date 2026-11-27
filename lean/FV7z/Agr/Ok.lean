@@ -114,8 +114,24 @@ theorem agr_arl {P1 P2 P3 : State → (Addr → Byte) → Prop} (c : Seg prof F 
   have hgY' : Y.cpu.gpr = gb V X.cpu.gpr d n := hgY
   refine Arl.arl_ok (P1 := P1) (P2 := P2) (P3 := P3) c hinR hinN hN hinM hM hinD hD hKY hAY hrY ?_ ?_ ?_ ?_ ?_ ?_
     ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ hin₂ h₂ ?_ ?_ ?_ ?_
-  all_goals rw [hgY']
-  exacts [hp, hp8, hs1, hs2, hs3, hs4, hs6, hl, f0, f8, w0, w12, hq, hd, kn d n hlt hn hle, km d n hlt hn hle,
-    kd d n hlt hn hle, kr d n hlt hn hle]
+  all_goals (try rw [hgY'])
+  · exact hp
+  · exact hp8
+  · exact hs1
+  · exact hs2
+  · exact hs3
+  · exact hs4
+  · exact hs6
+  · exact hl
+  · exact f0
+  · exact f8
+  · exact w0
+  · exact w12
+  · exact hq
+  · exact hd
+  · exact kn d n hlt hn hle
+  · exact km d n hlt hn hle
+  · exact kd d n hlt hn hle
+  · exact kr d n hlt hn hle
 
 end FV7z.Agr
