@@ -105,7 +105,9 @@ theorem vc_99z {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (hz : rdq
     (f1p : BitVec.setWidth 8 g.rcx = 43#8 → ∀ i < 1, Foot F.data (Addr.add (g.rbx + 1#64) i))
     (w20 : ∀ i < 4, Foot Wl (Addr.add (g.rsp + 20#64) i)) :
     W_99 fb F Wl (fun j g' _ V' => g'.rsp = g.rsp ∧ g'.r13 = g.r13 ∧ g'.r14 = g.r14 ∧ g'.rdx = g.rdx ∧
-      ((j = 448 ∧ V' = V) ∨ (j = 133 ∧ P133 V g g' V'))) g f V := by
+      ((j = 448 ∧ V' = V) ∨
+        (j = 133 ∧ (BitVec.setWidth 8 g.rcx &&& BitVec.setWidth 8 g.rcx == 0) = false ∧
+          P133 V g g' V'))) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only [rb, P133] at hz fE f1m f1p w20 ⊢
   mcx +contextual [W_99, W_107, W_116, W_496, W_672, W_969, W_981, o5, o6, o7, o38, o41, o43, o52, Op.ldsxq,
@@ -119,7 +121,9 @@ theorem vc_99n {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (hn : ¬ 
     (f1p : BitVec.setWidth 8 g.rcx = 43#8 → ∀ i < 1, Foot F.data (Addr.add (g.rbx + 1#64) i))
     (w20 : ∀ i < 4, Foot Wl (Addr.add (g.rsp + 20#64) i)) :
     W_99 fb F Wl (fun j g' _ V' => g'.rsp = g.rsp ∧ g'.r13 = g.r13 ∧ g'.r14 = g.r14 ∧ g'.rdx = g.rdx ∧
-      ((j = 790 ∧ V' = V ∧ g' = g) ∨ (j = 133 ∧ P133 V g g' V'))) g f V := by
+      ((j = 790 ∧ V' = V ∧ g' = g) ∨
+        (j = 133 ∧ (BitVec.setWidth 8 g.rcx &&& BitVec.setWidth 8 g.rcx == 0) = false ∧
+          P133 V g g' V'))) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only [rb, P133] at hn fE f1m f1p w20 ⊢
   mcx +contextual [W_99, W_107, W_116, W_496, W_672, W_969, W_981, o5, o6, o7, o38, o41, o43, o52, Op.ldsxq,
