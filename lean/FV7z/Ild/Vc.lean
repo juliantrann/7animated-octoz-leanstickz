@@ -114,7 +114,7 @@ theorem vc_65b {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte}
     W_65 fb F Wl (fun j' g' _ V' => j' = 248 ∧ V' = V ∧ g'.rsp = g.rsp) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only [nN, ia, nI] at hm f1 f2 hi ⊢
-  mcx +contextual [W_65, W_73, o3, o4, Op.sxr, hm, f1, f2, hi]
+  mcx +contextual [W_65, W_73, o3, o4, Op.sxr, not_true_eq_false, hm, f1, f2, hi]
 
 set_option maxHeartbeats 2000000 in
 /-- `4N + 8 ≥ datasize`: to 248. -/
@@ -191,7 +191,8 @@ theorem vc_196c {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Pos
   dsimp only [ix] at hb hc f1 hk ⊢
   have hj := nja12 hc
   mcx +contextual [W_196, W_208, o10, o11, hb, hj, f1]
-  all_goals exact hk _
+  -- `hj` is not used by `simp` (the generated literal `12#32` differs); unify by `Eq.trans`
+  exact ⟨fun h => absurd (h.symm.trans hj) Bool.true_ne_false, fun _ => hk _⟩
 
 /-- The jump through the table to `ℓ`. -/
 theorem vc_217 {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post} {ℓ : Nat}
@@ -214,7 +215,7 @@ theorem vc_228t {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte}
     W_228 fb F Wl (fun j' g' _ V' => j' = 288 ∧ V' = V ∧ g' = g) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at h ⊢
-  mcx +contextual [W_228, W_234, o13, h]
+  mcx +contextual [W_228, W_234, o13, o14, h]
 
 /-- `228`: `cnt > 1`: to 240. -/
 theorem vc_228f {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte}
@@ -222,7 +223,7 @@ theorem vc_228f {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte}
     W_228 fb F Wl (fun j' g' _ V' => j' = 240 ∧ V' = V ∧ g' = g) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at h ⊢
-  mcx +contextual [W_228, W_234, o13, h]
+  mcx +contextual [W_228, W_234, o13, o14, h]
 
 /-- `279`: `cnt ≤ 4`: to 288. -/
 theorem vc_279t {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte}
@@ -230,7 +231,7 @@ theorem vc_279t {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte}
     W_279 fb F Wl (fun j' g' _ V' => j' = 288 ∧ V' = V ∧ g' = g) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at h ⊢
-  mcx +contextual [W_279, W_285, o18, h]
+  mcx +contextual [W_279, W_285, o18, o19, h]
 
 /-- `279`: `cnt > 4`: to 240. -/
 theorem vc_279f {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte}
@@ -238,7 +239,7 @@ theorem vc_279f {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte}
     W_279 fb F Wl (fun j' g' _ V' => j' = 240 ∧ V' = V ∧ g' = g) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at h ⊢
-  mcx +contextual [W_279, W_285, o18, h]
+  mcx +contextual [W_279, W_285, o18, o19, h]
 
 /-- `350`: `cnt ≤ 6`: to 288. -/
 theorem vc_350t {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte}
@@ -389,6 +390,10 @@ theorem vc_435a {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (hz : (B
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at hz h ⊢
   mcx +contextual [W_435, W_439, o34, o35, hz, h]
+  -- `h` is not used by `simp` (as `hj` in `vc_196c`)
+  intro af hC
+  have e : (!(decide (rcx.toNat < 85) || decide (rcx = 85#64))) = true := by simp only [h, Bool.not_false]
+  exact absurd (hC.symm.trans e) Bool.false_ne_true
 
 /-- `435` (`c = 0`): `cnt ≤ 85`: to 288. -/
 theorem vc_435b {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (hz : (BitVec.setWidth 32 g.rbp == 0) = true)
@@ -397,6 +402,9 @@ theorem vc_435b {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} (hz : (B
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at hz h ⊢
   mcx +contextual [W_435, W_439, W_449, o34, o35, hz, h]
+  intro hC
+  have e : (!(decide (rcx.toNat < 85) || decide (rcx = 85#64))) = false := by simp only [h, Bool.not_true]
+  exact absurd (hC.symm.trans e) Bool.true_ne_false
 
 /-! ## The value -/
 
