@@ -166,6 +166,18 @@ FNS = {
     "mga": dict(grp="Mga", cn="_int_memalign", a=0x631bc0, n=470, pos=True, fs=True,
                 stops=(0x166, 0x167, 0x183, 0x196, 0x1b7), calls=True, hand=(0xba,),
                 tag="PLAN.md §M, M1", src="glibc 2.31's `_int_memalign` (`malloc/malloc.c`; `objdump -d`)"),
+    # glibc 2.31 iconv/gconv_cache.c `find_module_idx (str, idxp)`: `__hash_string (str)` (the `call`, 0x2e), the
+    # probes of the cache's hash table from `hval % hash_size` by `1 + hval % (hash_size - 2)`, `strcmp` (the
+    # `call` through the PLT, 0x76) of each name inside the string table. Stops: the `ret`s (0xba: an empty slot,
+    # -1; 0xdb: found, `*idxp` set, 0).
+    "fmi": dict(grp="Fmi", cn="find_module_idx", a=0x67ce30, n=220, pos=True, stops=(0xba, 0xdb), calls=True,
+                tag="PLAN.md §M, M1", src="glibc 2.31's `find_module_idx` (`iconv/gconv_cache.c`; `objdump -d`)"),
+    # glibc 2.31 intl/l10nflist.c `_nl_normalize_codeset (codeset, name_len)`: the count of the name's alphanumerics
+    # and whether all are digits (the loop at 0x30, `__ctype_b` at 0x7914c8), `malloc` (the `call`s, 0x5b, 0xc4,
+    # 0xf5), "iso" before an all-digit name, then the copy of the alphanumerics, letters lowered by `__ctype_tolower`
+    # (0x7914d0; the loop at 0x8c). Stops: the `ret`s (0xbe: the new name; 0xea: `malloc` failed, 0).
+    "nlc": dict(grp="Nlc", cn="_nl_normalize_codeset", a=0x619f30, n=271, pos=True, stops=(0xbe, 0xea), calls=True,
+                tag="PLAN.md §M, M1", src="glibc 2.31's `_nl_normalize_codeset` (`intl/l10nflist.c`; `objdump -d`)"),
     "gdn": dict(grp="Gdn", cn="__getdents", a=0x6a2820, n=0x3c, pos=True, fs=True, stops=(0x23, 0x24, 0x3b),
                 calls=True, tag="PLAN.md §M, M1",
                 src="glibc 2.31's `__getdents` (`sysdeps/unix/sysv/linux/getdents64.c`; `objdump -d`)"),
@@ -705,6 +717,18 @@ FNS = {
     "efn": dict(grp="Efn", cn="ExtractFileNameFromPath(const UString &)", a=0x4528f0, n=54, pos=True, stops=(0x35,),
                 calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `ExtractFileNameFromPath` (`CPP/Common/Wildcard.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/Common/MyString.cpp `UString::Grow_1 ()`: `next = _len + _len / 2 + 16`, rounded down to 16, less
+    # 1, capped at `0x3ffffffe` (and so when below `_len`); not above `_len`: a jump to the throw stub (0x2c, `0x4013e4`,
+    # by hand); else a tail jump to `ReAlloc (next)` (0x36).
+    "ug1": dict(grp="Ug1", cn="UString::Grow_1", a=0x44d0a0, n=59, pos=True, stops=(0x36,), calls=True, hand=(0x2c,),
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `UString::Grow_1` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/Common/MyString.cpp `UString::Grow (n)`: nothing (the `ret`, 0x58) when `_limit - _len` is at
+    # least `n`; else `next = _len + n`, `next + next / 2 + 16` rounded down to 16, less 1, capped at `0x3ffffffe`
+    # (and so when below `_len`); not above `_len`, or less than `n` above it: jumps to the throw stub (0x37, 0x43,
+    # `0x401406`, by hand); else a tail jump to `ReAlloc (next - 1)` (0x50).
+    "ugr": dict(grp="Ugr", cn="UString::Grow", a=0x44d0e0, n=89, pos=True, stops=(0x50, 0x58), calls=True,
+                hand=(0x37, 0x43), tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `UString::Grow` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
     "usl": dict(grp="Usl", cn="UString::SetStartLen", a=0x44d060, n=54, pos=True, stops=(0x35,), calls=True,
                 tag="PLAN.md §M, M1", src="7-Zip's `UString::SetStartLen` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
     # `UString::UString (const UString &s)`: `SetStartLen (s._len)` (the `call` at 0x13 to `usl`), then a tail jump
@@ -768,6 +792,9 @@ FNS = {
     "usb": dict(grp="Usb", cn="UString::SetFromBstr", a=0x44d820, n=113, pos=True, stops=(0x3d,), calls=True,
                 tag="PLAN.md §M, M1",
                 src="7-Zip's `UString::SetFromBstr (LPCOLESTR)` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
+    "uca": dict(grp="Uca", cn="UString::UString(const char*)", a=0x44d4e0, n=140, pos=True, stops=(0x77,), calls=True,
+                tag="PLAN.md §M, M1",
+                src="7-Zip's `UString::UString (const char *)` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
     # CPP/UI/Common/EnumDirItems.cpp `CDirItems::ScanProgress (dirPath)`: without a `Callback` (at 0xc0) 0, else a tail
     # jump to `Callback->ScanProgress (Stat, false, dirPath)` (`Stat` at 0x48), its vtable's second entry. Stops: the
     # `jmp rax` (0x26) and the `ret` (0x32).
