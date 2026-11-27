@@ -34,7 +34,7 @@ theorem vc_794 (hK : Ok K) (hE : Env K F Wl) (hc : Cm K g) (hI : I794 K g) :
             (case hm => exact (by dsimp only [M833] <;> tfo)))
     | (with_reducible rfl)
     | apply And.intro
-    | intro _)
+    | (intro h; dcd h))
 
 set_option maxHeartbeats 4000000 in
 /-- 821. -/
@@ -58,7 +58,7 @@ theorem vc_821 (hK : Ok K) (hE : Env K F Wl) (hc : Cm K g) (hI : I821 K g) :
             (case hm => exact (by dsimp only [M833] <;> tfo)))
     | (with_reducible rfl)
     | apply And.intro
-    | intro _)
+    | (intro h; dcd h))
 
 set_option maxHeartbeats 4000000 in
 /-- 833. -/
@@ -85,7 +85,7 @@ theorem vc_833 (hK : Ok K) (hE : Env K F Wl) (hc : Cm K g) (hI : I833 K g) :
             (case hm => exact (by dsimp only [M880] <;> tfo)))
     | (with_reducible rfl)
     | apply And.intro
-    | intro _)
+    | (intro h; dcd h))
 
 set_option maxHeartbeats 4000000 in
 /-- 880. -/
@@ -108,7 +108,7 @@ theorem vc_880 (hK : Ok K) (hE : Env K F Wl) (hc : Cm K g) (hI : I880 K g) :
             (case hm => exact (by dsimp only [M821] <;> tfo)))
     | (with_reducible rfl)
     | apply And.intro
-    | intro _)
+    | (intro h; dcd h))
 
 set_option maxHeartbeats 4000000 in
 /-- 960. -/
@@ -137,7 +137,7 @@ theorem vc_960 (hK : Ok K) (hE : Env K F Wl) (hc : Cm K g) (hI : I960 K g) :
             (case hm => exact (by dsimp only [M1200] <;> tfo)))
     | (with_reducible rfl)
     | apply And.intro
-    | intro _)
+    | (intro h; dcd h))
 
 set_option maxHeartbeats 4000000 in
 /-- 1024. -/
@@ -161,7 +161,7 @@ theorem vc_1024 (hK : Ok K) (hE : Env K F Wl) (hc : Cm K g) (hI : I1024 K g) :
             (case hm => exact (by dsimp only [M1288] <;> tfo)))
     | (with_reducible rfl)
     | apply And.intro
-    | intro _)
+    | (intro h; dcd h))
 
 set_option maxHeartbeats 4000000 in
 /-- 1105. -/
@@ -183,7 +183,7 @@ theorem vc_1105 (hK : Ok K) (hE : Env K F Wl) (hc : Cm K g) (hI : I1105 K g) :
             (case hm => exact (by dsimp only [M510] <;> tfo)))
     | (with_reducible rfl)
     | apply And.intro
-    | intro _)
+    | (intro h; dcd h))
 
 set_option maxHeartbeats 4000000 in
 /-- 1200. -/
@@ -212,7 +212,7 @@ theorem vc_1200 (hK : Ok K) (hE : Env K F Wl) (hc : Cm K g) (hI : I1200 K g) :
             (case hm => exact (by dsimp only [M1288] <;> tfo)))
     | (with_reducible rfl)
     | apply And.intro
-    | intro _)
+    | (intro h; dcd h))
 
 set_option maxHeartbeats 4000000 in
 /-- 1261. -/
@@ -234,7 +234,7 @@ theorem vc_1261 (hK : Ok K) (hE : Env K F Wl) (hc : Cm K g) (hI : I1261 K g) :
             (case hm => exact (by dsimp only [M1288] <;> tfo)))
     | (with_reducible rfl)
     | apply And.intro
-    | intro _)
+    | (intro h; dcd h))
 
 set_option maxHeartbeats 4000000 in
 /-- 1288. -/
@@ -256,7 +256,7 @@ theorem vc_1288 (hK : Ok K) (hE : Env K F Wl) (hc : Cm K g) (hI : I1288 K g) :
             (case hm => exact (by dsimp only [M443] <;> tfo)))
     | (with_reducible rfl)
     | apply And.intro
-    | intro _)
+    | (intro h; dcd h))
 
 set_option maxHeartbeats 4000000 in
 /-- 1400. -/
@@ -278,7 +278,7 @@ theorem vc_1400 (hK : Ok K) (hE : Env K F Wl) (hc : Cm K g) (hI : I1400 K g) :
             (case hm => exact (by dsimp only [M1432] <;> tfo)))
     | (with_reducible rfl)
     | apply And.intro
-    | intro _)
+    | (intro h; dcd h))
 
 set_option maxHeartbeats 4000000 in
 /-- 1420. -/
@@ -302,7 +302,7 @@ theorem vc_1420 (hK : Ok K) (hE : Env K F Wl) (hc : Cm K g) (hI : I1420 K g) :
             (case hm => exact (by dsimp only [M1432] <;> tfo)))
     | (with_reducible rfl)
     | apply And.intro
-    | intro _)
+    | (intro h; dcd h))
 
 set_option maxHeartbeats 4000000 in
 /-- 1432. -/
@@ -328,7 +328,7 @@ theorem vc_1432 (hK : Ok K) (hE : Env K F Wl) (hc : Cm K g) (hI : I1432 K g) :
             (case hm => exact (by dsimp only [M1472] <;> tfo)))
     | (with_reducible rfl)
     | apply And.intro
-    | intro _)
+    | (intro h; dcd h))
 
 set_option maxHeartbeats 4000000 in
 /-- 1472. -/
@@ -350,7 +350,7 @@ theorem vc_1472 (hK : Ok K) (hE : Env K F Wl) (hc : Cm K g) (hI : I1472 K g) :
             (case hm => exact (by dsimp only [M1420] <;> tfo)))
     | (with_reducible rfl)
     | apply And.intro
-    | intro _)
+    | (intro h; dcd h))
 
 set_option maxHeartbeats 4000000 in
 /-- 1504. -/
@@ -375,7 +375,7 @@ theorem vc_1504 (hK : Ok K) (hE : Env K F Wl) (hc : Cm K g) (hI : I1504 K g) :
             (case hm => exact (by dsimp only [M1537] <;> tfo)))
     | (with_reducible rfl)
     | apply And.intro
-    | intro _)
+    | (intro h; dcd h))
 
 set_option maxHeartbeats 4000000 in
 /-- 1537. -/
@@ -399,6 +399,6 @@ theorem vc_1537 (hK : Ok K) (hE : Env K F Wl) (hc : Cm K g) (hI : I1537 K g) :
             (case hm => exact (by dsimp only [M1504] <;> tfo)))
     | (with_reducible rfl)
     | apply And.intro
-    | intro _)
+    | (intro h; dcd h))
 
 end FV7z.Tdm
