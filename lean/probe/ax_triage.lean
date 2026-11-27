@@ -1,5 +1,3 @@
-import FV7z.Usb.Holds
-import FV7z.Uaw.Cuts
+import FV7z.Uaw.Holds
 open FV7z
-#print axioms FV7z.Usb.usb_ok
-#print axioms FV7z.Uaw.spAll
+#print axioms FV7z.Uaw.uaw_ok
