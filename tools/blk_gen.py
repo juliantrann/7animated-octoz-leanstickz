@@ -733,6 +733,29 @@ FNS = {
     "ugr": dict(grp="Ugr", cn="UString::Grow", a=0x44d0e0, n=89, pos=True, stops=(0x50, 0x58), calls=True,
                 hand=(0x37, 0x43), tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `UString::Grow` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/Common/MyString.cpp `AString::Grow_1 ()`: the bytes of `UString::Grow_1` (`ug1`) but for the
+    # jump targets; the throw stub `0x401372` (0x2c, by hand), else a tail jump to `ReAlloc (next)` (0x36).
+    "ag1": dict(grp="Ag1", cn="AString::Grow_1", a=0x44c0a0, n=59, pos=True, stops=(0x36,), calls=True, hand=(0x2c,),
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `AString::Grow_1` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/Common/MyString.cpp `AString::Grow (n)`: as `UString::Grow` (`ugr`) with other registers (`n` kept
+    # in `eax`, `next` in `esi`); nothing (the `ret`, 0x58) when `_limit - _len` is at least `n`; the throw stub
+    # `0x401394` (0x3a, 0x46, by hand); else a tail jump to `ReAlloc (next)` (0x50).
+    "agr": dict(grp="Agr", cn="AString::Grow", a=0x44c0e0, n=89, pos=True, stops=(0x50, 0x58), calls=True,
+                hand=(0x3a, 0x46), tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `AString::Grow` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/Common/MyString.cpp `operator+ (const AString &s1, const AString &s2)`: `AString (s1._chars,
+    # s1._len, s2._chars, s2._len)` into the result (the `call` at 0x1a, to 0x44c260), the result's address back in
+    # `rax`. Stop: the `ret` (0x24).
+    "apl": dict(grp="Apl", cn="operator+(const AString &, const AString &)", a=0x44c2b0, n=37, pos=True, stops=(0x24,),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `operator+ (const AString &, const AString &)` (`CPP/Common/MyString.cpp`; "
+                    "`objdump -d`)"),
+    # The same for `UString` (`operator+ (const UString &, const UString &)`, the `call` at 0x1a to 0x44d2e0): the
+    # bytes of `apl` but for the `call`'s target.
+    "upl": dict(grp="Upl", cn="operator+(const UString &, const UString &)", a=0x44d330, n=37, pos=True, stops=(0x24,),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `operator+ (const UString &, const UString &)` (`CPP/Common/MyString.cpp`; "
+                    "`objdump -d`)"),
     "usl": dict(grp="Usl", cn="UString::SetStartLen", a=0x44d060, n=54, pos=True, stops=(0x35,), calls=True,
                 tag="PLAN.md §M, M1", src="7-Zip's `UString::SetStartLen` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
     # `UString::UString (const UString &s)`: `SetStartLen (s._len)` (the `call` at 0x13 to `usl`), then a tail jump
