@@ -148,6 +148,14 @@ theorem gd_pos {g0 : Gprs} {V₀ W W₁ : Addr → Byte} {Z : State} {t : Nat} {
     rw [h14, BitVec.add_comm]
     exact Opd.fa (by omega) (by rw [Opd.tAdd p 48 (by omega)])
   have hdx : Y₁.cpu.gpr.rdx.toNat = 0 := by rw [hg₁]; try rfl
+  -- the first entry is at least 24 bytes, so its `d_ino` lies in the buffer
+  have h8 : 8 ≤ (r.es.map Dirent.reclen).sum := by
+    cases hr : r.es with
+    | nil => rw [hr] at hpos; simp at hpos
+    | cons e es =>
+      have := reclen_ge e
+      simp only [List.map_cons, List.sum_cons]
+      omega
   have hnz : rdq(Vst W (p + 16#64) (toBytesLE Z.cpu.gpr.rax 8), Addr.add p (48 + 0)) ≠ 0#64 := by
     show rdq(Vst W (p + 16#64) (toBytesLE Z.cpu.gpr.rax 8), p.add 48) ≠ 0#64
     rw [rd_Vst W (p + 16#64) (toBytesLE Z.cpu.gpr.rax 8) (p.add 48) 8 hal (by omega) (by omega), hW,
