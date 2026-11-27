@@ -1,5 +1,4 @@
-import FV7z.Aas.Loop
-import FV7z.Aas.Holds
+import FV7z.C64.Holds
 open FV7z
-#print axioms FV7z.Aas.loop
-#print axioms FV7z.Aas.aas_ok
+#print axioms FV7z.C64.c64_ok
+#print axioms FV7z.C64.ddiv
