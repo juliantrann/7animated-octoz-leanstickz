@@ -1,4 +1,18 @@
-import FV7z.Stl.Steps
 import FV7z.Stl.Vc1
+import FV7z.Stl.Vc2
+import FV7z.Stl.Holds
 open FV7z
-#print axioms FV7z.Stl.ret_429 FV7z.Stl.ret_462 FV7z.Stl.vc_0 FV7z.Stl.vc_80 FV7z.Stl.vc_99 FV7z.Stl.vc_150 FV7z.Stl.vc_216 FV7z.Stl.vc_223 FV7z.Stl.vc_296 FV7z.Stl.vc_332 FV7z.Stl.vc_265 FV7z.Stl.vc_345 FV7z.Stl.vc_291 FV7z.Stl.vc_368z FV7z.Stl.vc_368n FV7z.Stl.vc_432 FV7z.Stl.vc_448 FV7z.Stl.vc_745 FV7z.Stl.vc_790 FV7z.Stl.vc_927
+#print axioms FV7z.Stl.vc_99z
+#print axioms FV7z.Stl.vc_99n
+#print axioms FV7z.Stl.vc_368n
+#print axioms FV7z.Stl.vc_133
+#print axioms FV7z.Stl.vc_171
+#print axioms FV7z.Stl.vc_604
+#print axioms FV7z.Stl.vc_390
+#print axioms FV7z.Stl.vc_748z
+#print axioms FV7z.Stl.vc_748s
+#print axioms FV7z.Stl.vc_748l
+#print axioms FV7z.Stl.u40
+#print axioms FV7z.Stl.q40
+#print axioms FV7z.Stl.rdF
+#print axioms FV7z.Stl.fr6_ra
