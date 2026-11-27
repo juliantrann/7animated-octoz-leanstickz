@@ -16,8 +16,9 @@ words from the old top up and the block, so the string is as it was (`Mal.keep_l
 - `acc_okH`: `acc_ok` with `Asl.kf_hpW`.
 
 Status (2026-11-27): built and axioms clean (kt2702, run 45948639733), imported after `FV7z.Sfn.Mem`; `Acp.acp_okH`
-(`FV7z/Acp/New.lean`) the same way. The other callers of `operator new`: `Ucw.ucw_okH` (`FV7z/Ucw/New.lean`), then
-`Ctor.*`, `Rdn`'s `ReserveDown`, `Uau`/`Ucn`.
+(`FV7z/Acp/New.lean`) the same way. The other callers of `operator new`: `Ucw.ucw_okH`, `Ucn.ucn_okH`,
+`Uau.uau_okH` (kt2703, kt2704), `Ura`/`Ur2`/`Usf` by `Onw.onw_pnW` (`FV7z/OnwP.lean`). `Ctor.*` calls it through
+`Nst.nst_ok` with `operator new` run inline; there is no module yet for `ReserveDown`.
 -/
 open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn FV7z.Mys
 open FV7z.Imm (imm imm_at)

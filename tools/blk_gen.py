@@ -763,6 +763,9 @@ FNS = {
     "usb": dict(grp="Usb", cn="UString::SetFromBstr", a=0x44d820, n=113, pos=True, stops=(0x3d,), calls=True,
                 tag="PLAN.md §M, M1",
                 src="7-Zip's `UString::SetFromBstr (LPCOLESTR)` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
+    "uca": dict(grp="Uca", cn="UString::UString(const char*)", a=0x44d4e0, n=140, pos=True, stops=(0x77,), calls=True,
+                tag="PLAN.md §M, M1",
+                src="7-Zip's `UString::UString (const char *)` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
     # CPP/UI/Common/EnumDirItems.cpp `CDirItems::ScanProgress (dirPath)`: without a `Callback` (at 0xc0) 0, else a tail
     # jump to `Callback->ScanProgress (Stat, false, dirPath)` (`Stat` at 0x48), its vtable's second entry. Stops: the
     # `jmp rax` (0x26) and the `ret` (0x32).
