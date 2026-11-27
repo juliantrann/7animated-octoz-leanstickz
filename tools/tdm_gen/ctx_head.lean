@@ -1,3 +1,4 @@
+import Lean
 import FV7z.Tdm.Cuts
 import FV7z.Lemmas.LeafRet
 /-!
@@ -127,18 +128,33 @@ theorem nd_true {p : Prop} {i : Decidable p} : ((!@decide p i) = true) = ¬ p :=
 
 /-! ## Tactics -/
 
+open Lean Elab Tactic Meta in
 /-- A jump's condition `h` as a fact: `(!decide p) = false`, `decide p = true` and the like as `p` or `¬ p`, by `cast`
 (`simp at *` leaves some of them, kt2301; `simp at h` with its simprocs hits maxRecDepth at 648, kt2303). -/
-scoped macro "dcd " h:ident : tactic => `(tactic| ((try with_reducible replace $h:ident := cast nd_false $h:ident) <;>
-  (try with_reducible replace $h:ident := cast nd_true $h:ident) <;>
-  (try with_reducible replace $h:ident := cast dec_true $h:ident) <;>
-  (try with_reducible replace $h:ident := cast dec_false $h:ident)))
+scoped elab "dcd " h:ident : tactic => withMainContext do
+  -- Only on a syntactic match, and by `MVarId.replace` with a built term: no unification, no elaboration
+  -- (elaborating `cast nd_false h` against other hypotheses hit maxRecDepth at 648, kt2304).
+  let d ← getLocalDeclFromUserName h.getId
+  let t ← instantiateMVars d.type
+  let some (_, l, r) := t.consumeMData.eq? | return
+  let (neg, e) := if l.isAppOfArity `Bool.not 1 then (true, l.appArg!) else (false, l)
+  unless e.isAppOfArity `Decidable.decide 2 do return
+  let p := e.appFn!.appArg!
+  let i := e.appArg!
+  let some (lem, ty) := (if r.isConstOf `Bool.true then
+      some (if neg then (``nd_true, mkNot p) else (``dec_true, p))
+    else if r.isConstOf `Bool.false then
+      some (if neg then (``nd_false, p) else (``dec_false, mkNot p))
+    else none) | return
+  let v := mkApp4 (mkConst ``cast [levelZero]) t ty (mkApp2 (mkConst lem) p i) (mkFVar d.fvarId)
+  let res ← (← getMainGoal).replace d.fvarId v (some ty)
+  replaceMainGoal [res.mvarId]
 /-- The jumps' conditions as facts, then `bv_omega`. -/
 scoped macro "tfo" : tactic => `(tactic| ((try simp only [Bool.not_eq_true', Bool.not_eq_false', Bool.or_eq_true,
   Bool.or_eq_false_iff, Bool.and_eq_true, decide_eq_true_eq, decide_eq_false_iff_not, dec_true, dec_false, beq_iff_eq,
   beq_eq_false_iff_ne, Bnd, ne_eq] at *) <;> bv_omega))
-/-- Triage only: `tfo` that shows the goal after the jumps' conditions, and fails if `simp` does. -/
-scoped macro "tfod" : tactic => `(tactic| ((simp only [Bool.not_eq_true', Bool.not_eq_false', Bool.or_eq_true,
+/-- Triage only: `tfo` that shows the goal after the jumps' conditions. -/
+scoped macro "tfod" : tactic => `(tactic| ((try simp only [Bool.not_eq_true', Bool.not_eq_false', Bool.or_eq_true,
   Bool.or_eq_false_iff, Bool.and_eq_true, decide_eq_true_eq, decide_eq_false_iff_not, dec_true, dec_false, beq_iff_eq,
   beq_eq_false_iff_ne, Bnd, ne_eq] at *) <;> (trace_state; bv_omega)))
 /-- `tfo` with the wraps that `omega` proves away dropped first (`omega` alone gives up on many of them). -/
