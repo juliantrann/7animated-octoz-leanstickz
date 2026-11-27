@@ -9,29 +9,35 @@ import FV7z.Tun.Inv
 points, then the `ret` at 354 or 765: the five registers popped as pushed (`rd1`), the return address as at the
 entry, `*bufOut` stored or not (`rdv`).
 
-## Status (2026-11-26, kt902 = run 45838042042, not green yet)
+## Status (2026-11-27, kt2309 = run 45963066487, not green yet)
 
 The Vc files are generated: `python3 tools/tdm_gen/gen.py lean/FV7z/Tdm` (cuts in `tools/tdm_gen/cuts.py`, the
 head of `Ctx` in `tools/tdm_gen/ctx_head.lean`). Design: `Seg.cfg` with `Inv` = entry ∨ 36 cut disjuncts; each `vc_k`
 is `wpx` then a `repeat' (first | …)` loop of foot closers (`fA`, `fIn`, `fP`, `fD`, frame reads) and exits `xJ`,
 written `(refine xJ ?hc rfl ?hI ?hm; (case hc => tcm); …)` so that the side goals run after `K`/`g` are fixed, and
 with `with_reducible` (default-transparency `exact`/`assumption` hit uncatchable whnf timeouts / maxRecDepth).
-Holds itself has not been compiled yet (the Vc files fail first).
 
-Open in kt902, next steps in order:
-1. The jump hypothesis `(!decide (rsi.toNat < K.B.toNat)) = false` ends as `decide (rsi.toNat < K.B.toNat) = true`
-   after `tfo`'s simp (`decide_eq_true_eq` does not fire, likely a different `Decidable` instance from `subF_cf`),
-   so omega lacks `rsi < B`: the input reads (`fIn`) and `tcm` fail at 248, 320, 443, 481 and in Vc3. Fix: add a
-   lemma `(decide (a < b) = true) = (a < b)` for any instance (`by cases h <;> simp_all`) and its `= false` twin to
-   the simp set of `tfo`/`tfom`/`tfod` in `ctx_head.lean`; check with `TDM_DBG=248:288` traces.
-2. vc_180 → x210 leaves `Nx K 6100 210 {…cv…}`; the uncommitted try is `MOD = {(180, 210)}` (omega after
-   `Nat.mod_eq_of_lt`); else trace it with `TDM_DBG=180:210`.
-3. Vc3 (1420, 1432, 1472, 1504, 1537): unsolved goals and omega failures; add those edges to `MOD`, then read the
-   traces.
-4. Compile Holds; final run without `TDM_DBG`, `#print axioms tdm_ok` (propext, Classical.choice, Quot.sound); add
-   the Tdm imports to `FV7z.lean` after the Dr2 lines.
+Green: `Ctx`, `Vc1`, `Vc2`, `Vc3` at f884b51 (kt2308 = run 45962344429, generated without `TDM_DBG`). What it took:
+`dec_true`/`dec_false`/`nd_true`/`nd_false` and the guarded `dcd` elab (casts a jump's `decide` hypothesis by
+`MVarId.replace`, no elaboration: the `cast` macro hit maxRecDepth at 648); `lits` (closed `BitVec.toNat` terms as
+numerals, e.g. `(BitVec.setWidth 64 4#32).toNat` from a 32-bit `mov` of an immediate); `true_and`, `and_true`,
+`true_or`, `or_true` in `tfo` (simp left `256 = 0 ∨ True`, which omega does not take); `MOD` for 1420→1432,
+1472→1420, 1537→1400; `TDM_DBG` now overrides `MOD`.
 
-Triage: `triage.sh kt9NN -L tri10 FV7z.Tdm.Ctx FV7z.Tdm.Vc1 FV7z.Tdm.Vc2 FV7z.Tdm.Vc3 FV7z.Tdm.Holds --
+Holds: kt2308 failed with three errors, fixed at e7ef035 (`vc_1537 (f := f)`; the `{ K.g0 with … }` of `k` on one
+line, since the fields broke over lines do not parse; heartbeats). kt2309 then ran Holds ~55 min and out of memory
+(runner shut down, exit 143), most likely in `tbo` (`bv_omega` over the frame's nested `- 8`/`+ 8` in the big
+contexts of `rd1` and `tdm_ok`, ~37 calls). Plan B in this file (not built yet): `s8`/`a8` and `fr` give each frame
+address's `toNat` one step at a time in a small context, and `tbo` is `eq_of_toNat_eq` then plain `omega` over those
+atoms; heartbeats at 400000 so a blow-up fails fast.
+
+Next steps in order:
+1. Triage `FV7z.Tdm.Holds -- FV7z.Tdm.tdm_ok` (Vc1–Vc3 are cached on lane tri10); watch memory in live-j0 and stop
+   at once if Holds grows past a few GB. If `fr` itself fails, split it into one lemma per fact.
+2. `#print axioms tdm_ok` (propext, Classical.choice, Quot.sound); add the Tdm imports to `FV7z.lean` after the Dr2
+   lines.
+
+Triage: `triage.sh ktNNNN -L tri10 FV7z.Tdm.Ctx FV7z.Tdm.Vc1 FV7z.Tdm.Vc2 FV7z.Tdm.Vc3 FV7z.Tdm.Holds --
 FV7z.Tdm.tdm_ok @sha`.
 -/
 open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn
@@ -114,15 +120,46 @@ theorem rds {V : Addr → Byte} {a x : Addr} {r : BitVec 64} (ha : a.toNat + 8 �
   subst e
   rw [FV7z.Tun.rd_Vst_self V x (toBytesLE r 8) (toBytesLE_length _ _) ha, ofBytesLE_toBytesLE (n := 8) rfl]
 
-/-- The address arithmetic of the frame. -/
-local macro "tbo" : tactic => `(tactic| ((try simp only [Ctx.sp] at *) <;> bv_omega))
+/-- `x - 8` as a number, when it does not wrap. -/
+theorem s8 (x : BitVec 64) (h : 8 ≤ x.toNat) : (x - 8).toNat = x.toNat - 8 := by bv_omega
 
-set_option maxHeartbeats 2000000 in
+/-- `x + 8` as a number, when it does not wrap. -/
+theorem a8 (x : BitVec 64) (h : x.toNat + 8 < 2 ^ 64) : (x + 8).toNat = x.toNat + 8 := by bv_omega
+
+/-- The frame's addresses as numbers, one `bv_omega` step at a time (`bv_omega` over the nested `- 8`s and `+ 8`s in
+the big contexts of `rd1` and `tdm_ok` ran ~55 min and out of memory, kt2309). -/
+theorem fr (hs : 40 ≤ K.g0.rsp.toNat) (hs8 : K.g0.rsp.toNat + 8 ≤ 2 ^ 64) :
+    (K.g0.rsp - 8).toNat = K.g0.rsp.toNat - 8 ∧ (K.g0.rsp - 8 - 8).toNat = K.g0.rsp.toNat - 16 ∧
+    (K.g0.rsp - 8 - 8 - 8).toNat = K.g0.rsp.toNat - 24 ∧ (K.g0.rsp - 8 - 8 - 8 - 8).toNat = K.g0.rsp.toNat - 32 ∧
+    (K.g0.rsp - 8 - 8 - 8 - 8 - 8).toNat = K.g0.rsp.toNat - 40 ∧ K.sp.toNat = K.g0.rsp.toNat - 40 ∧
+    (K.sp + 8).toNat = K.g0.rsp.toNat - 32 ∧ (K.sp + 8 + 8).toNat = K.g0.rsp.toNat - 24 ∧
+    (K.sp + 8 + 8 + 8).toNat = K.g0.rsp.toNat - 16 ∧ (K.sp + 8 + 8 + 8 + 8).toNat = K.g0.rsp.toNat - 8 ∧
+    (K.sp + 8 + 8 + 8 + 8 + 8).toNat = K.g0.rsp.toNat := by
+  have h1 := s8 K.g0.rsp (by omega)
+  have h2 := s8 (K.g0.rsp - 8) (by omega)
+  have h3 := s8 (K.g0.rsp - 8 - 8) (by omega)
+  have h4 := s8 (K.g0.rsp - 8 - 8 - 8) (by omega)
+  have h5 := s8 (K.g0.rsp - 8 - 8 - 8 - 8) (by omega)
+  have h0 : K.sp.toNat = K.g0.rsp.toNat - 40 := by
+    show (K.g0.rsp - 8 - 8 - 8 - 8 - 8).toNat = _
+    omega
+  have a1 := a8 K.sp (by omega)
+  have a2 := a8 (K.sp + 8) (by omega)
+  have a3 := a8 (K.sp + 8 + 8) (by omega)
+  have a4 := a8 (K.sp + 8 + 8 + 8) (by omega)
+  have a5 := a8 (K.sp + 8 + 8 + 8 + 8) (by omega)
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> omega
+
+/-- The address arithmetic of the frame, with `fr`'s facts in the context: `omega` over the `toNat` atoms. -/
+local macro "tbo" : tactic => `(tactic| ((try apply BitVec.eq_of_toNat_eq) <;> omega))
+
+set_option maxHeartbeats 400000 in
 /-- The five saved registers and the return address under `V1`. -/
 theorem rd1 (hO : Ok K) (hs : 40 ≤ K.g0.rsp.toNat) (hs8 : K.g0.rsp.toNat + 8 ≤ 2 ^ 64) :
     rdq(K.V1, K.sp) = K.g0.rbx ∧ rdq(K.V1, K.sp + 8) = K.g0.rbp ∧ rdq(K.V1, K.sp + 8 + 8) = K.g0.r12 ∧
     rdq(K.V1, K.sp + 8 + 8 + 8) = K.g0.r13 ∧ rdq(K.V1, K.sp + 8 + 8 + 8 + 8) = K.g0.r14 ∧
     rdq(K.V1, K.g0.rsp) = rdq(K.V0, K.g0.rsp) := by
+  obtain ⟨f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11⟩ := fr (K := K) hs hs8
   rw [hO.eV1]
   refine ⟨rds ?_ ?_, (rdo ?_ ?_ ?_).trans (rds ?_ ?_), (rdo ?_ ?_ ?_).trans ((rdo ?_ ?_ ?_).trans (rds ?_ ?_)),
     (rdo ?_ ?_ ?_).trans ((rdo ?_ ?_ ?_).trans ((rdo ?_ ?_ ?_).trans (rds ?_ ?_))),
@@ -142,7 +179,7 @@ variable {prof : Profile} {L : List (Addr × List Byte)} {s₀ : State} {o : Ora
   {gev : List Event} {gP : State → Nat → List Event → Prop} {gE : Outcome → List Event → Prop}
   {X : State} {t : Nat}
 
-set_option maxHeartbeats 2000000 in
+set_option maxHeartbeats 400000 in
 /-- `LzmaDec_TryDummy (p, buf, bufOut)` from its entry, with `Ok K` and `Env K F Wl` of the names `K` (the registers
 `K.g0` and bytes `K.V0` at the entry): at the return address, the return address popped, `rbx`, `rbp`, `r12`–`r15`
 and `rdx` as they were, `r9 = *bufOut`, `rax` the result (at most 3) and `rsi` between `buf` and `*bufOut`; the bytes
@@ -181,6 +218,7 @@ theorem tdm_ok (c : Seg prof F Wl L s₀ o) (hin : CodeIn L tdm_at tdm) (hO : Ok
     · exact Or.inl h
     · exact Or.inr ⟨h1, h2⟩
   obtain ⟨e0, e1, e2, e3, e4, e5⟩ := rd1 hO hs hs8
+  obtain ⟨f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11⟩ := fr (K := K) hs hs8
   rw [rdv (x := K.sp) hv' hr (by tbo) (by tbo), e0] at hbx
   rw [rdv (x := K.sp + 8) hv' hr (by tbo) (by tbo), e1] at hbp
   rw [rdv (x := K.sp + 8 + 8) hv' hr (by tbo) (by tbo), e2] at h12
