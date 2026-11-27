@@ -8,7 +8,7 @@ through `ild_jt` (read as at the entry: it is in `Kk`, outside the frame) to the
 which checks `cnt ≤ lim c` (to 288, else out by `free`); `c = 0` (435) stores strings past 85 without a type, and
 `c = 9` (318) reads the type itself.
 
-- `ia4`, `j4`, `sw3`, `jtV`: the offset's address, the table entry's address, `c` through `ebp`, the case reached.
+- `ia4`, `jt4`, `sw3`, `jtV`: the offset's address, the table entry's address, `c` through `ebp`, the case reached.
 - `tcs`: a case `cnt ≤ K` (to 288) or not (to 240), for the generated pair `vc_ℓt`/`vc_ℓf`.
 - `t435`, `t318`: the cases of `c = 0` and `c = 9`.
 - `t196`: the loop's head.
@@ -27,7 +27,7 @@ theorem ia4 (a : Addr) (k : Nat) : a + BitVec.ofNat 64 k * 4#64 + 8#64 = Addr.ad
   omega
 
 /-- The address of the jump table's entry `x`. -/
-theorem j4 (x : BitVec 32) : 7268832#64 + BitVec.setWidth 64 x * 4#64 = Addr.add 7268832#64 (4 * x.toNat) := by
+theorem jt4 (x : BitVec 32) : 7268832#64 + BitVec.setWidth 64 x * 4#64 = Addr.add 7268832#64 (4 * x.toNat) := by
   have := x.isLt
   apply BitVec.eq_of_toNat_eq
   simp only [Addr.add, BitVec.toNat_add, BitVec.toNat_mul, BitVec.toNat_setWidth, BitVec.toNat_ofNat]
@@ -56,7 +56,7 @@ theorem jtV (E : Env F Wl L Kk V0 g0 fb e₂ j₂) {V : Addr → Byte} (hag : Ag
     rw [addr_add_add]
     exact E.kJ _ (by omega)
   have h2 := Hca.sub_rd V0 7268832#64 ild_jt 52 E.jt (4 * (BitVec.setWidth 32 g0.rdi).toNat) 4 (by omega)
-  rw [j4, rdK E.s80 hag h1, h2]
+  rw [jt4, rdK E.s80 hag h1, h2]
   exact jt_case _ (by omega)
 
 /-! ## The cases -/
@@ -201,7 +201,7 @@ theorem t196 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (E : 
       exact hc
     have hf : ∀ i < 4, Foot F.data (Addr.add (Y.cpu.gpr.rdx + Y.cpu.gpr.r9 * 4#64) i) := by
       intro i hi
-      rw [l4, l7, j4, addr_add_add]
+      rw [l4, l7, jt4, addr_add_add]
       exact E.fJ _ (by omega)
     have ht : BitVec.signExtend 64 (ofBytesLE 32 (List.map V (byteAddrs (Y.cpu.gpr.rdx + Y.cpu.gpr.r9 * 4#64) 4))) +
         Y.cpu.gpr.rdx = Addr.add ild_at (ild_cases.getD (BitVec.setWidth 32 g0.rdi).toNat 0) := by
@@ -213,7 +213,8 @@ theorem t196 (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (E : 
     have hℓ : ild_cases.getD (BitVec.setWidth 32 g0.rdi).toNat 0 < ild.length := lt_len (cs_ok _ (by omega))
     refine (c_196 prof fb).run c hfs E.hin _ hK hA hr
       (vc_196c (Q := fun j' g' _ V' => j' = ild_cases.getD (BitVec.setWidth 32 g0.rdi).toNat 0 ∧ V' = V ∧
-        g' = { Y.cpu.gpr with rsi := ix V Y.cpu.gpr, rdi := ix V Y.cpu.gpr,
+        g' = { Y.cpu.gpr with
+          rsi := ix V Y.cpu.gpr, rdi := ix V Y.cpu.gpr,
           r8 := Addr.add ild_at (ild_cases.getD (BitVec.setWidth 32 g0.rdi).toNat 0) })
         hb hcb f1 fun _ => vc_217 hf ht hℓ fun _ => ⟨rfl, rfl, rfl⟩) ?_
     rintro j' g fl V' ⟨rfl, rfl, rfl⟩ Z t₁ hKZ hAZ hrZ hgZ -
