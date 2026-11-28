@@ -1567,6 +1567,16 @@ FNS = {
     "cxd": dict(grp="Cxd", cn="CObjectVector<CXmlProp>::~CObjectVector", a=0x5f63c0, n=117, pos=True,
                 stops=(0x69, 0x74), calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `CObjectVector<T>::~CObjectVector` (`CPP/Common/MyVector.h`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/Common/CommandLineParser.cpp `NCommandLineParser::CParser::~CParser ()`: `delete []
+    # _switches` (the array of `CSwitchResult`s, 24 bytes each, behind its count at `_switches - 8`): the items from
+    # the last down (the outer loop, head 0x30, `rbx` the item), each item's `UStringVector PostStrings` destroyed
+    # (the inner loop, head 0x50: the `UString`s' chars freed unless NULL, 0x61, the `UString`s freed, 0x6e; the
+    # array freed unless NULL, 0x86), then `operator delete [] (_switches - 8, 24 n + 8)` (0xa5); from 0xaa two
+    # buffers freed unless NULL (0xb4, 0xc3), then `NonSwitchStrings` as `ocv` (the loop, head 0xe0, the calls at
+    # 0xf2, 0xff) and its array as a tail jump (0x120) unless NULL, else the `ret` (0x140).
+    "cpd": dict(grp="Cpd", cn="NCommandLineParser::CParser::~CParser", a=0x5a0500, n=321, pos=True,
+                stops=(0x120, 0x140), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CParser::~CParser` (`CPP/Common/CommandLineParser.cpp`; `objdump -d`)"),
     # 7-Zip 26.06 CPP/Common/StdOutStream.cpp `CStdOutStream::Normalize_UString (s)`: in terminal mode (the byte at
     # `this + 8`) each `wchar_t` of `s` below 0x20 (signed), in 0x7f..0x9f, 0x202a..0x202e or 0x2066..0x2069 made
     # '_' (the loop at 0x59), else each '\n' made '_' (the loop at 0x80). Stops: the `ret`s (0x6f, 0x94).
@@ -1692,8 +1702,27 @@ FNS = {
     "mbu": dict(grp="Mbu", cn="MultiByteToUnicodeString2", a=0x450a60, n=500, pos=True, fs=True, stops=(0x1aa, 0x1ef),
                 calls=True, cut=(0xc3, 0x138, 0x170), tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `MultiByteToUnicodeString2` (`CPP/Common/StringConvert.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/Common/Wildcard.cpp `SplitPathToParts (path, pathParts)`: `pathParts.Clear ()` inline (the items
+    # from the last: `delete []` of the chars at 0x56 when not null, `operator delete (p, 16)` at 0x63 when not null),
+    # `_size` = 0; `path` empty to the epilogue. Else `name` made (0xb8), the chars scanned for `'/'`: at each,
+    # `name.SetFrom (path + prev, i - prev)` (0xfe) and `pathParts.Add (name)` inline (grown when full: above
+    # 0x7ffffffe the `ja` at 0x110 to the throw, by hand: its target is outside; `operator new []` at 0x135, `memcpy`
+    # at 0x273, `delete []` at 0x288; `operator new (16)` at 0x165, the copy at 0x175); then the last part the same
+    # way (0x1b8, the `ja` at 0x1ca by hand, 0x1ee, 0x2ae, 0x2b6, 0x21a, 0x228) and `delete []` of `name`'s chars
+    # (0x24c). Stops: the `ret` (0xa9), the call of `__stack_chk_fail` (0x2c0).
+    "spp": dict(grp="Spp", cn="SplitPathToParts", a=0x452500, n=709, pos=True, fs=True, stops=(0xa9, 0x2c0),
+                calls=True, hand=(0x110, 0x1ca), tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `SplitPathToParts` (`CPP/Common/Wildcard.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/7zip/Common/ProgressUtils.cpp `CLocalProgress::Init (progress, inSizeIsMain)`:
+    # `_ratioProgress.Release ()` with `CLocalProgress::Release` (0x462290) inlined four levels deep where the
+    # vtable's slot is it (else `call rax`: 0x1c3, 0x1d3, 0x1e3, 0x1ea), each level's `delete this` its fields'
+    # releases (`call [rax + 16]`) and `operator delete (p, 0x38)`; then `_progress = progress` (`AddRef` at 0x58,
+    # the old one's `Release` at 0x67), `QueryInterface` (0x80), `_inSizeIsMain` stored. Stop: the `ret` (0x94).
+    # By hand: the counts' `sub dword [r + 8], 1` (0x3c, 0xc5, 0xf0, 0x117), their flags followed.
+    "clp": dict(grp="Clp", cn="CLocalProgress::Init", a=0x461ff0, n=497, pos=True, stops=(0x94,),
+                calls=True, hand=(0x3c, 0xc5, 0xf0, 0x117), tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CLocalProgress::Init` (`CPP/7zip/Common/ProgressUtils.cpp`; `objdump -d`)"),
 }
-
 
 def file_bytes(path, va, n):
     """`n` bytes at virtual address `va` of the ELF file (its `PT_LOAD` segments)"""

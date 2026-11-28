@@ -1,8 +1,7 @@
-import FV7z.Mbu.Rest
+import FV7z.Lemmas.SubMf
+import FV7z.Clp.Cuts
 open FV7z
-#print axioms FV7z.Mbu.floop
-#print axioms FV7z.Mbu.sloop
-#print axioms FV7z.Mbu.mbu_fb
-#print axioms FV7z.Mbu.mbu_ns
-#print axioms FV7z.Mbu.mbu_121
-#print axioms FV7z.Mbu.mbu_ok
+#print axioms FV7z.sub_mi32f
+#print axioms FV7z.Fn.Seg.s_sub_mi32f
+#print axioms FV7z.Clp.spAll
+#print axioms FV7z.Clp.clp_pin
