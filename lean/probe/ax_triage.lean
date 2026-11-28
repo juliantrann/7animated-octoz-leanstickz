@@ -7,6 +7,8 @@ open FV7z
 #print axioms FV7z.Fr40.r5
 #print axioms FV7z.Gfs.vc_0
 #print axioms FV7z.Gfs.vc_26z
+#print axioms FV7z.Gfs.vc_26n
+#print axioms FV7z.Gfs.vc_59k
 #print axioms FV7z.Gfs.vc_59d
 #print axioms FV7z.Gfs.vc_77
 #print axioms FV7z.Gfs.tail77
