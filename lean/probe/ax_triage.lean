@@ -1,8 +1,6 @@
-import FV7z.Gtd.Code
-import FV7z.Gtd.Cuts
+import FV7z.Lemmas.SysTod
 open FV7z
-#print axioms FV7z.Gtd.gtd_pin
-#print axioms FV7z.Gtd.c_0
-#print axioms FV7z.Gtd.c_60
-#print axioms FV7z.Gtd.c_109
-#print axioms FV7z.Gtd.spAll
+#print axioms FV7z.putUser_ok
+#print axioms FV7z.sysGettimeofday_ok
+#print axioms FV7z.syscall_gettimeofday
+#print axioms FV7z.Fn.Seg.s_gettimeofday_re
