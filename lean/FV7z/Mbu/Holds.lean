@@ -234,17 +234,17 @@ theorem mbu_tail {fb S : Addr} {g₀ : Gprs} {W : State} (c : Seg prof F Wl L s�
   have l2 : ∀ i < 8, Foot F.data (Addr.add (S - 8 - 8) i) := fun i hi => c.hws _ (w2 i hi)
   have l1 : ∀ i < 8, Foot F.data (Addr.add (S - 8) i) := fun i hi => c.hws _ (w1 i hi)
   refine (c_400 prof fb).run c hfs hin (fun j' g' _ V' => j' = 426 ∧
-      ∃ ra, g' = { W.cpu.gpr with
+      (∃ ra, g' = { W.cpu.gpr with
           rax := ra,
           rbx := g₀.rbx,
           rbp := g₀.rbp,
           rsp := S,
           r12 := g₀.r12,
-          r13 := g₀.r13 } ∧ V' = V) hK hA hrip
+          r13 := g₀.r13 }) ∧ V' = V) hK hA hrip
     (vc_400 (by rw [hs]; exact hc) (by rw [hs]; exact f24) fc (by rw [hs, g40]; exact l4)
       (by rw [hs, g40, a4s]; exact l3) (by rw [hs, g40, a4s, a3s]; exact l2)
       (by rw [hs, g40, a4s, a3s, a2s]; exact l1)
-      fun ra _ => ⟨rfl, ra, by rw [hs, g40, a4s, a3s, a2s, a1s, h4, h3, h2, h1], rfl⟩) ?_
+      fun ra _ => ⟨rfl, ⟨ra, by rw [hs, g40, a4s, a3s, a2s, a1s, h4, h3, h2, h1]⟩, rfl⟩) ?_
   rintro j' g fl V₁ ⟨rfl, ⟨ra, rfl⟩, hV₁⟩ U t₁ hKU hAU hrU hgU -
   subst V₁
   have hsU : U.cpu.gpr.rsp = S := by rw [hgU]
