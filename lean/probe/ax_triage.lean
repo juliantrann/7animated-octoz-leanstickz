@@ -1,6 +1,3 @@
-import FV7z.Fkd.Holds
-import FV7z
+import FV7z.Smd.Holds
 open FV7z
-#print axioms FV7z.Fkd.fkd_ok
-#print axioms FV7z.Fkd.vc_21
-#print axioms FV7z.Fkd.tail97
+#print axioms FV7z.Smd.smd_ok
