@@ -21,7 +21,8 @@ import os, re, subprocess, sys, textwrap
 # name -> the function: its group (directory and namespace), C name, address and length in 7zzs 26.06; `pos`: the code
 # is taken where it lies in 7zzs (its instructions have operands `[rip + d]`), else wherever it lies; `stops`: offsets
 # the proof does not go past (exits, like the `ret`: the invariant there says they are not reached, or what holds);
-# `tag`, `src`: for the files' headers; `cut`: more cut points, to split the proof.
+# `tag`, `src`: for the files' headers; `cut`: more cut points, to split the proof; `split`: offsets inside
+# straight-line code made block leaders and cut points, to keep each piece short.
 FNS = {
     "dr3": dict(grp="Lzma", cn="LzmaDec_DecodeReal_3", a=0x6d4040, n=4719, pos=False, stops=(), tag="PLAN.md G2, pilot",
                 src="`C/LzmaDec.c`'s `LzmaDec_DecodeReal_3` (section `.text$LZMADECOPT`, the assembly of "
@@ -1540,6 +1541,37 @@ FNS = {
     "rst": dict(grp="Rst", cn="ReadStream", a=0x4632b0, n=177, pos=True, fs=True, stops=(0xa1, 0xac), hand=(0x76,),
                 calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `ReadStream` (`CPP/7zip/Common/StreamUtils.cpp`; `objdump -d`)"),
+    # 7-Zip's C/LzmaDec.c `LzmaDec_Allocate (p, props, propsSize, alloc)`: `LzmaProps_Decode (&propNew, props,
+    # propsSize)` (call, 0x27, `Lpd`) into the frame, `LzmaDec_AllocateProbs2 (p, &propNew, alloc)` (0x67, `Lap`), the
+    # dictionary size rounded up to 4 KiB (below 4 MiB) or 1 MiB (0x73..0xc1; 0x100: above 1 GiB), the old dictionary
+    # freed (`alloc->Free`, 0xcf) and a new one allocated (`alloc->Alloc`, 0xe1) unless it is there with that size;
+    # a null result `LzmaDec_FreeProbs` (0x11c, `Lfp`) and SZ_ERROR_MEM. The guard's check. Stops: the `ret` (0x54),
+    # the call of `__stack_chk_fail` (0x126).
+    "lza": dict(grp="Lza", cn="LzmaDec_Allocate", a=0x42bf80, n=299, pos=True, fs=True, stops=(0x54, 0x126),
+                calls=True, tag="PLAN.md §M, M1", src="7-Zip 26.06's `LzmaDec_Allocate` (`C/LzmaDec.c`; `objdump -d`)"),
+    "uac": dict(grp="Uac", cn="UString::operator= (const char *)", a=0x44d8a0, n=184, pos=True, stops=(0x82,),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip's `UString::operator= (const char *)` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/Common/MyVector.h `CObjectVector<CXmlProp>::~CObjectVector ()` (`ApfsHandler.o`): the items
+    # from the last down (the loop, head 0x20, `rbx` = 8 * i); for an item not NULL its two `AString`s' chars freed
+    # unless NULL (`operator delete []`, the `call`s at 0x32, 0x40), the item freed (`operator delete (p, 0x20)`,
+    # 0x4d); then the array: `operator delete []` as a tail jump (0x69) unless NULL, else the `ret` (0x74).
+    "cxd": dict(grp="Cxd", cn="CObjectVector<CXmlProp>::~CObjectVector", a=0x5f63c0, n=117, pos=True,
+                stops=(0x69, 0x74), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CObjectVector<T>::~CObjectVector` (`CPP/Common/MyVector.h`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/Common/StdOutStream.cpp `CStdOutStream::Normalize_UString (s)`: in terminal mode (the byte at
+    # `this + 8`) each `wchar_t` of `s` below 0x20 (signed), in 0x7f..0x9f, 0x202a..0x202e or 0x2066..0x2069 made
+    # '_' (the loop at 0x59), else each '\n' made '_' (the loop at 0x80). Stops: the `ret`s (0x6f, 0x94).
+    "nus": dict(grp="Nus", cn="CStdOutStream::Normalize_UString", a=0x5a15e0, n=149, pos=True, stops=(0x6f, 0x94),
+                tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CStdOutStream::Normalize_UString` (`CPP/Common/StdOutStream.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/Windows/FileDir.cpp `GetFullPathAndSplit (path, resDirPrefix, resFileName)`: `res =
+    # GetFullPath (path, resDirPrefix)` (the `call` at 0x15), when false `resDirPrefix = path` (0x66, then back to
+    # 0x21); `i = resDirPrefix.ReverseFind_PathSepar ()` (0x24), `resFileName = resDirPrefix.Ptr (i + 1)` (0x36),
+    # `resDirPrefix.DeleteFrom (i + 1)` (the stores at 0x3b..0x4c). Stop: the `ret` (0x58).
+    "gfs": dict(grp="Gfs", cn="NWindows::NFile::NDir::GetFullPathAndSplit", a=0x454a50, n=109, pos=True,
+                stops=(0x58,), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `NDir::GetFullPathAndSplit` (`FileDir.cpp`; `objdump -d`)"),
     # 7-Zip 26.06 CPP/7zip/UI/Common/ArchiveCommandLine.cpp `FindCharset (parser, keyIndex, byDefault, defaultVal)`
     # (static): a frame of 56 bytes under four pushes with the stack guard at `rsp + 0x28` and a `UString` at
     # `rsp + 0x10`; the switch not set (`jne 88` not taken) returns `defaultVal`; else the `UString` copy of the last
