@@ -387,27 +387,21 @@ theorem vc_111c {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Pos
     | apply And.intro
     | intro _)
 
-/-- The stores of 0 (the size, `this + 72`, `this + 88`, the 2 bytes at `this + 44`), kept by `P`; `rbp` = `rdi` =
-`this + 112`, `rsi` = `folderPrefix`: to the `call` at 158. -/
-theorem vc_121 {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post} {P : (Addr → Byte) → Prop}
+/-- The stores of 0 (the size, `this + 72`, `this + 88`, the 2 bytes at `this + 44`; their bytes named `b1`–`b4`);
+`rbp` = `rdi` = `this + 112`, `rsi` = `folderPrefix`: to the `call` at 158. -/
+set_option maxHeartbeats 1000000 in
+theorem vc_121 {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post}
     (w56 : ∀ i < 4, Foot Wl (Addr.add (g.rbx + 56#64) i)) (w72 : ∀ i < 4, Foot Wl (Addr.add (g.rbx + 72#64) i))
     (w88 : ∀ i < 4, Foot Wl (Addr.add (g.rbx + 88#64) i)) (w44 : ∀ i < 2, Foot Wl (Addr.add (g.rbx + 44#64) i))
-    (hP : P V) (z56 : ∀ W bs, P W → P (Vst W (g.rbx + 56#64) bs))
-    (z72 : ∀ W bs, P W → P (Vst W (g.rbx + 72#64) bs)) (z88 : ∀ W bs, P W → P (Vst W (g.rbx + 88#64) bs))
-    (z44 : ∀ W bs, P W → P (Vst W (g.rbx + 44#64) bs))
-    (h : ∀ g' V', P V' → Fr g g' → g'.rbp = g.rbx + 112#64 → g'.rsi = g.r13 → g'.rdi = g.rbx + 112#64 →
-      ∀ fl, Q 158 g' fl V') :
+    (h : ∀ g' (b1 b2 b3 b4 : List Byte), Fr g g' → g'.rbp = g.rbx + 112#64 → g'.rsi = g.r13 →
+      g'.rdi = g.rbx + 112#64 → ∀ fl, Q 158 g' fl
+        (Vst (Vst (Vst (Vst V (g.rbx + 56#64) b1) (g.rbx + 72#64) b2) (g.rbx + 88#64) b3) (g.rbx + 44#64) b4)) :
     W_121 fb F Wl Q g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
-  dsimp only at w56 w72 w88 w44 z56 z72 z88 z44 h ⊢
+  dsimp only at w56 w72 w88 w44 h ⊢
   wpx [W_121, o7]
   all_goals repeat' (first
-    | refine h _ _ ?_ ?_ ?_ ?_ ?_ _
-    | with_reducible exact hP
-    | refine z44 _ _ ?_
-    | refine z88 _ _ ?_
-    | refine z72 _ _ ?_
-    | refine z56 _ _ ?_
+    | refine h _ _ _ _ _ ?_ ?_ ?_ ?_ _
     | with_reducible rfl
     | with_reducible exact w56
     | with_reducible exact w72
@@ -669,12 +663,15 @@ theorem from121 (E : Ev prof F Wl L s₀ o gev gP gE fb S g0 e₂ code₂ j₂ n
     (hA : Agree F Y.proc.mm.mem W) (hr : Y.cpu.rip = oci_at.add 121) (hm : Fm S g0 Y.cpu.gpr) (hIW : I 0 W) :
     GoG prof L o gev gP gE Y t := by
   have e112 : Y.cpu.gpr.rbx + 112#64 = g0.rdi + 112#64 := by rw [hm.2.1]
+  have z56 : ∀ W bs, I 0 W → I 0 (Vst W (Y.cpu.gpr.rbx + 56#64) bs) := by rw [hm.2.1]; exact E.z56
+  have z72 : ∀ W bs, I 0 W → I 0 (Vst W (Y.cpu.gpr.rbx + 72#64) bs) := by rw [hm.2.1]; exact E.z72
+  have z88 : ∀ W bs, I 0 W → I 0 (Vst W (Y.cpu.gpr.rbx + 88#64) bs) := by rw [hm.2.1]; exact E.z88
+  have z44 : ∀ W bs, I 0 W → I 0 (Vst W (Y.cpu.gpr.rbx + 44#64) bs) := by rw [hm.2.1]; exact E.z44
   refine (c_121 prof fb).run E.c E.hfs E.hin (fun j' g' _ V' => j' = 158 ∧ I 0 V' ∧ Fr Y.cpu.gpr g' ∧
       g'.rbp = Y.cpu.gpr.rbx + 112#64 ∧ g'.rsi = Y.cpu.gpr.r13 ∧ g'.rdi = Y.cpu.gpr.rbx + 112#64) hK hA hr
-    (vc_121 (P := I 0) (by rw [hm.2.1]; exact E.w56) (by rw [hm.2.1]; exact E.w72) (by rw [hm.2.1]; exact E.w88)
-      (by rw [hm.2.1]; exact E.w44) hIW (by rw [hm.2.1]; exact E.z56) (by rw [hm.2.1]; exact E.z72)
-      (by rw [hm.2.1]; exact E.z88) (by rw [hm.2.1]; exact E.z44)
-      fun _ _ a b d e i _ => ⟨rfl, a, b, d, e, i⟩) ?_
+    (vc_121 (by rw [hm.2.1]; exact E.w56) (by rw [hm.2.1]; exact E.w72) (by rw [hm.2.1]; exact E.w88)
+      (by rw [hm.2.1]; exact E.w44)
+      fun _ b1 b2 b3 b4 a b d e _ => ⟨rfl, z44 _ b4 (z88 _ b3 (z72 _ b2 (z56 _ b1 hIW))), a, b, d, e⟩) ?_
   rintro j' g fl V₁ ⟨rfl, hIV, gf, gbp, gsi, gdi⟩ U t₁ hKU hAU hrU hgU -
   subst hgU
   have hmU := Fm.fr hm gf
