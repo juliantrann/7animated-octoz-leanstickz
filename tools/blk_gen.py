@@ -238,6 +238,13 @@ FNS = {
     "pvc": dict(grp="Pvc", cn="NWindows::NCOM::CPropVariant::Clear", a=0x457020, n=29, pos=True, stops=(18, 24),
                 tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `CPropVariant::Clear` (`CPP/Windows/PropVariant.cpp`; `objdump -d`)"),
+    # 7-Zip's CPP/Windows/PropVariant.cpp `PropVariant_Clear (prop)`: the types without resources (`vt` <= 7, or
+    # `vt - 10` a bit of 0x40000000003fc3): `vt`, `wReserved1`, `wReserved2`, `wReserved3` and the value zeroed
+    # (the `ret`, 0x5b); else `VariantClear (prop)` (the `call`, 0x2d), its result kept if not 0 (the `ret`, 0x3d),
+    # else the same zeroing past `vt` if `vt` is 0 (0x43).
+    "pcl": dict(grp="Pcl", cn="NWindows::NCOM::PropVariant_Clear", a=0x456fb0, n=92, pos=True,
+                stops=(0x3d, 0x5b), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `PropVariant_Clear` (`CPP/Windows/PropVariant.cpp`; `objdump -d`)"),
     "sdf": dict(grp="Sdf", cn="CFiTimesCAM::SetDirTime_to_FS", a=0x5ad590, n=52, pos=True, stops=(0x2f,),
                 tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `CFiTimesCAM::SetDirTime_to_FS` (`ArchiveExtractCallback.cpp`; `objdump -d`)"),
