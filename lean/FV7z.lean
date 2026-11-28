@@ -1981,3 +1981,9 @@ import FV7z.Amp.Blocks1
 import FV7z.Amp.Blocks
 import FV7z.Amp.Cuts
 import FV7z.Amp.Holds
+import FV7z.Pui.Code
+import FV7z.Pui.Pats
+import FV7z.Pui.Blocks1
+import FV7z.Pui.Blocks
+import FV7z.Pui.Cuts
+import FV7z.Pui.Holds
