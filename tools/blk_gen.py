@@ -2083,6 +2083,19 @@ FNS = {
     # glibc 2.31 libio/genops.c `_IO_iter_begin ()`: `_IO_list_all`. Stop: the `ret` (0xb).
     "iib": dict(grp="Iib", cn="_IO_iter_begin", a=0x60e050, n=12, pos=True, stops=(11,), tag="PLAN.md §M, M1",
                 src="glibc 2.31's `_IO_iter_begin` (`libio/genops.c`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/7zip/UI/Common/ArchiveCommandLine.cpp `StringToUInt32 (s, v)`: `ConvertStringToUInt32 (s,
+    # &end)`, `v` set, `*end == 0`. Stops: the `ret` (0x42), the call of `__stack_chk_fail` (0x43).
+    "sti": dict(grp="Sti", cn="StringToUInt32 (const wchar_t *, UInt32 &)", a=0x5a6760, n=72, pos=True, fs=True,
+                stops=(66, 67), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `StringToUInt32` (`ArchiveCommandLine.cpp`; `objdump -d`)"),
+    # glibc 2.31 iconv/gconv_db.c `__gconv_alias_compare (p1, p2)`: `strcmp` of the two `fromname`s as a tail jump.
+    # Stop: the jump (10).
+    "gac": dict(grp="Gac", cn="__gconv_alias_compare", a=0x452930, n=15, pos=True, stops=(10,),
+                tag="PLAN.md §M, M1", src="glibc 2.31's `__gconv_alias_compare` (`iconv/gconv_db.c`; `objdump -d`)"),
+    # glibc 2.31 wcsmbs/mbsrtowcs.c `__mbsrtowcs (dst, src, len, ps)`: `__mbsrtowcs_l (dst, src, len, ps ?: &state,
+    # _NL_CURRENT_LOCALE)` as a tail jump. Stop: the jump (29).
+    "mbr": dict(grp="Mbr", cn="__mbsrtowcs", a=0x65d320, n=34, pos=True, fs=True, stops=(29,),
+                tag="PLAN.md §M, M1", src="glibc 2.31's `__mbsrtowcs` (`wcsmbs/mbsrtowcs.c`; `objdump -d`)"),
     # glibc 2.31 elf/dl-lookup.c `_dl_setup_hash (map)`: the GNU hash table's fields (or the SysV one's) into `map`.
     # Stops: the two `ret`s (0x61, 0x93), the `__assert_fail` path (0x94) not covered.
     "dsh": dict(grp="Dsh", cn="_dl_setup_hash", a=0x6ab020, n=180, pos=True, stops=(0x61, 0x93, 0x94), calls=True,
