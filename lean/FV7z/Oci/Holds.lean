@@ -387,9 +387,9 @@ theorem vc_111c {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Pos
     | apply And.intro
     | intro _)
 
+set_option maxHeartbeats 1000000 in
 /-- The stores of 0 (the size, `this + 72`, `this + 88`, the 2 bytes at `this + 44`; their bytes named `b1`–`b4`);
 `rbp` = `rdi` = `this + 112`, `rsi` = `folderPrefix`: to the `call` at 158. -/
-set_option maxHeartbeats 1000000 in
 theorem vc_121 {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post}
     (w56 : ∀ i < 4, Foot Wl (Addr.add (g.rbx + 56#64) i)) (w72 : ∀ i < 4, Foot Wl (Addr.add (g.rbx + 72#64) i))
     (w88 : ∀ i < 4, Foot Wl (Addr.add (g.rbx + 88#64) i)) (w44 : ∀ i < 2, Foot Wl (Addr.add (g.rbx + 44#64) i))
