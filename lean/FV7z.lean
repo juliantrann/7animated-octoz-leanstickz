@@ -1447,3 +1447,10 @@ import FV7z.Spp.Cuts
 import FV7z.Spp.Pieces
 import FV7z.Spp.Holds
 import FV7z.Mbu.Rest
+import FV7z.Lemmas.SubMf
+import FV7z.Clp.Code
+import FV7z.Clp.Pats
+import FV7z.Clp.Blocks1
+import FV7z.Clp.Blocks2
+import FV7z.Clp.Blocks
+import FV7z.Clp.Cuts
