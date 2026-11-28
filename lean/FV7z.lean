@@ -1887,3 +1887,15 @@ import FV7z.Glh.Holds
 import FV7z.Lzp.Blocks
 import FV7z.Lzp.Cuts
 import FV7z.Lzp.Holds
+import FV7z.Npu.Code
+import FV7z.Npu.Pats
+import FV7z.Npu.Blocks1
+import FV7z.Npu.Blocks
+import FV7z.Npu.Cuts
+import FV7z.Npu.Holds
+import FV7z.Stc.Code
+import FV7z.Stc.Pats
+import FV7z.Stc.Blocks1
+import FV7z.Stc.Blocks
+import FV7z.Stc.Cuts
+import FV7z.Stc.Holds

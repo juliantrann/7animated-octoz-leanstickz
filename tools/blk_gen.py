@@ -2113,6 +2113,16 @@ FNS = {
     # 0x79217c), a tail jump to `ConvertUnicodeToUTF8_Flags`. Stop: the jump (0xd).
     "cu8": dict(grp="Cu8", cn="ConvertUnicodeToUTF8", a=0x4520b0, n=18, pos=True, stops=(13,), tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `ConvertUnicodeToUTF8` (`UTFConvert.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 Common/StdOutStream.cpp `CStdOutStream::NormalizePrint_UString_Path (s, tempU, tempA)`: three pushes,
+    # `tempU = s` (0x44d710), `NormalizePrint_UString (tempU)` (0x5a1680), the pops, a tail jump to `PrintUString`.
+    # Stop: the jump (0x33).
+    "npu": dict(grp="Npu", cn="CStdOutStream::NormalizePrint_UString_Path", a=0x5a16d0, n=56, pos=True, stops=(51,),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CStdOutStream::NormalizePrint_UString_Path` (`StdOutStream.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 Windows/FileIO.cpp `CFileBase::seekToCur ()`: `seek (0, SEEK_CUR)` (0x4560b0). Stop: the ret (0x18).
+    "stc": dict(grp="Stc", cn="NWindows::NFile::NIO::CFileBase::seekToCur", a=0x4560f0, n=25, pos=True, stops=(24,),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CFileBase::seekToCur` (`FileIO.cpp`; `objdump -d`)"),
 }
 
 def file_bytes(path, va, n):
