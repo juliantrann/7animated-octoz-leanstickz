@@ -561,6 +561,17 @@ FNS = {
     "dtu": dict(grp="Dtu", cn="do_tunable_update_val", a=0x66ed50, n=77, pos=True, stops=(0x26, 0x34, 0x4c),
                 tag="PLAN.md G3, startup",
                 src="glibc 2.31's `do_tunable_update_val` (`elf/dl-tunables.c`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/Common/IntToString.cpp `ConvertInt64ToString (val, s)`: a negative `val` gives '-' at `s`, then
+    # `-val` and `s + 1`; a tail jump (0x13) to `ConvertUInt64ToString` (0x44ac30).
+    "cis": dict(grp="Cis", cn="ConvertInt64ToString", a=0x44aea0, n=24, pos=True, stops=(0x13,), calls=True,
+                tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `ConvertInt64ToString` (`CPP/Common/IntToString.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/7zip/UI/Common/SortUtils.cpp `CompareStrings (p1, p2, param)`: the strings `(*strings)[*p1]`,
+    # `(*strings)[*p2]` (`param` the `UStringVector`); a tail jump (0x15) to `CompareFileNames` (0x4522b0) of their
+    # characters.
+    "cst": dict(grp="Cst", cn="CompareStrings", a=0x5dca50, n=26, pos=True, stops=(0x15,), calls=True,
+                tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CompareStrings` (`CPP/7zip/UI/Common/SortUtils.cpp`; `objdump -d`)"),
     # 7-Zip 26.06 C/LzmaDec + CPP/7zip/Compress/LzmaDecoder.cpp `CDecoder::SetOutStreamSizeResume (outSize)`: the
     # flags and sizes, then a tail jump (0x2f) to `LzmaDec_Init (&_state)`.
     "sos": dict(grp="Sos", cn="NCompress::NLzma::CDecoder::SetOutStreamSizeResume", a=0x57fd80, n=52, pos=True,
@@ -705,6 +716,10 @@ FNS = {
     # `_limit` = 3, `_chars[0]` = 0. Stop: the `ret` (0x31).
     "uct": dict(grp="Uct", cn="UString::UString()", a=0x44d3e0, n=50, pos=True, stops=(0x31,), calls=True,
                 tag="PLAN.md §M, M1", src="7-Zip's `UString::UString` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
+    # `AString::AString ()`: `_chars` = NULL, then `_chars` = `new char[4]` (the `call` at 0x14), `_len` = 0,
+    # `_limit` = 3, `_chars[0]` = 0 (one byte). Stop: the `ret` (0x2e).
+    "act": dict(grp="Act", cn="AString::AString()", a=0x44c360, n=47, pos=True, stops=(0x2e,), calls=True,
+                tag="PLAN.md §M, M1", src="7-Zip's `AString::AString` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
     # 7-Zip 26.06's CPP/Common/CommandLineParser.cpp `CParser::CParser ()`: `_switches` (the vector at 0) empty and
     # `StopSwitchIndex` (at 0x18) -1, then the `AString` at 0x20 (the `call` at 0x34, to 0x44c360) and the `UString`
     # at 0x30 (the `call` at 0x3d, `UString::UString ()`). Stop: the `ret` (0x4c).
