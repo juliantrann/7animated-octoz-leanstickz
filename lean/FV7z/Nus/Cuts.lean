@@ -1,7 +1,7 @@
 import FV7z.Nus.Blocks
 import FV7z.Lemmas.Wp
 /-!
-# The cut points of `Normalize_UString` (PLAN.md §M, M1)
+# The cut points of `CStdOutStream::Normalize_UString` (PLAN.md §M, M1)
 
 The 6 cut points: the entry and where two ways meet. From each, the blocks up to the next cut points as one
 piece (`W_*`, with its `Sp`, `c_*`): a block's straight-line code, then at its jump's exits the next block's condition,

@@ -1,6 +1,6 @@
 import FV7z.Nus.Blocks1
 /-!
-# The basic blocks of `Normalize_UString` (PLAN.md §M, M1)
+# The basic blocks of `CStdOutStream::Normalize_UString` (PLAN.md §M, M1)
 
 Where the stretches of `Pats.lean` lie in the code (`w_*`, `wj_*`: a prefix of the code from an offset, by the kernel's
 evaluation), and for each of the 16 basic blocks that the entry reaches an `Sp` (`sp_*`, by the block's offset): what
