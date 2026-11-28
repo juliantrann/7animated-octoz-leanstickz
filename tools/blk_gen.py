@@ -1583,6 +1583,16 @@ FNS = {
     "fch": dict(grp="Fch", cn="FindCharset", a=0x5a67b0, n=289, pos=True, fs=True, stops=(0x52, 0x117, 0x11c),
                 split=(0x25,), calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `FindCharset` (`CPP/7zip/UI/Common/ArchiveCommandLine.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/7zip/UI/Common/DefaultName.cpp `GetDefaultName3 (name, ext, addSubExtension)` (as
+    # `GetDefaultName2`): a frame of 32 bytes under five pushes with the stack guard at `rsp + 24` and a `UString`
+    # at `rsp`; `name` ends with `.ext` (the `cmp` at 0x40, `StringsAreEqualNoCase_Ascii`-like call at 0xf7): `Left`
+    # (0x110) + `addSubExtension` (0x11e); else `ReverseFind_Dot` (0x55): a dot gives `Left` (0xc9) +
+    # `addSubExtension` (0xd7), none gives `name + addSubExtension` (0x71) or `name + '~'` (0xb3); `delete []` of
+    # the temporary (0xe5); `Trim`-like call on the result (0x79); the guard's check. Stops: the `ret` (0xa2), the
+    # call of `__stack_chk_fail` (0x125).
+    "dfn": dict(grp="Dfn", cn="GetDefaultName2", a=0x5bfdd0, n=298, pos=True, fs=True, stops=(0xa2, 0x125),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `GetDefaultName2` (`CPP/7zip/UI/Common/DefaultName.cpp`; `objdump -d`)"),
 }
 
 
