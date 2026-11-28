@@ -1,10 +1,10 @@
-import FV7z.Ldp.Holds
+import FV7z.Lemmas.CmpMrF
+import FV7z.Npc.Holds
 open FV7z
-#print axioms FV7z.Ldp.bj
-#print axioms FV7z.Ldp.c7
-#print axioms FV7z.Ldp.vc_0
-#print axioms FV7z.Ldp.vc_27e
-#print axioms FV7z.Ldp.vc_27n
-#print axioms FV7z.Ldp.vc_27z
-#print axioms FV7z.Ldp.vc_76
-#print axioms FV7z.Ldp.ldp_ok
+#print axioms FV7z.OpIF.cmpmrf
+#print axioms FV7z.Npc.vc_0
+#print axioms FV7z.Npc.vc_25
+#print axioms FV7z.Npc.vc_44
+#print axioms FV7z.Npc.vc_78e
+#print axioms FV7z.Npc.vc_78n
+#print axioms FV7z.Npc.npc_ok
