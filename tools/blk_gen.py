@@ -1713,6 +1713,15 @@ FNS = {
     "spp": dict(grp="Spp", cn="SplitPathToParts", a=0x452500, n=709, pos=True, fs=True, stops=(0xa9, 0x2c0),
                 calls=True, hand=(0x110, 0x1ca), tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `SplitPathToParts` (`CPP/Common/Wildcard.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/Windows/FileName.cpp `NName::ResolveDotsFolders (s)` (static; no frame: three pushes, `r12` the
+    # string, `ebp` the index `i`, `rbx` = `4 i`, `rsi` its chars): the loop (0x35 the check of `s[i]`, 0x20 its head)
+    # over `s`: a `.` after a separator or at 0 followed by `/` or the end deletes it (`UString::Delete` at 0x86);
+    # `..` likewise deletes the folder before it, found by two backward scans (0xb8, 0xf0), the start reached either
+    # way or none (returns false at 0xc8); `Delete` at 0x127. Stops: the `ret`s (0x45 after the pops, 0x13a for the
+    # empty string).
+    "rdf": dict(grp="Rdf", cn="NWindows::NFile::NName::ResolveDotsFolders", a=0x456630, n=315, pos=True,
+                stops=(0x45, 0x13a), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `NName::ResolveDotsFolders` (`CPP/Windows/FileName.cpp`; `objdump -d`)"),
     # 7-Zip 26.06 CPP/7zip/UI/Common/EnumDirItems.cpp `CDirItems::ReserveDown ()`: `CRecordVector::ReserveDown` in
     # line for `Prefixes` (`this`, 8-byte items), `PhyParents` (`+ 0x10`, 4-byte), `LogParents` (`+ 0x20`, 4-byte)
     # and `Items` (`+ 0x30`, 8-byte), each `_items`, `_size` at `+ 8`, `_capacity` at `+ 0xc`: when `_size` is not
@@ -1723,6 +1732,20 @@ FNS = {
     "rsv": dict(grp="Rsv", cn="CDirItems::ReserveDown", a=0x5c03e0, n=439, pos=True, stops=(0x99,), calls=True,
                 tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `CDirItems::ReserveDown` (`CPP/7zip/UI/Common/EnumDirItems.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/7zip/UI/Common/OpenArchive.cpp `CArchiveLink::Release ()`: `NonOpen_ErrorInfo.ClearErrors ()`
+    # (0x13, `rdi` = `this + 0x40`), `NonOpen_ArcPath.Empty ()` inline; then `Arcs.DeleteBack ()` while `Arcs` (`this`,
+    # `_size` at `+ 8`) is not empty (the loop, head 0x40): the `CArc` (0x110 bytes) destroyed in line: `delete []` of
+    # seven strings' chars (0x5e .. 0xbb), `Release` of three COM pointers (`call [rax + 0x10]`, 0xcc, 0xdb, 0xea),
+    # `Archive` (`+ 0`) released: devirtualized when its `Release` is `0x5db1e0` (the count at `+ 0x10` decremented;
+    # at 0 the object destroyed in line: vtables, a COM pointer released (0x13d), its vector of 0x80-byte items freed
+    # (the loop, head 0x158: four strings' chars, `operator delete (p, 0x80)` at 0x1a5), `delete []` (0x1bd),
+    # `operator delete (p, 0x38)` (0x1ca)), else `call rax` (0x203); `operator delete (arc, 0x110)` (0x1d7), `_size`
+    # decremented. Stop: the `ret` (0x1f5). By hand: `sub dword [r14 + 0x10], 1` (0x10e; `Seg.s_sub_mi32`,
+    # FV7z/Lemmas/Lock2.lean).
+    "alr": dict(grp="Alr", cn="CArchiveLink::Release", a=0x5d34b0, n=519, pos=True, stops=(0x1f5,), calls=True,
+                hand=(0x10e,),
+                tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CArchiveLink::Release` (`CPP/7zip/UI/Common/OpenArchive.cpp`; `objdump -d`)"),
 }
 
 
