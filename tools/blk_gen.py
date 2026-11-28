@@ -246,6 +246,10 @@ FNS = {
     # (0x627710, noreturn). Stop: the call (23).
     "mpe": dict(grp="Mpe", cn="malloc_printerr", a=0x62e490, n=28, pos=True, stops=(23,),
                 tag="PLAN.md §M, M1", src="glibc's `malloc_printerr` (`malloc/malloc.c`; `objdump -d`)"),
+    # glibc's debug/fortify_fail.c `__fortify_fail (msg)`: `push rbp; push rbx`, then a loop of
+    # `__libc_message (1, "*** %s ***: terminated\n", msg)` (0x627710, noreturn). Stop: the call (37).
+    "ffl": dict(grp="Ffl", cn="__fortify_fail", a=0x669810, n=44, pos=True, stops=(37,),
+                tag="PLAN.md §M, M1", src="glibc's `__fortify_fail` (`debug/fortify_fail.c`; `objdump -d`)"),
     "uts": dict(grp="Uts", cn="ConvertUtcFileTimeToString", a=0x457a10, n=19, pos=True, stops=(14,),
                 tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `ConvertUtcFileTimeToString` (`CPP/Windows/PropVariantConv.cpp`; `objdump -d`)"),
@@ -916,24 +920,39 @@ FNS = {
     "gle": dict(grp="Gle", cn="GetLastError()", a=0x5a0200, n=20, pos=True, stops=(0x13,),
                 calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip's `GetLastError ()` (`CPP/Common/MyWindows.cpp`; `objdump -d`)"),
-    # `NDir::SetCurrentDir`, `NDir::CreateDir`, `NIO::SetSymLink` (folded): `rmdir`/`mkdir (path, 0777)`/`link`
+    # `NDir::RemoveDir`, `NDir::CreateDir`, `NDir::MyCreateHardLink`: `rmdir`/`mkdir (path, 0777)`/`link`
     # (each a hypothesis) then `sete al`; `seekToBegin`: `seek (0, SEEK_SET)`; `GetLastError_noZero_HRESULT`:
     # `GetLastError ()` (a hypothesis), then `HRESULT_FROM_WIN32` or `E_FAIL` for 0.
-    "scd": dict(grp="Scd", cn="NWindows::NFile::NDir::SetCurrentDir(char const*)", a=0x454b90, n=23, pos=True,
+    "scd": dict(grp="Scd", cn="NWindows::NFile::NDir::RemoveDir(char const*)", a=0x454b90, n=23, pos=True,
                 stops=(0x16,), calls=True, tag="PLAN.md §M, M1",
-                src="7-Zip's `NDir::SetCurrentDir` (`CPP/Windows/FileDir.cpp`; `objdump -d`)"),
+                src="7-Zip's `NDir::RemoveDir` (`CPP/Windows/FileDir.cpp`; `objdump -d`)"),
     "cdr": dict(grp="Cdr", cn="NWindows::NFile::NDir::CreateDir(char const*)", a=0x454bb0, n=28, pos=True,
                 stops=(0x1b,), calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip's `NDir::CreateDir` (`CPP/Windows/FileDir.cpp`; `objdump -d`)"),
-    "lkw": dict(grp="Lkw", cn="NWindows::NFile::NIO::SetSymLink(char const*, char const*)", a=0x455880, n=32,
+    "lkw": dict(grp="Lkw", cn="NWindows::NFile::NDir::MyCreateHardLink(char const*, char const*)", a=0x455880, n=32,
                 pos=True, stops=(0x1f,), calls=True, tag="PLAN.md §M, M1",
-                src="7-Zip's `NIO::SetSymLink` (`CPP/Windows/FileDir.cpp`; `objdump -d`)"),
+                src="7-Zip's `NDir::MyCreateHardLink` (`CPP/Windows/FileDir.cpp`; `objdump -d`)"),
     "sbg": dict(grp="Sbg", cn="NWindows::NFile::NIO::CFileBase::seekToBegin() const", a=0x4560c0, n=22, pos=True,
                 stops=(0x15,), calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip's `CFileBase::seekToBegin` (`CPP/Windows/FileIO.cpp`; `objdump -d`)"),
     "glh": dict(grp="Glh", cn="GetLastError_noZero_HRESULT()", a=0x456000, n=47, pos=True, stops=(0x23,),
                 calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip's `GetLastError_noZero_HRESULT ()` (`CPP/Windows/FileIO.cpp`; `objdump -d`)"),
+    # `NDir::DeleteFileAlways`: `remove (path) == 0` (`call` at 8, a hypothesis);
+    # `CTempFile::Remove`: if `_mustBeDeleted`, `_mustBeDeleted = !that (_path)`; `NName::IsAbsolutePath`:
+    # `s[0] == '/'`.
+    "rmf": dict(grp="Rmf", cn="NWindows::NFile::NDir::DeleteFileAlways(char const*)", a=0x455010, n=23, pos=True,
+                stops=(0x16,), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip's `NDir::DeleteFileAlways` (`CPP/Windows/FileDir.cpp`; `objdump -d`)"),
+    "tfr": dict(grp="Tfr", cn="NWindows::NFile::NDir::CTempFile::Remove()", a=0x455030, n=38, pos=True,
+                stops=(0xe, 0x25), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip's `CTempFile::Remove` (`CPP/Windows/FileDir.cpp`; `objdump -d`)"),
+    "iap": dict(grp="Iap", cn="NWindows::NFile::NName::IsAbsolutePath(wchar_t const*)", a=0x456a50, n=11, pos=True,
+                stops=(0xa,), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip's `NName::IsAbsolutePath` (`CPP/Windows/FileName.cpp`; `objdump -d`)"),
+    # glibc 2.31's `remove`: only its code is used (`Rmf` takes it as a hypothesis).
+    "rmv": dict(grp="Rmv", cn="remove", a=0x624030, n=63, pos=True, fs=True, stops=(0x31, 0x3e), calls=True,
+                tag="PLAN.md §M, M1", src="glibc 2.31's `remove` (`stdio-common/remove.c`; `objdump -d`)"),
     # glibc 2.31's `rmdir`, `mkdir`, `link` (`syscall` 84, 83, 86): only their code is used (hypotheses above).
     "rmd": dict(grp="Rmd", cn="rmdir", a=0x665e30, n=37, pos=True, fs=True, stops=(0x13, 0x24), calls=True,
                 tag="PLAN.md §M, M1", src="glibc 2.31's `rmdir` (`sysdeps/unix/syscalls.list`; `objdump -d`)"),
@@ -2096,6 +2115,15 @@ FNS = {
     # _NL_CURRENT_LOCALE)` as a tail jump. Stop: the jump (29).
     "mbr": dict(grp="Mbr", cn="__mbsrtowcs", a=0x65d320, n=34, pos=True, fs=True, stops=(29,),
                 tag="PLAN.md §M, M1", src="glibc 2.31's `__mbsrtowcs` (`wcsmbs/mbsrtowcs.c`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/7zip/UI/Common/ArchiveExtractCallback.cpp `CDirPathSortPair::SetNumSlashes (s)`: the number of
+    # `/` in `s` up to its 0 into `Len` (`this + 0`); the loop's head 0x18. Stop: the `ret` (0x30).
+    "sns": dict(grp="Sns", cn="CDirPathSortPair::SetNumSlashes", a=0x5ad550, n=49, pos=True, stops=(48,),
+                tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CDirPathSortPair::SetNumSlashes` (`ArchiveExtractCallback.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/Common/MyString.cpp `UString::Add_LF ()`: `Grow_1 ()` (0x44d0a0) when `_len == _limit`, then
+    # `L'\n'` and the 0 at `_len`, `_len + 1`. Stops: the `ret` (0x2a), the `call` (0x30).
+    "alf": dict(grp="Alf", cn="UString::Add_LF", a=0x44dab0, n=58, pos=True, stops=(42, 48), calls=True,
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `UString::Add_LF` (`MyString.cpp`; `objdump -d`)"),
     # glibc 2.31 elf/dl-lookup.c `_dl_setup_hash (map)`: the GNU hash table's fields (or the SysV one's) into `map`.
     # Stops: the two `ret`s (0x61, 0x93), the `__assert_fail` path (0x94) not covered.
     "dsh": dict(grp="Dsh", cn="_dl_setup_hash", a=0x6ab020, n=180, pos=True, stops=(0x61, 0x93, 0x94), calls=True,
