@@ -245,7 +245,7 @@ theorem a24 (x : Addr) : x - 24#64 + 24#64 = x := BitVec.sub_add_cancel _ _
 theorem rdself {S : Addr} {W : Addr → Byte} {x : BitVec 64} (ns : (sp72 S + 8#64).toNat + 8 ≤ 2 ^ 64) :
     rdq(Wsp S W x, sp72 S + 8#64) = x := by
   show ofBytesLE 64 (List.map (Vst W (sp72 S + 8#64) (toBytesLE x 8)) (byteAddrs (sp72 S + 8#64) 8)) = x
-  rw [Tun.rd_Vst_self W _ _ (toBytesLE_length _ _) ns, ofBytesLE_toBytesLE rfl]
+  rw [Tun.rd_Vst_self W _ _ (toBytesLE_length _ _) ns, ofBytesLE_toBytesLE (w := 64) (n := 8) rfl]
 
 /-- The closer of the pieces' conditions. -/
 local macro "ccl" : tactic => `(tactic| (all_goals repeat'
@@ -753,6 +753,7 @@ theorem vc_106 {v : BitVec 64} (hv : rdq(V, g.rbp) = v) (fv : ∀ i < 8, Foot F.
   wpx [W_106, o7, hv]
   ccl
 
+set_option maxHeartbeats 4000000 in
 /-- 130: `_inSizeIsMain` stored, the pops; to the `ret` at 148. -/
 theorem vc_130 {Q : Post} (w : ∀ i < 1, Foot Wl (Addr.add (g.rbx + 14#64) i))
     (l1 : ∀ i < 8, Foot F.data (Addr.add (g.rsp + 24#64) i))
@@ -815,8 +816,8 @@ theorem aft_sk {Y Z : State} (hs : U.cpu.gpr.rsp = sp72 S) (hsY : Y.cpu.gpr.rsp 
     (hgY : Y.cpu.gpr = U.cpu.gpr.set 4 (U.cpu.gpr.rsp - 8)) (h : Ocv.Bk Y.cpu.gpr Z.cpu.gpr) :
     Sk U.cpu.gpr Z.cpu.gpr := by
   obtain ⟨b1, b2, b3, b4, b5, b6, b7⟩ := h
-  refine ⟨?_, b2.trans (congrArg Gprs.rbx hgY), b3.trans (congrArg Gprs.rbp hgY), b4.trans (congrArg Gprs.r12 hgY),
-    b5.trans (congrArg Gprs.r13 hgY), b6.trans (congrArg Gprs.r14 hgY), b7.trans (congrArg Gprs.r15 hgY)⟩
+  refine ⟨?_, b2.trans (by rw [hgY]; try rfl), b3.trans (by rw [hgY]; try rfl), b4.trans (by rw [hgY]; try rfl),
+    b5.trans (by rw [hgY]; try rfl), b6.trans (by rw [hgY]; try rfl), b7.trans (by rw [hgY]; try rfl)⟩
   rw [b1, hsY, Ocv.a1s, hs]
 
 /-- A `call [b + d]` at `j`, the target `f` read at `a`. -/
