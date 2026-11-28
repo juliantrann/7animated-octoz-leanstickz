@@ -359,7 +359,7 @@ theorem ird_ok (c : Seg prof F Wl L s₀ o) (hin : CodeIn L ird_at ird) (hinR : 
         rw [hg2, hzp]
         exact BitVec.add_zero _
       refine c.s_callM hKU hAU hin (lt_len (by decide)) hrU (call_113 _) (by rw [he]; exact fb) hinF hF0
-        (by rw [he]; rfl) (by rw [hsU]; exact hs3) ?_
+        (by rw [he]) (by rw [hsU]; exact hs3) ?_
       rintro Y t₂ hKY hAY ⟨hrY, hgY⟩
       rw [hsU] at hAY
       exact kcb U.cpu.gpr V' hp hsU (by rw [hgU, hg3, hzp]) (by rw [hgU, hg4, hzp]) hF Y t₂ hKY hAY hrY
