@@ -40,7 +40,7 @@ theorem ret_168 (feat : Features) : Dec feat cpv 168 (FV7z.mk .ret 64 [] 1) :=
   Dec.shift (j := 168) (k := 0) (pret_0 feat) w_168 (Nat.zero_le _)
 
 /-! The tail jumps: to `ConvertUInt64ToString` (`4500528` = `0x44ac30`), `ConvertUInt32ToString` (`4500336` =
-`0x44ab70`), `ConvertInt64ToString` (`4501152` = `0x44aea0`), `0x457a10` (`4569616`). -/
+`0x44ab70`), `ConvertInt64ToString` (`4501152` = `0x44aea0`), `0x457a10` (`4553232`). -/
 def pj64 : List Byte := [0xe9, 0xdb, 0x30, 0xff, 0xff]
 theorem pj64_0 : ∀ feat, Dec feat pj64 0 (FV7z.mk .jmp 64 [.rel 18446744073709498587] 5) := by dec_rfl
 theorem wj64 : pj64 <+: cpv.drop 64 := by decide +kernel
@@ -157,7 +157,7 @@ def Jt (V0 : Addr → Byte) (g0 : Gprs) (T : Addr) (g : Gprs) (V : Addr → Byte
   (clw (vtg V0 g0) = 176 ∧ T = 4501152#64 ∧
       g.rdi = BitVec.signExtend 64 (ofBytesLE 16 (vqb V0 g0 2)) ∧
       g.rsi = g0.rsi ∧ V = Vz V0 g0) ∨
-  (clw (vtg V0 g0) = 192 ∧ T = 4569616#64 ∧
+  (clw (vtg V0 g0) = 192 ∧ T = 4553232#64 ∧
       g.rdi = g0.rdi + 8#64 ∧ g.rdx = 0 ∧ g.rsi = g0.rsi ∧ V = Vz V0 g0) ∨
   (clw (vtg V0 g0) = 208 ∧ T = 4501152#64 ∧
       g.rdi = ofBytesLE 64 (vqb V0 g0 8) ∧
@@ -177,7 +177,7 @@ def Ex (V0 : Addr → Byte) (g0 : Gprs) (j : Nat) (g : Gprs) (_fl : Rflags) (V :
     (j = 131 ∧ Jt V0 g0 4500336#64 g V) ∨
     (j = 148 ∧ Jt V0 g0 4501152#64 g V) ∨
     (j = 181 ∧ Jt V0 g0 4501152#64 g V) ∨
-    (j = 198 ∧ Jt V0 g0 4569616#64 g V) ∨
+    (j = 198 ∧ Jt V0 g0 4553232#64 g V) ∨
     (j = 212 ∧ Jt V0 g0 4501152#64 g V) ∨
     (j = 228 ∧ Jt V0 g0 4500528#64 g V))
 
@@ -209,6 +209,16 @@ theorem svx {a d : Addr} {n : Nat} (h : ∀ i < n, ∀ j < 2, Addr.add a i ≠ A
     ∀ (W : Addr → Byte) (bs : List Byte), bs.length ≤ 2 →
       List.map (Vst W d bs) (byteAddrs a n) = List.map W (byteAddrs a n) :=
   fun _ _ hb => rdv fun i hi j hj => h i hi j (by omega)
+
+/-- `svx` for a store of 1 byte. -/
+theorem sv1 {a d : Addr} {n : Nat} (h : ∀ i < n, ∀ j < 2, Addr.add a i ≠ Addr.add d j) (W : Addr → Byte) {w : Nat}
+    (x : BitVec w) : List.map (Vst W d (toBytesLE x 1)) (byteAddrs a n) = List.map W (byteAddrs a n) :=
+  svx h W _ (by rw [toBytesLE_length] <;> omega)
+
+/-- `svx` for a store of 2 bytes. -/
+theorem sv2 {a d : Addr} {n : Nat} (h : ∀ i < n, ∀ j < 2, Addr.add a i ≠ Addr.add d j) (W : Addr → Byte) {w : Nat}
+    (x : BitVec w) : List.map (Vst W d (toBytesLE x 2)) (byteAddrs a n) = List.map W (byteAddrs a n) :=
+  svx h W _ (by rw [toBytesLE_length] <;> omega)
 
 /-- `rsi + 2 - 2`. -/
 theorem m2 (x : BitVec 64) : x + 2#64 + 18446744073709551614#64 = x := by
@@ -435,12 +445,13 @@ local macro "cfin" t:term : tactic =>
     | apply And.intro
     | intro _))
 
+set_option maxHeartbeats 1000000 in
 /-- From the entry: `*dest = 0`; `vt` above 64, to 48; else by the table. -/
 theorem vc_0 (hP : Pc F Wl V0 g0) : W_0 F Wl (Nx V0 g0 2) g0 f V0 := by
   have fP := hP.fP
   have fT := hP.fT
   have wD := hP.wD
-  have sp := svx hP.sP
+  have sp := sv1 hP.sP
   have hjv := jt_V hP
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g0
   dsimp only at fP wD sp hjv
@@ -450,8 +461,9 @@ theorem vc_0 (hP : Pc F Wl V0 g0) : W_0 F Wl (Nx V0 g0 2) g0 f V0 := by
     | exact fun i hi => wD i (by omega)
     | exact eI (by decide) (cl_ja ‹_›) ⟨_, _, rfl⟩ (by decide)
     | exact jt_foot fT _ (ja_w ‹_›)
+    | exact tg _ _ (ja_w ‹_›) (hjv _ (by simp [toBytesLE_length])) (eT (ja_w ‹_›) ⟨_, _, rfl⟩)
     | refine tg _ _ (ja_w ‹_›) (hjv _ (by simp [toBytesLE_length])) ?_
-    | exact eT (ja_w ‹_›) ⟨_, _, rfl⟩
+    | exact (show Nx _ _ _ (cpv_cases.getD _ _) _ _ _ from eT (ja_w ‹_›) ⟨_, _, rfl⟩)
     | rfl
     | apply And.intro
     | intro _)
@@ -462,11 +474,12 @@ theorem vc_48 (hP : Pc F Wl V0 g0) (hR : Rg g0 g) (hℓ : 48 = clw (vtg V0 g0)) 
   have fP := hP.fP
   have fQ := hP.fQ
   have wD := hP.wD
-  have sp := svx hP.sP
+  have sp := sv1 hP.sP
+  have sq := sv2 hP.sP
   obtain ⟨a, b, rfl⟩ := hR
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g0
-  dsimp only at fP fQ wD sp ⊢
-  wpx [W_48, o2, Vz, sp, m2]
+  dsimp only at fP fQ wD sp sq ⊢
+  wpx [W_48, o2, Vz, sp, sq, m2]
   cfin x64 hℓ rK rfl rfl (by decide)
 
 /-- `VT_BOOL`: '-' or '+', then 0. -/
@@ -475,7 +488,7 @@ theorem vc_72 (hP : Pc F Wl V0 g0) (hR : Rg g0 g) (hℓ : 72 = clw (vtg V0 g0)) 
   have fP := hP.fP
   have fQ := hP.fQ
   have wD := hP.wD
-  have s2 := svx (n := 2) fun i hi => hP.sQ i (by omega)
+  have s2 := sv1 (n := 2) fun i hi => hP.sQ i (by omega)
   obtain ⟨a, b, rfl⟩ := hR
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g0
   dsimp only at fP fQ wD s2 ⊢
@@ -492,7 +505,7 @@ theorem vc_96 (hP : Pc F Wl V0 g0) (hR : Rg g0 g) (hℓ : 96 = clw (vtg V0 g0)) 
   have fP := hP.fP
   have fQ := hP.fQ
   have wD := hP.wD
-  have s1 := svx (n := 1) fun i hi => hP.sQ i (by omega)
+  have s1 := sv1 (n := 1) fun i hi => hP.sQ i (by omega)
   obtain ⟨a, b, rfl⟩ := hR
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g0
   dsimp only at fP fQ wD s1 ⊢
@@ -505,7 +518,7 @@ theorem vc_112 (hP : Pc F Wl V0 g0) (hR : Rg g0 g) (hℓ : 112 = clw (vtg V0 g0)
   have fP := hP.fP
   have fQ := hP.fQ
   have wD := hP.wD
-  have s2 := svx (n := 2) fun i hi => hP.sQ i (by omega)
+  have s2 := sv1 (n := 2) fun i hi => hP.sQ i (by omega)
   obtain ⟨a, b, rfl⟩ := hR
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g0
   dsimp only at fP fQ wD s2 ⊢
@@ -518,7 +531,7 @@ theorem vc_128 (hP : Pc F Wl V0 g0) (hR : Rg g0 g) (hℓ : 128 = clw (vtg V0 g0)
   have fP := hP.fP
   have fQ := hP.fQ
   have wD := hP.wD
-  have s4 := svx (n := 4) fun i hi => hP.sQ i (by omega)
+  have s4 := sv1 (n := 4) fun i hi => hP.sQ i (by omega)
   obtain ⟨a, b, rfl⟩ := hR
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g0
   dsimp only at fP fQ wD s4 ⊢
@@ -531,7 +544,7 @@ theorem vc_144 (hP : Pc F Wl V0 g0) (hR : Rg g0 g) (hℓ : 144 = clw (vtg V0 g0)
   have fP := hP.fP
   have fQ := hP.fQ
   have wD := hP.wD
-  have s4 := svx (n := 4) fun i hi => hP.sQ i (by omega)
+  have s4 := sv1 (n := 4) fun i hi => hP.sQ i (by omega)
   obtain ⟨a, b, rfl⟩ := hR
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g0
   dsimp only at fP fQ wD s4 ⊢
@@ -556,7 +569,7 @@ theorem vc_176 (hP : Pc F Wl V0 g0) (hR : Rg g0 g) (hℓ : 176 = clw (vtg V0 g0)
   have fP := hP.fP
   have fQ := hP.fQ
   have wD := hP.wD
-  have s2 := svx (n := 2) fun i hi => hP.sQ i (by omega)
+  have s2 := sv1 (n := 2) fun i hi => hP.sQ i (by omega)
   obtain ⟨a, b, rfl⟩ := hR
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g0
   dsimp only at fP fQ wD s2 ⊢
@@ -581,7 +594,7 @@ theorem vc_208 (hP : Pc F Wl V0 g0) (hR : Rg g0 g) (hℓ : 208 = clw (vtg V0 g0)
   have fP := hP.fP
   have fQ := hP.fQ
   have wD := hP.wD
-  have s8 := svx (n := 8) hP.sQ
+  have s8 := sv1 (n := 8) hP.sQ
   obtain ⟨a, b, rfl⟩ := hR
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g0
   dsimp only at fP fQ wD s8 ⊢
@@ -594,7 +607,7 @@ theorem vc_224 (hP : Pc F Wl V0 g0) (hR : Rg g0 g) (hℓ : 224 = clw (vtg V0 g0)
   have fP := hP.fP
   have fQ := hP.fQ
   have wD := hP.wD
-  have s8 := svx (n := 8) hP.sQ
+  have s8 := sv1 (n := 8) hP.sQ
   obtain ⟨a, b, rfl⟩ := hR
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g0
   dsimp only at fP fQ wD s8 ⊢
@@ -651,7 +664,7 @@ theorem cpv_ok {X : State} {t : Nat} {V : Addr → Byte} (c : Seg prof F Wl L s�
     (hra : rdq(V, X.cpu.gpr.rsp) = e₂.add j₂)
     {cU cW cI cF : List Byte} (hU : CodeIn L 4500528#64 cU) (hU' : 0 < cU.length)
     (hW : CodeIn L 4500336#64 cW) (hW' : 0 < cW.length) (hI : CodeIn L 4501152#64 cI) (hI' : 0 < cI.length)
-    (hF : CodeIn L 4569616#64 cF) (hF' : 0 < cF.length)
+    (hF : CodeIn L 4553232#64 cF) (hF' : 0 < cF.length)
     (kr : ∀ (V' : Addr → Byte) (Z : State) (t' : Nat), KeptW Wl s₀ Z → Agree F Z.proc.mm.mem V' →
       Z.cpu.rip = e₂.add j₂ → Str.Back X.cpu.gpr Z.cpu.gpr → Rv V X.cpu.gpr V' → GoG prof L o gev gP gE Z t')
     (kj : ∀ (T : Addr) (V' : Addr → Byte) (Y : State) (t' : Nat), KeptW Wl s₀ Y → Agree F Y.proc.mm.mem V' →
