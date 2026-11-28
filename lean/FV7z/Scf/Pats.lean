@@ -1,0 +1,45 @@
+import FV7z.Lemmas.Sp
+import FV7z.Lemmas.BlkOps2
+/-!
+# The stretches of straight-line code of `__stack_chk_fail` (PLAN.md §M, M1)
+
+Each distinct stretch between labels and jumps (`p*`, 1 of them) and each distinct jump (`j*`, 0) as its own
+list of bytes: what the model's decoder makes of its instructions on every processor, whatever bytes follow
+(`Leaf.Dec`, by evaluation), their effects (`o*`, `Op`s of `BlkOps.lean`), and the stretch as a `Blk`. Generated from
+the decoder's own output (`decshow`) by `tools/blk_gen.py`.
+-/
+namespace FV7z.Scf
+set_option maxRecDepth 20000
+open ZellicX86 Decode FV7z.Leaf
+
+/-- Decoding at a fixed offset, by evaluation. -/
+macro "dec_rfl" : tactic => `(tactic| (intro feat f; rfl))
+
+/-- The stretch at `0`. -/
+def p0 : List Byte := [
+  0xf3, 0x0f, 0x1e, 0xfa, 0x50, 0x58, 0x48, 0x8d, 0x3d, 0x9c, 0x94, 0x08, 0x00, 0x48, 0x83, 0xec,
+  0x08]
+
+theorem p0_0 : ∀ feat, Dec feat p0 0 (FV7z.mk .endbr64 32 [] 4) := by dec_rfl
+theorem p0_4 : ∀ feat, Dec feat p0 4 (FV7z.mk .push 64 [gr 64 0] 1) := by dec_rfl
+theorem p0_5 : ∀ feat, Dec feat p0 5 (FV7z.mk .pop 64 [gr 64 0] 1) := by dec_rfl
+theorem p0_6 : ∀ feat, Dec feat p0 6 (FV7z.mk .lea 64 [gr 64 7, .mem (mrip 562332 0)] 7) := by dec_rfl
+theorem p0_13 : ∀ feat, Dec feat p0 13 (FV7z.mk .sub 64 [gr 64 4, Src.opd 64 (.i 8)] 4) := by dec_rfl
+
+/-- What the stretch does. -/
+def o0 : List Op := [
+  Op.nop,
+  Op.push 0,
+  Op.pop 0,
+  Op.mov 64 7 (.i 7285913),
+  Op.sub 64 4 (.i 8)]
+
+theorem b0 (prof : Profile) : BlkA prof p0 (0x6697f0 : Addr) 0 17 o0 :=
+  .cons (p0_0 _) ((OpI.endbr).at _) (by decide) <|
+  .cons (p0_4 _) ((OpI.push).at _) (by decide) <|
+  .cons (p0_5 _) ((OpI.pop).at _) (by decide) <|
+  .cons (p0_6 _) (OpIA.lea_rip (by decide)) (by decide) <|
+  .cons (p0_13 _) ((OpI.sub (.i 8) (.inr rfl)).at _) (by decide) <|
+  .nil 17
+
+end FV7z.Scf
