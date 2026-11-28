@@ -1152,6 +1152,10 @@ FNS = {
     "pst": dict(grp="Pst", cn="PrintString", a=0x5ebf50, n=171, pos=True, stops=(0x57, 0x6d, 0x9c), calls=True,
                 tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `PrintString` (`CPP/7zip/UI/Console/List.cpp`; `objdump -d`)"),
+    "ppd": dict(grp="Ppd", cn="CPercentPrinter::~CPercentPrinter", a=0x5f68a0, n=162, pos=True, stops=(0x95, 0xa1),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CPercentPrinter::~CPercentPrinter` (`CPP/7zip/UI/Console/PercentPrinter.h`; "
+                    "`objdump -d`)"),
     # `CFileBase::OpenBinary (name, flags, mode)`: `Close ()` (the `call` at 0x1a), `open64 (name, flags, mode)` (the
     # `call` at 0x2a), the result stored as `_handle`, `al` = it is not -1. Stop: the `ret` (0x41).
     "fob": dict(grp="Fob", cn="NWindows::NFile::NIO::CFileBase::OpenBinary", a=0x456060, n=66, pos=True, stops=(0x41,),
@@ -2286,6 +2290,13 @@ FNS = {
     "ifw": dict(grp="Ifw", cn="_IO_new_file_write", a=0x6287d0, n=156, pos=True, stops=(0x25, 0x8b, 0x8c),
                 calls=True, hand=(0x60,), tag="PLAN.md §M, M1",
                 src="glibc's `_IO_new_file_write` (`libio/fileops.c`, static in 7zzs 26.06; `objdump -d`)"),
+    # glibc's `__gettimeofday (tv, tz)` (static in 7zzs): `tz` not null (0x14): `*(char *) tz = 0` (0x80) and back
+    # (0x83); the vDSO's pointer at 0x791cd0 (0x16): null to the `syscall` 96 (0x6b), else `call rax` (0x28); a
+    # result in `-4095 .. -1` (0x34) other than `-ENOSYS` (0x3a, to the `syscall`) or from the `syscall` (0x76):
+    # `errno` = minus it (`fs:[-0x48]`, 0x45) and -1. Stops: the `ret`s (0x58, 0x7f), the padding (0x59).
+    "gtd": dict(grp="Gtd", cn="__gettimeofday", a=0x660360, n=133, pos=True, fs=True, stops=(0x58, 0x59, 0x7f),
+                calls=True, tag="PLAN.md §M, M1",
+                src="glibc's `__gettimeofday` (`gettimeofday.c`, static in 7zzs 26.06; `objdump -d`)"),
 }
 
 def file_bytes(path, va, n):
