@@ -1037,6 +1037,11 @@ FNS = {
     # PLT entry) of the rest down and `_len` - `count`. Stops: the `ret`s (0x25, 0x5d).
     "udl": dict(grp="Udl", cn="UString::Delete", a=0x44e0b0, n=94, pos=True, stops=(0x25, 0x5d), calls=True,
                 hand=(0x54,), tag="PLAN.md §M, M1", src="7-Zip's `UString::Delete` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
+    # `LzFindPrepare ()`: the first CPU test (the `call` at 0x8); 0 into `g_LzFind_GetMatchesSpec` (`0x7967a0`) when it
+    # fails, else the second (the `call` at 0x28) picks one of two functions by a `cmovne`. Stops: the `ret`s (0x22,
+    # 0x4c).
+    "lzp": dict(grp="Lzp", cn="LzFindPrepare", a=0x427de0, n=77, pos=True, stops=(0x22, 0x4c), calls=True,
+                tag="PLAN.md §M, M1", src="7-Zip's `LzFindPrepare` (`C/LzFind.c`; `objdump -d`)"),
     # `CFileBase::OpenBinary (name, flags, mode)`: `Close ()` (the `call` at 0x1a), `open64 (name, flags, mode)` (the
     # `call` at 0x2a), the result stored as `_handle`, `al` = it is not -1. Stop: the `ret` (0x41).
     "fob": dict(grp="Fob", cn="NWindows::NFile::NIO::CFileBase::OpenBinary", a=0x456060, n=66, pos=True, stops=(0x41,),
