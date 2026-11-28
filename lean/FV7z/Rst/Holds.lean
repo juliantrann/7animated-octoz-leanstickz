@@ -491,8 +491,12 @@ theorem rst_ok {fb : Addr} {eF : Addr} {codeF : List Byte} {g0 : Gprs} {m : BitV
         exact BitVec.add_zero _
       refine c.s_add_mr64 hKU₁ hAU₁ hin (lt_len (by decide)) hrU₁ (add_118 _) (by rw [he']; exact wz) ?_
       rw [he']
+      suffices KK : ∀ bs : List Byte, bs.length = 8 → ContG prof F Wl L s₀ o gev gP gE (Vst W' X.cpu.gpr.rdx bs)
+          (fun Y => Y.cpu.rip = rst_at.add (118 + 3) ∧ Y.cpu.gpr = U₁.cpu.gpr) from
+        KK _ (toBytesLE_length ..)
+      intro bs6 hl6
       rintro Y₆ t₅ hK₆ hA₆ ⟨hr₆, hg₆⟩
-      have hI6 := hIa W' _ (toBytesLE_length ..) hIW'
+      have hI6 := hIa W' bs6 hl6 hIW'
       have y_s : Y₆.cpu.gpr.rsp = aR X.cpu.gpr.rsp := by rw [hg₆]; exact us.trans zs
       have y_b : Y₆.cpu.gpr.rbx = r := by rw [hg₆]; exact ub.trans zb
       have y_d : Y₆.cpu.gpr.rdx = BitVec.setWidth 64 rdd(W', aR X.cpu.gpr.rsp + 4#64) := by rw [hg₆]; exact ud
@@ -501,7 +505,7 @@ theorem rst_ok {fb : Addr} {eF : Addr} {codeF : List Byte} {g0 : Gprs} {m : BitV
         · -- nothing read: to 131
           have hv : (BitVec.setWidth 32 Y₆.cpu.gpr.rdx == 0) = true := by
             rw [y_d, sw_64_32]; exact beq_iff_eq.2 hv0
-          refine (c_121 prof fb).run c hfs hin (fun j' g' _ V' => j' = 131 ∧ V' = _ ∧
+          refine (c_121 prof fb).run c hfs hin (fun j' g' _ V' => j' = 131 ∧ V' = Vst W' X.cpu.gpr.rdx bs6 ∧
               g'.rsp = Y₆.cpu.gpr.rsp) hK₆ hA₆ hr₆
             (vc_121s (beq_iff_eq.2 ha) hv fun _ a _ => ⟨rfl, rfl, a⟩) ?_
           rintro j' g fl V₁ ⟨rfl, hV₁, gs'⟩ U₂ t₆ hKU₂ hAU₂ hrU₂ hgU₂ -
@@ -511,14 +515,14 @@ theorem rst_ok {fb : Addr} {eF : Addr} {codeF : List Byte} {g0 : Gprs} {m : BitV
             rw [y_d, sw_64_32]; exact beq_eq_false_iff_ne.2 hv0
           by_cases hz : Y₆.cpu.gpr.rbx - Y₆.cpu.gpr.rdx = 0
           · -- all read: to 168
-            refine (c_121 prof fb).run c hfs hin (fun j' g' _ V' => j' = 168 ∧ V' = _ ∧
+            refine (c_121 prof fb).run c hfs hin (fun j' g' _ V' => j' = 168 ∧ V' = Vst W' X.cpu.gpr.rdx bs6 ∧
                 g'.rsp = Y₆.cpu.gpr.rsp) hK₆ hA₆ hr₆
               (vc_121z (beq_iff_eq.2 ha) hv (beq_iff_eq.2 hz) fun _ a _ => ⟨rfl, rfl, a⟩) ?_
             rintro j' g fl V₁ ⟨rfl, hV₁, gs'⟩ U₂ t₆ hKU₂ hAU₂ hrU₂ hgU₂ -
             subst V₁ hgU₂
             exact T168 U₂ _ t₆ hKU₂ hAU₂ hrU₂ (gs'.trans y_s) hI6
           · -- something left: round again
-            refine (c_121 prof fb).run c hfs hin (fun j' g' _ V' => j' = 89 ∧ V' = _ ∧
+            refine (c_121 prof fb).run c hfs hin (fun j' g' _ V' => j' = 89 ∧ V' = Vst W' X.cpu.gpr.rdx bs6 ∧
                 g'.rsp = Y₆.cpu.gpr.rsp ∧ g'.rbx = Y₆.cpu.gpr.rbx - Y₆.cpu.gpr.rdx ∧
                 g'.r13 = Y₆.cpu.gpr.r13 + Y₆.cpu.gpr.rdx ∧ g'.rbp = Y₆.cpu.gpr.rbp ∧
                 g'.r12 = Y₆.cpu.gpr.r12 ∧ g'.r14 = Y₆.cpu.gpr.r14 ∧ g'.r15 = Y₆.cpu.gpr.r15) hK₆ hA₆ hr₆
@@ -541,7 +545,7 @@ theorem rst_ok {fb : Addr} {eF : Addr} {codeF : List Byte} {g0 : Gprs} {m : BitV
                 g13'.trans (by rw [hg₆]; exact u12.trans z13), g15'.trans (by rw [hg₆]; exact u15.trans z14),
                 g14'.trans (by rw [hg₆]; exact u14.trans z15)⟩ hI6
       · -- the callee's error: to 131
-        refine (c_121 prof fb).run c hfs hin (fun j' g' _ V' => j' = 131 ∧ V' = _ ∧
+        refine (c_121 prof fb).run c hfs hin (fun j' g' _ V' => j' = 131 ∧ V' = Vst W' X.cpu.gpr.rdx bs6 ∧
             g'.rsp = Y₆.cpu.gpr.rsp) hK₆ hA₆ hr₆
           (vc_121a (beq_eq_false_iff_ne.2 ha) fun _ a _ => ⟨rfl, rfl, a⟩) ?_
         rintro j' g fl V₁ ⟨rfl, hV₁, gs'⟩ U₂ t₆ hKU₂ hAU₂ hrU₂ hgU₂ -
