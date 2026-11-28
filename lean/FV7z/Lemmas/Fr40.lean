@@ -6,8 +6,8 @@ Functions that save `r14`, `r13`, `r12`, `rbp` and `rbx` with five pushes and no
 (`NDir::GetFullPathAndSplit` at `0x454a50`, `FV7z/Gfs`): `S` the entry's `rsp`, the saved `r14` at `S - 8`, `r13` at
 `S - 16`, `r12` at `S - 24`, `rbp` at `S - 32`, `rbx` at `S - 40`, a `call`'s return address at `S - 48`. The slots
 are named as the pops read them (`S - 8 - 8 - 8 - 8 - 8`, then `+ 8` each), so the epilogue needs no address
-rewriting; the pushes' forms (`S - 8`, …) meet them by `r1`–`r5`, one small `bv_omega` lemma each (never `bv_omega` in
-a big context).
+rewriting; the pushes' forms (`S - 8`, …) meet them by `r1`–`r5`, by `BitVec.sub_add_cancel` (`bv_omega` over ten
+nested `± 8` splits exponentially: kt3620 sat 10 min in this module).
 
 - `r1`–`r5`: the pops' addresses as the pushes'.
 - `Fr`: the registers a piece (or a callee, from its entry's registers) keeps; `KS`: the callee-saved registers as at
@@ -18,11 +18,16 @@ a big context).
 open ZellicX86 Decode FV7z
 namespace FV7z.Fr40
 
-theorem r1 (s : BitVec 64) : s - 8 - 8 - 8 - 8 - 8 + 8 = s - 8 - 8 - 8 - 8 := by bv_omega
-theorem r2 (s : BitVec 64) : s - 8 - 8 - 8 - 8 - 8 + 8 + 8 = s - 8 - 8 - 8 := by bv_omega
-theorem r3 (s : BitVec 64) : s - 8 - 8 - 8 - 8 - 8 + 8 + 8 + 8 = s - 8 - 8 := by bv_omega
-theorem r4 (s : BitVec 64) : s - 8 - 8 - 8 - 8 - 8 + 8 + 8 + 8 + 8 = s - 8 := by bv_omega
-theorem r5 (s : BitVec 64) : s - 8 - 8 - 8 - 8 - 8 + 8 + 8 + 8 + 8 + 8 = s := by bv_omega
+theorem r1 (s : BitVec 64) : s - 8 - 8 - 8 - 8 - 8 + 8 = s - 8 - 8 - 8 - 8 := by
+  rw [BitVec.sub_add_cancel]
+theorem r2 (s : BitVec 64) : s - 8 - 8 - 8 - 8 - 8 + 8 + 8 = s - 8 - 8 - 8 := by
+  rw [BitVec.sub_add_cancel, BitVec.sub_add_cancel]
+theorem r3 (s : BitVec 64) : s - 8 - 8 - 8 - 8 - 8 + 8 + 8 + 8 = s - 8 - 8 := by
+  rw [BitVec.sub_add_cancel, BitVec.sub_add_cancel, BitVec.sub_add_cancel]
+theorem r4 (s : BitVec 64) : s - 8 - 8 - 8 - 8 - 8 + 8 + 8 + 8 + 8 = s - 8 := by
+  rw [BitVec.sub_add_cancel, BitVec.sub_add_cancel, BitVec.sub_add_cancel, BitVec.sub_add_cancel]
+theorem r5 (s : BitVec 64) : s - 8 - 8 - 8 - 8 - 8 + 8 + 8 + 8 + 8 + 8 = s := by
+  rw [BitVec.sub_add_cancel, BitVec.sub_add_cancel, BitVec.sub_add_cancel, BitVec.sub_add_cancel, BitVec.sub_add_cancel]
 
 /-- What a piece keeps: `rsp`, `rbx`, `rbp`, `r12`–`r15`. -/
 abbrev Fr (g g' : Gprs) : Prop :=
