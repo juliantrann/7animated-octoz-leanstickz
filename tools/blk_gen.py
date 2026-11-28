@@ -1042,6 +1042,10 @@ FNS = {
     # 0x4c).
     "lzp": dict(grp="Lzp", cn="LzFindPrepare", a=0x427de0, n=77, pos=True, stops=(0x22, 0x4c), calls=True,
                 tag="PLAN.md §M, M1", src="7-Zip's `LzFindPrepare` (`C/LzFind.c`; `objdump -d`)"),
+    # `CPU_IsSupported_SSE41 ()`: the stack guard (`fs:0x28`), `z7_x86_cpuid (a, 1)` into the frame (the `call` at
+    # 0x20, `0x424290`), then bit 19 of `ecx` (`a[2]`, `rsp + 8`). Stops: the `ret` (0x43), `__stack_chk_fail` (0x44).
+    "sse": dict(grp="Sse", cn="CPU_IsSupported_SSE41", a=0x424390, n=73, pos=True, fs=True, stops=(0x43, 0x44),
+                calls=True, tag="PLAN.md §M, M1", src="7-Zip's `CPU_IsSupported_SSE41` (`C/CpuArch.c`; `objdump -d`)"),
     # `CFileBase::OpenBinary (name, flags, mode)`: `Close ()` (the `call` at 0x1a), `open64 (name, flags, mode)` (the
     # `call` at 0x2a), the result stored as `_handle`, `al` = it is not -1. Stop: the `ret` (0x41).
     "fob": dict(grp="Fob", cn="NWindows::NFile::NIO::CFileBase::OpenBinary", a=0x456060, n=66, pos=True, stops=(0x41,),
