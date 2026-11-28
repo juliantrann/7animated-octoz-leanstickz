@@ -4,15 +4,17 @@ import FV7z.Alr.Blocks1
 import FV7z.Alr.Blocks
 import FV7z.Alr.Cuts
 import FV7z.Alr.Pieces
+import FV7z.Alr.Holds
 open FV7z
-#print axioms FV7z.Alr.spAll
-#print axioms FV7z.Alr.vc_0
-#print axioms FV7z.Alr.vc_24
-#print axioms FV7z.Alr.vc_64
-#print axioms FV7z.Alr.vc_237
-#print axioms FV7z.Alr.vc_275
-#print axioms FV7z.Alr.vc_320
-#print axioms FV7z.Alr.vc_344
-#print axioms FV7z.Alr.vc_476
-#print axioms FV7z.Alr.vc_493
-#print axioms FV7z.Alr.vc_517
+#print axioms FV7z.Alr.callK
+#print axioms FV7z.Alr.callMK
+#print axioms FV7z.Alr.callRK
+#print axioms FV7z.Alr.tail493
+#print axioms FV7z.Alr.S476
+#print axioms FV7z.Alr.B64
+#print axioms FV7z.Alr.R99
+#print axioms FV7z.Alr.R178
+#print axioms FV7z.Alr.R192
+#print axioms FV7z.Alr.R222
+#print axioms FV7z.Alr.R237
+#print axioms FV7z.Alr.R463
