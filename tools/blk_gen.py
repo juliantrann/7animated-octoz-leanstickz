@@ -1722,6 +1722,18 @@ FNS = {
     "rdf": dict(grp="Rdf", cn="NWindows::NFile::NName::ResolveDotsFolders", a=0x456630, n=315, pos=True,
                 stops=(0x45, 0x13a), calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `NName::ResolveDotsFolders` (`CPP/Windows/FileName.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/UI/Common/ArchiveExtractCallback.cpp `CArchiveExtractCallback::SetDirsTimes ()`: nothing without
+    # `_arc` (0x2b2). Else `pairs` of `_extractedFolders.Size ()` (`n`, `this + 0x220`; saved at `rsp + 12`; above
+    # 0x7fffffff the `js` at 0x32 to the throw, by hand: its target is outside) made by `operator new []` (0x45), each
+    # filled by `SetNumSlashes` (0x7b; `Index` = `i`), `pairs.Sort2 ()` inline (the heap sort: the heap built from
+    # 0x98, sorted from 0x220), `SetDirTime` of each folder in the pairs' order (0x184), then
+    # `ClearExtractedDirsInfo ()` inline (from the last: `delete []` of the path's chars at 0x1c9 when not null,
+    # `operator delete (p, 0x48)` at 0x1d6 when not null), `_size` = 0, `delete []` of the pairs (0x1f7). Stops: the
+    # `ret`s (0x20c, 0x2b2).
+    "sdt": dict(grp="Sdt", cn="CArchiveExtractCallback::SetDirsTimes", a=0x5ad610, n=705, pos=True,
+                stops=(0x20c, 0x2b2), calls=True, hand=(0x32,), tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CArchiveExtractCallback::SetDirsTimes` "
+                    "(`CPP/UI/Common/ArchiveExtractCallback.cpp`; `objdump -d`)"),
 }
 
 
