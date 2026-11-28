@@ -1,6 +1,5 @@
-import FV7z.Guv.Holds
+import FV7z.Mbu.Holds
 open FV7z
-#print axioms FV7z.Guv.guv_ok
-#print axioms FV7z.Guv.guv_mid
-#print axioms FV7z.Guv.vc_131
-#print axioms FV7z.Guv.vc_66z
+#print axioms FV7z.Mbu.mbu_u8
+#print axioms FV7z.Mbu.mbu_tail
+#print axioms FV7z.Mbu.spAll

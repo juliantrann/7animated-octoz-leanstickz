@@ -1329,6 +1329,14 @@ FNS = {
     "ndp": dict(grp="Ndp", cn="NWindows::NFile::NName::NormalizeDirPathPrefix", a=0x4568a0, n=102, pos=True,
                 stops=(0x1f, 0x41), calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `NormalizeDirPathPrefix` (`CPP/Windows/FileName.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/Windows/FileName.cpp `NormalizeDirPathPrefix (AString &dirPath)` (as `ndp` with 1-byte
+    # characters): nothing (the `ret`, 0x17) when `dirPath` is empty or ends in `/`; when `_len != _limit` the stores
+    # (`_chars[_len] = '/'`, `_chars[_len + 1] = 0`, `_len += 1`) and the `ret` (0x35); else (a frame of 24 bytes,
+    # `dirPath` saved at `rsp + 8`) `AString::Grow_1 ()` (the `call` at 0x49, to `ag1`), the length and the
+    # characters read again, the same stores (from 0x5c, split there) and the `ret` (0x70).
+    "nda": dict(grp="Nda", cn="NWindows::NFile::NName::NormalizeDirPathPrefix(AString&)", a=0x456820, n=113, pos=True,
+                stops=(0x17, 0x35, 0x70), split=(0x5c,), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `NormalizeDirPathPrefix` (`CPP/Windows/FileName.cpp`; `objdump -d`)"),
     # 7-Zip 26.06 CPP/Windows/FileDir.cpp `MyGetTempPath (AString &path)`: `path = "/tmp"` (the `call` at 0xf, to
     # `AString::operator= (const char *)`, the string at `0x6d944d`), `NFind::DoesDirExist (path._chars, true)` (0x1d),
     # then `path = "/tmp/"` (`0x6d9447`) when it answers true, else `path = "./"` (`0x6ee956`; the `call` at 0x39),
@@ -1613,6 +1621,37 @@ FNS = {
     "lri": dict(grp="Lri", cn="NCompress::NLzma::CDecoder::ReadFromInputStream", a=0x5801f0, n=256, pos=True,
                 stops=(0x73,), hand=(0xd8, 0xdc, 0xe9), calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `CDecoder::ReadFromInputStream` (`LzmaDecoder.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/7zip/UI/Common/UpdateCallback.cpp-side `CDirItems::SetLinkInfo (dirItem, fi, phyPrefix)`: a
+    # frame of 48 bytes under five pushes (`push r14, r13, r12, rbp, rbx`, as `Lemmas/Fr40.lean`) with the stack guard
+    # at `rsp + 0x28` and an `FString` at `rsp + 0x10`; `SymLinks` (`[rdi + 0x40]`) off or `fi` not a link (`st_mode
+    # & S_IFMT` at `[rdx + 0x48]` not `S_IFLNK`) returns 0; else `phyPrefix + fi.Name` (the `call` at 0x75), the link
+    # read into `dirItem.ReparseData` (0x84): read gives `_totalSize -= fi.Size` (by hand: `sub [rbp + 0x60], rax`,
+    # 0x90); else the error's code (0xb8), `ReparseData` freed (0xca) and cleared, `AddError (path, code)` (0xed);
+    # `delete []` of the path (0xa4) unless NULL, the guard's check. Stops: the `ret` (0x5e), the call of
+    # `__stack_chk_fail` (0xf4); the landing pad after it (0xf9..) is left out.
+    "sli": dict(grp="Sli", cn="CDirItems::SetLinkInfo", a=0x5c0e20, n=249, pos=True, fs=True, stops=(0x5e, 0xf4),
+                hand=(0x90,), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CDirItems::SetLinkInfo` (`CPP/7zip/UI/Common/EnumDirItems.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/7zip/UI/Common/ArchiveOpenCallback.cpp `COpenCallbackImp::Init2 (folderPrefix, fileName)`: a
+    # frame of 32 bytes under five pushes with the stack guard at `rsp + 24` and a `UString` at `rsp`; `FileNames`'
+    # `Clear` by a call (0x30); `FileNames_WasUsed`' items from the last down (the loop, head 0x48, `rbp` = 8 * i):
+    # an item not NULL has its chars freed unless NULL (`operator delete []`, 0x5d) and is freed (`operator delete
+    # (p, 0x10)`, 0x6a); the sizes and `PasswordWasAsked` zeroed; `_folderPrefix = folderPrefix` (0x9e), the path
+    # `_folderPrefix + fileName` (0xac), `_fileInfo.Find (path, true)` (0xc1), `delete []` of the path (0xd1); `false`
+    # gives `GetLastError_noZero_HRESULT ()` (0x100). Stops: the `ret` (0xf8), the call of `__stack_chk_fail` (0x107).
+    "oci": dict(grp="Oci", cn="COpenCallbackImp::Init2", a=0x5b32e0, n=268, pos=True, fs=True, stops=(0xf8, 0x107),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `COpenCallbackImp::Init2` (`CPP/7zip/UI/Common/ArchiveOpenCallback.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/Common/Wildcard.cpp `NWildcard::CCensor::AddPreItem (include, path, props)`: `_preItems` (a
+    # `CObjectVector`: `_items` at `this + 0x18`, `_size` at `+ 0x20`, `_capacity` at `+ 0x24`) grown when full
+    # (above 0x7ffffffe the `ja` at 0x2b to the throw, by hand: its target is outside; the new capacity by `cmova`,
+    # `operator new []` at 0x50, `memcpy` of the old items at 0xdf when any, `delete []` of the old array at 0xec when
+    # not null); then `new CCensorPathProps`-sized item (`operator new` at 0x78, 0x18 bytes), its `UString` made
+    # (0x83), appended, `item.Path = path` (0xa6), `item.Include = include` and the three props bytes. Stop: the
+    # `ret` (0xcf).
+    "api": dict(grp="Api", cn="NWildcard::CCensor::AddPreItem", a=0x453650, n=246, pos=True, stops=(0xcf,),
+                hand=(0x2b,), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `NWildcard::CCensor::AddPreItem` (`CPP/Common/Wildcard.cpp`; `objdump -d`)"),
     # 7-Zip 26.06 CPP/7zip/UI/Console/List.cpp `GetUInt64Value (archive, index, propID, value)` (static): a frame of
     # 0x20 under three pushes, the stack guard at `rsp + 0x18`, `value.Val = 0; value.Def = false`, `prop` (a
     # `CPropVariant` at `rsp`) emptied; `archive->GetProperty (index, propID, &prop)` (`call [rax + 0x30]` at 0x3f);
@@ -1624,6 +1663,16 @@ FNS = {
     "guv": dict(grp="Guv", cn="GetUInt64Value", a=0x5ebcd0, n=249, pos=True, fs=True, stops=(0x70, 0xf4), hand=(0x7d,),
                 calls=True, jt=(0x6ea208, 22), jtx=True, tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `GetUInt64Value` (`CPP/7zip/UI/Console/List.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/Common/StringConvert.cpp `MultiByteToUnicodeString2 (dest, src, codePage)`: `dest.Empty ()`;
+    # for an empty `src` the return; for `CP_UTF8` or `g_ForceToUTF8` (the byte at 0x792178) `ConvertUTF8ToUnicode`
+    # (call, 0x1b6); else `dest.GetBuf (limit)` (`ReAlloc2`, call 0x1c3, when `limit` = `2 len + 2` is above
+    # `_limit`), `mbstowcs` (call 0x74); on -1 the bytes copied (loop 0x170); else the end set, the scan for a
+    # character above 0xffff (loop 0xc3) and, for one, a copy of the rest (`UString (const wchar_t *)`, call 0xd2)
+    # written back as surrogate pairs (loop 0x138), its buffer freed (call 0x1e8). Stops: the `ret` (0x1aa), the
+    # stack guard failing (0x1ef).
+    "mbu": dict(grp="Mbu", cn="MultiByteToUnicodeString2", a=0x450a60, n=500, pos=True, fs=True, stops=(0x1aa, 0x1ef),
+                calls=True, cut=(0xc3, 0x138, 0x170), tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `MultiByteToUnicodeString2` (`CPP/Common/StringConvert.cpp`; `objdump -d`)"),
 }
 
 
