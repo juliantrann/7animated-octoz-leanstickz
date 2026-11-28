@@ -754,6 +754,39 @@ theorem vc_106 {v : BitVec 64} (hv : rdq(V, g.rbp) = v) (fv : ∀ i < 8, Foot F.
   ccl
 
 set_option maxHeartbeats 4000000 in
+/-- 130: `_inSizeIsMain` stored, the pops; to the `ret` at 148 (each register of the state there by an equation). -/
+theorem vc_130e {Q : Post} (w : ∀ i < 1, Foot Wl (Addr.add (g.rbx + 14#64) i))
+    (l1 : ∀ i < 8, Foot F.data (Addr.add (g.rsp + 24#64) i))
+    (l2 : ∀ i < 8, Foot F.data (Addr.add (g.rsp + 24#64 + 8) i))
+    (l3 : ∀ i < 8, Foot F.data (Addr.add (g.rsp + 24#64 + 8 + 8) i))
+    (l4 : ∀ i < 8, Foot F.data (Addr.add (g.rsp + 24#64 + 8 + 8 + 8) i))
+    (l5 : ∀ i < 8, Foot F.data (Addr.add (g.rsp + 24#64 + 8 + 8 + 8 + 8) i))
+    (l6 : ∀ i < 8, Foot F.data (Addr.add (g.rsp + 24#64 + 8 + 8 + 8 + 8 + 8) i))
+    (h : ∀ (g' : Gprs) (V' : Addr → Byte), V' = Vst V (g.rbx + 14#64) (toBytesLE (g.r13.setWidth 8) 1) →
+      g'.rax = g.rax → g'.rcx = g.rcx → g'.rdx = g.rdx → g'.rbx = rdq(V', g.rsp + 24#64) →
+      g'.rsp = g.rsp + 24#64 + 8 + 8 + 8 + 8 + 8 + 8 → g'.rbp = rdq(V', g.rsp + 24#64 + 8) →
+      g'.rsi = g.rsi → g'.rdi = g.rdi → g'.r8 = g.r8 → g'.r9 = g.r9 → g'.r10 = g.r10 → g'.r11 = g.r11 →
+      g'.r12 = rdq(V', g.rsp + 24#64 + 8 + 8) → g'.r13 = rdq(V', g.rsp + 24#64 + 8 + 8 + 8) →
+      g'.r14 = rdq(V', g.rsp + 24#64 + 8 + 8 + 8 + 8) → g'.r15 = rdq(V', g.rsp + 24#64 + 8 + 8 + 8 + 8 + 8) →
+      ∀ fl, Q 148 g' fl V') : W_130 F Wl Q g f V := by
+  obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
+  dsimp only at w l1 l2 l3 l4 l5 l6 h ⊢
+  wpx [W_130, o8]
+  all_goals repeat' (first
+    | refine h _ _ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ _
+    | with_reducible rfl
+    | with_reducible exact w
+    | with_reducible exact l1
+    | with_reducible exact l2
+    | with_reducible exact l3
+    | with_reducible exact l4
+    | with_reducible exact l5
+    | with_reducible exact l6
+    | exact trivial
+    | apply And.intro
+    | intro _)
+  all_goals first | rfl | assumption
+
 /-- 130: `_inSizeIsMain` stored, the pops; to the `ret` at 148. -/
 theorem vc_130 {Q : Post} (w : ∀ i < 1, Foot Wl (Addr.add (g.rbx + 14#64) i))
     (l1 : ∀ i < 8, Foot F.data (Addr.add (g.rsp + 24#64) i))
@@ -764,10 +797,13 @@ theorem vc_130 {Q : Post} (w : ∀ i < 1, Foot Wl (Addr.add (g.rbx + 14#64) i))
     (l6 : ∀ i < 8, Foot F.data (Addr.add (g.rsp + 24#64 + 8 + 8 + 8 + 8 + 8) i))
     (h : ∀ fl, Q 148 (pops6 (Vst V (g.rbx + 14#64) (toBytesLE (g.r13.setWidth 8) 1)) g) fl
       (Vst V (g.rbx + 14#64) (toBytesLE (g.r13.setWidth 8) 1))) : W_130 F Wl Q g f V := by
-  obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
-  dsimp only [pops6] at w l1 l2 l3 l4 l5 l6 h ⊢
-  wpx [W_130, o8]
-  all_goals repeat' (first | exact h _ | assumption | exact trivial | apply And.intro | intro _)
+  refine vc_130e w l1 l2 l3 l4 l5 l6 ?_
+  intro g' V' hV h0 h1 h2 h3 h4 h5 h6 h7 h8 h9 h10 h11 h12 h13 h14 h15 fl
+  subst hV
+  obtain ⟨a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15⟩ := g'
+  dsimp only at h0 h1 h2 h3 h4 h5 h6 h7 h8 h9 h10 h11 h12 h13 h14 h15
+  subst h0 h1 h2 h3 h4 h5 h6 h7 h8 h9 h10 h11 h12 h13 h14 h15
+  exact h fl
 
 /-- The `jmp`s. -/
 theorem vc_437 : W_437 F Wl (fun j' g' _ V' => j' = 68 ∧ g' = g ∧ V' = V) g f V := by

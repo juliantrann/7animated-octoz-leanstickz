@@ -205,7 +205,8 @@ theorem a130 (H : Hyp prof F Wl L s₀ o gev gP gE g₀ e₂ code₂ j₂ I K T)
     show U.cpu.gpr.rsp + 8 = _
     rw [hsU]
   · rw [hgZ, hgU]
-    exact hkP
+    obtain ⟨k1, k2, k3, k4, k5, k6⟩ := hkP
+    exact ⟨k1, k2, k3, k4, k5, k6⟩
 
 /-- 106: `_progress` = `progress`, `QueryInterface` at 128. -/
 theorem a106 (H : Hyp prof F Wl L s₀ o gev gP gE g₀ e₂ code₂ j₂ I K T) :
