@@ -246,6 +246,10 @@ FNS = {
     # (0x627710, noreturn). Stop: the call (23).
     "mpe": dict(grp="Mpe", cn="malloc_printerr", a=0x62e490, n=28, pos=True, stops=(23,),
                 tag="PLAN.md §M, M1", src="glibc's `malloc_printerr` (`malloc/malloc.c`; `objdump -d`)"),
+    # glibc's debug/fortify_fail.c `__fortify_fail (msg)`: `push rbp; push rbx`, then a loop of
+    # `__libc_message (1, "*** %s ***: terminated\n", msg)` (0x627710, noreturn). Stop: the call (37).
+    "ffl": dict(grp="Ffl", cn="__fortify_fail", a=0x669810, n=44, pos=True, stops=(37,),
+                tag="PLAN.md §M, M1", src="glibc's `__fortify_fail` (`debug/fortify_fail.c`; `objdump -d`)"),
     "uts": dict(grp="Uts", cn="ConvertUtcFileTimeToString", a=0x457a10, n=19, pos=True, stops=(14,),
                 tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `ConvertUtcFileTimeToString` (`CPP/Windows/PropVariantConv.cpp`; `objdump -d`)"),
