@@ -2,6 +2,7 @@ import FV7z.Glh.Cuts
 import FV7z.Gle.Code
 import FV7z.Lemmas.LeafRet
 import FV7z.Lemmas.Lock2
+import FV7z.Lemmas.Signed
 /-!
 # `GetLastError_noZero_HRESULT ()` (PLAN.md §M, M1)
 
@@ -116,8 +117,8 @@ theorem glh_ok {Pe : State → (Addr → Byte) → Prop}
       GoG prof L o gev gP gE Y t')
     (kr : ∀ (Z : State) (V₁ : Addr → Byte) (Z' : State) (t' : Nat) (rd : BitVec 64), Pe Z V₁ →
       KeptW Wl s₀ Z' → Agree F Z'.proc.mm.mem V₁ → Z'.cpu.rip = e₂.add j₂ →
-      Z'.cpu.gpr = { Z.cpu.gpr with rax := (hrw Z.cpu.gpr.rax).setWidth 64, rdx := rd,
-        rsp := X.cpu.gpr.rsp + 8 } →
+      Z'.cpu.gpr =
+        { Z.cpu.gpr with rax := (hrw Z.cpu.gpr.rax).setWidth 64, rdx := rd, rsp := X.cpu.gpr.rsp + 8 } →
       GoG prof L o gev gP gE Z' t') :
     GoG prof L o gev gP gE X t := by
   -- to the `call` of `GetLastError`
