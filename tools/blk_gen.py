@@ -548,6 +548,12 @@ FNS = {
                 cut=(175, 328),
                 tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `CompareFileNames` (`CPP/Common/Wildcard.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/Common/MyString.cpp `UString::Add_Dot ()`: `_len != _limit`: the stores (`_chars[_len] = '.'`,
+    # `_chars[_len + 1] = 0`, `_len += 1`) from 0x10 and the `ret` (0x2a); else `Grow_1 ()` (the `call` at 0x30, to
+    # `ug1`), the length read again (0x35) and the same stores.
+    "uad": dict(grp="Uad", cn="UString::Add_Dot", a=0x44d9b0, n=58, pos=True, stops=(0x2a,), calls=True,
+                tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `UString::Add_Dot` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
     # 7-Zip 26.06 C/LzmaDec + CPP/7zip/Compress/LzmaDecoder.cpp `CDecoder::SetOutStreamSizeResume (outSize)`: the
     # flags and sizes, then a tail jump (0x2f) to `LzmaDec_Init (&_state)`.
     "sos": dict(grp="Sos", cn="NCompress::NLzma::CDecoder::SetOutStreamSizeResume", a=0x57fd80, n=52, pos=True,
@@ -1755,6 +1761,20 @@ FNS = {
     "rsv": dict(grp="Rsv", cn="CDirItems::ReserveDown", a=0x5c03e0, n=439, pos=True, stops=(0x99,), calls=True,
                 tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `CDirItems::ReserveDown` (`CPP/7zip/UI/Common/EnumDirItems.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/7zip/UI/Common/OpenArchive.cpp `CArchiveLink::Release ()`: `NonOpen_ErrorInfo.ClearErrors ()`
+    # (0x13, `rdi` = `this + 0x40`), `NonOpen_ArcPath.Empty ()` inline; then `Arcs.DeleteBack ()` while `Arcs` (`this`,
+    # `_size` at `+ 8`) is not empty (the loop, head 0x40): the `CArc` (0x110 bytes) destroyed in line: `delete []` of
+    # seven strings' chars (0x5e .. 0xbb), `Release` of three COM pointers (`call [rax + 0x10]`, 0xcc, 0xdb, 0xea),
+    # `Archive` (`+ 0`) released: devirtualized when its `Release` is `0x5db1e0` (the count at `+ 0x10` decremented;
+    # at 0 the object destroyed in line: vtables, a COM pointer released (0x13d), its vector of 0x80-byte items freed
+    # (the loop, head 0x158: four strings' chars, `operator delete (p, 0x80)` at 0x1a5), `delete []` (0x1bd),
+    # `operator delete (p, 0x38)` (0x1ca)), else `call rax` (0x203); `operator delete (arc, 0x110)` (0x1d7), `_size`
+    # decremented. Stop: the `ret` (0x1f5). By hand: `sub dword [r14 + 0x10], 1` (0x10e; `Seg.s_sub_mi32`,
+    # FV7z/Lemmas/Lock2.lean).
+    "alr": dict(grp="Alr", cn="CArchiveLink::Release", a=0x5d34b0, n=519, pos=True, stops=(0x1f5,), calls=True,
+                hand=(0x10e,),
+                tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CArchiveLink::Release` (`CPP/7zip/UI/Common/OpenArchive.cpp`; `objdump -d`)"),
     # 7-Zip 26.06 CPP/Common/Wildcard.cpp `NWildcard::CCensorNode::CheckPathToRoot (include, pathParts, isFile)`: six
     # pushes and a frame of 0x48 bytes with the stack guard at `rsp + 0x38` and a local `UStringVector` at `rsp + 0x20`;
     # `CheckPathCurrent` (0x36); `Parent` not null: the local's first item (`operator new []` 0x70, `operator new`
@@ -1775,6 +1795,25 @@ FNS = {
                 stops=(687,), hand=(537,), calls=True, split=(23, 61, 100, 133, 171, 477, 613, 679),
                 tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `CArchiveExtractCallback` constructor (`ArchiveExtractCallback.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/7zip/UI/Console/ExtractCallbackConsole.cpp `CExtractCallbackConsole::BeforeOpen (name, testMode)`:
+    # four pushes and 8 bytes of frame, `_currentArchivePath = name` (`UString::operator=` at 30), the break check
+    # (`NConsoleClose::TestBreakSignal ()`, the counter at 0x79f088: `E_ABORT` at 288), the counters and flags, then
+    # `ClosePrint` of the percent printer (262) when `_so` is the printer's stream, and `endl`, `fputs` of the open or
+    # test message, `NormalizePrint_UString`, `endl` (130, 160, 175, 187) when `_so`, and `_tempA = ""`
+    # (`AString::operator=` at 216) when the printer is on and not quiet. `add qword [rbx + 0x180], 1` (61) by hand.
+    # Stop: the `ret` (233); the bytes from 295 on are the landing pad.
+    "bop": dict(grp="Bop", cn="CExtractCallbackConsole::BeforeOpen", a=0x5e7b70, n=295, pos=True,
+                stops=(233,), hand=(61,), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CExtractCallbackConsole::BeforeOpen` (`ExtractCallbackConsole.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/7zip/UI/Console/ExtractCallbackConsole.cpp `CExtractCallbackConsole::ExtractResult (result)`:
+    # three pushes and a frame of 32 bytes (the stack guard at `rsp + 24`, an `AString` at `rsp`), the lock's
+    # `Enter` and `Leave` (`g_CriticalSection`), the percent printer's `ClosePrint` and clears, the `endl`s and
+    # `fwrite`s of the counts and messages, `NumArcsWithError++` etc. (the four `add qword [rbx + d], 1` by hand),
+    # `E_ABORT` from `NConsoleClose::g_BreakCounter` (`sbb`, `not`, `and`). Stops: the `ret` (233), the call of
+    # `__stack_chk_fail` (663); the landing pads after it (668..) are left out.
+    "exr": dict(grp="Exr", cn="CExtractCallbackConsole::ExtractResult", a=0x5e82c0, n=668, pos=True, fs=True,
+                stops=(233, 663), hand=(110, 265, 482, 616), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CExtractCallbackConsole::ExtractResult` (`ExtractCallbackConsole.cpp`; `objdump -d`)"),
 }
 
 
