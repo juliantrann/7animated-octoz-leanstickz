@@ -1,6 +1,7 @@
 import FV7z.Pvc.Cuts
 import FV7z.Lemmas.LeafRet
 import FV7z.Lemmas.FnFar
+import FV7z.Tun.Inv
 /-!
 # `NWindows::NCOM::CPropVariant::Clear` (PLAN.md §M, M1)
 
@@ -11,8 +12,8 @@ import FV7z.Lemmas.FnFar
 
 - `vt`: `vt`; `Vs`: the bytes after the store.
 - `vc_0`: the verification condition, split on `vt`.
-- `pvc_ok`: from the entry: `VT_EMPTY`, at the return address with `rax` = 0 and the bytes `Vs` (`kn`); else at
-  `PropVariant_Clear` with the registers and bytes as they were (`kf`).
+- `pvc_ok`: from the entry (the object outside the frame, `hd`): `VT_EMPTY`, at the return address with `rax` = 0
+  and the bytes `Vs` (`kn`); else at `PropVariant_Clear` with the registers and bytes as they were (`kf`).
 -/
 open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn
 namespace FV7z.Pvc
@@ -77,7 +78,9 @@ theorem pvc_ok (c : Seg prof F Wl L s₀ o) (hin : CodeIn L pvc_at pvc) (hK : Ke
     (fw : vt V X.cpu.gpr.rdi = 0#16 → ∀ i < 2, Foot Wl (Addr.add (X.cpu.gpr.rdi + 2#64) i))
     (hl : ∀ i < 8, Foot F.data (Addr.add X.cpu.gpr.rsp i))
     {e₂ : Addr} {code₂ : List Byte} (hin₂ : CodeIn L e₂ code₂) {j₂ : Nat} (h₂ : j₂ < code₂.length)
-    (hra : vt V X.cpu.gpr.rdi = 0#16 → rdq(Vs V X.cpu.gpr.rdi, X.cpu.gpr.rsp) = e₂.add j₂)
+    (hra : rdq(V, X.cpu.gpr.rsp) = e₂.add j₂) (hp8 : X.cpu.gpr.rsp.toNat + 8 ≤ 2 ^ 64)
+    (hq : X.cpu.gpr.rdi.toNat + 4 ≤ 2 ^ 64)
+    (hd : X.cpu.gpr.rdi.toNat + 4 ≤ X.cpu.gpr.rsp.toNat ∨ X.cpu.gpr.rsp.toNat + 8 ≤ X.cpu.gpr.rdi.toNat)
     {cT : List Byte} (hinT : CodeIn L tgt_at cT) (hT : 0 < cT.length)
     (kn : vt V X.cpu.gpr.rdi = 0#16 → ∀ (Z : State) (t' : Nat), KeptW Wl s₀ Z →
       Agree F Z.proc.mm.mem (Vs V X.cpu.gpr.rdi) → Z.cpu.rip = e₂.add j₂ →
@@ -85,6 +88,14 @@ theorem pvc_ok (c : Seg prof F Wl L s₀ o) (hin : CodeIn L pvc_at pvc) (hK : Ke
     (kf : ¬ vt V X.cpu.gpr.rdi = 0#16 → ∀ (Y : State) (t' : Nat), KeptW Wl s₀ Y → Agree F Y.proc.mm.mem V →
       Y.cpu.rip = tgt_at → Y.cpu.gpr = X.cpu.gpr → GoG prof L o gev gP gE Y t') :
     GoG prof L o gev gP gE X t := by
+  -- the store of `wReserved1` leaves the return address as it was (the object outside the frame)
+  have t2 : (X.cpu.gpr.rdi + 2#64).toNat = X.cpu.gpr.rdi.toNat + 2 := by
+    rw [BitVec.toNat_add]; simp <;> omega
+  have hra' : rdq(Vs V X.cpu.gpr.rdi, X.cpu.gpr.rsp) = e₂.add j₂ := by
+    show rdq(Vst V (X.cpu.gpr.rdi + 2#64) (toBytesLE 0#16 2), X.cpu.gpr.rsp) = e₂.add j₂
+    rw [Tun.rd_Vst V (X.cpu.gpr.rdi + 2#64) (toBytesLE 0#16 2) X.cpu.gpr.rsp 8
+      (by rw [toBytesLE_length, t2]; omega) hp8 (by rw [toBytesLE_length, t2]; omega)]
+    exact hra
   refine (c_0 prof).run c hin (fun j' g' _ V' =>
       (j' = 18 ∧ g' = { X.cpu.gpr with rax := 0#64 } ∧ V' = Vs V X.cpu.gpr.rdi ∧ vt V X.cpu.gpr.rdi = 0#16) ∨
       (j' = 24 ∧ g' = X.cpu.gpr ∧ V' = V ∧ ¬ vt V X.cpu.gpr.rdi = 0#16)) hK hA (by rw [addr_add_zero]; exact hrip)
@@ -93,7 +104,7 @@ theorem pvc_ok (c : Seg prof F Wl L s₀ o) (hin : CodeIn L pvc_at pvc) (hK : Ke
   · -- `ret`
     have hsY : Y.cpu.gpr.rsp = X.cpu.gpr.rsp := by rw [hgY]
     refine c.s_ret hKY hAY hin (lt_len (by decide)) hrY (ret_18 _) (by rw [hsY]; exact hl) hin₂ h₂
-      (by rw [hsY]; exact hra hz) ?_
+      (by rw [hsY]; exact hra') ?_
     rintro Z t₂ hKZ hAZ ⟨hrZ, hgZ⟩
     refine kn hz Z t₂ hKZ hAZ hrZ ?_
     rw [hgZ, hgY]
