@@ -221,6 +221,16 @@ FNS = {
     # `Archive_GetItemBoolProp (arc, index, kpidIsDir, result)` (0x5d15e0). Stop: the jump (12).
     "aid": dict(grp="Aid", cn="Archive_IsItem_Dir", a=0x5d1670, n=17, pos=True, stops=(12,),
                 tag="PLAN.md §M, M1", src="7-Zip 26.06's `Archive_IsItem_Dir` (`OpenArchive.cpp`; `objdump -d`)"),
+    # 7-Zip's CPP/Windows/FileDir.cpp `NDir::SetDirTime (path, cTime, aTime, mTime)` (Linux): a tail jump to
+    # 0x4549b0 with `aTime`, `mTime` moved down and `ecx` = 0. Stop: the jump (12).
+    "sdr": dict(grp="Sdr", cn="NWindows::NFile::NDir::SetDirTime", a=0x4556e0, n=17, pos=True, stops=(12,),
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `NDir::SetDirTime` (`CPP/Windows/FileDir.cpp`; `objdump -d`)"),
+    # 7-Zip's CPP/7zip/UI/Common/ArchiveExtractCallback.cpp `CFiTimesCAM::SetDirTime_to_FS (path)`: each of the
+    # three times (`this`, `this + 16`, `this + 32`) or NULL by its `*_Defined` flag (`this + 48..50`), then a tail
+    # jump (0x2f) to `NDir::SetDirTime` (0x4556e0). Stop: the jump.
+    "sdf": dict(grp="Sdf", cn="CFiTimesCAM::SetDirTime_to_FS", a=0x5ad590, n=52, pos=True, stops=(0x2f,),
+                tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CFiTimesCAM::SetDirTime_to_FS` (`ArchiveExtractCallback.cpp`; `objdump -d`)"),
     # 7-Zip's CPP/7zip/UI/Console/OpenCallbackConsole.cpp `COpenCallbackConsole::Open_SetTotal (files, bytes)`: the
     # totals into the percent printer when it is on, then `CheckBreak2 ()` (`NConsoleClose::g_BreakCounter` at
     # 0x79f088). Stop: the `ret` (0x4f).
