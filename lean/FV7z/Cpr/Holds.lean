@@ -1030,10 +1030,10 @@ theorem from59 (E : Ev prof F Wl L s₀ o gev gP gE fb S g0 e₂ code₂ j₂ I0
         (Y.cpu.gpr.rsp + 40#64) (toBytesLE 0#64 8)))) hK hA hr
     (vc_59 (by rw [hm.2.1]; exact E.fpar) (by rw [hm.1]; exact E.w32) (by rw [hm.1]; exact E.w40)
       (fun _ a _ => ⟨a, Or.inl ⟨rfl, rfl⟩⟩) (fun _ a b _ => ⟨a, Or.inr ⟨rfl, b, rfl⟩⟩)) ?_
-  rintro j' g fl V₁ ⟨gf, ⟨rfl, rfl⟩ | ⟨rfl, gdi, rfl⟩⟩ U t₁ hKU hAU hrU hgU -
-  · subst hgU
+  rintro j' g fl V₁ ⟨gf, ⟨rfl, hV₁⟩ | ⟨rfl, gdi, hV₁⟩⟩ U t₁ hKU hAU hrU hgU -
+  · subst V₁ hgU
     exact tail333 E hKU hAU hrU (gf.1.trans hm.1) (E.hz0 W hI)
-  · subst hgU
+  · subst V₁ hgU
     have hmU := Fm.fr hm gf
     rw [hm.1] at hAU
     refine callK E hKU hAU hrU hmU.1 (lt_len (by decide)) (call_112 _) tgt_112 E.cA (E.k112 _ (E.z80 W hI))
