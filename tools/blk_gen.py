@@ -835,6 +835,13 @@ FNS = {
                 calls=True, hand=(0x2e,), tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `CPropVariant::operator= (const char *)` (`CPP/Windows/PropVariant.cpp`; "
                     "`objdump -d`)"),
+    # 7-Zip 26.06 CPP/7zip/Common/FileStreams.h `CInFileStream::Release ()` (`Z7_COM_UNKNOWN_IMP_*`): `--__m_RefCount`;
+    # when 0, `delete this` (`~CInFileStream ()` 0x5a4040 and `operator delete (this, 0x108)` 0x6014e0, the `call`s).
+    # Stop: the `ret` (0x3a).
+    "cir": dict(grp="Cir", cn="CInFileStream::Release", a=0x5a4b20, n=59, pos=True, stops=(0x3a,),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CInFileStream::Release` "
+                    "(`CPP/7zip/Common/FileStreams.h`; `objdump -d`)"),
     # 7-Zip 26.06 CPP/Common/Wildcard.cpp `ExtractFileNameFromPath (path)`: `path.ReverseFind_PathSepar ()` (the `call`,
     # 0x14), then `UString (path + it + 1)` into the result (0x26). Stop: the `ret` (0x35).
     "efn": dict(grp="Efn", cn="ExtractFileNameFromPath(const UString &)", a=0x4528f0, n=54, pos=True, stops=(0x35,),
