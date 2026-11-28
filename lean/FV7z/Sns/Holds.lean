@@ -232,7 +232,8 @@ theorem loop (c : Seg prof F Wl L s₀ o) (hin : CodeIn L sns_at sns) {V : Addr 
       rintro j' g fl V₁ ⟨rfl, ⟨a, cx, rfl, ha, hc⟩, rfl⟩ Y t₁ hKY hAY hrY hgY -
       refine ih (j + 1) (by omega) Y t₁ hKY hAY hrY ?_ ?_ ?_ (by rw [hgY]; exact hdi) (hkp.trans (kp_w hgY))
       · rw [hgY]
-        exact ha.trans (congrArg V hdx)
+        show BitVec.setWidth 8 a = _
+        rw [ha, hdx]
       · rw [hgY]
         exact ea
       · rw [hgY]
@@ -242,7 +243,8 @@ theorem loop (c : Seg prof F Wl L s₀ o) (hin : CodeIn L sns_at sns) {V : Addr 
       rintro j' g fl V₁ ⟨rfl, ⟨a, cx, rfl, ha, hc⟩, rfl⟩ Y t₁ hKY hAY hrY hgY -
       refine ih (j + 1) (by omega) Y t₁ hKY hAY hrY ?_ ?_ ?_ (by rw [hgY]; exact hdi) (hkp.trans (kp_w hgY))
       · rw [hgY]
-        exact ha.trans (congrArg V hdx)
+        show BitVec.setWidth 8 a = _
+        rw [ha, hdx]
       · rw [hgY]
         exact ea
       · rw [hgY]
