@@ -1256,3 +1256,15 @@ import FV7z.Ldc.Holds
 import FV7z.Ldd.Blocks
 import FV7z.Ldd.Cuts
 import FV7z.Ldd.Holds
+import FV7z.Ifc.Code
+import FV7z.Ifc.Pats
+import FV7z.Ifc.Blocks1
+import FV7z.Ifc.Blocks
+import FV7z.Ifc.Cuts
+import FV7z.Ifc.Holds
+import FV7z.Ifd.Code
+import FV7z.Ifd.Pats
+import FV7z.Ifd.Blocks1
+import FV7z.Ifd.Blocks
+import FV7z.Ifd.Cuts
+import FV7z.Ifd.Holds
