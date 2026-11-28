@@ -230,6 +230,22 @@ FNS = {
     # jump (0x2f) to `NDir::SetDirTime` (0x4556e0). Stop: the jump.
     # 7-Zip's CPP/Windows/PropVariantConv.cpp `ConvertUtcFileTimeToString (ft, s, level)`: a tail jump (14) to
     # `ConvertUtcFileTimeToString2 (ft, 0, s, level, 0)` (0x4576f0).
+    # glibc's debug/chk_fail.c `__stack_chk_fail ()`: `push rax; pop rax`, `rdi` = the message, `sub rsp, 8`, then
+    # `call __fortify_fail` (0x669810, noreturn). Stop: the call (17).
+    "scf": dict(grp="Scf", cn="__stack_chk_fail", a=0x6697f0, n=22, pos=True, stops=(17,),
+                tag="PLAN.md §M, M1", src="glibc's `__stack_chk_fail` (`debug/chk_fail.c`; `objdump -d`)"),
+    # glibc's sysdeps/posix/libc_fatal.c `__libc_fatal (msg)`: `push rax; pop rax`, `__libc_message (1, "%s", msg)`
+    # (0x6275b0, noreturn). Stop: the call (27).
+    "lfa": dict(grp="Lfa", cn="__libc_fatal", a=0x627a00, n=32, pos=True, stops=(27,),
+                tag="PLAN.md §M, M1", src="glibc's `__libc_fatal` (`sysdeps/posix/libc_fatal.c`; `objdump -d`)"),
+    # glibc's stdlib/exit.c `exit (status)`: `push rax; pop rax`, `__run_exit_handlers (status, &__exit_funcs, 1, 1)`
+    # (0x623150, noreturn). Stop: the call (27).
+    "exi": dict(grp="Exi", cn="exit", a=0x623410, n=32, pos=True, stops=(27,),
+                tag="PLAN.md §M, M1", src="glibc's `exit` (`stdlib/exit.c`; `objdump -d`)"),
+    # glibc's malloc/malloc.c `malloc_printerr (str)`: `push rax; pop rax`, `__libc_message (1, "%s\n", str)`
+    # (0x627710, noreturn). Stop: the call (23).
+    "mpe": dict(grp="Mpe", cn="malloc_printerr", a=0x62e490, n=28, pos=True, stops=(23,),
+                tag="PLAN.md §M, M1", src="glibc's `malloc_printerr` (`malloc/malloc.c`; `objdump -d`)"),
     "uts": dict(grp="Uts", cn="ConvertUtcFileTimeToString", a=0x457a10, n=19, pos=True, stops=(14,),
                 tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `ConvertUtcFileTimeToString` (`CPP/Windows/PropVariantConv.cpp`; `objdump -d`)"),
@@ -1021,6 +1037,11 @@ FNS = {
     # PLT entry) of the rest down and `_len` - `count`. Stops: the `ret`s (0x25, 0x5d).
     "udl": dict(grp="Udl", cn="UString::Delete", a=0x44e0b0, n=94, pos=True, stops=(0x25, 0x5d), calls=True,
                 hand=(0x54,), tag="PLAN.md §M, M1", src="7-Zip's `UString::Delete` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
+    # `LzFindPrepare ()`: the first CPU test (the `call` at 0x8); 0 into `g_LzFind_GetMatchesSpec` (`0x7967a0`) when it
+    # fails, else the second (the `call` at 0x28) picks one of two functions by a `cmovne`. Stops: the `ret`s (0x22,
+    # 0x4c).
+    "lzp": dict(grp="Lzp", cn="LzFindPrepare", a=0x427de0, n=77, pos=True, stops=(0x22, 0x4c), calls=True,
+                tag="PLAN.md §M, M1", src="7-Zip's `LzFindPrepare` (`C/LzFind.c`; `objdump -d`)"),
     # `CFileBase::OpenBinary (name, flags, mode)`: `Close ()` (the `call` at 0x1a), `open64 (name, flags, mode)` (the
     # `call` at 0x2a), the result stored as `_handle`, `al` = it is not -1. Stop: the `ret` (0x41).
     "fob": dict(grp="Fob", cn="NWindows::NFile::NIO::CFileBase::OpenBinary", a=0x456060, n=66, pos=True, stops=(0x41,),
@@ -2054,6 +2075,14 @@ FNS = {
     "usm": dict(grp="Usm", cn="UnicodeStringToMultiByte (const UString &, UINT)", a=0x450dc0, n=101, pos=True,
                 fs=True, stops=(95, 96), calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `UnicodeStringToMultiByte` (`StringConvert.cpp`; `objdump -d`)"),
+    # glibc 2.31 sysdeps/unix/sysv/linux/read_nocancel.c (`__read_nocancel`): `read`, `errno` set for an error.
+    # Stops: the `ret` (0x10), the `ret` after `errno` is set (0x2b); the `syscall` (0x6) is a step of its own.
+    "rnc": dict(grp="Rnc", cn="__read_nocancel", a=0x6661e0, n=44, pos=True, fs=True, stops=(16, 43), calls=True,
+                tag="PLAN.md §M, M1",
+                src="glibc 2.31's `__read_nocancel` (`sysdeps/unix/sysv/linux/read_nocancel.c`; `objdump -d`)"),
+    # glibc 2.31 libio/genops.c `_IO_iter_begin ()`: `_IO_list_all`. Stop: the `ret` (0xb).
+    "iib": dict(grp="Iib", cn="_IO_iter_begin", a=0x60e050, n=12, pos=True, stops=(11,), tag="PLAN.md §M, M1",
+                src="glibc 2.31's `_IO_iter_begin` (`libio/genops.c`; `objdump -d`)"),
     # glibc 2.31 elf/dl-lookup.c `_dl_setup_hash (map)`: the GNU hash table's fields (or the SysV one's) into `map`.
     # Stops: the two `ret`s (0x61, 0x93), the `__assert_fail` path (0x94) not covered.
     "dsh": dict(grp="Dsh", cn="_dl_setup_hash", a=0x6ab020, n=180, pos=True, stops=(0x61, 0x93, 0x94), calls=True,
@@ -2094,6 +2123,12 @@ FNS = {
     "stc": dict(grp="Stc", cn="NWindows::NFile::NIO::CFileBase::seekToCur", a=0x4560f0, n=25, pos=True, stops=(24,),
                 calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `CFileBase::seekToCur` (`FileIO.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 Common/StdOutStream.cpp `CStdOutStream::NormalizePrint_UString (s)` (UString&): two pushes; with
+    # `IsTerminalMode` (byte 10) and not `ListPathSeparatorSlash` (byte 9), `s.Replace (L'/', L'\\')` (0x44e010); the
+    # pops, a tail jump to `Normalize_UString (s)` (0x5a15e0). Stops: the jump (0x2a), the padding after it (0x2f).
+    "npl": dict(grp="Npl", cn="CStdOutStream::NormalizePrint_UString", a=0x5a1680, n=68, pos=True, stops=(42, 47),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CStdOutStream::NormalizePrint_UString` (`StdOutStream.cpp`; `objdump -d`)"),
 }
 
 def file_bytes(path, va, n):
