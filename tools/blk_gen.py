@@ -948,6 +948,11 @@ FNS = {
     # PLT entry) of the rest down and `_len` - `count`. Stops: the `ret`s (0x25, 0x5d).
     "udl": dict(grp="Udl", cn="UString::Delete", a=0x44e0b0, n=94, pos=True, stops=(0x25, 0x5d), calls=True,
                 hand=(0x54,), tag="PLAN.md §M, M1", src="7-Zip's `UString::Delete` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
+    # `CFileBase::OpenBinary (name, flags, mode)`: `Close ()` (the `call` at 0x1a), `open64 (name, flags, mode)` (the
+    # `call` at 0x2a), the result stored as `_handle`, `al` = it is not -1. Stop: the `ret` (0x41).
+    "fob": dict(grp="Fob", cn="NWindows::NFile::NIO::CFileBase::OpenBinary", a=0x456060, n=66, pos=True, stops=(0x41,),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip's `CFileBase::OpenBinary` (`CPP/Windows/FileIO.cpp`; `objdump -d`)"),
     # `AString::Add_UInt32 (v)`: `Grow (10)` (the `call` at 0x14), `ConvertUInt32ToString (v, _chars + _len)` (the
     # `call` at 0x21), `_len` = the returned end minus `_chars` (0x29). Stop: the `ret` (0x32).
     "aui": dict(grp="Aui", cn="AString::Add_UInt32", a=0x44c980, n=51, pos=True, stops=(0x32,), calls=True,
@@ -1976,6 +1981,14 @@ FNS = {
     "usm": dict(grp="Usm", cn="UnicodeStringToMultiByte (const UString &, UINT)", a=0x450dc0, n=101, pos=True,
                 fs=True, stops=(95, 96), calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `UnicodeStringToMultiByte` (`StringConvert.cpp`; `objdump -d`)"),
+    # glibc 2.31 sysdeps/unix/sysv/linux/read_nocancel.c (`__read_nocancel`): `read`, `errno` set for an error.
+    # Stops: the `ret` (0x10), the `ret` after `errno` is set (0x2b); the `syscall` (0x6) is a step of its own.
+    "rnc": dict(grp="Rnc", cn="__read_nocancel", a=0x6661e0, n=44, pos=True, fs=True, stops=(16, 43), calls=True,
+                tag="PLAN.md §M, M1",
+                src="glibc 2.31's `__read_nocancel` (`sysdeps/unix/sysv/linux/read_nocancel.c`; `objdump -d`)"),
+    # glibc 2.31 libio/genops.c `_IO_iter_begin ()`: `_IO_list_all`. Stop: the `ret` (0xb).
+    "iib": dict(grp="Iib", cn="_IO_iter_begin", a=0x60e050, n=12, pos=True, stops=(11,), tag="PLAN.md §M, M1",
+                src="glibc 2.31's `_IO_iter_begin` (`libio/genops.c`; `objdump -d`)"),
     # glibc 2.31 elf/dl-lookup.c `_dl_setup_hash (map)`: the GNU hash table's fields (or the SysV one's) into `map`.
     # Stops: the two `ret`s (0x61, 0x93), the `__assert_fail` path (0x94) not covered.
     "dsh": dict(grp="Dsh", cn="_dl_setup_hash", a=0x6ab020, n=180, pos=True, stops=(0x61, 0x93, 0x94), calls=True,

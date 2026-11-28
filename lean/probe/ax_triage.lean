@@ -1,17 +1,9 @@
-import FV7z.Ufs.Holds
-import FV7z.Usm.Holds
+import FV7z.Rnc.Holds
+import FV7z.Iib.Holds
 open FV7z
-#print axioms FV7z.Ufs.ufs_ok
-#print axioms FV7z.Ufs.from41
-#print axioms FV7z.Ufs.from54
-#print axioms FV7z.Ufs.from68
-#print axioms FV7z.Ufs.vc_0
-#print axioms FV7z.Ufs.vc_41
-#print axioms FV7z.Ufs.vc_54
-#print axioms FV7z.Ufs.vc_68
-#print axioms FV7z.Usm.usm_ok
-#print axioms FV7z.Usm.from43
-#print axioms FV7z.Usm.from67
-#print axioms FV7z.Usm.vc_0
-#print axioms FV7z.Usm.vc_43
-#print axioms FV7z.Usm.vc_67
+#print axioms FV7z.Rnc.rnc_ok
+#print axioms FV7z.Rnc.vc_0
+#print axioms FV7z.Rnc.vc_8_ok
+#print axioms FV7z.Rnc.vc_8_err
+#print axioms FV7z.Iib.iib_ok
+#print axioms FV7z.Iib.vc_0
