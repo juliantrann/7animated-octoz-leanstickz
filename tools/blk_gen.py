@@ -2233,7 +2233,7 @@ FNS = {
     # (0x83); the vDSO's pointer at 0x791cd0 (0x16): null to the `syscall` 96 (0x6b), else `call rax` (0x28); a
     # result in `-4095 .. -1` (0x34) other than `-ENOSYS` (0x3a, to the `syscall`) or from the `syscall` (0x76):
     # `errno` = minus it (`fs:[-0x48]`, 0x45) and -1. Stops: the `ret`s (0x58, 0x7f), the padding (0x59).
-    "gtd": dict(grp="Gtd", cn="__gettimeofday", a=0x660360, n=133, pos=True, stops=(0x58, 0x59, 0x7f),
+    "gtd": dict(grp="Gtd", cn="__gettimeofday", a=0x660360, n=133, pos=True, fs=True, stops=(0x58, 0x59, 0x7f),
                 calls=True, tag="PLAN.md §M, M1",
                 src="glibc's `__gettimeofday` (`gettimeofday.c`, static in 7zzs 26.06; `objdump -d`)"),
 }
