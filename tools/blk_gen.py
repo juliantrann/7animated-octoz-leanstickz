@@ -1717,6 +1717,36 @@ FNS = {
     "mbu": dict(grp="Mbu", cn="MultiByteToUnicodeString2", a=0x450a60, n=500, pos=True, fs=True, stops=(0x1aa, 0x1ef),
                 calls=True, cut=(0xc3, 0x138, 0x170), tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `MultiByteToUnicodeString2` (`CPP/Common/StringConvert.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/Common/Wildcard.cpp `SplitPathToParts (path, pathParts)`: `pathParts.Clear ()` inline (the items
+    # from the last: `delete []` of the chars at 0x56 when not null, `operator delete (p, 16)` at 0x63 when not null),
+    # `_size` = 0; `path` empty to the epilogue. Else `name` made (0xb8), the chars scanned for `'/'`: at each,
+    # `name.SetFrom (path + prev, i - prev)` (0xfe) and `pathParts.Add (name)` inline (grown when full: above
+    # 0x7ffffffe the `ja` at 0x110 to the throw, by hand: its target is outside; `operator new []` at 0x135, `memcpy`
+    # at 0x273, `delete []` at 0x288; `operator new (16)` at 0x165, the copy at 0x175); then the last part the same
+    # way (0x1b8, the `ja` at 0x1ca by hand, 0x1ee, 0x2ae, 0x2b6, 0x21a, 0x228) and `delete []` of `name`'s chars
+    # (0x24c). Stops: the `ret` (0xa9), the call of `__stack_chk_fail` (0x2c0).
+    "spp": dict(grp="Spp", cn="SplitPathToParts", a=0x452500, n=709, pos=True, fs=True, stops=(0xa9, 0x2c0),
+                calls=True, hand=(0x110, 0x1ca), tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `SplitPathToParts` (`CPP/Common/Wildcard.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/Windows/FileName.cpp `NName::ResolveDotsFolders (s)` (static; no frame: three pushes, `r12` the
+    # string, `ebp` the index `i`, `rbx` = `4 i`, `rsi` its chars): the loop (0x35 the check of `s[i]`, 0x20 its head)
+    # over `s`: a `.` after a separator or at 0 followed by `/` or the end deletes it (`UString::Delete` at 0x86);
+    # `..` likewise deletes the folder before it, found by two backward scans (0xb8, 0xf0), the start reached either
+    # way or none (returns false at 0xc8); `Delete` at 0x127. Stops: the `ret`s (0x45 after the pops, 0x13a for the
+    # empty string).
+    "rdf": dict(grp="Rdf", cn="NWindows::NFile::NName::ResolveDotsFolders", a=0x456630, n=315, pos=True,
+                stops=(0x45, 0x13a), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `NName::ResolveDotsFolders` (`CPP/Windows/FileName.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/7zip/UI/Common/EnumDirItems.cpp `CDirItems::ReserveDown ()`: `CRecordVector::ReserveDown` in
+    # line for `Prefixes` (`this`, 8-byte items), `PhyParents` (`+ 0x10`, 4-byte), `LogParents` (`+ 0x20`, 4-byte)
+    # and `Items` (`+ 0x30`, 8-byte), each `_items`, `_size` at `+ 8`, `_capacity` at `+ 0xc`: when `_size` is not
+    # `_capacity`, a `_size` not 0 gives `operator new []` (0xdc, 0xa4, 0x14c, 0x114), `memcpy` of the items (0xf4,
+    # 0xbd, 0x165, 0x12d) and `delete []` of the old array (0xfc, 0xc5, 0x16d, 0x135); a `_size` of 0 `delete []` of the
+    # old array when not null (by the stubs at 0x190, 0x1a0, 0x1b0, 0x180); then `_items` and `_capacity` = `_size`
+    # stored. Stop: the `ret` (0x99).
+    "rsv": dict(grp="Rsv", cn="CDirItems::ReserveDown", a=0x5c03e0, n=439, pos=True, stops=(0x99,), calls=True,
+                tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CDirItems::ReserveDown` (`CPP/7zip/UI/Common/EnumDirItems.cpp`; `objdump -d`)"),
 }
 
 
