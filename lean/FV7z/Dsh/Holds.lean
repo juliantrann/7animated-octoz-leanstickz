@@ -128,11 +128,18 @@ theorem vc_g {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post} (hg : (ghp V
     W_0 F Wl Q g f V := by
   obtain ⟨hz, fgh, fc0, fc8, fc4, fc12, w756, w760, w768, w776, w764, w784⟩ := H
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
-  dsimp only [Fd, VG, V2, V1, ch, bk, sh, mk1, bm, sb, nb, cG, ghp] at hg hz f672 fgh fc0 fc8 fc4 fc12 w756 w760
-    w768 w776 w764 w784 h
+  dsimp only [Fd, VG, V2, V1, ch, bk, sh, mk1, bm, sb, nb, cG, ghp] at hg hz f672 fgh fc0 fc8 fc4 fc12 h
+  dsimp only at w756 w760 w768 w776 w764 w784
   wpx [W_0, W_16, W_43, W_104, W_113, o0, o1, o2, o3, o4, BitVec.and_self, hg, hz, Bool.not_true, Bool.not_false,
     Bool.true_eq_false, Bool.false_eq_true, false_implies, true_implies, and_true, true_and, implies_true]
-  all_goals repeat' (first | refine h _ _ ?_ | rfl | assumption | exact trivial | apply And.intro | intro _)
+  all_goals repeat'
+    first
+    | with_reducible refine h _ _ ?_
+    | with_reducible rfl
+    | with_reducible assumption
+    | exact trivial
+    | apply And.intro
+    | intro _
 
 /-- No table: `map->l_info[DT_HASH]` 0, to the `ret` at 147, nothing stored. -/
 theorem vc_n {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post} (hg : (ghp V g == 0) = true)
@@ -145,7 +152,14 @@ theorem vc_n {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post} (hg : (ghp V
   dsimp only [Fd, hs, ghp] at hg hn f672 f96 h
   wpx [W_0, W_16, W_43, W_104, W_113, o0, o1, o2, o3, o4, BitVec.and_self, hg, hn, Bool.not_true, Bool.not_false,
     Bool.true_eq_false, Bool.false_eq_true, false_implies, true_implies, and_true, true_and, implies_true]
-  all_goals repeat' (first | refine h _ _ ?_ | rfl | assumption | exact trivial | apply And.intro | intro _)
+  all_goals repeat'
+    first
+    | with_reducible refine h _ _ ?_
+    | with_reducible rfl
+    | with_reducible assumption
+    | exact trivial
+    | apply And.intro
+    | intro _
 
 /-- The SysV way: the three stores, to the `ret` at 147. -/
 theorem vc_s {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post} (hg : (ghp V g == 0) = true)
@@ -159,7 +173,14 @@ theorem vc_s {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post} (hg : (ghp V
   dsimp only [Fd, VS, nc, dS, hs, ghp] at hg hn f672 f96 fhs fd w784 w756 w776 h
   wpx [W_0, W_16, W_43, W_104, W_113, o0, o1, o2, o3, o4, BitVec.and_self, hg, hn, Bool.not_true, Bool.not_false,
     Bool.true_eq_false, Bool.false_eq_true, false_implies, true_implies, and_true, true_and, implies_true]
-  all_goals repeat' (first | refine h _ _ ?_ | rfl | assumption | exact trivial | apply And.intro | intro _)
+  all_goals repeat'
+    first
+    | with_reducible refine h _ _ ?_
+    | with_reducible rfl
+    | with_reducible assumption
+    | exact trivial
+    | apply And.intro
+    | intro _
 
 /-! ## The return -/
 
@@ -206,7 +227,7 @@ theorem dsh_ok (c : Seg prof F Wl L s₀ o) (hin : CodeIn L dsh_at dsh) (hK : Ke
       Kd X.cpu.gpr Z.cpu.gpr → GoG prof L o gev gP gE Z t') :
     GoG prof L o gev gP gE X t := by
   cases hg : (ghp V X.cpu.gpr == 0)
-  · have eV : Vr V X.cpu.gpr = VG V X.cpu.gpr := by simp only [Vr, hg, cond_false]
+  · have eV : Vr V X.cpu.gpr = VG V X.cpu.gpr := by simp only [Vr, hg, Bool.cond_false]
     refine (c_0 prof).run c hin (fun j' g' _ V' => j' = 97 ∧ Fd X.cpu.gpr g' ∧ V' = VG V X.cpu.gpr) hK hA
       (by rw [addr_add_zero]; exact hrip) (vc_g hg H.f672 (H.gnu hg) fun _ _ a => ⟨rfl, a, rfl⟩) ?_
     rintro j' g fl V₁ ⟨rfl, hF, hV₁⟩ Y t₁ hKY hAY hrY hgY -
@@ -218,7 +239,7 @@ theorem dsh_ok (c : Seg prof F Wl L s₀ o) (hin : CodeIn L dsh_at dsh) (hK : Ke
       rd_keep 760 4 _ (by decide) hm hsp8 hdr, rd_keep 756 4 _ (by decide) hm hsp8 hdr]
     exact hra
   · cases hn : (hs V X.cpu.gpr == 0)
-    · have eV : Vr V X.cpu.gpr = VS V X.cpu.gpr := by simp only [Vr, hg, hn, cond_true, cond_false]
+    · have eV : Vr V X.cpu.gpr = VS V X.cpu.gpr := by simp only [Vr, hg, hn, Bool.cond_true, Bool.cond_false]
       refine (c_0 prof).run c hin (fun j' g' _ V' => j' = 147 ∧ Fd X.cpu.gpr g' ∧ V' = VS V X.cpu.gpr) hK hA
         (by rw [addr_add_zero]; exact hrip)
         (vc_s hg hn H.f672 (H.f96 hg) (H.sysv hg hn) fun _ _ a => ⟨rfl, a, rfl⟩) ?_
@@ -229,7 +250,7 @@ theorem dsh_ok (c : Seg prof F Wl L s₀ o) (hin : CodeIn L dsh_at dsh) (hK : Ke
       rw [rd_keep 776 8 _ (by decide) hm hsp8 hdr, rd_keep 756 4 _ (by decide) hm hsp8 hdr,
         rd_keep 784 8 _ (by decide) hm hsp8 hdr]
       exact hra
-    · have eV : Vr V X.cpu.gpr = V := by simp only [Vr, hg, hn, cond_true]
+    · have eV : Vr V X.cpu.gpr = V := by simp only [Vr, hg, hn, Bool.cond_true]
       refine (c_0 prof).run c hin (fun j' g' _ V' => j' = 147 ∧ Fd X.cpu.gpr g' ∧ V' = V) hK hA
         (by rw [addr_add_zero]; exact hrip) (vc_n hg hn H.f672 (H.f96 hg) fun _ _ a => ⟨rfl, a, rfl⟩) ?_
       rintro j' g fl V₁ ⟨rfl, hF, hV₁⟩ Y t₁ hKY hAY hrY hgY -
