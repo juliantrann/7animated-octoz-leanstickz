@@ -186,7 +186,8 @@ theorem vc_0 {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post}
 stored, `add rsp, 8`, to the `ret` at 36. -/
 theorem vc_13 {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post} (hw : ∀ i < 4, Foot Wl (Addr.add gM i))
     (h40 : ∀ g', g'.rsp = g.rsp → KS g g' → ∀ fl, Q 40 g' fl V)
-    (h36 : ∀ g' (v : BitVec 32), g'.rsp = g.rsp + 8#64 → KS g g' → ∀ fl, Q 36 g' fl (Vst V gM (toBytesLE v 4))) :
+    (h36 : ∀ g' (v : BitVec 32), g'.rsp = g.rsp + 8#64 → KS g g' →
+      ∀ fl, Q 36 g' fl (Vst V gM (toBytesLE v 4))) :
     W_13 F Wl Q g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at h40 h36 ⊢
@@ -241,7 +242,8 @@ theorem from13 (E : Ev prof F Wl L s₀ o gev gP gE S g0 e₂ code₂ j₂ I) (h
   refine (c_13 prof).run E.c E.hin (fun j' g' _ V' => KS Y.cpu.gpr g' ∧
       ((j' = 40 ∧ V' = W ∧ g'.rsp = Y.cpu.gpr.rsp) ∨
         (j' = 36 ∧ (∃ v : BitVec 32, V' = Vst W gM (toBytesLE v 4)) ∧ g'.rsp = Y.cpu.gpr.rsp + 8#64))) hK hA hr
-    (vc_13 E.hw (fun _ a k _ => ⟨k, .inl ⟨rfl, rfl, a⟩⟩) fun _ v a k _ => ⟨k, .inr ⟨rfl, ⟨v, rfl⟩, a⟩⟩) ?_
+    (vc_13 E.hw (fun _ a k _ => ⟨k, .inl ⟨rfl, rfl, a⟩⟩)
+      fun _ v a k _ => ⟨k, .inr ⟨rfl, ⟨v, rfl⟩, a⟩⟩) ?_
   rintro j' g fl V₁ ⟨gk, ⟨rfl, rfl, gs⟩ | ⟨rfl, ⟨v, rfl⟩, gs⟩⟩ U t₁ hKU hAU hrU hgU -
   · subst hgU
     have hmU : Fm S g0 U.cpu.gpr := fm_ret hm (gs.trans hm.1) gk

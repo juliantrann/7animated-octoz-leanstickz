@@ -981,6 +981,21 @@ FNS = {
     "ids": dict(grp="Ids", cn="NWindows::NFile::NFind::CDirEntry::IsDots() const", a=0x455df0, n=59, pos=True,
                 stops=(0x17, 0x3a), calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip's `CDirEntry::IsDots` (`CPP/Windows/FileFind.h`; `objdump -d`)"),
+    # glibc 2.31's `__init_sched_fifo_prio`: `sched_get_priority_max (SCHED_FIFO)` (0x0d) and `_min` (0x1d), both
+    # hypotheses, into `__sched_fifo_max_prio` (`0x792270`) and `__sched_fifo_min_prio` (`0x792274`). Stop: the `ret`.
+    "isf": dict(grp="Isf", cn="__init_sched_fifo_prio", a=0x5ff620, n=45, pos=True, stops=(0x2c,), calls=True,
+                tag="PLAN.md §M, M1", src="glibc 2.31's `__init_sched_fifo_prio` (`nptl/tpp.c`; `objdump -d`)"),
+    # `Add_Messsage_Pre_ArcType (s, pre, arcType)`: `s.Add_LF ()`, `s += pre`, `s += " "`, `s += arcType`, then the
+    # tail `jmp` to `s += ...` (0x47); the four callees are hypotheses.
+    "amp": dict(grp="Amp", cn="Add_Messsage_Pre_ArcType(UString&, char const*, wchar_t const*)", a=0x5e7a50, n=76,
+                pos=True, stops=(0x47,), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip's `Add_Messsage_Pre_ArcType` (`CPP/7zip/UI/Console/ExtractCallbackConsole.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/7zip/UI/Console/ExtractCallbackConsole.cpp `Print_UInt64_and_String (s, val, name)`: the
+    # stack guard, `ConvertUInt64ToString` into a buffer at `rsp`, `s += buf; s.Add_Space (); s += name`. Stops: the
+    # `ret` (0x68) and the `call` of `__stack_chk_fail` (0x69).
+    "pui": dict(grp="Pui", cn="Print_UInt64_and_String", a=0x5e85f0, n=110, pos=True, fs=True, stops=(0x68, 0x69),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `Print_UInt64_and_String` (`ExtractCallbackConsole.cpp`; `objdump -d`)"),
     # glibc 2.31's `remove`: only its code is used (`Rmf` takes it as a hypothesis).
     "rmv": dict(grp="Rmv", cn="remove", a=0x624030, n=63, pos=True, fs=True, stops=(0x31, 0x3e), calls=True,
                 tag="PLAN.md §M, M1", src="glibc 2.31's `remove` (`stdio-common/remove.c`; `objdump -d`)"),
@@ -1102,6 +1117,16 @@ FNS = {
     # `__stack_chk_fail` (0x63).
     "av2": dict(grp="Av2", cn="CPU_IsSupported_AVX2", a=0x4244b0, n=104, pos=True, fs=True, stops=(0x37, 0x63),
                 calls=True, tag="PLAN.md §M, M1", src="7-Zip's `CPU_IsSupported_AVX2` (`C/CpuArch.c`; `objdump -d`)"),
+    # `CFieldPrinter::PrintTitleLines ()`: `fputs (LinesString, *g_StdOut)` (the `call` at 0x16). Stops: the `ret`
+    # (0x1f), the landing pad after it (0x20).
+    "ptl": dict(grp="Ptl", cn="CFieldPrinter::PrintTitleLines", a=0x5eccd0, n=47, pos=True, stops=(0x1f, 0x20),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CFieldPrinter::PrintTitleLines` (`CPP/7zip/UI/Console/List.cpp`; `objdump -d`)"),
+    # `PrintSpaces (numSpaces)` (`.part.0`): `fputs (kSpaces + (32 - numSpaces), *g_StdOut)` (the `call` at 0x23).
+    # Stops: the `ret` (0x2c), the landing pad after it (0x2d).
+    "psp": dict(grp="Psp", cn="PrintSpaces", a=0x5ebdd0, n=60, pos=True, stops=(0x2c, 0x2d), calls=True,
+                tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `PrintSpaces` (`CPP/7zip/UI/Console/List.cpp`, `.part.0`; `objdump -d`)"),
     # `CFileBase::OpenBinary (name, flags, mode)`: `Close ()` (the `call` at 0x1a), `open64 (name, flags, mode)` (the
     # `call` at 0x2a), the result stored as `_handle`, `al` = it is not -1. Stop: the `ret` (0x41).
     "fob": dict(grp="Fob", cn="NWindows::NFile::NIO::CFileBase::OpenBinary", a=0x456060, n=66, pos=True, stops=(0x41,),
@@ -2221,6 +2246,14 @@ FNS = {
     # Stops: the `ret`s (0x24, 0x42), the padding after the first (0x25).
     "sbp": dict(grp="Sbp", cn="z7_SwapBytesPrepare", a=0x43d3d0, n=67, pos=True, stops=(36, 37, 66), calls=True,
                 tag="PLAN.md §M, M1", src="7-Zip 26.06's `z7_SwapBytesPrepare` (`SwapBytes.c`; `objdump -d`)"),
+    # glibc 2.x `_IO_new_file_write (f, data, n)` (libio/fileops.c, static in 7zzs): `n <= 0` (0x14) to the end with
+    # 0; the loop head (0x3d): `__write_nocancel` (0x4e) when `f->_flags2 & 2`, else `__write` (0x28); a negative
+    # count (0x30, 0x56) sets `_IO_ERR_SEEN` (0x60); else `to_do -= count`, `data += count`, to the head while
+    # `to_do > 0` (0x3b); the end (0x6b) adds `n - to_do` to `f->_offset` unless negative. Stops: the `ret` (0x8b),
+    # the padding (0x25, 0x8c); the `or dword [r13], 0x20` (0x60) by hand (`Seg.s_or_mi32`).
+    "ifw": dict(grp="Ifw", cn="_IO_new_file_write", a=0x6287d0, n=156, pos=True, stops=(0x25, 0x8b, 0x8c),
+                calls=True, hand=(0x60,), tag="PLAN.md §M, M1",
+                src="glibc's `_IO_new_file_write` (`libio/fileops.c`, static in 7zzs 26.06; `objdump -d`)"),
 }
 
 def file_bytes(path, va, n):
