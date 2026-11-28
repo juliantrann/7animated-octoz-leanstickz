@@ -6,6 +6,8 @@ open FV7z
 #print axioms FV7z.Sdt.tn2
 #print axioms FV7z.Sdt.ad1
 #print axioms FV7z.Sdt.swn
+#print axioms FV7z.Sdt.a1
+#print axioms FV7z.Sdt.sh3
 #print axioms FV7z.Sdt.r12n
 #print axioms FV7z.Sdt.zs
 #print axioms FV7z.Sdt.zk

@@ -53,16 +53,25 @@ theorem ad1 (k : Nat) : BitVec.ofNat 64 k + 1#64 = BitVec.ofNat 64 (k + 1) := by
 theorem swn (d : BitVec 32) : BitVec.setWidth 64 d = BitVec.ofNat 64 d.toNat := by
   rw [BitVec.ofNat_toNat]
 
+theorem a1 {d : BitVec 32} (h : 1 ≤ d.toNat) :
+    BitVec.setWidth 64 d + 18446744073709551615#64 = BitVec.ofNat 64 (d.toNat - 1) := by
+  have hd := d.isLt
+  apply BitVec.eq_of_toNat_eq
+  simp only [BitVec.toNat_add, BitVec.toNat_setWidth, BitVec.toNat_ofNat, Nat.reducePow, Nat.reduceMod] at hd ⊢
+  omega
+
+theorem sh3 (x : BitVec 64) : x <<< (3 : Nat) = x * 8#64 := by
+  apply BitVec.eq_of_toNat_eq
+  simp only [BitVec.toNat_shiftLeft, BitVec.toNat_mul, BitVec.toNat_ofNat, Nat.shiftLeft_eq, Nat.reducePow,
+    Nat.reduceMod]
+  all_goals omega
+
 theorem r12n {d : BitVec 32} (h : 1 ≤ d.toNat) :
     BitVec.setWidth 64 (BitVec.setWidth 32 (BitVec.setWidth 64 d + 18446744073709551615#64)) <<< (3 : Nat) =
       BitVec.ofNat 64 (d.toNat - 1) * 8#64 := by
-  have hd : d.toNat < 4294967296 := d.isLt
-  first
-  | (apply BitVec.eq_of_toNat_eq
-     simp only [BitVec.toNat_shiftLeft, BitVec.toNat_setWidth, BitVec.toNat_add, BitVec.toNat_ofNat,
-       BitVec.toNat_mul, Nat.shiftLeft_eq, Nat.reducePow, Nat.reduceMod]
-     omega)
-  | bv_omega
+  have hd := d.isLt
+  simp only [Nat.reducePow] at hd
+  rw [a1 h, sw_ix (i := d.toNat - 1) (by omega), sh3]
 
 theorem zs (k : Nat) : BitVec.ofNat 64 (k + 1) * 8#64 - 8#64 = BitVec.ofNat 64 k * 8#64 := by
   first
