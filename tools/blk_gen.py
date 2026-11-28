@@ -1461,6 +1461,31 @@ FNS = {
     "gcf": dict(grp="Gcf", cn="Get_Correct_FsFile_Name", a=0x5c7070, n=88, pos=True, stops=(0x37, 0x57), calls=True,
                 tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `Get_Correct_FsFile_Name` (`ExtractingFilePath.cpp`; `objdump -d`)"),
+    # 7-Zip's CPP/7zip/Compress/LzmaDecoder.cpp `CDecoder::CDecoder ()`: the 8 vtable pointers (the class's
+    # interfaces, from 0x78c498) at `this + 8 * i`, the flags and sizes 0, `_inBufSize` = `_outStep` = 1 MiB. Stop:
+    # the `ret` (184).
+    "ldc": dict(grp="Ldc", cn="NCompress::NLzma::CDecoder::CDecoder", a=0x57fb70, n=185, pos=True, stops=(184,),
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `CDecoder` constructor (`LzmaDecoder.cpp`; `objdump -d`)"),
+    # 7-Zip's CPP/7zip/Compress/LzmaDecoder.cpp `CDecoder::~CDecoder ()`: the 8 vtable pointers back, then
+    # `LzmaDec_Free (&_state, &g_AlignedAlloc)` (the `call` at 110, to `ldf`), `MidFree (_inBuf)` (119), and
+    # `_inStream.Release ()` through the vtable (`call [rax + 16]`, 139) when `_inStream` (at `this + 256`) is set.
+    # Stop: the `ret` (143).
+    "ldd": dict(grp="Ldd", cn="NCompress::NLzma::CDecoder::~CDecoder", a=0x57fc30, n=144, pos=True, stops=(143,),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CDecoder` destructor (`LzmaDecoder.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/7zip/Common/FileStreams.h `CInFileStream::CInFileStream ()`: the five vtable pointers (from
+    # 0x78e748), `File` (a `CFileBase` at 0x2c) set up in line, `Callback` and `CallbackRef` 0, then the two `UString`s
+    # at 0xd0 (the `call` at 0x7a) and 0xe0 (0x86, `UString::UString ()`), the three fields after them 0. Stop: the `ret`
+    # (0xb1); the bytes from 0xb2 on are the landing pads.
+    "ifc": dict(grp="Ifc", cn="CInFileStream::CInFileStream", a=0x5a3f70, n=178, pos=True, stops=(0xb1,), calls=True,
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `CInFileStream::CInFileStream` (`FileStreams.h`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/7zip/Common/FileStreams.cpp `CInFileStream::~CInFileStream ()`: the five vtable pointers set back,
+    # `if (Callback) Callback->InFileStream_On_Destroy (this, CallbackRef)` (`call qword [rax + 8]` at 0x57), the two
+    # `UString`s' chars freed unless NULL (`operator delete []`, the `call`s at 0x66, 0x77), then `File.Close ()` (0x80,
+    # `CFileBase::Close`). Stop: the `ret` (0x86).
+    "ifd": dict(grp="Ifd", cn="CInFileStream::~CInFileStream", a=0x5a4040, n=135, pos=True, stops=(0x86,), calls=True,
+                tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CInFileStream::~CInFileStream` (`FileStreams.cpp`; `objdump -d`)"),
 }
 
 
