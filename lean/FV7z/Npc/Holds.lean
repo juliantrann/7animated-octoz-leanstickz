@@ -82,8 +82,9 @@ theorem vc_25 {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post}
     (f64 : ∀ i < 8, Foot F.data (Addr.add (g.rdx + 64#64) i))
     (f88 : ∀ i < 8, Foot F.data (Addr.add (g.rdx + 88#64) i))
     (f72 : ∀ i < 8, Foot F.data (Addr.add (g.rdx + 72#64) i))
-    (h : ∀ fl, Q 44 { g with rax := rdq(V, g.rdx + 88#64), rcx := rdq(V, g.rdx + 64#64) + 256#64,
-      rdx := rdq(V, g.rdx + 72#64) } fl V) :
+    (h : ∀ fl, Q 44
+      { g with rax := rdq(V, g.rdx + 88#64), rcx := rdq(V, g.rdx + 64#64) + 256#64,
+        rdx := rdq(V, g.rdx + 72#64) } fl V) :
     W_25 fb F Wl Q g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at f64 f88 f72 h ⊢
@@ -126,8 +127,9 @@ theorem vc_78e {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post
     (w4 : ∀ i < 8, Foot Wl (Addr.add (fb + 18446744073709551568#64) i))
     (w5 : ∀ i < 8, Foot Wl (Addr.add (fb + 18446744073709551560#64) i))
     (w6 : ∀ i < 8, Foot Wl (Addr.add (fb + 18446744073709551552#64) i))
-    (h : ∀ fl, Q 121 { g with rsi := 18446744073709551568#64, rcx := 18446744073709551560#64,
-      rdx := 18446744073709551552#64 } fl
+    (h : ∀ fl, Q 121
+      { g with rsi := 18446744073709551568#64, rcx := 18446744073709551560#64,
+        rdx := 18446744073709551552#64 } fl
       (Vst (Vst (Vst V (fb + 18446744073709551568#64) (toBytesLE g.rcx 8)) (fb + 18446744073709551560#64)
         (toBytesLE g.rdx 8)) (fb + 18446744073709551552#64) (toBytesLE g.rax 8))) :
     W_78 fb F Wl Q g f V := by
@@ -202,23 +204,26 @@ theorem npc_ok {fb : Addr} {e₂ : Addr} {code₂ : List Byte} {j₂ : Nat}
   rintro j' g fl V₁ ⟨rfl, hV₁, rfl⟩ U t₁ hKU hAU hrU hgU -
   rw [hV₁] at hAU
   refine (c_25 prof fb).run c hfs hin (fun j' g' _ V' => j' = 44 ∧ V' = V ∧
-      g' = { X.cpu.gpr with rax := rdq(V, Lc V + 88#64), rcx := ca V, rdx := rdq(V, Lc V + 72#64),
-        rdi := 18446744073709551488#64, rsi := 7938752#64 })
+      g' =
+        { X.cpu.gpr with rax := rdq(V, Lc V + 88#64), rcx := ca V, rdx := rdq(V, Lc V + 72#64),
+          rdi := 18446744073709551488#64, rsi := 7938752#64 })
     hKU hAU hrU (vc_25 (g := U.cpu.gpr) (by rw [hgU]; exact f64) (by rw [hgU]; exact f88) (by rw [hgU]; exact f72)
       (by rw [hgU]; exact fun _ => ⟨rfl, rfl, rfl⟩)) ?_
   rintro j' g fl V₁ ⟨rfl, hV₂, rfl⟩ U₂ t₂ hKU₂ hAU₂ hrU₂ hgU₂ -
   rw [hV₂] at hAU₂
   refine (c_44 prof fb).run c hfs hin (fun j' g' _ V' => j' = 78 ∧ V' = V3 V ∧
-      g' = { X.cpu.gpr with rax := cb V, rcx := ca V, rdx := cc V, rdi := 18446744073709551488#64,
-        rsi := 7938752#64 })
+      g' =
+        { X.cpu.gpr with rax := cb V, rcx := ca V, rdx := cc V, rdi := 18446744073709551488#64,
+          rsi := 7938752#64 })
     hKU₂ hAU₂ hrU₂ (vc_44 (g := U₂.cpu.gpr) w1 w2 w3 (by rw [hgU₂]; exact fun _ => ⟨rfl, rfl, rfl⟩)) ?_
   rintro j' g fl V₁ ⟨rfl, hV₃, rfl⟩ U₃ t₃ hKU₃ hAU₃ hrU₃ hgU₃ -
   rw [hV₃] at hAU₃
   by_cases he : Gt fb V
   · have hf : Vf fb V = V6 fb V := by rw [Vf, if_pos he]
     refine (c_78 prof fb).run c hfs hin (fun j' g' _ V' => j' = 121 ∧ V' = V6 fb V ∧
-        g' = { X.cpu.gpr with rax := cb V, rcx := 18446744073709551560#64, rdx := 18446744073709551552#64,
-          rdi := 18446744073709551488#64, rsi := 18446744073709551568#64 })
+        g' =
+          { X.cpu.gpr with rax := cb V, rcx := 18446744073709551560#64, rdx := 18446744073709551552#64,
+            rdi := 18446744073709551488#64, rsi := 18446744073709551568#64 })
       hKU₃ hAU₃ hrU₃
       (vc_78e (g := U₃.cpu.gpr) (by rw [hgU₃]; exact fc) (by rw [hgU₃]; exact he) (by rw [hgU₃]; exact w4)
         (by rw [hgU₃]; exact w5) (by rw [hgU₃]; exact w6) (by rw [hgU₃]; exact fun _ => ⟨rfl, rfl, rfl⟩)) ?_
@@ -229,8 +234,9 @@ theorem npc_ok {fb : Addr} {e₂ : Addr} {code₂ : List Byte} {j₂ : Nat}
       fun Z t' hK' hA' hr' hb _ => kr Z t' hK' hA' hr' hb
   · have hf : Vf fb V = V3 V := by rw [Vf, if_neg he]
     refine (c_78 prof fb).run c hfs hin (fun j' g' _ V' => j' = 84 ∧ V' = V3 V ∧
-        g' = { X.cpu.gpr with rax := cb V, rcx := ca V, rdx := cc V, rdi := 18446744073709551488#64,
-          rsi := 7938752#64 })
+        g' =
+          { X.cpu.gpr with rax := cb V, rcx := ca V, rdx := cc V, rdi := 18446744073709551488#64,
+            rsi := 7938752#64 })
       hKU₃ hAU₃ hrU₃
       (vc_78n (g := U₃.cpu.gpr) (by rw [hgU₃]; exact fc) (by rw [hgU₃]; exact he)
         (by rw [hgU₃]; exact fun _ => ⟨rfl, rfl, rfl⟩)) ?_
