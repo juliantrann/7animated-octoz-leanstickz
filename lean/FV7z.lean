@@ -1549,3 +1549,9 @@ import FV7z.Pew.Cuts
 import FV7z.Pew.Defs
 import FV7z.Pew.Pieces
 import FV7z.Pew.Holds
+import FV7z.Uad.Code
+import FV7z.Uad.Pats
+import FV7z.Uad.Blocks1
+import FV7z.Uad.Blocks
+import FV7z.Uad.Cuts
+import FV7z.Uad.Holds

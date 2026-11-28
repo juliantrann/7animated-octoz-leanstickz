@@ -548,6 +548,12 @@ FNS = {
                 cut=(175, 328),
                 tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `CompareFileNames` (`CPP/Common/Wildcard.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/Common/MyString.cpp `UString::Add_Dot ()`: `_len != _limit`: the stores (`_chars[_len] = '.'`,
+    # `_chars[_len + 1] = 0`, `_len += 1`) from 0x10 and the `ret` (0x2a); else `Grow_1 ()` (the `call` at 0x30, to
+    # `ug1`), the length read again (0x35) and the same stores.
+    "uad": dict(grp="Uad", cn="UString::Add_Dot", a=0x44d9b0, n=58, pos=True, stops=(0x2a,), calls=True,
+                tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `UString::Add_Dot` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
     # 7-Zip 26.06 C/LzmaDec + CPP/7zip/Compress/LzmaDecoder.cpp `CDecoder::SetOutStreamSizeResume (outSize)`: the
     # flags and sizes, then a tail jump (0x2f) to `LzmaDec_Init (&_state)`.
     "sos": dict(grp="Sos", cn="NCompress::NLzma::CDecoder::SetOutStreamSizeResume", a=0x57fd80, n=52, pos=True,
