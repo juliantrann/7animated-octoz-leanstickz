@@ -326,8 +326,8 @@ theorem from48i {g₀ : Gprs} {ra : Addr} {b : Addr} {N : Nat} {O : Nat → (Add
   intro i hi h139
   have hnI : (nI i).toNat < 4294967296 := (nI i).isLt
   have h129 := from129 c hin hin1 hin2 w6 hE0 hE1 i hi h139
-  have B80 := from80 c hin hin1 hin2 w6 fa fe fp hIt hP0 hQ0 hD1 hD2 i hi
-  have S119 := from119 c hin i hi h129
+  have B80 := from80 (ra := ra) c hin hin1 hin2 w6 fa fe fp hIt hP0 hQ0 hD1 hD2 i hi
+  have S119 := from119 (nI := nI) c hin i hi h129
   -- the steps, by induction
   have L80 : ∀ k, k < (nI i).toNat → AtJ prof F Wl L s₀ o gev gP gE 80 fun g W => H i (k + 1) W ∧
       Fr g₀ ra W ∧ Rs g₀ g ∧ g.rdi = itI i ∧ g.rbp = BitVec.ofNat 64 (8 * k) ∧ g.rbx = ip b i ∧
@@ -408,7 +408,7 @@ theorem from48 {g₀ : Gprs} {ra b : Addr} {N : Nat}
     ∀ i < N, AtJ prof F Wl L s₀ o gev gP gE 48 fun g W => O (i + 1) W ∧ Fr g₀ ra W ∧ Rs g₀ g ∧
       g.rbx = ip b (i + 1) := by
   have F139 := from139 c hin hN fb fc hb h157
-  have ITEM := from48i c hin hin1 hin2 w6 fn fa fe fp hn hOH hIt hP0 hQ0 hD1 hD2 hE0 hE1
+  have ITEM := from48i (ra := ra) c hin hin1 hin2 w6 fn fa fe fp hn hOH hIt hP0 hQ0 hD1 hD2 hE0 hE1
   -- the items, by induction
   intro i
   induction i with
