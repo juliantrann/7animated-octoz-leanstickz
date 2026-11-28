@@ -1519,3 +1519,11 @@ import FV7z.Exr.Cuts
 import FV7z.Exr.Defs
 import FV7z.Exr.Pieces
 import FV7z.Exr.Holds
+import FV7z.Pew.Code
+import FV7z.Pew.Pats
+import FV7z.Pew.Blocks1
+import FV7z.Pew.Blocks
+import FV7z.Pew.Cuts
+import FV7z.Pew.Defs
+import FV7z.Pew.Pieces
+import FV7z.Pew.Holds
