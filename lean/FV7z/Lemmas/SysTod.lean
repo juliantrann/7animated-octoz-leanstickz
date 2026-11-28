@@ -45,6 +45,10 @@ abbrev tvUsec (o : Oracle) (t : Nat) : List Byte :=
 /-- The kernel's time zone, the answer at `t`. -/
 abbrev tzB (o : Oracle) (t : Nat) : List Byte := toBytesLE (o t .timezone) 8
 
+theorem tvSec_len : (tvSec o t).length = 8 := toBytesLE_length _ _
+theorem tvUsec_len : (tvUsec o t).length = 8 := toBytesLE_length _ _
+theorem tzB_len : (tzB o t).length = 8 := toBytesLE_length _ _
+
 /-- The memory `m` after `gettimeofday (tv, tz)` with the stream at `t`: `tv` written, then `tz` unless it is 0. -/
 def todMem (o : Oracle) (t : Nat) (tv tz : Addr) (m : Memory) : Memory :=
   if tz = 0 then writeBytes (writeBytes m tv (tvSec o t)) (tv.add 8) (tvUsec o t)
@@ -76,9 +80,6 @@ structure TodOk (prof : Profile) (o : Oracle) (t : Nat) (s : State) : Prop where
   tz : s.cpu.gpr.rsi ≠ 0 → s.cpu.gpr.rsi.toNat + 8 ≤ userPtrMax prof.feat ∧
     Writable prof (st (st s s.cpu.gpr.rdi (tvSec o t)) (s.cpu.gpr.rdi.add 8) (tvUsec o t)) s.cpu.gpr.rsi 8
 
-theorem req_ask_bind_run {α β : Type} {r : Request} {g : r.Answer → Req α} {h : α → Req β} :
-    ((Req.request r >>= g) >>= h).runStream o t = (g (o t r) >>= h).runStream o (t + 1) := rfl
-
 /-- `gettimeofday (rdi, rsi)` on Zellic's model, as `TodOk` needs: as `todSt` says, `rax` 0. -/
 theorem sysGettimeofday_ok (h : TodOk prof o t s) :
     (sysGettimeofday prof s).runStream o t =
@@ -86,32 +87,36 @@ theorem sysGettimeofday_ok (h : TodOk prof o t s) :
   have h47 : userPtrMax prof.feat ≤ 2 ^ 56 := by unfold userPtrMax; split <;> decide
   have htop := h.tvTop
   have e8 : (s.cpu.gpr.rdi.add 8).toNat = s.cpu.gpr.rdi.toNat + 8 := by
-    simp only [Addr.add, BitVec.toNat_add, BitVec.toNat_ofNat]
+    show (s.cpu.gpr.rdi + BitVec.ofNat 64 8).toNat = _
+    rw [BitVec.toNat_add, BitVec.toNat_ofNat]
     omega
   have p1 : putUser prof s s.cpu.gpr.rdi (toBytesLE (o t (.clock 0)).sec 8) =
-      Pure.pure (st s s.cpu.gpr.rdi (tvSec o t), true) :=
+      Pure.pure (st s s.cpu.gpr.rdi (toBytesLE (o t (.clock 0)).sec 8), true) :=
     putUser_ok (by rw [toBytesLE_length]; exact accessOk_le (by omega)) (by rw [toBytesLE_length]; exact h.w1)
-  have p2 : putUser prof (st s s.cpu.gpr.rdi (tvSec o t)) (s.cpu.gpr.rdi.add 8)
+  have p2 : putUser prof (st s s.cpu.gpr.rdi (toBytesLE (o t (.clock 0)).sec 8)) (s.cpu.gpr.rdi.add 8)
       (toBytesLE (BitVec.ofNat 64 ((o t (.clock 0)).nsec.val / 1000)) 8) =
-      Pure.pure (st (st s s.cpu.gpr.rdi (tvSec o t)) (s.cpu.gpr.rdi.add 8) (tvUsec o t), true) :=
+      Pure.pure (st (st s s.cpu.gpr.rdi (toBytesLE (o t (.clock 0)).sec 8)) (s.cpu.gpr.rdi.add 8)
+        (toBytesLE (BitVec.ofNat 64 ((o t (.clock 0)).nsec.val / 1000)) 8), true) :=
     putUser_ok (by rw [toBytesLE_length]; exact accessOk_le (by omega)) (by rw [toBytesLE_length]; exact h.w2)
   unfold sysGettimeofday todSt todMem todBs todT
   simp only [h.tv0, ↓reduceIte]
-  rw [req_ask_bind_run]
+  rw [req_ask_run]
   simp only [p1, req_pure_bind, Bool.not_true, Bool.false_eq_true, ↓reduceIte]
   simp only [p2, req_pure_bind, Bool.not_true, Bool.false_eq_true, ↓reduceIte, eq_self_iff_true]
   by_cases hz : s.cpu.gpr.rsi = 0
   · simp only [if_pos hz]
     rfl
   · obtain ⟨ht, w3⟩ := h.tz hz
-    have p3 : copyOut prof (st (st s s.cpu.gpr.rdi (tvSec o t)) (s.cpu.gpr.rdi.add 8) (tvUsec o t)) s.cpu.gpr.rsi
+    have p3 : copyOut prof (st (st s s.cpu.gpr.rdi (toBytesLE (o t (.clock 0)).sec 8)) (s.cpu.gpr.rdi.add 8)
+        (toBytesLE (BitVec.ofNat 64 ((o t (.clock 0)).nsec.val / 1000)) 8)) s.cpu.gpr.rsi
         (toBytesLE (o (t + 1) .timezone) 8) =
-        Pure.pure (st (st (st s s.cpu.gpr.rdi (tvSec o t)) (s.cpu.gpr.rdi.add 8) (tvUsec o t)) s.cpu.gpr.rsi
-          (tzB o (t + 1)), (toBytesLE (o (t + 1) .timezone) 8).length, true) :=
+        Pure.pure (st (st (st s s.cpu.gpr.rdi (toBytesLE (o t (.clock 0)).sec 8)) (s.cpu.gpr.rdi.add 8)
+          (toBytesLE (BitVec.ofNat 64 ((o t (.clock 0)).nsec.val / 1000)) 8)) s.cpu.gpr.rsi
+          (toBytesLE (o (t + 1) .timezone) 8), (toBytesLE (o (t + 1) .timezone) 8).length, true) :=
       copyOut_ok (by rw [toBytesLE_length]; exact accessOk_le ht) (by rw [toBytesLE_length]; exact w3)
     simp only [if_neg hz]
     rw [req_ask_run]
-    simp only [p3, req_pure_bind, ↓reduceIte]
+    simp only [p3, req_pure_bind, ↓reduceIte, eq_self_iff_true]
     rfl
 
 /-- `syscall` for `gettimeofday (rdi, rsi)`, as `TodOk` needs: `todMem`'s writes, `rax` 0. -/
@@ -165,17 +170,21 @@ theorem s_gettimeofday_re (c : Seg prof F Wl L s₀ o) (hrs : s₀.thread.rseq =
   c.stepE hK hin hj hrip fun M hM hK' htf hac => by
     have hA' : Agree F (X.withMem M).proc.mm.mem V := c.agreeK hK hA hM
     obtain ⟨hw1, hK1, hA1⟩ := c.store_ok (a := X.cpu.gpr.rdi) (bs := tvSec o (t + 1)) hK' hA'
-      (fun i hi => hst i (by rw [toBytesLE_length] at hi; omega))
-    obtain ⟨hw2, hK2, hA2⟩ := c.store_ok (a := X.cpu.gpr.rdi.add 8) (bs := tvUsec o (t + 1)) hK1 hA1
-      (fun i hi => by rw [toBytesLE_length] at hi; rw [addr_add_add]; exact hst (8 + i) (by omega))
-    rw [toBytesLE_length] at hw1 hw2
+      (fun i hi => hst i (show i < 16 by rw [tvSec_len] at hi; omega))
+    obtain ⟨hw2, hK2, hA2⟩ := c.store_ok (a := Addr.add X.cpu.gpr.rdi 8) (bs := tvUsec o (t + 1)) hK1 hA1
+      (fun i hi => by
+        rw [tvUsec_len] at hi
+        rw [addr_add_add]
+        exact hst (8 + i) (by omega))
+    rw [tvSec_len] at hw1
+    rw [tvUsec_len] at hw2
     have hT : TodOk prof o (t + 1) (nx (X.withMem M) len (sysGpr (X.withMem M) len) (rf0 (X.withMem M))) :=
       { tv0 := htv, tvTop := htop, w1 := hw1, w2 := hw2
         tz := fun h0 => by
           obtain ⟨ht, hf⟩ := hz h0
           obtain ⟨hw3, -, -⟩ := c.store_ok (a := X.cpu.gpr.rsi) (bs := tzB o (t + 1 + 1)) hK2 hA2
-            (fun i hi => hf i (by rw [toBytesLE_length] at hi; exact hi))
-          rw [toBytesLE_length] at hw3
+            (fun i hi => hf i (show i < 8 by rw [tzB_len] at hi; exact hi))
+          rw [tzB_len] at hw3
           exact ⟨ht, hw3⟩ }
     have hKA : KeptW Wl s₀ ((X.withMem M).withMem (todMem o (t + 1) X.cpu.gpr.rdi X.cpu.gpr.rsi M)) ∧
         Agree F (todMem o (t + 1) X.cpu.gpr.rdi X.cpu.gpr.rsi M) (todV o (t + 1) X.cpu.gpr.rdi X.cpu.gpr.rsi V) := by
@@ -184,7 +193,7 @@ theorem s_gettimeofday_re (c : Seg prof F Wl L s₀ o) (hrs : s₀.thread.rseq =
         exact ⟨hK2, hA2⟩
       · obtain ⟨-, hf⟩ := hz h0
         obtain ⟨-, hK3, hA3⟩ := c.store_ok (a := X.cpu.gpr.rsi) (bs := tzB o (t + 1 + 1)) hK2 hA2
-          (fun i hi => hf i (by rw [toBytesLE_length] at hi; exact hi))
+          (fun i hi => hf i (show i < 8 by rw [tzB_len] at hi; exact hi))
         simp only [todMem, todV, if_neg h0]
         exact ⟨hK3, hA3⟩
     exact ⟨_, _, _, syscall_gettimeofday (s := X.withMem M) htf (c.dec hK' hin hrip hd) hnr hT,
