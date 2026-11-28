@@ -1,8 +1,15 @@
-import FV7z.Dsh.Holds
+import FV7z.Nps.Code
+import FV7z.Nps.Pats
+import FV7z.Nps.Blocks1
+import FV7z.Nps.Blocks
+import FV7z.Nps.Cuts
+import FV7z.Nps.Defs
+import FV7z.Nps.Pieces
+import FV7z.Nps.Holds
 open FV7z
-#print axioms FV7z.Dsh.dsh_ok
-#print axioms FV7z.Dsh.vc_g
-#print axioms FV7z.Dsh.vc_n
-#print axioms FV7z.Dsh.vc_s
-#print axioms FV7z.Dsh.rd_keep
-#print axioms FV7z.Dsh.fin_ret
+#print axioms FV7z.Nps.nps_ok
+#print axioms FV7z.Nps.vc_0
+#print axioms FV7z.Nps.vc_81
+#print axioms FV7z.Nps.vc_110
+#print axioms FV7z.Nps.from110
+#print axioms FV7z.Nps.from43
