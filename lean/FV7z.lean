@@ -1758,3 +1758,6 @@ import FV7z.Aui.Holds
 import FV7z.Fob.Blocks
 import FV7z.Fob.Cuts
 import FV7z.Fob.Holds
+import FV7z.Lzp.Blocks
+import FV7z.Lzp.Cuts
+import FV7z.Lzp.Holds
