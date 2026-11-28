@@ -1747,6 +1747,26 @@ FNS = {
     "rsv": dict(grp="Rsv", cn="CDirItems::ReserveDown", a=0x5c03e0, n=439, pos=True, stops=(0x99,), calls=True,
                 tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `CDirItems::ReserveDown` (`CPP/7zip/UI/Common/EnumDirItems.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/Common/Wildcard.cpp `NWildcard::CCensorNode::CheckPathToRoot (include, pathParts, isFile)`: six
+    # pushes and a frame of 0x48 bytes with the stack guard at `rsp + 0x38` and a local `UStringVector` at `rsp + 0x20`;
+    # `CheckPathCurrent` (0x36); `Parent` not null: the local's first item (`operator new []` 0x70, `operator new`
+    # 0xa9, the `UString` copy of `Name` 0xb7), `pathParts` appended (grown when full: the two jumps to the throw at
+    # 0x1a9 and 0x1b2, by hand: their target is outside; the loop at 0x1e0), `Parent->CheckPathToRoot` (0xee); the
+    # local's items freed from the last down (the loop at 0x110). Stops: the `ret` (0x172), the call of
+    # `__stack_chk_fail` (0x2a7).
+    "cpr": dict(grp="Cpr", cn="NWildcard::CCensorNode::CheckPathToRoot", a=0x454330, n=684, pos=True, fs=True,
+                stops=(0x172, 0x2a7), hand=(0x1a9, 0x1b2), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `NWildcard::CCensorNode::CheckPathToRoot` (`CPP/Common/Wildcard.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/7zip/UI/Common/ArchiveExtractCallback.cpp `CArchiveExtractCallback::CArchiveExtractCallback ()`:
+    # five pushes (no frame of its own), the seven vtable pointers (from 0x78ebd8) and the scalar fields stored, the
+    # `AString`s (the `call`s at 203, 215, 334, 400, 412, 555, to 0x44c360) and `UString`s (252, 286, 298, 652,
+    # `UString::UString ()`) set up in line with more fields 0, `_localProgressSpec = new CLocalProgress` (`operator
+    # new (0x38)` at 521, its constructor at 532, `AddRef` as `add dword [rbp + 8], 1` at 537, by hand; the pointer at
+    # 0x228). Stop: the `ret` (687); the bytes from 688 on are the landing pads. Split: the stores in short pieces.
+    "aec": dict(grp="Aec", cn="CArchiveExtractCallback::CArchiveExtractCallback", a=0x5b0040, n=688, pos=True,
+                stops=(687,), hand=(537,), calls=True, split=(23, 61, 100, 133, 171, 477, 613, 679),
+                tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CArchiveExtractCallback` constructor (`ArchiveExtractCallback.cpp`; `objdump -d`)"),
 }
 
 

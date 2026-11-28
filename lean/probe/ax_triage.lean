@@ -1,25 +1,16 @@
-import FV7z.Cps.Ev
-import FV7z.Cps.Str
-import FV7z.Cps.Sel
-import FV7z.Cps.Loop
-import FV7z.Cps.Holds
+import FV7z.Aec.Code
+import FV7z.Aec.Pats
+import FV7z.Aec.Blocks1
+import FV7z.Aec.Blocks
+import FV7z.Aec.Cuts
+import FV7z.Aec.Defs
+import FV7z.Aec.Pieces1
+import FV7z.Aec.Pieces2
+import FV7z.Aec.Holds
 open FV7z
-#print axioms FV7z.Cps.cps_ok
-#print axioms FV7z.Cps.from28
-#print axioms FV7z.Cps.loop
-#print axioms FV7z.Cps.str112
-#print axioms FV7z.Cps.from126
-#print axioms FV7z.Cps.from156
-#print axioms FV7z.Cps.from170
-#print axioms FV7z.Cps.from183
-#print axioms FV7z.Cps.from206
-#print axioms FV7z.Cps.from221
-#print axioms FV7z.Cps.from241
-#print axioms FV7z.Cps.from265
-#print axioms FV7z.Cps.from302
-#print axioms FV7z.Cps.from439
-#print axioms FV7z.Cps.from514
-#print axioms FV7z.Cps.from534
-#print axioms FV7z.Cps.from660
-#print axioms FV7z.Cps.from678
-#print axioms FV7z.Cps.tail331
+#print axioms FV7z.Aec.aec_ok
+#print axioms FV7z.Aec.vc_0
+#print axioms FV7z.Aec.vc_23
+#print axioms FV7z.Aec.vc_220
+#print axioms FV7z.Aec.vc_679
+#print axioms FV7z.Aec.from537
