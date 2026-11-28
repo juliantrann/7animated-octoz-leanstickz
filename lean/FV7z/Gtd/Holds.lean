@@ -6,7 +6,8 @@ import FV7z.Lemmas.SysTod
 glibc's `__gettimeofday (tv, tz)` at `0x660360` in `7zzs`. It saves `r12` and `rbp` (then `tv` and `tz`), clears
 `tz`'s first byte unless `tz` is 0 (the store at 128), and loads the vDSO's `gettimeofday`
 (`GLRO(dl_vdso_gettimeofday)`, 8 bytes at `0x791cd0`). When that is 0 it asks the kernel `gettimeofday (tv, tz)`
-(the `syscall` at 107); the answer is then 0 (`Lemmas/SysTod.lean`), not an error, so it restores `rbp` and `r12` and reaches the `ret` at 127.
+(the `syscall` at 107); the answer is then 0 (`Lemmas/SysTod.lean`), not an error, so it restores `rbp` and `r12`
+and reaches the `ret` at 127.
 
 - `vc_0`, `vc_22`, `vc_96`, `vc_109`: the verification conditions of the pieces (`Gtd/Cuts.lean`).
 - `gtd_ok`: from the entry, `tv` not 0 with its 16 bytes in what the run may store into, `tz` 0 or its 8 bytes so,
@@ -58,6 +59,22 @@ theorem fm_fk {g0 g g' : Gprs} (h : Fm g0 g) (h' : Fk g g') : Fm g0 g' :=
     h'.2.2.2.2.2.2.2.1.trans h.2.2.2.2.2.2.2.1, h'.2.2.2.2.2.2.2.2.1.trans h.2.2.2.2.2.2.2.2.1,
     h'.2.2.2.2.2.2.2.2.2.1.trans h.2.2.2.2.2.2.2.2.2.1, h'.2.2.2.2.2.2.2.2.2.2.trans h.2.2.2.2.2.2.2.2.2.2⟩
 
+theorem fm_mk {g0 g : Gprs} (a : g.rsp = aR g0.rsp) (b : g.r12 = g0.rdi) (c : g.rbp = g0.rsi) (d : g.rbx = g0.rbx)
+    (e : g.r13 = g0.r13) (f : g.r14 = g0.r14) (h : g.r15 = g0.r15) (i : g.rdx = g0.rdx) (j : g.r8 = g0.r8)
+    (k : g.r9 = g0.r9) (l : g.r10 = g0.r10) : Fm g0 g := ⟨a, b, c, d, e, f, h, i, j, k, l⟩
+
+theorem fk_mk {g g' : Gprs} (a : g'.rsp = g.rsp) (b : g'.r12 = g.r12) (c : g'.rbp = g.rbp) (d : g'.rbx = g.rbx)
+    (e : g'.r13 = g.r13) (f : g'.r14 = g.r14) (h : g'.r15 = g.r15) (i : g'.rdx = g.rdx) (j : g'.r8 = g.r8)
+    (k : g'.r9 = g.r9) (l : g'.r10 = g.r10) : Fk g g' := ⟨a, b, c, d, e, f, h, i, j, k, l⟩
+
+/-- One step of the closers of the pieces. -/
+macro "ostep" : tactic => `(tactic| first
+  | with_reducible rfl
+  | with_reducible assumption
+  | exact rfl
+  | apply And.intro
+  | intro _)
+
 section Pieces
 variable {F : Footprint} {Wl : List Rgn}
 
@@ -76,7 +93,7 @@ theorem vc_0 {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post}
     wpx [W_0, W_128, o0, o9, Op.sti, BitVec.and_self, Bool.not_true, Bool.not_false, Bool.false_eq_true,
       Bool.true_eq_false, false_implies, implies_true]
     all_goals repeat' (first
-      | refine h22 _ ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ _
+      | refine h22 _ (fm_mk ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_) _
       | with_reducible exact hs1
       | with_reducible exact hs2
       | ostep)
@@ -86,7 +103,7 @@ theorem vc_0 {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post}
     wpx [W_0, W_128, o0, o9, Op.sti, eaG, optV, BitVec.mul_one, BitVec.add_zero, BitVec.and_self, h0, Bool.not_true,
       Bool.not_false, Bool.false_eq_true, Bool.true_eq_false, false_implies, implies_true]
     all_goals repeat' (first
-      | refine h22 _ ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ _
+      | refine h22 _ (fm_mk ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_) _
       | with_reducible exact hs1
       | with_reducible exact hs2
       | with_reducible exact hz'
@@ -102,7 +119,7 @@ theorem vc_22 {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post}
   wpx [W_22, W_34, o1, o2, Op.lda, hv, BitVec.and_self, Bool.not_true, Bool.not_false, Bool.false_eq_true,
     Bool.true_eq_false, false_implies, implies_true]
   all_goals repeat' (first
-    | refine h96 _ ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ _
+    | refine h96 _ (fk_mk ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_) _
     | with_reducible exact hf
     | ostep)
 
@@ -114,7 +131,7 @@ theorem vc_96 {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post}
   dsimp only at h107 ⊢
   wpx [W_96, o7]
   all_goals repeat' (first
-    | refine h107 _ ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ ?_ ?_ ?_ _
+    | refine h107 _ (fk_mk ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_) ?_ ?_ ?_ _
     | ostep)
 
 /-- After the `syscall`, the answer 0: `rdx` = 0, not above `-4096`; `add rsp, 8`, the pops, to the `ret`. -/
