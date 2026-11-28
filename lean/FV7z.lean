@@ -1963,3 +1963,9 @@ import FV7z.Npl.Blocks1
 import FV7z.Npl.Blocks
 import FV7z.Npl.Cuts
 import FV7z.Npl.Holds
+import FV7z.Ids.Code
+import FV7z.Ids.Pats
+import FV7z.Ids.Blocks1
+import FV7z.Ids.Blocks
+import FV7z.Ids.Cuts
+import FV7z.Ids.Holds
