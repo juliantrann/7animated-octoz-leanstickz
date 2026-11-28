@@ -1,16 +1,11 @@
-import FV7z.Lzp.Blocks
-import FV7z.Lzp.Cuts
-import FV7z.Lzp.Holds
+import FV7z.Sse.Blocks
+import FV7z.Sse.Cuts
+import FV7z.Sse.Holds
 open FV7z
-#print axioms FV7z.Lzp.call_8
-#print axioms FV7z.Lzp.tgt_8
-#print axioms FV7z.Lzp.call_40
-#print axioms FV7z.Lzp.tgt_40
-#print axioms FV7z.Lzp.ret_34
-#print axioms FV7z.Lzp.ret_76
-#print axioms FV7z.Lzp.vc_0
-#print axioms FV7z.Lzp.vc_13z
-#print axioms FV7z.Lzp.vc_13n
-#print axioms FV7z.Lzp.vc_45z
-#print axioms FV7z.Lzp.vc_45n
-#print axioms FV7z.Lzp.lzp_ok
+#print axioms FV7z.Sse.call_32
+#print axioms FV7z.Sse.tgt_32
+#print axioms FV7z.Sse.ret_67
+#print axioms FV7z.Sse.t32
+#print axioms FV7z.Sse.vc_0
+#print axioms FV7z.Sse.vc_37
+#print axioms FV7z.Sse.sse_ok
