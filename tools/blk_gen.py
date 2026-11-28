@@ -828,6 +828,25 @@ FNS = {
                 calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `COpenCallbackConsole::Open_Finished` "
                     "(`CPP/7zip/UI/Console/OpenCallbackConsole.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/Windows/PropVariant.cpp `CPropVariant::operator= (const char *s)`: `InternalClear ()` (the
+    # `call` at 0x11), `vt` = `VT_BSTR` and `wReserved1` = 0 (one 4-byte store), `bstrVal = AllocBstrFromAscii (s)`
+    # (0x21); NULL: the `je` at 0x2e to the throw (by hand: its target is outside). Stop: the `ret` (0x3e).
+    "pva": dict(grp="Pva", cn="CPropVariant::operator=(const char *)", a=0x4572a0, n=63, pos=True, stops=(0x3e,),
+                calls=True, hand=(0x2e,), tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CPropVariant::operator= (const char *)` (`CPP/Windows/PropVariant.cpp`; "
+                    "`objdump -d`)"),
+    # 7-Zip 26.06 CPP/7zip/Common/FileStreams.h `CInFileStream::Release ()` (`Z7_COM_UNKNOWN_IMP_*`): `--__m_RefCount`;
+    # when 0, `delete this` (`~CInFileStream ()` 0x5a4040 and `operator delete (this, 0x108)` 0x6014e0, the `call`s).
+    # Stop: the `ret` (0x3a).
+    "cir": dict(grp="Cir", cn="CInFileStream::Release", a=0x5a4b20, n=59, pos=True, stops=(0x3a,),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CInFileStream::Release` "
+                    "(`CPP/7zip/Common/FileStreams.h`; `objdump -d`)"),
+    # 7-Zip 26.06 Common/StdOutStream.cpp `CStdOutStream::operator<< (unsigned)`, the twin of `olg`, without the landing
+    # pad (from 0x57). Stops: the `ret` (0x51), the call of `__stack_chk_fail` (0x52).
+    "oun": dict(grp="Oun", cn="CStdOutStream::operator<< (unsigned)", a=0x5a1a00, n=87, pos=True, fs=True,
+                stops=(81, 82), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CStdOutStream::operator<< (unsigned)` (`StdOutStream.cpp`; `objdump -d`)"),
     # 7-Zip 26.06 CPP/Common/Wildcard.cpp `ExtractFileNameFromPath (path)`: `path.ReverseFind_PathSepar ()` (the `call`,
     # 0x14), then `UString (path + it + 1)` into the result (0x26). Stop: the `ret` (0x35).
     "efn": dict(grp="Efn", cn="ExtractFileNameFromPath(const UString &)", a=0x4528f0, n=54, pos=True, stops=(0x35,),
@@ -2195,6 +2214,13 @@ FNS = {
     "osc": dict(grp="Osc", cn="CStdOutStream::operator<< (const char *)", a=0x5f4be0, n=27, pos=True, stops=(26,),
                 calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `CStdOutStream::operator<< (const char *)` (`StdOutStream.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/7zip/Compress/LzmaDecoder.cpp `CDecoder::SetDecoderProperties2 (prop, size)`:
+    # `LzmaDec_Allocate (&_state, prop, size, &g_AllocBig)` (0x42bf80), the result through `SResToHRESULT`'s table
+    # (0x6e68c0), on `S_OK` `_propsWereSet = true` and `CreateInputBuffer ()` (0x57fcc0). Without the landing pad
+    # (from 0x4e). Stops: the three `ret`s (0x31, 0x3e, 0x4d).
+    "ldp": dict(grp="Ldp", cn="NCompress::NLzma::CDecoder::SetDecoderProperties2", a=0x57fd10, n=78, pos=True,
+                stops=(0x31, 0x3e, 0x4d), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `NCompress::NLzma::CDecoder::SetDecoderProperties2` (`LzmaDecoder.cpp`; `objdump -d`)"),
     # glibc 2.31 elf/dl-lookup.c `_dl_setup_hash (map)`: the GNU hash table's fields (or the SysV one's) into `map`.
     # Stops: the two `ret`s (0x61, 0x93), the `__assert_fail` path (0x94) not covered.
     "dsh": dict(grp="Dsh", cn="_dl_setup_hash", a=0x6ab020, n=180, pos=True, stops=(0x61, 0x93, 0x94), calls=True,
