@@ -135,8 +135,8 @@ theorem vc_109 {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post}
 /-- The counter of the second loop (`rcx` = `0x6eb590`), then its next compare: to 45 after the 16th byte, else
 to 88 (match) or 109 (mismatch). -/
 theorem vc_88 {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post}
-    (fa : ∀ i : Nat, i < 1 → Foot F.data (Addr.add (g.rax + 1#64 + g.rcx) i))
-    (fb : ∀ i : Nat, i < 1 → Foot F.data (Addr.add (g.rsi + (g.rax + 1#64)) i))
+    (fa : ¬ g.rax + 1#64 = 16#64 → ∀ i : Nat, i < 1 → Foot F.data (Addr.add (g.rax + 1#64 + g.rcx) i))
+    (fb : ¬ g.rax + 1#64 = 16#64 → ∀ i : Nat, i < 1 → Foot F.data (Addr.add (g.rsi + (g.rax + 1#64)) i))
     (h45 : g.rax + 1#64 = 16#64 → ∀ fl, Q 45 { g with rax := g.rax + 1#64 } fl V)
     (h88 : ¬ g.rax + 1#64 = 16#64 → bq V (g.rsi + (g.rax + 1#64)) = bq V (g.rax + 1#64 + g.rcx) →
       ∀ fl, Q 88 { g with
@@ -155,6 +155,8 @@ theorem vc_88 {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post}
     | exact rfl
     | exact trivial
     | assumption
+    | (apply fa <;> assumption)
+    | (apply fb <;> assumption)
     | (apply h45 <;> assumption)
     | (apply h88 <;> assumption)
     | (apply h109 <;> assumption)
