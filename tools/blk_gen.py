@@ -554,6 +554,13 @@ FNS = {
     "uad": dict(grp="Uad", cn="UString::Add_Dot", a=0x44d9b0, n=58, pos=True, stops=(0x2a,), calls=True,
                 tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `UString::Add_Dot` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
+    # glibc 2.31 elf/dl-tunables.c `do_tunable_update_val (cur, valp)` (static, called by `__tunables_init`): the type
+    # (the 4 bytes at `cur + 8`) 3, a string: the pointer `valp` stored at `cur + 0x20`; else the value `*valp` against
+    # the bounds at `cur + 0x10`, `cur + 0x18` (signed for the type 0, unsigned else), within them stored at
+    # `cur + 0x20` and `cur->initialized` (`cur + 0x28`) set. Stops: the three `ret`s (0x26, 0x34, 0x4c).
+    "dtu": dict(grp="Dtu", cn="do_tunable_update_val", a=0x66ed50, n=77, pos=True, stops=(0x26, 0x34, 0x4c),
+                tag="PLAN.md G3, startup",
+                src="glibc 2.31's `do_tunable_update_val` (`elf/dl-tunables.c`; `objdump -d`)"),
     # 7-Zip 26.06 C/LzmaDec + CPP/7zip/Compress/LzmaDecoder.cpp `CDecoder::SetOutStreamSizeResume (outSize)`: the
     # flags and sizes, then a tail jump (0x2f) to `LzmaDec_Init (&_state)`.
     "sos": dict(grp="Sos", cn="NCompress::NLzma::CDecoder::SetOutStreamSizeResume", a=0x57fd80, n=52, pos=True,

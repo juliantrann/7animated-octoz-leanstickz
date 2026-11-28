@@ -1608,3 +1608,9 @@ import FV7z.Pus.Cuts
 import FV7z.Pus.Defs
 import FV7z.Pus.Pieces
 import FV7z.Pus.Holds
+import FV7z.Dtu.Code
+import FV7z.Dtu.Pats
+import FV7z.Dtu.Blocks1
+import FV7z.Dtu.Blocks
+import FV7z.Dtu.Cuts
+import FV7z.Dtu.Holds
