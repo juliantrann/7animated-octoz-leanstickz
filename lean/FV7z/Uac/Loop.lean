@@ -107,8 +107,9 @@ theorem vc_40zb {g : Gprs} {f : Rflags} {V : Addr → Byte}
     (hf : ∀ i < 1, Foot F.data (Addr.add (g.rbp + nx g) i)) (hz : V (g.rbp + nx g) = 0#8)
     (hl4 : ∀ i < 4, Foot F.data (Addr.add (g.r15 + 12#64) i))
     (hL : rdd(V, g.r15 + 12#64).toNat < (BitVec.setWidth 32 (g.rbx + 1#64)).toNat) :
-    W_40 F Wl (fun j' g' _ V' => j' = 141 ∧ g' = { g with rax := nx g, r13 := lo g, rbx := nx g,
-      r12 := nx g * 4#64, rdi := nx g * 4#64 + 4#64 } ∧ V' = V) g f V := by
+    W_40 F Wl (fun j' g' _ V' => j' = 141 ∧
+      g' = { g with rax := nx g, r13 := lo g, rbx := nx g, r12 := nx g * 4#64, rdi := nx g * 4#64 + 4#64 } ∧
+      V' = V) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at hf hz hl4 hL ⊢
   wpx [W_40, W_56, W_136, W_70, o2, o3, o4, o9, Op.cmpmi, Op.cmpmr, Tun.rd1, BitVec.sub_zero, hz, cond_2, subF_cf,
@@ -121,8 +122,9 @@ theorem vc_40zs {g : Gprs} {f : Rflags} {V : Addr → Byte}
     (hf : ∀ i < 1, Foot F.data (Addr.add (g.rbp + nx g) i)) (hz : V (g.rbp + nx g) = 0#8)
     (hl4 : ∀ i < 4, Foot F.data (Addr.add (g.r15 + 12#64) i)) (f15 : ∀ i < 8, Foot F.data (Addr.add g.r15 i))
     (hL : ¬ rdd(V, g.r15 + 12#64).toNat < (BitVec.setWidth 32 (g.rbx + 1#64)).toNat) :
-    W_40 F Wl (fun j' g' _ V' => j' = 73 ∧ g' = { g with rax := nx g, r13 := lo g, rbx := nx g,
-      r12 := nx g * 4#64, r14 := rdq(V, g.r15) } ∧ V' = V) g f V := by
+    W_40 F Wl (fun j' g' _ V' => j' = 73 ∧
+      g' = { g with rax := nx g, r13 := lo g, rbx := nx g, r12 := nx g * 4#64, r14 := rdq(V, g.r15) } ∧
+      V' = V) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at hf hz hl4 f15 hL ⊢
   wpx [W_40, W_56, W_136, W_70, o2, o3, o4, o9, Op.cmpmi, Op.cmpmr, Tun.rd1, BitVec.sub_zero, hz, cond_2, subF_cf,
