@@ -243,8 +243,8 @@ theorem vc_89 {g : Gprs} {f : Rflags} {V : Addr → Byte} (hf : ∀ i < 4, Foot 
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at hf ⊢
   by_cases h1 : 31 < (rdd(V, rax)).toInt
-  swap
-  · have hb : bT rdd(V, rax) = true := by
+  case neg =>
+    have hb : bT rdd(V, rax) = true := by
       unfold bT
       rw [if_neg h1]
     have d1 : decide (31 < (rdd(V, rax)).toInt) = false := decide_eq_false h1
