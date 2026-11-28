@@ -1356,6 +1356,47 @@ FNS = {
     "fnd": dict(grp="Fnd", cn="NWindows::NFile::NFind::CFileInfo::Find", a=0x455b80, n=130, pos=True, stops=(0x81,),
                 calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `CFileInfo::Find` (`CPP/Windows/FileFind.cpp`; `objdump -d`)"),
+    # Tail-jump wrappers of M1 (one straight-line block, then a `jmp` to the callee; the stop is the `jmp`).
+    # 7-Zip 26.06 CPP/UI/Console/ExtractCallbackConsole.h: the `this - 8` thunks of `CExtractCallbackConsole`'s
+    # `IOpenCallbackUI` methods (`sub rdi, 8; jmp`).
+    "tbo": dict(grp="Tbo", cn="CExtractCallbackConsole::BeforeOpen (thunk, this - 8)", a=0x5e7cb0, n=13, pos=True,
+                stops=(0x8,), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CExtractCallbackConsole` thunk (`CPP/UI/Console/ExtractCallbackConsole.h`; `objdump -d`)"),
+    "ter": dict(grp="Ter", cn="CExtractCallbackConsole::ExtractResult (thunk, this - 8)", a=0x5e85b0, n=13, pos=True,
+                stops=(0x8,), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CExtractCallbackConsole` thunk (`CPP/UI/Console/ExtractCallbackConsole.h`; `objdump -d`)"),
+    "tor": dict(grp="Tor", cn="CExtractCallbackConsole::OpenResult (thunk, this - 8)", a=0x5e9ef0, n=13, pos=True,
+                stops=(0x8,), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CExtractCallbackConsole` thunk (`CPP/UI/Console/ExtractCallbackConsole.h`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/Common/UTFConvert.cpp.
+    "u8f": dict(grp="U8f", cn="ConvertUTF8ToUnicode_Flags", a=0x451fe0, n=23, pos=True, stops=(0x12,), calls=True,
+                tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `ConvertUTF8ToUnicode_Flags` (`CPP/Common/UTFConvert.cpp`; `objdump -d`)"),
+    "u8u": dict(grp="U8u", cn="ConvertUTF8ToUnicode", a=0x452000, n=14, pos=True, stops=(0x9,), calls=True,
+                tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `ConvertUTF8ToUnicode` (`CPP/Common/UTFConvert.cpp`; `objdump -d`)"),
+    "uu8": dict(grp="Uu8", cn="ConvertUnicodeToUTF8", a=0x4520b0, n=18, pos=True, stops=(0xd,), calls=True,
+                tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `ConvertUnicodeToUTF8` (`CPP/Common/UTFConvert.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/Windows/FileName.cpp `GetFullPath (const char *path, AString &fullPath)`.
+    "gfp": dict(grp="Gfp", cn="NWindows::NFile::NName::GetFullPath", a=0x456e30, n=17, pos=True, stops=(0xc,),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `GetFullPath (path, fullPath)` (`CPP/Windows/FileName.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/Windows/FileIO.h `CInFile::Open (name)`: `OpenBinary (name, O_RDONLY, 0666)` (the symbol at
+    # 0x456180 is folded with others of the same bytes).
+    # 7-Zip 26.06 CPP/Common/StdOutStream.cpp `CStdOutStream::Flush ()`: `return fflush (_stream) == 0;` (the
+    # `call` of `fflush` at 0xb, then `test eax, eax; sete al; add rsp, 8; ret`)
+    "fls": dict(grp="Fls", cn="CStdOutStream::Flush", a=0x5a1440, n=26, pos=True, stops=(0x19,), calls=True,
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `CStdOutStream::Flush` (`CPP/Common/StdOutStream.cpp`; "
+                "`objdump -d`)"),
+    # 7-Zip 26.06 CPP/Common/StdOutStream.cpp `endl (CStdOutStream &outStream)`: `outStream << '\\n'` as
+    # `fputc ('\\n', _stream)` (the `call` at 0x11), then `mov rax, r12; pop r12; ret` as in `operator+` (`Apl`)
+    "enl": dict(grp="Enl", cn="endl(CStdOutStream &)", a=0x5a1470, n=28, pos=True, stops=(0x1b,), calls=True,
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `endl (CStdOutStream &)` (`CPP/Common/StdOutStream.cpp`; "
+                "`objdump -d`)"),
+    "obn": dict(grp="Obn", cn="NWindows::NFile::NIO::CInFile::Open", a=0x456180, n=16, pos=True, stops=(0xb,),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CInFile::Open` (`CPP/Windows/FileIO.h`; `objdump -d`)"),
 }
 
 
