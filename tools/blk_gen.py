@@ -993,6 +993,13 @@ FNS = {
     # 7-Zip 26.06 CPP/7zip/UI/Console/ExtractCallbackConsole.cpp `Print_UInt64_and_String (s, val, name)`: the
     # stack guard, `ConvertUInt64ToString` into a buffer at `rsp`, `s += buf; s.Add_Space (); s += name`. Stops: the
     # `ret` (0x68) and the `call` of `__stack_chk_fail` (0x69).
+    # 7-Zip 26.06 CPP/7zip/UI/Common/ArchiveCommandLine.cpp `AddNameToCensor (censor, item, name)` (static): the
+    # stack guard, `wildcardMatching` from `item.WildcardMatching` (2: `DoesNameContainWildcard (name)`), the
+    # `CCensorPathProps` on the stack, `censor.AddPreItem (item.Include, name, props)`. Stops: the `ret` (0x74) and
+    # the `call` of `__stack_chk_fail` (0x75).
+    "anc": dict(grp="Anc", cn="AddNameToCensor", a=0x5a66e0, n=122, pos=True, fs=True, stops=(0x74, 0x75),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `AddNameToCensor` (`ArchiveCommandLine.cpp`; `objdump -d`)"),
     "pui": dict(grp="Pui", cn="Print_UInt64_and_String", a=0x5e85f0, n=110, pos=True, fs=True, stops=(0x68, 0x69),
                 calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `Print_UInt64_and_String` (`ExtractCallbackConsole.cpp`; `objdump -d`)"),
