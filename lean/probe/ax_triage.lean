@@ -1,8 +1,12 @@
-import FV7z.Lza.Holds
+import FV7z.Lza.Run
 open FV7z
-#print axioms FV7z.Lza.spAll
+#print axioms FV7z.Lza.lza_ok
+#print axioms FV7z.Lza.tail51
+#print axioms FV7z.Lza.from44
+#print axioms FV7z.Lza.from229
+#print axioms FV7z.Lza.vc_44
+#print axioms FV7z.Lza.vc_51
+#print axioms FV7z.Lza.vc_108
+#print axioms FV7z.Lza.vc_173
+#print axioms FV7z.Lza.vc_229
 #print axioms FV7z.Lza.vc_0
-#print axioms FV7z.Lza.vc_204
-#print axioms FV7z.Lza.vc_211
-#print axioms FV7z.Lza.vc_238
-#print axioms FV7z.Lza.vc_272
