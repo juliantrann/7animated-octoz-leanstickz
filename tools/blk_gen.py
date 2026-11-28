@@ -842,6 +842,11 @@ FNS = {
                 calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `CInFileStream::Release` "
                     "(`CPP/7zip/Common/FileStreams.h`; `objdump -d`)"),
+    # 7-Zip 26.06 Common/StdOutStream.cpp `CStdOutStream::operator<< (unsigned)`, the twin of `olg`, without the landing
+    # pad (from 0x57). Stops: the `ret` (0x51), the call of `__stack_chk_fail` (0x52).
+    "oun": dict(grp="Oun", cn="CStdOutStream::operator<< (unsigned)", a=0x5a1a00, n=87, pos=True, fs=True,
+                stops=(81, 82), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CStdOutStream::operator<< (unsigned)` (`StdOutStream.cpp`; `objdump -d`)"),
     # 7-Zip 26.06 CPP/Common/Wildcard.cpp `ExtractFileNameFromPath (path)`: `path.ReverseFind_PathSepar ()` (the `call`,
     # 0x14), then `UString (path + it + 1)` into the result (0x26). Stop: the `ret` (0x35).
     "efn": dict(grp="Efn", cn="ExtractFileNameFromPath(const UString &)", a=0x4528f0, n=54, pos=True, stops=(0x35,),
@@ -1141,6 +1146,12 @@ FNS = {
     "psp": dict(grp="Psp", cn="PrintSpaces", a=0x5ebdd0, n=60, pos=True, stops=(0x2c, 0x2d), calls=True,
                 tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `PrintSpaces` (`CPP/7zip/UI/Console/List.cpp`, `.part.0`; `objdump -d`)"),
+    # `PrintString (adj, width, s)`: `strlen (s)` (the PLT `call` at 0x18), `PrintSpaces` before (the `call` at 0x85;
+    # `kRight`, or half for `kCenter`), `fputs (s, *g_StdOut)` (the `call` at 0x3f), `PrintSpaces` after (the tail jump
+    # at 0x6d). Stops: the `ret` (0x57), the tail jump (0x6d), the landing pad (0x9c).
+    "pst": dict(grp="Pst", cn="PrintString", a=0x5ebf50, n=171, pos=True, stops=(0x57, 0x6d, 0x9c), calls=True,
+                tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `PrintString` (`CPP/7zip/UI/Console/List.cpp`; `objdump -d`)"),
     # `CFileBase::OpenBinary (name, flags, mode)`: `Close ()` (the `call` at 0x1a), `open64 (name, flags, mode)` (the
     # `call` at 0x2a), the result stored as `_handle`, `al` = it is not -1. Stop: the `ret` (0x41).
     "fob": dict(grp="Fob", cn="NWindows::NFile::NIO::CFileBase::OpenBinary", a=0x456060, n=66, pos=True, stops=(0x41,),

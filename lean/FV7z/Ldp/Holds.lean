@@ -72,7 +72,7 @@ theorem bj (m : BitVec 32) : (!(decide (m.toNat < 5) || decide (m = 5#32))) = de
   · by_cases h3 : m.toNat < 5
     · simp [h, h3]
     · have h2 : m = 5#32 := e.2 (by omega)
-      simp [h, h3, h2]
+      simp [h2]
 
 theorem c7 (f : Rflags) (m : BitVec 32) : (subF f m 5#32).cond 7 = decide (5 < m.toNat) := by
   rw [cond_7, subF_cf, subF_zf]; exact bj m
