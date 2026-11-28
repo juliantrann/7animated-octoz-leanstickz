@@ -1427,3 +1427,14 @@ import FV7z.Mbu.Blocks1
 import FV7z.Mbu.Blocks
 import FV7z.Mbu.Cuts
 import FV7z.Mbu.Holds
+import FV7z.Cpd.Code
+import FV7z.Cpd.Pats
+import FV7z.Cpd.Blocks1
+import FV7z.Cpd.Blocks
+import FV7z.Cpd.Cuts
+import FV7z.Cpd.Defs
+import FV7z.Cpd.Tail
+import FV7z.Cpd.Inner
+import FV7z.Cpd.Items
+import FV7z.Cpd.Loop
+import FV7z.Cpd.Holds
