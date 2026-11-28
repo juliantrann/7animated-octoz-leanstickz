@@ -4,6 +4,7 @@ import FV7z.Gfs.Holds
 open FV7z
 #print axioms FV7z.Gfs.spAll
 #print axioms FV7z.Fr40.rdSt
+#print axioms FV7z.Fr40.r5
 #print axioms FV7z.Gfs.vc_0
 #print axioms FV7z.Gfs.vc_26z
 #print axioms FV7z.Gfs.vc_59d
