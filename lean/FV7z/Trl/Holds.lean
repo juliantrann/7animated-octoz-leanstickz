@@ -273,7 +273,7 @@ theorem trl_ok {P1 P2 : State → (Addr → Byte) → Prop} (c : Seg prof F Wl L
       (by rw [hU32]; exact hs4) ?_
     rintro U₂ t₄ hK₄ hA₄ ⟨hr₄, hg₄⟩
     rw [hU32] at hA₄
-    refine ke Z V₂ hP1 U₂ t₄ hK₄ hA₄ (by rw [hr₄, addr_add_zero]) (by rw [hg₄]; exact hU32)
+    refine ke Z _ hP1 U₂ t₄ hK₄ hA₄ (by rw [hr₄, addr_add_zero]) (by rw [hg₄]; exact hU32)
       (by rw [hg₄]; exact hd') (by rw [hg₄]; exact hsi) (by rw [hg₄]; exact hb') (by rw [hg₄]; exact hr')
       (by rw [hg₄]; exact hk') ?_
     intro Z₂ V₄ t₅ hKZ₂ hAZ₂ hrZ₂ hz2s hz2r hz2k hra hrp hrq hP2
