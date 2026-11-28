@@ -1,3 +1,3 @@
-import FV7z.Exr.Holds
+import FV7z.Cfn.Holds
 open FV7z
-#print axioms FV7z.Exr.exr_ok
+#print axioms FV7z.Cfn.cfn_ok

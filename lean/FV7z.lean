@@ -1519,3 +1519,10 @@ import FV7z.Exr.Cuts
 import FV7z.Exr.Defs
 import FV7z.Exr.Pieces
 import FV7z.Exr.Holds
+import FV7z.Cfn.Code
+import FV7z.Cfn.Pats
+import FV7z.Cfn.Blocks1
+import FV7z.Cfn.Blocks2
+import FV7z.Cfn.Blocks
+import FV7z.Cfn.Cuts
+import FV7z.Cfn.Holds
