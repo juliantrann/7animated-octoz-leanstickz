@@ -1,13 +1,7 @@
-import FV7z.Tiny.Tj
-import FV7z.Sns.Holds
+import FV7z.Alf.Holds
 open FV7z
-#print axioms FV7z.Tiny.t6029b0_ok
-#print axioms FV7z.Sns.vc_0z
-#print axioms FV7z.Sns.vc_0n
-#print axioms FV7z.Sns.vc_24sz
-#print axioms FV7z.Sns.vc_24sn
-#print axioms FV7z.Sns.vc_24pz
-#print axioms FV7z.Sns.vc_24pn
-#print axioms FV7z.Sns.vc_46
-#print axioms FV7z.Sns.loop
-#print axioms FV7z.Sns.sns_ok
+#print axioms FV7z.Alf.vc_0e
+#print axioms FV7z.Alf.vc_0n
+#print axioms FV7z.Alf.vc_16
+#print axioms FV7z.Alf.vc_53
+#print axioms FV7z.Alf.alf_ok
