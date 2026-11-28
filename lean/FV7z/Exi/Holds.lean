@@ -37,7 +37,7 @@ theorem tgt_27 :
 entry's, `rax` left open (`a`). -/
 abbrev gS (g : Gprs) (a : BitVec 64) : Gprs :=
   { g with rax := a, rcx := BitVec.setWidth 64 (BitVec.ofNat 32 1),
-      rdx := BitVec.setWidth 64 (BitVec.ofNat 32 1), rsp := g.rsp - 8, rsi := 7938992#64 }
+           rdx := BitVec.setWidth 64 (BitVec.ofNat 32 1), rsp := g.rsp - 8, rsi := 7938992#64 }
 
 /-- The bytes at the `call`: `rax` pushed. -/
 abbrev V0 (V : Addr → Byte) (g : Gprs) : Addr → Byte := Vst V (g.rsp - 8) (toBytesLE g.rax 8)
