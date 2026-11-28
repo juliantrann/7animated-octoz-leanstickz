@@ -121,10 +121,24 @@ theorem m_eq (nn : BitVec 32) (h : nn ≠ 0) :
       BitVec.ofNat 64 (8 * nn.toNat) := by
   have h1 : nn.toNat ≠ 0 := fun e => h (BitVec.eq_of_toNat_eq (by rw [e]; rfl))
   have h2 : nn.toNat < 4294967296 := nn.isLt
+  have l1 : nn.toNat < 18446744073709551616 := Nat.lt_trans h2 (by decide)
+  have l2 : nn.toNat - 1 < 4294967296 := Nat.lt_of_le_of_lt (Nat.sub_le _ _) h2
+  have l3 : nn.toNat - 1 < 18446744073709551616 := Nat.lt_trans l2 (by decide)
+  have l4 : nn.toNat + 18446744073709551615 = nn.toNat - 1 + 18446744073709551616 := by omega
+  have l5 : (nn.toNat - 1) * 8 < 18446744073709551616 := by omega
+  have l6 : (nn.toNat - 1) * 8 + 8 = 8 * nn.toNat := by omega
+  have l7 : 8 * nn.toNat < 18446744073709551616 := by omega
+  have e1 : (BitVec.setWidth 64 nn + 18446744073709551615#64).toNat = nn.toNat - 1 := by
+    simp only [BitVec.toNat_add, BitVec.toNat_setWidth, BitVec.toNat_ofNat, Nat.reducePow, Nat.reduceMod]
+    rw [Nat.mod_eq_of_lt l1, l4, Nat.add_mod_right, Nat.mod_eq_of_lt l3]
+  have e2 : (BitVec.setWidth 64 (BitVec.setWidth 32 (BitVec.setWidth 64 nn + 18446744073709551615#64))).toNat =
+      nn.toNat - 1 := by
+    rw [BitVec.toNat_setWidth, BitVec.toNat_setWidth, e1]
+    simp only [Nat.reducePow]
+    rw [Nat.mod_eq_of_lt l2, Nat.mod_eq_of_lt l3]
   apply BitVec.eq_of_toNat_eq
-  simp only [BitVec.toNat_add, BitVec.toNat_mul, BitVec.toNat_setWidth, BitVec.toNat_ofNat, Nat.reducePow,
-    Nat.reduceMod]
-  omega
+  simp only [BitVec.toNat_add, BitVec.toNat_mul, e2, BitVec.toNat_ofNat, Nat.reducePow, Nat.reduceMod]
+  rw [Nat.mod_eq_of_lt l5, l6]
 
 /-- The loop's offset one round on. -/
 theorem r14_succ (k : Nat) : BitVec.ofNat 64 (8 * k) + 8#64 = BitVec.ofNat 64 (8 * (k + 1)) := by
@@ -256,7 +270,8 @@ theorem vc_0 {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post}
     W_0 F Wl Q g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only [aR, P6] at hs1 hs2 hs3 hs4 hs5 hs6 hv h123 h49 ⊢
-  wpx [W_0, W_44, o0, o1, Op.cmpmr]
+  by_cases hc : (BitVec.setWidth 8 rsi &&& BitVec.setWidth 8 rsi == 0) = true
+  all_goals wpx [W_0, W_44, o0, o1, Op.cmpmr, hc, ↓reduceIte, Bool.false_eq_true]
   all_goals repeat' (first
     | refine h123 _ ?_ ?_ ?_ _
     | refine h49 _ ?_ ?_ ?_ _
@@ -275,7 +290,6 @@ theorem vc_0 {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post}
     | with_reducible exact Or.inr rfl
     | apply And.intro
     | (exfalso; contradiction)
-    | split
     | intro _)
 
 /-- The new capacity (`cmova`), `rdi` = 8 times it: to `operator new []` (86). -/
@@ -447,7 +461,7 @@ theorem vc_220 {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post}
     | with_reducible rfl
     | with_reducible exact hI
     | with_reducible exact hrd _ _
-    | refine hcs _ _ (toBytesLE_length _ _) ?_
+    | with_reducible refine hcs _ _ (toBytesLE_length _ _) ?_
     | refine hcl _ _ _ _ (toBytesLE_length _ _) ?_ ?_
     | with_reducible exact w0
     | with_reducible exact w12
@@ -711,7 +725,7 @@ theorem from220 (E : Ev prof F Wl L s₀ o gev gP gE S g0 vb e₂ code₂ j₂ I
   have hM : U.cpu.gpr.rax = BitVec.ofNat 64 (8 * nn.toNat) := by rw [hax, h13]; exact m_eq nn hnn
   rw [hm.1] at hrq
   exact loop E (nn.toNat - 1) 0 U V₁ t₁ (by omega) hKU hAU hrU
-    ⟨Fm.fr hm gf, gbp, by rw [h14]; rfl⟩ hob hI1 (hrq.trans hM)
+    ⟨Fm.fr hm gf, gbp, by rw [h14]⟩ hob hI1 (hrq.trans hM)
 
 /-- From 133 (back from `operator new`, `rax` = the new item): cleared; `nn` not 0, `operator new []` (`k215`) and
 from its return 220; else to 161. -/
@@ -902,7 +916,7 @@ theorem ais_ok {I : (Addr → Byte) → Prop} {Ok : Addr → Nat → Prop} {e₂
   have E : Ev prof F Wl L s₀ o gev gP gE X.cpu.gpr.rsp X.cpu.gpr vb e₂ code₂ j₂ I Ok pp nn :=
     { c := c, hin := hin, hin₂ := hin₂, h₂ := h₂, hI := hI, hok := hok, hcl := hcl, hcs := hcs, hfr := hfr,
       hrd := fun W v => by
-        rw [Tun.rd_Vst_self _ _ _ (toBytesLE_length _ _) hnw, ofBytesLE_toBytesLE rfl],
+        rw [Tun.rd_Vst_self _ _ _ (toBytesLE_length _ _) hnw]; exact ofBytesLE_toBytesLE (n := 8) rfl v,
       ws8 := ws8, fs8 := fun i hi => c.hws _ (ws8 i hi),
       hv := hV vb (by rw [← hvb]; exact hbY), fi0 := fi0, fi8 := fi8, fi16 := fi16, hpp := hpp, fpp := fpp,
       fb48 := fun i hi => c.hws _ (hs6 i hi), fb40 := fun i hi => c.hws _ (hs5 i hi),
