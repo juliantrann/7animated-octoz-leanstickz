@@ -2195,6 +2195,13 @@ FNS = {
     "osc": dict(grp="Osc", cn="CStdOutStream::operator<< (const char *)", a=0x5f4be0, n=27, pos=True, stops=(26,),
                 calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `CStdOutStream::operator<< (const char *)` (`StdOutStream.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/7zip/Compress/LzmaDecoder.cpp `CDecoder::SetDecoderProperties2 (prop, size)`:
+    # `LzmaDec_Allocate (&_state, prop, size, &g_AllocBig)` (0x42bf80), the result through `SResToHRESULT`'s table
+    # (0x6e68c0), on `S_OK` `_propsWereSet = true` and `CreateInputBuffer ()` (0x57fcc0). Without the landing pad
+    # (from 0x4e). Stops: the three `ret`s (0x31, 0x3e, 0x4d).
+    "ldp": dict(grp="Ldp", cn="NCompress::NLzma::CDecoder::SetDecoderProperties2", a=0x57fd10, n=78, pos=True,
+                stops=(0x31, 0x3e, 0x4d), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `NCompress::NLzma::CDecoder::SetDecoderProperties2` (`LzmaDecoder.cpp`; `objdump -d`)"),
     # glibc 2.31 elf/dl-lookup.c `_dl_setup_hash (map)`: the GNU hash table's fields (or the SysV one's) into `map`.
     # Stops: the two `ret`s (0x61, 0x93), the `__assert_fail` path (0x94) not covered.
     "dsh": dict(grp="Dsh", cn="_dl_setup_hash", a=0x6ab020, n=180, pos=True, stops=(0x61, 0x93, 0x94), calls=True,
