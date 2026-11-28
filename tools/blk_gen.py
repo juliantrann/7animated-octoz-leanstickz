@@ -800,6 +800,16 @@ FNS = {
     "pvu": dict(grp="Pvu", cn="CPropVariant::operator=(UInt32)", a=0x457430, n=61, pos=True, stops=(0x3c,), calls=True,
                 tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `CPropVariant::operator= (UInt32)` (`CPP/Windows/PropVariant.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/Windows/PropVariant.cpp `CPropVariant::operator= (Byte)`: as `operator= (UInt32)` with
+    # `VT_UI1` (17) and the byte `bVal`. Stop: the `ret` (0x3c).
+    "pvb": dict(grp="Pvb", cn="CPropVariant::operator=(Byte)", a=0x4573f0, n=61, pos=True, stops=(0x3c,), calls=True,
+                tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CPropVariant::operator= (Byte)` (`CPP/Windows/PropVariant.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/Windows/PropVariant.cpp `CPropVariant::operator= (UInt64)`: as `operator= (UInt32)` with
+    # `VT_UI8` (21) and the 8 bytes `uhVal` (the `call` at 0x17). Stop: the `ret` (0x3d).
+    "pvq": dict(grp="Pvq", cn="CPropVariant::operator=(UInt64)", a=0x457470, n=62, pos=True, stops=(0x3d,), calls=True,
+                tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CPropVariant::operator= (UInt64)` (`CPP/Windows/PropVariant.cpp`; `objdump -d`)"),
     # 7-Zip 26.06 CPP/Common/Wildcard.cpp `ExtractFileNameFromPath (path)`: `path.ReverseFind_PathSepar ()` (the `call`,
     # 0x14), then `UString (path + it + 1)` into the result (0x26). Stop: the `ret` (0x35).
     "efn": dict(grp="Efn", cn="ExtractFileNameFromPath(const UString &)", a=0x4528f0, n=54, pos=True, stops=(0x35,),
