@@ -228,6 +228,16 @@ FNS = {
     # 7-Zip's CPP/7zip/UI/Common/ArchiveExtractCallback.cpp `CFiTimesCAM::SetDirTime_to_FS (path)`: each of the
     # three times (`this`, `this + 16`, `this + 32`) or NULL by its `*_Defined` flag (`this + 48..50`), then a tail
     # jump (0x2f) to `NDir::SetDirTime` (0x4556e0). Stop: the jump.
+    # 7-Zip's CPP/Windows/PropVariantConv.cpp `ConvertUtcFileTimeToString (ft, s, level)`: a tail jump (14) to
+    # `ConvertUtcFileTimeToString2 (ft, 0, s, level, 0)` (0x4576f0).
+    "uts": dict(grp="Uts", cn="ConvertUtcFileTimeToString", a=0x457a10, n=19, pos=True, stops=(14,),
+                tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `ConvertUtcFileTimeToString` (`CPP/Windows/PropVariantConv.cpp`; `objdump -d`)"),
+    # 7-Zip's CPP/Windows/PropVariant.cpp `CPropVariant::Clear ()`: `vt` = VT_EMPTY: `wReserved1` = 0 and 0 (the
+    # `ret`, 18); else a tail jump (24) to `PropVariant_Clear (this)` (0x456fb0).
+    "pvc": dict(grp="Pvc", cn="NWindows::NCOM::CPropVariant::Clear", a=0x457020, n=29, pos=True, stops=(18, 24),
+                tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CPropVariant::Clear` (`CPP/Windows/PropVariant.cpp`; `objdump -d`)"),
     "sdf": dict(grp="Sdf", cn="CFiTimesCAM::SetDirTime_to_FS", a=0x5ad590, n=52, pos=True, stops=(0x2f,),
                 tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `CFiTimesCAM::SetDirTime_to_FS` (`ArchiveExtractCallback.cpp`; `objdump -d`)"),
@@ -842,6 +852,32 @@ FNS = {
                 src="7-Zip's `UString::UString (unsigned, const UString &)` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
     # `UString::UString (const UString &s, c)`: `SetStartLen (s._len + 1)` (the `call` at 0x1d), `wmemcpy (_chars,
     # s._chars, s._len)` (0x33), `_chars[s._len] = c`, `_chars[s._len + 1] = 0`; the `ret` at 0x50.
+    # `COutFile::OpenBinary_forWrite_oflag (name, flags)`: `Path = name` (`AString::operator=`, 0x16), then the tail
+    # `jmp` to `CFileBase::OpenBinary (name, flags, mode)` (0x2c), `mode` the field at `this + 0x58`.
+    "obw": dict(grp="Obw", cn="NWindows::NFile::NIO::COutFile::OpenBinary_forWrite_oflag(char const*, int)", a=0x456250, n=49, pos=True,
+                stops=(0x2c,), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `NIO::COutFile::OpenBinary_forWrite_oflag` (`CPP/Windows/FileIO.cpp`; `objdump -d`)"),
+    # The `COutFile::Open_EXISTING`, `Create_ALWAYS`, `Create_NEW` and `Create_ALWAYS_or_Open_ALWAYS` wrappers: the
+    # flags in `edx`, then the tail `jmp` to `OpenBinary_forWrite_oflag`.
+    "oex": dict(grp="Oex", cn="NWindows::NFile::NIO::COutFile::Open_EXISTING(char const*)", a=0x456290, n=14, pos=True,
+                stops=(0x9,), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `NIO::COutFile::Open_EXISTING` (`CPP/Windows/FileIO.cpp`; `objdump -d`)"),
+    "ocl": dict(grp="Ocl", cn="NWindows::NFile::NIO::COutFile::Create_ALWAYS(char const*)", a=0x4562a0, n=14, pos=True,
+                stops=(0x9,), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `NIO::COutFile::Create_ALWAYS` (`CPP/Windows/FileIO.cpp`; `objdump -d`)"),
+    "cnw": dict(grp="Cnw", cn="NWindows::NFile::NIO::COutFile::Create_NEW(char const*)", a=0x4562b0, n=14, pos=True,
+                stops=(0x9,), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `NIO::COutFile::Create_NEW` (`CPP/Windows/FileIO.cpp`; `objdump -d`)"),
+    "cao": dict(grp="Cao", cn="NWindows::NFile::NIO::COutFile::Create_ALWAYS_or_Open_ALWAYS(char const*, bool)", a=0x4562c0, n=26, pos=True,
+                stops=(0x15,), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `NIO::COutFile::Create_ALWAYS_or_Open_ALWAYS` (`CPP/Windows/FileIO.cpp`; `objdump -d`)"),
+    # `COutFile::SetLength (length)`: `ftruncate (_handle, length) == 0` (`call` at 0xa, a hypothesis).
+    "osl": dict(grp="Osl", cn="NWindows::NFile::NIO::COutFile::SetLength(unsigned long)", a=0x456390, n=25, pos=True,
+                stops=(0x18,), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `NIO::COutFile::SetLength` (`CPP/Windows/FileIO.cpp`; `objdump -d`)"),
+    # glibc 2.31's `ftruncate64` (`syscall` 77): only its code is used (`Osl` takes it as a hypothesis).
+    "ftr": dict(grp="Ftr", cn="ftruncate64", a=0x6664f0, n=42, pos=True, fs=True, stops=(0x13, 0x29), calls=True,
+                tag="PLAN.md §M, M1", src="glibc 2.31's `ftruncate64` (`sysdeps/unix/syscalls.list`; `objdump -d`)"),
     # `umask` (glibc 2.31, `syscall` 95) and `__errno_location`: only their code is used (`Cum`, `Gle` take them as
     # hypotheses).
     "umk": dict(grp="Umk", cn="umask", a=0x665480, n=12, pos=True, stops=(0xb,), calls=True, tag="PLAN.md §M, M1",
@@ -953,6 +989,16 @@ FNS = {
     # PLT entry) of the rest down and `_len` - `count`. Stops: the `ret`s (0x25, 0x5d).
     "udl": dict(grp="Udl", cn="UString::Delete", a=0x44e0b0, n=94, pos=True, stops=(0x25, 0x5d), calls=True,
                 hand=(0x54,), tag="PLAN.md §M, M1", src="7-Zip's `UString::Delete` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
+    # `CFileBase::OpenBinary (name, flags, mode)`: `Close ()` (the `call` at 0x1a), `open64 (name, flags, mode)` (the
+    # `call` at 0x2a), the result stored as `_handle`, `al` = it is not -1. Stop: the `ret` (0x41).
+    "fob": dict(grp="Fob", cn="NWindows::NFile::NIO::CFileBase::OpenBinary", a=0x456060, n=66, pos=True, stops=(0x41,),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip's `CFileBase::OpenBinary` (`CPP/Windows/FileIO.cpp`; `objdump -d`)"),
+    # `AString::Add_UInt32 (v)`: `Grow (10)` (the `call` at 0x14), `ConvertUInt32ToString (v, _chars + _len)` (the
+    # `call` at 0x21), `_len` = the returned end minus `_chars` (0x29). Stop: the `ret` (0x32).
+    "aui": dict(grp="Aui", cn="AString::Add_UInt32", a=0x44c980, n=51, pos=True, stops=(0x32,), calls=True,
+                tag="PLAN.md §M, M1",
+                src="7-Zip's `AString::Add_UInt32` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
     # `AString::Find (s, startIndex)`: `strstr (_chars + startIndex, s)` (the `call` at 0xd, the PLT's entry), then the
     # found pointer minus `_chars`, or -1 when none. Stops: the `ret`s (0x1a, 0x21).
     "afd": dict(grp="Afd", cn="AString::Find", a=0x44cae0, n=34, pos=True, stops=(0x1a, 0x21), calls=True,
@@ -1954,6 +2000,28 @@ FNS = {
     "fsv": dict(grp="Fsv", cn="fs2us (const char *), the twin at 0x44e600", a=0x44e600, n=67, pos=True, fs=True,
                 stops=(61, 62), calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `fs2us` (`MyString.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/Common/StringConvert.cpp `MultiByteToUnicodeString (const AString &, UINT)`: `UString ()`, then
+    # `MultiByteToUnicodeString2`; without the landing pad (from 0x2e). Stop: the `ret` (0x2d). No `fs` access: `fs`
+    # only for the same shape of proof as its caller's.
+    "mbs": dict(grp="Mbs", cn="MultiByteToUnicodeString (const AString &, UINT)", a=0x450c60, n=46, pos=True, fs=True,
+                stops=(45,), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `MultiByteToUnicodeString` (`StringConvert.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/Common/StringConvert.cpp `MultiByteToUnicodeString (const char *, UINT)`: a local `AString`, the
+    # one above, `delete []`; without the landing pad (from 0x6c). Stops: the `ret` (0x66), the call of
+    # `__stack_chk_fail` (0x67).
+    "mbc": dict(grp="Mbc", cn="MultiByteToUnicodeString (const char *, UINT)", a=0x450ca0, n=108, pos=True, fs=True,
+                stops=(102, 103), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `MultiByteToUnicodeString` (`StringConvert.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 Common/MyString.cpp `us2fs (const wchar_t *)`: a local `UString`, `UnicodeStringToMultiByte`,
+    # `delete []`; without the landing pad (from 0x64). Stops: the `ret` (0x5e), the call of `__stack_chk_fail` (0x5f).
+    "ufs": dict(grp="Ufs", cn="us2fs (const wchar_t *)", a=0x44e650, n=100, pos=True, fs=True, stops=(94, 95),
+                calls=True, tag="PLAN.md §M, M1", src="7-Zip 26.06's `us2fs` (`MyString.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/Common/StringConvert.cpp `UnicodeStringToMultiByte (const UString &, UINT)`: `AString ()`, the
+    # conversion at 0x450750 (default char '_'); without the landing pad (from 0x65). Stops: the `ret` (0x5f), the
+    # call of `__stack_chk_fail` (0x60).
+    "usm": dict(grp="Usm", cn="UnicodeStringToMultiByte (const UString &, UINT)", a=0x450dc0, n=101, pos=True,
+                fs=True, stops=(95, 96), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `UnicodeStringToMultiByte` (`StringConvert.cpp`; `objdump -d`)"),
     # glibc 2.31 elf/dl-lookup.c `_dl_setup_hash (map)`: the GNU hash table's fields (or the SysV one's) into `map`.
     # Stops: the two `ret`s (0x61, 0x93), the `__assert_fail` path (0x94) not covered.
     "dsh": dict(grp="Dsh", cn="_dl_setup_hash", a=0x6ab020, n=180, pos=True, stops=(0x61, 0x93, 0x94), calls=True,
@@ -1980,6 +2048,10 @@ FNS = {
     "um2": dict(grp="Um2", cn="UnicodeStringToMultiByte2", a=0x450d20, n=65, pos=True, fs=True, stops=(59, 60),
                 calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `UnicodeStringToMultiByte2` (`StringConvert.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 Common/UTFConvert.cpp `ConvertUnicodeToUTF8 (src, dest)`: `edx` = the global flags (4 bytes at
+    # 0x79217c), a tail jump to `ConvertUnicodeToUTF8_Flags`. Stop: the jump (0xd).
+    "cu8": dict(grp="Cu8", cn="ConvertUnicodeToUTF8", a=0x4520b0, n=18, pos=True, stops=(13,), tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `ConvertUnicodeToUTF8` (`UTFConvert.cpp`; `objdump -d`)"),
 }
 
 def file_bytes(path, va, n):
