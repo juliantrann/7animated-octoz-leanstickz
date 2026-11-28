@@ -1175,6 +1175,9 @@ FNS = {
                 calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `CPercentPrinter::CPercentPrinter (unsigned)` "
                     "(`CPP/7zip/UI/Console/PercentPrinter.h`; `objdump -d`)"),
+    "ptt": dict(grp="Ptt", cn="CFieldPrinter::PrintTitle", a=0x5ecc60, n=105, pos=True, stops=(0x64, 0x68),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CFieldPrinter::PrintTitle ()` (`CPP/7zip/UI/Console/List.cpp`; `objdump -d`)"),
     # `CFileBase::OpenBinary (name, flags, mode)`: `Close ()` (the `call` at 0x1a), `open64 (name, flags, mode)` (the
     # `call` at 0x2a), the result stored as `_handle`, `al` = it is not -1. Stop: the `ret` (0x41).
     "fob": dict(grp="Fob", cn="NWindows::NFile::NIO::CFileBase::OpenBinary", a=0x456060, n=66, pos=True, stops=(0x41,),
