@@ -800,6 +800,22 @@ FNS = {
     "pvu": dict(grp="Pvu", cn="CPropVariant::operator=(UInt32)", a=0x457430, n=61, pos=True, stops=(0x3c,), calls=True,
                 tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `CPropVariant::operator= (UInt32)` (`CPP/Windows/PropVariant.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/Windows/PropVariant.cpp `CPropVariant::operator= (Byte)`: as `operator= (UInt32)` with
+    # `VT_UI1` (17) and the byte `bVal`. Stop: the `ret` (0x3c).
+    "pvb": dict(grp="Pvb", cn="CPropVariant::operator=(Byte)", a=0x4573f0, n=61, pos=True, stops=(0x3c,), calls=True,
+                tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CPropVariant::operator= (Byte)` (`CPP/Windows/PropVariant.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/Windows/PropVariant.cpp `CPropVariant::operator= (UInt64)`: as `operator= (UInt32)` with
+    # `VT_UI8` (21) and the 8 bytes `uhVal` (the `call` at 0x17). Stop: the `ret` (0x3d).
+    "pvq": dict(grp="Pvq", cn="CPropVariant::operator=(UInt64)", a=0x457470, n=62, pos=True, stops=(0x3d,), calls=True,
+                tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CPropVariant::operator= (UInt64)` (`CPP/Windows/PropVariant.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/Windows/PropVariant.cpp `CPropVariant::operator= (const FILETIME &)`: as `operator= (UInt64)`
+    # with `VT_FILETIME` (64) and the 8 bytes `filetime` loaded from the argument. Stop: the `ret` (0x40).
+    "pvf": dict(grp="Pvf", cn="CPropVariant::operator=(const FILETIME &)", a=0x4574b0, n=65, pos=True, stops=(0x40,),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CPropVariant::operator= (const FILETIME &)` (`CPP/Windows/PropVariant.cpp`; "
+                    "`objdump -d`)"),
     # 7-Zip 26.06 CPP/Common/Wildcard.cpp `ExtractFileNameFromPath (path)`: `path.ReverseFind_PathSepar ()` (the `call`,
     # 0x14), then `UString (path + it + 1)` into the result (0x26). Stop: the `ret` (0x35).
     "efn": dict(grp="Efn", cn="ExtractFileNameFromPath(const UString &)", a=0x4528f0, n=54, pos=True, stops=(0x35,),
@@ -940,7 +956,7 @@ FNS = {
                 src="7-Zip's `GetLastError_noZero_HRESULT ()` (`CPP/Windows/FileIO.cpp`; `objdump -d`)"),
     # `NDir::DeleteFileAlways`: `remove (path) == 0` (`call` at 8, a hypothesis);
     # `CTempFile::Remove`: if `_mustBeDeleted`, `_mustBeDeleted = !that (_path)`; `NName::IsAbsolutePath`:
-    # `s[0] == '/'`.
+    # `s[0] == '/'`; `CDirEntry::IsDots`: a directory named `.` or `..`.
     "rmf": dict(grp="Rmf", cn="NWindows::NFile::NDir::DeleteFileAlways(char const*)", a=0x455010, n=23, pos=True,
                 stops=(0x16,), calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip's `NDir::DeleteFileAlways` (`CPP/Windows/FileDir.cpp`; `objdump -d`)"),
@@ -950,6 +966,9 @@ FNS = {
     "iap": dict(grp="Iap", cn="NWindows::NFile::NName::IsAbsolutePath(wchar_t const*)", a=0x456a50, n=11, pos=True,
                 stops=(0xa,), calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip's `NName::IsAbsolutePath` (`CPP/Windows/FileName.cpp`; `objdump -d`)"),
+    "ids": dict(grp="Ids", cn="NWindows::NFile::NFind::CDirEntry::IsDots() const", a=0x455df0, n=59, pos=True,
+                stops=(0x17, 0x3a), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip's `CDirEntry::IsDots` (`CPP/Windows/FileFind.h`; `objdump -d`)"),
     # glibc 2.31's `remove`: only its code is used (`Rmf` takes it as a hypothesis).
     "rmv": dict(grp="Rmv", cn="remove", a=0x624030, n=63, pos=True, fs=True, stops=(0x31, 0x3e), calls=True,
                 tag="PLAN.md §M, M1", src="glibc 2.31's `remove` (`stdio-common/remove.c`; `objdump -d`)"),
@@ -1065,6 +1084,12 @@ FNS = {
     # 0x20, `0x424290`), then bit 19 of `ecx` (`a[2]`, `rsp + 8`). Stops: the `ret` (0x43), `__stack_chk_fail` (0x44).
     "sse": dict(grp="Sse", cn="CPU_IsSupported_SSE41", a=0x424390, n=73, pos=True, fs=True, stops=(0x43, 0x44),
                 calls=True, tag="PLAN.md §M, M1", src="7-Zip's `CPU_IsSupported_SSE41` (`C/CpuArch.c`; `objdump -d`)"),
+    # `CPU_IsSupported_AVX2 ()`: the stack guard (`fs:0x28`), the OS test (the `call` at 0x18, `0x424440`); if it
+    # passes, `z7_x86_cpuid_GetMaxFunc ()` (the `call` at 0x40, `0x4242b0`) above 6, then `z7_x86_cpuid (a, 7)` (the
+    # `call` at 0x52, `0x424290`) and bit 5 of `ebx` (`a[1]`, `rsp + 4`); else 0 (0x21). Stops: the `ret` (0x37),
+    # `__stack_chk_fail` (0x63).
+    "av2": dict(grp="Av2", cn="CPU_IsSupported_AVX2", a=0x4244b0, n=104, pos=True, fs=True, stops=(0x37, 0x63),
+                calls=True, tag="PLAN.md §M, M1", src="7-Zip's `CPU_IsSupported_AVX2` (`C/CpuArch.c`; `objdump -d`)"),
     # `CFileBase::OpenBinary (name, flags, mode)`: `Close ()` (the `call` at 0x1a), `open64 (name, flags, mode)` (the
     # `call` at 0x2a), the result stored as `_handle`, `al` = it is not -1. Stop: the `ret` (0x41).
     "fob": dict(grp="Fob", cn="NWindows::NFile::NIO::CFileBase::OpenBinary", a=0x456060, n=66, pos=True, stops=(0x41,),
@@ -2170,6 +2195,14 @@ FNS = {
     # Stops: the `ret`s (0x24, 0x42), the padding after the first (0x25).
     "sbp": dict(grp="Sbp", cn="z7_SwapBytesPrepare", a=0x43d3d0, n=67, pos=True, stops=(36, 37, 66), calls=True,
                 tag="PLAN.md §M, M1", src="7-Zip 26.06's `z7_SwapBytesPrepare` (`SwapBytes.c`; `objdump -d`)"),
+    # glibc 2.x `_IO_new_file_write (f, data, n)` (libio/fileops.c, static in 7zzs): `n <= 0` (0x14) to the end with
+    # 0; the loop head (0x3d): `__write_nocancel` (0x4e) when `f->_flags2 & 2`, else `__write` (0x28); a negative
+    # count (0x30, 0x56) sets `_IO_ERR_SEEN` (0x60); else `to_do -= count`, `data += count`, to the head while
+    # `to_do > 0` (0x3b); the end (0x6b) adds `n - to_do` to `f->_offset` unless negative. Stops: the `ret` (0x8b),
+    # the padding (0x25, 0x8c); the `or dword [r13], 0x20` (0x60) by hand (`Seg.s_or_mi32`).
+    "ifw": dict(grp="Ifw", cn="_IO_new_file_write", a=0x6287d0, n=156, pos=True, stops=(0x25, 0x8b, 0x8c),
+                calls=True, hand=(0x60,), tag="PLAN.md §M, M1",
+                src="glibc's `_IO_new_file_write` (`libio/fileops.c`, static in 7zzs 26.06; `objdump -d`)"),
 }
 
 def file_bytes(path, va, n):
