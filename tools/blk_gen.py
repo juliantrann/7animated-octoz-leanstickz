@@ -1893,6 +1893,12 @@ FNS = {
     "pus": dict(grp="Pus", cn="CStdOutStream::PrintUString", a=0x5a14f0, n=40, pos=True, stops=(39,), calls=True,
                 tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `CStdOutStream::PrintUString` (`StdOutStream.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 Common/StdOutStream.cpp: by `CodePage` (`this + 12`), three tail jumps. Stops: the jumps to
+    # `UnicodeStringToMultiByte2` (0x21, 0x38) and to `ConvertUnicodeToUTF8` (0x46), the padding after the first two
+    # (0x26, 0x3d).
+    "cua": dict(grp="Cua", cn="CStdOutStream::Convert_UString_to_AString", a=0x5a14a0, n=75, pos=True,
+                stops=(33, 38, 56, 61, 70), tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CStdOutStream::Convert_UString_to_AString` (`StdOutStream.cpp`; `objdump -d`)"),
 }
 
 def file_bytes(path, va, n):
