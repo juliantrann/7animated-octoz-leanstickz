@@ -1702,6 +1702,15 @@ FNS = {
     "mbu": dict(grp="Mbu", cn="MultiByteToUnicodeString2", a=0x450a60, n=500, pos=True, fs=True, stops=(0x1aa, 0x1ef),
                 calls=True, cut=(0xc3, 0x138, 0x170), tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `MultiByteToUnicodeString2` (`CPP/Common/StringConvert.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/Windows/FileName.cpp `NName::ResolveDotsFolders (s)` (static; no frame: three pushes, `r12` the
+    # string, `ebp` the index `i`, `rbx` = `4 i`, `rsi` its chars): the loop (0x35 the check of `s[i]`, 0x20 its head)
+    # over `s`: a `.` after a separator or at 0 followed by `/` or the end deletes it (`UString::Delete` at 0x86);
+    # `..` likewise deletes the folder before it, found by two backward scans (0xb8, 0xf0), the start reached either
+    # way or none (returns false at 0xc8); `Delete` at 0x127. Stops: the `ret`s (0x45 after the pops, 0x13a for the
+    # empty string).
+    "rdf": dict(grp="Rdf", cn="NWindows::NFile::NName::ResolveDotsFolders", a=0x456630, n=315, pos=True,
+                stops=(0x45, 0x13a), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `NName::ResolveDotsFolders` (`CPP/Windows/FileName.cpp`; `objdump -d`)"),
 }
 
 
