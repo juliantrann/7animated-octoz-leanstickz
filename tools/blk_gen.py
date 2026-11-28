@@ -1663,6 +1663,25 @@ FNS = {
     "guv": dict(grp="Guv", cn="GetUInt64Value", a=0x5ebcd0, n=249, pos=True, fs=True, stops=(0x70, 0xf4), hand=(0x7d,),
                 calls=True, jt=(0x6ea208, 22), jtx=True, tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `GetUInt64Value` (`CPP/7zip/UI/Console/List.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/7zip/UI/Common/OpenArchive.cpp `CArc::GetItem_DefaultPath (index, result)`: a frame of 48 bytes
+    # under five pushes with the stack guard at `rsp + 0x28`, `isDir` at `rsp + 0xf` and a `CPropVariant` at
+    # `rsp + 0x10`; `result.Empty ()` inline, `Archive_IsItem_Dir` (0x41); a directory or an error to the epilogue;
+    # else `result = DefaultName` (0x8c), `Archive->GetProperty (index, kpidExtension, &prop)` (`call qword [rax +
+    # 0x30]` at 0xb3); `VT_BSTR` gives `Add_Dot` (0xf3) and `+= bstrVal` (0x100), another non-empty type `E_FAIL`;
+    # `prop.Clear ()` (0xd0). Stops: the `ret` (0x77), the call of `__stack_chk_fail` (0x107).
+    "gdp": dict(grp="Gdp", cn="CArc::GetItem_DefaultPath", a=0x5d2040, n=268, pos=True, fs=True, stops=(0x77, 0x107),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CArc::GetItem_DefaultPath` (`CPP/7zip/UI/Common/OpenArchive.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/Common/Wildcard.cpp `NWildcard::CCensorNode::AddItemSimple (include, item)`: `IncludeItems`
+    # (`this + 0x28`) or `ExcludeItems` (`+ 0x38`) by `cmove` (a `CObjectVector<CItem>`: `_items`, `_size` at `+ 8`,
+    # `_capacity` at `+ 0xc`) grown when full (above 0x7ffffffe the `ja` at 0x31 to the throw, by hand: its target is
+    # outside; `operator new []` at 0x56, `memcpy` at 0x152 when any, `delete []` at 0x15a when not null); then
+    # `new CItem (item)` (`operator new` at 0x80, 0x18 bytes): its `PathParts` copied (`operator new []` at 0xd7, the
+    # loop at 0x100: `operator new` at 0x10d, the `UString` copy at 0x11b), the flags word, appended. Stop: the `ret`
+    # (0xc7).
+    "ais": dict(grp="Ais", cn="NWildcard::CCensorNode::AddItemSimple", a=0x452bc0, n=356, pos=True, stops=(0xc7,),
+                hand=(0x31,), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `NWildcard::CCensorNode::AddItemSimple` (`CPP/Common/Wildcard.cpp`; `objdump -d`)"),
     # 7-Zip 26.06 CPP/Common/StringConvert.cpp `MultiByteToUnicodeString2 (dest, src, codePage)`: `dest.Empty ()`;
     # for an empty `src` the return; for `CP_UTF8` or `g_ForceToUTF8` (the byte at 0x792178) `ConvertUTF8ToUnicode`
     # (call, 0x1b6); else `dest.GetBuf (limit)` (`ReAlloc2`, call 0x1c3, when `limit` = `2 len + 2` is above

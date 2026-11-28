@@ -1,7 +1,8 @@
-import FV7z.Mbu.Holds
+import FV7z.Mbu.Rest
 open FV7z
-#print axioms FV7z.Mbu.mbu_pre
-#print axioms FV7z.Mbu.mbu_mw
-#print axioms FV7z.Mbu.mbu_u8
-#print axioms FV7z.Mbu.mbu_tail
-#print axioms FV7z.Mbu.spAll
+#print axioms FV7z.Mbu.floop
+#print axioms FV7z.Mbu.sloop
+#print axioms FV7z.Mbu.mbu_fb
+#print axioms FV7z.Mbu.mbu_ns
+#print axioms FV7z.Mbu.mbu_121
+#print axioms FV7z.Mbu.mbu_ok
