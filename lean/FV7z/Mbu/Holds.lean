@@ -22,7 +22,7 @@ return (with the frame `Fr` as it was, and its post `P`).
   = 0; `Fr`: the stack guard, the saved registers and the return address in the bytes.
 - `vc_*`: the verification conditions of the pieces; `mbu_tail`: from 400 to the return address.
 - `mbu_u8`: from the entry, for `n` = 0 (`kr0`) or for `CP_UTF8` or `g_ForceToUTF8` through the callee (`kr1`), to the
-  return address with `eax` = 0 and `rbx`, `rbp`, `r12`, `r13`, `rsp` restored.
+  return address with `rbx`, `rbp`, `r12`, `r13`, `rsp` restored.
 
 Not covered yet: the path through `mbstowcs` (106 on), the stack guard failing (`__stack_chk_fail`, 495).
 -/
@@ -172,6 +172,7 @@ theorem vc_443 : W_443 fb F Wl (fun j' g' _ V' => j' = 400 ∧ g' = g ∧ V' = V
   unfold W_443
   exact ⟨rfl, rfl, rfl⟩
 
+set_option maxHeartbeats 400000 in
 /-- From 400: the stack guard checked, the frame dropped, the pops, to the `ret` at 426. -/
 theorem vc_400 {Q : Post}
     (hc : rdq(V, g.rsp + 24#64) = rdq(V, fb + 40#64)) (f24 : ∀ i < 8, Foot F.data (Addr.add (g.rsp + 24#64) i))
@@ -180,9 +181,9 @@ theorem vc_400 {Q : Post}
     (l2 : ∀ i < 8, Foot F.data (Addr.add (g.rsp + 40#64 + 8) i))
     (l3 : ∀ i < 8, Foot F.data (Addr.add (g.rsp + 40#64 + 8 + 8) i))
     (l4 : ∀ i < 8, Foot F.data (Addr.add (g.rsp + 40#64 + 8 + 8 + 8) i))
-    (h : ∀ fl, Q 426
+    (h : ∀ ra fl, Q 426
       { g with
-          rax := 0#64,
+          rax := ra,
           rbx := rdq(V, g.rsp + 40#64),
           rbp := rdq(V, g.rsp + 40#64 + 8),
           rsp := g.rsp + 40#64 + 8 + 8 + 8 + 8,
@@ -194,7 +195,7 @@ theorem vc_400 {Q : Post}
   have z0 : ((0#64 : BitVec 64) == 0) = true := by decide
   wpx [W_400, W_416, o24, o25, Op.xormf, hc, BitVec.xor_self, z0, decide_true, Bool.not_true, Bool.false_eq_true,
     false_implies, eq_self_iff_true, true_implies]
-  all_goals repeat' (first | exact h _ | assumption | exact trivial | apply And.intro | intro _)
+  all_goals repeat' (first | exact h _ _ | with_reducible assumption | exact trivial | apply And.intro | intro _)
 
 end
 
@@ -204,8 +205,8 @@ variable {prof : Profile} {L : List (Addr × List Byte)} {s₀ : State} {o : Ora
   {gev : List Event} {gP : State → Nat → List Event → Prop} {gE : Outcome → List Event → Prop}
   {X : State} {t : Nat} {V : Addr → Byte}
 
-/-- From 400 with `rsp` the frame of `S` and the frame `Fr` in the bytes: to the return address with `eax` = 0 and the
-saved registers of `g₀` restored. -/
+/-- From 400 with `rsp` the frame of `S` and the frame `Fr` in the bytes: to the return address with the saved
+registers of `g₀` restored (`rax` any: the function is `void`). -/
 theorem mbu_tail {fb S : Addr} {g₀ : Gprs} {W : State} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb)
     (hin : CodeIn L mbu_at mbu) (hK : KeptW Wl s₀ W) (hA : Agree F W.proc.mm.mem V)
     (hrip : W.cpu.rip = mbu_at.add 400) (hs : W.cpu.gpr.rsp = gq S)
@@ -214,9 +215,10 @@ theorem mbu_tail {fb S : Addr} {g₀ : Gprs} {W : State} (c : Seg prof F Wl L s�
     (w1 : ∀ i < 8, Foot Wl (Addr.add (S - 8) i)) (w2 : ∀ i < 8, Foot Wl (Addr.add (S - 8 - 8) i))
     (w3 : ∀ i < 8, Foot Wl (Addr.add (S - 8 - 8 - 8) i)) (w4 : ∀ i < 8, Foot Wl (Addr.add (S - 8 - 8 - 8 - 8) i))
     (w5 : ∀ i < 8, Foot Wl (Addr.add (gq S + 24#64) i)) (hl : ∀ i < 8, Foot F.data (Addr.add S i))
-    (k : ∀ (Z' : State) (t' : Nat), KeptW Wl s₀ Z' → Agree F Z'.proc.mm.mem V → Z'.cpu.rip = e₂.add j₂ →
+    (k : ∀ (ra : BitVec 64) (Z' : State) (t' : Nat), KeptW Wl s₀ Z' → Agree F Z'.proc.mm.mem V →
+      Z'.cpu.rip = e₂.add j₂ →
       Z'.cpu.gpr = { W.cpu.gpr with
-          rax := 0#64,
+          rax := ra,
           rbx := g₀.rbx,
           rbp := g₀.rbp,
           rsp := S + 8,
@@ -232,8 +234,8 @@ theorem mbu_tail {fb S : Addr} {g₀ : Gprs} {W : State} (c : Seg prof F Wl L s�
   have l2 : ∀ i < 8, Foot F.data (Addr.add (S - 8 - 8) i) := fun i hi => c.hws _ (w2 i hi)
   have l1 : ∀ i < 8, Foot F.data (Addr.add (S - 8) i) := fun i hi => c.hws _ (w1 i hi)
   refine (c_400 prof fb).run c hfs hin (fun j' g' _ V' => j' = 426 ∧
-      g' = { W.cpu.gpr with
-          rax := 0#64,
+      ∃ ra, g' = { W.cpu.gpr with
+          rax := ra,
           rbx := g₀.rbx,
           rbp := g₀.rbp,
           rsp := S,
@@ -242,14 +244,14 @@ theorem mbu_tail {fb S : Addr} {g₀ : Gprs} {W : State} (c : Seg prof F Wl L s�
     (vc_400 (by rw [hs]; exact hc) (by rw [hs]; exact f24) fc (by rw [hs, g40]; exact l4)
       (by rw [hs, g40, a4s]; exact l3) (by rw [hs, g40, a4s, a3s]; exact l2)
       (by rw [hs, g40, a4s, a3s, a2s]; exact l1)
-      fun _ => ⟨rfl, by rw [hs, g40, a4s, a3s, a2s, a1s, h4, h3, h2, h1], rfl⟩) ?_
-  rintro j' g fl V₁ ⟨rfl, rfl, hV₁⟩ U t₁ hKU hAU hrU hgU -
+      fun ra _ => ⟨rfl, ra, by rw [hs, g40, a4s, a3s, a2s, a1s, h4, h3, h2, h1], rfl⟩) ?_
+  rintro j' g fl V₁ ⟨rfl, ⟨ra, rfl⟩, hV₁⟩ U t₁ hKU hAU hrU hgU -
   subst V₁
   have hsU : U.cpu.gpr.rsp = S := by rw [hgU]
   refine c.s_ret hKU hAU hin (lt_len (by decide)) hrU (ret_426 _) (by rw [hsU]; exact hl) hin₂ h₂
     (by rw [hsU]; exact hr) ?_
   rintro Z' t₂ hKZ hAZ ⟨hrZ, hgZ⟩
-  refine k Z' t₂ hKZ hAZ hrZ ?_
+  refine k ra Z' t₂ hKZ hAZ hrZ ?_
   rw [hgZ, hgU]
   try rfl
 
@@ -258,7 +260,7 @@ theorem mbu_tail {fb S : Addr} {g₀ : Gprs} {W : State} (c : Seg prof F Wl L s�
 `n` = 0 with the frame in the bytes `VE` (`hFE`) the run reaches the return address (`kr0`); else at
 `ConvertUTF8ToUnicode`'s entry the registers have `rsi` = `dest`, `rdi` = `src` and the return address
 `mbu_at + 443` pushed (`kfu`); if that returns with `rsp` the frame and the frame in the bytes, the run reaches the
-return address with `eax` = 0 and `rbx`, `rbp`, `r12`, `r13`, `rsp` restored (`kr1`). -/
+return address with `rbx`, `rbp`, `r12`, `r13`, `rsp` restored (`kr1`). -/
 theorem mbu_u8 {fb : Addr} {cn d : BitVec 64} {n : BitVec 32} {P : State → (Addr → Byte) → Prop}
     (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (hin : CodeIn L mbu_at mbu)
     (hinU : CodeIn L U8u.u8u_at U8u.u8u)
@@ -280,8 +282,9 @@ theorem mbu_u8 {fb : Addr} {cn d : BitVec 64} {n : BitVec 32} {P : State → (Ad
     (hp : n = 0#32 ∨ X.cpu.gpr.rdx.setWidth 32 = 65001#32 ∨ VE V X.cpu.gpr cn d 7938424#64 ≠ 0#8)
     {e₂ : Addr} {code₂ : List Byte} (hin₂ : CodeIn L e₂ code₂) {j₂ : Nat} (h₂ : j₂ < code₂.length)
     (hFE : n = 0#32 → Fr X.cpu.gpr.rsp fb X.cpu.gpr (e₂.add j₂) (VE V X.cpu.gpr cn d))
-    (kr0 : ∀ (Z' : State) (t' : Nat), KeptW Wl s₀ Z' → Agree F Z'.proc.mm.mem (VE V X.cpu.gpr cn d) →
-      Z'.cpu.rip = e₂.add j₂ → Z'.cpu.gpr = { X.cpu.gpr with rax := 0#64, rsp := X.cpu.gpr.rsp + 8 } →
+    (kr0 : ∀ (ra : BitVec 64) (Z' : State) (t' : Nat), KeptW Wl s₀ Z' →
+      Agree F Z'.proc.mm.mem (VE V X.cpu.gpr cn d) →
+      Z'.cpu.rip = e₂.add j₂ → Z'.cpu.gpr = { X.cpu.gpr with rax := ra, rsp := X.cpu.gpr.rsp + 8 } →
       GoG prof L o gev gP gE Z' t')
     (kfu : ∀ (Y : State) (t' : Nat), KeptW Wl s₀ Y →
       Agree F Y.proc.mm.mem (Vst (VE V X.cpu.gpr cn d) (gq X.cpu.gpr.rsp - 8) (toBytesLE (mbu_at.add 443) 8)) →
@@ -299,10 +302,10 @@ theorem mbu_u8 {fb : Addr} {cn d : BitVec 64} {n : BitVec 32} {P : State → (Ad
         W.cpu.rip = mbu_at.add 443 → W.cpu.gpr.rsp = gq X.cpu.gpr.rsp →
         Fr X.cpu.gpr.rsp fb X.cpu.gpr (e₂.add j₂) V'' → P W V'' → GoG prof L o gev gP gE W t'') →
       GoG prof L o gev gP gE Y t')
-    (kr1 : ∀ (W : State) (V'' : Addr → Byte) (Z' : State) (t' : Nat), P W V'' → KeptW Wl s₀ Z' →
-      Agree F Z'.proc.mm.mem V'' → Z'.cpu.rip = e₂.add j₂ →
+    (kr1 : ∀ (W : State) (V'' : Addr → Byte) (ra : BitVec 64) (Z' : State) (t' : Nat), P W V'' →
+      KeptW Wl s₀ Z' → Agree F Z'.proc.mm.mem V'' → Z'.cpu.rip = e₂.add j₂ →
       Z'.cpu.gpr = { W.cpu.gpr with
-          rax := 0#64,
+          rax := ra,
           rbx := X.cpu.gpr.rbx,
           rbp := X.cpu.gpr.rbp,
           rsp := X.cpu.gpr.rsp + 8,
@@ -321,7 +324,7 @@ theorem mbu_u8 {fb : Addr} {cn d : BitVec 64} {n : BitVec 32} {P : State → (Ad
     rintro j' g fl V₁ ⟨rfl, ⟨ra, rfl⟩, hV₁⟩ Y t₁ hKY hAY hrY hgY -
     subst V₁
     exact mbu_tail c hfs hin hKY hAY hrY (by rw [hgY]) hin₂ h₂ (hFE hz) fc w1 w2 w3 w4 w5 hl
-      fun Z' t' hKZ hAZ hrZ hgZ => kr0 Z' t' hKZ hAZ hrZ (by rw [hgZ, hgY]; try rfl)
+      fun ra Z' t' hKZ hAZ hrZ hgZ => kr0 ra Z' t' hKZ hAZ hrZ (by rw [hgZ, hgY]; try rfl)
   -- `CP_UTF8` or `g_ForceToUTF8`: to 432
   have hu : X.cpu.gpr.rdx.setWidth 32 = 65001#32 ∨ VE V X.cpu.gpr cn d 7938424#64 ≠ 0#8 := by
     rcases hp with h | h
@@ -362,6 +365,6 @@ theorem mbu_u8 {fb : Addr} {cn d : BitVec 64} {n : BitVec 32} {P : State → (Ad
   rintro j' g fl V₁ ⟨rfl, rfl, hV₁⟩ Y₄ t₄ hK₄ hA₄ hr₄ hg₄ -
   subst V₁
   exact mbu_tail c hfs hin hK₄ hA₄ hr₄ (by rw [hg₄]; exact hsW) hin₂ h₂ hFW fc w1 w2 w3 w4 w5 hl
-    fun Z' t' hKZ hAZ hrZ hgZ => kr1 W V'' Z' t' hPW hKZ hAZ hrZ (by rw [hgZ, hg₄]; try rfl)
+    fun ra Z' t' hKZ hAZ hrZ hgZ => kr1 W V'' ra Z' t' hPW hKZ hAZ hrZ (by rw [hgZ, hg₄]; try rfl)
 
 end FV7z.Mbu
