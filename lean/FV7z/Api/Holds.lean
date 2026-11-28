@@ -255,7 +255,6 @@ theorem vc_49 {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post}
     (h : ∀ g', Fr g g' → ∀ fl, Q 80 g' fl V) :
     W_49 F Wl Q g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
-  dsimp only at h ⊢
   wpx [W_49, o2, Op.shl64]
   all_goals repeat' (first
     | refine h _ ?_ _
@@ -320,7 +319,6 @@ theorem vc_115 {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post} (hI : I V)
     (h : ∀ g' V', I V' → Fr g g' → ∀ fl, Q 120 g' fl V') :
     W_115 F Wl Q g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
-  dsimp only at h ⊢
   wpx [W_115, o6]
   all_goals repeat' (first
     | refine h _ _ ?_ ?_ _
@@ -441,7 +439,6 @@ theorem vc_233 {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post} (hI : I V)
     (h : ∀ g' V', I V' → Fr g g' → ∀ fl, Q 236 g' fl V') :
     W_233 F Wl Q g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
-  dsimp only at h ⊢
   wpx [W_233, o12]
   all_goals repeat' (first
     | refine h _ _ ?_ ?_ _
