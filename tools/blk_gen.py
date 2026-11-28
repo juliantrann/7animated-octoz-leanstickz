@@ -1461,6 +1461,18 @@ FNS = {
     "gcf": dict(grp="Gcf", cn="Get_Correct_FsFile_Name", a=0x5c7070, n=88, pos=True, stops=(0x37, 0x57), calls=True,
                 tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `Get_Correct_FsFile_Name` (`ExtractingFilePath.cpp`; `objdump -d`)"),
+    # 7-Zip's CPP/7zip/Compress/LzmaDecoder.cpp `CDecoder::CDecoder ()`: the 8 vtable pointers (the class's
+    # interfaces, from 0x78c498) at `this + 8 * i`, the flags and sizes 0, `_inBufSize` = `_outStep` = 1 MiB. Stop:
+    # the `ret` (184).
+    "ldc": dict(grp="Ldc", cn="NCompress::NLzma::CDecoder::CDecoder", a=0x57fb70, n=185, pos=True, stops=(184,),
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `CDecoder` constructor (`LzmaDecoder.cpp`; `objdump -d`)"),
+    # 7-Zip's CPP/7zip/Compress/LzmaDecoder.cpp `CDecoder::~CDecoder ()`: the 8 vtable pointers back, then
+    # `LzmaDec_Free (&_state, &g_AlignedAlloc)` (the `call` at 110, to `ldf`), `MidFree (_inBuf)` (119), and
+    # `_inStream.Release ()` through the vtable (`call [rax + 16]`, 139) when `_inStream` (at `this + 256`) is set.
+    # Stop: the `ret` (143).
+    "ldd": dict(grp="Ldd", cn="NCompress::NLzma::CDecoder::~CDecoder", a=0x57fc30, n=144, pos=True, stops=(143,),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CDecoder` destructor (`LzmaDecoder.cpp`; `objdump -d`)"),
 }
 
 
