@@ -4,12 +4,13 @@ import FV7z.Lemmas.LeafRet
 import FV7z.Lemmas.FnFar
 import FV7z.Lemmas.Lock2
 /-!
-# `NWindows::NFile::NIO::SetSymLink (from, to)` (PLAN.md §M, M1)
+# `NWindows::NFile::NDir::MyCreateHardLink (newFileName, existFileName)` (PLAN.md §M, M1)
 
-7-Zip 26.06's `NIO::SetSymLink (from, to)` at `0x455880` in `7zzs` (`CPP/Windows/FileDir.cpp`; `objdump -d`;
-its bytes folded with one other wrapper), `from` in `rdi`, `to` in `rsi`: `mov r8, rdi; sub rsp, 8;
-mov rdi, rsi; mov rsi, r8` (the arguments swapped), the `call` (17) of `link` (`Lnk.lnk_at`), then
-`test eax, eax; sete al; add rsp, 8; ret` (31). As `FV7z/Osl/Holds.lean`, the same shape.
+7-Zip 26.06's `NDir::MyCreateHardLink (newFileName, existFileName)` at `0x455880` in `7zzs`
+(`CPP/Windows/FileDir.cpp`; `objdump -d`; the symbol table's sizes also match `NIO::SetSymLink`, but this code calls
+`link`), `newFileName` in `rdi`, `existFileName` in `rsi`: `return link (existFileName, newFileName) == 0;` as
+`mov r8, rdi; sub rsp, 8; mov rdi, rsi; mov rsi, r8` (the arguments swapped), the `call` (17) of `link`
+(`Lnk.lnk_at`), then `test eax, eax; sete al; add rsp, 8; ret` (31). As `FV7z/Osl/Holds.lean`, the same shape.
 
 The callee is a hypothesis (`kf`): a continuation at its entry, given the run from its return (`lkw_at + 22`, `rsp` 8
 below the entry's, the return address left as it was, and the callee's own post `Pc`) to the return address (`kr`),
@@ -88,10 +89,10 @@ variable {prof : Profile} {L : List (Addr × List Byte)} {s₀ : State} {o : Ora
   {gev : List Event} {gP : State → Nat → List Event → Prop} {gE : Outcome → List Event → Prop}
   {X : State} {t : Nat} {V : Addr → Byte}
 
-/-- `NWindows::NFile::NIO::SetSymLink (from, to)` from its entry. At `link`'s entry the registers are `gC`
-with `rsp` 16 below the entry's and the return address into `SetSymLink` pushed (`kf`); if `link` returns to
-`lkw_at + 22` with `rsp` as at its call and `SetSymLink`'s return address as it was, the run reaches that return
-address with `rsp` restored and `al` = 1 if `link`'s `eax` is 0, else 0 (`kr`). -/
+/-- `NWindows::NFile::NDir::MyCreateHardLink (newFileName, existFileName)` from its entry. At `link`'s entry the
+registers are `gC` with `rsp` 16 below the entry's and the return address into `MyCreateHardLink` pushed (`kf`); if
+`link` returns to `lkw_at + 22` with `rsp` as at its call and `MyCreateHardLink`'s return address as it was, the run
+reaches that return address with `rsp` restored and `al` = 1 if `link`'s `eax` is 0, else 0 (`kr`). -/
 theorem lkw_ok {Pc : State → (Addr → Byte) → Prop} (c : Seg prof F Wl L s₀ o) (hin : CodeIn L lkw_at lkw)
     (hinC : CodeIn L Lnk.lnk_at Lnk.lnk)
     (hK : KeptW Wl s₀ X) (hA : Agree F X.proc.mm.mem V) (hrip : X.cpu.rip = lkw_at)
