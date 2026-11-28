@@ -1505,6 +1505,9 @@ FNS = {
     # `p` NULL (0x58); else the copy loop at 0x30 (`p[i] = (Byte)s[i]` for `i <= len`), the `ret` at 0x46.
     "aba": dict(grp="Aba", cn="AllocBstrFromAscii", a=0x456e50, n=99, pos=True, stops=(0x46, 0x58, 0x62), calls=True,
                 tag="PLAN.md §M, M1", src="7-Zip 26.06's `NCOM::AllocBstrFromAscii` (`PropVariant.cpp`; `objdump -d`)"),
+    "uac": dict(grp="Uac", cn="UString::operator= (const char *)", a=0x44d8a0, n=184, pos=True, stops=(0x82,),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip's `UString::operator= (const char *)` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
 }
 
 
