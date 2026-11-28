@@ -1133,6 +1133,10 @@ FNS = {
     "pst": dict(grp="Pst", cn="PrintString", a=0x5ebf50, n=171, pos=True, stops=(0x57, 0x6d, 0x9c), calls=True,
                 tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `PrintString` (`CPP/7zip/UI/Console/List.cpp`; `objdump -d`)"),
+    "ppd": dict(grp="Ppd", cn="CPercentPrinter::~CPercentPrinter", a=0x5f68a0, n=162, pos=True, stops=(0x95, 0xa1),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CPercentPrinter::~CPercentPrinter` (`CPP/7zip/UI/Console/PercentPrinter.h`; "
+                    "`objdump -d`)"),
     # `CFileBase::OpenBinary (name, flags, mode)`: `Close ()` (the `call` at 0x1a), `open64 (name, flags, mode)` (the
     # `call` at 0x2a), the result stored as `_handle`, `al` = it is not -1. Stop: the `ret` (0x41).
     "fob": dict(grp="Fob", cn="NWindows::NFile::NIO::CFileBase::OpenBinary", a=0x456060, n=66, pos=True, stops=(0x41,),
