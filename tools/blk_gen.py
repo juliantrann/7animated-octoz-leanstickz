@@ -2297,6 +2297,15 @@ FNS = {
     "gtd": dict(grp="Gtd", cn="__gettimeofday", a=0x660360, n=133, pos=True, fs=True, stops=(0x58, 0x59, 0x7f),
                 calls=True, tag="PLAN.md §M, M1",
                 src="glibc's `__gettimeofday` (`gettimeofday.c`, static in 7zzs 26.06; `objdump -d`)"),
+    # glibc's libio/genops.c `_IO_doallocbuf (fp)`: `fp->_IO_buf_base` not null: the `ret` (0x0b); else, unless
+    # unbuffered with a positive `_mode` (0x25, to 0x90), the vtable (`fp + 0xd8`) checked against the section
+    # (0x48; outside: `_IO_vtable_check`, the `call` at 0xb0) and its `doallocate` called (`call [rbp + 0x68]`,
+    # 0x4d); not -1: the pops and the `ret` (0x8d); else `_IO_setb (fp, fp->_shortbuf, fp->_shortbuf + 1, 0)`
+    # inlined: `free` of an owned old buffer (the `call` at 0xa0), the flag, the two pointers built in `xmm0`
+    # (`movq`, `punpcklqdq`) and stored by one `movups` (0x85). Stops: the `ret`s (0x0b, 0x8d), the padding.
+    "dab": dict(grp="Dab", cn="_IO_doallocbuf", a=0x62b500, n=183, pos=True, stops=(0x0b, 0x0c, 0x8d, 0x8e, 0xa9),
+                calls=True, vop=True, tag="PLAN.md §M, M1",
+                src="glibc 2.31's `_IO_doallocbuf` (`libio/genops.c`; `objdump -d`)"),
 }
 
 def file_bytes(path, va, n):
@@ -2417,6 +2426,10 @@ def effect(mn, sz, ol, pc=None):
             return terms, f"Op.vsa 16 {absa(ops[0])}", f"OpIA.vs_{sm}_rip (by decide) (by decide)"
         if sm == 'pxor' and ks == ('x', 'x'):   # FV7z/Lemmas/BlkOps19.lean
             return terms, "Op.vld 0 fun _ => 0", "OpI.vz_pxor"
+        if sm == 'punpcklqdq' and ks == ('x', 'x'):   # FV7z/Lemmas/BlkOps19.lean
+            return terms, "Op.vld 0 fun _ => 0", "OpI.vz_punpcklqdq"
+        if sm == 'movq' and ks == ('x', 'r') and f[1][0] == 64:   # FV7z/Lemmas/BlkOps19.lean
+            return terms, "Op.vld 0 fun _ => 0", "OpI.vz_movq_xr"
         raise Exception(f"no effect for {mn} {sz} {ol}")
     # through `fs` (FV7z/Lemmas/SpFs.lean): the `Op` has the `fs` base `fb`
     if mn == 'mov' and ks == ('r', 'mf') and sz in (32, 64):
