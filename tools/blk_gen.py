@@ -1567,6 +1567,16 @@ FNS = {
     "cxd": dict(grp="Cxd", cn="CObjectVector<CXmlProp>::~CObjectVector", a=0x5f63c0, n=117, pos=True,
                 stops=(0x69, 0x74), calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `CObjectVector<T>::~CObjectVector` (`CPP/Common/MyVector.h`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/Common/CommandLineParser.cpp `NCommandLineParser::CParser::~CParser ()`: `delete []
+    # _switches` (the array of `CSwitchResult`s, 24 bytes each, behind its count at `_switches - 8`): the items from
+    # the last down (the outer loop, head 0x30, `rbx` the item), each item's `UStringVector PostStrings` destroyed
+    # (the inner loop, head 0x50: the `UString`s' chars freed unless NULL, 0x61, the `UString`s freed, 0x6e; the
+    # array freed unless NULL, 0x86), then `operator delete [] (_switches - 8, 24 n + 8)` (0xa5); from 0xaa two
+    # buffers freed unless NULL (0xb4, 0xc3), then `NonSwitchStrings` as `ocv` (the loop, head 0xe0, the calls at
+    # 0xf2, 0xff) and its array as a tail jump (0x120) unless NULL, else the `ret` (0x140).
+    "cpd": dict(grp="Cpd", cn="NCommandLineParser::CParser::~CParser", a=0x5a0500, n=321, pos=True,
+                stops=(0x120, 0x140), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CParser::~CParser` (`CPP/Common/CommandLineParser.cpp`; `objdump -d`)"),
     # 7-Zip 26.06 CPP/Common/StdOutStream.cpp `CStdOutStream::Normalize_UString (s)`: in terminal mode (the byte at
     # `this + 8`) each `wchar_t` of `s` below 0x20 (signed), in 0x7f..0x9f, 0x202a..0x202e or 0x2066..0x2069 made
     # '_' (the loop at 0x59), else each '\n' made '_' (the loop at 0x80). Stops: the `ret`s (0x6f, 0x94).
@@ -1621,6 +1631,17 @@ FNS = {
     "lri": dict(grp="Lri", cn="NCompress::NLzma::CDecoder::ReadFromInputStream", a=0x5801f0, n=256, pos=True,
                 stops=(0x73,), hand=(0xd8, 0xdc, 0xe9), calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `CDecoder::ReadFromInputStream` (`LzmaDecoder.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/7zip/UI/Common/UpdateCallback.cpp-side `CDirItems::SetLinkInfo (dirItem, fi, phyPrefix)`: a
+    # frame of 48 bytes under five pushes (`push r14, r13, r12, rbp, rbx`, as `Lemmas/Fr40.lean`) with the stack guard
+    # at `rsp + 0x28` and an `FString` at `rsp + 0x10`; `SymLinks` (`[rdi + 0x40]`) off or `fi` not a link (`st_mode
+    # & S_IFMT` at `[rdx + 0x48]` not `S_IFLNK`) returns 0; else `phyPrefix + fi.Name` (the `call` at 0x75), the link
+    # read into `dirItem.ReparseData` (0x84): read gives `_totalSize -= fi.Size` (by hand: `sub [rbp + 0x60], rax`,
+    # 0x90); else the error's code (0xb8), `ReparseData` freed (0xca) and cleared, `AddError (path, code)` (0xed);
+    # `delete []` of the path (0xa4) unless NULL, the guard's check. Stops: the `ret` (0x5e), the call of
+    # `__stack_chk_fail` (0xf4); the landing pad after it (0xf9..) is left out.
+    "sli": dict(grp="Sli", cn="CDirItems::SetLinkInfo", a=0x5c0e20, n=249, pos=True, fs=True, stops=(0x5e, 0xf4),
+                hand=(0x90,), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CDirItems::SetLinkInfo` (`CPP/7zip/UI/Common/EnumDirItems.cpp`; `objdump -d`)"),
     # 7-Zip 26.06 CPP/7zip/UI/Common/ArchiveOpenCallback.cpp `COpenCallbackImp::Init2 (folderPrefix, fileName)`: a
     # frame of 32 bytes under five pushes with the stack guard at `rsp + 24` and a `UString` at `rsp`; `FileNames`'
     # `Clear` by a call (0x30); `FileNames_WasUsed`' items from the last down (the loop, head 0x48, `rbp` = 8 * i):
@@ -1631,6 +1652,16 @@ FNS = {
     "oci": dict(grp="Oci", cn="COpenCallbackImp::Init2", a=0x5b32e0, n=268, pos=True, fs=True, stops=(0xf8, 0x107),
                 calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `COpenCallbackImp::Init2` (`CPP/7zip/UI/Common/ArchiveOpenCallback.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/Common/Wildcard.cpp `NWildcard::CCensor::AddPreItem (include, path, props)`: `_preItems` (a
+    # `CObjectVector`: `_items` at `this + 0x18`, `_size` at `+ 0x20`, `_capacity` at `+ 0x24`) grown when full
+    # (above 0x7ffffffe the `ja` at 0x2b to the throw, by hand: its target is outside; the new capacity by `cmova`,
+    # `operator new []` at 0x50, `memcpy` of the old items at 0xdf when any, `delete []` of the old array at 0xec when
+    # not null); then `new CCensorPathProps`-sized item (`operator new` at 0x78, 0x18 bytes), its `UString` made
+    # (0x83), appended, `item.Path = path` (0xa6), `item.Include = include` and the three props bytes. Stop: the
+    # `ret` (0xcf).
+    "api": dict(grp="Api", cn="NWildcard::CCensor::AddPreItem", a=0x453650, n=246, pos=True, stops=(0xcf,),
+                hand=(0x2b,), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `NWildcard::CCensor::AddPreItem` (`CPP/Common/Wildcard.cpp`; `objdump -d`)"),
 }
 
 
