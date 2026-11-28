@@ -75,10 +75,11 @@ abbrev PJ (S : Addr) (g0 : Gprs) (Hj : Nat → Addr → Addr → Nat → Addr �
 bytes, `Ok` the stores that keep `H`). -/
 structure Eh (prof : Profile) (F : Footprint) (Wl : List Rgn) (L : List (Addr × List Byte)) (s₀ : State)
     (o : Oracle) (gev : List Event) (gP : State → Nat → List Event → Prop) (gE : Outcome → List Event → Prop)
-    (S : Addr) (J : Nat → Addr → (Addr → Byte) → Prop) (H Hx : Nat → Addr → Addr → (Addr → Byte) → Prop)
+    (S : Addr) (J : Nat → Addr → (Addr → Byte) → Prop) (H : Nat → Addr → Addr → (Addr → Byte) → Prop)
     (Hi : Nat → Addr → Addr → Nat → (Addr → Byte) → Prop)
     (Hj : Nat → Addr → Addr → Nat → Addr → (Addr → Byte) → Prop)
-    (Hd : Nat → Addr → Addr → Nat → (Addr → Byte) → Prop) (Ok : Addr → Nat → Prop) : Prop where
+    (Hd : Nat → Addr → Addr → Nat → (Addr → Byte) → Prop) (Hx : Nat → Addr → Addr → (Addr → Byte) → Prop)
+    (Ok : Addr → Nat → Prop) : Prop where
   hH : ∀ k p W, J k p W → rdq(W, p) ≠ 0 → H k p (rdq(W, p)) W
   hX : ∀ k p b W, H k p b W → J k p W
   w16 : ∀ k p b W, H k p b W → ∀ i < 4, Foot Wl (Addr.add (b + 16#64) i)
