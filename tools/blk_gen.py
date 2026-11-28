@@ -1397,6 +1397,25 @@ FNS = {
     "obn": dict(grp="Obn", cn="NWindows::NFile::NIO::CInFile::Open", a=0x456180, n=16, pos=True, stops=(0xb,),
                 calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `CInFile::Open` (`CPP/Windows/FileIO.h`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/Common/MyString.cpp `AString::Add_Space ()`: `if (_limit == _len) Grow_1 ();` (the `call` of
+    # `AString::Grow_1` at 0x28, then `mov eax, [rbx + 8]; jmp 16`), then at 16 the stores (' ', then 0, the length
+    # plus 1) and `pop rbx; ret` (0x24)
+    "asp": dict(grp="Asp", cn="AString::Add_Space", a=0x44c6f0, n=50, pos=True, stops=(0x24,), calls=True,
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `AString::Add_Space` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/Common/MyString.cpp `AString::Add_Minus ()`: as `Add_Space` (`asp`) with '-'
+    "amn": dict(grp="Amn", cn="AString::Add_Minus", a=0x44c810, n=50, pos=True, stops=(0x24,), calls=True,
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `AString::Add_Minus` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/Common/MyString.cpp `AString::operator+= (char c)`: as `Add_Space` (`asp`) with `c` kept in
+    # `ebp` (`push rbp; mov ebp, esi; push rbx; sub rsp, 8`); the `ret` at 0x30, the `call` of `Grow_1` at 0x38
+    "ach": dict(grp="Ach", cn="AString::operator+=(char)", a=0x44c6a0, n=66, pos=True, stops=(0x30,), calls=True,
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `AString::operator+= (char)` (`CPP/Common/MyString.h`; "
+                "`objdump -d`)"),
+    # 7-Zip 26.06 `Release ()` of a COM class through its third base (`_ZThn24`): `this` - 24 the object, the count at
+    # `rdi + 0x20`; `if (--__m_RefCount == 0) delete this;` as the destructor's `call` (0x22, `0x5b2340`) and the sized
+    # `operator delete (p, 0x2c0)` (0x2f, `0x6014e0`); the `ret` at 0x3e with the count in `eax`
+    "trl": dict(grp="Trl", cn="_ZThn24 Release", a=0x5b2940, n=63, pos=True, stops=(0x3e,), calls=True,
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `MY_ADDREF_RELEASE` `Release ()` (`CPP/Common/MyCom.h`; "
+                "`objdump -d`)"),
 }
 
 
