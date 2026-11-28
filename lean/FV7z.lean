@@ -1323,3 +1323,9 @@ import FV7z.Rst.Blocks
 import FV7z.Rst.Cuts
 import FV7z.Wst.Holds
 import FV7z.Rst.Holds
+import FV7z.Fch.Code
+import FV7z.Fch.Pats
+import FV7z.Fch.Blocks1
+import FV7z.Fch.Blocks
+import FV7z.Fch.Cuts
+import FV7z.Fch.Holds
