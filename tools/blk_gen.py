@@ -1384,6 +1384,16 @@ FNS = {
                 src="7-Zip 26.06's `GetFullPath (path, fullPath)` (`CPP/Windows/FileName.cpp`; `objdump -d`)"),
     # 7-Zip 26.06 CPP/Windows/FileIO.h `CInFile::Open (name)`: `OpenBinary (name, O_RDONLY, 0666)` (the symbol at
     # 0x456180 is folded with others of the same bytes).
+    # 7-Zip 26.06 CPP/Common/StdOutStream.cpp `CStdOutStream::Flush ()`: `return fflush (_stream) == 0;` (the
+    # `call` of `fflush` at 0xb, then `test eax, eax; sete al; add rsp, 8; ret`)
+    "fls": dict(grp="Fls", cn="CStdOutStream::Flush", a=0x5a1440, n=26, pos=True, stops=(0x19,), calls=True,
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `CStdOutStream::Flush` (`CPP/Common/StdOutStream.cpp`; "
+                "`objdump -d`)"),
+    # 7-Zip 26.06 CPP/Common/StdOutStream.cpp `endl (CStdOutStream &outStream)`: `outStream << '\\n'` as
+    # `fputc ('\\n', _stream)` (the `call` at 0x11), then `mov rax, r12; pop r12; ret` as in `operator+` (`Apl`)
+    "enl": dict(grp="Enl", cn="endl(CStdOutStream &)", a=0x5a1470, n=28, pos=True, stops=(0x1b,), calls=True,
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `endl (CStdOutStream &)` (`CPP/Common/StdOutStream.cpp`; "
+                "`objdump -d`)"),
     "obn": dict(grp="Obn", cn="NWindows::NFile::NIO::CInFile::Open", a=0x456180, n=16, pos=True, stops=(0xb,),
                 calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `CInFile::Open` (`CPP/Windows/FileIO.h`; `objdump -d`)"),

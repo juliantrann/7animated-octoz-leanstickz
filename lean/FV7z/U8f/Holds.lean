@@ -28,8 +28,12 @@ theorem tgt_18 : u8f_at.add (18 + 5) + BitVec.ofNat 64 18446744073709551401 = tg
 
 /-- The registers at the jump. -/
 abbrev gq (V : Addr → Byte) (g : Gprs) : Gprs :=
-  { g with r8 := g.rsi, rsi := BitVec.setWidth 64 rdd(V, g.rdi + 8#64), rdi := rdq(V, g.rdi),
-      rcx := BitVec.setWidth 64 (BitVec.setWidth 32 g.rdx), rdx := g.rsi }
+  { g with
+      r8 := g.rsi,
+      rsi := BitVec.setWidth 64 rdd(V, g.rdi + 8#64),
+      rdi := rdq(V, g.rdi),
+      rcx := BitVec.setWidth 64 (BitVec.setWidth 32 g.rdx),
+      rdx := g.rsi }
 
 variable {F : Footprint} {Wl : List Rgn}
 

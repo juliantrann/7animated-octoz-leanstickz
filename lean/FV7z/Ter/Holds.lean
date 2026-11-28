@@ -28,7 +28,8 @@ theorem tgt_8 : ter_at.add (8 + 5) + BitVec.ofNat 64 18446744073709550851 = tgt_
 
 /-- The registers at the jump. -/
 abbrev gq (g : Gprs) : Gprs :=
-  { g with rdi := g.rdi - 8#64 }
+  { g with
+      rdi := g.rdi - 8#64 }
 
 variable {F : Footprint} {Wl : List Rgn}
 

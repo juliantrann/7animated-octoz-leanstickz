@@ -27,7 +27,12 @@ theorem tgt_11 : obn_at.add (11 + 5) + BitVec.ofNat 64 18446744073709551312 = tg
 
 /-- The registers at the jump. -/
 abbrev gq (g : Gprs) : Gprs :=
-  { g with rcx := 438#64, rdx := 0#64 }
+  { g with
+      rcx := 438#64,
+      rdx := 0#64 }
+
+/-- `xor r32, r32`. -/
+theorem xz (x : BitVec 32) : BitVec.setWidth 64 (x ^^^ x) = 0#64 := by simp
 
 variable {F : Footprint} {Wl : List Rgn}
 
@@ -35,7 +40,7 @@ variable {F : Footprint} {Wl : List Rgn}
 theorem vc_0 {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post}
     (h : ∀ fl, Q 11 (gq g) fl V) : W_0 F Wl Q g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
-  wpx [W_0, o0]
+  wpx [W_0, o0, xz, BitVec.reduceSetWidth]
   all_goals repeat' (first | exact h _ | apply And.intro | intro _)
 
 variable {prof : Profile} {L : List (Addr × List Byte)} {s₀ : State} {o : Oracle}
