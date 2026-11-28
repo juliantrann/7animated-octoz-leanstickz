@@ -2,14 +2,16 @@ import FV7z.Lemmas.FnMem
 /-!
 # `add qword [b + d], r64` (PLAN.md §M, M1)
 
-The 64-bit form of `InsMem.add_mr32` and `Fn.Seg.s_add_mr32`, for 7-Zip 26.06's `ReadStream`
-(`add qword [r14], rdx`, `*size += processed`): a read-modify-write, a step of its own.
+A read-modify-write of a quadword with a register: 7-Zip's `CDummyOutStream::Write` adds the processed size to
+`_size` (`add [rbx + 0x18], rcx`), `ReadStream` to `*processedSize` (`add [r14], rdx`). As `add_mr32`
+(`InsMem.lean`) and `Seg.s_add_mr32` (`FnMem.lean`) on 8 bytes.
+
+- `add_mr64`: the instruction's step; `Seg.s_add_mr64`: on a quadword the run may store into.
 -/
 namespace FV7z
 open ZellicX86 Decode
 
-section
-variable {prof : Profile} {o : Oracle} {t : Nat} {s : State}
+variable {prof : Profile} {s : State} {o : Oracle} {t : Nat}
 
 /-- `add qword [b + d], r64`: a read-modify-write. -/
 theorem add_mr64 {b d r len : Nat} (htf : s.cpu.rflags.tf = false) (hac : s.cpu.rflags.ac = false)
@@ -31,23 +33,18 @@ theorem add_mr64 {b d r len : Nat} (htf : s.cpu.rflags.tf = false) (hac : s.cpu.
   rw [hc]
   rfl
 
-end
-
 end FV7z
 
-namespace FV7z.Fn
+namespace FV7z.Fn.Seg
 open ZellicX86 Decode FV7z.Leaf
 
-variable {prof : Profile} {L : List (Addr × List Byte)} {s₀ : State} {o : Oracle} {F : Footprint} {Wl : List Rgn}
-  {gev : List Event} {gP : State → Nat → List Event → Prop} {gE : Outcome → List Event → Prop} {X : State} {t j : Nat}
-  {e' : Addr} {code : List Byte} {V : Addr → Byte}
+variable {prof : Profile} {F : Footprint} {Wl : List Rgn} {L : List (Addr × List Byte)} {s₀ X : State}
+  {o : Oracle} {gev : List Event} {gP : State → Nat → List Event → Prop} {gE : Outcome → List Event → Prop}
+  {V : Addr → Byte} {t : Nat} {e' : Addr} {code : List Byte} {j : Nat}
 
-namespace Seg
-
-/-- `add qword [b + d], r64`, on a word the run may store into. -/
-theorem s_add_mr64 (c : Seg prof F Wl L s₀ o) (hK : KeptW Wl s₀ X)
-    (hA : Agree F X.proc.mm.mem V) (hin : CodeIn L e' code) (hj : j < code.length)
-    (hrip : X.cpu.rip = e'.add j) {b d r len : Nat}
+/-- `add qword [b + d], r64` on a quadword the run may store into. -/
+theorem s_add_mr64 (c : Seg prof F Wl L s₀ o) (hK : KeptW Wl s₀ X) (hA : Agree F X.proc.mm.mem V)
+    (hin : CodeIn L e' code) (hj : j < code.length) (hrip : X.cpu.rip = e'.add j) {b d r len : Nat}
     (hd : Dec prof.feat code j (FV7z.mk .add 64 [.mem (mbd b d 64), gr 64 r] len))
     (hst : ∀ i < 8, Foot Wl ((eaD X b d).add i))
     (k' : ContG prof F Wl L s₀ o gev gP gE
@@ -65,6 +62,4 @@ theorem s_add_mr64 (c : Seg prof F Wl L s₀ o) (hK : KeptW Wl s₀ X)
     rw [show eaD (X.withMem M) b d = eaD X b d from rfl, hv] at hr
     exact ⟨_, _, hr, hKs.nx rfl rfl rfl, hAs, rip_add hrip M len, rfl⟩) k'
 
-end Seg
-
-end FV7z.Fn
+end FV7z.Fn.Seg
