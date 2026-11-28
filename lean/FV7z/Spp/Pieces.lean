@@ -551,7 +551,7 @@ theorem vc_341 {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post
 theorem vc_352 {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post}
     (h : ∀ g', Fk g g' → ∀ fl, Q 357 g' fl V) : W_352 fb F Wl Q g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
-  dsimp only at h ⊢
+  dsimp only [Fk] at h ⊢
   wpx [W_352, o20]
   all_goals repeat' (first
     | refine h _ ?_ _
@@ -690,7 +690,7 @@ theorem vc_445 {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post
 theorem vc_464 {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post}
     (h : ∀ g', Fr g g' → ∀ fl, Q 494 g' fl V) : W_464 fb F Wl Q g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
-  dsimp only at h ⊢
+  dsimp only [Fr] at h ⊢
   wpx [W_464, o24, Op.shl64]
   all_goals repeat' (first
     | refine h _ ?_ _
@@ -744,7 +744,7 @@ theorem vc_526 {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post
 theorem vc_533 {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post}
     (h : ∀ g', Fr g g' → ∀ fl, Q 538 g' fl V) : W_533 fb F Wl Q g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
-  dsimp only at h ⊢
+  dsimp only [Fr] at h ⊢
   wpx [W_533, o20]
   all_goals repeat' (first
     | refine h _ ?_ _
@@ -756,7 +756,7 @@ theorem vc_533 {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post
 theorem vc_543 {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post}
     (h : ∀ g', Fr g g' → ∀ fl, Q 552 g' fl V) : W_543 fb F Wl Q g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
-  dsimp only at h ⊢
+  dsimp only [Fr] at h ⊢
   wpx [W_543, o28]
   all_goals repeat' (first
     | refine h _ ?_ _
@@ -851,7 +851,7 @@ theorem vc_653 {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post
 theorem vc_691 {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post}
     (h : ∀ g', Fr g g' → ∀ fl, Q 694 g' fl V) : W_691 fb F Wl Q g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
-  dsimp only at h ⊢
+  dsimp only [Fr] at h ⊢
   wpx [W_691, o35]
   all_goals repeat' (first
     | refine h _ ?_ _
