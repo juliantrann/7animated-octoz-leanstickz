@@ -17,8 +17,7 @@ epilogue (71..84, `ret`); else `rdx`, `rsi` = `propNew.lp`, `propNew.lc`, `rcx` 
 `__stack_chk_fail` (294).
 
 This module has the pieces that need no callee: `vc_0` (the frame, to the first `call`), `vc_204`, `vc_211`,
-`vc_238`, `vc_272`. Left: the pieces with branches (`W_44`, `W_51`, `W_108`, `W_173`) and the run through the callees,
-as in `FV7z/Smd/Holds.lean` (the callees as continuations `KC`).
+`vc_238`, `vc_272`. The pieces with branches and the run through the callees: `FV7z/Lza/Run.lean`.
 -/
 open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn
 namespace FV7z.Lza
