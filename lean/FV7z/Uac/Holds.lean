@@ -465,7 +465,8 @@ theorem uac_ok {P1 P2 : State → (Addr → Byte) → Prop} {n : Nat} (c : Seg p
     obtain ⟨hus, hubp, hu15, hubx, hu13, hu12⟩ := hR
     refine (c_73 prof).run c hin (fun j' g' _ V' => j' = 80 ∧ g' = { U.cpu.gpr with rdx := 0#64 } ∧ V' = M)
       hKU hAU hrU (vc_73 hubx h0 hn fun _ => ⟨rfl, rfl, rfl⟩) ?_
-    rintro j' g fl V₁ ⟨rfl, rfl, rfl⟩ Y t₁ hKY hAY hrY hgY -
+    rintro j' g fl V₁ ⟨rfl, rfl, hV₁⟩ Y t₁ hKY hAY hrY hgY -
+    rw [hV₁] at hAY
     refine loop c hin (W := M) (s := X.cpu.gpr.rsi) (d := d) (n := n) (g₀ := Y.cpu.gpr) hn hf hDs.1
       (by rw [hgY]; exact hubp) (by rw [hgY]; exact h14) (by rw [hgY]; exact hu13) ?_ (n - 1) 0 (by omega) Y t₁
       hKY hAY hrY (by rw [hgY] <;> rfl) (Kp.refl _)
