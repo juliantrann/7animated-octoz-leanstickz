@@ -716,6 +716,10 @@ FNS = {
     # `_limit` = 3, `_chars[0]` = 0. Stop: the `ret` (0x31).
     "uct": dict(grp="Uct", cn="UString::UString()", a=0x44d3e0, n=50, pos=True, stops=(0x31,), calls=True,
                 tag="PLAN.md §M, M1", src="7-Zip's `UString::UString` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
+    # `AString::AString ()`: `_chars` = NULL, then `_chars` = `new char[4]` (the `call` at 0x14), `_len` = 0,
+    # `_limit` = 3, `_chars[0]` = 0 (one byte). Stop: the `ret` (0x2e).
+    "act": dict(grp="Act", cn="AString::AString()", a=0x44c360, n=47, pos=True, stops=(0x2e,), calls=True,
+                tag="PLAN.md §M, M1", src="7-Zip's `AString::AString` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
     # 7-Zip 26.06's CPP/Common/CommandLineParser.cpp `CParser::CParser ()`: `_switches` (the vector at 0) empty and
     # `StopSwitchIndex` (at 0x18) -1, then the `AString` at 0x20 (the `call` at 0x34, to 0x44c360) and the `UString`
     # at 0x30 (the `call` at 0x3d, `UString::UString ()`). Stop: the `ret` (0x4c).
@@ -826,6 +830,11 @@ FNS = {
     "ucu": dict(grp="Ucu", cn="UString::UString(unsigned, const UString&)", a=0x44d240, n=64, pos=True, stops=(0x3f,),
                 calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip's `UString::UString (unsigned, const UString &)` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
+    # `UString::UString (const UString &s, c)`: `SetStartLen (s._len + 1)` (the `call` at 0x1d), `wmemcpy (_chars,
+    # s._chars, s._len)` (0x33), `_chars[s._len] = c`, `_chars[s._len + 1] = 0`; the `ret` at 0x50.
+    "uch": dict(grp="Uch", cn="UString::UString(const UString&, wchar_t)", a=0x44d280, n=81, pos=True, stops=(0x50,),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip's `UString::UString (const UString &, wchar_t)` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
     # `UString::UString (s1, num1, s2, num2)`: `SetStartLen (num1 + num2)` (0x1e), `wmemcpy (_chars, s1, num1)` (0x30),
     # a tail jump to `wmemcpy (_chars + num1, s2, num2 + 1)` (0x47).
     "uc4": dict(grp="Uc4", cn="UString::UString(const wchar_t*, unsigned, const wchar_t*, unsigned)", a=0x44d2e0,
@@ -1895,6 +1904,11 @@ FNS = {
                 pos=True, fs=True, stops=(134, 135), calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `CStdOutStream::NormalizePrint_UString_Path (const UString &)` (`StdOutStream.cpp`; "
                     "`objdump -d`)"),
+    # glibc 2.31 elf/dl-lookup.c `_dl_setup_hash (map)`: the GNU hash table's fields (or the SysV one's) into `map`.
+    # Stops: the two `ret`s (0x61, 0x93), the `__assert_fail` path (0x94) not covered.
+    "dsh": dict(grp="Dsh", cn="_dl_setup_hash", a=0x6ab020, n=180, pos=True, stops=(0x61, 0x93, 0x94), calls=True,
+                tag="PLAN.md G3, startup",
+                src="glibc 2.31's `_dl_setup_hash` (`elf/dl-lookup.c`; `objdump -d`)"),
     # 7-Zip 26.06 Common/StdOutStream.cpp, without the landing pad (from 0x58). Stops: the `ret` (0x52), the call of
     # `__stack_chk_fail` (0x53).
     "olg": dict(grp="Olg", cn="CStdOutStream::operator<< (Int64)", a=0x5a1a70, n=88, pos=True, fs=True,
