@@ -134,7 +134,7 @@ theorem vc_0 {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post}
     W_0 F Wl Q g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only [aR, V0] at hs1 hs2 f9 f10 h29 h61 ⊢
-  wpx [W_0, W_23, W_48, o0, o1, o3]
+  wpx [W_0, W_23, W_48, o0, o1, o3, Op.cmpmi]
   all_goals repeat' (first
     | refine h29 _ ?_ ?_ ?_ ?_ ?_ ?_ ?_ _
     | refine h61 _ ?_ ?_ ?_ ?_ ?_ ?_ ?_ _
@@ -142,14 +142,16 @@ theorem vc_0 {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post}
     | with_reducible exact hs2
     | with_reducible exact f9
     | with_reducible exact f10
+    | exact f9 _ (by assumption)
+    | exact f10 _ (by assumption)
     | ostep)
 
 /-- `add rsp, 8`, `rsi` = `s`, `rdi` = `this`, the two pops, to the tail jump at 42. -/
 theorem vc_29 {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post}
     (f1 : ∀ i < 8, Foot F.data (Addr.add (g.rsp + 8#64) i))
     (f2 : ∀ i < 8, Foot F.data (Addr.add (g.rsp + 8#64 + 8) i))
-    (h : ∀ g', g'.rsp = g.rsp + 8#64 + 8 + 8 → g'.rbp = rdq(V, g.rsp + 8#64) → g'.r12 = rdq(V, g.rsp + 8#64 + 8) →
-      g'.rbx = g.rbx → g'.r13 = g.r13 → g'.r14 = g.r14 → g'.r15 = g.r15 → g'.rdi = g.rbp → g'.rsi = g.r12 →
+    (h : ∀ g', g'.rsp = g.rsp + 8#64 + 8 + 8 → g'.rbp = rdq(V, g.rsp + 8#64) →
+      g'.r12 = rdq(V, g.rsp + 8#64 + 8) → g'.rbx = g.rbx → g'.r13 = g.r13 → g'.r14 = g.r14 → g'.r15 = g.r15 → g'.rdi = g.rbp → g'.rsi = g.r12 →
       ∀ fl, Q 42 g' fl V) :
     W_29 F Wl Q g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
