@@ -1,7 +1,7 @@
 import FV7z.Ecq.Cuts
 import FV7z.Lemmas.LeafRet
 /-!
-# `CExtractCallbackConsole::QueryInterface`: the pieces of the first loop (PLAN.md §M, M1)
+# `CExtractCallbackConsole::QueryInterface`: the pieces at the cut points (PLAN.md §M, M1)
 
 7-Zip 26.06's `CExtractCallbackConsole::QueryInterface (iid, ppv)` (`Z7_COM_QI_*`,
 `CPP/7zip/UI/Console/ExtractCallbackConsole.h`; `objdump -d`) at `0x5e9f00` in `7zzs`, `this` = `rdi`, `iid` =
@@ -15,6 +15,12 @@ byte [rax + rcx]; cmp byte [rsi + rax], r8b`, `OpI.cmpmr8`). On a match `*ppv` =
 - `vc_24`: one step of the first loop: on a match on to 24 or (the 16 bytes done) to 45; on a mismatch the second
   loop's first compare, to 88 (match) or 109 (mismatch).
 - `vc_35`: the counter of the first loop.
+- `vc_45`: `*ppv = this`, to the `AddRef` at 48; `vc_55`: `S_OK`, to the `ret` at 57.
+- `vc_88`: the counter of the second loop and its next compare; `vc_109`: to the third loop.
+- `vc_128`, `vc_192`, `vc_240`: one step of the third, fourth and fifth loop with its exits.
+
+Not yet here (not imported by `FV7z.lean`): the five loops by induction on `16 - rax` (as `Apc.slen`), the two
+`AddRef`s by `Seg.s_add_mi32` and the three `ret`s, and `ecq_ok`.
 -/
 open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn
 namespace FV7z.Ecq
