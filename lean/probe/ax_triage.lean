@@ -1,7 +1,10 @@
-import FV7z.Isf.Holds
+import FV7z.Amp.Holds
 open FV7z
-#print axioms FV7z.Isf.isf_ok
-#print axioms FV7z.Isf.vc_0
-#print axioms FV7z.Isf.vc_18
-#print axioms FV7z.Isf.vc_34
-#print axioms FV7z.Isf.isf_pin
+#print axioms FV7z.Amp.amp_a
+#print axioms FV7z.Amp.amp_b
+#print axioms FV7z.Amp.amp_c
+#print axioms FV7z.Amp.amp_d
+#print axioms FV7z.Amp.amp_e
+#print axioms FV7z.Amp.vc_0
+#print axioms FV7z.Amp.vc_56
+#print axioms FV7z.Amp.amp_pin

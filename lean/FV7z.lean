@@ -1975,3 +1975,9 @@ import FV7z.Isf.Blocks1
 import FV7z.Isf.Blocks
 import FV7z.Isf.Cuts
 import FV7z.Isf.Holds
+import FV7z.Amp.Code
+import FV7z.Amp.Pats
+import FV7z.Amp.Blocks1
+import FV7z.Amp.Blocks
+import FV7z.Amp.Cuts
+import FV7z.Amp.Holds
