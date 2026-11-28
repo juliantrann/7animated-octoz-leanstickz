@@ -997,6 +997,13 @@ FNS = {
     # stack guard, `wildcardMatching` from `item.WildcardMatching` (2: `DoesNameContainWildcard (name)`), the
     # `CCensorPathProps` on the stack, `censor.AddPreItem (item.Include, name, props)`. Stops: the `ret` (0x74) and
     # the `call` of `__stack_chk_fail` (0x75).
+    # 7-Zip 26.06 CPP/7zip/UI/Console/ExtractCallbackConsole.cpp `CExtractScanConsole::ScanProgress (st, path,
+    # isDir)`: the stack guard; with `_percent._so` set and not disabled, the percent printer's files and bytes from
+    # `st`, its path from `path` (a `UString` on the stack, freed), `Print ()`; returns `CheckBreak2 ()`'s code. Stops:
+    # the `ret` (0x9b) and the `call` of `__stack_chk_fail` (0x9c); the landing pad after it is not entered.
+    "scp": dict(grp="Scp", cn="CExtractScanConsole::ScanProgress", a=0x5e7810, n=173, pos=True, fs=True,
+                stops=(0x9b, 0x9c), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CExtractScanConsole::ScanProgress` (`ExtractCallbackConsole.cpp`; `objdump -d`)"),
     "anc": dict(grp="Anc", cn="AddNameToCensor", a=0x5a66e0, n=122, pos=True, fs=True, stops=(0x74, 0x75),
                 calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `AddNameToCensor` (`ArchiveCommandLine.cpp`; `objdump -d`)"),
