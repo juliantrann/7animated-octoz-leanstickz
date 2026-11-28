@@ -2,6 +2,7 @@ import FV7z.Clp.Holds
 import FV7z.Clp.Run
 open FV7z
 #print axioms FV7z.Clp.rdself
+#print axioms FV7z.Clp.vc_130e
 #print axioms FV7z.Clp.vc_130
 #print axioms FV7z.Clp.aft_sk
 #print axioms FV7z.Clp.cl_m
