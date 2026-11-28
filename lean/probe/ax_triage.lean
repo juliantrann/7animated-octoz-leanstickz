@@ -1,7 +1,8 @@
-import FV7z.Pui.Holds
+import FV7z.Anc.Holds
 open FV7z
-#print axioms FV7z.Pui.pui_ok
-#print axioms FV7z.Pui.vc_0
-#print axioms FV7z.Pui.vc_79
-#print axioms FV7z.Pui.tail79
-#print axioms FV7z.Pui.pui_pin
+#print axioms FV7z.Anc.anc_ok
+#print axioms FV7z.Anc.vc_0
+#print axioms FV7z.Anc.vc_60
+#print axioms FV7z.Anc.vc_92
+#print axioms FV7z.Anc.tail92
+#print axioms FV7z.Anc.anc_pin

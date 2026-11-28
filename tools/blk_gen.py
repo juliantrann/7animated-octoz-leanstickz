@@ -98,6 +98,11 @@ FNS = {
     "unm": dict(grp="Uname", cn="__uname", a=0x6649e0, n=37, pos=True, stops=(0x13, 0x14), calls=True,
                 tag="PLAN.md G3, startup",
                 src="glibc 2.31's `__uname` (`sysdeps/unix/sysv/linux/syscall-template.S`; `objdump -d`)"),
+    # glibc 2.31 sysdeps/unix/sysv/linux/syscall-template.S (`getpid`, no error return). Stops: the `syscall` (9; a step
+    # of its own), the `ret` (11).
+    "gpd": dict(grp="Getpid", cn="__getpid", a=0x664ad0, n=12, pos=True, stops=(0xb,), calls=True,
+                tag="PLAN.md G3, startup",
+                src="glibc 2.31's `__getpid` (`sysdeps/unix/sysv/linux/syscall-template.S`; `objdump -d`)"),
     # glibc 2.31 sysdeps/unix/sysv/linux/close.c (`SYSCALL_CANCEL`). Stops: the `ret` (0x1f), the process has more
     # than one thread (0x20: `multiple_threads` is not 0), the `ret` after `errno` is set (0x71); the `syscall` (0x15)
     # is a step of its own.
@@ -810,6 +815,19 @@ FNS = {
     "pvq": dict(grp="Pvq", cn="CPropVariant::operator=(UInt64)", a=0x457470, n=62, pos=True, stops=(0x3d,), calls=True,
                 tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `CPropVariant::operator= (UInt64)` (`CPP/Windows/PropVariant.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/Windows/PropVariant.cpp `CPropVariant::operator= (const FILETIME &)`: as `operator= (UInt64)`
+    # with `VT_FILETIME` (64) and the 8 bytes `filetime` loaded from the argument. Stop: the `ret` (0x40).
+    "pvf": dict(grp="Pvf", cn="CPropVariant::operator=(const FILETIME &)", a=0x4574b0, n=65, pos=True, stops=(0x40,),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CPropVariant::operator= (const FILETIME &)` (`CPP/Windows/PropVariant.cpp`; "
+                    "`objdump -d`)"),
+    # 7-Zip 26.06 CPP/7zip/UI/Console/OpenCallbackConsole.cpp `COpenCallbackConsole::Open_Finished ()`:
+    # `ClosePercents ()` (with `_percent._so` set and `_percent.DisableOutput` clear, `_percent.ClosePrint (true)`, the
+    # `call`) and `S_OK`. Stops: the two `ret`s (0x29, 0x32).
+    "ocf": dict(grp="Ocf", cn="COpenCallbackConsole::Open_Finished", a=0x5f66a0, n=51, pos=True, stops=(0x29, 0x32),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `COpenCallbackConsole::Open_Finished` "
+                    "(`CPP/7zip/UI/Console/OpenCallbackConsole.cpp`; `objdump -d`)"),
     # 7-Zip 26.06 CPP/Common/Wildcard.cpp `ExtractFileNameFromPath (path)`: `path.ReverseFind_PathSepar ()` (the `call`,
     # 0x14), then `UString (path + it + 1)` into the result (0x26). Stop: the `ret` (0x35).
     "efn": dict(grp="Efn", cn="ExtractFileNameFromPath(const UString &)", a=0x4528f0, n=54, pos=True, stops=(0x35,),
@@ -975,6 +993,13 @@ FNS = {
     # 7-Zip 26.06 CPP/7zip/UI/Console/ExtractCallbackConsole.cpp `Print_UInt64_and_String (s, val, name)`: the
     # stack guard, `ConvertUInt64ToString` into a buffer at `rsp`, `s += buf; s.Add_Space (); s += name`. Stops: the
     # `ret` (0x68) and the `call` of `__stack_chk_fail` (0x69).
+    # 7-Zip 26.06 CPP/7zip/UI/Common/ArchiveCommandLine.cpp `AddNameToCensor (censor, item, name)` (static): the
+    # stack guard, `wildcardMatching` from `item.WildcardMatching` (2: `DoesNameContainWildcard (name)`), the
+    # `CCensorPathProps` on the stack, `censor.AddPreItem (item.Include, name, props)`. Stops: the `ret` (0x74) and
+    # the `call` of `__stack_chk_fail` (0x75).
+    "anc": dict(grp="Anc", cn="AddNameToCensor", a=0x5a66e0, n=122, pos=True, fs=True, stops=(0x74, 0x75),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `AddNameToCensor` (`ArchiveCommandLine.cpp`; `objdump -d`)"),
     "pui": dict(grp="Pui", cn="Print_UInt64_and_String", a=0x5e85f0, n=110, pos=True, fs=True, stops=(0x68, 0x69),
                 calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `Print_UInt64_and_String` (`ExtractCallbackConsole.cpp`; `objdump -d`)"),
@@ -1093,6 +1118,22 @@ FNS = {
     # 0x20, `0x424290`), then bit 19 of `ecx` (`a[2]`, `rsp + 8`). Stops: the `ret` (0x43), `__stack_chk_fail` (0x44).
     "sse": dict(grp="Sse", cn="CPU_IsSupported_SSE41", a=0x424390, n=73, pos=True, fs=True, stops=(0x43, 0x44),
                 calls=True, tag="PLAN.md §M, M1", src="7-Zip's `CPU_IsSupported_SSE41` (`C/CpuArch.c`; `objdump -d`)"),
+    # `CPU_IsSupported_AVX2 ()`: the stack guard (`fs:0x28`), the OS test (the `call` at 0x18, `0x424440`); if it
+    # passes, `z7_x86_cpuid_GetMaxFunc ()` (the `call` at 0x40, `0x4242b0`) above 6, then `z7_x86_cpuid (a, 7)` (the
+    # `call` at 0x52, `0x424290`) and bit 5 of `ebx` (`a[1]`, `rsp + 4`); else 0 (0x21). Stops: the `ret` (0x37),
+    # `__stack_chk_fail` (0x63).
+    "av2": dict(grp="Av2", cn="CPU_IsSupported_AVX2", a=0x4244b0, n=104, pos=True, fs=True, stops=(0x37, 0x63),
+                calls=True, tag="PLAN.md §M, M1", src="7-Zip's `CPU_IsSupported_AVX2` (`C/CpuArch.c`; `objdump -d`)"),
+    # `CFieldPrinter::PrintTitleLines ()`: `fputs (LinesString, *g_StdOut)` (the `call` at 0x16). Stops: the `ret`
+    # (0x1f), the landing pad after it (0x20).
+    "ptl": dict(grp="Ptl", cn="CFieldPrinter::PrintTitleLines", a=0x5eccd0, n=47, pos=True, stops=(0x1f, 0x20),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CFieldPrinter::PrintTitleLines` (`CPP/7zip/UI/Console/List.cpp`; `objdump -d`)"),
+    # `PrintSpaces (numSpaces)` (`.part.0`): `fputs (kSpaces + (32 - numSpaces), *g_StdOut)` (the `call` at 0x23).
+    # Stops: the `ret` (0x2c), the landing pad after it (0x2d).
+    "psp": dict(grp="Psp", cn="PrintSpaces", a=0x5ebdd0, n=60, pos=True, stops=(0x2c, 0x2d), calls=True,
+                tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `PrintSpaces` (`CPP/7zip/UI/Console/List.cpp`, `.part.0`; `objdump -d`)"),
     # `CFileBase::OpenBinary (name, flags, mode)`: `Close ()` (the `call` at 0x1a), `open64 (name, flags, mode)` (the
     # `call` at 0x2a), the result stored as `_handle`, `al` = it is not -1. Stop: the `ret` (0x41).
     "fob": dict(grp="Fob", cn="NWindows::NFile::NIO::CFileBase::OpenBinary", a=0x456060, n=66, pos=True, stops=(0x41,),
@@ -2147,6 +2188,20 @@ FNS = {
     # _NL_CURRENT_LOCALE)` as a tail jump. Stop: the jump (29).
     "mbr": dict(grp="Mbr", cn="__mbsrtowcs", a=0x65d320, n=34, pos=True, fs=True, stops=(29,),
                 tag="PLAN.md §M, M1", src="glibc 2.31's `__mbsrtowcs` (`wcsmbs/mbsrtowcs.c`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/7zip/UI/Common/ArchiveExtractCallback.cpp `CDirPathSortPair::SetNumSlashes (s)`: the number of
+    # `/` in `s` up to its 0 into `Len` (`this + 0`); the loop's head 0x18. Stop: the `ret` (0x30).
+    "sns": dict(grp="Sns", cn="CDirPathSortPair::SetNumSlashes", a=0x5ad550, n=49, pos=True, stops=(48,),
+                tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CDirPathSortPair::SetNumSlashes` (`ArchiveExtractCallback.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/Common/MyString.cpp `UString::Add_LF ()`: `Grow_1 ()` (0x44d0a0) when `_len == _limit`, then
+    # `L'\n'` and the 0 at `_len`, `_len + 1`. Stops: the `ret` (0x2a), the `call` (0x30).
+    "alf": dict(grp="Alf", cn="UString::Add_LF", a=0x44dab0, n=58, pos=True, stops=(42,), calls=True,
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `UString::Add_LF` (`MyString.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/Common/StdOutStream.cpp `CStdOutStream::operator<< (const char *s)`: `fputs (s, _stream)`
+    # (0x624cc0), returns `this`. Without the landing pad (from 0x1b). Stops: the `ret` (0x1a).
+    "osc": dict(grp="Osc", cn="CStdOutStream::operator<< (const char *)", a=0x5f4be0, n=27, pos=True, stops=(26,),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CStdOutStream::operator<< (const char *)` (`StdOutStream.cpp`; `objdump -d`)"),
     # glibc 2.31 elf/dl-lookup.c `_dl_setup_hash (map)`: the GNU hash table's fields (or the SysV one's) into `map`.
     # Stops: the two `ret`s (0x61, 0x93), the `__assert_fail` path (0x94) not covered.
     "dsh": dict(grp="Dsh", cn="_dl_setup_hash", a=0x6ab020, n=180, pos=True, stops=(0x61, 0x93, 0x94), calls=True,
@@ -2193,6 +2248,19 @@ FNS = {
     "npl": dict(grp="Npl", cn="CStdOutStream::NormalizePrint_UString", a=0x5a1680, n=68, pos=True, stops=(42, 47),
                 calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `CStdOutStream::NormalizePrint_UString` (`StdOutStream.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 C/SwapBytes.c `z7_SwapBytesPrepare ()`: `CPU_IsSupported_AVX2 ()` (0x4244b0); not 0: the mode 3 stored
+    # at 0x7967b8, `ret` (0x24); 0: `CPU_IsSupported_SSSE3 ()` (0x424340), the mode 1 + (not 0) stored, `ret` (0x42).
+    # Stops: the `ret`s (0x24, 0x42), the padding after the first (0x25).
+    "sbp": dict(grp="Sbp", cn="z7_SwapBytesPrepare", a=0x43d3d0, n=67, pos=True, stops=(36, 37, 66), calls=True,
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `z7_SwapBytesPrepare` (`SwapBytes.c`; `objdump -d`)"),
+    # glibc 2.x `_IO_new_file_write (f, data, n)` (libio/fileops.c, static in 7zzs): `n <= 0` (0x14) to the end with
+    # 0; the loop head (0x3d): `__write_nocancel` (0x4e) when `f->_flags2 & 2`, else `__write` (0x28); a negative
+    # count (0x30, 0x56) sets `_IO_ERR_SEEN` (0x60); else `to_do -= count`, `data += count`, to the head while
+    # `to_do > 0` (0x3b); the end (0x6b) adds `n - to_do` to `f->_offset` unless negative. Stops: the `ret` (0x8b),
+    # the padding (0x25, 0x8c); the `or dword [r13], 0x20` (0x60) by hand (`Seg.s_or_mi32`).
+    "ifw": dict(grp="Ifw", cn="_IO_new_file_write", a=0x6287d0, n=156, pos=True, stops=(0x25, 0x8b, 0x8c),
+                calls=True, hand=(0x60,), tag="PLAN.md §M, M1",
+                src="glibc's `_IO_new_file_write` (`libio/fileops.c`, static in 7zzs 26.06; `objdump -d`)"),
 }
 
 def file_bytes(path, va, n):
