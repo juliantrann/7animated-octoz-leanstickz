@@ -91,7 +91,9 @@ theorem vc_0 {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post}
     simp only [V1, eq_self_iff_true, ↓reduceIte] at h22
     dsimp only [aR] at hs1 hs2 h22 ⊢
     wpx [W_0, W_128, o0, o9, Op.sti, BitVec.and_self, Bool.not_true, Bool.not_false, Bool.false_eq_true,
-      Bool.true_eq_false, false_implies, implies_true]
+      Bool.true_eq_false, false_implies, implies_true,
+      eq_self_iff_true, decide_true, decide_false, BitVec.toNat_zero, Bool.true_or, Bool.or_true, Bool.false_or,
+      Bool.or_false]
     all_goals repeat' (first
       | refine h22 _ (fm_mk ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_) _
       | with_reducible exact hs1
@@ -101,7 +103,9 @@ theorem vc_0 {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post}
     simp only [V1, h0, ↓reduceIte] at h22
     dsimp only [aR] at hs1 hs2 hz' h22 ⊢
     wpx [W_0, W_128, o0, o9, Op.sti, eaG, optV, BitVec.mul_one, BitVec.add_zero, BitVec.and_self, h0, Bool.not_true,
-      Bool.not_false, Bool.false_eq_true, Bool.true_eq_false, false_implies, implies_true]
+      Bool.not_false, Bool.false_eq_true, Bool.true_eq_false, false_implies, implies_true,
+      eq_self_iff_true, decide_true, decide_false, BitVec.toNat_zero, Bool.true_or, Bool.or_true, Bool.false_or,
+      Bool.or_false]
     all_goals repeat' (first
       | refine h22 _ (fm_mk ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_) _
       | with_reducible exact hs1
@@ -115,9 +119,11 @@ theorem vc_22 {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post}
     (h96 : ∀ g', Fk g g' → ∀ fl, Q 96 g' fl V) :
     W_22 fb F Wl Q g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
-  dsimp only at h96 ⊢
+  try dsimp only at h96 ⊢
   wpx [W_22, W_34, o1, o2, Op.lda, hv, BitVec.and_self, Bool.not_true, Bool.not_false, Bool.false_eq_true,
-    Bool.true_eq_false, false_implies, implies_true]
+    Bool.true_eq_false, false_implies, implies_true,
+    eq_self_iff_true, decide_true, decide_false, BitVec.toNat_zero, Bool.true_or, Bool.or_true, Bool.false_or,
+    Bool.or_false]
   all_goals repeat' (first
     | refine h96 _ (fk_mk ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_) _
     | with_reducible exact hf
@@ -128,7 +134,7 @@ theorem vc_96 {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post}
     (h107 : ∀ g', Fk g g' → g'.rdi = g.r12 → g'.rsi = g.rbp → g'.rax = 96#64 → ∀ fl, Q 107 g' fl V) :
     W_96 fb F Wl Q g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
-  dsimp only at h107 ⊢
+  try dsimp only at h107 ⊢
   wpx [W_96, o7]
   all_goals repeat' (first
     | refine h107 _ (fk_mk ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_) ?_ ?_ ?_ _
@@ -147,11 +153,14 @@ theorem vc_109 {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post
   subst h0'
   dsimp only at f1 f2 h127 ⊢
   wpx [W_109, W_120, o8, o6, Bool.not_true, Bool.not_false, Bool.false_eq_true, Bool.true_eq_false,
-    false_implies, implies_true]
+    false_implies, implies_true,
+    eq_self_iff_true, decide_true, decide_false, BitVec.toNat_zero, Bool.true_or, Bool.or_true, Bool.false_or,
+    Bool.or_false]
   all_goals repeat' (first
     | refine h127 _ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ _
     | with_reducible exact f1
     | with_reducible exact f2
+    | (rename_i hh; exact absurd hh (by decide))
     | ostep)
 
 end Pieces
