@@ -27,6 +27,7 @@ return (with the frame `Fr` as it was, and its post `P`).
 - `mbu_mw`: from the entry, for `n` not 0, neither `CP_UTF8` nor `g_ForceToUTF8`, to `mbstowcs`'s entry (106 to the
   `call` at 116), through `ReAlloc2 (2 n + 2)` (448 to 456, a hypothesis like `ConvertUTF8ToUnicode`) when
   `dest._limit` is below `2 n + 2`.
+- `mbu_pre`: `mbu_u8` and `mbu_mw` together, every path from the entry up to the return from `mbstowcs`.
 
 Not covered yet: the return from `mbstowcs` (121 on: the fallback copy loop at 344, the scan loop at 160, the
 surrogate loop at 215, the `UString (const wchar_t *)` and `free` calls), the stack guard failing
@@ -589,5 +590,90 @@ theorem mbu_mw {fb : Addr} {cn d : BitVec 64} {n : BitVec 32} {PR : State → (A
     (by rw [hg₄]; dsimp only; rw [hcW]; exact fs) w6 hinM hM
     fun Z t' hKZ hAZ hrZ hgZ => kfm { W.cpu.gpr with rbx := rdq(V'', W.cpu.gpr.rbp) } V'' Z t'
       (Or.inr ⟨W, hPW, hsW, hbW, hcW, hdW, rfl⟩) hKZ hAZ hrZ (by rw [hgZ, hg₄])
+
+/-- `MultiByteToUnicodeString2 (dest, src, codePage)` from its entry, all the paths up to the return from `mbstowcs`:
+for `n` = 0, `CP_UTF8` or `g_ForceToUTF8` (`mbu_u8`) to the return address (`kr0`, `kr1`, through `kfu`), else
+(`mbu_mw`) to `mbstowcs`'s entry (`kfm`, through `kfr` when the buffer is short). The code from the return from
+`mbstowcs` (121) on is not covered yet: `kfm` stands for it. -/
+theorem mbu_pre {fb : Addr} {cn d : BitVec 64} {n : BitVec 32} {P PR : State → (Addr → Byte) → Prop}
+    (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (hin : CodeIn L mbu_at mbu)
+    (hinU : CodeIn L U8u.u8u_at U8u.u8u)
+    {cR cM : List Byte} (hinR : CodeIn L ra2_at cR) (hR : 0 < cR.length) (hinM : CodeIn L mbs_at cM)
+    (hM : 0 < cM.length)
+    (hK : KeptW Wl s₀ X) (hA : Agree F X.proc.mm.mem V) (hrip : X.cpu.rip = mbu_at)
+    (fc : ∀ i < 8, Foot F.data (Addr.add (fb + 40#64) i))
+    (fa : ∀ i < 8, Foot F.data (Addr.add X.cpu.gpr.rdi i))
+    (fs8 : ∀ i < 4, Foot F.data (Addr.add (X.cpu.gpr.rsi + 8#64) i))
+    (fs : ∀ i < 8, Foot F.data (Addr.add X.cpu.gpr.rsi i))
+    (f12 : ∀ i < 4, Foot F.data (Addr.add (X.cpu.gpr.rdi + 12#64) i))
+    (fg : ∀ i < 1, Foot F.data (Addr.add 7938424#64 i))
+    (w1 : ∀ i < 8, Foot Wl (Addr.add (X.cpu.gpr.rsp - 8) i))
+    (w2 : ∀ i < 8, Foot Wl (Addr.add (X.cpu.gpr.rsp - 8 - 8) i))
+    (w3 : ∀ i < 8, Foot Wl (Addr.add (X.cpu.gpr.rsp - 8 - 8 - 8) i))
+    (w4 : ∀ i < 8, Foot Wl (Addr.add (X.cpu.gpr.rsp - 8 - 8 - 8 - 8) i))
+    (w5 : ∀ i < 8, Foot Wl (Addr.add (gq X.cpu.gpr.rsp + 24#64) i))
+    (wd8 : ∀ i < 4, Foot Wl (Addr.add (X.cpu.gpr.rdi + 8#64) i)) (wb : ∀ i < 4, Foot Wl (Addr.add d i))
+    (w6 : ∀ i < 8, Foot Wl (Addr.add (gq X.cpu.gpr.rsp - 8) i))
+    (hl : ∀ i < 8, Foot F.data (Addr.add X.cpu.gpr.rsp i))
+    (hcn : rdq(Vp V X.cpu.gpr, fb + 40#64) = cn) (hd : rdq(Vp V X.cpu.gpr, X.cpu.gpr.rdi) = d)
+    (hn : rdd(Vd V X.cpu.gpr cn, X.cpu.gpr.rsi + 8#64) = n)
+    {e₂ : Addr} {code₂ : List Byte} (hin₂ : CodeIn L e₂ code₂) {j₂ : Nat} (h₂ : j₂ < code₂.length)
+    (hFE : n = 0#32 → Fr X.cpu.gpr.rsp fb X.cpu.gpr (e₂.add j₂) (VE V X.cpu.gpr cn d))
+    (kr0 : ∀ (ra : BitVec 64) (Z' : State) (t' : Nat), KeptW Wl s₀ Z' →
+      Agree F Z'.proc.mm.mem (VE V X.cpu.gpr cn d) →
+      Z'.cpu.rip = e₂.add j₂ → Z'.cpu.gpr = { X.cpu.gpr with rax := ra, rsp := X.cpu.gpr.rsp + 8 } →
+      GoG prof L o gev gP gE Z' t')
+    (kfu : ∀ (Y : State) (t' : Nat), KeptW Wl s₀ Y →
+      Agree F Y.proc.mm.mem (Vst (VE V X.cpu.gpr cn d) (gq X.cpu.gpr.rsp - 8) (toBytesLE (mbu_at.add 443) 8)) →
+      Y.cpu.rip = U8u.u8u_at →
+      (∃ ra rd, Y.cpu.gpr = ({ X.cpu.gpr with
+          rax := ra,
+          rdx := rd,
+          rbx := d,
+          rsp := gq X.cpu.gpr.rsp,
+          rbp := X.cpu.gpr.rdi,
+          rsi := X.cpu.gpr.rdi,
+          rdi := X.cpu.gpr.rsi,
+          r12 := X.cpu.gpr.rsi }).set 4 (gq X.cpu.gpr.rsp - 8)) →
+      (∀ (W : State) (V'' : Addr → Byte) (t'' : Nat), KeptW Wl s₀ W → Agree F W.proc.mm.mem V'' →
+        W.cpu.rip = mbu_at.add 443 → W.cpu.gpr.rsp = gq X.cpu.gpr.rsp →
+        Fr X.cpu.gpr.rsp fb X.cpu.gpr (e₂.add j₂) V'' → P W V'' → GoG prof L o gev gP gE W t'') →
+      GoG prof L o gev gP gE Y t')
+    (kr1 : ∀ (W : State) (V'' : Addr → Byte) (ra : BitVec 64) (Z' : State) (t' : Nat), P W V'' →
+      KeptW Wl s₀ Z' → Agree F Z'.proc.mm.mem V'' → Z'.cpu.rip = e₂.add j₂ →
+      Z'.cpu.gpr = { W.cpu.gpr with
+          rax := ra,
+          rbx := X.cpu.gpr.rbx,
+          rbp := X.cpu.gpr.rbp,
+          rsp := X.cpu.gpr.rsp + 8,
+          r12 := X.cpu.gpr.r12,
+          r13 := X.cpu.gpr.r13 } →
+      GoG prof L o gev gP gE Z' t')
+    (kfr : ∀ (Y : State) (t' : Nat), KeptW Wl s₀ Y →
+      Agree F Y.proc.mm.mem (Vst (VE V X.cpu.gpr cn d) (gq X.cpu.gpr.rsp - 8) (toBytesLE (mbu_at.add 456) 8)) →
+      Y.cpu.rip = ra2_at → Y.cpu.gpr = (gR X.cpu.gpr d n).set 4 (gq X.cpu.gpr.rsp - 8) →
+      (∀ (W : State) (V'' : Addr → Byte) (t'' : Nat), KeptW Wl s₀ W → Agree F W.proc.mm.mem V'' →
+        W.cpu.rip = mbu_at.add 456 → W.cpu.gpr.rsp = gq X.cpu.gpr.rsp → W.cpu.gpr.rbp = X.cpu.gpr.rdi →
+        W.cpu.gpr.r12 = X.cpu.gpr.rsi → W.cpu.gpr.r13 = nn n → PR W V'' → GoG prof L o gev gP gE W t'') →
+      GoG prof L o gev gP gE Y t')
+    (kfm : ∀ (G : Gprs) (V' : Addr → Byte) (Z : State) (t' : Nat),
+      (G = gB X.cpu.gpr d n ∧ V' = VE V X.cpu.gpr cn d ∨
+        ∃ W : State, PR W V' ∧ W.cpu.gpr.rsp = gq X.cpu.gpr.rsp ∧ W.cpu.gpr.rbp = X.cpu.gpr.rdi ∧
+          W.cpu.gpr.r12 = X.cpu.gpr.rsi ∧ W.cpu.gpr.r13 = nn n ∧
+          G = { W.cpu.gpr with rbx := rdq(V', W.cpu.gpr.rbp) }) →
+      KeptW Wl s₀ Z → Agree F Z.proc.mm.mem (Vst V' (gq X.cpu.gpr.rsp - 8) (toBytesLE (mbu_at.add 121) 8)) →
+      Z.cpu.rip = mbs_at → Z.cpu.gpr = ({ G with rsi := rdq(V', G.r12), rdx := G.r13, rdi := G.rbx }).set 4
+        (gq X.cpu.gpr.rsp - 8) →
+      GoG prof L o gev gP gE Z t') :
+    GoG prof L o gev gP gE X t := by
+  rcases Classical.em (n = 0#32 ∨ X.cpu.gpr.rdx.setWidth 32 = 65001#32 ∨ VE V X.cpu.gpr cn d 7938424#64 ≠ 0#8)
+    with hp | hp
+  · exact mbu_u8 c hfs hin hinU hK hA hrip fc fa fs8 fg w1 w2 w3 w4 w5 wd8 wb w6 hl hcn hd hn hp hin₂ h₂ hFE kr0
+      kfu kr1
+  have hz : n ≠ 0#32 := fun h => hp (Or.inl h)
+  have hu : X.cpu.gpr.rdx.setWidth 32 ≠ 65001#32 := fun h => hp (Or.inr (Or.inl h))
+  have hf : VE V X.cpu.gpr cn d 7938424#64 = 0#8 := Classical.byContradiction fun h => hp (Or.inr (Or.inr h))
+  exact mbu_mw c hfs hin hinR hR hinM hM hK hA hrip fc fa fs8 fs f12 fg w1 w2 w3 w4 w5 wd8 wb w6 hcn hd hn hz hu hf
+    kfr kfm
 
 end FV7z.Mbu
