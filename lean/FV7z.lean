@@ -1378,6 +1378,13 @@ import FV7z.Lri.Blocks1
 import FV7z.Lri.Blocks
 import FV7z.Lri.Cuts
 import FV7z.Lri.Holds
+import FV7z.Lemmas.SubMr64
+import FV7z.Sli.Code
+import FV7z.Sli.Pats
+import FV7z.Sli.Blocks1
+import FV7z.Sli.Blocks
+import FV7z.Sli.Cuts
+import FV7z.Sli.Holds
 import FV7z.Oci.Code
 import FV7z.Oci.Pats
 import FV7z.Oci.Blocks1

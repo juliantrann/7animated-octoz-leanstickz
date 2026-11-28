@@ -1613,6 +1613,17 @@ FNS = {
     "lri": dict(grp="Lri", cn="NCompress::NLzma::CDecoder::ReadFromInputStream", a=0x5801f0, n=256, pos=True,
                 stops=(0x73,), hand=(0xd8, 0xdc, 0xe9), calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `CDecoder::ReadFromInputStream` (`LzmaDecoder.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/7zip/UI/Common/UpdateCallback.cpp-side `CDirItems::SetLinkInfo (dirItem, fi, phyPrefix)`: a
+    # frame of 48 bytes under five pushes (`push r14, r13, r12, rbp, rbx`, as `Lemmas/Fr40.lean`) with the stack guard
+    # at `rsp + 0x28` and an `FString` at `rsp + 0x10`; `SymLinks` (`[rdi + 0x40]`) off or `fi` not a link (`st_mode
+    # & S_IFMT` at `[rdx + 0x48]` not `S_IFLNK`) returns 0; else `phyPrefix + fi.Name` (the `call` at 0x75), the link
+    # read into `dirItem.ReparseData` (0x84): read gives `_totalSize -= fi.Size` (by hand: `sub [rbp + 0x60], rax`,
+    # 0x90); else the error's code (0xb8), `ReparseData` freed (0xca) and cleared, `AddError (path, code)` (0xed);
+    # `delete []` of the path (0xa4) unless NULL, the guard's check. Stops: the `ret` (0x5e), the call of
+    # `__stack_chk_fail` (0xf4); the landing pad after it (0xf9..) is left out.
+    "sli": dict(grp="Sli", cn="CDirItems::SetLinkInfo", a=0x5c0e20, n=249, pos=True, fs=True, stops=(0x5e, 0xf4),
+                hand=(0x90,), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CDirItems::SetLinkInfo` (`CPP/7zip/UI/Common/EnumDirItems.cpp`; `objdump -d`)"),
     # 7-Zip 26.06 CPP/7zip/UI/Common/ArchiveOpenCallback.cpp `COpenCallbackImp::Init2 (folderPrefix, fileName)`: a
     # frame of 32 bytes under five pushes with the stack guard at `rsp + 24` and a `UString` at `rsp`; `FileNames`'
     # `Clear` by a call (0x30); `FileNames_WasUsed`' items from the last down (the loop, head 0x48, `rbp` = 8 * i):
