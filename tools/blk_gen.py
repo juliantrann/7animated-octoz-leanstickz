@@ -972,6 +972,12 @@ FNS = {
     "amp": dict(grp="Amp", cn="Add_Messsage_Pre_ArcType(UString&, char const*, wchar_t const*)", a=0x5e7a50, n=76,
                 pos=True, stops=(0x47,), calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip's `Add_Messsage_Pre_ArcType` (`CPP/7zip/UI/Console/ExtractCallbackConsole.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/7zip/UI/Console/ExtractCallbackConsole.cpp `Print_UInt64_and_String (s, val, name)`: the
+    # stack guard, `ConvertUInt64ToString` into a buffer at `rsp`, `s += buf; s.Add_Space (); s += name`. Stops: the
+    # `ret` (0x68) and the `call` of `__stack_chk_fail` (0x69).
+    "pui": dict(grp="Pui", cn="Print_UInt64_and_String", a=0x5e85f0, n=110, pos=True, fs=True, stops=(0x68, 0x69),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `Print_UInt64_and_String` (`ExtractCallbackConsole.cpp`; `objdump -d`)"),
     # glibc 2.31's `remove`: only its code is used (`Rmf` takes it as a hypothesis).
     "rmv": dict(grp="Rmv", cn="remove", a=0x624030, n=63, pos=True, fs=True, stops=(0x31, 0x3e), calls=True,
                 tag="PLAN.md §M, M1", src="glibc 2.31's `remove` (`stdio-common/remove.c`; `objdump -d`)"),
