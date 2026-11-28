@@ -1438,3 +1438,11 @@ import FV7z.Cpd.Inner
 import FV7z.Cpd.Items
 import FV7z.Cpd.Loop
 import FV7z.Cpd.Holds
+import FV7z.Spp.Code
+import FV7z.Spp.Pats
+import FV7z.Spp.Blocks1
+import FV7z.Spp.Blocks2
+import FV7z.Spp.Blocks
+import FV7z.Spp.Cuts
+import FV7z.Spp.Pieces
+import FV7z.Spp.Holds
