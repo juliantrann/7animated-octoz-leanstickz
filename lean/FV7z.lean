@@ -1212,6 +1212,12 @@ import FV7z.Ape.Blocks1
 import FV7z.Ape.Blocks
 import FV7z.Ape.Cuts
 import FV7z.Ape.Holds
+import FV7z.Fkd.Code
+import FV7z.Fkd.Pats
+import FV7z.Fkd.Blocks1
+import FV7z.Fkd.Blocks
+import FV7z.Fkd.Cuts
+import FV7z.Fkd.Holds
 import FV7z.Lemmas.Rmw8
 import FV7z.Sfn.Cuts
 import FV7z.Aac.Holds
