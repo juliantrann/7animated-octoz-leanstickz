@@ -698,6 +698,10 @@ FNS = {
     # `_limit` = 3, `_chars[0]` = 0. Stop: the `ret` (0x31).
     "uct": dict(grp="Uct", cn="UString::UString()", a=0x44d3e0, n=50, pos=True, stops=(0x31,), calls=True,
                 tag="PLAN.md §M, M1", src="7-Zip's `UString::UString` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
+    # `AString::AString ()`: `_chars` = NULL, then `_chars` = `new char[4]` (the `call` at 0x14), `_len` = 0,
+    # `_limit` = 3, `_chars[0]` = 0 (one byte). Stop: the `ret` (0x2e).
+    "act": dict(grp="Act", cn="AString::AString()", a=0x44c360, n=47, pos=True, stops=(0x2e,), calls=True,
+                tag="PLAN.md §M, M1", src="7-Zip's `AString::AString` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
     # 7-Zip 26.06's CPP/Common/CommandLineParser.cpp `CParser::CParser ()`: `_switches` (the vector at 0) empty and
     # `StopSwitchIndex` (at 0x18) -1, then the `AString` at 0x20 (the `call` at 0x34, to 0x44c360) and the `UString`
     # at 0x30 (the `call` at 0x3d, `UString::UString ()`). Stop: the `ret` (0x4c).
