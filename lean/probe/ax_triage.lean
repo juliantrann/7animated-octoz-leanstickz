@@ -1,9 +1,5 @@
-import FV7z.Nus.Holds
+import FV7z.Cpv.Holds
 open FV7z
-#print axioms FV7z.Nus.spAll
-#print axioms FV7z.Nus.vc_0t
-#print axioms FV7z.Nus.vc_89
-#print axioms FV7z.Nus.vc_128s
-#print axioms FV7z.Nus.loop1
-#print axioms FV7z.Nus.loop2
-#print axioms FV7z.Nus.nus_ok
+#print axioms FV7z.Cpv.spAll
+#print axioms FV7z.Cpv.vcAll
+#print axioms FV7z.Cpv.cpv_ok
