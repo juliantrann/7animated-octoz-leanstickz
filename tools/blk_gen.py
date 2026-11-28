@@ -21,7 +21,8 @@ import os, re, subprocess, sys, textwrap
 # name -> the function: its group (directory and namespace), C name, address and length in 7zzs 26.06; `pos`: the code
 # is taken where it lies in 7zzs (its instructions have operands `[rip + d]`), else wherever it lies; `stops`: offsets
 # the proof does not go past (exits, like the `ret`: the invariant there says they are not reached, or what holds);
-# `tag`, `src`: for the files' headers; `cut`: more cut points, to split the proof.
+# `tag`, `src`: for the files' headers; `cut`: more cut points, to split the proof; `split`: offsets inside
+# straight-line code made block leaders and cut points, to keep each piece short.
 FNS = {
     "dr3": dict(grp="Lzma", cn="LzmaDec_DecodeReal_3", a=0x6d4040, n=4719, pos=False, stops=(), tag="PLAN.md G2, pilot",
                 src="`C/LzmaDec.c`'s `LzmaDec_DecodeReal_3` (section `.text$LZMADECOPT`, the assembly of "
@@ -1328,6 +1329,14 @@ FNS = {
     "ndp": dict(grp="Ndp", cn="NWindows::NFile::NName::NormalizeDirPathPrefix", a=0x4568a0, n=102, pos=True,
                 stops=(0x1f, 0x41), calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `NormalizeDirPathPrefix` (`CPP/Windows/FileName.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/Windows/FileName.cpp `NormalizeDirPathPrefix (AString &dirPath)` (as `ndp` with 1-byte
+    # characters): nothing (the `ret`, 0x17) when `dirPath` is empty or ends in `/`; when `_len != _limit` the stores
+    # (`_chars[_len] = '/'`, `_chars[_len + 1] = 0`, `_len += 1`) and the `ret` (0x35); else (a frame of 24 bytes,
+    # `dirPath` saved at `rsp + 8`) `AString::Grow_1 ()` (the `call` at 0x49, to `ag1`), the length and the
+    # characters read again, the same stores (from 0x5c, split there) and the `ret` (0x70).
+    "nda": dict(grp="Nda", cn="NWindows::NFile::NName::NormalizeDirPathPrefix(AString&)", a=0x456820, n=113, pos=True,
+                stops=(0x17, 0x35, 0x70), split=(0x5c,), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `NormalizeDirPathPrefix` (`CPP/Windows/FileName.cpp`; `objdump -d`)"),
     # 7-Zip 26.06 CPP/Windows/FileDir.cpp `MyGetTempPath (AString &path)`: `path = "/tmp"` (the `call` at 0xf, to
     # `AString::operator= (const char *)`, the string at `0x6d944d`), `NFind::DoesDirExist (path._chars, true)` (0x1d),
     # then `path = "/tmp/"` (`0x6d9447`) when it answers true, else `path = "./"` (`0x6ee956`; the `call` at 0x39),
@@ -1486,6 +1495,60 @@ FNS = {
     "ifd": dict(grp="Ifd", cn="CInFileStream::~CInFileStream", a=0x5a4040, n=135, pos=True, stops=(0x86,), calls=True,
                 tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `CInFileStream::~CInFileStream` (`FileStreams.cpp`; `objdump -d`)"),
+    # glibc 2.31 math/s_nan.c `__nan (tagp)`: `__strtod_nan (tagp, NULL, 0)` as `xor edx, edx; xor esi, esi`, then a
+    # tail jump (8) to 0x461ed0
+    "nan": dict(grp="Nan", cn="__nan", a=0x4621f0, n=13, pos=True, stops=(0x8,), calls=True,
+                tag="PLAN.md §M, M1", src="glibc 2.31's `__nan` (`math/s_nan.c`; `objdump -d`)"),
+    # 7-Zip 26.06 `CArchiveExtractCallback::Release ()` (`MY_ADDREF_RELEASE`, `CPP/Common/MyCom.h`): as the `_ZThn24`
+    # thunk (`trl`) with `this` in `rdi` and the count at `rdi + 0x38`; the destructor's `call` (0x1e, `0x5b2340`), the
+    # sized `operator delete (p, 0x2c0)` (0x2b, `0x6014e0`); the `ret` at 0x3a with the count in `eax`
+    "rel": dict(grp="Rel", cn="CArchiveExtractCallback::Release", a=0x5b2840, n=59, pos=True, stops=(0x3a,),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `MY_ADDREF_RELEASE` `Release ()` (`CPP/Common/MyCom.h`; `objdump -d`)"),
+    # `AString::operator+=(const char *)`: length loop, `Grow` as a continuation, copy loop, `_len += n`
+    "apc": dict(grp="Apc", cn="AString::operator+=(const char *)", a=0x44c890, n=93, pos=True, stops=(0x5c,),
+                hand=(0x50,), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `AString::operator+= (const char *)` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/Windows/PropVariant.cpp `NCOM::AllocBstrFromAscii (s)`: NULL for `s` NULL (the `ret` at 0x62);
+    # `len = strlen (s)` (the `call` of the PLT entry at 0x12), `p = SysAllocStringLen (NULL, len)` (0x1e), NULL for
+    # `p` NULL (0x58); else the copy loop at 0x30 (`p[i] = (Byte)s[i]` for `i <= len`), the `ret` at 0x46.
+    "aba": dict(grp="Aba", cn="AllocBstrFromAscii", a=0x456e50, n=99, pos=True, stops=(0x46, 0x58, 0x62), calls=True,
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `NCOM::AllocBstrFromAscii` (`PropVariant.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/7zip/Common/FileStreams.cpp `CInFileStream::Seek (offset, seekOrigin, newPosition)`: the origin
+    # checked (0x0b), `File.seek` (the `call` at 0x17), on -1 `GetLastError_noZero_HRESULT` (0x38) and `File.GetPosition`
+    # (0x5a), the result stored. Stop: the `ret` (0x34); the bytes from 0x78 on are the landing pads.
+    "isk": dict(grp="Isk", cn="CInFileStream::Seek", a=0x5a3770, n=120, pos=True, stops=(0x34,), calls=True,
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `CInFileStream::Seek` (`FileStreams.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/7zip/Common/FileStreams.cpp `CInFileStream::Read (data, size, processedSize)`: `File.read_part`
+    # (the `call`s at 0x21 and 0x40, with and without `processedSize`), on -1 `GetLastError_noZero_HRESULT` (0x50) and
+    # `if (Callback) Callback->InFileStream_On_Error (CallbackRef, errorCode)` (`call qword [rax]` at 0x71). Stops: the
+    # `ret`s (0x36, 0x79); the bytes from 0xa0 on are the landing pads.
+    "ird": dict(grp="Ird", cn="CInFileStream::Read", a=0x5a35a0, n=160, pos=True, stops=(0x36, 0x79), calls=True,
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `CInFileStream::Read` (`FileStreams.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 `CDummyOutStream::Write (data, size, processedSize)` (`CPP/7zip/UI/Common/Extract.cpp`, the
+    # dummy stream of `7z t`): a frame of 24 bytes under `push rbp; push rbx` with the stack guard at `rsp + 8` and
+    # `realProcessed` (= `size`) at `rsp + 4`; when `_stream` (`[rdi + 0x10]`) is not NULL, `_stream->Write (data,
+    # size, &realProcessed)` (the `call [rax + 0x18]` at 0x35); `_size += realProcessed` (by hand: `add [rbx + 0x18],
+    # rcx`, 0x3e); `*processedSize = realProcessed` unless NULL (0x47); the guard's check. Stops: the `ret` (0x60),
+    # the call of `__stack_chk_fail` (0x61).
+    "dow": dict(grp="Dow", cn="CDummyOutStream::Write", a=0x4e2470, n=102, pos=True, fs=True, stops=(0x60, 0x61),
+                hand=(0x3e,), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CDummyOutStream::Write` (`CPP/7zip/UI/Common/Extract.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/7zip/Common/StreamUtils.cpp `WriteStream (stream, data, size)`: a frame of 16 bytes under five
+    # pushes with the stack guard at `rsp + 8` and `processedSize` at `rsp + 4`; the loop (head 0x49) of
+    # `stream->Write (data, min (size, 0x80000000), &processedSize)` (the `call [rax + 0x18]` at 0x5f), `data +=`,
+    # `size -=` the processed size; a result not 0 is returned, a processed size 0 gives `E_FAIL` (0x98), size 0
+    # gives 0 (0x90). Stops: the `ret` (0x8c), the call of `__stack_chk_fail` (0x9f).
+    "wst": dict(grp="Wst", cn="WriteStream", a=0x463420, n=164, pos=True, fs=True, stops=(0x8c, 0x9f), calls=True,
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `WriteStream` (`CPP/7zip/Common/StreamUtils.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/7zip/Common/StreamUtils.cpp `ReadStream (stream, data, processedSize)`: `size = *processedSize;
+    # *processedSize = 0;` then the loop (head 0x59) of `stream->Read (data, min (size, 0x80000000), &processed)`
+    # (the `call [rax + 0x18]` at 0x6f), `*processedSize += processed` (by hand: `add [r14], rdx`, 0x76), `data +=`,
+    # `size -=`; a result not 0 is returned, a processed size 0 or size 0 give 0 (0x83, 0xa8). Stops: the `ret`
+    # (0xa1), the call of `__stack_chk_fail` (0xac).
+    "rst": dict(grp="Rst", cn="ReadStream", a=0x4632b0, n=177, pos=True, fs=True, stops=(0xa1, 0xac), hand=(0x76,),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `ReadStream` (`CPP/7zip/Common/StreamUtils.cpp`; `objdump -d`)"),
     # 7-Zip's C/LzmaDec.c `LzmaDec_Allocate (p, props, propsSize, alloc)`: `LzmaProps_Decode (&propNew, props,
     # propsSize)` (call, 0x27, `Lpd`) into the frame, `LzmaDec_AllocateProbs2 (p, &propNew, alloc)` (0x67, `Lap`), the
     # dictionary size rounded up to 4 KiB (below 4 MiB) or 1 MiB (0x73..0xc1; 0x100: above 1 GiB), the old dictionary
@@ -1494,6 +1557,80 @@ FNS = {
     # the call of `__stack_chk_fail` (0x126).
     "lza": dict(grp="Lza", cn="LzmaDec_Allocate", a=0x42bf80, n=299, pos=True, fs=True, stops=(0x54, 0x126),
                 calls=True, tag="PLAN.md §M, M1", src="7-Zip 26.06's `LzmaDec_Allocate` (`C/LzmaDec.c`; `objdump -d`)"),
+    "uac": dict(grp="Uac", cn="UString::operator= (const char *)", a=0x44d8a0, n=184, pos=True, stops=(0x82,),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip's `UString::operator= (const char *)` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/Common/MyVector.h `CObjectVector<CXmlProp>::~CObjectVector ()` (`ApfsHandler.o`): the items
+    # from the last down (the loop, head 0x20, `rbx` = 8 * i); for an item not NULL its two `AString`s' chars freed
+    # unless NULL (`operator delete []`, the `call`s at 0x32, 0x40), the item freed (`operator delete (p, 0x20)`,
+    # 0x4d); then the array: `operator delete []` as a tail jump (0x69) unless NULL, else the `ret` (0x74).
+    "cxd": dict(grp="Cxd", cn="CObjectVector<CXmlProp>::~CObjectVector", a=0x5f63c0, n=117, pos=True,
+                stops=(0x69, 0x74), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CObjectVector<T>::~CObjectVector` (`CPP/Common/MyVector.h`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/Common/StdOutStream.cpp `CStdOutStream::Normalize_UString (s)`: in terminal mode (the byte at
+    # `this + 8`) each `wchar_t` of `s` below 0x20 (signed), in 0x7f..0x9f, 0x202a..0x202e or 0x2066..0x2069 made
+    # '_' (the loop at 0x59), else each '\n' made '_' (the loop at 0x80). Stops: the `ret`s (0x6f, 0x94).
+    "nus": dict(grp="Nus", cn="CStdOutStream::Normalize_UString", a=0x5a15e0, n=149, pos=True, stops=(0x6f, 0x94),
+                tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CStdOutStream::Normalize_UString` (`CPP/Common/StdOutStream.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/Windows/FileDir.cpp `GetFullPathAndSplit (path, resDirPrefix, resFileName)`: `res =
+    # GetFullPath (path, resDirPrefix)` (the `call` at 0x15), when false `resDirPrefix = path` (0x66, then back to
+    # 0x21); `i = resDirPrefix.ReverseFind_PathSepar ()` (0x24), `resFileName = resDirPrefix.Ptr (i + 1)` (0x36),
+    # `resDirPrefix.DeleteFrom (i + 1)` (the stores at 0x3b..0x4c). Stop: the `ret` (0x58).
+    "gfs": dict(grp="Gfs", cn="NWindows::NFile::NDir::GetFullPathAndSplit", a=0x454a50, n=109, pos=True,
+                stops=(0x58,), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `NDir::GetFullPathAndSplit` (`FileDir.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/7zip/UI/Common/ArchiveCommandLine.cpp `FindCharset (parser, keyIndex, byDefault, defaultVal)`
+    # (static): a frame of 56 bytes under four pushes with the stack guard at `rsp + 0x28` and a `UString` at
+    # `rsp + 0x10`; the switch not set (`jne 88` not taken) returns `defaultVal`; else the `UString` copy of the last
+    # post string (the `call` at 0x69), `StringToUInt32`-like parse into `[rsp + 0xc]` (0x7e) of a non-empty string,
+    # a number <= 0xffff returned; else `MyStringLower_Ascii` (0xa0) and the loop (head 0xe0) over the 3 or 5 names of
+    # the table at 0x77e400 (`StringsAreEqualNoCase_Ascii`, 0xe5), the match's code page; `delete []` of the chars
+    # unless NULL (0x105), the guard's check. Stops: the `ret` (0x52), the call of `__stack_chk_fail` (0x117), the
+    # `jmp` to the cold path that throws (no name matched, 0x11c).
+    "fch": dict(grp="Fch", cn="FindCharset", a=0x5a67b0, n=289, pos=True, fs=True, stops=(0x52, 0x117, 0x11c),
+                split=(0x25,), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `FindCharset` (`CPP/7zip/UI/Common/ArchiveCommandLine.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/7zip/UI/Common/DefaultName.cpp `GetDefaultName3 (name, ext, addSubExtension)` (as
+    # `GetDefaultName2`): a frame of 32 bytes under five pushes with the stack guard at `rsp + 24` and a `UString`
+    # at `rsp`; `name` ends with `.ext` (the `cmp` at 0x40, `StringsAreEqualNoCase_Ascii`-like call at 0xf7): `Left`
+    # (0x110) + `addSubExtension` (0x11e); else `ReverseFind_Dot` (0x55): a dot gives `Left` (0xc9) +
+    # `addSubExtension` (0xd7), none gives `name + addSubExtension` (0x71) or `name + '~'` (0xb3); `delete []` of
+    # the temporary (0xe5); `Trim`-like call on the result (0x79); the guard's check. Stops: the `ret` (0xa2), the
+    # call of `__stack_chk_fail` (0x125).
+    "dfn": dict(grp="Dfn", cn="GetDefaultName2", a=0x5bfdd0, n=298, pos=True, fs=True, stops=(0xa2, 0x125),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `GetDefaultName2` (`CPP/7zip/UI/Common/DefaultName.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/Windows/PropVariantConv.cpp `ConvertPropVariantToShortString (prop, dest)`: `*dest = 0`, then
+    # the `switch` on `prop.vt` (`jt`, 65 entries; above 0x40 the default): VT_EMPTY the `ret` (0x28); VT_BOOL "+" or
+    # "-" (0x48..0x5b); VT_BSTR "?" (0xa0..0xa8); the integers by tail jumps to `ConvertUInt32ToString` (0x64, 0x74,
+    # 0x83), `ConvertInt64ToString` (0x94, 0xb5, 0xd4) or `ConvertUInt64ToString` (0xe4); VT_FILETIME to
+    # `ConvertUtcFileTimeToString` (0xc6); else "?:" and `ConvertUInt64ToString (vt)` (0x40). Stops: the `ret`s and
+    # the tail jumps.
+    "cpv": dict(grp="Cpv", cn="ConvertPropVariantToShortString", a=0x457b10, n=233, pos=True,
+                stops=(0x28, 0x40, 0x5b, 0x64, 0x74, 0x83, 0x94, 0xa8, 0xb5, 0xc6, 0xd4, 0xe4),
+                calls=True, jt=(0x6d9570, 65), tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `ConvertPropVariantToShortString` (`CPP/Windows/PropVariantConv.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/7zip/Compress/LzmaDecoder.cpp `CDecoder::ReadFromInputStream (data, size, processedSize)`:
+    # `CreateInputBuffer ()` (the `call` at 0x1e), its result at `rsp + 0xc`; `*processedSize = 0` unless NULL;
+    # the loop (head 0x40) while `size` (`r15d`) is not 0: `_inPos == _inLim` gives `_inPos = _inLim = 0` and, the
+    # result 0, `_inStream->Read (_inBuf, _inBufSize, &_inLim)` (devirtualized: `call 0x57f9b0` at 0xa2 for the
+    # vtable entry `0x57fb60`, else `call rax` at 0xf8), `_inLim` 0 ends; the copy `memcpy (data, _inBuf + _inPos,
+    # cur)` (the `call` at 0xd3, `cur = min (size, _inLim - _inPos)`), `_inPos += cur`, `_inProcessed += cur`,
+    # `*processedSize += cur` (by hand: 0xd8, 0xdc, 0xe9). Stop: the `ret` (0x73).
+    "lri": dict(grp="Lri", cn="NCompress::NLzma::CDecoder::ReadFromInputStream", a=0x5801f0, n=256, pos=True,
+                stops=(0x73,), hand=(0xd8, 0xdc, 0xe9), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CDecoder::ReadFromInputStream` (`LzmaDecoder.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/7zip/UI/Common/ArchiveOpenCallback.cpp `COpenCallbackImp::Init2 (folderPrefix, fileName)`: a
+    # frame of 32 bytes under five pushes with the stack guard at `rsp + 24` and a `UString` at `rsp`; `FileNames`'
+    # `Clear` by a call (0x30); `FileNames_WasUsed`' items from the last down (the loop, head 0x48, `rbp` = 8 * i):
+    # an item not NULL has its chars freed unless NULL (`operator delete []`, 0x5d) and is freed (`operator delete
+    # (p, 0x10)`, 0x6a); the sizes and `PasswordWasAsked` zeroed; `_folderPrefix = folderPrefix` (0x9e), the path
+    # `_folderPrefix + fileName` (0xac), `_fileInfo.Find (path, true)` (0xc1), `delete []` of the path (0xd1); `false`
+    # gives `GetLastError_noZero_HRESULT ()` (0x100). Stops: the `ret` (0xf8), the call of `__stack_chk_fail` (0x107).
+    "oci": dict(grp="Oci", cn="COpenCallbackImp::Init2", a=0x5b32e0, n=268, pos=True, fs=True, stops=(0xf8, 0x107),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `COpenCallbackImp::Init2` (`CPP/7zip/UI/Common/ArchiveOpenCallback.cpp`; `objdump -d`)"),
 }
 
 
@@ -1710,6 +1847,8 @@ def effect(mn, sz, ol, pc=None):
         return terms, f"Op.ldsxb {f[0][1]} {mem(ops[1])}", "OpI.ldsxb"
     if mn == 'movsx' and ks == ('r', 'm') and sz == 64 and f[1][4] == 8:   # FV7z/Lemmas/BlkOps26.lean
         return terms, f"Op.ldsxq {f[0][1]} {mem(ops[1])}", "OpI.ldsxq"
+    if mn == 'movsx' and ks == ('r', 'm') and sz == 64 and f[1][4] == 16:   # FV7z/Lemmas/BlkOps27.lean
+        return terms, f"Op.ldsxw {f[0][1]} {mem(ops[1])}", "OpI.ldsxw"
     if mn == 'movsxd' and ks == ('r', 'm') and sz == 64 and f[1][4] == 32:
         return terms, f"Op.ldsx {f[0][1]} {mem(ops[1])}", "OpI.ldsx"
     if mn == 'mul' and ks == ('r',) and sz == 64:   # FV7z/Lemmas/BlkOps17.lean
@@ -1856,8 +1995,9 @@ def main():
                or i[0] in F.get("hand", ())}
               if F.get("calls") else {})
     stops |= set(callat)
-    # leaders: the entry, jump targets, what follows a jump
-    leaders = {E0} | stops | set(jtg) | {x for x in callat.values() if x < n}
+    # leaders: the entry, jump targets, what follows a jump (`split`: cut points inside straight-line code, to keep
+    # each piece short)
+    leaders = {E0} | stops | set(jtg) | {x for x in callat.values() if x < n} | set(F.get("split", ()))
     for k, i in enumerate(ins):
         if jr(i): pass   # its targets are the table's (`jt`), needed if the proof reaches it
         elif i[1].split()[0] in ('jcc', 'jmp'):
@@ -1987,7 +2127,7 @@ end FV7z.{grp}
                          f"theorem j{k}_0 : ∀ feat, Dec feat j{k} 0 (FV7z.mk {mnl(mn)} {sz} [{operand(ol[0])[1]}] {ln}) := "
                          "by dec_rfl\n")
     open(out + "/Pats.lean", "w").write(f"""import FV7z.Lemmas.Sp{"Fs" if FSM else ""}
-{"import FV7z.Lemmas.BlkOps26" + chr(10) if any("Op.ldsxq" in x for x in P) else ""}{"import FV7z.Lemmas.CmovLd" + chr(10) if any(k in x for x in P for k in ("Op.cmovld32", "Op.cmovld64")) else ""}{"import FV7z.Lemmas.RepCmpsb" + chr(10) if any("Op.sbb8" in x for x in P) else ""}{"import FV7z.Lemmas.TestMr" + chr(10) if any("Op.testmra" in x for x in P) else ""}{"import FV7z.Lemmas.CmpMi16" + chr(10) if any("Op.cmpmi 16" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps25" + chr(10) if any("Op.cmp 16" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps24" + chr(10) if any(k in x for x in P for k in ("Op.shr16", "Op.sxb16", "Op.imul3d")) else ""}{"import FV7z.Lemmas.BlkOps23" + chr(10) if any(k in x for x in P for k in ("Op.or8", "Op.not64")) else ""}{"import FV7z.Lemmas.BlkOps22" + chr(10) if any("Op.testmi 32" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps20" + chr(10) if any(k in x for x in P for k in ("Op.not32", "Op.cqo", "Op.imul3", "Op.andh", "Op.testh", "Op.cmpm 8")) else ""}{"import FV7z.Lemmas.BlkOps19" + chr(10) if any("Op.vld 0" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps18" + chr(10) if any("Op.zxr16" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps17" + chr(10) if any("Op.mul64" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps16" + chr(10) if any("Op.bt64" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps15" + chr(10) if any("Op.sxr" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps14" + chr(10) if any(k in x for x in P for k in ("Op.zxr", "Op.test 16", "Op.cmpmif fb 8")) else ""}{"import FV7z.Lemmas.BlkOps13" + chr(10) if any("Op.cmpmif" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps12" + chr(10) if any(k in x for x in P for k in ("Op.cmpmr", "Op.testmi")) else ""}{"import FV7z.Lemmas.BlkOps11" + chr(10) if any(k in x for x in P for k in ("Op.rol64", "Op.ror64")) else ""}{"import FV7z.Lemmas.BlkOps10" + chr(10) if any("Op.cmpm 16" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps9" + chr(10) if any("Op.cmpma" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps8" + chr(10) if any(k in x for x in P for k in ("Op.vla", "Op.vsa", "Op.addma", "Op.cmpmia 8", "Op.stia 8")) else ""}{"import FV7z.Lemmas.BlkOps7" + chr(10) if any(k in x for x in P for k in ("Op.vl", "Op.vs", "Op.cdqe")) else ""}{"import FV7z.Lemmas.BlkOps6" + chr(10) if any(k in x for x in P for k in ("Op.stf8", "Op.stfi", "Op.xormf")) else ""}{("import FV7z.Lemmas.BlkOps5" if any("Op.ldsxb" in x for x in P) else
+{"import FV7z.Lemmas.BlkOps27" + chr(10) if any("Op.ldsxw" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps26" + chr(10) if any("Op.ldsxq" in x for x in P) else ""}{"import FV7z.Lemmas.CmovLd" + chr(10) if any(k in x for x in P for k in ("Op.cmovld32", "Op.cmovld64")) else ""}{"import FV7z.Lemmas.RepCmpsb" + chr(10) if any("Op.sbb8" in x for x in P) else ""}{"import FV7z.Lemmas.TestMr" + chr(10) if any("Op.testmra" in x for x in P) else ""}{"import FV7z.Lemmas.CmpMi16" + chr(10) if any("Op.cmpmi 16" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps25" + chr(10) if any("Op.cmp 16" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps24" + chr(10) if any(k in x for x in P for k in ("Op.shr16", "Op.sxb16", "Op.imul3d")) else ""}{"import FV7z.Lemmas.BlkOps23" + chr(10) if any(k in x for x in P for k in ("Op.or8", "Op.not64")) else ""}{"import FV7z.Lemmas.BlkOps22" + chr(10) if any("Op.testmi 32" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps20" + chr(10) if any(k in x for x in P for k in ("Op.not32", "Op.cqo", "Op.imul3", "Op.andh", "Op.testh", "Op.cmpm 8")) else ""}{"import FV7z.Lemmas.BlkOps19" + chr(10) if any("Op.vld 0" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps18" + chr(10) if any("Op.zxr16" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps17" + chr(10) if any("Op.mul64" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps16" + chr(10) if any("Op.bt64" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps15" + chr(10) if any("Op.sxr" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps14" + chr(10) if any(k in x for x in P for k in ("Op.zxr", "Op.test 16", "Op.cmpmif fb 8")) else ""}{"import FV7z.Lemmas.BlkOps13" + chr(10) if any("Op.cmpmif" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps12" + chr(10) if any(k in x for x in P for k in ("Op.cmpmr", "Op.testmi")) else ""}{"import FV7z.Lemmas.BlkOps11" + chr(10) if any(k in x for x in P for k in ("Op.rol64", "Op.ror64")) else ""}{"import FV7z.Lemmas.BlkOps10" + chr(10) if any("Op.cmpm 16" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps9" + chr(10) if any("Op.cmpma" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps8" + chr(10) if any(k in x for x in P for k in ("Op.vla", "Op.vsa", "Op.addma", "Op.cmpmia 8", "Op.stia 8")) else ""}{"import FV7z.Lemmas.BlkOps7" + chr(10) if any(k in x for x in P for k in ("Op.vl", "Op.vs", "Op.cdqe")) else ""}{"import FV7z.Lemmas.BlkOps6" + chr(10) if any(k in x for x in P for k in ("Op.stf8", "Op.stfi", "Op.xormf")) else ""}{("import FV7z.Lemmas.BlkOps5" if any("Op.ldsxb" in x for x in P) else
   "import FV7z.Lemmas.BlkOps4" if any("Op.imul64" in x for x in P) else
   "import FV7z.Lemmas.BlkOps3" if any(k in x for x in P for k in ("Op.shl64", "Op.shr64", "Op.sar64")) else
   "import FV7z.Lemmas.BlkOps2") + chr(10) if pos else ""}/-!
@@ -2109,7 +2249,7 @@ kernel's memory for the evaluations adds up within a file. Generated by `tools/b
         for s in succs(l): npred[s] = npred.get(s, 0) + 1
     cuts = sorted({E0} | {heads[h][1] for h in heads if h in blocks}
                   | {l for l in nodes if l not in heads and npred.get(l, 0) >= 2} | (set(jtg) & set(nodes))
-                  | ({callat[c] for c in called} & set(nodes)) | (set(F.get("cut", ())) & set(nodes)))
+                  | ({callat[c] for c in called} & set(nodes)) | (set(F.get("cut", ()) + F.get("split", ())) & set(nodes)))
     cutset = set(cuts)
     C, done, size = [], set(), {}
 

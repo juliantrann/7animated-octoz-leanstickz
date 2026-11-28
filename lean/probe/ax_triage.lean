@@ -1,5 +1,3 @@
-import FV7z.Lza.Run
+import FV7z.Nda.Holds
 open FV7z
-#print axioms FV7z.Lza.lza_ok
-#print axioms FV7z.Lza.vc_173
-#print axioms FV7z.Lza.eaG_r5
+#print axioms FV7z.Nda.nda_ok
