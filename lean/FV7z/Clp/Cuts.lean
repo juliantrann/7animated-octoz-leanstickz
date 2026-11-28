@@ -213,7 +213,8 @@ theorem c_492 (prof : Profile) : Sp prof clp clp_at 492 W_492 :=
   Sp.jmp_then (spj_492 prof) (Sp.skip 352)
 
 /-- The cut points. -/
-def cuts : List Nat := [0, 66, 68, 76, 91, 106, 130, 202, 245, 284, 309, 314, 334, 339, 352, 367, 380, 395, 408, 424, 437, 453, 469, 485, 492]
+def cuts : List Nat := [0, 66, 68, 76, 91, 106, 130, 202, 245, 284, 309, 314, 334, 339, 352, 367, 380, 395, 408,
+  424, 437, 453, 469, 485, 492]
 
 /-- What the code from a cut point needs for `Q` at the next ones. -/
 def Wt (ℓ : Nat) : Wpt :=
