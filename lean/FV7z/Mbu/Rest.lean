@@ -42,15 +42,15 @@ abbrev Spr (c : BitVec 32) : Prop := (c - 65536#32).toNat ≤ 1048575
 theorem spT {c : BitVec 32} (h : Spr c) :
     (decide ((c - 65536#32).toNat < 1048575) || decide (c - 65536#32 = 1048575#32)) = true := by
   rcases Nat.lt_or_eq_of_le h with h | h
-  · simp [h]
+  · rw [decide_eq_true h, Bool.true_or]
   · have e : c - 65536#32 = 1048575#32 := BitVec.eq_of_toNat_eq h
-    simp [e]
+    rw [decide_eq_true e, Bool.or_true]
 
 theorem spF {c : BitVec 32} (h : ¬ Spr c) :
     (decide ((c - 65536#32).toNat < 1048575) || decide (c - 65536#32 = 1048575#32)) = false := by
   have h1 : ¬ (c - 65536#32).toNat < 1048575 := fun h' => h (Nat.le_of_lt h')
   have h2 : ¬ c - 65536#32 = 1048575#32 := fun e => h (show (c - 65536#32).toNat ≤ 1048575 by rw [e]; decide)
-  simp [h1, h2]
+  rw [decide_eq_false h1, decide_eq_false h2, Bool.or_false]
 
 /-- The bytes at 400 on the fallback path: the bytes at `s` up to the first 0 (`m` of them) stored as 4 each at `d`,
 4 bytes 0 after them (`Uca.Mf`), `dest._len` (at `p + 8`) = `m`. -/
@@ -117,7 +117,7 @@ theorem vc_121m {Q : Post} {s : Addr} (hm : g.rax = m1) (hs : rdq(V, g.r12) = s)
   have e1 : decide (m1 = 18446744073709551615#64) = true := decide_eq_true rfl
   by_cases hz : V s = 0#8
   · have e : (V s == 0) = true := beq_iff_eq.2 hz
-    wpx [W_121, W_344, W_357, o5, o19, o20, e1, hs, e, Tun.rd1, Mys.sw8b, BitVec.and_self, Ucw.xz,
+    wpx [W_121, W_344, W_357, o5, o19, o20, e1, hs, e, Tun.rd1, Mys.sw8b, Mys.sw8a, BitVec.and_self, Ucw.xz,
       Bool.not_true, Bool.not_false, Bool.false_eq_true, Bool.true_eq_false, false_implies, true_implies,
       implies_true]
     all_goals repeat' (first
@@ -127,7 +127,7 @@ theorem vc_121m {Q : Post} {s : Addr} (hm : g.rax = m1) (hs : rdq(V, g.r12) = s)
       | apply And.intro
       | intro _)
   · have e : (V s == 0) = false := beq_eq_false_iff_ne.2 hz
-    wpx [W_121, W_344, W_357, o5, o19, o20, e1, hs, e, Tun.rd1, Mys.sw8b, BitVec.and_self, Ucw.xz,
+    wpx [W_121, W_344, W_357, o5, o19, o20, e1, hs, e, Tun.rd1, Mys.sw8b, Mys.sw8a, BitVec.and_self, Ucw.xz,
       Bool.not_true, Bool.not_false, Bool.false_eq_true, Bool.true_eq_false, false_implies, true_implies,
       implies_true]
     all_goals repeat' (first
@@ -158,7 +158,7 @@ theorem vc_368n {j : Nat} {b : Byte} (hj : j + 1 < 2 ^ 32)
   subst ha hc hd
   have e : (Vst V (rbx + BitVec.ofNat 64 j * 4#64) (toBytesLE (BitVec.setWidth 32 b) 4)
       (rsi + BitVec.ofNat 64 (j + 1)) == 0) = false := beq_eq_false_iff_ne.2 hn
-  wpx [W_368, W_387, o21, o22, Op.zxr, Mys.sw8b, Tun.rd1, BitVec.and_self, Ffp.inc32 hj, Ffp.sw32 hj, e,
+  wpx [W_368, W_387, o21, o22, Op.zxr, Mys.sw8b, Mys.sw8a, Tun.rd1, BitVec.and_self, Ffp.inc32 hj, Ffp.sw32 hj, e,
     Bool.not_true, Bool.not_false, Bool.false_eq_true, Bool.true_eq_false, false_implies, true_implies,
     implies_true]
   all_goals repeat' (first | exact rfl | with_reducible assumption | exact trivial | apply And.intro | intro _)
@@ -184,7 +184,7 @@ theorem vc_368z {j : Nat} {b : Byte} (hj : j + 1 < 2 ^ 32)
   subst ha hc hd
   have e : (Vst V (rbx + BitVec.ofNat 64 j * 4#64) (toBytesLE (BitVec.setWidth 32 b) 4)
       (rsi + BitVec.ofNat 64 (j + 1)) == 0) = true := beq_iff_eq.2 hz
-  wpx [W_368, W_387, o21, o22, Op.zxr, Mys.sw8b, Tun.rd1, BitVec.and_self, Ffp.inc32 hj, Ffp.sw32 hj, e,
+  wpx [W_368, W_387, o21, o22, Op.zxr, Mys.sw8b, Mys.sw8a, Tun.rd1, BitVec.and_self, Ffp.inc32 hj, Ffp.sw32 hj, e,
     Bool.not_true, Bool.not_false, Bool.false_eq_true, Bool.true_eq_false, false_implies, true_implies,
     implies_true]
   all_goals repeat' (first | exact rfl | with_reducible assumption | exact trivial | apply And.intro | intro _)
@@ -302,13 +302,13 @@ theorem floop {fb : Addr} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBas
     {W : Addr → Byte} {s d : Addr} {m : Nat} {G : Gprs} (hm : m < 2 ^ 32)
     (fr : ∀ i ≤ m, Foot F.data (Addr.add s i)) (fw : ∀ i < 4 * m, Foot Wl (Addr.add d i))
     (hb : ∀ i < m, Uca.Cw W s d i (Addr.add s i) ≠ 0#8) (h0 : Uca.Cw W s d m (Addr.add s m) = 0#8)
-    (hGs : G.rsi = s) (hGd : G.rbx = d)
     (k : ∀ (Z : State) (t' : Nat), KeptW Wl s₀ Z → Agree F Z.proc.mm.mem (Uca.Cw W s d m) →
       Z.cpu.rip = mbu_at.add 391 →
       Z.cpu.gpr = { G with
           rax := BitVec.setWidth 64 (BitVec.setWidth 32 (Uca.Cw W s d m (Addr.add s m))),
           rcx := BitVec.ofNat 64 m,
           rdx := BitVec.ofNat 64 m,
+          rsi := s,
           rbx := Addr.add d (4 * m) } →
       GoG prof L o gev gP gE Z t') :
     ∀ (r j : Nat), j + 1 + r = m → ∀ (X : State) (t : Nat), KeptW Wl s₀ X →
@@ -316,15 +316,17 @@ theorem floop {fb : Addr} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBas
       X.cpu.gpr = { G with
           rax := BitVec.setWidth 64 (BitVec.setWidth 32 (Uca.Cw W s d j (Addr.add s j))),
           rcx := BitVec.ofNat 64 j,
-          rdx := BitVec.ofNat 64 j } →
+          rdx := BitVec.ofNat 64 j,
+          rsi := s,
+          rbx := d } →
       GoG prof L o gev gP gE X t := by
   intro r
   induction r with
   | zero =>
     intro j hj X t hK hA hrip hg
     obtain rfl : m = j + 1 := by omega
-    have hx : X.cpu.gpr.rbx = d := by rw [hg]; exact hGd
-    have hs' : X.cpu.gpr.rsi = s := by rw [hg]; exact hGs
+    have hx : X.cpu.gpr.rbx = d := by rw [hg]; try rfl
+    have hs' : X.cpu.gpr.rsi = s := by rw [hg]; try rfl
     have hw4 : ∀ i < 4, Foot Wl (Addr.add (X.cpu.gpr.rbx + BitVec.ofNat 64 j * 4#64) i) := fun i hi => by
       rw [hx, idx4m, addr_add_add]
       exact fw _ (by omega)
@@ -338,7 +340,8 @@ theorem floop {fb : Addr} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBas
       rw [hx, hs', idx4m]
       exact h0
     refine (c_368 prof fb).run c hfs hin _ hK hA hrip
-      (vc_368z (j := j) (b := Uca.Cw W s d j (Addr.add s j)) hm (by rw [hg]) (by rw [hg]) (by rw [hg]) hw4 hr1 hz) ?_
+      (vc_368z (j := j) (b := Uca.Cw W s d j (Addr.add s j)) hm (by rw [hg]; try rfl) (by rw [hg]; try rfl)
+        (by rw [hg]; try rfl) hw4 hr1 hz) ?_
     rintro j' g fl V₁ ⟨rfl, hV, hg'⟩ Y t₁ hKY hAY hrY hgY -
     subst hV
     rw [hx, idx4m] at hAY
@@ -347,8 +350,8 @@ theorem floop {fb : Addr} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBas
     try rfl
   | succ r ih =>
     intro j hj X t hK hA hrip hg
-    have hx : X.cpu.gpr.rbx = d := by rw [hg]; exact hGd
-    have hs' : X.cpu.gpr.rsi = s := by rw [hg]; exact hGs
+    have hx : X.cpu.gpr.rbx = d := by rw [hg]; try rfl
+    have hs' : X.cpu.gpr.rsi = s := by rw [hg]; try rfl
     have hw4 : ∀ i < 4, Foot Wl (Addr.add (X.cpu.gpr.rbx + BitVec.ofNat 64 j * 4#64) i) := fun i hi => by
       rw [hx, idx4m, addr_add_add]
       exact fw _ (by omega)
@@ -362,7 +365,8 @@ theorem floop {fb : Addr} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBas
       rw [hx, hs', idx4m]
       exact hb (j + 1) (by omega)
     refine (c_368 prof fb).run c hfs hin _ hK hA hrip
-      (vc_368n (j := j) (b := Uca.Cw W s d j (Addr.add s j)) (by omega) (by rw [hg]) (by rw [hg]) (by rw [hg])
+      (vc_368n (j := j) (b := Uca.Cw W s d j (Addr.add s j)) (by omega) (by rw [hg]; try rfl) (by rw [hg]; try rfl)
+        (by rw [hg]; try rfl)
         hw4 hr1 hn) ?_
     rintro j' g fl V₁ ⟨rfl, hV, hg'⟩ Y t₁ hKY hAY hrY hgY -
     subst hV
@@ -406,13 +410,13 @@ theorem sloop {fb : Addr} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBas
     have hsi : X.cpu.gpr.rsi + 4#64 = Addr.add p (4 * (k + 1)) := by rw [hg]; exact nxt4 p k
     have hbx : X.cpu.gpr.rbx + 1#64 = BitVec.ofNat 64 (k + 1) := by rw [hg]; exact (BitVec.ofNat_add k 1).symm
     rcases Classical.em (Spr (rdd(U, Addr.add p (4 * k)))) with hsp | hsp
-    · refine (c_195 prof fb).run c hfs hin _ hK hA hrip (vc_195s (by rw [hg]) hsp) ?_
+    · refine (c_195 prof fb).run c hfs hin _ hK hA hrip (vc_195s (by rw [hg]; try rfl) hsp) ?_
       rintro j' g fl V₁ ⟨rfl, rfl, rfl⟩ Y t₁ hKY hAY hrY hgY -
       refine kS k (by omega) hsp Y t₁ hKY hAY hrY ?_
       rw [hgY, hg]
       try rfl
     · refine (c_195 prof fb).run c hfs hin _ hK hA hrip
-        (vc_195z (by rw [hg]) hsp (by rw [hsi]; exact fr (k + 1) (Nat.le_refl _)) (by rw [hsi]; exact h0)) ?_
+        (vc_195z (by rw [hg]; try rfl) hsp (by rw [hsi]; exact fr (k + 1) (Nat.le_refl _)) (by rw [hsi]; exact h0)) ?_
       rintro j' g fl V₁ ⟨rfl, rfl, rfl⟩ Y t₁ hKY hAY hrY hgY -
       refine kE Y t₁ hKY hAY hrY ?_
       rw [hgY, hsi, hbx, hg]
@@ -422,13 +426,14 @@ theorem sloop {fb : Addr} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBas
     have hsi : X.cpu.gpr.rsi + 4#64 = Addr.add p (4 * (k + 1)) := by rw [hg]; exact nxt4 p k
     have hbx : X.cpu.gpr.rbx + 1#64 = BitVec.ofNat 64 (k + 1) := by rw [hg]; exact (BitVec.ofNat_add k 1).symm
     rcases Classical.em (Spr (rdd(U, Addr.add p (4 * k)))) with hsp | hsp
-    · refine (c_195 prof fb).run c hfs hin _ hK hA hrip (vc_195s (by rw [hg]) hsp) ?_
+    · refine (c_195 prof fb).run c hfs hin _ hK hA hrip (vc_195s (by rw [hg]; try rfl) hsp) ?_
       rintro j' g fl V₁ ⟨rfl, rfl, rfl⟩ Y t₁ hKY hAY hrY hgY -
       refine kS k (by omega) hsp Y t₁ hKY hAY hrY ?_
       rw [hgY, hg]
       try rfl
     · refine (c_195 prof fb).run c hfs hin _ hK hA hrip
-        (vc_195n (by rw [hg]) hsp (by rw [hsi]; exact fr (k + 1) (by omega)) (by rw [hsi]; exact hb (k + 1) (by omega)))
+        (vc_195n (by rw [hg]; try rfl) hsp (by rw [hsi]; exact fr (k + 1) (by omega))
+          (by rw [hsi]; exact hb (k + 1) (by omega)))
         ?_
       rintro j' g fl V₁ ⟨rfl, rfl, rfl⟩ Y t₁ hKY hAY hrY hgY -
       refine ih (k + 1) (by omega) Y t₁ hKY hAY hrY ?_
@@ -483,7 +488,7 @@ theorem mbu_fb {fb S s d p : Addr} {g₀ : Gprs} {W : State} {m : Nat} (c : Seg 
       hK hA hrip (vc_121m hax hsrc fp hs0 (fun _ _ => ⟨rfl, rfl, rfl⟩) fun h' => absurd hz h') ?_
     rintro j' g fl V₁ ⟨rfl, rfl, rfl⟩ Y t₁ hKY hAY hrY hgY -
     exact k391 Y t₁ hKY hAY hrY (by rw [hgY, z4]; exact hd) (by rw [hgY]; try rfl) (by rw [hgY]; exact hp)
-      (by rw [hgY]; exact hs) (by rw [hgY]) (by rw [hgY])
+      (by rw [hgY]; exact hs) (by rw [hgY]; try rfl) (by rw [hgY]; try rfl)
   | succ j =>
     have hn : V s ≠ 0#8 := by
       have h' := hb 0 (Nat.succ_pos j)
@@ -494,12 +499,14 @@ theorem mbu_fb {fb S s d p : Addr} {g₀ : Gprs} {W : State} {m : Nat} (c : Seg 
           rax := BitVec.setWidth 64 (BitVec.setWidth 32 (V s)), rcx := 0#64, rdx := 0#64, rsi := s })
       hK hA hrip (vc_121m hax hsrc fp hs0 (fun h' => absurd h' hn) fun _ _ => ⟨rfl, rfl, rfl⟩) ?_
     rintro j' g fl V₁ ⟨rfl, rfl, rfl⟩ Y t₁ hKY hAY hrY hgY -
-    refine floop (G := { W.cpu.gpr with rsi := s }) c hfs hin hm fr (fun i hi => fw i (by omega)) hb h0 rfl hd
+    refine floop (G := W.cpu.gpr) c hfs hin hm fr (fun i hi => fw i (by omega)) hb h0
       ?_ j 0 (by omega) Y t₁ hKY hAY hrY ?_
     · intro Z t' hKZ hAZ hrZ hgZ
-      exact k391 Z t' hKZ hAZ hrZ (by rw [hgZ]) (by rw [hgZ]) (by rw [hgZ]; exact hp) (by rw [hgZ]; exact hs)
-        (by rw [hgZ]) (by rw [hgZ])
+      exact k391 Z t' hKZ hAZ hrZ (by rw [hgZ]; try rfl) (by rw [hgZ]; try rfl) (by rw [hgZ]; exact hp)
+        (by rw [hgZ]; exact hs)
+        (by rw [hgZ]; try rfl) (by rw [hgZ]; try rfl)
     · rw [hgY, addr_add_zero]
+      subst hd
       try rfl
 
 /-- From 121 for `rax` not -1 (`d'` = `dest._chars` read back): to the return address with the bytes `VN` (`k`)
@@ -525,7 +532,7 @@ theorem mbu_ns {fb S d' : Addr} {g₀ : Gprs} {W : State} {m : Nat} (c : Seg pro
           rax := BitVec.setWidth 64 (rdd(VN V W.cpu.gpr.rbp d' W.cpu.gpr.rax, Addr.add d' (4 * k)) - 65536#32),
           rbx := BitVec.ofNat 64 k,
           rsi := Addr.add d' (4 * k),
-          rdi := gq S,
+          rdi := W.cpu.gpr.rsp,
           r12 := d' } →
       GoG prof L o gev gP gE Z t') :
     GoG prof L o gev gP gE W t := by
@@ -547,7 +554,7 @@ theorem mbu_ns {fb S d' : Addr} {g₀ : Gprs} {W : State} {m : Nat} (c : Seg pro
         g' = { W.cpu.gpr with rax := BitVec.setWidth 64 (rdd(VN V W.cpu.gpr.rbp d' W.cpu.gpr.rax, d')), r12 := d' })
       hK hA hrip (vc_121n hax hd' fp f8 fe f0 (fun _ _ => ⟨rfl, rfl, rfl⟩) fun h' => absurd hz h') ?_
     rintro j' g fl V₁ ⟨rfl, rfl, rfl⟩ Y t₁ hKY hAY hrY hgY -
-    exact kT Y t₁ hKY hAY hrY (by rw [hgY]; exact hs) (by rw [hgY]) (by rw [hgY])
+    exact kT Y t₁ hKY hAY hrY (by rw [hgY]; exact hs) (by rw [hgY]; try rfl) (by rw [hgY]; try rfl)
   have hm0 : 0 < m := by
     rcases Nat.eq_zero_or_pos m with h' | h'
     · subst h'
@@ -562,10 +569,10 @@ theorem mbu_ns {fb S d' : Addr} {g₀ : Gprs} {W : State} {m : Nat} (c : Seg pro
   refine sloop (G := { W.cpu.gpr with r12 := d' }) c hfs hin fr hb h0 ?_ ?_ (m - 1) 0 (by omega) Y t₁ hKY hAY hrY ?_
   · intro k' hk hsp Z t' hKZ hAZ hrZ hgZ
     refine kS k' hk hsp Z t' hKZ hAZ hrZ ?_
-    rw [hgZ, hs]
+    rw [hgZ]
     try rfl
   · intro Z t' hKZ hAZ hrZ hgZ
-    exact kT Z t' hKZ hAZ hrZ (by rw [hgZ]; exact hs) (by rw [hgZ]) (by rw [hgZ])
+    exact kT Z t' hKZ hAZ hrZ (by rw [hgZ]; exact hs) (by rw [hgZ]; try rfl) (by rw [hgZ]; try rfl)
   · rw [hgY, z4]
     try rfl
 
@@ -598,7 +605,7 @@ theorem mbu_121 {fb S : Addr} {g₀ : Gprs} {W : State} (c : Seg prof F Wl L s�
             Addr.add (rdq(V, W.cpu.gpr.rbp)) (4 * k)) - 65536#32),
           rbx := BitVec.ofNat 64 k,
           rsi := Addr.add (rdq(V, W.cpu.gpr.rbp)) (4 * k),
-          rdi := gq S,
+          rdi := W.cpu.gpr.rsp,
           r12 := rdq(V, W.cpu.gpr.rbp) } →
       GoG prof L o gev gP gE Z t') :
     GoG prof L o gev gP gE W t := by
@@ -705,7 +712,7 @@ theorem mbu_ok {fb : Addr} {cn d : BitVec 64} {n : BitVec 32} {P PR PM : State �
             Addr.add (rdq(V₁, W.cpu.gpr.rbp)) (4 * k)) - 65536#32),
           rbx := BitVec.ofNat 64 k,
           rsi := Addr.add (rdq(V₁, W.cpu.gpr.rbp)) (4 * k),
-          rdi := gq X.cpu.gpr.rsp,
+          rdi := W.cpu.gpr.rsp,
           r12 := rdq(V₁, W.cpu.gpr.rbp) } →
       GoG prof L o gev gP gE Z t') :
     GoG prof L o gev gP gE X t := by
