@@ -257,7 +257,7 @@ theorem vc_70 {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post}
     W_70 fb F Wl Q g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at f15 h84 h140 ⊢
-  wpx [W_70, W_77, W_128, o1, o2, o5]
+  wpx [W_70, W_77, W_128, o1, o2, o5, Op.cmpmi]
   all_goals repeat' (first
     | refine h84 _ ?_ _
     | refine h140 _ ?_ ?_ ?_ ?_ _
