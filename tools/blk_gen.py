@@ -228,6 +228,16 @@ FNS = {
     # 7-Zip's CPP/7zip/UI/Common/ArchiveExtractCallback.cpp `CFiTimesCAM::SetDirTime_to_FS (path)`: each of the
     # three times (`this`, `this + 16`, `this + 32`) or NULL by its `*_Defined` flag (`this + 48..50`), then a tail
     # jump (0x2f) to `NDir::SetDirTime` (0x4556e0). Stop: the jump.
+    # 7-Zip's CPP/Windows/PropVariantConv.cpp `ConvertUtcFileTimeToString (ft, s, level)`: a tail jump (14) to
+    # `ConvertUtcFileTimeToString2 (ft, 0, s, level, 0)` (0x4576f0).
+    "uts": dict(grp="Uts", cn="ConvertUtcFileTimeToString", a=0x457a10, n=19, pos=True, stops=(14,),
+                tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `ConvertUtcFileTimeToString` (`CPP/Windows/PropVariantConv.cpp`; `objdump -d`)"),
+    # 7-Zip's CPP/Windows/PropVariant.cpp `CPropVariant::Clear ()`: `vt` = VT_EMPTY: `wReserved1` = 0 and 0 (the
+    # `ret`, 18); else a tail jump (24) to `PropVariant_Clear (this)` (0x456fb0).
+    "pvc": dict(grp="Pvc", cn="NWindows::NCOM::CPropVariant::Clear", a=0x457020, n=29, pos=True, stops=(18, 24),
+                tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CPropVariant::Clear` (`CPP/Windows/PropVariant.cpp`; `objdump -d`)"),
     "sdf": dict(grp="Sdf", cn="CFiTimesCAM::SetDirTime_to_FS", a=0x5ad590, n=52, pos=True, stops=(0x2f,),
                 tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `CFiTimesCAM::SetDirTime_to_FS` (`ArchiveExtractCallback.cpp`; `objdump -d`)"),
