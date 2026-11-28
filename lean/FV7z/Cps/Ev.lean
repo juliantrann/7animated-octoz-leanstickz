@@ -108,10 +108,10 @@ abbrev Ro (I : (Addr → Byte) → Prop) (Ok : Addr → Nat → Prop) (r : Addr)
   Ok r 1 ∧ Ok (r + 1#64) 1 ∧ Ok (r + 4#64) 4 ∧ Ok (r + 8#64) 8 ∧ Ok (r + 16#64) 4 ∧ Ok (r + 20#64) 4 ∧
     ∀ W, I W → Ok (rdq(W, r + 8#64) + BitVec.setWidth 64 rdd(W, r + 16#64) * 8#64) 8
 
-/-- A key at `p` of length `l`: below `2^32`, its bytes and the NUL readable, nonzero before the NUL. -/
+/-- A key at `p` with its NUL at `l`: below `2^32`, its bytes and the NUL readable. -/
 abbrev Ky (F : Footprint) (I : (Addr → Byte) → Prop) (p : Addr) (l : Nat) : Prop :=
   l < 4294967296 ∧ (∀ j ≤ l, ∀ i < 1, Foot F.data (Addr.add (p + BitVec.ofNat 64 j) i)) ∧
-    ∀ W, I W → (∀ j < l, W (p + BitVec.ofNat 64 j) ≠ 0#8) ∧ W (p + BitVec.ofNat 64 l) = 0#8
+    ∀ W, I W → W (p + BitVec.ofNat 64 l) = 0#8
 
 /-- The switch loop at the form `k`: `rsp`, `r14` = `s`, `ecx` = `numSwitches`, `r13` = the form, `r12` = `k`. -/
 abbrev Lp (S : Addr) (g0 : Gprs) (k : Nat) (g : Gprs) : Prop :=
@@ -166,7 +166,7 @@ structure Ev (prof : Profile) (F : Footprint) (Wl : List Rgn) (L : List (Addr ×
   f16 : ∀ i < 8, Foot F.data (Addr.add (aR S + 16#64) i)
   f24 : ∀ i < 8, Foot F.data (Addr.add (aR S + 24#64) i)
   f32 : ∀ i < 8, Foot F.data (Addr.add (aR S + 32#64) i)
-  f56 : ∀ i < 8, Foot F.data (Addr.add (aR S + 56#64) i)
+  w56 : ∀ i < 8, Foot Wl (Addr.add (aR S + 56#64) i)
   fcl : ∀ i < 8, Foot F.data (Addr.add (fb + 40#64) i)
   fb48 : ∀ i < 8, Foot F.data (Addr.add (S - 8 - 8 - 8 - 8 - 8 - 8) i)
   fb40 : ∀ i < 8, Foot F.data (Addr.add (S - 8 - 8 - 8 - 8 - 8) i)
@@ -180,7 +180,7 @@ structure Ev (prof : Profile) (F : Footprint) (Wl : List Rgn) (L : List (Addr ×
   fs8 : ∀ i < 4, Foot F.data (Addr.add (g0.rsi + 8#64) i)
   fth : ∀ i < 8, Foot F.data (Addr.add g0.rdi i)
   fch0 : ln ≠ 0 → ∀ i < 4, Foot F.data (Addr.add ch i)
-  fch : ∀ p : BitVec 32, p.toNat < ln.toNat → ∀ i < 4, Foot F.data (Addr.add (ch + BitVec.setWidth 64 p * 4#64) i)
+  fch : ∀ p : BitVec 32, ln - p = 1#32 → ∀ i < 4, Foot F.data (Addr.add (ch + BitVec.setWidth 64 p * 4#64) i)
   ffo : ∀ k < nS g0, Fo F (e24 g0.rdx k)
   hky : ∀ k < nS g0, ∃ l, Ky F I (kp k) l
   hro : ∀ k < nS g0, Ro I Ok (e24 sp k)
@@ -236,6 +236,10 @@ theorem Ev.fd (E : Ev prof F Wl L s₀ o gev gP gE fb S g0 e₂ code₂ j₂ I O
 /-- The slot of `ecx` readable. -/
 theorem Ev.f12 (E : Ev prof F Wl L s₀ o gev gP gE fb S g0 e₂ code₂ j₂ I Ok ch ln sp kp) :
     ∀ i < 4, Foot F.data (Addr.add (aR S + 12#64) i) := fun i hi => E.c.hws _ (E.w12 i hi)
+
+/-- The stack guard's slot readable. -/
+theorem Ev.f56 (E : Ev prof F Wl L s₀ o gev gP gE fb S g0 e₂ code₂ j₂ I Ok ch ln sp kp) :
+    ∀ i < 8, Foot F.data (Addr.add (aR S + 56#64) i) := fun i hi => E.c.hws _ (E.w56 i hi)
 
 /-- A `call` at `j` (`rsp` = `aR S`, the bytes `W`) of the callee `k`, and from its return at `j + 5`. -/
 theorem callK (E : Ev prof F Wl L s₀ o gev gP gE fb S g0 e₂ code₂ j₂ I Ok ch ln sp kp)
