@@ -62,8 +62,8 @@ theorem vc_0 {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post}
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at f8 f24 f16 fs0 fs1 h ⊢
   wpx [W_0, W_12, W_32, W_41, W_51, o0, o1, o2, o3, o4, Op.cmpmi, Op.testmi, Op.setcc]
-  refine ⟨f8, fun hA => ?_, fun hA => ⟨f24, fun hB => ⟨f16, fs0, fun hC => ?_,
-    fun hC => ⟨fun hD => ?_, fun hD => ⟨fs1, ?_⟩⟩⟩, fun hB => ?_⟩⟩
+  refine fun _ => ⟨f8, fun _ => ⟨fun hA => ?_, fun hA => ⟨f24, fun hB => ⟨f16, fs0, fun hC => ?_,
+    fun hC => ⟨fun hD => ?_, fun hD => ⟨fs1, ?_⟩⟩⟩, fun hB => ?_⟩⟩⟩
   · have ha : ¬ ofBytesLE 8 ((byteAddrs (rdi + 8#64) 1).map V) &&& 251#8 = 0#8 := by simpa using hA
     exact h 23 _ _ _ _ (.inl rfl) (by rw [if_neg fun hd => ha hd.1]; exact xz _)
   · have hc : ¬ ofBytesLE 8 ((byteAddrs rdq(V, rdi + 16#64) 1).map V) = 46#8 := by simpa using hC
