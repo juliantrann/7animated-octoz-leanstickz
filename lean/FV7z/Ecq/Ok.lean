@@ -63,8 +63,8 @@ theorem ecq_ok (c : Seg prof F Wl L s₀ o) (hin : CodeIn L ecq_at ecq) {V : Add
     (f3 : ∀ j < 16, ∀ i : Nat, i < 1 → Foot F.data (Addr.add (BitVec.ofNat 64 j + 7255424#64) i))
     (f4 : ∀ j < 16, ∀ i : Nat, i < 1 → Foot F.data (Addr.add (BitVec.ofNat 64 j + 7255936#64) i))
     (f5 : ∀ j < 16, ∀ i : Nat, i < 1 → Foot F.data (Addr.add (BitVec.ofNat 64 j + 7255952#64) i))
-    (hd1 : ∀ i < 8, ∀ k < 8, X.cpu.gpr.rsp.add i ≠ X.cpu.gpr.rdx.add k)
-    (hd2 : ∀ i < 8, ∀ k < 4, X.cpu.gpr.rsp.add i ≠ (X.cpu.gpr.rdi + 312#64).add k)
+    (hd1 : ∀ i : Nat, i < 8 → ∀ k : Nat, k < 8 → Addr.add X.cpu.gpr.rsp i ≠ Addr.add X.cpu.gpr.rdx k)
+    (hd2 : ∀ i : Nat, i < 8 → ∀ k : Nat, k < 4 → Addr.add X.cpu.gpr.rsp i ≠ Addr.add (X.cpu.gpr.rdi + 312#64) k)
     {e₂ : Addr} {code₂ : List Byte} (hin₂ : CodeIn L e₂ code₂) {j₂ : Nat} (h₂ : j₂ < code₂.length)
     (hra : ofBytesLE 64 ((byteAddrs X.cpu.gpr.rsp 8).map V) = e₂.add j₂)
     (k : ∀ (V' : Addr → Byte) (Z : State) (t' : Nat), KeptW Wl s₀ Z → Agree F Z.proc.mm.mem V' →
