@@ -828,6 +828,20 @@ FNS = {
                 calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `COpenCallbackConsole::Open_Finished` "
                     "(`CPP/7zip/UI/Console/OpenCallbackConsole.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/Windows/PropVariant.cpp `CPropVariant::operator= (const char *s)`: `InternalClear ()` (the
+    # `call` at 0x11), `vt` = `VT_BSTR` and `wReserved1` = 0 (one 4-byte store), `bstrVal = AllocBstrFromAscii (s)`
+    # (0x21); NULL: the `je` at 0x2e to the throw (by hand: its target is outside). Stop: the `ret` (0x3e).
+    "pva": dict(grp="Pva", cn="CPropVariant::operator=(const char *)", a=0x4572a0, n=63, pos=True, stops=(0x3e,),
+                calls=True, hand=(0x2e,), tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CPropVariant::operator= (const char *)` (`CPP/Windows/PropVariant.cpp`; "
+                    "`objdump -d`)"),
+    # 7-Zip 26.06 CPP/7zip/Common/FileStreams.h `CInFileStream::Release ()` (`Z7_COM_UNKNOWN_IMP_*`): `--__m_RefCount`;
+    # when 0, `delete this` (`~CInFileStream ()` 0x5a4040 and `operator delete (this, 0x108)` 0x6014e0, the `call`s).
+    # Stop: the `ret` (0x3a).
+    "cir": dict(grp="Cir", cn="CInFileStream::Release", a=0x5a4b20, n=59, pos=True, stops=(0x3a,),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CInFileStream::Release` "
+                    "(`CPP/7zip/Common/FileStreams.h`; `objdump -d`)"),
     # 7-Zip 26.06 CPP/Common/Wildcard.cpp `ExtractFileNameFromPath (path)`: `path.ReverseFind_PathSepar ()` (the `call`,
     # 0x14), then `UString (path + it + 1)` into the result (0x26). Stop: the `ret` (0x35).
     "efn": dict(grp="Efn", cn="ExtractFileNameFromPath(const UString &)", a=0x4528f0, n=54, pos=True, stops=(0x35,),
@@ -981,6 +995,21 @@ FNS = {
     "ids": dict(grp="Ids", cn="NWindows::NFile::NFind::CDirEntry::IsDots() const", a=0x455df0, n=59, pos=True,
                 stops=(0x17, 0x3a), calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip's `CDirEntry::IsDots` (`CPP/Windows/FileFind.h`; `objdump -d`)"),
+    # glibc 2.31's `__init_sched_fifo_prio`: `sched_get_priority_max (SCHED_FIFO)` (0x0d) and `_min` (0x1d), both
+    # hypotheses, into `__sched_fifo_max_prio` (`0x792270`) and `__sched_fifo_min_prio` (`0x792274`). Stop: the `ret`.
+    "isf": dict(grp="Isf", cn="__init_sched_fifo_prio", a=0x5ff620, n=45, pos=True, stops=(0x2c,), calls=True,
+                tag="PLAN.md §M, M1", src="glibc 2.31's `__init_sched_fifo_prio` (`nptl/tpp.c`; `objdump -d`)"),
+    # `Add_Messsage_Pre_ArcType (s, pre, arcType)`: `s.Add_LF ()`, `s += pre`, `s += " "`, `s += arcType`, then the
+    # tail `jmp` to `s += ...` (0x47); the four callees are hypotheses.
+    "amp": dict(grp="Amp", cn="Add_Messsage_Pre_ArcType(UString&, char const*, wchar_t const*)", a=0x5e7a50, n=76,
+                pos=True, stops=(0x47,), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip's `Add_Messsage_Pre_ArcType` (`CPP/7zip/UI/Console/ExtractCallbackConsole.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/7zip/UI/Console/ExtractCallbackConsole.cpp `Print_UInt64_and_String (s, val, name)`: the
+    # stack guard, `ConvertUInt64ToString` into a buffer at `rsp`, `s += buf; s.Add_Space (); s += name`. Stops: the
+    # `ret` (0x68) and the `call` of `__stack_chk_fail` (0x69).
+    "pui": dict(grp="Pui", cn="Print_UInt64_and_String", a=0x5e85f0, n=110, pos=True, fs=True, stops=(0x68, 0x69),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `Print_UInt64_and_String` (`ExtractCallbackConsole.cpp`; `objdump -d`)"),
     # glibc 2.31's `remove`: only its code is used (`Rmf` takes it as a hypothesis).
     "rmv": dict(grp="Rmv", cn="remove", a=0x624030, n=63, pos=True, fs=True, stops=(0x31, 0x3e), calls=True,
                 tag="PLAN.md §M, M1", src="glibc 2.31's `remove` (`stdio-common/remove.c`; `objdump -d`)"),
@@ -1102,6 +1131,16 @@ FNS = {
     # `__stack_chk_fail` (0x63).
     "av2": dict(grp="Av2", cn="CPU_IsSupported_AVX2", a=0x4244b0, n=104, pos=True, fs=True, stops=(0x37, 0x63),
                 calls=True, tag="PLAN.md §M, M1", src="7-Zip's `CPU_IsSupported_AVX2` (`C/CpuArch.c`; `objdump -d`)"),
+    # `CFieldPrinter::PrintTitleLines ()`: `fputs (LinesString, *g_StdOut)` (the `call` at 0x16). Stops: the `ret`
+    # (0x1f), the landing pad after it (0x20).
+    "ptl": dict(grp="Ptl", cn="CFieldPrinter::PrintTitleLines", a=0x5eccd0, n=47, pos=True, stops=(0x1f, 0x20),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CFieldPrinter::PrintTitleLines` (`CPP/7zip/UI/Console/List.cpp`; `objdump -d`)"),
+    # `PrintSpaces (numSpaces)` (`.part.0`): `fputs (kSpaces + (32 - numSpaces), *g_StdOut)` (the `call` at 0x23).
+    # Stops: the `ret` (0x2c), the landing pad after it (0x2d).
+    "psp": dict(grp="Psp", cn="PrintSpaces", a=0x5ebdd0, n=60, pos=True, stops=(0x2c, 0x2d), calls=True,
+                tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `PrintSpaces` (`CPP/7zip/UI/Console/List.cpp`, `.part.0`; `objdump -d`)"),
     # `CFileBase::OpenBinary (name, flags, mode)`: `Close ()` (the `call` at 0x1a), `open64 (name, flags, mode)` (the
     # `call` at 0x2a), the result stored as `_handle`, `al` = it is not -1. Stop: the `ret` (0x41).
     "fob": dict(grp="Fob", cn="NWindows::NFile::NIO::CFileBase::OpenBinary", a=0x456060, n=66, pos=True, stops=(0x41,),
@@ -2170,6 +2209,13 @@ FNS = {
     "osc": dict(grp="Osc", cn="CStdOutStream::operator<< (const char *)", a=0x5f4be0, n=27, pos=True, stops=(26,),
                 calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `CStdOutStream::operator<< (const char *)` (`StdOutStream.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/7zip/Compress/LzmaDecoder.cpp `CDecoder::SetDecoderProperties2 (prop, size)`:
+    # `LzmaDec_Allocate (&_state, prop, size, &g_AllocBig)` (0x42bf80), the result through `SResToHRESULT`'s table
+    # (0x6e68c0), on `S_OK` `_propsWereSet = true` and `CreateInputBuffer ()` (0x57fcc0). Without the landing pad
+    # (from 0x4e). Stops: the three `ret`s (0x31, 0x3e, 0x4d).
+    "ldp": dict(grp="Ldp", cn="NCompress::NLzma::CDecoder::SetDecoderProperties2", a=0x57fd10, n=78, pos=True,
+                stops=(0x31, 0x3e, 0x4d), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `NCompress::NLzma::CDecoder::SetDecoderProperties2` (`LzmaDecoder.cpp`; `objdump -d`)"),
     # glibc 2.31 elf/dl-lookup.c `_dl_setup_hash (map)`: the GNU hash table's fields (or the SysV one's) into `map`.
     # Stops: the two `ret`s (0x61, 0x93), the `__assert_fail` path (0x94) not covered.
     "dsh": dict(grp="Dsh", cn="_dl_setup_hash", a=0x6ab020, n=180, pos=True, stops=(0x61, 0x93, 0x94), calls=True,
