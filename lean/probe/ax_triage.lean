@@ -1,6 +1,5 @@
 import FV7z.Aeq.Holds
 open FV7z
-#print axioms FV7z.Aeq.spAll
 #print axioms FV7z.Aeq.vc_0
 #print axioms FV7z.Aeq.vc_24
 #print axioms FV7z.Aeq.vc_35
