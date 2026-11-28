@@ -1981,6 +1981,14 @@ FNS = {
     "usm": dict(grp="Usm", cn="UnicodeStringToMultiByte (const UString &, UINT)", a=0x450dc0, n=101, pos=True,
                 fs=True, stops=(95, 96), calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `UnicodeStringToMultiByte` (`StringConvert.cpp`; `objdump -d`)"),
+    # glibc 2.31 sysdeps/unix/sysv/linux/read_nocancel.c (`__read_nocancel`): `read`, `errno` set for an error.
+    # Stops: the `ret` (0x10), the `ret` after `errno` is set (0x2b); the `syscall` (0x6) is a step of its own.
+    "rnc": dict(grp="Rnc", cn="__read_nocancel", a=0x6661e0, n=44, pos=True, fs=True, stops=(16, 43), calls=True,
+                tag="PLAN.md §M, M1",
+                src="glibc 2.31's `__read_nocancel` (`sysdeps/unix/sysv/linux/read_nocancel.c`; `objdump -d`)"),
+    # glibc 2.31 libio/genops.c `_IO_iter_begin ()`: `_IO_list_all`. Stop: the `ret` (0xb).
+    "iib": dict(grp="Iib", cn="_IO_iter_begin", a=0x60e050, n=12, pos=True, stops=(11,), tag="PLAN.md §M, M1",
+                src="glibc 2.31's `_IO_iter_begin` (`libio/genops.c`; `objdump -d`)"),
     # glibc 2.31 elf/dl-lookup.c `_dl_setup_hash (map)`: the GNU hash table's fields (or the SysV one's) into `map`.
     # Stops: the two `ret`s (0x61, 0x93), the `__assert_fail` path (0x94) not covered.
     "dsh": dict(grp="Dsh", cn="_dl_setup_hash", a=0x6ab020, n=180, pos=True, stops=(0x61, 0x93, 0x94), calls=True,
