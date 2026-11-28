@@ -221,6 +221,16 @@ FNS = {
     # `Archive_GetItemBoolProp (arc, index, kpidIsDir, result)` (0x5d15e0). Stop: the jump (12).
     "aid": dict(grp="Aid", cn="Archive_IsItem_Dir", a=0x5d1670, n=17, pos=True, stops=(12,),
                 tag="PLAN.md §M, M1", src="7-Zip 26.06's `Archive_IsItem_Dir` (`OpenArchive.cpp`; `objdump -d`)"),
+    # 7-Zip's CPP/Windows/FileDir.cpp `NDir::SetDirTime (path, cTime, aTime, mTime)` (Linux): a tail jump to
+    # 0x4549b0 with `aTime`, `mTime` moved down and `ecx` = 0. Stop: the jump (12).
+    "sdr": dict(grp="Sdr", cn="NWindows::NFile::NDir::SetDirTime", a=0x4556e0, n=17, pos=True, stops=(12,),
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `NDir::SetDirTime` (`CPP/Windows/FileDir.cpp`; `objdump -d`)"),
+    # 7-Zip's CPP/7zip/UI/Common/ArchiveExtractCallback.cpp `CFiTimesCAM::SetDirTime_to_FS (path)`: each of the
+    # three times (`this`, `this + 16`, `this + 32`) or NULL by its `*_Defined` flag (`this + 48..50`), then a tail
+    # jump (0x2f) to `NDir::SetDirTime` (0x4556e0). Stop: the jump.
+    "sdf": dict(grp="Sdf", cn="CFiTimesCAM::SetDirTime_to_FS", a=0x5ad590, n=52, pos=True, stops=(0x2f,),
+                tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CFiTimesCAM::SetDirTime_to_FS` (`ArchiveExtractCallback.cpp`; `objdump -d`)"),
     # 7-Zip's CPP/7zip/UI/Console/OpenCallbackConsole.cpp `COpenCallbackConsole::Open_SetTotal (files, bytes)`: the
     # totals into the percent printer when it is on, then `CheckBreak2 ()` (`NConsoleClose::g_BreakCounter` at
     # 0x79f088). Stop: the `ret` (0x4f).
@@ -830,6 +840,11 @@ FNS = {
     "ucu": dict(grp="Ucu", cn="UString::UString(unsigned, const UString&)", a=0x44d240, n=64, pos=True, stops=(0x3f,),
                 calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip's `UString::UString (unsigned, const UString &)` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
+    # `UString::UString (const UString &s, c)`: `SetStartLen (s._len + 1)` (the `call` at 0x1d), `wmemcpy (_chars,
+    # s._chars, s._len)` (0x33), `_chars[s._len] = c`, `_chars[s._len + 1] = 0`; the `ret` at 0x50.
+    "uch": dict(grp="Uch", cn="UString::UString(const UString&, wchar_t)", a=0x44d280, n=81, pos=True, stops=(0x50,),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip's `UString::UString (const UString &, wchar_t)` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
     # `UString::UString (s1, num1, s2, num2)`: `SetStartLen (num1 + num2)` (0x1e), `wmemcpy (_chars, s1, num1)` (0x30),
     # a tail jump to `wmemcpy (_chars + num1, s2, num2 + 1)` (0x47).
     "uc4": dict(grp="Uc4", cn="UString::UString(const wchar_t*, unsigned, const wchar_t*, unsigned)", a=0x44d2e0,
@@ -923,6 +938,11 @@ FNS = {
     # PLT entry) of the rest down and `_len` - `count`. Stops: the `ret`s (0x25, 0x5d).
     "udl": dict(grp="Udl", cn="UString::Delete", a=0x44e0b0, n=94, pos=True, stops=(0x25, 0x5d), calls=True,
                 hand=(0x54,), tag="PLAN.md §M, M1", src="7-Zip's `UString::Delete` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
+    # `AString::Find (s, startIndex)`: `strstr (_chars + startIndex, s)` (the `call` at 0xd, the PLT's entry), then the
+    # found pointer minus `_chars`, or -1 when none. Stops: the `ret`s (0x1a, 0x21).
+    "afd": dict(grp="Afd", cn="AString::Find", a=0x44cae0, n=34, pos=True, stops=(0x1a, 0x21), calls=True,
+                tag="PLAN.md §M, M1",
+                src="7-Zip's `AString::Find` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
     # `AString::InsertSpace (index, size)`: `Grow (size)` (the `call` at 0x12, `index` by reference in `r12`), then
     # `memmove (_chars + index + size, _chars + index, _len - index + 1)` as a tail jump to the PLT's entry. Stop:
     # the `jmp` (0x37).
@@ -1911,6 +1931,14 @@ FNS = {
                 pos=True, fs=True, stops=(135, 136), calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `CStdOutStream::NormalizePrint_UString (const UString &)` (`StdOutStream.cpp`; "
                     "`objdump -d`)"),
+    # 7-Zip 26.06 Common/MyString.cpp `fs2us (const char *)` (also `fs2us (const AString &)`), without the landing pad.
+    # Stops: the `ret` (0x3d), the call of `__stack_chk_fail` (0x3e).
+    "fsu": dict(grp="Fsu", cn="fs2us (const char *)", a=0x44e5b0, n=67, pos=True, fs=True, stops=(61, 62), calls=True,
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `fs2us (const char *)` (`MyString.cpp`; `objdump -d`)"),
+    # Its twin: the same code, another callee (`0x450c60`, not `0x450ca0`).
+    "fsv": dict(grp="Fsv", cn="fs2us (const char *), the twin at 0x44e600", a=0x44e600, n=67, pos=True, fs=True,
+                stops=(61, 62), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `fs2us` (`MyString.cpp`; `objdump -d`)"),
     # glibc 2.31 elf/dl-lookup.c `_dl_setup_hash (map)`: the GNU hash table's fields (or the SysV one's) into `map`.
     # Stops: the two `ret`s (0x61, 0x93), the `__assert_fail` path (0x94) not covered.
     "dsh": dict(grp="Dsh", cn="_dl_setup_hash", a=0x6ab020, n=180, pos=True, stops=(0x61, 0x93, 0x94), calls=True,
@@ -1937,6 +1965,10 @@ FNS = {
     "um2": dict(grp="Um2", cn="UnicodeStringToMultiByte2", a=0x450d20, n=65, pos=True, fs=True, stops=(59, 60),
                 calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `UnicodeStringToMultiByte2` (`StringConvert.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 Common/UTFConvert.cpp `ConvertUnicodeToUTF8 (src, dest)`: `edx` = the global flags (4 bytes at
+    # 0x79217c), a tail jump to `ConvertUnicodeToUTF8_Flags`. Stop: the jump (0xd).
+    "cu8": dict(grp="Cu8", cn="ConvertUnicodeToUTF8", a=0x4520b0, n=18, pos=True, stops=(13,), tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `ConvertUnicodeToUTF8` (`UTFConvert.cpp`; `objdump -d`)"),
 }
 
 def file_bytes(path, va, n):
