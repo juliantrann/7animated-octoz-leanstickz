@@ -114,11 +114,19 @@ theorem vc_135 {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post}
     W_135 F Wl Q g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at f13 h ⊢
-  wpx [W_135, o8]
-  all_goals repeat' (first
-    | refine h _ ?_ ?_ ?_ ?_ _
-    | exact f13
-    | astep)
+  by_cases h0 : BitVec.setWidth 8 r12 = 0
+  · have hb : (BitVec.setWidth 8 r12 == 0) = true := beq_iff_eq.2 h0
+    wpx [W_135, o8, hb, BitVec.and_self, ↓reduceIte]
+    all_goals repeat' (first
+      | refine h _ ?_ ?_ ?_ ?_ _
+      | exact f13
+      | astep)
+  · have hb : (BitVec.setWidth 8 r12 == 0) = false := beq_eq_false_iff_ne.2 h0
+    wpx [W_135, o8, hb, BitVec.and_self, Bool.false_eq_true, ↓reduceIte]
+    all_goals repeat' (first
+      | refine h _ ?_ ?_ ?_ ?_ _
+      | exact f13
+      | astep)
 
 /-- `rdi` = `_so`, `rsi` = `name`, to the `call` of `NormalizePrint_UString` at 175. -/
 theorem vc_165 {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post}
