@@ -53,11 +53,10 @@ theorem ad1 (k : Nat) : BitVec.ofNat 64 k + 1#64 = BitVec.ofNat 64 (k + 1) := by
 theorem swn (d : BitVec 32) : BitVec.setWidth 64 d = BitVec.ofNat 64 d.toNat := by
   rw [BitVec.ofNat_toNat]
 
-theorem a1 {d : BitVec 32} (h : 1 ≤ d.toNat) :
-    BitVec.setWidth 64 d + 18446744073709551615#64 = BitVec.ofNat 64 (d.toNat - 1) := by
-  have hd := d.isLt
+theorem a1 {n : Nat} (h : 1 ≤ n) :
+    BitVec.ofNat 64 n + 18446744073709551615#64 = BitVec.ofNat 64 (n - 1) := by
   apply BitVec.eq_of_toNat_eq
-  simp only [BitVec.toNat_add, BitVec.toNat_setWidth, BitVec.toNat_ofNat, Nat.reducePow, Nat.reduceMod] at hd ⊢
+  simp only [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.reducePow, Nat.reduceMod]
   omega
 
 theorem sh3 (x : BitVec 64) : x <<< (3 : Nat) = x * 8#64 := by
@@ -66,12 +65,12 @@ theorem sh3 (x : BitVec 64) : x <<< (3 : Nat) = x * 8#64 := by
     Nat.reduceMod]
   all_goals omega
 
-theorem r12n {d : BitVec 32} (h : 1 ≤ d.toNat) :
+theorem r12n {d : BitVec 32} (h : 1 ≤ d.toNat) (h2 : d.toNat < 2147483648) :
     BitVec.setWidth 64 (BitVec.setWidth 32 (BitVec.setWidth 64 d + 18446744073709551615#64)) <<< (3 : Nat) =
       BitVec.ofNat 64 (d.toNat - 1) * 8#64 := by
-  have hd := d.isLt
-  simp only [Nat.reducePow] at hd
-  rw [a1 h, sw_ix (i := d.toNat - 1) (by omega), sh3]
+  rw [swn d]
+  generalize d.toNat = n at h h2 ⊢
+  rw [a1 h, sw_ix (i := n - 1) (by omega), sh3]
 
 theorem zs (k : Nat) : BitVec.ofNat 64 (k + 1) * 8#64 - 8#64 = BitVec.ofNat 64 k * 8#64 := by
   first
@@ -256,7 +255,7 @@ theorem set_ok {g0 : Gprs} {P : Addr} {I : (Addr → Byte) → Prop} {n32 : BitV
           (by rw [zs, e2, z12]; exact BitVec.eq_of_toNat_eq (by rw [tn2 (k := k) (by omega)]; omega))
           (by rw [zb]; exact f544) (by rw [zb, e4]; exact hn0)
           fun _ a b d e _ => ⟨rfl, rfl, a.trans zs, b.trans zb, d.trans zp,
-            by rw [e, zb, e4, r12n (d := n32) (by omega)]⟩) ?_
+            by rw [e, zb, e4, r12n (d := n32) (by omega) hlb]⟩) ?_
       rintro j' g fl V₁ ⟨rfl, hV₁, a, b, d, e⟩ U₂ t₄ hKU₂ hAU₂ hrU₂ hgU₂ -
       subst V₁ hgU₂
       exact k432 U₂ W' t₄ hKU₂ hAU₂ hrU₂ a b d e hIW''
