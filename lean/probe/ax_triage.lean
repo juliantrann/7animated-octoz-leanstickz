@@ -1,6 +1,6 @@
 import FV7z
 open FV7z
-#print axioms FV7z.Asp.asp_ok
-#print axioms FV7z.Amn.amn_ok
-#print axioms FV7z.Ach.ach_ok
-#print axioms FV7z.Trl.trl_ok
+#print axioms FV7z.Txc.txc_ok
+#print axioms FV7z.Pto.pto_ok
+#print axioms FV7z.Stw.stw_ok
+#print axioms FV7z.Ape.ape_ok
