@@ -32,6 +32,10 @@ theorem sub_mi32f {b d v len : Nat} (htf : s.cpu.rflags.tf = false) (hac : s.cpu
     have z : BitVec.setWidth 32 (BitVec.ofBool false) = 0#32 := rfl
     simp only [Nat.reduceDiv, hc, z, BitVec.sub_zero]
     rfl
+  case hz =>
+    unfold subF
+    rw [subR_eq]
+    rfl
   all_goals rfl
 
 end FV7z
