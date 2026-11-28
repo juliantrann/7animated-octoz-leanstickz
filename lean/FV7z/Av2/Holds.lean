@@ -181,10 +181,12 @@ theorem vc_69 {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post}
     | exact h2 (gt_jbe (by assumption)) _
 
 /-- Back from `z7_x86_cpuid`: `eax` = `abit`, to 35. -/
-theorem vc_87 {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post}
-    (hl4 : ∀ i < 4, Foot F.data (Addr.add (g.rsp + 4#64) i))
-    (h : ∀ fl, Q 35 { g with rax := abit V g.rsp } fl V) : W_87 fb F Wl Q g f V := by
+theorem vc_87 {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post} {s : Addr} (hs : g.rsp = s)
+    (hl4 : ∀ i < 4, Foot F.data (Addr.add (s + 4#64) i))
+    (h : ∀ fl, Q 35 { g with rax := abit V s } fl V) : W_87 fb F Wl Q g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
+  dsimp only at hs
+  subst hs
   dsimp only at hl4 h
   wpx [W_87, o7]
   all_goals repeat' (first | exact h _ | assumption | apply And.intro | intro _)
@@ -373,7 +375,7 @@ theorem av2_ok {fb : Addr} {Pc1 Pc2 Pc3 : State → (Addr → Byte) → Prop} (c
   intro Z₃ V₃ t₈ hKZ₃ hAZ₃ hrZ₃ hz3s hcan₃ hra₃ hP3
   refine (c_87 prof fb).run c hfs hin (fun j' g' _ V'' => j' = 35 ∧
       g' = { Z₃.cpu.gpr with rax := abit V₃ (X.cpu.gpr.rsp - 40#64) } ∧ V'' = V₃) hKZ₃ hAZ₃ hrZ₃
-    (vc_87 (by rw [hz3s]; exact hl4) fun _ => ⟨rfl, by rw [hz3s], rfl⟩) ?_
+    (vc_87 hz3s hl4 fun _ => ⟨rfl, rfl, rfl⟩) ?_
   rintro j' g fl₄ V₄ ⟨rfl, rfl, hV₄⟩ U₅ t₉ hKU₅ hAU₅ hrU₅ hgU₅ -
   subst V₄
   refine fin35 (S := X.cpu.gpr.rsp) c hfs hin hKU₅ hAU₅ hrU₅ (by rw [hgU₅]; exact hz3s) hl24 hl hcl hcan₃ hin₂ h₂
