@@ -1335,6 +1335,20 @@ FNS = {
     "mgt": dict(grp="Mgt", cn="NWindows::NFile::NDir::MyGetTempPath", a=0x454b40, n=69, pos=True, stops=(0x44,),
                 calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `MyGetTempPath` (`CPP/Windows/FileDir.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/UI/Common/LoadCodecs.cpp `CArcInfoEx::FindExtension (const UString &ext)`: for `i` from 0 below
+    # `Exts.Size ()` (`this + 0x30`, the items at `this + 0x28`), `StringsAreEqualNoCase (ext, Exts[i].Ext)` (the
+    # `call` at 0x39, to `sen`): `i` when it answers true (the `ret`, 0x48); -1 past the end (0x59) or for none (0x5f).
+    "fex": dict(grp="Fex", cn="CArcInfoEx::FindExtension", a=0x5ceb50, n=96, pos=True, stops=(0x48, 0x59, 0x5f),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CArcInfoEx::FindExtension` (`CPP/UI/Common/LoadCodecs.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/UI/Common/LoadCodecs.cpp `CCodecs::FindFormatForArchiveType (const UString &arcType)`: for `i`
+    # from 0 below `Formats.Size ()` (`this + 0x18`, the items at `this + 0x10`), `StringsAreEqualNoCase
+    # (Formats[i].Name, arcType)` (the `call` at 0x3a, to `sen`; `Name` at the item's `+ 0x18`): `i` when it answers
+    # true (the `ret`, 0x49); -1 past the end (0x59) or for none (0x5f).
+    "ffa": dict(grp="Ffa", cn="CCodecs::FindFormatForArchiveType", a=0x5ced10, n=96, pos=True,
+                stops=(0x49, 0x59, 0x5f), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CCodecs::FindFormatForArchiveType` (`CPP/UI/Common/LoadCodecs.cpp`; "
+                    "`objdump -d`)"),
 }
 
 

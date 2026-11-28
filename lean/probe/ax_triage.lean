@@ -1,9 +1,7 @@
-import FV7z.Gus.Holds
-import FV7z.Sts.Holds
-import FV7z.Mgt.Holds
-import FV7z.Ndp.Holds
+import FV7z.Fex.Holds
+import FV7z.Ffa.Holds
 open FV7z
-#print axioms FV7z.Gus.gus_ok
-#print axioms FV7z.Sts.sts_ok
-#print axioms FV7z.Mgt.mgt_ok
-#print axioms FV7z.Ndp.ndp_ok
+#print axioms FV7z.Fex.fex_ok
+#print axioms FV7z.Ffa.ffa_ok
+#print axioms FV7z.Fex.lpAll
+#print axioms FV7z.Ffa.lpAll
