@@ -98,6 +98,11 @@ FNS = {
     "unm": dict(grp="Uname", cn="__uname", a=0x6649e0, n=37, pos=True, stops=(0x13, 0x14), calls=True,
                 tag="PLAN.md G3, startup",
                 src="glibc 2.31's `__uname` (`sysdeps/unix/sysv/linux/syscall-template.S`; `objdump -d`)"),
+    # glibc 2.31 sysdeps/unix/sysv/linux/syscall-template.S (`getpid`, no error return). Stops: the `syscall` (9; a step
+    # of its own), the `ret` (11).
+    "gpd": dict(grp="Getpid", cn="__getpid", a=0x664ad0, n=12, pos=True, stops=(0xb,), calls=True,
+                tag="PLAN.md G3, startup",
+                src="glibc 2.31's `__getpid` (`sysdeps/unix/sysv/linux/syscall-template.S`; `objdump -d`)"),
     # glibc 2.31 sysdeps/unix/sysv/linux/close.c (`SYSCALL_CANCEL`). Stops: the `ret` (0x1f), the process has more
     # than one thread (0x20: `multiple_threads` is not 0), the `ret` after `errno` is set (0x71); the `syscall` (0x15)
     # is a step of its own.
