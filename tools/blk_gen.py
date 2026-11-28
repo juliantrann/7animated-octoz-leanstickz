@@ -923,6 +923,12 @@ FNS = {
     # PLT entry) of the rest down and `_len` - `count`. Stops: the `ret`s (0x25, 0x5d).
     "udl": dict(grp="Udl", cn="UString::Delete", a=0x44e0b0, n=94, pos=True, stops=(0x25, 0x5d), calls=True,
                 hand=(0x54,), tag="PLAN.md §M, M1", src="7-Zip's `UString::Delete` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
+    # `AString::InsertSpace (index, size)`: `Grow (size)` (the `call` at 0x12, `index` by reference in `r12`), then
+    # `memmove (_chars + index + size, _chars + index, _len - index + 1)` as a tail jump to the PLT's entry. Stop:
+    # the `jmp` (0x37).
+    "asi": dict(grp="Asi", cn="AString::InsertSpace", a=0x44c140, n=60, pos=True, stops=(0x37,), calls=True,
+                tag="PLAN.md §M, M1",
+                src="7-Zip's `AString::InsertSpace` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
     # `AString::Insert (index, s)`: nothing when `s` is empty; else `InsertSpace (index, s._len)` (the `call` at 0x36,
     # `index` by reference at `rsp + 0xc`), `memcpy` (the `call` at 0x49, the PLT entry) of `s`'s chars to `_chars +
     # index` and `_len += s._len` (0x4e, by hand). Stops: the `ret`s (0x21, 0x5a).
@@ -1899,6 +1905,12 @@ FNS = {
                 pos=True, fs=True, stops=(134, 135), calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `CStdOutStream::NormalizePrint_UString_Path (const UString &)` (`StdOutStream.cpp`; "
                     "`objdump -d`)"),
+    # 7-Zip 26.06 Common/StdOutStream.cpp, without the landing pads (from 0x8d). Stops: the `ret` (0x87), the call of
+    # `__stack_chk_fail` (0x88).
+    "nps": dict(grp="Nps", cn="CStdOutStream::NormalizePrint_UString (const UString &)", a=0x5a1870, n=141,
+                pos=True, fs=True, stops=(135, 136), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CStdOutStream::NormalizePrint_UString (const UString &)` (`StdOutStream.cpp`; "
+                    "`objdump -d`)"),
     # glibc 2.31 elf/dl-lookup.c `_dl_setup_hash (map)`: the GNU hash table's fields (or the SysV one's) into `map`.
     # Stops: the two `ret`s (0x61, 0x93), the `__assert_fail` path (0x94) not covered.
     "dsh": dict(grp="Dsh", cn="_dl_setup_hash", a=0x6ab020, n=180, pos=True, stops=(0x61, 0x93, 0x94), calls=True,
@@ -1913,6 +1925,12 @@ FNS = {
     "pus": dict(grp="Pus", cn="CStdOutStream::PrintUString", a=0x5a14f0, n=40, pos=True, stops=(39,), calls=True,
                 tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `CStdOutStream::PrintUString` (`StdOutStream.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 Common/StdOutStream.cpp: by `CodePage` (`this + 12`), three tail jumps. Stops: the jumps to
+    # `UnicodeStringToMultiByte2` (0x21, 0x38) and to `ConvertUnicodeToUTF8` (0x46), the padding after the first two
+    # (0x26, 0x3d).
+    "cua": dict(grp="Cua", cn="CStdOutStream::Convert_UString_to_AString", a=0x5a14a0, n=75, pos=True,
+                stops=(33, 38, 56, 61, 70), tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CStdOutStream::Convert_UString_to_AString` (`StdOutStream.cpp`; `objdump -d`)"),
 }
 
 def file_bytes(path, va, n):
