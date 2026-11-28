@@ -1859,6 +1859,12 @@ FNS = {
     "owc": dict(grp="Owc", cn="CStdOutStream::operator<< (const wchar_t *)", a=0x5a1530, n=143, pos=True, fs=True,
                 stops=(137, 138), calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `CStdOutStream::operator<< (const wchar_t *)` (`StdOutStream.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 Common/StdOutStream.cpp, without the landing pads (from 0x8c). Stops: the `ret` (0x86), the call of
+    # `__stack_chk_fail` (0x87).
+    "npp": dict(grp="Npp", cn="CStdOutStream::NormalizePrint_UString_Path (const UString &)", a=0x5a1710, n=140,
+                pos=True, fs=True, stops=(134, 135), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CStdOutStream::NormalizePrint_UString_Path (const UString &)` (`StdOutStream.cpp`; "
+                    "`objdump -d`)"),
 }
 
 def file_bytes(path, va, n):
