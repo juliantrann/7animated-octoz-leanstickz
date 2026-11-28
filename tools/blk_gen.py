@@ -561,6 +561,17 @@ FNS = {
     "dtu": dict(grp="Dtu", cn="do_tunable_update_val", a=0x66ed50, n=77, pos=True, stops=(0x26, 0x34, 0x4c),
                 tag="PLAN.md G3, startup",
                 src="glibc 2.31's `do_tunable_update_val` (`elf/dl-tunables.c`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/Common/IntToString.cpp `ConvertInt64ToString (val, s)`: a negative `val` gives '-' at `s`, then
+    # `-val` and `s + 1`; a tail jump (0x13) to `ConvertUInt64ToString` (0x44ac30).
+    "cis": dict(grp="Cis", cn="ConvertInt64ToString", a=0x44aea0, n=24, pos=True, stops=(0x13,), calls=True,
+                tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `ConvertInt64ToString` (`CPP/Common/IntToString.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/7zip/UI/Common/SortUtils.cpp `CompareStrings (p1, p2, param)`: the strings `(*strings)[*p1]`,
+    # `(*strings)[*p2]` (`param` the `UStringVector`); a tail jump (0x15) to `CompareFileNames` (0x4522b0) of their
+    # characters.
+    "cst": dict(grp="Cst", cn="CompareStrings", a=0x5dca50, n=26, pos=True, stops=(0x15,), calls=True,
+                tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CompareStrings` (`CPP/7zip/UI/Common/SortUtils.cpp`; `objdump -d`)"),
     # 7-Zip 26.06 C/LzmaDec + CPP/7zip/Compress/LzmaDecoder.cpp `CDecoder::SetOutStreamSizeResume (outSize)`: the
     # flags and sizes, then a tail jump (0x2f) to `LzmaDec_Init (&_state)`.
     "sos": dict(grp="Sos", cn="NCompress::NLzma::CDecoder::SetOutStreamSizeResume", a=0x57fd80, n=52, pos=True,
@@ -705,6 +716,10 @@ FNS = {
     # `_limit` = 3, `_chars[0]` = 0. Stop: the `ret` (0x31).
     "uct": dict(grp="Uct", cn="UString::UString()", a=0x44d3e0, n=50, pos=True, stops=(0x31,), calls=True,
                 tag="PLAN.md §M, M1", src="7-Zip's `UString::UString` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
+    # `AString::AString ()`: `_chars` = NULL, then `_chars` = `new char[4]` (the `call` at 0x14), `_len` = 0,
+    # `_limit` = 3, `_chars[0]` = 0 (one byte). Stop: the `ret` (0x2e).
+    "act": dict(grp="Act", cn="AString::AString()", a=0x44c360, n=47, pos=True, stops=(0x2e,), calls=True,
+                tag="PLAN.md §M, M1", src="7-Zip's `AString::AString` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
     # 7-Zip 26.06's CPP/Common/CommandLineParser.cpp `CParser::CParser ()`: `_switches` (the vector at 0) empty and
     # `StopSwitchIndex` (at 0x18) -1, then the `AString` at 0x20 (the `call` at 0x34, to 0x44c360) and the `UString`
     # at 0x30 (the `call` at 0x3d, `UString::UString ()`). Stop: the `ret` (0x4c).
@@ -908,6 +923,12 @@ FNS = {
     # PLT entry) of the rest down and `_len` - `count`. Stops: the `ret`s (0x25, 0x5d).
     "udl": dict(grp="Udl", cn="UString::Delete", a=0x44e0b0, n=94, pos=True, stops=(0x25, 0x5d), calls=True,
                 hand=(0x54,), tag="PLAN.md §M, M1", src="7-Zip's `UString::Delete` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
+    # `AString::InsertSpace (index, size)`: `Grow (size)` (the `call` at 0x12, `index` by reference in `r12`), then
+    # `memmove (_chars + index + size, _chars + index, _len - index + 1)` as a tail jump to the PLT's entry. Stop:
+    # the `jmp` (0x37).
+    "asi": dict(grp="Asi", cn="AString::InsertSpace", a=0x44c140, n=60, pos=True, stops=(0x37,), calls=True,
+                tag="PLAN.md §M, M1",
+                src="7-Zip's `AString::InsertSpace` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
     # `AString::Insert (index, s)`: nothing when `s` is empty; else `InsertSpace (index, s._len)` (the `call` at 0x36,
     # `index` by reference at `rsp + 0xc`), `memcpy` (the `call` at 0x49, the PLT entry) of `s`'s chars to `_chars +
     # index` and `_len += s._len` (0x4e, by hand). Stops: the `ret`s (0x21, 0x5a).
@@ -1890,6 +1911,14 @@ FNS = {
                 pos=True, fs=True, stops=(135, 136), calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `CStdOutStream::NormalizePrint_UString (const UString &)` (`StdOutStream.cpp`; "
                     "`objdump -d`)"),
+    # 7-Zip 26.06 Common/MyString.cpp `fs2us (const char *)` (also `fs2us (const AString &)`), without the landing pad.
+    # Stops: the `ret` (0x3d), the call of `__stack_chk_fail` (0x3e).
+    "fsu": dict(grp="Fsu", cn="fs2us (const char *)", a=0x44e5b0, n=67, pos=True, fs=True, stops=(61, 62), calls=True,
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `fs2us (const char *)` (`MyString.cpp`; `objdump -d`)"),
+    # Its twin: the same code, another callee (`0x450c60`, not `0x450ca0`).
+    "fsv": dict(grp="Fsv", cn="fs2us (const char *), the twin at 0x44e600", a=0x44e600, n=67, pos=True, fs=True,
+                stops=(61, 62), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `fs2us` (`MyString.cpp`; `objdump -d`)"),
     # glibc 2.31 elf/dl-lookup.c `_dl_setup_hash (map)`: the GNU hash table's fields (or the SysV one's) into `map`.
     # Stops: the two `ret`s (0x61, 0x93), the `__assert_fail` path (0x94) not covered.
     "dsh": dict(grp="Dsh", cn="_dl_setup_hash", a=0x6ab020, n=180, pos=True, stops=(0x61, 0x93, 0x94), calls=True,
@@ -1904,6 +1933,12 @@ FNS = {
     "pus": dict(grp="Pus", cn="CStdOutStream::PrintUString", a=0x5a14f0, n=40, pos=True, stops=(39,), calls=True,
                 tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `CStdOutStream::PrintUString` (`StdOutStream.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 Common/StdOutStream.cpp: by `CodePage` (`this + 12`), three tail jumps. Stops: the jumps to
+    # `UnicodeStringToMultiByte2` (0x21, 0x38) and to `ConvertUnicodeToUTF8` (0x46), the padding after the first two
+    # (0x26, 0x3d).
+    "cua": dict(grp="Cua", cn="CStdOutStream::Convert_UString_to_AString", a=0x5a14a0, n=75, pos=True,
+                stops=(33, 38, 56, 61, 70), tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CStdOutStream::Convert_UString_to_AString` (`StdOutStream.cpp`; `objdump -d`)"),
 }
 
 def file_bytes(path, va, n):
