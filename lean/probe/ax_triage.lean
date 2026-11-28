@@ -1,20 +1,22 @@
-import FV7z.Ftr.Code
-import FV7z.Obw.Holds
-import FV7z.Oex.Holds
-import FV7z.Ocl.Holds
-import FV7z.Cnw.Holds
-import FV7z.Cao.Holds
-import FV7z.Osl.Holds
+import FV7z.Rmd.Code
+import FV7z.Mkd.Code
+import FV7z.Lnk.Code
+import FV7z.Scd.Holds
+import FV7z.Cdr.Holds
+import FV7z.Lkw.Holds
+import FV7z.Sbg.Holds
+import FV7z.Glh.Holds
 open FV7z
-#print axioms FV7z.Obw.obw_ok
-#print axioms FV7z.Obw.vc_0
-#print axioms FV7z.Obw.vc_27
-#print axioms FV7z.Oex.oex_ok
-#print axioms FV7z.Ocl.ocl_ok
-#print axioms FV7z.Cnw.cnw_ok
-#print axioms FV7z.Cao.cao_ok
-#print axioms FV7z.Cao.ofl_eq
-#print axioms FV7z.Osl.osl_ok
-#print axioms FV7z.Osl.vc_15z
-#print axioms FV7z.Osl.vc_15n
-#print axioms FV7z.Ftr.ftr_pin
+#print axioms FV7z.Scd.scd_ok
+#print axioms FV7z.Cdr.cdr_ok
+#print axioms FV7z.Lkw.lkw_ok
+#print axioms FV7z.Sbg.sbg_ok
+#print axioms FV7z.Glh.glh_ok
+#print axioms FV7z.Glh.vc_13
+#print axioms FV7z.Scd.vc_13z
+#print axioms FV7z.Cdr.vc_18n
+#print axioms FV7z.Lkw.vc_0
+#print axioms FV7z.Sbg.vc_0
+#print axioms FV7z.Rmd.rmd_pin
+#print axioms FV7z.Mkd.mkd_pin
+#print axioms FV7z.Lnk.lnk_pin
