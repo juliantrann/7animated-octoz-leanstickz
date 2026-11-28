@@ -21,7 +21,8 @@ import os, re, subprocess, sys, textwrap
 # name -> the function: its group (directory and namespace), C name, address and length in 7zzs 26.06; `pos`: the code
 # is taken where it lies in 7zzs (its instructions have operands `[rip + d]`), else wherever it lies; `stops`: offsets
 # the proof does not go past (exits, like the `ret`: the invariant there says they are not reached, or what holds);
-# `tag`, `src`: for the files' headers; `cut`: more cut points, to split the proof.
+# `tag`, `src`: for the files' headers; `cut`: more cut points, to split the proof; `split`: offsets inside
+# straight-line code made block leaders and cut points, to keep each piece short.
 FNS = {
     "dr3": dict(grp="Lzma", cn="LzmaDec_DecodeReal_3", a=0x6d4040, n=4719, pos=False, stops=(), tag="PLAN.md G2, pilot",
                 src="`C/LzmaDec.c`'s `LzmaDec_DecodeReal_3` (section `.text$LZMADECOPT`, the assembly of "
@@ -1571,6 +1572,17 @@ FNS = {
     "gfs": dict(grp="Gfs", cn="NWindows::NFile::NDir::GetFullPathAndSplit", a=0x454a50, n=109, pos=True,
                 stops=(0x58,), calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `NDir::GetFullPathAndSplit` (`FileDir.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/7zip/UI/Common/ArchiveCommandLine.cpp `FindCharset (parser, keyIndex, byDefault, defaultVal)`
+    # (static): a frame of 56 bytes under four pushes with the stack guard at `rsp + 0x28` and a `UString` at
+    # `rsp + 0x10`; the switch not set (`jne 88` not taken) returns `defaultVal`; else the `UString` copy of the last
+    # post string (the `call` at 0x69), `StringToUInt32`-like parse into `[rsp + 0xc]` (0x7e) of a non-empty string,
+    # a number <= 0xffff returned; else `MyStringLower_Ascii` (0xa0) and the loop (head 0xe0) over the 3 or 5 names of
+    # the table at 0x77e400 (`StringsAreEqualNoCase_Ascii`, 0xe5), the match's code page; `delete []` of the chars
+    # unless NULL (0x105), the guard's check. Stops: the `ret` (0x52), the call of `__stack_chk_fail` (0x117), the
+    # `jmp` to the cold path that throws (no name matched, 0x11c).
+    "fch": dict(grp="Fch", cn="FindCharset", a=0x5a67b0, n=289, pos=True, fs=True, stops=(0x52, 0x117, 0x11c),
+                split=(0x25,), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `FindCharset` (`CPP/7zip/UI/Common/ArchiveCommandLine.cpp`; `objdump -d`)"),
     # 7-Zip 26.06 CPP/7zip/UI/Common/DefaultName.cpp `GetDefaultName3 (name, ext, addSubExtension)` (as
     # `GetDefaultName2`): a frame of 32 bytes under five pushes with the stack guard at `rsp + 24` and a `UString`
     # at `rsp`; `name` ends with `.ext` (the `cmp` at 0x40, `StringsAreEqualNoCase_Ascii`-like call at 0xf7): `Left`
@@ -1581,6 +1593,36 @@ FNS = {
     "dfn": dict(grp="Dfn", cn="GetDefaultName2", a=0x5bfdd0, n=298, pos=True, fs=True, stops=(0xa2, 0x125),
                 calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `GetDefaultName2` (`CPP/7zip/UI/Common/DefaultName.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/Windows/PropVariantConv.cpp `ConvertPropVariantToShortString (prop, dest)`: `*dest = 0`, then
+    # the `switch` on `prop.vt` (`jt`, 65 entries; above 0x40 the default): VT_EMPTY the `ret` (0x28); VT_BOOL "+" or
+    # "-" (0x48..0x5b); VT_BSTR "?" (0xa0..0xa8); the integers by tail jumps to `ConvertUInt32ToString` (0x64, 0x74,
+    # 0x83), `ConvertInt64ToString` (0x94, 0xb5, 0xd4) or `ConvertUInt64ToString` (0xe4); VT_FILETIME to
+    # `ConvertUtcFileTimeToString` (0xc6); else "?:" and `ConvertUInt64ToString (vt)` (0x40). Stops: the `ret`s and
+    # the tail jumps.
+    "cpv": dict(grp="Cpv", cn="ConvertPropVariantToShortString", a=0x457b10, n=233, pos=True,
+                stops=(0x28, 0x40, 0x5b, 0x64, 0x74, 0x83, 0x94, 0xa8, 0xb5, 0xc6, 0xd4, 0xe4),
+                calls=True, jt=(0x6d9570, 65), tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `ConvertPropVariantToShortString` (`CPP/Windows/PropVariantConv.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/7zip/Compress/LzmaDecoder.cpp `CDecoder::ReadFromInputStream (data, size, processedSize)`:
+    # `CreateInputBuffer ()` (the `call` at 0x1e), its result at `rsp + 0xc`; `*processedSize = 0` unless NULL;
+    # the loop (head 0x40) while `size` (`r15d`) is not 0: `_inPos == _inLim` gives `_inPos = _inLim = 0` and, the
+    # result 0, `_inStream->Read (_inBuf, _inBufSize, &_inLim)` (devirtualized: `call 0x57f9b0` at 0xa2 for the
+    # vtable entry `0x57fb60`, else `call rax` at 0xf8), `_inLim` 0 ends; the copy `memcpy (data, _inBuf + _inPos,
+    # cur)` (the `call` at 0xd3, `cur = min (size, _inLim - _inPos)`), `_inPos += cur`, `_inProcessed += cur`,
+    # `*processedSize += cur` (by hand: 0xd8, 0xdc, 0xe9). Stop: the `ret` (0x73).
+    "lri": dict(grp="Lri", cn="NCompress::NLzma::CDecoder::ReadFromInputStream", a=0x5801f0, n=256, pos=True,
+                stops=(0x73,), hand=(0xd8, 0xdc, 0xe9), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CDecoder::ReadFromInputStream` (`LzmaDecoder.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/Common/Wildcard.cpp `NWildcard::CCensor::AddPreItem (include, path, props)`: `_preItems` (a
+    # `CObjectVector`: `_items` at `this + 0x18`, `_size` at `+ 0x20`, `_capacity` at `+ 0x24`) grown when full
+    # (above 0x7ffffffe the `ja` at 0x2b to the throw, by hand: its target is outside; the new capacity by `cmova`,
+    # `operator new []` at 0x50, `memcpy` of the old items at 0xdf when any, `delete []` of the old array at 0xec when
+    # not null); then `new CCensorPathProps`-sized item (`operator new` at 0x78, 0x18 bytes), its `UString` made
+    # (0x83), appended, `item.Path = path` (0xa6), `item.Include = include` and the three props bytes. Stop: the
+    # `ret` (0xcf).
+    "api": dict(grp="Api", cn="NWildcard::CCensor::AddPreItem", a=0x453650, n=246, pos=True, stops=(0xcf,),
+                hand=(0x2b,), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `NWildcard::CCensor::AddPreItem` (`CPP/Common/Wildcard.cpp`; `objdump -d`)"),
 }
 
 
@@ -1797,6 +1839,8 @@ def effect(mn, sz, ol, pc=None):
         return terms, f"Op.ldsxb {f[0][1]} {mem(ops[1])}", "OpI.ldsxb"
     if mn == 'movsx' and ks == ('r', 'm') and sz == 64 and f[1][4] == 8:   # FV7z/Lemmas/BlkOps26.lean
         return terms, f"Op.ldsxq {f[0][1]} {mem(ops[1])}", "OpI.ldsxq"
+    if mn == 'movsx' and ks == ('r', 'm') and sz == 64 and f[1][4] == 16:   # FV7z/Lemmas/BlkOps27.lean
+        return terms, f"Op.ldsxw {f[0][1]} {mem(ops[1])}", "OpI.ldsxw"
     if mn == 'movsxd' and ks == ('r', 'm') and sz == 64 and f[1][4] == 32:
         return terms, f"Op.ldsx {f[0][1]} {mem(ops[1])}", "OpI.ldsx"
     if mn == 'mul' and ks == ('r',) and sz == 64:   # FV7z/Lemmas/BlkOps17.lean
@@ -1943,8 +1987,9 @@ def main():
                or i[0] in F.get("hand", ())}
               if F.get("calls") else {})
     stops |= set(callat)
-    # leaders: the entry, jump targets, what follows a jump
-    leaders = {E0} | stops | set(jtg) | {x for x in callat.values() if x < n}
+    # leaders: the entry, jump targets, what follows a jump (`split`: cut points inside straight-line code, to keep
+    # each piece short)
+    leaders = {E0} | stops | set(jtg) | {x for x in callat.values() if x < n} | set(F.get("split", ()))
     for k, i in enumerate(ins):
         if jr(i): pass   # its targets are the table's (`jt`), needed if the proof reaches it
         elif i[1].split()[0] in ('jcc', 'jmp'):
@@ -2074,7 +2119,7 @@ end FV7z.{grp}
                          f"theorem j{k}_0 : ∀ feat, Dec feat j{k} 0 (FV7z.mk {mnl(mn)} {sz} [{operand(ol[0])[1]}] {ln}) := "
                          "by dec_rfl\n")
     open(out + "/Pats.lean", "w").write(f"""import FV7z.Lemmas.Sp{"Fs" if FSM else ""}
-{"import FV7z.Lemmas.BlkOps26" + chr(10) if any("Op.ldsxq" in x for x in P) else ""}{"import FV7z.Lemmas.CmovLd" + chr(10) if any(k in x for x in P for k in ("Op.cmovld32", "Op.cmovld64")) else ""}{"import FV7z.Lemmas.RepCmpsb" + chr(10) if any("Op.sbb8" in x for x in P) else ""}{"import FV7z.Lemmas.TestMr" + chr(10) if any("Op.testmra" in x for x in P) else ""}{"import FV7z.Lemmas.CmpMi16" + chr(10) if any("Op.cmpmi 16" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps25" + chr(10) if any("Op.cmp 16" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps24" + chr(10) if any(k in x for x in P for k in ("Op.shr16", "Op.sxb16", "Op.imul3d")) else ""}{"import FV7z.Lemmas.BlkOps23" + chr(10) if any(k in x for x in P for k in ("Op.or8", "Op.not64")) else ""}{"import FV7z.Lemmas.BlkOps22" + chr(10) if any("Op.testmi 32" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps20" + chr(10) if any(k in x for x in P for k in ("Op.not32", "Op.cqo", "Op.imul3", "Op.andh", "Op.testh", "Op.cmpm 8")) else ""}{"import FV7z.Lemmas.BlkOps19" + chr(10) if any("Op.vld 0" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps18" + chr(10) if any("Op.zxr16" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps17" + chr(10) if any("Op.mul64" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps16" + chr(10) if any("Op.bt64" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps15" + chr(10) if any("Op.sxr" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps14" + chr(10) if any(k in x for x in P for k in ("Op.zxr", "Op.test 16", "Op.cmpmif fb 8")) else ""}{"import FV7z.Lemmas.BlkOps13" + chr(10) if any("Op.cmpmif" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps12" + chr(10) if any(k in x for x in P for k in ("Op.cmpmr", "Op.testmi")) else ""}{"import FV7z.Lemmas.BlkOps11" + chr(10) if any(k in x for x in P for k in ("Op.rol64", "Op.ror64")) else ""}{"import FV7z.Lemmas.BlkOps10" + chr(10) if any("Op.cmpm 16" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps9" + chr(10) if any("Op.cmpma" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps8" + chr(10) if any(k in x for x in P for k in ("Op.vla", "Op.vsa", "Op.addma", "Op.cmpmia 8", "Op.stia 8")) else ""}{"import FV7z.Lemmas.BlkOps7" + chr(10) if any(k in x for x in P for k in ("Op.vl", "Op.vs", "Op.cdqe")) else ""}{"import FV7z.Lemmas.BlkOps6" + chr(10) if any(k in x for x in P for k in ("Op.stf8", "Op.stfi", "Op.xormf")) else ""}{("import FV7z.Lemmas.BlkOps5" if any("Op.ldsxb" in x for x in P) else
+{"import FV7z.Lemmas.BlkOps27" + chr(10) if any("Op.ldsxw" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps26" + chr(10) if any("Op.ldsxq" in x for x in P) else ""}{"import FV7z.Lemmas.CmovLd" + chr(10) if any(k in x for x in P for k in ("Op.cmovld32", "Op.cmovld64")) else ""}{"import FV7z.Lemmas.RepCmpsb" + chr(10) if any("Op.sbb8" in x for x in P) else ""}{"import FV7z.Lemmas.TestMr" + chr(10) if any("Op.testmra" in x for x in P) else ""}{"import FV7z.Lemmas.CmpMi16" + chr(10) if any("Op.cmpmi 16" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps25" + chr(10) if any("Op.cmp 16" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps24" + chr(10) if any(k in x for x in P for k in ("Op.shr16", "Op.sxb16", "Op.imul3d")) else ""}{"import FV7z.Lemmas.BlkOps23" + chr(10) if any(k in x for x in P for k in ("Op.or8", "Op.not64")) else ""}{"import FV7z.Lemmas.BlkOps22" + chr(10) if any("Op.testmi 32" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps20" + chr(10) if any(k in x for x in P for k in ("Op.not32", "Op.cqo", "Op.imul3", "Op.andh", "Op.testh", "Op.cmpm 8")) else ""}{"import FV7z.Lemmas.BlkOps19" + chr(10) if any("Op.vld 0" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps18" + chr(10) if any("Op.zxr16" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps17" + chr(10) if any("Op.mul64" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps16" + chr(10) if any("Op.bt64" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps15" + chr(10) if any("Op.sxr" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps14" + chr(10) if any(k in x for x in P for k in ("Op.zxr", "Op.test 16", "Op.cmpmif fb 8")) else ""}{"import FV7z.Lemmas.BlkOps13" + chr(10) if any("Op.cmpmif" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps12" + chr(10) if any(k in x for x in P for k in ("Op.cmpmr", "Op.testmi")) else ""}{"import FV7z.Lemmas.BlkOps11" + chr(10) if any(k in x for x in P for k in ("Op.rol64", "Op.ror64")) else ""}{"import FV7z.Lemmas.BlkOps10" + chr(10) if any("Op.cmpm 16" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps9" + chr(10) if any("Op.cmpma" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps8" + chr(10) if any(k in x for x in P for k in ("Op.vla", "Op.vsa", "Op.addma", "Op.cmpmia 8", "Op.stia 8")) else ""}{"import FV7z.Lemmas.BlkOps7" + chr(10) if any(k in x for x in P for k in ("Op.vl", "Op.vs", "Op.cdqe")) else ""}{"import FV7z.Lemmas.BlkOps6" + chr(10) if any(k in x for x in P for k in ("Op.stf8", "Op.stfi", "Op.xormf")) else ""}{("import FV7z.Lemmas.BlkOps5" if any("Op.ldsxb" in x for x in P) else
   "import FV7z.Lemmas.BlkOps4" if any("Op.imul64" in x for x in P) else
   "import FV7z.Lemmas.BlkOps3" if any(k in x for x in P for k in ("Op.shl64", "Op.shr64", "Op.sar64")) else
   "import FV7z.Lemmas.BlkOps2") + chr(10) if pos else ""}/-!
@@ -2196,7 +2241,7 @@ kernel's memory for the evaluations adds up within a file. Generated by `tools/b
         for s in succs(l): npred[s] = npred.get(s, 0) + 1
     cuts = sorted({E0} | {heads[h][1] for h in heads if h in blocks}
                   | {l for l in nodes if l not in heads and npred.get(l, 0) >= 2} | (set(jtg) & set(nodes))
-                  | ({callat[c] for c in called} & set(nodes)) | (set(F.get("cut", ())) & set(nodes)))
+                  | ({callat[c] for c in called} & set(nodes)) | (set(F.get("cut", ()) + F.get("split", ())) & set(nodes)))
     cutset = set(cuts)
     C, done, size = [], set(), {}
 
