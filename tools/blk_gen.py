@@ -851,6 +851,14 @@ FNS = {
     # (`Z7_COM_QI_*`): `*ppv = NULL`, then five 16-byte loops comparing `iid` with the IIDs at 0x6eb970, 0x6eb590,
     # 0x6eb580, 0x6eb780, 0x6eb790; on a match `*ppv` = `this` + 0/0/16/24/32, `AddRef` inline (`add dword
     # [rdi + 0x138], 1` by hand: 48, 158), `S_OK`; else `E_NOINTERFACE`. Stops: the `ret`s (57, 165, 278).
+    # 7-Zip 26.06 CPP/7zip/UI/Common/ArchiveExtractCallback.h `CArchiveExtractCallback::QueryInterface`
+    # (`Z7_COM_QI_*`): `*ppv = NULL`, then seven 16-byte loops comparing `iid` with the IIDs at 0x6eb970, 0x6eb890,
+    # 0x6eb780, 0x6eb760, 0x6eb7f0, 0x6eb7e0, 0x6eb790; on a match `*ppv` = `this` + 8/8/16/24/32/40/48, `AddRef`
+    # inline (`add dword [rdi + 0x38], 1` by hand: 52, 158), `S_OK`; else `E_NOINTERFACE`. Stops: the `ret`s.
+    "aeq": dict(grp="Aeq", cn="CArchiveExtractCallback::QueryInterface", a=0x5b16d0, n=367, pos=True,
+                stops=(58, 162, 366), calls=True, hand=(52, 158), tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CArchiveExtractCallback::QueryInterface` "
+                    "(`CPP/7zip/UI/Common/ArchiveExtractCallback.h`; `objdump -d`)"),
     "ecq": dict(grp="Ecq", cn="CExtractCallbackConsole::QueryInterface", a=0x5e9f00, n=279, pos=True,
                 stops=(57, 165, 278), calls=True, hand=(48, 158), tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `CExtractCallbackConsole::QueryInterface` "
@@ -1020,6 +1028,13 @@ FNS = {
     # 7-Zip 26.06 CPP/7zip/UI/Console/ExtractCallbackConsole.cpp `Print_UInt64_and_String (s, val, name)`: the
     # stack guard, `ConvertUInt64ToString` into a buffer at `rsp`, `s += buf; s.Add_Space (); s += name`. Stops: the
     # `ret` (0x68) and the `call` of `__stack_chk_fail` (0x69).
+    # 7-Zip 26.06 CPP/7zip/UI/Common/ArchiveCommandLine.cpp `AddNameToCensor (censor, item, name)` (static): the
+    # stack guard, `wildcardMatching` from `item.WildcardMatching` (2: `DoesNameContainWildcard (name)`), the
+    # `CCensorPathProps` on the stack, `censor.AddPreItem (item.Include, name, props)`. Stops: the `ret` (0x74) and
+    # the `call` of `__stack_chk_fail` (0x75).
+    "anc": dict(grp="Anc", cn="AddNameToCensor", a=0x5a66e0, n=122, pos=True, fs=True, stops=(0x74, 0x75),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `AddNameToCensor` (`ArchiveCommandLine.cpp`; `objdump -d`)"),
     "pui": dict(grp="Pui", cn="Print_UInt64_and_String", a=0x5e85f0, n=110, pos=True, fs=True, stops=(0x68, 0x69),
                 calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `Print_UInt64_and_String` (`ExtractCallbackConsole.cpp`; `objdump -d`)"),
@@ -1164,6 +1179,10 @@ FNS = {
                 calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `CPercentPrinter::~CPercentPrinter` (`CPP/7zip/UI/Console/PercentPrinter.h`; "
                     "`objdump -d`)"),
+    "ppc": dict(grp="Ppc", cn="CPercentPrinter::CPercentPrinter", a=0x5f4f80, n=404, pos=True, stops=(0xc1,),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CPercentPrinter::CPercentPrinter (unsigned)` "
+                    "(`CPP/7zip/UI/Console/PercentPrinter.h`; `objdump -d`)"),
     # `CFileBase::OpenBinary (name, flags, mode)`: `Close ()` (the `call` at 0x1a), `open64 (name, flags, mode)` (the
     # `call` at 0x2a), the result stored as `_handle`, `al` = it is not -1. Stop: the `ret` (0x41).
     "fob": dict(grp="Fob", cn="NWindows::NFile::NIO::CFileBase::OpenBinary", a=0x456060, n=66, pos=True, stops=(0x41,),
