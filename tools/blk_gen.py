@@ -1781,6 +1781,16 @@ FNS = {
                 stops=(687,), hand=(537,), calls=True, split=(23, 61, 100, 133, 171, 477, 613, 679),
                 tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `CArchiveExtractCallback` constructor (`ArchiveExtractCallback.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/7zip/UI/Console/ExtractCallbackConsole.cpp `CExtractCallbackConsole::BeforeOpen (name, testMode)`:
+    # four pushes and 8 bytes of frame, `_currentArchivePath = name` (`UString::operator=` at 30), the break check
+    # (`NConsoleClose::TestBreakSignal ()`, the counter at 0x79f088: `E_ABORT` at 288), the counters and flags, then
+    # `ClosePrint` of the percent printer (262) when `_so` is the printer's stream, and `endl`, `fputs` of the open or
+    # test message, `NormalizePrint_UString`, `endl` (130, 160, 175, 187) when `_so`, and `_tempA = ""`
+    # (`AString::operator=` at 216) when the printer is on and not quiet. `add qword [rbx + 0x180], 1` (61) by hand.
+    # Stop: the `ret` (233); the bytes from 295 on are the landing pad.
+    "bop": dict(grp="Bop", cn="CExtractCallbackConsole::BeforeOpen", a=0x5e7b70, n=295, pos=True,
+                stops=(233,), hand=(61,), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CExtractCallbackConsole::BeforeOpen` (`ExtractCallbackConsole.cpp`; `objdump -d`)"),
 }
 
 
