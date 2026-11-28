@@ -981,6 +981,21 @@ FNS = {
     "ids": dict(grp="Ids", cn="NWindows::NFile::NFind::CDirEntry::IsDots() const", a=0x455df0, n=59, pos=True,
                 stops=(0x17, 0x3a), calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip's `CDirEntry::IsDots` (`CPP/Windows/FileFind.h`; `objdump -d`)"),
+    # glibc 2.31's `__init_sched_fifo_prio`: `sched_get_priority_max (SCHED_FIFO)` (0x0d) and `_min` (0x1d), both
+    # hypotheses, into `__sched_fifo_max_prio` (`0x792270`) and `__sched_fifo_min_prio` (`0x792274`). Stop: the `ret`.
+    "isf": dict(grp="Isf", cn="__init_sched_fifo_prio", a=0x5ff620, n=45, pos=True, stops=(0x2c,), calls=True,
+                tag="PLAN.md §M, M1", src="glibc 2.31's `__init_sched_fifo_prio` (`nptl/tpp.c`; `objdump -d`)"),
+    # `Add_Messsage_Pre_ArcType (s, pre, arcType)`: `s.Add_LF ()`, `s += pre`, `s += " "`, `s += arcType`, then the
+    # tail `jmp` to `s += ...` (0x47); the four callees are hypotheses.
+    "amp": dict(grp="Amp", cn="Add_Messsage_Pre_ArcType(UString&, char const*, wchar_t const*)", a=0x5e7a50, n=76,
+                pos=True, stops=(0x47,), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip's `Add_Messsage_Pre_ArcType` (`CPP/7zip/UI/Console/ExtractCallbackConsole.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/7zip/UI/Console/ExtractCallbackConsole.cpp `Print_UInt64_and_String (s, val, name)`: the
+    # stack guard, `ConvertUInt64ToString` into a buffer at `rsp`, `s += buf; s.Add_Space (); s += name`. Stops: the
+    # `ret` (0x68) and the `call` of `__stack_chk_fail` (0x69).
+    "pui": dict(grp="Pui", cn="Print_UInt64_and_String", a=0x5e85f0, n=110, pos=True, fs=True, stops=(0x68, 0x69),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `Print_UInt64_and_String` (`ExtractCallbackConsole.cpp`; `objdump -d`)"),
     # glibc 2.31's `remove`: only its code is used (`Rmf` takes it as a hypothesis).
     "rmv": dict(grp="Rmv", cn="remove", a=0x624030, n=63, pos=True, fs=True, stops=(0x31, 0x3e), calls=True,
                 tag="PLAN.md §M, M1", src="glibc 2.31's `remove` (`stdio-common/remove.c`; `objdump -d`)"),
