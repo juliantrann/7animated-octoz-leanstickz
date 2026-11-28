@@ -1540,6 +1540,24 @@ FNS = {
     "rst": dict(grp="Rst", cn="ReadStream", a=0x4632b0, n=177, pos=True, fs=True, stops=(0xa1, 0xac), hand=(0x76,),
                 calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `ReadStream` (`CPP/7zip/Common/StreamUtils.cpp`; `objdump -d`)"),
+    # 7-Zip's C/LzmaDec.c `LzmaDec_Allocate (p, props, propsSize, alloc)`: `LzmaProps_Decode (&propNew, props,
+    # propsSize)` (call, 0x27, `Lpd`) into the frame, `LzmaDec_AllocateProbs2 (p, &propNew, alloc)` (0x67, `Lap`), the
+    # dictionary size rounded up to 4 KiB (below 4 MiB) or 1 MiB (0x73..0xc1; 0x100: above 1 GiB), the old dictionary
+    # freed (`alloc->Free`, 0xcf) and a new one allocated (`alloc->Alloc`, 0xe1) unless it is there with that size;
+    # a null result `LzmaDec_FreeProbs` (0x11c, `Lfp`) and SZ_ERROR_MEM. The guard's check. Stops: the `ret` (0x54),
+    # the call of `__stack_chk_fail` (0x126).
+    "lza": dict(grp="Lza", cn="LzmaDec_Allocate", a=0x42bf80, n=299, pos=True, fs=True, stops=(0x54, 0x126),
+                calls=True, tag="PLAN.md §M, M1", src="7-Zip 26.06's `LzmaDec_Allocate` (`C/LzmaDec.c`; `objdump -d`)"),
+    "uac": dict(grp="Uac", cn="UString::operator= (const char *)", a=0x44d8a0, n=184, pos=True, stops=(0x82,),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip's `UString::operator= (const char *)` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/Common/MyVector.h `CObjectVector<CXmlProp>::~CObjectVector ()` (`ApfsHandler.o`): the items
+    # from the last down (the loop, head 0x20, `rbx` = 8 * i); for an item not NULL its two `AString`s' chars freed
+    # unless NULL (`operator delete []`, the `call`s at 0x32, 0x40), the item freed (`operator delete (p, 0x20)`,
+    # 0x4d); then the array: `operator delete []` as a tail jump (0x69) unless NULL, else the `ret` (0x74).
+    "cxd": dict(grp="Cxd", cn="CObjectVector<CXmlProp>::~CObjectVector", a=0x5f63c0, n=117, pos=True,
+                stops=(0x69, 0x74), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CObjectVector<T>::~CObjectVector` (`CPP/Common/MyVector.h`; `objdump -d`)"),
     # 7-Zip 26.06 CPP/Common/StdOutStream.cpp `CStdOutStream::Normalize_UString (s)`: in terminal mode (the byte at
     # `this + 8`) each `wchar_t` of `s` below 0x20 (signed), in 0x7f..0x9f, 0x202a..0x202e or 0x2066..0x2069 made
     # '_' (the loop at 0x59), else each '\n' made '_' (the loop at 0x80). Stops: the `ret`s (0x6f, 0x94).
