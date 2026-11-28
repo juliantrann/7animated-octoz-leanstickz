@@ -1459,6 +1459,10 @@ FNS = {
     "rel": dict(grp="Rel", cn="CArchiveExtractCallback::Release", a=0x5b2840, n=59, pos=True, stops=(0x3a,),
                 calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `MY_ADDREF_RELEASE` `Release ()` (`CPP/Common/MyCom.h`; `objdump -d`)"),
+    # `AString::operator+=(const char *)`: length loop, `Grow` as a continuation, copy loop, `_len += n`
+    "apc": dict(grp="Apc", cn="AString::operator+=(const char *)", a=0x44c890, n=93, pos=True, stops=(0x5c,),
+                hand=(0x50,), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `AString::operator+= (const char *)` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
 }
 
 
