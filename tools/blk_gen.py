@@ -98,6 +98,11 @@ FNS = {
     "unm": dict(grp="Uname", cn="__uname", a=0x6649e0, n=37, pos=True, stops=(0x13, 0x14), calls=True,
                 tag="PLAN.md G3, startup",
                 src="glibc 2.31's `__uname` (`sysdeps/unix/sysv/linux/syscall-template.S`; `objdump -d`)"),
+    # glibc 2.31 sysdeps/unix/sysv/linux/syscall-template.S (`getpid`, no error return). Stops: the `syscall` (9; a step
+    # of its own), the `ret` (11).
+    "gpd": dict(grp="Getpid", cn="__getpid", a=0x664ad0, n=12, pos=True, stops=(0xb,), calls=True,
+                tag="PLAN.md G3, startup",
+                src="glibc 2.31's `__getpid` (`sysdeps/unix/sysv/linux/syscall-template.S`; `objdump -d`)"),
     # glibc 2.31 sysdeps/unix/sysv/linux/close.c (`SYSCALL_CANCEL`). Stops: the `ret` (0x1f), the process has more
     # than one thread (0x20: `multiple_threads` is not 0), the `ret` after `errno` is set (0x71); the `syscall` (0x15)
     # is a step of its own.
@@ -816,6 +821,13 @@ FNS = {
                 calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `CPropVariant::operator= (const FILETIME &)` (`CPP/Windows/PropVariant.cpp`; "
                     "`objdump -d`)"),
+    # 7-Zip 26.06 CPP/7zip/UI/Console/OpenCallbackConsole.cpp `COpenCallbackConsole::Open_Finished ()`:
+    # `ClosePercents ()` (with `_percent._so` set and `_percent.DisableOutput` clear, `_percent.ClosePrint (true)`, the
+    # `call`) and `S_OK`. Stops: the two `ret`s (0x29, 0x32).
+    "ocf": dict(grp="Ocf", cn="COpenCallbackConsole::Open_Finished", a=0x5f66a0, n=51, pos=True, stops=(0x29, 0x32),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `COpenCallbackConsole::Open_Finished` "
+                    "(`CPP/7zip/UI/Console/OpenCallbackConsole.cpp`; `objdump -d`)"),
     # 7-Zip 26.06 CPP/Common/Wildcard.cpp `ExtractFileNameFromPath (path)`: `path.ReverseFind_PathSepar ()` (the `call`,
     # 0x14), then `UString (path + it + 1)` into the result (0x26). Stop: the `ret` (0x35).
     "efn": dict(grp="Efn", cn="ExtractFileNameFromPath(const UString &)", a=0x4528f0, n=54, pos=True, stops=(0x35,),
@@ -2144,6 +2156,20 @@ FNS = {
     # _NL_CURRENT_LOCALE)` as a tail jump. Stop: the jump (29).
     "mbr": dict(grp="Mbr", cn="__mbsrtowcs", a=0x65d320, n=34, pos=True, fs=True, stops=(29,),
                 tag="PLAN.md §M, M1", src="glibc 2.31's `__mbsrtowcs` (`wcsmbs/mbsrtowcs.c`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/7zip/UI/Common/ArchiveExtractCallback.cpp `CDirPathSortPair::SetNumSlashes (s)`: the number of
+    # `/` in `s` up to its 0 into `Len` (`this + 0`); the loop's head 0x18. Stop: the `ret` (0x30).
+    "sns": dict(grp="Sns", cn="CDirPathSortPair::SetNumSlashes", a=0x5ad550, n=49, pos=True, stops=(48,),
+                tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CDirPathSortPair::SetNumSlashes` (`ArchiveExtractCallback.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/Common/MyString.cpp `UString::Add_LF ()`: `Grow_1 ()` (0x44d0a0) when `_len == _limit`, then
+    # `L'\n'` and the 0 at `_len`, `_len + 1`. Stops: the `ret` (0x2a), the `call` (0x30).
+    "alf": dict(grp="Alf", cn="UString::Add_LF", a=0x44dab0, n=58, pos=True, stops=(42,), calls=True,
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `UString::Add_LF` (`MyString.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/Common/StdOutStream.cpp `CStdOutStream::operator<< (const char *s)`: `fputs (s, _stream)`
+    # (0x624cc0), returns `this`. Without the landing pad (from 0x1b). Stops: the `ret` (0x1a).
+    "osc": dict(grp="Osc", cn="CStdOutStream::operator<< (const char *)", a=0x5f4be0, n=27, pos=True, stops=(26,),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CStdOutStream::operator<< (const char *)` (`StdOutStream.cpp`; `objdump -d`)"),
     # glibc 2.31 elf/dl-lookup.c `_dl_setup_hash (map)`: the GNU hash table's fields (or the SysV one's) into `map`.
     # Stops: the two `ret`s (0x61, 0x93), the `__assert_fail` path (0x94) not covered.
     "dsh": dict(grp="Dsh", cn="_dl_setup_hash", a=0x6ab020, n=180, pos=True, stops=(0x61, 0x93, 0x94), calls=True,
