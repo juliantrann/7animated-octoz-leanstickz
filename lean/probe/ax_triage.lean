@@ -1,39 +1,17 @@
-import FV7z.Clp.Holds
-import FV7z.Clp.Run
+import FV7z.Adl.Code
+import FV7z.Adl.Pats
+import FV7z.Adl.Blocks1
+import FV7z.Adl.Blocks
+import FV7z.Adl.Cuts
+import FV7z.Adl.Holds
 open FV7z
-#print axioms FV7z.Clp.rdself
-#print axioms FV7z.Clp.vc_130e
-#print axioms FV7z.Clp.vc_130
-#print axioms FV7z.Clp.aft_sk
-#print axioms FV7z.Clp.cl_m
-#print axioms FV7z.Clp.callR
-#print axioms FV7z.Clp.callM
-#print axioms FV7z.Clp.callS
-#print axioms FV7z.Clp.callD
-#print axioms FV7z.Clp.jmpP
-#print axioms FV7z.Clp.pops6_bk
-#print axioms FV7z.Clp.a130
-#print axioms FV7z.Clp.a106
-#print axioms FV7z.Clp.a91
-#print axioms FV7z.Clp.a76
-#print axioms FV7z.Clp.a68
-#print axioms FV7z.Clp.a437
-#print axioms FV7z.Clp.a424
-#print axioms FV7z.Clp.a408
-#print axioms FV7z.Clp.a395
-#print axioms FV7z.Clp.a380
-#print axioms FV7z.Clp.a367
-#print axioms FV7z.Clp.a352
-#print axioms FV7z.Clp.a339
-#print axioms FV7z.Clp.a334
-#print axioms FV7z.Clp.a314
-#print axioms FV7z.Clp.a309
-#print axioms FV7z.Clp.d279
-#print axioms FV7z.Clp.a492
-#print axioms FV7z.Clp.d240
-#print axioms FV7z.Clp.a469
-#print axioms FV7z.Clp.d197
-#print axioms FV7z.Clp.a485
-#print axioms FV7z.Clp.d60
-#print axioms FV7z.Clp.a453
-#print axioms FV7z.Clp.lpi_ok
+#print axioms FV7z.Adl.wc_74
+#print axioms FV7z.Adl.call_74
+#print axioms FV7z.Adl.tgt_74
+#print axioms FV7z.Adl.sub_79
+#print axioms FV7z.Adl.ret_37
+#print axioms FV7z.Adl.ret_88
+#print axioms FV7z.Adl.vc_z
+#print axioms FV7z.Adl.vc_nz
+#print axioms FV7z.Adl.vc_82
+#print axioms FV7z.Adl.adl_ok

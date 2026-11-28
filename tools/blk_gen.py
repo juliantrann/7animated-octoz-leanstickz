@@ -540,6 +540,20 @@ FNS = {
     "ffp": dict(grp="Ffp", cn="NWildcard::CCensor::FindPairForPrefix", a=0x453550, n=0x60, pos=True,
                 stops=(0x48, 0x59, 0x5f), calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `NWildcard::CCensor::FindPairForPrefix` (`CPP/Common/Wildcard.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/Common/Wildcard.cpp `CompareFileNames (s1, s2)`: `g_CaseSensitive` (the byte at 0x792180) not 0,
+    # the loop at 0x22 (`wchar_t`s compared as they are), else the loop at 0x7d (each side upper-cased: `- 0x20` for
+    # 'a'..'z', `towupper` (0x669660, the `call`s at 0xc8, 0xe9, 0x164) above 0x7f); '/' compares as 0 in both.
+    # Stop: the `ret` (0x74).
+    "cfn": dict(grp="Cfn", cn="CompareFileNames", a=0x4522b0, n=424, pos=True, stops=(0x74,), calls=True,
+                cut=(175, 328),
+                tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CompareFileNames` (`CPP/Common/Wildcard.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/Common/MyString.cpp `UString::Add_Dot ()`: `_len != _limit`: the stores (`_chars[_len] = '.'`,
+    # `_chars[_len + 1] = 0`, `_len += 1`) from 0x10 and the `ret` (0x2a); else `Grow_1 ()` (the `call` at 0x30, to
+    # `ug1`), the length read again (0x35) and the same stores.
+    "uad": dict(grp="Uad", cn="UString::Add_Dot", a=0x44d9b0, n=58, pos=True, stops=(0x2a,), calls=True,
+                tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `UString::Add_Dot` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
     # 7-Zip 26.06 C/LzmaDec + CPP/7zip/Compress/LzmaDecoder.cpp `CDecoder::SetOutStreamSizeResume (outSize)`: the
     # flags and sizes, then a tail jump (0x2f) to `LzmaDec_Init (&_state)`.
     "sos": dict(grp="Sos", cn="NCompress::NLzma::CDecoder::SetOutStreamSizeResume", a=0x57fd80, n=52, pos=True,
@@ -887,6 +901,10 @@ FNS = {
     # PLT entry) of the rest down and `_len` - `count`. Stops: the `ret`s (0x25, 0x5d).
     "udl": dict(grp="Udl", cn="UString::Delete", a=0x44e0b0, n=94, pos=True, stops=(0x25, 0x5d), calls=True,
                 hand=(0x54,), tag="PLAN.md §M, M1", src="7-Zip's `UString::Delete` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
+    # `AString::Delete (index, count)`: `count` cut to `_len - index`; if not 0, `memmove` (the `call` at 0x4a, the
+    # PLT entry) of the rest down and `_len` - `count`. Stops: the `ret`s (0x25, 0x58).
+    "adl": dict(grp="Adl", cn="AString::Delete", a=0x44ce70, n=89, pos=True, stops=(0x25, 0x58), calls=True,
+                hand=(0x4f,), tag="PLAN.md §M, M1", src="7-Zip's `AString::Delete` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
     # 7-Zip's CPP/Windows/FileIO.cpp `CFileBase::seek (off, whence)`: the descriptor (`this->_handle`, at 0), then
     # `lseek`. Stop: the `jmp` to `__libc_lseek` (6), a branch to another segment (`Seg.s_jmp_x`).
     "fsk": dict(grp="Fsk", cn="NWindows::NFile::NIO::CFileBase::seek", a=0x4560b0, n=11, pos=True, stops=(6,),
@@ -1809,6 +1827,21 @@ FNS = {
     "exr": dict(grp="Exr", cn="CExtractCallbackConsole::ExtractResult", a=0x5e82c0, n=668, pos=True, fs=True,
                 stops=(233, 663), hand=(110, 265, 482, 616), calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `CExtractCallbackConsole::ExtractResult` (`ExtractCallbackConsole.cpp`; `objdump -d`)"),
+    # glibc 2.31 csu/check_fds.c `__libc_check_standard_fds ()` (a setuid start, `__libc_enable_secure`): a frame of
+    # 0x98 bytes with a `struct stat` at `rsp`; for each of the fds 0, 1, 2 `__fcntl64_nocancel (fd, F_GETFD)` (calls
+    # at 0x14, 0x2a, 0x44); on -1 with `errno` (`fs:-0x48`) = `EBADF` the fd is opened again (`__open64_nocancel`,
+    # 0x7d, 0xe9, 0x159: "/dev/full" `O_WRONLY|O_NOFOLLOW` for 0, "/dev/null" `O_RDONLY|O_NOFOLLOW` for 1 and 2) and
+    # checked by `__fxstat (1, fd, &st)` (0x90, 0x100, 0x170): the same fd, a character device (`st_mode`, `rsp +
+    # 0x18`) with the expected `st_rdev` (`rsp + 0x28`), else `hlt`. Stops: the `ret` (0x59), the `hlt`s (0xc0,
+    # 0x130, 0x1a0).
+    "cfd": dict(grp="Cfd", cn="__libc_check_standard_fds", a=0x613860, n=419, pos=True, fs=True,
+                stops=(0x59, 0xc0, 0x130, 0x1a0), calls=True, tag="PLAN.md G3, startup",
+                src="glibc 2.31's `__libc_check_standard_fds` (`csu/check_fds.c`; `objdump -d`)"),
+    # 7-Zip 26.06 UI/Console/ExtractCallbackConsole.cpp, without the landing pads (from 0x11e). Stops: the `ret`
+    # (0xfe), the call of `__stack_chk_fail` (0x119).
+    "pew": dict(grp="Pew", cn="Print_ErrorFormatIndex_Warning", a=0x5e96e0, n=286, pos=True, fs=True,
+                stops=(254, 281), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `Print_ErrorFormatIndex_Warning` (`ExtractCallbackConsole.cpp`; `objdump -d`)"),
 }
 
 def file_bytes(path, va, n):
