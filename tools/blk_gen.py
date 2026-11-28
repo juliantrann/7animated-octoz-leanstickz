@@ -1837,6 +1837,12 @@ FNS = {
     "cfd": dict(grp="Cfd", cn="__libc_check_standard_fds", a=0x613860, n=419, pos=True, fs=True,
                 stops=(0x59, 0xc0, 0x130, 0x1a0), calls=True, tag="PLAN.md G3, startup",
                 src="glibc 2.31's `__libc_check_standard_fds` (`csu/check_fds.c`; `objdump -d`)"),
+    # glibc 2.31 wctype/wcfuncs.c `towupper (wc)` with `wctrans_table_lookup` (`locale/C-translit.h`'s three-level
+    # table) inlined: the thread's locale (`fs:-0x70`), its `LC_CTYPE` data, the `toupper` table's offset at index
+    # `_NL_CTYPE_MAP_OFFSET` (the word at 0xd0); `wc` itself (`ret` at 0x4c) past the first level's bound or at an
+    # empty entry of either level, else `wc` plus the third level's entry (`ret` at 0x5c). No calls, no stores.
+    "tup": dict(grp="Tup", cn="towupper", a=0x669660, n=93, pos=True, fs=True, stops=(0x4c, 0x5c),
+                tag="PLAN.md §M, M1", src="glibc 2.31's `towupper` (`wctype/wcfuncs.c`; `objdump -d`)"),
     # 7-Zip 26.06 UI/Console/ExtractCallbackConsole.cpp, without the landing pads (from 0x11e). Stops: the `ret`
     # (0xfe), the call of `__stack_chk_fail` (0x119).
     "pew": dict(grp="Pew", cn="Print_ErrorFormatIndex_Warning", a=0x5e96e0, n=286, pos=True, fs=True,
@@ -1865,6 +1871,16 @@ FNS = {
                 pos=True, fs=True, stops=(134, 135), calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `CStdOutStream::NormalizePrint_UString_Path (const UString &)` (`StdOutStream.cpp`; "
                     "`objdump -d`)"),
+    # glibc 2.31 elf/dl-lookup.c `_dl_setup_hash (map)`: the GNU hash table's fields (or the SysV one's) into `map`.
+    # Stops: the two `ret`s (0x61, 0x93), the `__assert_fail` path (0x94) not covered.
+    "dsh": dict(grp="Dsh", cn="_dl_setup_hash", a=0x6ab020, n=180, pos=True, stops=(0x61, 0x93, 0x94), calls=True,
+                tag="PLAN.md G3, startup",
+                src="glibc 2.31's `_dl_setup_hash` (`elf/dl-lookup.c`; `objdump -d`)"),
+    # 7-Zip 26.06 Common/StdOutStream.cpp, without the landing pad (from 0x58). Stops: the `ret` (0x52), the call of
+    # `__stack_chk_fail` (0x53).
+    "olg": dict(grp="Olg", cn="CStdOutStream::operator<< (Int64)", a=0x5a1a70, n=88, pos=True, fs=True,
+                stops=(82, 83), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CStdOutStream::operator<< (Int64)` (`StdOutStream.cpp`; `objdump -d`)"),
 }
 
 def file_bytes(path, va, n):
