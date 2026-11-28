@@ -1,16 +1,15 @@
-import FV7z.Aec.Code
-import FV7z.Aec.Pats
-import FV7z.Aec.Blocks1
-import FV7z.Aec.Blocks
-import FV7z.Aec.Cuts
-import FV7z.Aec.Defs
-import FV7z.Aec.Pieces1
-import FV7z.Aec.Pieces2
-import FV7z.Aec.Holds
+import FV7z.Lemmas.AddMi64
+import FV7z.Bop.Code
+import FV7z.Bop.Pats
+import FV7z.Bop.Blocks1
+import FV7z.Bop.Blocks
+import FV7z.Bop.Cuts
+import FV7z.Bop.Defs
+import FV7z.Bop.Pieces
+import FV7z.Bop.Holds
 open FV7z
-#print axioms FV7z.Aec.aec_ok
-#print axioms FV7z.Aec.vc_0
-#print axioms FV7z.Aec.vc_23
-#print axioms FV7z.Aec.vc_220
-#print axioms FV7z.Aec.vc_679
-#print axioms FV7z.Aec.from537
+#print axioms FV7z.Bop.bop_ok
+#print axioms FV7z.Bop.vc_0
+#print axioms FV7z.Bop.vc_69
+#print axioms FV7z.Bop.vc_223
+#print axioms FV7z.Fn.Seg.s_add_mi64
