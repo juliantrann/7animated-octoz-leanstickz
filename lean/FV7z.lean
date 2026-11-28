@@ -1408,4 +1408,7 @@ import FV7z.Cpd.Pats
 import FV7z.Cpd.Blocks1
 import FV7z.Cpd.Blocks
 import FV7z.Cpd.Cuts
+import FV7z.Cpd.Defs
 import FV7z.Cpd.Tail
+import FV7z.Cpd.Inner
+import FV7z.Cpd.Holds
