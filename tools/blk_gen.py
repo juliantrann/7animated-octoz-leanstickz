@@ -908,6 +908,12 @@ FNS = {
     # PLT entry) of the rest down and `_len` - `count`. Stops: the `ret`s (0x25, 0x5d).
     "udl": dict(grp="Udl", cn="UString::Delete", a=0x44e0b0, n=94, pos=True, stops=(0x25, 0x5d), calls=True,
                 hand=(0x54,), tag="PLAN.md §M, M1", src="7-Zip's `UString::Delete` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
+    # `AString::InsertSpace (index, size)`: `Grow (size)` (the `call` at 0x12, `index` by reference in `r12`), then
+    # `memmove (_chars + index + size, _chars + index, _len - index + 1)` as a tail jump to the PLT's entry. Stop:
+    # the `jmp` (0x37).
+    "asi": dict(grp="Asi", cn="AString::InsertSpace", a=0x44c140, n=60, pos=True, stops=(0x37,), calls=True,
+                tag="PLAN.md §M, M1",
+                src="7-Zip's `AString::InsertSpace` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
     # `AString::Insert (index, s)`: nothing when `s` is empty; else `InsertSpace (index, s._len)` (the `call` at 0x36,
     # `index` by reference at `rsp + 0xc`), `memcpy` (the `call` at 0x49, the PLT entry) of `s`'s chars to `_chars +
     # index` and `_len += s._len` (0x4e, by hand). Stops: the `ret`s (0x21, 0x5a).
