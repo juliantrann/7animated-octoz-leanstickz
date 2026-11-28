@@ -1,16 +1,9 @@
-import FV7z.Oun.Code
-import FV7z.Oun.Pats
-import FV7z.Oun.Blocks1
-import FV7z.Oun.Blocks
-import FV7z.Oun.Cuts
-import FV7z.Oun.Defs
-import FV7z.Oun.Pieces
-import FV7z.Oun.Holds
+import FV7z.Lemmas.CmpMr8
+import FV7z.Ecq.Code
+import FV7z.Ecq.Pats
+import FV7z.Ecq.Blocks1
+import FV7z.Ecq.Blocks
+import FV7z.Ecq.Cuts
 open FV7z
-#print axioms FV7z.Oun.oun_ok
-#print axioms FV7z.Oun.vc_0
-#print axioms FV7z.Oun.vc_43
-#print axioms FV7z.Oun.vc_55
-#print axioms FV7z.Oun.from43
-#print axioms FV7z.Oun.from55
-#print axioms FV7z.Oun.callK
+#print axioms FV7z.OpI.cmpmr8
+#print axioms FV7z.Ecq.spAll

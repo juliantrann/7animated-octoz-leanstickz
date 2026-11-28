@@ -21,7 +21,7 @@ theorem or_mi64 {b d v len : Nat} (htf : s.cpu.rflags.tf = false) (hac : s.cpu.r
       fl.tf = s.cpu.rflags.tf ∧ fl.ac = s.cpu.rflags.ac ∧ fl.df = s.cpu.rflags.df := by
   refine ⟨?fl, ?t', instruction_next htf hdec ?h, ?h1, ?h2, ?h3⟩
   case h =>
-    simp only [exec, Sem.or, alu, logicOp, mk, mbd, gr, bind, Prog.bind, readOp, Bool.false_eq_true, ↓reduceIte,
+    simp only [exec, Sem.or, alu, logicOp, mk, mbd, bind, Prog.bind, readOp, Bool.false_eq_true, ↓reduceIte,
       memRef, effOffset, pure, Prog.readReg, Prog.read, Prog.write, Prog.run, writeOp, Prog.readFlags,
       BitVec.mul_one]
     rw [eaD_adv, checkAccess_ok (s := advance s len) hac hwr]

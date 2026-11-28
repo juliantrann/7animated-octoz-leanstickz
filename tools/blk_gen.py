@@ -847,6 +847,14 @@ FNS = {
     "oun": dict(grp="Oun", cn="CStdOutStream::operator<< (unsigned)", a=0x5a1a00, n=87, pos=True, fs=True,
                 stops=(81, 82), calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `CStdOutStream::operator<< (unsigned)` (`StdOutStream.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/7zip/UI/Console/ExtractCallbackConsole.h `CExtractCallbackConsole::QueryInterface`
+    # (`Z7_COM_QI_*`): `*ppv = NULL`, then five 16-byte loops comparing `iid` with the IIDs at 0x6eb970, 0x6eb590,
+    # 0x6eb580, 0x6eb780, 0x6eb790; on a match `*ppv` = `this` + 0/0/16/24/32, `AddRef` inline (`add dword
+    # [rdi + 0x138], 1` by hand: 48, 158), `S_OK`; else `E_NOINTERFACE`. Stops: the `ret`s (57, 165, 278).
+    "ecq": dict(grp="Ecq", cn="CExtractCallbackConsole::QueryInterface", a=0x5e9f00, n=279, pos=True,
+                stops=(57, 165, 278), calls=True, hand=(48, 158), tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CExtractCallbackConsole::QueryInterface` "
+                    "(`CPP/7zip/UI/Console/ExtractCallbackConsole.h`; `objdump -d`)"),
     # 7-Zip 26.06 CPP/Common/Wildcard.cpp `ExtractFileNameFromPath (path)`: `path.ReverseFind_PathSepar ()` (the `call`,
     # 0x14), then `UString (path + it + 1)` into the result (0x26). Stop: the `ret` (0x35).
     "efn": dict(grp="Efn", cn="ExtractFileNameFromPath(const UString &)", a=0x4528f0, n=54, pos=True, stops=(0x35,),
@@ -1000,6 +1008,21 @@ FNS = {
     "ids": dict(grp="Ids", cn="NWindows::NFile::NFind::CDirEntry::IsDots() const", a=0x455df0, n=59, pos=True,
                 stops=(0x17, 0x3a), calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip's `CDirEntry::IsDots` (`CPP/Windows/FileFind.h`; `objdump -d`)"),
+    # glibc 2.31's `__init_sched_fifo_prio`: `sched_get_priority_max (SCHED_FIFO)` (0x0d) and `_min` (0x1d), both
+    # hypotheses, into `__sched_fifo_max_prio` (`0x792270`) and `__sched_fifo_min_prio` (`0x792274`). Stop: the `ret`.
+    "isf": dict(grp="Isf", cn="__init_sched_fifo_prio", a=0x5ff620, n=45, pos=True, stops=(0x2c,), calls=True,
+                tag="PLAN.md §M, M1", src="glibc 2.31's `__init_sched_fifo_prio` (`nptl/tpp.c`; `objdump -d`)"),
+    # `Add_Messsage_Pre_ArcType (s, pre, arcType)`: `s.Add_LF ()`, `s += pre`, `s += " "`, `s += arcType`, then the
+    # tail `jmp` to `s += ...` (0x47); the four callees are hypotheses.
+    "amp": dict(grp="Amp", cn="Add_Messsage_Pre_ArcType(UString&, char const*, wchar_t const*)", a=0x5e7a50, n=76,
+                pos=True, stops=(0x47,), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip's `Add_Messsage_Pre_ArcType` (`CPP/7zip/UI/Console/ExtractCallbackConsole.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/7zip/UI/Console/ExtractCallbackConsole.cpp `Print_UInt64_and_String (s, val, name)`: the
+    # stack guard, `ConvertUInt64ToString` into a buffer at `rsp`, `s += buf; s.Add_Space (); s += name`. Stops: the
+    # `ret` (0x68) and the `call` of `__stack_chk_fail` (0x69).
+    "pui": dict(grp="Pui", cn="Print_UInt64_and_String", a=0x5e85f0, n=110, pos=True, fs=True, stops=(0x68, 0x69),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `Print_UInt64_and_String` (`ExtractCallbackConsole.cpp`; `objdump -d`)"),
     # glibc 2.31's `remove`: only its code is used (`Rmf` takes it as a hypothesis).
     "rmv": dict(grp="Rmv", cn="remove", a=0x624030, n=63, pos=True, fs=True, stops=(0x31, 0x3e), calls=True,
                 tag="PLAN.md §M, M1", src="glibc 2.31's `remove` (`stdio-common/remove.c`; `objdump -d`)"),
@@ -1121,6 +1144,16 @@ FNS = {
     # `__stack_chk_fail` (0x63).
     "av2": dict(grp="Av2", cn="CPU_IsSupported_AVX2", a=0x4244b0, n=104, pos=True, fs=True, stops=(0x37, 0x63),
                 calls=True, tag="PLAN.md §M, M1", src="7-Zip's `CPU_IsSupported_AVX2` (`C/CpuArch.c`; `objdump -d`)"),
+    # `CFieldPrinter::PrintTitleLines ()`: `fputs (LinesString, *g_StdOut)` (the `call` at 0x16). Stops: the `ret`
+    # (0x1f), the landing pad after it (0x20).
+    "ptl": dict(grp="Ptl", cn="CFieldPrinter::PrintTitleLines", a=0x5eccd0, n=47, pos=True, stops=(0x1f, 0x20),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CFieldPrinter::PrintTitleLines` (`CPP/7zip/UI/Console/List.cpp`; `objdump -d`)"),
+    # `PrintSpaces (numSpaces)` (`.part.0`): `fputs (kSpaces + (32 - numSpaces), *g_StdOut)` (the `call` at 0x23).
+    # Stops: the `ret` (0x2c), the landing pad after it (0x2d).
+    "psp": dict(grp="Psp", cn="PrintSpaces", a=0x5ebdd0, n=60, pos=True, stops=(0x2c, 0x2d), calls=True,
+                tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `PrintSpaces` (`CPP/7zip/UI/Console/List.cpp`, `.part.0`; `objdump -d`)"),
     # `CFileBase::OpenBinary (name, flags, mode)`: `Close ()` (the `call` at 0x1a), `open64 (name, flags, mode)` (the
     # `call` at 0x2a), the result stored as `_handle`, `al` = it is not -1. Stop: the `ret` (0x41).
     "fob": dict(grp="Fob", cn="NWindows::NFile::NIO::CFileBase::OpenBinary", a=0x456060, n=66, pos=True, stops=(0x41,),
@@ -2189,6 +2222,13 @@ FNS = {
     "osc": dict(grp="Osc", cn="CStdOutStream::operator<< (const char *)", a=0x5f4be0, n=27, pos=True, stops=(26,),
                 calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `CStdOutStream::operator<< (const char *)` (`StdOutStream.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/7zip/Compress/LzmaDecoder.cpp `CDecoder::SetDecoderProperties2 (prop, size)`:
+    # `LzmaDec_Allocate (&_state, prop, size, &g_AllocBig)` (0x42bf80), the result through `SResToHRESULT`'s table
+    # (0x6e68c0), on `S_OK` `_propsWereSet = true` and `CreateInputBuffer ()` (0x57fcc0). Without the landing pad
+    # (from 0x4e). Stops: the three `ret`s (0x31, 0x3e, 0x4d).
+    "ldp": dict(grp="Ldp", cn="NCompress::NLzma::CDecoder::SetDecoderProperties2", a=0x57fd10, n=78, pos=True,
+                stops=(0x31, 0x3e, 0x4d), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `NCompress::NLzma::CDecoder::SetDecoderProperties2` (`LzmaDecoder.cpp`; `objdump -d`)"),
     # glibc 2.31 elf/dl-lookup.c `_dl_setup_hash (map)`: the GNU hash table's fields (or the SysV one's) into `map`.
     # Stops: the two `ret`s (0x61, 0x93), the `__assert_fail` path (0x94) not covered.
     "dsh": dict(grp="Dsh", cn="_dl_setup_hash", a=0x6ab020, n=180, pos=True, stops=(0x61, 0x93, 0x94), calls=True,
@@ -2240,6 +2280,14 @@ FNS = {
     # Stops: the `ret`s (0x24, 0x42), the padding after the first (0x25).
     "sbp": dict(grp="Sbp", cn="z7_SwapBytesPrepare", a=0x43d3d0, n=67, pos=True, stops=(36, 37, 66), calls=True,
                 tag="PLAN.md §M, M1", src="7-Zip 26.06's `z7_SwapBytesPrepare` (`SwapBytes.c`; `objdump -d`)"),
+    # glibc 2.x `_IO_new_file_write (f, data, n)` (libio/fileops.c, static in 7zzs): `n <= 0` (0x14) to the end with
+    # 0; the loop head (0x3d): `__write_nocancel` (0x4e) when `f->_flags2 & 2`, else `__write` (0x28); a negative
+    # count (0x30, 0x56) sets `_IO_ERR_SEEN` (0x60); else `to_do -= count`, `data += count`, to the head while
+    # `to_do > 0` (0x3b); the end (0x6b) adds `n - to_do` to `f->_offset` unless negative. Stops: the `ret` (0x8b),
+    # the padding (0x25, 0x8c); the `or dword [r13], 0x20` (0x60) by hand (`Seg.s_or_mi32`).
+    "ifw": dict(grp="Ifw", cn="_IO_new_file_write", a=0x6287d0, n=156, pos=True, stops=(0x25, 0x8b, 0x8c),
+                calls=True, hand=(0x60,), tag="PLAN.md §M, M1",
+                src="glibc's `_IO_new_file_write` (`libio/fileops.c`, static in 7zzs 26.06; `objdump -d`)"),
 }
 
 def file_bytes(path, va, n):
@@ -2396,6 +2444,9 @@ def effect(mn, sz, ol, pc=None):
         return terms, "Op.nop", "OpI.endbr"
     if mn in ('cmp', 'test') and sz == 8 and ks in (('r', 'r'), ('r', 'i')):
         return tsrc(8), f"Op.{mn} 8 {f[0][1]} {src(ops[1])}", f"OpI.{mn}8 {src(ops[1])}"
+    if mn == 'cmp' and ks == ('m', 'r') and sz == 8:   # FV7z/Lemmas/CmpMr8.lean
+        assert f[0][4] == 8
+        return terms, f"Op.cmpmr 8 {mem(ops[0])} {f[1][1]}", "OpI.cmpmr8"
     if mn == 'cmp' and ks == ('m', 'r') and sz in (32, 64):   # FV7z/Lemmas/BlkOps12.lean
         assert f[0][4] == sz
         return terms, f"Op.cmpmr {sz} {mem(ops[0])} {f[1][1]}", f"OpI.cmpmr {hw2(sz)}"
@@ -2741,7 +2792,7 @@ end FV7z.{grp}
                          f"theorem j{k}_0 : ∀ feat, Dec feat j{k} 0 (FV7z.mk {mnl(mn)} {sz} [{operand(ol[0])[1]}] {ln}) := "
                          "by dec_rfl\n")
     open(out + "/Pats.lean", "w").write(f"""import FV7z.Lemmas.Sp{"Fs" if FSM else ""}
-{"import FV7z.Lemmas.BlkOps28" + chr(10) if any("Op.sxb32" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps27" + chr(10) if any("Op.ldsxw" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps26" + chr(10) if any("Op.ldsxq" in x for x in P) else ""}{"import FV7z.Lemmas.CmovLd" + chr(10) if any(k in x for x in P for k in ("Op.cmovld32", "Op.cmovld64")) else ""}{"import FV7z.Lemmas.RepCmpsb" + chr(10) if any("Op.sbb8" in x for x in P) else ""}{"import FV7z.Lemmas.TestMr" + chr(10) if any("Op.testmra" in x for x in P) else ""}{"import FV7z.Lemmas.CmpMi16" + chr(10) if any("Op.cmpmi 16" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps25" + chr(10) if any("Op.cmp 16" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps24" + chr(10) if any(k in x for x in P for k in ("Op.shr16", "Op.sxb16", "Op.imul3d")) else ""}{"import FV7z.Lemmas.BlkOps23" + chr(10) if any(k in x for x in P for k in ("Op.or8", "Op.not64")) else ""}{"import FV7z.Lemmas.BlkOps22" + chr(10) if any("Op.testmi 32" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps20" + chr(10) if any(k in x for x in P for k in ("Op.not32", "Op.cqo", "Op.imul3", "Op.andh", "Op.testh", "Op.cmpm 8")) else ""}{"import FV7z.Lemmas.BlkOps19" + chr(10) if any("Op.vld 0" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps18" + chr(10) if any("Op.zxr16" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps17" + chr(10) if any("Op.mul64" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps16" + chr(10) if any("Op.bt64" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps15" + chr(10) if any("Op.sxr" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps14" + chr(10) if any(k in x for x in P for k in ("Op.zxr", "Op.test 16", "Op.cmpmif fb 8")) else ""}{"import FV7z.Lemmas.BlkOps13" + chr(10) if any("Op.cmpmif" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps12" + chr(10) if any(k in x for x in P for k in ("Op.cmpmr", "Op.testmi")) else ""}{"import FV7z.Lemmas.BlkOps11" + chr(10) if any(k in x for x in P for k in ("Op.rol64", "Op.ror64")) else ""}{"import FV7z.Lemmas.BlkOps10" + chr(10) if any("Op.cmpm 16" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps9" + chr(10) if any("Op.cmpma" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps8" + chr(10) if any(k in x for x in P for k in ("Op.vla", "Op.vsa", "Op.addma", "Op.cmpmia 8", "Op.stia 8")) else ""}{"import FV7z.Lemmas.BlkOps7" + chr(10) if any(k in x for x in P for k in ("Op.vl", "Op.vs", "Op.cdqe")) else ""}{"import FV7z.Lemmas.BlkOps6" + chr(10) if any(k in x for x in P for k in ("Op.stf8", "Op.stfi", "Op.xormf")) else ""}{("import FV7z.Lemmas.BlkOps5" if any("Op.ldsxb" in x for x in P) else
+{"import FV7z.Lemmas.CmpMr8" + chr(10) if any("Op.cmpmr 8" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps28" + chr(10) if any("Op.sxb32" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps27" + chr(10) if any("Op.ldsxw" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps26" + chr(10) if any("Op.ldsxq" in x for x in P) else ""}{"import FV7z.Lemmas.CmovLd" + chr(10) if any(k in x for x in P for k in ("Op.cmovld32", "Op.cmovld64")) else ""}{"import FV7z.Lemmas.RepCmpsb" + chr(10) if any("Op.sbb8" in x for x in P) else ""}{"import FV7z.Lemmas.TestMr" + chr(10) if any("Op.testmra" in x for x in P) else ""}{"import FV7z.Lemmas.CmpMi16" + chr(10) if any("Op.cmpmi 16" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps25" + chr(10) if any("Op.cmp 16" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps24" + chr(10) if any(k in x for x in P for k in ("Op.shr16", "Op.sxb16", "Op.imul3d")) else ""}{"import FV7z.Lemmas.BlkOps23" + chr(10) if any(k in x for x in P for k in ("Op.or8", "Op.not64")) else ""}{"import FV7z.Lemmas.BlkOps22" + chr(10) if any("Op.testmi 32" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps20" + chr(10) if any(k in x for x in P for k in ("Op.not32", "Op.cqo", "Op.imul3", "Op.andh", "Op.testh", "Op.cmpm 8")) else ""}{"import FV7z.Lemmas.BlkOps19" + chr(10) if any("Op.vld 0" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps18" + chr(10) if any("Op.zxr16" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps17" + chr(10) if any("Op.mul64" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps16" + chr(10) if any("Op.bt64" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps15" + chr(10) if any("Op.sxr" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps14" + chr(10) if any(k in x for x in P for k in ("Op.zxr", "Op.test 16", "Op.cmpmif fb 8")) else ""}{"import FV7z.Lemmas.BlkOps13" + chr(10) if any("Op.cmpmif" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps12" + chr(10) if any(k in x for x in P for k in ("Op.cmpmr", "Op.testmi")) else ""}{"import FV7z.Lemmas.BlkOps11" + chr(10) if any(k in x for x in P for k in ("Op.rol64", "Op.ror64")) else ""}{"import FV7z.Lemmas.BlkOps10" + chr(10) if any("Op.cmpm 16" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps9" + chr(10) if any("Op.cmpma" in x for x in P) else ""}{"import FV7z.Lemmas.BlkOps8" + chr(10) if any(k in x for x in P for k in ("Op.vla", "Op.vsa", "Op.addma", "Op.cmpmia 8", "Op.stia 8")) else ""}{"import FV7z.Lemmas.BlkOps7" + chr(10) if any(k in x for x in P for k in ("Op.vl", "Op.vs", "Op.cdqe")) else ""}{"import FV7z.Lemmas.BlkOps6" + chr(10) if any(k in x for x in P for k in ("Op.stf8", "Op.stfi", "Op.xormf")) else ""}{("import FV7z.Lemmas.BlkOps5" if any("Op.ldsxb" in x for x in P) else
   "import FV7z.Lemmas.BlkOps4" if any("Op.imul64" in x for x in P) else
   "import FV7z.Lemmas.BlkOps3" if any(k in x for x in P for k in ("Op.shl64", "Op.shr64", "Op.sar64")) else
   "import FV7z.Lemmas.BlkOps2") + chr(10) if pos else ""}/-!
