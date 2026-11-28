@@ -243,6 +243,9 @@ theorem pops5_rsp {g₀ g : Gprs} {W : Addr → Byte} (hs : g.rsp = g₀.rsp - 8
   show g.rsp + 8 + 8 + 8 + 8 + 8 = _
   rw [hs, a5s, a4s, a3s, a2s, a1s]
 
+/-- `Kp` does not look at `rsp`. -/
+theorem kp_set4 {g₀ g : Gprs} {v : Addr} (h : Kp g₀ g) : Kp g₀ (g.set 4 v) := h
+
 theorem pops5_kp {g₀ g : Gprs} {ra : Addr} {W : Addr → Byte} (hs : g.rsp = g₀.rsp - 8 - 8 - 8 - 8 - 8)
     (hfr : Fr g₀ ra W) (h15 : g.r15 = g₀.r15) : Kp g₀ (pops5 W g) := by
   refine ⟨?_, ?_, ?_, ?_, ?_, h15⟩
@@ -306,8 +309,8 @@ theorem from275z {g₀ : Gprs} {it : BitVec 64} {I : Nat → (Addr → Byte) →
   · rw [hgZ]
     show U.cpu.gpr.rsp + 8 = _
     rw [hsU]
-  · rw [hgZ, hgU]
-    exact hkP
+  · rw [hgZ]
+    exact kp_set4 (hgU ▸ hkP)
 
 /-- From 275 with `it` not 0: the pops, then the `jmp` to `0x6014f0` (`kt`). -/
 theorem from275n {g₀ : Gprs} {it : BitVec 64} {I : Nat → (Addr → Byte) → Prop} {e₂ : Addr}
