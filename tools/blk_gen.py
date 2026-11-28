@@ -1672,6 +1672,16 @@ FNS = {
     "gdp": dict(grp="Gdp", cn="CArc::GetItem_DefaultPath", a=0x5d2040, n=268, pos=True, fs=True, stops=(0x77, 0x107),
                 calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `CArc::GetItem_DefaultPath` (`CPP/7zip/UI/Common/OpenArchive.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/Common/Wildcard.cpp `NWildcard::CCensorNode::AddItemSimple (include, item)`: `IncludeItems`
+    # (`this + 0x28`) or `ExcludeItems` (`+ 0x38`) by `cmove` (a `CObjectVector<CItem>`: `_items`, `_size` at `+ 8`,
+    # `_capacity` at `+ 0xc`) grown when full (above 0x7ffffffe the `ja` at 0x31 to the throw, by hand: its target is
+    # outside; `operator new []` at 0x56, `memcpy` at 0x152 when any, `delete []` at 0x15a when not null); then
+    # `new CItem (item)` (`operator new` at 0x80, 0x18 bytes): its `PathParts` copied (`operator new []` at 0xd7, the
+    # loop at 0x100: `operator new` at 0x10d, the `UString` copy at 0x11b), the flags word, appended. Stop: the `ret`
+    # (0xc7).
+    "ais": dict(grp="Ais", cn="NWildcard::CCensorNode::AddItemSimple", a=0x452bc0, n=356, pos=True, stops=(0xc7,),
+                hand=(0x31,), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `NWildcard::CCensorNode::AddItemSimple` (`CPP/Common/Wildcard.cpp`; `objdump -d`)"),
 }
 
 
