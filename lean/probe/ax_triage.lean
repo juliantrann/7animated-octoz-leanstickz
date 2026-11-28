@@ -1,10 +1,9 @@
-import FV7z.Rmv.Code
-import FV7z.Rmf.Holds
-import FV7z.Tfr.Holds
-import FV7z.Iap.Holds
-import FV7z.Ffl.Holds
+import FV7z.Sti.Holds
+import FV7z.Gac.Holds
+import FV7z.Mbr.Holds
+import FV7z.Sse.Holds
 open FV7z
-#print axioms FV7z.Rmf.rmf_ok
-#print axioms FV7z.Tfr.tfr_ok
-#print axioms FV7z.Iap.iap_ok
-#print axioms FV7z.Ffl.ffl_ok
+#print axioms FV7z.Sti.sti_ok
+#print axioms FV7z.Gac.gac_ok
+#print axioms FV7z.Mbr.mbr_ok
+#print axioms FV7z.Sse.sse_ok
