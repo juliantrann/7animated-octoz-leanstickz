@@ -1491,6 +1491,12 @@ import FV7z.Tup.Blocks1
 import FV7z.Tup.Blocks
 import FV7z.Tup.Cuts
 import FV7z.Tup.Holds
+import FV7z.Act.Code
+import FV7z.Act.Pats
+import FV7z.Act.Blocks1
+import FV7z.Act.Blocks
+import FV7z.Act.Cuts
+import FV7z.Act.Holds
 import FV7z.Cpr.Code
 import FV7z.Cpr.Pats
 import FV7z.Cpr.Blocks1
