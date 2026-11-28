@@ -554,6 +554,13 @@ FNS = {
     "uad": dict(grp="Uad", cn="UString::Add_Dot", a=0x44d9b0, n=58, pos=True, stops=(0x2a,), calls=True,
                 tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `UString::Add_Dot` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
+    # glibc 2.31 elf/dl-tunables.c `do_tunable_update_val (cur, valp)` (static, called by `__tunables_init`): the type
+    # (the 4 bytes at `cur + 8`) 3, a string: the pointer `valp` stored at `cur + 0x20`; else the value `*valp` against
+    # the bounds at `cur + 0x10`, `cur + 0x18` (signed for the type 0, unsigned else), within them stored at
+    # `cur + 0x20` and `cur->initialized` (`cur + 0x28`) set. Stops: the three `ret`s (0x26, 0x34, 0x4c).
+    "dtu": dict(grp="Dtu", cn="do_tunable_update_val", a=0x66ed50, n=77, pos=True, stops=(0x26, 0x34, 0x4c),
+                tag="PLAN.md G3, startup",
+                src="glibc 2.31's `do_tunable_update_val` (`elf/dl-tunables.c`; `objdump -d`)"),
     # 7-Zip 26.06 C/LzmaDec + CPP/7zip/Compress/LzmaDecoder.cpp `CDecoder::SetOutStreamSizeResume (outSize)`: the
     # flags and sizes, then a tail jump (0x2f) to `LzmaDec_Init (&_state)`.
     "sos": dict(grp="Sos", cn="NCompress::NLzma::CDecoder::SetOutStreamSizeResume", a=0x57fd80, n=52, pos=True,
@@ -901,6 +908,12 @@ FNS = {
     # PLT entry) of the rest down and `_len` - `count`. Stops: the `ret`s (0x25, 0x5d).
     "udl": dict(grp="Udl", cn="UString::Delete", a=0x44e0b0, n=94, pos=True, stops=(0x25, 0x5d), calls=True,
                 hand=(0x54,), tag="PLAN.md §M, M1", src="7-Zip's `UString::Delete` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
+    # `AString::InsertSpace (index, size)`: `Grow (size)` (the `call` at 0x12, `index` by reference in `r12`), then
+    # `memmove (_chars + index + size, _chars + index, _len - index + 1)` as a tail jump to the PLT's entry. Stop:
+    # the `jmp` (0x37).
+    "asi": dict(grp="Asi", cn="AString::InsertSpace", a=0x44c140, n=60, pos=True, stops=(0x37,), calls=True,
+                tag="PLAN.md §M, M1",
+                src="7-Zip's `AString::InsertSpace` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
     # `AString::Insert (index, s)`: nothing when `s` is empty; else `InsertSpace (index, s._len)` (the `call` at 0x36,
     # `index` by reference at `rsp + 0xc`), `memcpy` (the `call` at 0x49, the PLT entry) of `s`'s chars to `_chars +
     # index` and `_len += s._len` (0x4e, by hand). Stops: the `ret`s (0x21, 0x5a).
@@ -1843,6 +1856,12 @@ FNS = {
     "cfd": dict(grp="Cfd", cn="__libc_check_standard_fds", a=0x613860, n=419, pos=True, fs=True,
                 stops=(0x59, 0xc0, 0x130, 0x1a0), calls=True, tag="PLAN.md G3, startup",
                 src="glibc 2.31's `__libc_check_standard_fds` (`csu/check_fds.c`; `objdump -d`)"),
+    # glibc 2.31 wctype/wcfuncs.c `towupper (wc)` with `wctrans_table_lookup` (`locale/C-translit.h`'s three-level
+    # table) inlined: the thread's locale (`fs:-0x70`), its `LC_CTYPE` data, the `toupper` table's offset at index
+    # `_NL_CTYPE_MAP_OFFSET` (the word at 0xd0); `wc` itself (`ret` at 0x4c) past the first level's bound or at an
+    # empty entry of either level, else `wc` plus the third level's entry (`ret` at 0x5c). No calls, no stores.
+    "tup": dict(grp="Tup", cn="towupper", a=0x669660, n=93, pos=True, fs=True, stops=(0x4c, 0x5c),
+                tag="PLAN.md §M, M1", src="glibc 2.31's `towupper` (`wctype/wcfuncs.c`; `objdump -d`)"),
     # 7-Zip 26.06 UI/Console/ExtractCallbackConsole.cpp, without the landing pads (from 0x11e). Stops: the `ret`
     # (0xfe), the call of `__stack_chk_fail` (0x119).
     "pew": dict(grp="Pew", cn="Print_ErrorFormatIndex_Warning", a=0x5e96e0, n=286, pos=True, fs=True,
@@ -1865,6 +1884,21 @@ FNS = {
     "owc": dict(grp="Owc", cn="CStdOutStream::operator<< (const wchar_t *)", a=0x5a1530, n=143, pos=True, fs=True,
                 stops=(137, 138), calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `CStdOutStream::operator<< (const wchar_t *)` (`StdOutStream.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 Common/StdOutStream.cpp, without the landing pads (from 0x8c). Stops: the `ret` (0x86), the call of
+    # `__stack_chk_fail` (0x87).
+    "npp": dict(grp="Npp", cn="CStdOutStream::NormalizePrint_UString_Path (const UString &)", a=0x5a1710, n=140,
+                pos=True, fs=True, stops=(134, 135), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CStdOutStream::NormalizePrint_UString_Path (const UString &)` (`StdOutStream.cpp`; "
+                    "`objdump -d`)"),
+    # 7-Zip 26.06 Common/StdOutStream.cpp, without the landing pad (from 0x58). Stops: the `ret` (0x52), the call of
+    # `__stack_chk_fail` (0x53).
+    "olg": dict(grp="Olg", cn="CStdOutStream::operator<< (Int64)", a=0x5a1a70, n=88, pos=True, fs=True,
+                stops=(82, 83), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CStdOutStream::operator<< (Int64)` (`StdOutStream.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 Common/StdOutStream.cpp, without the landing pad (from 0x28). Stop: the `ret` (0x27).
+    "pus": dict(grp="Pus", cn="CStdOutStream::PrintUString", a=0x5a14f0, n=40, pos=True, stops=(39,), calls=True,
+                tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CStdOutStream::PrintUString` (`StdOutStream.cpp`; `objdump -d`)"),
 }
 
 def file_bytes(path, va, n):
