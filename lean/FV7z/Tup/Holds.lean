@@ -193,8 +193,8 @@ theorem vc_hit {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte}
     (f11 : ∀ i < 4, Foot F.data (Addr.add (a11 V fb (BitVec.setWidth 32 g.rdi)) i)) :
     W_0 fb F Wl (Qr g V 92 (BitVec.setWidth 32 g.rdi + dl V fb (BitVec.setWidth 32 g.rdi))) g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
-  dsimp only [tlsA, lq, ix, tt, s1, bd, a6, o1v, s2, m2, a9, o2v, a11, dl] at h e1 e2 f0 f1 f2 f3 f4 f5 f6 f8 f12
-    f9 f16 f11 ⊢
+  dsimp only [tlsA, lq, ix, tt, s1, bd, a6, o1v, s2, m2, a9, o2v, a11, dl] at h e1 e2 f0 f1 f2 f3 f4 f5 f6 ⊢
+  dsimp only [tlsA, lq, ix, tt, s1, bd, a6, o1v, s2, m2, a9, o2v, a11, dl] at f8 f12 f9 f16 f11
   have hd := decide_eq_true h
   cfx [h, hd, e1, e2]
   all_goals vfin
