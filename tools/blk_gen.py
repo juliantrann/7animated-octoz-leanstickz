@@ -238,6 +238,13 @@ FNS = {
     "pvc": dict(grp="Pvc", cn="NWindows::NCOM::CPropVariant::Clear", a=0x457020, n=29, pos=True, stops=(18, 24),
                 tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `CPropVariant::Clear` (`CPP/Windows/PropVariant.cpp`; `objdump -d`)"),
+    # 7-Zip's CPP/Windows/PropVariant.cpp `PropVariant_Clear (prop)`: the types without resources (`vt` <= 7, or
+    # `vt - 10` a bit of 0x40000000003fc3): `vt`, `wReserved1`, `wReserved2`, `wReserved3` and the value zeroed
+    # (the `ret`, 0x5b); else `VariantClear (prop)` (the `call`, 0x2d), its result kept if not 0 (the `ret`, 0x3d),
+    # else the same zeroing past `vt` if `vt` is 0 (0x43).
+    "pcl": dict(grp="Pcl", cn="NWindows::NCOM::PropVariant_Clear", a=0x456fb0, n=92, pos=True,
+                stops=(0x3d, 0x5b), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `PropVariant_Clear` (`CPP/Windows/PropVariant.cpp`; `objdump -d`)"),
     "sdf": dict(grp="Sdf", cn="CFiTimesCAM::SetDirTime_to_FS", a=0x5ad590, n=52, pos=True, stops=(0x2f,),
                 tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `CFiTimesCAM::SetDirTime_to_FS` (`ArchiveExtractCallback.cpp`; `objdump -d`)"),
@@ -852,6 +859,72 @@ FNS = {
                 src="7-Zip's `UString::UString (unsigned, const UString &)` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
     # `UString::UString (const UString &s, c)`: `SetStartLen (s._len + 1)` (the `call` at 0x1d), `wmemcpy (_chars,
     # s._chars, s._len)` (0x33), `_chars[s._len] = c`, `_chars[s._len + 1] = 0`; the `ret` at 0x50.
+    # `COutFile::OpenBinary_forWrite_oflag (name, flags)`: `Path = name` (`AString::operator=`, 0x16), then the tail
+    # `jmp` to `CFileBase::OpenBinary (name, flags, mode)` (0x2c), `mode` the field at `this + 0x58`.
+    "obw": dict(grp="Obw", cn="NWindows::NFile::NIO::COutFile::OpenBinary_forWrite_oflag(char const*, int)", a=0x456250, n=49, pos=True,
+                stops=(0x2c,), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `NIO::COutFile::OpenBinary_forWrite_oflag` (`CPP/Windows/FileIO.cpp`; `objdump -d`)"),
+    # The `COutFile::Open_EXISTING`, `Create_ALWAYS`, `Create_NEW` and `Create_ALWAYS_or_Open_ALWAYS` wrappers: the
+    # flags in `edx`, then the tail `jmp` to `OpenBinary_forWrite_oflag`.
+    "oex": dict(grp="Oex", cn="NWindows::NFile::NIO::COutFile::Open_EXISTING(char const*)", a=0x456290, n=14, pos=True,
+                stops=(0x9,), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `NIO::COutFile::Open_EXISTING` (`CPP/Windows/FileIO.cpp`; `objdump -d`)"),
+    "ocl": dict(grp="Ocl", cn="NWindows::NFile::NIO::COutFile::Create_ALWAYS(char const*)", a=0x4562a0, n=14, pos=True,
+                stops=(0x9,), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `NIO::COutFile::Create_ALWAYS` (`CPP/Windows/FileIO.cpp`; `objdump -d`)"),
+    "cnw": dict(grp="Cnw", cn="NWindows::NFile::NIO::COutFile::Create_NEW(char const*)", a=0x4562b0, n=14, pos=True,
+                stops=(0x9,), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `NIO::COutFile::Create_NEW` (`CPP/Windows/FileIO.cpp`; `objdump -d`)"),
+    "cao": dict(grp="Cao", cn="NWindows::NFile::NIO::COutFile::Create_ALWAYS_or_Open_ALWAYS(char const*, bool)", a=0x4562c0, n=26, pos=True,
+                stops=(0x15,), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `NIO::COutFile::Create_ALWAYS_or_Open_ALWAYS` (`CPP/Windows/FileIO.cpp`; `objdump -d`)"),
+    # `COutFile::SetLength (length)`: `ftruncate (_handle, length) == 0` (`call` at 0xa, a hypothesis).
+    "osl": dict(grp="Osl", cn="NWindows::NFile::NIO::COutFile::SetLength(unsigned long)", a=0x456390, n=25, pos=True,
+                stops=(0x18,), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `NIO::COutFile::SetLength` (`CPP/Windows/FileIO.cpp`; `objdump -d`)"),
+    # glibc 2.31's `ftruncate64` (`syscall` 77): only its code is used (`Osl` takes it as a hypothesis).
+    "ftr": dict(grp="Ftr", cn="ftruncate64", a=0x6664f0, n=42, pos=True, fs=True, stops=(0x13, 0x29), calls=True,
+                tag="PLAN.md §M, M1", src="glibc 2.31's `ftruncate64` (`sysdeps/unix/syscalls.list`; `objdump -d`)"),
+    # `umask` (glibc 2.31, `syscall` 95) and `__errno_location`: only their code is used (`Cum`, `Gle` take them as
+    # hypotheses).
+    "umk": dict(grp="Umk", cn="umask", a=0x665480, n=12, pos=True, stops=(0xb,), calls=True, tag="PLAN.md §M, M1",
+                src="glibc 2.31's `umask` (`sysdeps/unix/syscalls.list`; `objdump -d`)"),
+    "erl": dict(grp="Erl", cn="__errno_location", a=0x5ffea0, n=21, pos=True, fs=True, stops=(0x14,), calls=True,
+                tag="PLAN.md §M, M1", src="glibc 2.31's `__errno_location` (`csu/errno-loc.c`; `objdump -d`)"),
+    # `NWindows::NFile::NDir::C_umask::C_umask ()`: `umask (0)` (0x0a), `mask = ~r & 0x1ff`, then the tail
+    # `jmp umask` (0x1b) restores it; both calls to `umask` are hypotheses.
+    "cum": dict(grp="Cum", cn="NWindows::NFile::NDir::C_umask::C_umask()", a=0x455720, n=32, pos=True, stops=(0x1b,),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip's `C_umask::C_umask ()` (`CPP/Windows/FileDir.h`; `objdump -d`)"),
+    # `GetLastError ()`: `return errno` through `__errno_location` (0x08, a hypothesis).
+    "gle": dict(grp="Gle", cn="GetLastError()", a=0x5a0200, n=20, pos=True, stops=(0x13,),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip's `GetLastError ()` (`CPP/Common/MyWindows.cpp`; `objdump -d`)"),
+    # `NDir::SetCurrentDir`, `NDir::CreateDir`, `NIO::SetSymLink` (folded): `rmdir`/`mkdir (path, 0777)`/`link`
+    # (each a hypothesis) then `sete al`; `seekToBegin`: `seek (0, SEEK_SET)`; `GetLastError_noZero_HRESULT`:
+    # `GetLastError ()` (a hypothesis), then `HRESULT_FROM_WIN32` or `E_FAIL` for 0.
+    "scd": dict(grp="Scd", cn="NWindows::NFile::NDir::SetCurrentDir(char const*)", a=0x454b90, n=23, pos=True,
+                stops=(0x16,), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip's `NDir::SetCurrentDir` (`CPP/Windows/FileDir.cpp`; `objdump -d`)"),
+    "cdr": dict(grp="Cdr", cn="NWindows::NFile::NDir::CreateDir(char const*)", a=0x454bb0, n=28, pos=True,
+                stops=(0x1b,), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip's `NDir::CreateDir` (`CPP/Windows/FileDir.cpp`; `objdump -d`)"),
+    "lkw": dict(grp="Lkw", cn="NWindows::NFile::NIO::SetSymLink(char const*, char const*)", a=0x455880, n=32,
+                pos=True, stops=(0x1f,), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip's `NIO::SetSymLink` (`CPP/Windows/FileDir.cpp`; `objdump -d`)"),
+    "sbg": dict(grp="Sbg", cn="NWindows::NFile::NIO::CFileBase::seekToBegin() const", a=0x4560c0, n=22, pos=True,
+                stops=(0x15,), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip's `CFileBase::seekToBegin` (`CPP/Windows/FileIO.cpp`; `objdump -d`)"),
+    "glh": dict(grp="Glh", cn="GetLastError_noZero_HRESULT()", a=0x456000, n=47, pos=True, stops=(0x23,),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip's `GetLastError_noZero_HRESULT ()` (`CPP/Windows/FileIO.cpp`; `objdump -d`)"),
+    # glibc 2.31's `rmdir`, `mkdir`, `link` (`syscall` 84, 83, 86): only their code is used (hypotheses above).
+    "rmd": dict(grp="Rmd", cn="rmdir", a=0x665e30, n=37, pos=True, fs=True, stops=(0x13, 0x24), calls=True,
+                tag="PLAN.md §M, M1", src="glibc 2.31's `rmdir` (`sysdeps/unix/syscalls.list`; `objdump -d`)"),
+    "mkd": dict(grp="Mkd", cn="mkdir", a=0x6654f0, n=37, pos=True, fs=True, stops=(0x13, 0x24), calls=True,
+                tag="PLAN.md §M, M1", src="glibc 2.31's `mkdir` (`sysdeps/unix/syscalls.list`; `objdump -d`)"),
+    "lnk": dict(grp="Lnk", cn="link", a=0x665d70, n=37, pos=True, fs=True, stops=(0x13, 0x24), calls=True,
+                tag="PLAN.md §M, M1", src="glibc 2.31's `link` (`sysdeps/unix/syscalls.list`; `objdump -d`)"),
     "uch": dict(grp="Uch", cn="UString::UString(const UString&, wchar_t)", a=0x44d280, n=81, pos=True, stops=(0x50,),
                 calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip's `UString::UString (const UString &, wchar_t)` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
