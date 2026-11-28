@@ -319,7 +319,7 @@ theorem vc_64 {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post} {it p q : B
     | refine h94 ?_ ?_ _ ?_ ?_ ?_ _
     | with_reducible rfl
     | exact rfl
-    | assumption
+    | with_reducible assumption
     | with_reducible exact fi
     | with_reducible exact fp
     | (with_reducible exact fq (by assumption))
@@ -800,8 +800,8 @@ theorem vc_463 {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post}
 theorem vc_476 {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post} {c : BitVec 32}
     (fc : ∀ i < 4, Foot F.data (Addr.add (g.r13 + 8#64) i)) (wc : ∀ i < 4, Foot Wl (Addr.add (g.r13 + 8#64) i))
     (hc : rdd(V, g.r13 + 8#64) = c)
-    (h493 : c - 1#32 = 0 → ∀ g', Fr g g' → ∀ fl, Q 493 g' fl (Vst V (g.r13 + 8#64) (toBytesLE (c - 1#32) 4)))
-    (h64 : ¬c - 1#32 = 0 → ∀ g', Fr g g' → g'.rax = BitVec.setWidth 64 (c - 1#32) →
+    (h493 : c = 1#32 → ∀ g', Fr g g' → ∀ fl, Q 493 g' fl (Vst V (g.r13 + 8#64) (toBytesLE (c - 1#32) 4)))
+    (h64 : ¬c = 1#32 → ∀ g', Fr g g' → g'.rax = BitVec.setWidth 64 (c - 1#32) →
       ∀ fl, Q 64 g' fl (Vst V (g.r13 + 8#64) (toBytesLE (c - 1#32) 4))) :
     W_476 F Wl Q g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
