@@ -1501,3 +1501,12 @@ import FV7z.Aec.Pieces1
 import FV7z.Aec.Pieces2
 import FV7z.Aec.Holds
 import FV7z.Cpr.Loop
+import FV7z.Lemmas.AddMi64
+import FV7z.Bop.Code
+import FV7z.Bop.Pats
+import FV7z.Bop.Blocks1
+import FV7z.Bop.Blocks
+import FV7z.Bop.Cuts
+import FV7z.Bop.Defs
+import FV7z.Bop.Pieces
+import FV7z.Bop.Holds
