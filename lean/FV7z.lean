@@ -1571,6 +1571,12 @@ import FV7z.Npp.Cuts
 import FV7z.Npp.Defs
 import FV7z.Npp.Pieces
 import FV7z.Npp.Holds
+import FV7z.Dsh.Code
+import FV7z.Dsh.Pats
+import FV7z.Dsh.Blocks1
+import FV7z.Dsh.Blocks
+import FV7z.Dsh.Cuts
+import FV7z.Dsh.Holds
 import FV7z.Uad.Code
 import FV7z.Uad.Pats
 import FV7z.Uad.Blocks1
