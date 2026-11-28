@@ -948,6 +948,11 @@ FNS = {
     # PLT entry) of the rest down and `_len` - `count`. Stops: the `ret`s (0x25, 0x5d).
     "udl": dict(grp="Udl", cn="UString::Delete", a=0x44e0b0, n=94, pos=True, stops=(0x25, 0x5d), calls=True,
                 hand=(0x54,), tag="PLAN.md §M, M1", src="7-Zip's `UString::Delete` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
+    # `CFileBase::OpenBinary (name, flags, mode)`: `Close ()` (the `call` at 0x1a), `open64 (name, flags, mode)` (the
+    # `call` at 0x2a), the result stored as `_handle`, `al` = it is not -1. Stop: the `ret` (0x41).
+    "fob": dict(grp="Fob", cn="NWindows::NFile::NIO::CFileBase::OpenBinary", a=0x456060, n=66, pos=True, stops=(0x41,),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip's `CFileBase::OpenBinary` (`CPP/Windows/FileIO.cpp`; `objdump -d`)"),
     # `AString::Add_UInt32 (v)`: `Grow (10)` (the `call` at 0x14), `ConvertUInt32ToString (v, _chars + _len)` (the
     # `call` at 0x21), `_len` = the returned end minus `_chars` (0x29). Stop: the `ret` (0x32).
     "aui": dict(grp="Aui", cn="AString::Add_UInt32", a=0x44c980, n=51, pos=True, stops=(0x32,), calls=True,
