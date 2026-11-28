@@ -1732,6 +1732,16 @@ FNS = {
     "rsv": dict(grp="Rsv", cn="CDirItems::ReserveDown", a=0x5c03e0, n=439, pos=True, stops=(0x99,), calls=True,
                 tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `CDirItems::ReserveDown` (`CPP/7zip/UI/Common/EnumDirItems.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/Common/Wildcard.cpp `NWildcard::CCensorNode::CheckPathToRoot (include, pathParts, isFile)`: six
+    # pushes and a frame of 0x48 bytes with the stack guard at `rsp + 0x38` and a local `UStringVector` at `rsp + 0x20`;
+    # `CheckPathCurrent` (0x36); `Parent` not null: the local's first item (`operator new []` 0x70, `operator new`
+    # 0xa9, the `UString` copy of `Name` 0xb7), `pathParts` appended (grown when full: the two jumps to the throw at
+    # 0x1a9 and 0x1b2, by hand: their target is outside; the loop at 0x1e0), `Parent->CheckPathToRoot` (0xee); the
+    # local's items freed from the last down (the loop at 0x110). Stops: the `ret` (0x172), the call of
+    # `__stack_chk_fail` (0x2a7).
+    "cpr": dict(grp="Cpr", cn="NWildcard::CCensorNode::CheckPathToRoot", a=0x454330, n=684, pos=True, fs=True,
+                stops=(0x172, 0x2a7), hand=(0x1a9, 0x1b2), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `NWildcard::CCensorNode::CheckPathToRoot` (`CPP/Common/Wildcard.cpp`; `objdump -d`)"),
 }
 
 

@@ -1460,3 +1460,9 @@ import FV7z.Rsv.Blocks1
 import FV7z.Rsv.Blocks
 import FV7z.Rsv.Cuts
 import FV7z.Rsv.Holds
+import FV7z.Cpr.Code
+import FV7z.Cpr.Pats
+import FV7z.Cpr.Blocks1
+import FV7z.Cpr.Blocks
+import FV7z.Cpr.Cuts
+import FV7z.Cpr.Holds
