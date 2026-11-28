@@ -1607,6 +1607,13 @@ import FV7z.Ecq.Pats
 import FV7z.Ecq.Blocks1
 import FV7z.Ecq.Blocks
 import FV7z.Ecq.Cuts
+import FV7z.Ecq.Holds
+import FV7z.Ecq.Loop1
+import FV7z.Ecq.Loop2
+import FV7z.Ecq.Loop3
+import FV7z.Ecq.Loop45
+import FV7z.Ecq.Tail
+import FV7z.Ecq.Ok
 import FV7z.Cpr.Code
 import FV7z.Cpr.Pats
 import FV7z.Cpr.Blocks1
