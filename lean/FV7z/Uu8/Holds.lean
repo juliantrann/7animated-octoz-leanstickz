@@ -27,7 +27,9 @@ theorem tgt_13 : uu8_at.add (13 + 5) + BitVec.ofNat 64 18446744073709551438 = tg
 
 /-- The registers at the jump. -/
 abbrev gq (V : Addr → Byte) (g : Gprs) : Gprs :=
-  { g with rax := 7938428#64, rdx := BitVec.setWidth 64 rdd(V, 7938428#64) }
+  { g with
+      rax := 7938428#64,
+      rdx := BitVec.setWidth 64 rdd(V, 7938428#64) }
 
 variable {F : Footprint} {Wl : List Rgn}
 
@@ -36,9 +38,8 @@ theorem vc_0 {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post}
     (f1 : ∀ i < 4, Foot F.data (Addr.add (7938428#64) i))
     (h : ∀ fl, Q 13 (gq V g) fl V) : W_0 F Wl Q g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
-  dsimp only at f1 h ⊢
   wpx [W_0, o0]
-  all_goals repeat' (first | exact h _ | exact f1 | apply And.intro | intro _)
+  all_goals repeat' (first | exact h _ | exact f1 | simpa using f1 | apply And.intro | intro _)
 
 variable {prof : Profile} {L : List (Addr × List Byte)} {s₀ : State} {o : Oracle}
   {gev : List Event} {gP : State → Nat → List Event → Prop} {gE : Outcome → List Event → Prop}

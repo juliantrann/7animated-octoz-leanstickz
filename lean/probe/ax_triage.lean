@@ -6,6 +6,8 @@ import FV7z.U8u.Holds
 import FV7z.Uu8.Holds
 import FV7z.Gfp.Holds
 import FV7z.Obn.Holds
+import FV7z.Fls.Holds
+import FV7z.Enl.Holds
 open FV7z
 #print axioms FV7z.Tbo.tbo_ok
 #print axioms FV7z.Ter.ter_ok
@@ -15,3 +17,5 @@ open FV7z
 #print axioms FV7z.Uu8.uu8_ok
 #print axioms FV7z.Gfp.gfp_ok
 #print axioms FV7z.Obn.obn_ok
+#print axioms FV7z.Fls.fls_ok
+#print axioms FV7z.Enl.enl_ok
