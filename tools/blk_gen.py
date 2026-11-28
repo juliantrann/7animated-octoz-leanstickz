@@ -1603,6 +1603,16 @@ FNS = {
                 stops=(0x28, 0x40, 0x5b, 0x64, 0x74, 0x83, 0x94, 0xa8, 0xb5, 0xc6, 0xd4, 0xe4),
                 calls=True, jt=(0x6d9570, 65), tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `ConvertPropVariantToShortString` (`CPP/Windows/PropVariantConv.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/7zip/UI/Common/ArchiveOpenCallback.cpp `COpenCallbackImp::Init2 (folderPrefix, fileName)`: a
+    # frame of 32 bytes under five pushes with the stack guard at `rsp + 24` and a `UString` at `rsp`; `FileNames`'
+    # `Clear` by a call (0x30); `FileNames_WasUsed`' items from the last down (the loop, head 0x48, `rbp` = 8 * i):
+    # an item not NULL has its chars freed unless NULL (`operator delete []`, 0x5d) and is freed (`operator delete
+    # (p, 0x10)`, 0x6a); the sizes and `PasswordWasAsked` zeroed; `_folderPrefix = folderPrefix` (0x9e), the path
+    # `_folderPrefix + fileName` (0xac), `_fileInfo.Find (path, true)` (0xc1), `delete []` of the path (0xd1); `false`
+    # gives `GetLastError_noZero_HRESULT ()` (0x100). Stops: the `ret` (0xf8), the call of `__stack_chk_fail` (0x107).
+    "oci": dict(grp="Oci", cn="COpenCallbackImp::Init2", a=0x5b32e0, n=268, pos=True, fs=True, stops=(0xf8, 0x107),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `COpenCallbackImp::Init2` (`CPP/7zip/UI/Common/ArchiveOpenCallback.cpp`; `objdump -d`)"),
 }
 
 
