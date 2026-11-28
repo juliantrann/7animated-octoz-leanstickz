@@ -2,3 +2,9 @@ FV7z.Ifw.Code
 FV7z.Lemmas.OrMi32
 FV7z.Ifw.Holds
 FV7z.Sbp.Holds
+FV7z.Ptl.Blocks
+FV7z.Ptl.Cuts
+FV7z.Ptl.Holds
+FV7z.Psp.Blocks
+FV7z.Psp.Cuts
+FV7z.Psp.Holds

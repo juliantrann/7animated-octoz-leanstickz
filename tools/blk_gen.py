@@ -1102,6 +1102,16 @@ FNS = {
     # `__stack_chk_fail` (0x63).
     "av2": dict(grp="Av2", cn="CPU_IsSupported_AVX2", a=0x4244b0, n=104, pos=True, fs=True, stops=(0x37, 0x63),
                 calls=True, tag="PLAN.md §M, M1", src="7-Zip's `CPU_IsSupported_AVX2` (`C/CpuArch.c`; `objdump -d`)"),
+    # `CFieldPrinter::PrintTitleLines ()`: `fputs (LinesString, *g_StdOut)` (the `call` at 0x16). Stops: the `ret`
+    # (0x1f), the landing pad after it (0x20).
+    "ptl": dict(grp="Ptl", cn="CFieldPrinter::PrintTitleLines", a=0x5eccd0, n=47, pos=True, stops=(0x1f, 0x20),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CFieldPrinter::PrintTitleLines` (`CPP/7zip/UI/Console/List.cpp`; `objdump -d`)"),
+    # `PrintSpaces (numSpaces)` (`.part.0`): `fputs (kSpaces + (32 - numSpaces), *g_StdOut)` (the `call` at 0x23).
+    # Stops: the `ret` (0x2c), the landing pad after it (0x2d).
+    "psp": dict(grp="Psp", cn="PrintSpaces", a=0x5ebdd0, n=60, pos=True, stops=(0x2c, 0x2d), calls=True,
+                tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `PrintSpaces` (`CPP/7zip/UI/Console/List.cpp`, `.part.0`; `objdump -d`)"),
     # `CFileBase::OpenBinary (name, flags, mode)`: `Close ()` (the `call` at 0x1a), `open64 (name, flags, mode)` (the
     # `call` at 0x2a), the result stored as `_handle`, `al` = it is not -1. Stop: the `ret` (0x41).
     "fob": dict(grp="Fob", cn="NWindows::NFile::NIO::CFileBase::OpenBinary", a=0x456060, n=66, pos=True, stops=(0x41,),
