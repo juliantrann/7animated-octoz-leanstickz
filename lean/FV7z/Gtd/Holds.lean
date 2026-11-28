@@ -93,7 +93,7 @@ theorem vc_0 {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post}
     wpx [W_0, W_128, o0, o9, Op.sti, BitVec.and_self, Bool.not_true, Bool.not_false, Bool.false_eq_true,
       Bool.true_eq_false, false_implies, implies_true,
       eq_self_iff_true, decide_true, decide_false, BitVec.toNat_zero, Bool.true_or, Bool.or_true, Bool.false_or,
-      Bool.or_false]
+      Bool.or_false, beq_self_eq_true, beq_iff_eq, beq_eq_false_iff_ne, Bool.not_eq_eq_eq_not, ne_eq, not_false_eq_true]
     all_goals repeat' (first
       | refine h22 _ (fm_mk ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_) _
       | with_reducible exact hs1
@@ -105,7 +105,7 @@ theorem vc_0 {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post}
     wpx [W_0, W_128, o0, o9, Op.sti, eaG, optV, BitVec.mul_one, BitVec.add_zero, BitVec.and_self, h0, Bool.not_true,
       Bool.not_false, Bool.false_eq_true, Bool.true_eq_false, false_implies, implies_true,
       eq_self_iff_true, decide_true, decide_false, BitVec.toNat_zero, Bool.true_or, Bool.or_true, Bool.false_or,
-      Bool.or_false]
+      Bool.or_false, beq_self_eq_true, beq_iff_eq, beq_eq_false_iff_ne, Bool.not_eq_eq_eq_not, ne_eq, not_false_eq_true]
     all_goals repeat' (first
       | refine h22 _ (fm_mk ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_) _
       | with_reducible exact hs1
@@ -123,7 +123,7 @@ theorem vc_22 {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post}
   wpx [W_22, W_34, o1, o2, Op.lda, hv, BitVec.and_self, Bool.not_true, Bool.not_false, Bool.false_eq_true,
     Bool.true_eq_false, false_implies, implies_true,
     eq_self_iff_true, decide_true, decide_false, BitVec.toNat_zero, Bool.true_or, Bool.or_true, Bool.false_or,
-    Bool.or_false]
+    Bool.or_false, beq_self_eq_true, beq_iff_eq, beq_eq_false_iff_ne, Bool.not_eq_eq_eq_not, ne_eq, not_false_eq_true]
   all_goals repeat' (first
     | refine h96 _ (fk_mk ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_) _
     | with_reducible exact hf
@@ -155,7 +155,7 @@ theorem vc_109 {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post
   wpx [W_109, W_120, o8, o6, Bool.not_true, Bool.not_false, Bool.false_eq_true, Bool.true_eq_false,
     false_implies, implies_true,
     eq_self_iff_true, decide_true, decide_false, BitVec.toNat_zero, Bool.true_or, Bool.or_true, Bool.false_or,
-    Bool.or_false]
+    Bool.or_false, beq_self_eq_true, beq_iff_eq, beq_eq_false_iff_ne, Bool.not_eq_eq_eq_not, ne_eq, not_false_eq_true]
   all_goals repeat' (first
     | refine h127 _ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ _
     | with_reducible exact f1
