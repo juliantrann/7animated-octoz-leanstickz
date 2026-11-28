@@ -923,6 +923,11 @@ FNS = {
     # PLT entry) of the rest down and `_len` - `count`. Stops: the `ret`s (0x25, 0x5d).
     "udl": dict(grp="Udl", cn="UString::Delete", a=0x44e0b0, n=94, pos=True, stops=(0x25, 0x5d), calls=True,
                 hand=(0x54,), tag="PLAN.md §M, M1", src="7-Zip's `UString::Delete` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
+    # `AString::Find (s, startIndex)`: `strstr (_chars + startIndex, s)` (the `call` at 0xd, the PLT's entry), then the
+    # found pointer minus `_chars`, or -1 when none. Stops: the `ret`s (0x1a, 0x21).
+    "afd": dict(grp="Afd", cn="AString::Find", a=0x44cae0, n=34, pos=True, stops=(0x1a, 0x21), calls=True,
+                tag="PLAN.md §M, M1",
+                src="7-Zip's `AString::Find` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
     # `AString::InsertSpace (index, size)`: `Grow (size)` (the `call` at 0x12, `index` by reference in `r12`), then
     # `memmove (_chars + index + size, _chars + index, _len - index + 1)` as a tail jump to the PLT's entry. Stop:
     # the `jmp` (0x37).
