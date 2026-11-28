@@ -303,8 +303,8 @@ theorem from593 (E : Ev prof F Wl L s₀ o gev gP gE fb S g0 e₂ code₂ j₂ n
   refine (c_593 prof fb).run E.c E.hfs E.hin (fun j' g' _ V' => j' = 135 ∧ g' = Y.cpu.gpr ∧ V' = W)
     hK hA hr (vc_593 fun _ => ⟨rfl, rfl, rfl⟩) ?_
   rintro j' g fl V₁ ⟨rfl, rfl, hV₁⟩ U t₁ hKU hAU hrU hgU -
-  subst V₁ hgU
-  exact tail135 E hKU hAU hrU hs hIW
+  subst V₁
+  exact tail135 E hKU hAU hrU (by rw [hgU]; exact hs) hIW
 
 /-- From 557 (back from the last item's `UString (name)`): the slot, the size; `name`'s chars freed unless 0 (588);
 to 135. -/
@@ -371,8 +371,8 @@ theorem from699 (E : Ev prof F Wl L s₀ o gev gP gE fb S g0 e₂ code₂ j₂ n
   refine (c_699 prof fb).run E.c E.hfs E.hin (fun j' g' _ V' => j' = 526 ∧ g' = Y.cpu.gpr ∧ V' = W)
     hK hA hr (vc_699 fun _ => ⟨rfl, rfl, rfl⟩) ?_
   rintro j' g fl V₁ ⟨rfl, rfl, hV₁⟩ U t₁ hKU hAU hrU hgU -
-  subst V₁ hgU
-  exact from526 E hKU hAU hrU hm hIW
+  subst V₁
+  exact from526 E hKU hAU hrU (by rw [hgU]; exact hm) hIW
 
 /-- From 691 (back from `memcpy`, or the old items not copied): `delete []` of the old items (694), to 699. -/
 theorem from691 (E : Ev prof F Wl L s₀ o gev gP gE fb S g0 e₂ code₂ j₂ n it ch ln I J Ok) (hK : KeptW Wl s₀ Y)
@@ -682,7 +682,7 @@ theorem S221c (E : Ev prof F Wl L s₀ o gev gP gE fb S g0 e₂ code₂ j₂ n i
   · exact hnx U W t₁ hKU hAU hrU ⟨hIW, gf.1.trans ms, gf.2.1.trans mp, gf.2.2.trans m15,
       by rw [gbx, mx]; exact sInc i, g12.trans m12, gax.trans ma⟩
   · exact R254 E (S378c E i hlt hnx) U W t₁ hKU hAU hrU ⟨⟨hIW, gf.1.trans ms, gf.2.1.trans mp, gf.2.2.trans m15,
-      gbx.trans mx, g12.trans m12, by rw [g14, mx]⟩, gdi.trans (gf.2.2.trans m15)⟩
+      gbx.trans mx, g12.trans m12, by rw [g14, mx]⟩, gdi.trans m15⟩
 
 /-- 221 at the step `i` with `i + 1 = len`: a char not `'/'` to 432, a `'/'` to the `Add` (254, `R254`) and 378
 (`S378x`). -/
@@ -704,7 +704,7 @@ theorem S221x (E : Ev prof F Wl L s₀ o gev gP gE fb S g0 e₂ code₂ j₂ n i
   rcases hj with rfl | ⟨rfl, gax, gbx, g12, g14, gdi⟩
   · exact from432 E hKU hAU hrU ⟨gf.1.trans ms, gf.2.1.trans mp, gf.2.2.trans m15⟩ hIW
   · exact R254 E (S378x E i hi) U W t₁ hKU hAU hrU ⟨⟨hIW, gf.1.trans ms, gf.2.1.trans mp, gf.2.2.trans m15,
-      gbx.trans mx, g12.trans m12, by rw [g14, mx]⟩, gdi.trans (gf.2.2.trans m15)⟩
+      gbx.trans mx, g12.trans m12, by rw [g14, mx]⟩, gdi.trans m15⟩
 
 /-- The scan, by induction on the steps left. -/
 theorem L221 (E : Ev prof F Wl L s₀ o gev gP gE fb S g0 e₂ code₂ j₂ n it ch ln I J Ok) : ∀ d i,
