@@ -1,19 +1,20 @@
-import FV7z.Sdt.Run
+import FV7z.Olg.Code
+import FV7z.Olg.Pats
+import FV7z.Olg.Blocks1
+import FV7z.Olg.Blocks
+import FV7z.Olg.Cuts
+import FV7z.Olg.Defs
+import FV7z.Olg.Pieces
+import FV7z.Olg.Holds
 open FV7z
-#print axioms FV7z.Sdt.sw_ix
-#print axioms FV7z.Sdt.tn1
-#print axioms FV7z.Sdt.sw1
-#print axioms FV7z.Sdt.tn2
-#print axioms FV7z.Sdt.ad1
-#print axioms FV7z.Sdt.swn
-#print axioms FV7z.Sdt.a1z
-#print axioms FV7z.Sdt.a1
-#print axioms FV7z.Sdt.sh3
-#print axioms FV7z.Sdt.r12n
-#print axioms FV7z.Sdt.zs
-#print axioms FV7z.Sdt.zk
-#print axioms FV7z.Sdt.p04
-#print axioms FV7z.Sdt.fill_ok
-#print axioms FV7z.Sdt.set_ok
-#print axioms FV7z.Sdt.free_ok
-#print axioms FV7z.Sdt.sdt_ok
+#print axioms FV7z.Olg.olg_pin
+#print axioms FV7z.Olg.c_56
+#print axioms FV7z.Olg.tgt_39
+#print axioms FV7z.Olg.tgt_51
+#print axioms FV7z.Olg.callK
+#print axioms FV7z.Olg.vc_0
+#print axioms FV7z.Olg.vc_44
+#print axioms FV7z.Olg.vc_56
+#print axioms FV7z.Olg.from56
+#print axioms FV7z.Olg.from44
+#print axioms FV7z.Olg.olg_ok
