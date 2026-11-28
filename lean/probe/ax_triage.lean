@@ -1,5 +1,6 @@
-import FV7z.Ecq.Loop1
+import FV7z.Ecq.Loop3
+import FV7z.Ecq.Loop45
 open FV7z
-#print axioms FV7z.Ecq.loop1
-#print axioms FV7z.Ecq.ofNat_succ
-#print axioms FV7z.Ecq.ofNat_eq16
+#print axioms FV7z.Ecq.loop3
+#print axioms FV7z.Ecq.loop4
+#print axioms FV7z.Ecq.loop5
