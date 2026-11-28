@@ -53,11 +53,12 @@ theorem ad1 (k : Nat) : BitVec.ofNat 64 k + 1#64 = BitVec.ofNat 64 (k + 1) := by
 theorem swn (d : BitVec 32) : BitVec.setWidth 64 d = BitVec.ofNat 64 d.toNat := by
   rw [BitVec.ofNat_toNat]
 
+theorem a1z : 1#64 + 18446744073709551615#64 = 0#64 := by decide
+
 theorem a1 {n : Nat} (h : 1 ≤ n) :
     BitVec.ofNat 64 n + 18446744073709551615#64 = BitVec.ofNat 64 (n - 1) := by
-  apply BitVec.eq_of_toNat_eq
-  simp only [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.reducePow, Nat.reduceMod]
-  omega
+  obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
+  rw [Nat.add_sub_cancel, ← ad1 m, BitVec.add_assoc, a1z, BitVec.add_zero]
 
 theorem sh3 (x : BitVec 64) : x <<< (3 : Nat) = x * 8#64 := by
   apply BitVec.eq_of_toNat_eq
