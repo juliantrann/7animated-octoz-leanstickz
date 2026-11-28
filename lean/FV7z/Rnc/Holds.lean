@@ -92,7 +92,7 @@ reaches the `ret` at 16 with the bytes `r.bs` in `buf` and the registers as in `
 (`r.ret` at most `-4096`), else the `ret` at 43 with `errno` set (`errV`), `rax` -1 and `rdx` `errno`'s offset
 (`errG`). -/
 theorem rnc_ok {fb : Addr} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (hrs : s₀.thread.rseq = none)
-    (hin : CodeIn L rnc_at rd) (hK : KeptW Wl s₀ X) (hA : Agree F X.proc.mm.mem V) (hrip : X.cpu.rip = rnc_at)
+    (hin : CodeIn L rnc_at rnc) (hK : KeptW Wl s₀ X) (hA : Agree F X.proc.mm.mem V) (hrip : X.cpu.rip = rnc_at)
     (hfe : ∀ i < 4, Foot Wl ((fb + 18446744073709551544#64).add i))
     (hst : ∀ i < X.cpu.gpr.rdx.toNat, Foot Wl (X.cpu.gpr.rsi.add i))
     (k : ∀ (S : State) (t₁ : Nat) (r : RdOut), r = readRes prof o t₁ S → KeptW Wl s₀ S →
