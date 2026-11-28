@@ -1500,6 +1500,11 @@ FNS = {
     "apc": dict(grp="Apc", cn="AString::operator+=(const char *)", a=0x44c890, n=93, pos=True, stops=(0x5c,),
                 hand=(0x50,), calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `AString::operator+= (const char *)` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/Windows/PropVariant.cpp `NCOM::AllocBstrFromAscii (s)`: NULL for `s` NULL (the `ret` at 0x62);
+    # `len = strlen (s)` (the `call` of the PLT entry at 0x12), `p = SysAllocStringLen (NULL, len)` (0x1e), NULL for
+    # `p` NULL (0x58); else the copy loop at 0x30 (`p[i] = (Byte)s[i]` for `i <= len`), the `ret` at 0x46.
+    "aba": dict(grp="Aba", cn="AllocBstrFromAscii", a=0x456e50, n=99, pos=True, stops=(0x46, 0x58, 0x62), calls=True,
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `NCOM::AllocBstrFromAscii` (`PropVariant.cpp`; `objdump -d`)"),
 }
 
 
