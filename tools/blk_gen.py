@@ -1937,6 +1937,10 @@ FNS = {
     "um2": dict(grp="Um2", cn="UnicodeStringToMultiByte2", a=0x450d20, n=65, pos=True, fs=True, stops=(59, 60),
                 calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `UnicodeStringToMultiByte2` (`StringConvert.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 Common/UTFConvert.cpp `ConvertUnicodeToUTF8 (src, dest)`: `edx` = the global flags (4 bytes at
+    # 0x79217c), a tail jump to `ConvertUnicodeToUTF8_Flags`. Stop: the jump (0xd).
+    "cu8": dict(grp="Cu8", cn="ConvertUnicodeToUTF8", a=0x4520b0, n=18, pos=True, stops=(13,), tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `ConvertUnicodeToUTF8` (`UTFConvert.cpp`; `objdump -d`)"),
 }
 
 def file_bytes(path, va, n):
