@@ -57,7 +57,8 @@ theorem vc_0 {fb : Addr} {g : Gprs} {f : Rflags} {c : BitVec 64}
       | intro _)
   · obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
     dsimp only at hs hl ⊢
-    wpx [W_0, o0, gA, Op.cmov64, Op.ldf, BitVec.and_self, beq_eq_false_iff_ne.2 hs, Bool.false_eq_true,
+    have hb : (rcx == 0) = false := by simpa [beq_eq_false_iff_ne] using hs
+    wpx [W_0, o0, gA, Op.cmov64, Op.ldf, BitVec.and_self, beq_eq_false_iff_ne.2 hs, hb, Bool.false_eq_true,
       ↓reduceIte]
     all_goals repeat' (first
       | exact ⟨rfl, rfl, rfl⟩
@@ -79,8 +80,8 @@ theorem mbr_ok {fb : Addr} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBa
   have hv : (X.cpu.gpr.rcx = 0#64 ∧ ps0 X.cpu.gpr.rcx = 8013232#64) ∨
       (¬X.cpu.gpr.rcx = 0#64 ∧ ps0 X.cpu.gpr.rcx = X.cpu.gpr.rcx) := by
     by_cases h : X.cpu.gpr.rcx = 0#64
-    · exact Or.inl ⟨h, by rw [ps0, if_pos h]⟩
-    · exact Or.inr ⟨h, by rw [ps0, if_neg h]⟩
+    · exact Or.inl ⟨h, by simp [ps0, h]⟩
+    · exact Or.inr ⟨h, by simp [ps0, h]⟩
   refine (c_0 prof fb).run c hfs hin (fun j' g' _ V' => j' = 29 ∧ g' = gA fb V X.cpu.gpr (ps0 X.cpu.gpr.rcx) ∧
       V' = V) hK hA (by rw [addr_add_zero]; exact hrip) (vc_0 hv hl) ?_
   rintro j' g fl V₁ ⟨rfl, rfl, hV₁⟩ Y t₁ hKY hAY hrY hgY -
