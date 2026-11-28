@@ -1,5 +1,5 @@
-import FV7z.Cps.Holds
-import FV7z.Cpr.Holds
+import FV7z.Cpr.Loop
+import FV7z.Aec.Holds
 open FV7z
-#print axioms FV7z.Cps.cps_ok
-#print axioms FV7z.Cpr.cpr_ok
+#print axioms FV7z.Cpr.cpr_full
+#print axioms FV7z.Aec.aec_ok
