@@ -1613,6 +1613,15 @@ FNS = {
     "oci": dict(grp="Oci", cn="COpenCallbackImp::Init2", a=0x5b32e0, n=268, pos=True, fs=True, stops=(0xf8, 0x107),
                 calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `COpenCallbackImp::Init2` (`CPP/7zip/UI/Common/ArchiveOpenCallback.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/7zip/UI/Common/OpenArchive.cpp `CArc::GetItem_DefaultPath (index, result)`: a frame of 48 bytes
+    # under five pushes with the stack guard at `rsp + 0x28`, `isDir` at `rsp + 0xf` and a `CPropVariant` at
+    # `rsp + 0x10`; `result.Empty ()` inline, `Archive_IsItem_Dir` (0x41); a directory or an error to the epilogue;
+    # else `result = DefaultName` (0x8c), `Archive->GetProperty (index, kpidExtension, &prop)` (`call qword [rax +
+    # 0x30]` at 0xb3); `VT_BSTR` gives `Add_Dot` (0xf3) and `+= bstrVal` (0x100), another non-empty type `E_FAIL`;
+    # `prop.Clear ()` (0xd0). Stops: the `ret` (0x77), the call of `__stack_chk_fail` (0x107).
+    "gdp": dict(grp="Gdp", cn="CArc::GetItem_DefaultPath", a=0x5d2040, n=268, pos=True, fs=True, stops=(0x77, 0x107),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CArc::GetItem_DefaultPath` (`CPP/7zip/UI/Common/OpenArchive.cpp`; `objdump -d`)"),
 }
 
 
