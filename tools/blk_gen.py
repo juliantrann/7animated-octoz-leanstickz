@@ -1911,6 +1911,14 @@ FNS = {
                 pos=True, fs=True, stops=(135, 136), calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `CStdOutStream::NormalizePrint_UString (const UString &)` (`StdOutStream.cpp`; "
                     "`objdump -d`)"),
+    # 7-Zip 26.06 Common/MyString.cpp `fs2us (const char *)` (also `fs2us (const AString &)`), without the landing pad.
+    # Stops: the `ret` (0x3d), the call of `__stack_chk_fail` (0x3e).
+    "fsu": dict(grp="Fsu", cn="fs2us (const char *)", a=0x44e5b0, n=67, pos=True, fs=True, stops=(61, 62), calls=True,
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `fs2us (const char *)` (`MyString.cpp`; `objdump -d`)"),
+    # Its twin: the same code, another callee (`0x450c60`, not `0x450ca0`).
+    "fsv": dict(grp="Fsv", cn="fs2us (const char *), the twin at 0x44e600", a=0x44e600, n=67, pos=True, fs=True,
+                stops=(61, 62), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `fs2us` (`MyString.cpp`; `objdump -d`)"),
     # glibc 2.31 elf/dl-lookup.c `_dl_setup_hash (map)`: the GNU hash table's fields (or the SysV one's) into `map`.
     # Stops: the two `ret`s (0x61, 0x93), the `__assert_fail` path (0x94) not covered.
     "dsh": dict(grp="Dsh", cn="_dl_setup_hash", a=0x6ab020, n=180, pos=True, stops=(0x61, 0x93, 0x94), calls=True,
