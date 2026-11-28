@@ -44,7 +44,7 @@ theorem vc_0 {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post}
   dsimp only at hf h11 h16 ⊢
   wpx [W_0, o0, Op.cmpmi, subR_eq, BitVec.sub_zero, beq_iff_eq, Bool.not_eq_eq_eq_not, Bool.not_true,
     beq_eq_false_iff_ne, ne_eq]
-  refine ⟨hf, fun h => h16 h _, fun h => h11 h _⟩
+  refine ⟨hf, fun h => h16 (of_decide_eq_true h) _, fun h => h11 (of_decide_eq_false h) _⟩
 
 /-- `lea rbp, [rdi + 0x84]`, `lea r12, [rdi + 0x83]`, to 114. -/
 theorem vc_144 {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post}
