@@ -1563,6 +1563,14 @@ import FV7z.Owc.Cuts
 import FV7z.Owc.Defs
 import FV7z.Owc.Pieces
 import FV7z.Owc.Holds
+import FV7z.Npp.Code
+import FV7z.Npp.Pats
+import FV7z.Npp.Blocks1
+import FV7z.Npp.Blocks
+import FV7z.Npp.Cuts
+import FV7z.Npp.Defs
+import FV7z.Npp.Pieces
+import FV7z.Npp.Holds
 import FV7z.Uad.Code
 import FV7z.Uad.Pats
 import FV7z.Uad.Blocks1
