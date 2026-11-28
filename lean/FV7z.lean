@@ -1238,3 +1238,15 @@ import FV7z.Uau.New
 import FV7z.Ura.New
 import FV7z.Ur2.New
 import FV7z.Usf.New
+import FV7z.Ifc.Code
+import FV7z.Ifc.Pats
+import FV7z.Ifc.Blocks1
+import FV7z.Ifc.Blocks
+import FV7z.Ifc.Cuts
+import FV7z.Ifc.Holds
+import FV7z.Ifd.Code
+import FV7z.Ifd.Pats
+import FV7z.Ifd.Blocks1
+import FV7z.Ifd.Blocks
+import FV7z.Ifd.Cuts
+import FV7z.Ifd.Holds

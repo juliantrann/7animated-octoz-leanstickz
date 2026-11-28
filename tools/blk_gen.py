@@ -1449,6 +1449,19 @@ FNS = {
     "smd": dict(grp="Smd", cn="Set_ModuleDirPrefix_From_ProgArg0", a=0x5a9ed0, n=124, pos=True, fs=True,
                 stops=(0x76, 0x77), calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `Set_ModuleDirPrefix_From_ProgArg0` (`ArchiveCommandLine.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/7zip/Common/FileStreams.h `CInFileStream::CInFileStream ()`: the five vtable pointers (from
+    # 0x78e748), `File` (a `CFileBase` at 0x2c) set up in line, `Callback` and `CallbackRef` 0, then the two `UString`s
+    # at 0xd0 (the `call` at 0x7a) and 0xe0 (0x86, `UString::UString ()`), the three fields after them 0. Stop: the `ret`
+    # (0xb1); the bytes from 0xb2 on are the landing pads.
+    "ifc": dict(grp="Ifc", cn="CInFileStream::CInFileStream", a=0x5a3f70, n=178, pos=True, stops=(0xb1,), calls=True,
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `CInFileStream::CInFileStream` (`FileStreams.h`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/7zip/Common/FileStreams.cpp `CInFileStream::~CInFileStream ()`: the five vtable pointers set back,
+    # `if (Callback) Callback->InFileStream_On_Destroy (this, CallbackRef)` (`call qword [rax + 8]` at 0x57), the two
+    # `UString`s' chars freed unless NULL (`operator delete []`, the `call`s at 0x66, 0x77), then `File.Close ()` (0x80,
+    # `CFileBase::Close`). Stop: the `ret` (0x86).
+    "ifd": dict(grp="Ifd", cn="CInFileStream::~CInFileStream", a=0x5a4040, n=135, pos=True, stops=(0x86,), calls=True,
+                tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CInFileStream::~CInFileStream` (`FileStreams.cpp`; `objdump -d`)"),
 }
 
 
