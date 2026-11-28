@@ -1,14 +1,14 @@
-import FV7z.Pew.Code
-import FV7z.Pew.Pats
-import FV7z.Pew.Blocks1
-import FV7z.Pew.Blocks
-import FV7z.Pew.Cuts
-import FV7z.Pew.Defs
-import FV7z.Pew.Pieces
-import FV7z.Pew.Holds
+import FV7z.Owc.Code
+import FV7z.Owc.Pats
+import FV7z.Owc.Blocks1
+import FV7z.Owc.Blocks
+import FV7z.Owc.Cuts
+import FV7z.Owc.Defs
+import FV7z.Owc.Pieces
+import FV7z.Owc.Holds
 open FV7z
-#print axioms FV7z.Pew.pew_ok
-#print axioms FV7z.Pew.vc_0
-#print axioms FV7z.Pew.vc_87
-#print axioms FV7z.Pew.vc_141
-#print axioms FV7z.Pew.vc_228
+#print axioms FV7z.Owc.owc_ok
+#print axioms FV7z.Owc.vc_0
+#print axioms FV7z.Owc.vc_78
+#print axioms FV7z.Owc.vc_107
+#print axioms FV7z.Owc.from107
