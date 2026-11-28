@@ -1470,6 +1470,12 @@ import FV7z.Alr.Pieces
 import FV7z.Alr.Holds
 import FV7z.Alr.Hand
 import FV7z.Alr.Ok
+import FV7z.Cfd.Code
+import FV7z.Cfd.Pats
+import FV7z.Cfd.Blocks1
+import FV7z.Cfd.Blocks
+import FV7z.Cfd.Cuts
+import FV7z.Cfd.Holds
 import FV7z.Cpr.Code
 import FV7z.Cpr.Pats
 import FV7z.Cpr.Blocks1
