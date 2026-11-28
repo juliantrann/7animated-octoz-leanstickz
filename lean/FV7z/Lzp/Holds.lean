@@ -85,8 +85,9 @@ theorem vc_0 {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post}
 /-- Back from the first test with `eax` 0: the pointer = 0, `add rsp, 8`, to the `ret` at 34. -/
 theorem vc_13z {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post} (hz : g.rax.setWidth 32 = 0#32)
     (hw : ∀ i < 8, Foot Wl (Addr.add 7956384#64 i))
-    (h : ∀ fl, Q 34 { g with r8 := BitVec.setWidth 64 (BitVec.setWidth 32 g.rax), rax := 0#64,
-      rsp := g.rsp + 8#64 } fl (Vst V 7956384#64 (toBytesLE 0#64 8))) :
+    (h : ∀ fl, Q 34 { g with
+        r8 := BitVec.setWidth 64 (BitVec.setWidth 32 g.rax), rax := 0#64, rsp := g.rsp + 8#64 } fl
+      (Vst V 7956384#64 (toBytesLE 0#64 8))) :
     W_13 F Wl Q g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at hz h ⊢
@@ -169,8 +170,8 @@ theorem lzp_ok {Pc1 Pc2 : State → (Addr → Byte) → Prop} (c : Seg prof F Wl
     (kr1 : ∀ (Z : State) (V' : Addr → Byte) (Z' : State) (t' : Nat), Pc1 Z V' →
       Z.cpu.gpr.rax.setWidth 32 = 0#32 → KeptW Wl s₀ Z' →
       Agree F Z'.proc.mm.mem (Vst V' 7956384#64 (toBytesLE 0#64 8)) → Z'.cpu.rip = e₂.add j₂ →
-      Z'.cpu.gpr = { Z.cpu.gpr with r8 := BitVec.setWidth 64 (BitVec.setWidth 32 Z.cpu.gpr.rax), rax := 0#64,
-        rsp := X.cpu.gpr.rsp + 8 } →
+      Z'.cpu.gpr = { Z.cpu.gpr with
+        r8 := BitVec.setWidth 64 (BitVec.setWidth 32 Z.cpu.gpr.rax), rax := 0#64, rsp := X.cpu.gpr.rsp + 8 } →
       GoG prof L o gev gP gE Z' t')
     (kr2 : ∀ (Z₂ : State) (V₂ : Addr → Byte) (Z' : State) (t' : Nat), Pc2 Z₂ V₂ → KeptW Wl s₀ Z' →
       Agree F Z'.proc.mm.mem (Vst V₂ 7956384#64 (toBytesLE (fsel Z₂.cpu.gpr.rax) 8)) → Z'.cpu.rip = e₂.add j₂ →
@@ -197,8 +198,8 @@ theorem lzp_ok {Pc1 Pc2 : State → (Addr → Byte) → Prop} (c : Seg prof F Wl
   by_cases hz : Z.cpu.gpr.rax.setWidth 32 = 0#32
   · -- the pointer = 0, the `ret` at 34
     refine (c_13 prof).run c hin (fun j' g' _ V'' => j' = 34 ∧
-        g' = { Z.cpu.gpr with r8 := BitVec.setWidth 64 (BitVec.setWidth 32 Z.cpu.gpr.rax), rax := 0#64,
-          rsp := X.cpu.gpr.rsp } ∧
+        g' = { Z.cpu.gpr with
+          r8 := BitVec.setWidth 64 (BitVec.setWidth 32 Z.cpu.gpr.rax), rax := 0#64, rsp := X.cpu.gpr.rsp } ∧
         V'' = Vst V' 7956384#64 (toBytesLE 0#64 8)) hKZ hAZ hrZ
       (vc_13z hz hw fun _ => ⟨rfl, by rw [hzs, sa8], rfl⟩) ?_
     rintro j' g fl₂ V₂ ⟨rfl, rfl, hV₂⟩ U t₃ hKU hAU hrU hgU -
