@@ -230,6 +230,22 @@ FNS = {
     # jump (0x2f) to `NDir::SetDirTime` (0x4556e0). Stop: the jump.
     # 7-Zip's CPP/Windows/PropVariantConv.cpp `ConvertUtcFileTimeToString (ft, s, level)`: a tail jump (14) to
     # `ConvertUtcFileTimeToString2 (ft, 0, s, level, 0)` (0x4576f0).
+    # glibc's debug/chk_fail.c `__stack_chk_fail ()`: `push rax; pop rax`, `rdi` = the message, `sub rsp, 8`, then
+    # `call __fortify_fail` (0x669810, noreturn). Stop: the call (17).
+    "scf": dict(grp="Scf", cn="__stack_chk_fail", a=0x6697f0, n=22, pos=True, stops=(17,),
+                tag="PLAN.md §M, M1", src="glibc's `__stack_chk_fail` (`debug/chk_fail.c`; `objdump -d`)"),
+    # glibc's sysdeps/posix/libc_fatal.c `__libc_fatal (msg)`: `push rax; pop rax`, `__libc_message (1, "%s", msg)`
+    # (0x6275b0, noreturn). Stop: the call (27).
+    "lfa": dict(grp="Lfa", cn="__libc_fatal", a=0x627a00, n=32, pos=True, stops=(27,),
+                tag="PLAN.md §M, M1", src="glibc's `__libc_fatal` (`sysdeps/posix/libc_fatal.c`; `objdump -d`)"),
+    # glibc's stdlib/exit.c `exit (status)`: `push rax; pop rax`, `__run_exit_handlers (status, &__exit_funcs, 1, 1)`
+    # (0x623150, noreturn). Stop: the call (27).
+    "exi": dict(grp="Exi", cn="exit", a=0x623410, n=32, pos=True, stops=(27,),
+                tag="PLAN.md §M, M1", src="glibc's `exit` (`stdlib/exit.c`; `objdump -d`)"),
+    # glibc's malloc/malloc.c `malloc_printerr (str)`: `push rax; pop rax`, `__libc_message (1, "%s\n", str)`
+    # (0x627710, noreturn). Stop: the call (23).
+    "mpe": dict(grp="Mpe", cn="malloc_printerr", a=0x62e490, n=28, pos=True, stops=(23,),
+                tag="PLAN.md §M, M1", src="glibc's `malloc_printerr` (`malloc/malloc.c`; `objdump -d`)"),
     "uts": dict(grp="Uts", cn="ConvertUtcFileTimeToString", a=0x457a10, n=19, pos=True, stops=(14,),
                 tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `ConvertUtcFileTimeToString` (`CPP/Windows/PropVariantConv.cpp`; `objdump -d`)"),
