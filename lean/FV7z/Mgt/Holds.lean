@@ -76,6 +76,13 @@ abbrev gA (g : Gprs) : Gprs := { g with rax := 7268694#64, rsi := 7268694#64, rd
 /-- The registers at the third `call` with "/tmp/" (`DoesDirExist` answered true). -/
 abbrev gB (g : Gprs) : Gprs := { g with rax := 7268694#64, rsi := 7181383#64, rdi := g.rbp }
 
+/-- An `if` is one of its two branches (the `cmove`). -/
+theorem ite_or {α : Type} {c : Prop} [Decidable c] (a b : α) :
+    (if c then a else b) = a ∨ (if c then a else b) = b := by
+  by_cases h : c
+  · exact Or.inl (if_pos h)
+  · exact Or.inr (if_neg h)
+
 variable {F : Footprint} {Wl : List Rgn}
 
 /-- `push rbp; lea rsi, [rip + …]; mov rbp, rdi` to the first `call`. -/
@@ -101,13 +108,7 @@ theorem vc_34 {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post}
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   try dsimp only at h ⊢
   wpx [W_34, o2, Op.cmov64]
-  all_goals repeat'
-    first
-    | exact h _ (Or.inl rfl) _
-    | exact h _ (Or.inr rfl) _
-    | apply And.intro
-    | intro _
-    | split
+  all_goals repeat' (first | exact h _ (ite_or _ _) _ | apply And.intro | intro _)
 
 /-- `mov eax, 1; pop rbp` to the `ret` at 68. -/
 theorem vc_62 {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post}

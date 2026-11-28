@@ -86,11 +86,11 @@ abbrev Out (W : Addr → Byte) (p : Addr) : Addr → Byte :=
       (Addr.add (chs W p) (4 * (len W p + 1#32).toNat)) (toBytesLE 0#32 4))
     (p + 8#64) (toBytesLE (len W p + 1#32) 4)
 
-/-- The footprint of the stores at 41. -/
-abbrev Room (F : Footprint) (W : Addr → Byte) (p : Addr) : Prop :=
-  (∀ i < 4, Foot F.data (Addr.add (Addr.add (chs W p) (4 * (len W p).toNat)) i)) ∧
-    (∀ i < 4, Foot F.data (Addr.add (Addr.add (chs W p) (4 * (len W p + 1#32).toNat)) i)) ∧
-    ∀ i < 4, Foot F.data (Addr.add (p + 8#64) i)
+/-- The footprint of the stores at 41: writable. -/
+abbrev Room (Wl : List Rgn) (W : Addr → Byte) (p : Addr) : Prop :=
+  (∀ i < 4, Foot Wl (Addr.add (Addr.add (chs W p) (4 * (len W p).toNat)) i)) ∧
+    (∀ i < 4, Foot Wl (Addr.add (Addr.add (chs W p) (4 * (len W p + 1#32).toNat)) i)) ∧
+    ∀ i < 4, Foot Wl (Addr.add (p + 8#64) i)
 
 variable {F : Footprint} {Wl : List Rgn}
 
@@ -113,13 +113,17 @@ theorem vc_0 {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post}
     | exact h31 _ rfl ⟨rfl, rfl, rfl, rfl, rfl, rfl⟩ _
     | exact h41 _ ⟨rfl, lea4 _ _, sw_64_32 _, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩ _
     | exact h77 _ rfl rfl ⟨rfl, rfl, rfl, rfl, rfl, rfl⟩ _
-    | exact f8 | exact fp | exact fl | exact f12 | exact hs2
+    | with_reducible exact f8
+    | with_reducible exact fp
+    | with_reducible exact fl
+    | with_reducible exact f12
+    | with_reducible exact hs2
     | apply And.intro
     | intro _)
 
 /-- The stores at 41, then `add rsp, 0x18` to the `ret` at 65. -/
 theorem vc_41 {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post} {p S : Addr} {g₀ : Gprs}
-    (hP : P41 V p S g₀ g) (hR : Room F V p) (h : ∀ g', g'.rsp = S → KS g₀ g' → ∀ fl, Q 65 g' fl (Out V p)) :
+    (hP : P41 V p S g₀ g) (hR : Room Wl V p) (h : ∀ g', g'.rsp = S → KS g₀ g' → ∀ fl, Q 65 g' fl (Out V p)) :
     W_41 F Wl Q g f V := by
   obtain ⟨hd, hs, ha, hp, hsp, hk⟩ := hP
   obtain ⟨r1, r2, r3⟩ := hR
@@ -129,7 +133,13 @@ theorem vc_41 {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post} {p S : Addr
   have e2 := inc32 ha
   wpx [W_41, o3]
   simp only [hs, e2, lea4]
-  repeat' (first | exact h _ (sa24 _) hk _ | exact r1 | exact r2 | exact r3 | apply And.intro | intro _)
+  repeat' (first
+    | exact h _ (sa24 _) (by exact hk) _
+    | with_reducible exact r1
+    | with_reducible exact r2
+    | with_reducible exact r3
+    | apply And.intro
+    | intro _)
 
 /-- Back from `Grow_1` at 82: `p` from `rsp + 8`, its length and characters again, to 41. -/
 theorem vc_82 {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post} {p S : Addr} {g₀ : Gprs}
@@ -140,11 +150,13 @@ theorem vc_82 {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post} {p S : Addr
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at hS hk hz fs
   subst hS
-  subst hz
   wpx [W_82, o5, Op.shl64]
+  simp only [hz]
   all_goals repeat' (first
-    | exact h _ ⟨rfl, shl4a _ _, sw_64_32 _, rfl, rfl, hk⟩ _
-    | exact fs | exact f8 | exact fp
+    | exact h _ ⟨rfl, shl4a _ _, sw_64_32 _, rfl, rfl, by exact hk⟩ _
+    | with_reducible exact fs
+    | with_reducible exact f8
+    | with_reducible exact fp
     | apply And.intro
     | intro _)
 
@@ -155,7 +167,7 @@ variable {prof : Profile} {L : List (Addr × List Byte)} {s₀ : State} {o : Ora
 /-- From 41 (the registers `P41`, the bytes `W`) to the return address with the bytes `Out`. -/
 theorem tail41 {W : Addr → Byte} {p S : Addr} {g₀ : Gprs} {Y : State} (c : Seg prof F Wl L s₀ o)
     (hin : CodeIn L ndp_at ndp) (hK : KeptW Wl s₀ Y) (hA : Agree F Y.proc.mm.mem W)
-    (hrY : Y.cpu.rip = ndp_at.add 41) (hP : P41 W p S g₀ Y.cpu.gpr) (hR : Room F W p)
+    (hrY : Y.cpu.rip = ndp_at.add 41) (hP : P41 W p S g₀ Y.cpu.gpr) (hR : Room Wl W p)
     (hl : ∀ i < 8, Foot F.data (Addr.add S i))
     {e₂ : Addr} {code₂ : List Byte} (hin₂ : CodeIn L e₂ code₂) {j₂ : Nat} (h₂ : j₂ < code₂.length)
     (hr : rdq(Out W p, S) = e₂.add j₂)
@@ -190,7 +202,7 @@ theorem ndp_ok {P1 : State → (Addr → Byte) → Prop} (c : Seg prof F Wl L s�
     (f12 : ∀ i < 4, Foot F.data (Addr.add (X.cpu.gpr.rdi + 12#64) i))
     (fl : ∀ i < 4, Foot F.data (Addr.add (chs V X.cpu.gpr.rdi +
       BitVec.setWidth 64 (len V X.cpu.gpr.rdi) * 4#64 + 18446744073709551612#64) i))
-    (hR : Room F V X.cpu.gpr.rdi)
+    (hR : Room Wl V X.cpu.gpr.rdi)
     {e₂ : Addr} {code₂ : List Byte} (hin₂ : CodeIn L e₂ code₂) {j₂ : Nat} (h₂ : j₂ < code₂.length)
     (hr : rdq(V, X.cpu.gpr.rsp) = e₂.add j₂) (hr1 : rdq(Out V X.cpu.gpr.rdi, X.cpu.gpr.rsp) = e₂.add j₂)
     (k1 : ∀ (Y : State) (t' : Nat), KeptW Wl s₀ Y →
@@ -200,7 +212,7 @@ theorem ndp_ok {P1 : State → (Addr → Byte) → Prop} (c : Seg prof F Wl L s�
       KS X.cpu.gpr Y.cpu.gpr →
       (∀ (Z : State) (V' : Addr → Byte) (t'' : Nat), KeptW Wl s₀ Z → Agree F Z.proc.mm.mem V' →
         Z.cpu.rip = ndp_at.add 82 → Z.cpu.gpr.rsp = X.cpu.gpr.rsp - 24#64 → KS X.cpu.gpr Z.cpu.gpr →
-        rdq(V', X.cpu.gpr.rsp - 16) = X.cpu.gpr.rdi → Room F V' X.cpu.gpr.rdi →
+        rdq(V', X.cpu.gpr.rsp - 16) = X.cpu.gpr.rdi → Room Wl V' X.cpu.gpr.rdi →
         rdq(Out V' X.cpu.gpr.rdi, X.cpu.gpr.rsp) = e₂.add j₂ → P1 Z V' →
         GoG prof L o gev gP gE Z t'') →
       GoG prof L o gev gP gE Y t')
@@ -216,7 +228,8 @@ theorem ndp_ok {P1 : State → (Addr → Byte) → Prop} (c : Seg prof F Wl L s�
       (j' = 77 ∧ V' = Vst V (X.cpu.gpr.rsp - 24#64 + 8#64) (toBytesLE X.cpu.gpr.rdi 8) ∧
         g'.rsp = X.cpu.gpr.rsp - 24#64 ∧ g'.rdi = X.cpu.gpr.rdi ∧ KS X.cpu.gpr g'))
     hK hA (by rw [addr_add_zero]; exact hrip)
-    (vc_0 hR.2.2 fp fl f12 (by rw [q16]; exact hs2) (fun _ hs hk _ => Or.inl ⟨rfl, rfl, hs, hk⟩)
+    (vc_0 (by exact fun i hi => c.hws _ (hR.2.2 i hi)) fp fl f12 (by rw [q16]; exact hs2)
+      (fun _ hs hk _ => Or.inl ⟨rfl, rfl, hs, hk⟩)
       (fun _ hP _ => Or.inr (Or.inl ⟨rfl, rfl, hP⟩))
       (fun _ hs hd hk _ => Or.inr (Or.inr ⟨rfl, rfl, hs, hd, hk⟩))) ?_
   rintro j' g fl' V₁ hpost Y t₁ hKY hAY hrY hgY -
@@ -247,11 +260,12 @@ theorem ndp_ok {P1 : State → (Addr → Byte) → Prop} (c : Seg prof F Wl L s�
     intro Z V' t'' hKZ hAZ hrZ hzs hzk hb hR' hr' hP1
     refine (c_82 prof).run c hin
       (fun j' g' _ V'' => j' = 41 ∧ V'' = V' ∧ P41 V' X.cpu.gpr.rdi X.cpu.gpr.rsp X.cpu.gpr g')
-      hKZ hAZ hrZ (vc_82 hzs hzk (by rw [hzs, q16]; exact hb) (by rw [hzs, q16]; exact h16) hR'.2.2 fp
+      hKZ hAZ hrZ (vc_82 hzs hzk (by rw [hzs, q16]; exact hb) (by rw [hzs, q16]; exact h16)
+        (by exact fun i hi => c.hws _ (hR'.2.2 i hi)) fp
         fun _ hP _ => ⟨rfl, rfl, hP⟩) ?_
     rintro j' g fl₂ V₂ ⟨rfl, rfl, hP⟩ U t₃ hKU hAU hrU hgU -
     subst hgU
     exact tail41 c hin hKU hAU hrU hP hR' hl hin₂ h₂ hr' fun Z' t₄ hKZ' hAZ' hrZ' hs hk =>
-      kr _ Z' t₄ hKZ' hAZ' hrZ' hs hk (Or.inr (Or.inr ⟨Z, V', hP1, rfl⟩))
+      kr _ Z' t₄ hKZ' hAZ' hrZ' hs hk (Or.inr (Or.inr ⟨Z, _, hP1, rfl⟩))
 
 end FV7z.Ndp
