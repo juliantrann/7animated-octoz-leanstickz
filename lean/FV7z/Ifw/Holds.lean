@@ -326,7 +326,6 @@ theorem vc_61 {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post}
 theorem vc_101 {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post} (h : ∀ g', Fk g g' → ∀ fl, Q 107 g' fl V) :
     W_101 F Wl Q g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
-  dsimp only at h ⊢
   wpx [W_101, o6]
   all_goals repeat' (first
     | refine h _ ?_ _
@@ -493,7 +492,7 @@ theorem loop (E : Ev prof F Wl L s₀ o gev gP gE S g0 e₂ code₂ j₂ I) :
       Agree F Y.proc.mm.mem W → Y.cpu.rip = ifw_at.add 61 → Fm S g0 Y.cpu.gpr → I W →
       GoG prof L o gev gP gE Y t := by
   intro m
-  induction m using Nat.strong_induction_on with
+  induction m using Nat.strongRecOn with
   | _ m ih =>
   intro Y W t hm0 hK hA hr hF hIW
   refine (c_61 prof).run E.c E.hin (fun j' g' _ V' => (j' = 40 ∨ j' = 78) ∧ V' = W ∧ Fk Y.cpu.gpr g' ∧
