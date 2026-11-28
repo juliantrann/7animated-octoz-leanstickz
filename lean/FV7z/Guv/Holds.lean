@@ -437,7 +437,7 @@ theorem guv_mid {fb : Addr} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsB
       (∃ ra rd, Y.cpu.gpr = { X.cpu.gpr with rax := ra, rdx := rd, r12 := zl X.cpu.gpr.rax }) →
       GoG prof L o gev gP gE Y t') :
     GoG prof L o gev gP gE X t := by
-  rcases em (X.cpu.gpr.rax.setWidth 32 ≠ 0#32) with hz | hz'
+  rcases Classical.em (X.cpu.gpr.rax.setWidth 32 ≠ 0#32) with hz | hz'
   · refine (c_66 prof fb).run c hfs hin _ hK hA hrip (vc_66n hz) ?_
     rintro j' g fl V₁ ⟨rfl, rfl, hV₁⟩ Y t₁ hKY hAY hrY hgY -
     subst V₁
