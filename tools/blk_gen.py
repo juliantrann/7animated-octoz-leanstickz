@@ -948,6 +948,11 @@ FNS = {
     # PLT entry) of the rest down and `_len` - `count`. Stops: the `ret`s (0x25, 0x5d).
     "udl": dict(grp="Udl", cn="UString::Delete", a=0x44e0b0, n=94, pos=True, stops=(0x25, 0x5d), calls=True,
                 hand=(0x54,), tag="PLAN.md §M, M1", src="7-Zip's `UString::Delete` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
+    # `LzFindPrepare ()`: the first CPU test (the `call` at 0x8); 0 into `g_LzFind_GetMatchesSpec` (`0x7967a0`) when it
+    # fails, else the second (the `call` at 0x28) picks one of two functions by a `cmovne`. Stops: the `ret`s (0x22,
+    # 0x4c).
+    "lzp": dict(grp="Lzp", cn="LzFindPrepare", a=0x427de0, n=77, pos=True, stops=(0x22, 0x4c), calls=True,
+                tag="PLAN.md §M, M1", src="7-Zip's `LzFindPrepare` (`C/LzFind.c`; `objdump -d`)"),
     # `CFileBase::OpenBinary (name, flags, mode)`: `Close ()` (the `call` at 0x1a), `open64 (name, flags, mode)` (the
     # `call` at 0x2a), the result stored as `_handle`, `al` = it is not -1. Stop: the `ret` (0x41).
     "fob": dict(grp="Fob", cn="NWindows::NFile::NIO::CFileBase::OpenBinary", a=0x456060, n=66, pos=True, stops=(0x41,),
@@ -1959,6 +1964,28 @@ FNS = {
     "fsv": dict(grp="Fsv", cn="fs2us (const char *), the twin at 0x44e600", a=0x44e600, n=67, pos=True, fs=True,
                 stops=(61, 62), calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `fs2us` (`MyString.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/Common/StringConvert.cpp `MultiByteToUnicodeString (const AString &, UINT)`: `UString ()`, then
+    # `MultiByteToUnicodeString2`; without the landing pad (from 0x2e). Stop: the `ret` (0x2d). No `fs` access: `fs`
+    # only for the same shape of proof as its caller's.
+    "mbs": dict(grp="Mbs", cn="MultiByteToUnicodeString (const AString &, UINT)", a=0x450c60, n=46, pos=True, fs=True,
+                stops=(45,), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `MultiByteToUnicodeString` (`StringConvert.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/Common/StringConvert.cpp `MultiByteToUnicodeString (const char *, UINT)`: a local `AString`, the
+    # one above, `delete []`; without the landing pad (from 0x6c). Stops: the `ret` (0x66), the call of
+    # `__stack_chk_fail` (0x67).
+    "mbc": dict(grp="Mbc", cn="MultiByteToUnicodeString (const char *, UINT)", a=0x450ca0, n=108, pos=True, fs=True,
+                stops=(102, 103), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `MultiByteToUnicodeString` (`StringConvert.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 Common/MyString.cpp `us2fs (const wchar_t *)`: a local `UString`, `UnicodeStringToMultiByte`,
+    # `delete []`; without the landing pad (from 0x64). Stops: the `ret` (0x5e), the call of `__stack_chk_fail` (0x5f).
+    "ufs": dict(grp="Ufs", cn="us2fs (const wchar_t *)", a=0x44e650, n=100, pos=True, fs=True, stops=(94, 95),
+                calls=True, tag="PLAN.md §M, M1", src="7-Zip 26.06's `us2fs` (`MyString.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/Common/StringConvert.cpp `UnicodeStringToMultiByte (const UString &, UINT)`: `AString ()`, the
+    # conversion at 0x450750 (default char '_'); without the landing pad (from 0x65). Stops: the `ret` (0x5f), the
+    # call of `__stack_chk_fail` (0x60).
+    "usm": dict(grp="Usm", cn="UnicodeStringToMultiByte (const UString &, UINT)", a=0x450dc0, n=101, pos=True,
+                fs=True, stops=(95, 96), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `UnicodeStringToMultiByte` (`StringConvert.cpp`; `objdump -d`)"),
     # glibc 2.31 elf/dl-lookup.c `_dl_setup_hash (map)`: the GNU hash table's fields (or the SysV one's) into `map`.
     # Stops: the two `ret`s (0x61, 0x93), the `__assert_fail` path (0x94) not covered.
     "dsh": dict(grp="Dsh", cn="_dl_setup_hash", a=0x6ab020, n=180, pos=True, stops=(0x61, 0x93, 0x94), calls=True,
