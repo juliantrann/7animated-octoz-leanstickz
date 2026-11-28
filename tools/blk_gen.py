@@ -828,6 +828,13 @@ FNS = {
                 calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `COpenCallbackConsole::Open_Finished` "
                     "(`CPP/7zip/UI/Console/OpenCallbackConsole.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/Windows/PropVariant.cpp `CPropVariant::operator= (const char *s)`: `InternalClear ()` (the
+    # `call` at 0x11), `vt` = `VT_BSTR` and `wReserved1` = 0 (one 4-byte store), `bstrVal = AllocBstrFromAscii (s)`
+    # (0x21); NULL: the `je` at 0x2e to the throw (by hand: its target is outside). Stop: the `ret` (0x3e).
+    "pva": dict(grp="Pva", cn="CPropVariant::operator=(const char *)", a=0x4572a0, n=63, pos=True, stops=(0x3e,),
+                calls=True, hand=(0x2e,), tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CPropVariant::operator= (const char *)` (`CPP/Windows/PropVariant.cpp`; "
+                    "`objdump -d`)"),
     # 7-Zip 26.06 CPP/Common/Wildcard.cpp `ExtractFileNameFromPath (path)`: `path.ReverseFind_PathSepar ()` (the `call`,
     # 0x14), then `UString (path + it + 1)` into the result (0x26). Stop: the `ret` (0x35).
     "efn": dict(grp="Efn", cn="ExtractFileNameFromPath(const UString &)", a=0x4528f0, n=54, pos=True, stops=(0x35,),
