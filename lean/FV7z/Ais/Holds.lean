@@ -115,30 +115,47 @@ theorem ne_c5 {x y : BitVec 64} (h : (!decide (x = y)) = true) : x ≠ y := by
 theorem nz32 {x : BitVec 32} (h : (!(x &&& x == 0)) = true) : x ≠ 0 := by
   intro e; subst e; simp at h
 
+/-- `lea eax, [r13 - 1]` with `r13` = `nn` (as `Ocv.rbx0_eq`): `nn - 1`. -/
+theorem m_lea {nn : BitVec 32} (h1 : nn.toNat ≠ 0) :
+    (BitVec.setWidth 64 (BitVec.setWidth 32 (BitVec.setWidth 64 nn + 18446744073709551615#64))).toNat =
+      nn.toNat - 1 := by
+  have h2 : nn.toNat < 4294967296 := nn.isLt
+  have l64 : 4294967296 ≤ 2 ^ 64 := by decide
+  have eA : (BitVec.setWidth 64 nn).toNat = nn.toNat := by
+    rw [BitVec.toNat_setWidth]
+    exact Nat.mod_eq_of_lt (Nat.lt_of_lt_of_le h2 l64)
+  have eB : (BitVec.setWidth 64 nn + 18446744073709551615#64).toNat = nn.toNat - 1 := by
+    rw [BitVec.toNat_add, eA, BitVec.toNat_ofNat,
+      Nat.mod_eq_of_lt (a := 18446744073709551615) (b := 2 ^ 64) (by decide)]
+    have e : nn.toNat + 18446744073709551615 = (nn.toNat - 1) + 2 ^ 64 := by
+      rw [show (2 : Nat) ^ 64 = 18446744073709551616 from rfl]
+      omega
+    rw [e, Nat.add_mod_right]
+    exact Nat.mod_eq_of_lt (Nat.lt_of_le_of_lt (Nat.sub_le _ _) (Nat.lt_of_lt_of_le h2 l64))
+  have eC : (BitVec.setWidth 32 (BitVec.setWidth 64 nn + 18446744073709551615#64)).toNat = nn.toNat - 1 := by
+    rw [BitVec.toNat_setWidth, eB]
+    exact Nat.mod_eq_of_lt (Nat.lt_of_le_of_lt (Nat.sub_le _ _) h2)
+  rw [BitVec.toNat_setWidth, eC]
+  exact Nat.mod_eq_of_lt (Nat.lt_of_le_of_lt (Nat.sub_le _ _) (Nat.lt_of_lt_of_le h2 l64))
+
+/-- `8 (n - 1) + 8` = `8 n` below `2^64`, `n` not 0 and below `2^32`. -/
+theorem m_nat {n : Nat} (h1 : n ≠ 0) (h2 : n < 4294967296) :
+    ((n - 1) * (8 % 2 ^ 64) % 2 ^ 64 + 8 % 2 ^ 64) % 2 ^ 64 = 8 * n % 2 ^ 64 := by
+  have e8 : 8 % 2 ^ 64 = 8 := Nat.mod_eq_of_lt (by decide)
+  have l5 : (n - 1) * 8 < 2 ^ 64 := by
+    rw [show (2 : Nat) ^ 64 = 18446744073709551616 from rfl]
+    omega
+  have l6 : (n - 1) * 8 + 8 = 8 * n := by omega
+  rw [e8, Nat.mod_eq_of_lt l5, l6]
+
 /-- The count at `rsp + 8`: `8 nn` from `lea eax, [r13 - 1]; lea rax, [rax*8 + 8]`, `nn` not 0. -/
 theorem m_eq (nn : BitVec 32) (h : nn ≠ 0) :
     BitVec.setWidth 64 (BitVec.setWidth 32 (BitVec.setWidth 64 nn + 18446744073709551615#64)) * 8#64 + 8#64 =
       BitVec.ofNat 64 (8 * nn.toNat) := by
-  have h1 : nn.toNat ≠ 0 := fun e => h (BitVec.eq_of_toNat_eq (by rw [e]; rfl))
-  have h2 : nn.toNat < 4294967296 := nn.isLt
-  have l1 : nn.toNat < 18446744073709551616 := Nat.lt_trans h2 (by decide)
-  have l2 : nn.toNat - 1 < 4294967296 := Nat.lt_of_le_of_lt (Nat.sub_le _ _) h2
-  have l3 : nn.toNat - 1 < 18446744073709551616 := Nat.lt_trans l2 (by decide)
-  have l4 : nn.toNat + 18446744073709551615 = nn.toNat - 1 + 18446744073709551616 := by omega
-  have l5 : (nn.toNat - 1) * 8 < 18446744073709551616 := by omega
-  have l6 : (nn.toNat - 1) * 8 + 8 = 8 * nn.toNat := by omega
-  have l7 : 8 * nn.toNat < 18446744073709551616 := by omega
-  have e1 : (BitVec.setWidth 64 nn + 18446744073709551615#64).toNat = nn.toNat - 1 := by
-    simp only [BitVec.toNat_add, BitVec.toNat_setWidth, BitVec.toNat_ofNat, Nat.reducePow, Nat.reduceMod]
-    rw [Nat.mod_eq_of_lt l1, l4, Nat.add_mod_right, Nat.mod_eq_of_lt l3]
-  have e2 : (BitVec.setWidth 64 (BitVec.setWidth 32 (BitVec.setWidth 64 nn + 18446744073709551615#64))).toNat =
-      nn.toNat - 1 := by
-    rw [BitVec.toNat_setWidth, BitVec.toNat_setWidth, e1]
-    simp only [Nat.reducePow]
-    rw [Nat.mod_eq_of_lt l2, Nat.mod_eq_of_lt l3]
+  have h1 : nn.toNat ≠ 0 := fun e => h (BitVec.eq_of_toNat_eq (e.trans rfl))
   apply BitVec.eq_of_toNat_eq
-  simp only [BitVec.toNat_add, BitVec.toNat_mul, e2, BitVec.toNat_ofNat, Nat.reducePow, Nat.reduceMod]
-  rw [Nat.mod_eq_of_lt l5, l6]
+  rw [BitVec.toNat_add, BitVec.toNat_mul, m_lea h1, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
+  exact m_nat h1 nn.isLt
 
 /-- The loop's offset one round on. -/
 theorem r14_succ (k : Nat) : BitVec.ofNat 64 (8 * k) + 8#64 = BitVec.ofNat 64 (8 * (k + 1)) := by
