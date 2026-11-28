@@ -1540,6 +1540,14 @@ FNS = {
     "rst": dict(grp="Rst", cn="ReadStream", a=0x4632b0, n=177, pos=True, fs=True, stops=(0xa1, 0xac), hand=(0x76,),
                 calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `ReadStream` (`CPP/7zip/Common/StreamUtils.cpp`; `objdump -d`)"),
+    # 7-Zip's C/LzmaDec.c `LzmaDec_Allocate (p, props, propsSize, alloc)`: `LzmaProps_Decode (&propNew, props,
+    # propsSize)` (call, 0x27, `Lpd`) into the frame, `LzmaDec_AllocateProbs2 (p, &propNew, alloc)` (0x67, `Lap`), the
+    # dictionary size rounded up to 4 KiB (below 4 MiB) or 1 MiB (0x73..0xc1; 0x100: above 1 GiB), the old dictionary
+    # freed (`alloc->Free`, 0xcf) and a new one allocated (`alloc->Alloc`, 0xe1) unless it is there with that size;
+    # a null result `LzmaDec_FreeProbs` (0x11c, `Lfp`) and SZ_ERROR_MEM. The guard's check. Stops: the `ret` (0x54),
+    # the call of `__stack_chk_fail` (0x126).
+    "lza": dict(grp="Lza", cn="LzmaDec_Allocate", a=0x42bf80, n=299, pos=True, fs=True, stops=(0x54, 0x126),
+                calls=True, tag="PLAN.md §M, M1", src="7-Zip 26.06's `LzmaDec_Allocate` (`C/LzmaDec.c`; `objdump -d`)"),
 }
 
 
