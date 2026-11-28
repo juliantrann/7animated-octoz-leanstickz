@@ -1415,3 +1415,10 @@ import FV7z.Gdp.Blocks1
 import FV7z.Gdp.Blocks
 import FV7z.Gdp.Cuts
 import FV7z.Gdp.Holds
+import FV7z.Spp.Code
+import FV7z.Spp.Pats
+import FV7z.Spp.Blocks1
+import FV7z.Spp.Blocks2
+import FV7z.Spp.Blocks
+import FV7z.Spp.Cuts
+import FV7z.Spp.Pieces
