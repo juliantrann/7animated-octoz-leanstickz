@@ -11,6 +11,9 @@ its length at `this + 24`) is `.` or `..`. A leaf without a loop that writes no 
 - `isd`: what the code computes, as a proposition.
 - `vc_0`: the code to a `ret`, `rax` = 1 if `isd`, else 0 (`rcx`, `rdx` changed).
 - `ids_ok`: from the entry to the return address, only `rax`, `rcx`, `rdx` changed (and `rsp` popped).
+
+Note: `rw`/`simpa` miss the `decide`s and literals of the `wpx` goal (another instance, `BitVec.ofNat` forms); take
+facts by unification instead (`nd0`, `nd1`, `dt` with `{inst}`; `exact (sete1 _).trans (if_pos …)` for `sete`).
 -/
 open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn
 namespace FV7z.Ids
