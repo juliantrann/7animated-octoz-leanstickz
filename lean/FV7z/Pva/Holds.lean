@@ -179,7 +179,7 @@ theorem pva_ok {P1 P2 : State → (Addr → Byte) → Prop} (c : Seg prof F Wl L
   intro Z V' t'' hKZ hAZ hrZ hzs hz12 hzb hP1
   refine (c_22 prof).run c hin (fun j' g' _ V'' => j' = 33 ∧ g' = { Z.cpu.gpr with rdi := X.cpu.gpr.rsi } ∧
       V'' = Vst V' X.cpu.gpr.rdi (toBytesLE 8#32 4)) hKZ hAZ hrZ
-    (vc_22 (by rw [hz12]; exact fw) fun _ => ⟨rfl, by rw [hzb], by rw [hz12]⟩) ?_
+    (vc_22 (by rw [hz12]; exact fw) fun _ => ⟨rfl, by rw [← hzb]; try rfl, by rw [hz12]⟩) ?_
   rintro j' g fl V₂ ⟨rfl, rfl, hV₂⟩ U t₃ hKU hAU hrU hgU -
   subst V₂
   have hsU : U.cpu.gpr.rsp = X.cpu.gpr.rsp - 24 := by rw [hgU]; exact hzs

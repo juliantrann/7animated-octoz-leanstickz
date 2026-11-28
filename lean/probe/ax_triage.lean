@@ -1,8 +1,3 @@
-import FV7z.Pva.Code
-import FV7z.Pva.Pats
-import FV7z.Pva.Blocks1
-import FV7z.Pva.Blocks
-import FV7z.Pva.Cuts
 import FV7z.Pva.Holds
 open FV7z
 #print axioms FV7z.Pva.pva_ok
