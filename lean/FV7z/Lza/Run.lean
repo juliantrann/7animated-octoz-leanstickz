@@ -244,6 +244,11 @@ theorem vc_108 {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post
     | apply And.intro
     | intro _)
 
+/-- An `rbp`-based address with no index, as `wpx` leaves it in a footprint goal. -/
+theorem eaG_r5 {g : Gprs} (d : Nat) : eaG g (some 5) none 1 d = g.rbp + BitVec.ofNat 64 d := by
+  show g.get (regOf 5) + 0 * BitVec.ofNat 64 1 + BitVec.ofNat 64 d = _
+  rw [z_mul64, add_z64]; rfl
+
 /-- The rounding's end, `rsi` = `p->dic`: to `alloc->Free` (204), or (`p->dic` set with `p->dicBufSize` = `rbx`)
 to 238. -/
 theorem vc_173 {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post}
@@ -263,6 +268,7 @@ theorem vc_173 {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post
     | with_reducible rfl
     | with_reducible exact f24
     | with_reducible exact f32
+    | (simp only [eaG_r5]; exact f32 _ (by assumption))
     | apply And.intro
     | intro _)
 
