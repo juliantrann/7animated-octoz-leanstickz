@@ -242,7 +242,6 @@ the 4 bytes at `this + 16` (`hn`) and `it` the 8 bytes at `this + 8` whenever `I
 `FV7z/Ocv/Holds.lean` (`hP0`, `hQ0`, `hD1`, `hD2`); with `I 0` the run reaches the return address with the registers
 a call keeps when `it` is 0 (`kr`), else `0x6014f0` with `rsp` as at the entry, `rdi` = `it`, the saved registers
 back and the return address in place (`kt`). -/
-set_option maxHeartbeats 4000000 in
 theorem from170 {g₀ : Gprs} {n32 : BitVec 32} {it : BitVec 64} {B0 B1 : (Addr → Byte) → Prop}
     {I : Nat → (Addr → Byte) → Prop} {J : Nat → BitVec 64 → (Addr → Byte) → Prop} {e₂ : Addr} {code₂ : List Byte}
     {j₂ : Nat} (c : Seg prof F Wl L s₀ o) (hin : CodeIn L cpd_at cpd)

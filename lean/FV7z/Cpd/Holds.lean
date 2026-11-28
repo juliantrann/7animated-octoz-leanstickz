@@ -1,5 +1,5 @@
 import FV7z.Cpd.Tail
-import FV7z.Cpd.Inner
+import FV7z.Cpd.Loop
 /-!
 # `NCommandLineParser::CParser::~CParser` (PLAN.md §M, M1)
 
@@ -102,7 +102,6 @@ variable {prof : Profile} {L : List (Addr × List Byte)} {s₀ : State} {o : Ora
 0, `B0` (`h00`); else `N` its count (`hc`, `24 N` below `2 ^ 64`) and `O N` (`hO`), the items as in `from48` and
 `operator delete [] (b - 8, …)` giving `B0` (`hDA`). From `B0` on as in `from170`: the run reaches the return address
 with the registers a call keeps when `NonSwitchStrings._items` (`it`) is 0 (`kr`), else `0x6014f0` (`kt`). -/
-set_option maxHeartbeats 4000000 in
 theorem cpd_ok {b it : BitVec 64} {N : Nat} {n32 : BitVec 32} {B0 B1 : (Addr → Byte) → Prop}
     {O : Nat → (Addr → Byte) → Prop} {H : Nat → Nat → (Addr → Byte) → Prop}
     {JA : Nat → Nat → BitVec 64 → (Addr → Byte) → Prop} {nI : Nat → BitVec 32} {itI : Nat → BitVec 64}
