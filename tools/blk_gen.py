@@ -1936,6 +1936,12 @@ FNS = {
     "cua": dict(grp="Cua", cn="CStdOutStream::Convert_UString_to_AString", a=0x5a14a0, n=75, pos=True,
                 stops=(33, 38, 56, 61, 70), tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `CStdOutStream::Convert_UString_to_AString` (`StdOutStream.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 Common/StringConvert.cpp: a frame of 24 bytes with the stack guard at `rsp + 8`,
+    # `UnicodeStringToMultiByte (dest, src, codePage, '_', &defaultCharWasUsed)` (call at 0x22, the `bool` at
+    # `rsp + 7`), the guard's check. Stops: the `ret` (0x3b), the call of `__stack_chk_fail` (0x3c).
+    "um2": dict(grp="Um2", cn="UnicodeStringToMultiByte2", a=0x450d20, n=65, pos=True, fs=True, stops=(59, 60),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `UnicodeStringToMultiByte2` (`StringConvert.cpp`; `objdump -d`)"),
 }
 
 def file_bytes(path, va, n):
