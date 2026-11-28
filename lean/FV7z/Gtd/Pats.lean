@@ -1,4 +1,4 @@
-import FV7z.Lemmas.Sp
+import FV7z.Lemmas.SpFs
 import FV7z.Lemmas.BlkOps15
 import FV7z.Lemmas.BlkOps2
 /-!

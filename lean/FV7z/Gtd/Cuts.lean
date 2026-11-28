@@ -12,78 +12,83 @@ namespace FV7z.Gtd
 set_option linter.unusedVariables false
 open ZellicX86 Decode FV7z.Leaf
 
-def W_128 : Wpt := fun F Wl Q => wp F Wl o9 fun g f V =>
+def W_128 (fb : Addr) : Wpt := fun F Wl Q => wp F Wl o9 fun g f V =>
     Q 22 g (rfz f) V
-theorem c_128 (prof : Profile) : Sp prof gtd gtd_at 128 W_128 :=
-  Sp.blk_then (blk_128 prof) (Sp.jmp_then (spj_131 prof) (Sp.skip 22))
+theorem c_128 (prof : Profile) (fb : Addr) : SpF prof gtd gtd_at fb 128 (W_128 fb) :=
+  SpF.blk_then (blk_128 prof) (SpF.jmp_then (spj_131 prof fb) (SpF.skip 22))
 
-def W_0 : Wpt := fun F Wl Q => wp F Wl o0 fun g f V =>
-    (f.cond 5 = true → W_128 F Wl Q g (rfz f) V) ∧
+def W_0 (fb : Addr) : Wpt := fun F Wl Q => wp F Wl o0 fun g f V =>
+    (f.cond 5 = true → W_128 fb F Wl Q g (rfz f) V) ∧
     (f.cond 5 = false → Q 22 g (rfz f) V)
-theorem c_0 (prof : Profile) : Sp prof gtd gtd_at 0 W_0 :=
-  Sp.blk_then (blk_0 prof) (Sp.jcc_then (spj_20 prof) (c_128 prof) (Sp.skip 22))
+theorem c_0 (prof : Profile) (fb : Addr) : SpF prof gtd gtd_at fb 0 (W_0 fb) :=
+  SpF.blk_then (blk_0 prof) (SpF.jcc_then (spj_20 prof fb) (c_128 prof fb) (SpF.skip 22))
 
-def W_34 : Wpt := fun F Wl Q => wp F Wl o2 (Q 40)
-theorem c_34 (prof : Profile) : Sp prof gtd gtd_at 34 W_34 := Sp.blk_then (blk_34 prof) (Sp.skip 40)
+def W_34 (fb : Addr) : Wpt := fun F Wl Q => wp F Wl o2 (Q 40)
+theorem c_34 (prof : Profile) (fb : Addr) : SpF prof gtd gtd_at fb 34 (W_34 fb) :=
+  SpF.blk_then (blk_34 prof) (SpF.skip 40)
 
-def W_22 : Wpt := fun F Wl Q => wp F Wl o1 fun g f V =>
+def W_22 (fb : Addr) : Wpt := fun F Wl Q => wp F Wl o1 fun g f V =>
     (f.cond 4 = true → Q 96 g (rfz f) V) ∧
-    (f.cond 4 = false → W_34 F Wl Q g (rfz f) V)
-theorem c_22 (prof : Profile) : Sp prof gtd gtd_at 22 W_22 :=
-  Sp.blkA_then (blk_22 prof) (Sp.jcc_then (spj_32 prof) (Sp.skip 96) (c_34 prof))
+    (f.cond 4 = false → W_34 fb F Wl Q g (rfz f) V)
+theorem c_22 (prof : Profile) (fb : Addr) : SpF prof gtd gtd_at fb 22 (W_22 fb) :=
+  SpF.blkA_then (blk_22 prof) (SpF.jcc_then (spj_32 prof fb) (SpF.skip 96) (c_34 prof fb))
 
-def W_54 : Wpt := fun F Wl Q => wp F Wl o4 fun g f V =>
+def W_54 (fb : Addr) : Wpt := fun F Wl Q => wp F Wl o4 fun g f V =>
     (f.cond 4 = true → Q 96 g (rfz f) V) ∧
     (f.cond 4 = false → Q 60 g (rfz f) V)
-theorem c_54 (prof : Profile) : Sp prof gtd gtd_at 54 W_54 :=
-  Sp.blk_then (blk_54 prof) (Sp.jcc_then (spj_58 prof) (Sp.skip 96) (Sp.skip 60))
+theorem c_54 (prof : Profile) (fb : Addr) : SpF prof gtd gtd_at fb 54 (W_54 fb) :=
+  SpF.blk_then (blk_54 prof) (SpF.jcc_then (spj_58 prof fb) (SpF.skip 96) (SpF.skip 60))
 
-def W_42 : Wpt := fun F Wl Q => wp F Wl o3 fun g f V =>
+def W_42 (fb : Addr) : Wpt := fun F Wl Q => wp F Wl o3 fun g f V =>
     (f.cond 6 = true → Q 81 g (rfz f) V) ∧
-    (f.cond 6 = false → W_54 F Wl Q g (rfz f) V)
-theorem c_42 (prof : Profile) : Sp prof gtd gtd_at 42 W_42 :=
-  Sp.blk_then (blk_42 prof) (Sp.jcc_then (spj_52 prof) (Sp.skip 81) (c_54 prof))
+    (f.cond 6 = false → W_54 fb F Wl Q g (rfz f) V)
+theorem c_42 (prof : Profile) (fb : Addr) : SpF prof gtd gtd_at fb 42 (W_42 fb) :=
+  SpF.blk_then (blk_42 prof) (SpF.jcc_then (spj_52 prof fb) (SpF.skip 81) (c_54 prof fb))
 
-def W_60 : Wpt := fun F Wl Q => wp F Wl (o5 fb) (Q 81)
-theorem c_60 (prof : Profile) : Sp prof gtd gtd_at 60 W_60 := Sp.blkF_then (blk_60 prof fb) (Sp.skip 81)
+def W_60 (fb : Addr) : Wpt := fun F Wl Q => wp F Wl (o5 fb) (Q 81)
+theorem c_60 (prof : Profile) (fb : Addr) : SpF prof gtd gtd_at fb 60 (W_60 fb) :=
+  SpF.blkF_then (blk_60 prof fb) (SpF.skip 81)
 
-def W_81 : Wpt := fun F Wl Q => wp F Wl o6 (Q 88)
-theorem c_81 (prof : Profile) : Sp prof gtd gtd_at 81 W_81 := Sp.blk_then (blk_81 prof) (Sp.skip 88)
+def W_81 (fb : Addr) : Wpt := fun F Wl Q => wp F Wl o6 (Q 88)
+theorem c_81 (prof : Profile) (fb : Addr) : SpF prof gtd gtd_at fb 81 (W_81 fb) :=
+  SpF.blk_then (blk_81 prof) (SpF.skip 88)
 
-def W_96 : Wpt := fun F Wl Q => wp F Wl o7 (Q 107)
-theorem c_96 (prof : Profile) : Sp prof gtd gtd_at 96 W_96 := Sp.blk_then (blk_96 prof) (Sp.skip 107)
+def W_96 (fb : Addr) : Wpt := fun F Wl Q => wp F Wl o7 (Q 107)
+theorem c_96 (prof : Profile) (fb : Addr) : SpF prof gtd gtd_at fb 96 (W_96 fb) :=
+  SpF.blk_then (blk_96 prof) (SpF.skip 107)
 
-def W_120 : Wpt := fun F Wl Q => wp F Wl o6 (Q 127)
-theorem c_120 (prof : Profile) : Sp prof gtd gtd_at 120 W_120 := Sp.blk_then (blk_120 prof) (Sp.skip 127)
+def W_120 (fb : Addr) : Wpt := fun F Wl Q => wp F Wl o6 (Q 127)
+theorem c_120 (prof : Profile) (fb : Addr) : SpF prof gtd gtd_at fb 120 (W_120 fb) :=
+  SpF.blk_then (blk_120 prof) (SpF.skip 127)
 
-def W_109 : Wpt := fun F Wl Q => wp F Wl o8 fun g f V =>
+def W_109 (fb : Addr) : Wpt := fun F Wl Q => wp F Wl o8 fun g f V =>
     (f.cond 7 = true → Q 60 g (rfz f) V) ∧
-    (f.cond 7 = false → W_120 F Wl Q g (rfz f) V)
-theorem c_109 (prof : Profile) : Sp prof gtd gtd_at 109 W_109 :=
-  Sp.blk_then (blk_109 prof) (Sp.jcc_then (spj_118 prof) (Sp.skip 60) (c_120 prof))
+    (f.cond 7 = false → W_120 fb F Wl Q g (rfz f) V)
+theorem c_109 (prof : Profile) (fb : Addr) : SpF prof gtd gtd_at fb 109 (W_109 fb) :=
+  SpF.blk_then (blk_109 prof) (SpF.jcc_then (spj_118 prof fb) (SpF.skip 60) (c_120 prof fb))
 
 /-- The cut points. -/
 def cuts : List Nat := [0, 22, 42, 60, 81, 96, 109]
 
 /-- What the code from a cut point needs for `Q` at the next ones. -/
-def Wt (ℓ : Nat) : Wpt :=
-  if ℓ = 0 then W_0 else
-  if ℓ = 22 then W_22 else
-  if ℓ = 42 then W_42 else
-  if ℓ = 60 then W_60 else
-  if ℓ = 81 then W_81 else
-  if ℓ = 96 then W_96 else
-  if ℓ = 109 then W_109 else
+def Wt (fb : Addr) (ℓ : Nat) : Wpt :=
+  if ℓ = 0 then W_0 fb else
+  if ℓ = 22 then W_22 fb else
+  if ℓ = 42 then W_42 fb else
+  if ℓ = 60 then W_60 fb else
+  if ℓ = 81 then W_81 fb else
+  if ℓ = 96 then W_96 fb else
+  if ℓ = 109 then W_109 fb else
   fun _ _ _ _ _ _ => False
 
-theorem spAll (prof : Profile) (ℓ : Nat) : Sp prof gtd gtd_at ℓ (Wt ℓ) :=
-  Sp.table (c_0 prof) <|
-  Sp.table (c_22 prof) <|
-  Sp.table (c_42 prof) <|
-  Sp.table (c_60 prof) <|
-  Sp.table (c_81 prof) <|
-  Sp.table (c_96 prof) <|
-  Sp.table (c_109 prof) <|
-  Sp.never ℓ
+theorem spAll (prof : Profile) (fb : Addr) (ℓ : Nat) : SpF prof gtd gtd_at fb ℓ (Wt fb ℓ) :=
+  SpF.table (c_0 prof fb) <|
+  SpF.table (c_22 prof fb) <|
+  SpF.table (c_42 prof fb) <|
+  SpF.table (c_60 prof fb) <|
+  SpF.table (c_81 prof fb) <|
+  SpF.table (c_96 prof fb) <|
+  SpF.table (c_109 prof fb) <|
+  SpF.never ℓ
 
 end FV7z.Gtd
