@@ -821,6 +821,13 @@ FNS = {
                 calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `CPropVariant::operator= (const FILETIME &)` (`CPP/Windows/PropVariant.cpp`; "
                     "`objdump -d`)"),
+    # 7-Zip 26.06 CPP/7zip/UI/Console/OpenCallbackConsole.cpp `COpenCallbackConsole::Open_Finished ()`:
+    # `ClosePercents ()` (with `_percent._so` set and `_percent.DisableOutput` clear, `_percent.ClosePrint (true)`, the
+    # `call`) and `S_OK`. Stops: the two `ret`s (0x29, 0x32).
+    "ocf": dict(grp="Ocf", cn="COpenCallbackConsole::Open_Finished", a=0x5f66a0, n=51, pos=True, stops=(0x29, 0x32),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `COpenCallbackConsole::Open_Finished` "
+                    "(`CPP/7zip/UI/Console/OpenCallbackConsole.cpp`; `objdump -d`)"),
     # 7-Zip 26.06 CPP/Common/Wildcard.cpp `ExtractFileNameFromPath (path)`: `path.ReverseFind_PathSepar ()` (the `call`,
     # 0x14), then `UString (path + it + 1)` into the result (0x26). Stop: the `ret` (0x35).
     "efn": dict(grp="Efn", cn="ExtractFileNameFromPath(const UString &)", a=0x4528f0, n=54, pos=True, stops=(0x35,),
@@ -2158,6 +2165,11 @@ FNS = {
     # `L'\n'` and the 0 at `_len`, `_len + 1`. Stops: the `ret` (0x2a), the `call` (0x30).
     "alf": dict(grp="Alf", cn="UString::Add_LF", a=0x44dab0, n=58, pos=True, stops=(42,), calls=True,
                 tag="PLAN.md §M, M1", src="7-Zip 26.06's `UString::Add_LF` (`MyString.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/Common/StdOutStream.cpp `CStdOutStream::operator<< (const char *s)`: `fputs (s, _stream)`
+    # (0x624cc0), returns `this`. Without the landing pad (from 0x1b). Stops: the `ret` (0x1a).
+    "osc": dict(grp="Osc", cn="CStdOutStream::operator<< (const char *)", a=0x5f4be0, n=27, pos=True, stops=(26,),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CStdOutStream::operator<< (const char *)` (`StdOutStream.cpp`; `objdump -d`)"),
     # glibc 2.31 elf/dl-lookup.c `_dl_setup_hash (map)`: the GNU hash table's fields (or the SysV one's) into `map`.
     # Stops: the two `ret`s (0x61, 0x93), the `__assert_fail` path (0x94) not covered.
     "dsh": dict(grp="Dsh", cn="_dl_setup_hash", a=0x6ab020, n=180, pos=True, stops=(0x61, 0x93, 0x94), calls=True,
@@ -2209,6 +2221,14 @@ FNS = {
     # Stops: the `ret`s (0x24, 0x42), the padding after the first (0x25).
     "sbp": dict(grp="Sbp", cn="z7_SwapBytesPrepare", a=0x43d3d0, n=67, pos=True, stops=(36, 37, 66), calls=True,
                 tag="PLAN.md §M, M1", src="7-Zip 26.06's `z7_SwapBytesPrepare` (`SwapBytes.c`; `objdump -d`)"),
+    # glibc 2.x `_IO_new_file_write (f, data, n)` (libio/fileops.c, static in 7zzs): `n <= 0` (0x14) to the end with
+    # 0; the loop head (0x3d): `__write_nocancel` (0x4e) when `f->_flags2 & 2`, else `__write` (0x28); a negative
+    # count (0x30, 0x56) sets `_IO_ERR_SEEN` (0x60); else `to_do -= count`, `data += count`, to the head while
+    # `to_do > 0` (0x3b); the end (0x6b) adds `n - to_do` to `f->_offset` unless negative. Stops: the `ret` (0x8b),
+    # the padding (0x25, 0x8c); the `or dword [r13], 0x20` (0x60) by hand (`Seg.s_or_mi32`).
+    "ifw": dict(grp="Ifw", cn="_IO_new_file_write", a=0x6287d0, n=156, pos=True, stops=(0x25, 0x8b, 0x8c),
+                calls=True, hand=(0x60,), tag="PLAN.md §M, M1",
+                src="glibc's `_IO_new_file_write` (`libio/fileops.c`, static in 7zzs 26.06; `objdump -d`)"),
 }
 
 def file_bytes(path, va, n):
