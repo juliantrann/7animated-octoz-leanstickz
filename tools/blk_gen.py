@@ -1449,6 +1449,18 @@ FNS = {
     "smd": dict(grp="Smd", cn="Set_ModuleDirPrefix_From_ProgArg0", a=0x5a9ed0, n=124, pos=True, fs=True,
                 stops=(0x76, 0x77), calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `Set_ModuleDirPrefix_From_ProgArg0` (`ArchiveCommandLine.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/7zip/UI/Console/List.cpp `GetPropName (propID, name, nameA, nameU)` (static): a known `propID`
+    # (<= 0x68) `nameA = kPropIdToName[propID]` (the table at 0x77f520, a tail jump to `AString::operator= (const char
+    # *)` at 0x43); else with `name` `nameU = name` (a tail jump to `UString::operator= (const wchar_t *)`, 0x14),
+    # without, `nameA.Empty (); nameA.Add_UInt32 (propID)` (the stores, a tail jump to `Add_UInt32`, 0x30)
+    "gpn": dict(grp="Gpn", cn="GetPropName", a=0x5ebc80, n=72, pos=True, stops=(0x14, 0x30, 0x43), calls=True,
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `GetPropName` (`CPP/7zip/UI/Console/List.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/7zip/UI/Common/ExtractingFilePath.cpp `Get_Correct_FsFile_Name (name)`: `UString res = name`
+    # (the copy constructor's `call` at 0xe), `Correct_PathPart (res)` when not empty (0x1f), `res = '_'` when it is
+    # empty then (0x48); `rax` = the result's place, the `ret`s (0x37, 0x57). The landing pad (0x58..) is left out.
+    "gcf": dict(grp="Gcf", cn="Get_Correct_FsFile_Name", a=0x5c7070, n=88, pos=True, stops=(0x37, 0x57), calls=True,
+                tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `Get_Correct_FsFile_Name` (`ExtractingFilePath.cpp`; `objdump -d`)"),
 }
 
 
