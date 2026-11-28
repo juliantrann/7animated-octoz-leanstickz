@@ -1558,6 +1558,19 @@ FNS = {
     "cxd": dict(grp="Cxd", cn="CObjectVector<CXmlProp>::~CObjectVector", a=0x5f63c0, n=117, pos=True,
                 stops=(0x69, 0x74), calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `CObjectVector<T>::~CObjectVector` (`CPP/Common/MyVector.h`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/Common/StdOutStream.cpp `CStdOutStream::Normalize_UString (s)`: in terminal mode (the byte at
+    # `this + 8`) each `wchar_t` of `s` below 0x20 (signed), in 0x7f..0x9f, 0x202a..0x202e or 0x2066..0x2069 made
+    # '_' (the loop at 0x59), else each '\n' made '_' (the loop at 0x80). Stops: the `ret`s (0x6f, 0x94).
+    "nus": dict(grp="Nus", cn="CStdOutStream::Normalize_UString", a=0x5a15e0, n=149, pos=True, stops=(0x6f, 0x94),
+                tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CStdOutStream::Normalize_UString` (`CPP/Common/StdOutStream.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/Windows/FileDir.cpp `GetFullPathAndSplit (path, resDirPrefix, resFileName)`: `res =
+    # GetFullPath (path, resDirPrefix)` (the `call` at 0x15), when false `resDirPrefix = path` (0x66, then back to
+    # 0x21); `i = resDirPrefix.ReverseFind_PathSepar ()` (0x24), `resFileName = resDirPrefix.Ptr (i + 1)` (0x36),
+    # `resDirPrefix.DeleteFrom (i + 1)` (the stores at 0x3b..0x4c). Stop: the `ret` (0x58).
+    "gfs": dict(grp="Gfs", cn="NWindows::NFile::NDir::GetFullPathAndSplit", a=0x454a50, n=109, pos=True,
+                stops=(0x58,), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `NDir::GetFullPathAndSplit` (`FileDir.cpp`; `objdump -d`)"),
     # 7-Zip 26.06 CPP/7zip/UI/Common/DefaultName.cpp `GetDefaultName3 (name, ext, addSubExtension)` (as
     # `GetDefaultName2`): a frame of 32 bytes under five pushes with the stack guard at `rsp + 24` and a `UString`
     # at `rsp`; `name` ends with `.ext` (the `cmp` at 0x40, `StringsAreEqualNoCase_Ascii`-like call at 0xf7): `Left`
