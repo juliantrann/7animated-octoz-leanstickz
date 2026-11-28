@@ -1945,3 +1945,9 @@ import FV7z.Iap.Holds
 import FV7z.Sse.Blocks
 import FV7z.Sse.Cuts
 import FV7z.Sse.Holds
+import FV7z.Npl.Code
+import FV7z.Npl.Pats
+import FV7z.Npl.Blocks1
+import FV7z.Npl.Blocks
+import FV7z.Npl.Cuts
+import FV7z.Npl.Holds

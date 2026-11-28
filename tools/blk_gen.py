@@ -2159,6 +2159,12 @@ FNS = {
     "stc": dict(grp="Stc", cn="NWindows::NFile::NIO::CFileBase::seekToCur", a=0x4560f0, n=25, pos=True, stops=(24,),
                 calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `CFileBase::seekToCur` (`FileIO.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 Common/StdOutStream.cpp `CStdOutStream::NormalizePrint_UString (s)` (UString&): two pushes; with
+    # `IsTerminalMode` (byte 10) and not `ListPathSeparatorSlash` (byte 9), `s.Replace (L'/', L'\\')` (0x44e010); the
+    # pops, a tail jump to `Normalize_UString (s)` (0x5a15e0). Stops: the jump (0x2a), the padding after it (0x2f).
+    "npl": dict(grp="Npl", cn="CStdOutStream::NormalizePrint_UString", a=0x5a1680, n=68, pos=True, stops=(42, 47),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CStdOutStream::NormalizePrint_UString` (`StdOutStream.cpp`; `objdump -d`)"),
 }
 
 def file_bytes(path, va, n):
