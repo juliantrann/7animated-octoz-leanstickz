@@ -17,7 +17,7 @@ from its return (`rsp` 8 below the entry's, `rbx` = `this`, the saved `rbx` and 
 `Sv`) and its own post `Pr`. The store `_mustBeDeleted` (the byte at `this`) needs `this` clear of the 16 bytes from
 the saved `rbx` to the return address (`hd`): no hypothesis on the bytes after the store.
 
-- `b0`: the byte `_mustBeDeleted`; `V0`, `gC`: the bytes and the registers at the `call`; `Vm`: the bytes after the
+- `mbd`: the byte `_mustBeDeleted`; `V0`, `gC`: the bytes and the registers at the `call`; `Vm`: the bytes after the
   store.
 - `vc_0`, `vc_29`: the verification conditions of the pieces.
 - `tfr_ok`: from the entry to the return address (`kz` for `_mustBeDeleted` 0, else through `DeleteFileAlways`, `kr`).
@@ -46,7 +46,7 @@ theorem ret_37 (feat : Features) : Dec feat tfr 37 (FV7z.mk .ret 64 [] 1) :=
   Dec.shift (j := 37) (k := 0) (pret_0 feat) w_37 (Nat.zero_le _)
 
 /-- `_mustBeDeleted`: the byte at `p`. -/
-abbrev b0 (V : Addr → Byte) (p : Addr) : BitVec 8 := ofBytesLE 8 ((byteAddrs p 1).map V)
+abbrev mbd (V : Addr → Byte) (p : Addr) : BitVec 8 := ofBytesLE 8 ((byteAddrs p 1).map V)
 
 /-- The bytes at the `call`: `rbx` pushed. -/
 abbrev V0 (V : Addr → Byte) (g : Gprs) : Addr → Byte := Vst V (g.rsp - 8) (toBytesLE g.rbx 8)
@@ -70,8 +70,8 @@ theorem vc_0 {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post}
     (f0 : ∀ i < 1, Foot F.data (Addr.add g.rdi i))
     (f8 : ∀ i < 8, Foot F.data (Addr.add (g.rdi + 8#64) i))
     (hs1 : ∀ i < 8, Foot Wl (Addr.add (g.rsp - 8) i))
-    (hz : b0 V g.rdi = 0#8 → ∀ fl, Q 14 { g with rax := BitVec.setWidth 64 1#32 } fl V)
-    (hn : b0 V g.rdi ≠ 0#8 → ∀ fl, Q 24 (gC V g) fl (V0 V g)) :
+    (hz : mbd V g.rdi = 0#8 → ∀ fl, Q 14 { g with rax := BitVec.setWidth 64 1#32 } fl V)
+    (hn : mbd V g.rdi ≠ 0#8 → ∀ fl, Q 24 (gC V g) fl (V0 V g)) :
     W_0 F Wl Q g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at f0 f8 hs1 hz hn ⊢
@@ -121,11 +121,11 @@ theorem tfr_ok {Pr : State → (Addr → Byte) → Prop}
     (hd : X.cpu.gpr.rdi.toNat + 1 ≤ X.cpu.gpr.rsp.toNat - 8 ∨ X.cpu.gpr.rsp.toNat + 8 ≤ X.cpu.gpr.rdi.toNat)
     {e₂ : Addr} {code₂ : List Byte} (hin₂ : CodeIn L e₂ code₂) {j₂ : Nat} (h₂ : j₂ < code₂.length)
     (hra : rdq(V, X.cpu.gpr.rsp) = e₂.add j₂)
-    (kz : ∀ (Z' : State) (t' : Nat), b0 V X.cpu.gpr.rdi = 0#8 → KeptW Wl s₀ Z' → Agree F Z'.proc.mm.mem V →
+    (kz : ∀ (Z' : State) (t' : Nat), mbd V X.cpu.gpr.rdi = 0#8 → KeptW Wl s₀ Z' → Agree F Z'.proc.mm.mem V →
       Z'.cpu.rip = e₂.add j₂ →
       Z'.cpu.gpr = { X.cpu.gpr with rax := BitVec.setWidth 64 1#32, rsp := X.cpu.gpr.rsp + 8 } →
       GoG prof L o gev gP gE Z' t')
-    (kf : ∀ (Y : State) (t' : Nat), b0 V X.cpu.gpr.rdi ≠ 0#8 → KeptW Wl s₀ Y →
+    (kf : ∀ (Y : State) (t' : Nat), mbd V X.cpu.gpr.rdi ≠ 0#8 → KeptW Wl s₀ Y →
       Agree F Y.proc.mm.mem (Vst (V0 V X.cpu.gpr) (X.cpu.gpr.rsp - 16) (toBytesLE (tfr_at.add 29) 8)) →
       Y.cpu.rip = Rmf.rmf_at → Y.cpu.gpr = (gC V X.cpu.gpr).set 4 (X.cpu.gpr.rsp - 16) →
       (∀ (Z : State) (V₁ : Addr → Byte) (t'' : Nat), KeptW Wl s₀ Z → Agree F Z.proc.mm.mem V₁ →
@@ -151,8 +151,8 @@ theorem tfr_ok {Pr : State → (Addr → Byte) → Prop}
   have h8 : ∀ i < 8, Foot F.data (Addr.add (X.cpu.gpr.rsp - 8) i) := fun i hi => c.hws _ (hs1 i hi)
   have hrip' : X.cpu.rip = tfr_at.add 0 := by rw [addr_add_zero]; exact hrip
   refine (c_0 prof).run c hin (fun j' g' _ V' =>
-      (j' = 14 ∧ b0 V X.cpu.gpr.rdi = 0#8 ∧ g' = { X.cpu.gpr with rax := BitVec.setWidth 64 1#32 } ∧ V' = V) ∨
-      (j' = 24 ∧ b0 V X.cpu.gpr.rdi ≠ 0#8 ∧ g' = gC V X.cpu.gpr ∧ V' = V0 V X.cpu.gpr)) hK hA hrip'
+      (j' = 14 ∧ mbd V X.cpu.gpr.rdi = 0#8 ∧ g' = { X.cpu.gpr with rax := BitVec.setWidth 64 1#32 } ∧ V' = V) ∨
+      (j' = 24 ∧ mbd V X.cpu.gpr.rdi ≠ 0#8 ∧ g' = gC V X.cpu.gpr ∧ V' = V0 V X.cpu.gpr)) hK hA hrip'
     (vc_0 f0 f8 hs1 (fun hb _ => Or.inl ⟨rfl, hb, rfl, rfl⟩) (fun hb _ => Or.inr ⟨rfl, hb, rfl, rfl⟩)) ?_
   rintro j' g fl V₁ (⟨rfl, hb, rfl, hV₁⟩ | ⟨rfl, hb, rfl, hV₁⟩) Y t₁ hKY hAY hrY hgY -
   · -- `_mustBeDeleted` 0: the `ret` at 14

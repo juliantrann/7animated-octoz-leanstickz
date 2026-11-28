@@ -4,6 +4,7 @@ import FV7z.Tfr.Holds
 import FV7z.Iap.Holds
 import FV7z.Scd.Holds
 import FV7z.Lkw.Holds
+import FV7z.Ids.Holds
 open FV7z
 #print axioms FV7z.Rmf.rmf_ok
 #print axioms FV7z.Tfr.tfr_ok
