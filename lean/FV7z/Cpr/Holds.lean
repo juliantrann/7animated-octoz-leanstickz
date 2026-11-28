@@ -20,8 +20,9 @@ bytes at `this`) null, to the epilogue (333). Else (80) `pathParts2` cleared, `o
 pathParts2, isFile)` (238, `0x4530c0`), its `al` the result (`r12d`); (243) `pathParts2` destroyed from its last item
 down (the loop 272..321, `rbx` = `8 k`): an item `p` not null has its chars freed unless null (290, `operator delete
 []` at `0x6014f0`) and is freed (303, `operator delete (p, 16)` at `0x6014e0`); `rdi` reloaded from `_items` (308);
-(323) `_items` freed unless null (328); at 333 the guard's check, the epilogue, `ret` (370). Not covered here: the run
-from 425 (the growth and the copy loop: an `AtJ 425` hypothesis, `h425`), `__stack_chk_fail` (679), the landing pads.
+(323) `_items` freed unless null (328); at 333 the guard's check, the epilogue, `ret` (370). The run from
+425 (the growth and the copy loop) is a hypothesis here (`h425`, `AtJ 425`), discharged in `FV7z/Cpr/Loop.lean`.
+Not covered: `__stack_chk_fail` (679), the landing pads.
 
 The callees are continuations (`KC`, as in `FV7z/Oci/Holds.lean`, the bytes and the registers at the return tied by
 `J`): from the return the run goes on with `rsp` as it was and the callee-saved registers (`KS`) as at the `call`. The
@@ -41,7 +42,7 @@ invariants say, so a caller makes them as strong as the stores allow.
   the runs from an offset, the hypotheses of the runs; `callK`: a `call`.
 - `vc_*`: the pieces; `tail333`, `from323`, `A295`, `B272`, `S313`, `L272`, `from243`, `from221`, `from188`,
   `from174`, `from117`, `from59`: the runs from the cut points.
-- `cpr_ok`: from the entry to the return address, the run from 425 a hypothesis.
+- `cpr_ok`: from the entry to the return address, the run from 425 a hypothesis (`Cpr.cpr_full` discharges it).
 -/
 open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn
 open FV7z.Api (P6 Stk KS)
@@ -267,6 +268,11 @@ def AtJ (prof : Profile) (F : Footprint) (Wl : List Rgn) (L : List (Addr × List
   ∀ (Y : State) (W : Addr → Byte) (t : Nat), KeptW Wl s₀ Y → Agree F Y.proc.mm.mem W →
     Y.cpu.rip = cpr_at.add j → P Y.cpu.gpr W → GoG prof L o gev gP gE Y t
 
+/-- What holds at 425: the frame, `r15` = `pathParts._size` (`m`), `rdx` = the local's `_size` (`x`), `Q4 m x`. -/
+abbrev P425 (S : Addr) (g0 : Gprs) (Q4 : BitVec 32 → BitVec 32 → (Addr → Byte) → Prop) :
+    Gprs → (Addr → Byte) → Prop := fun g W =>
+  Fm S g0 g ∧ ∃ m x, g.r15 = BitVec.setWidth 64 m ∧ g.rdx = BitVec.setWidth 64 x ∧ Q4 m x W
+
 /-- The hypotheses of the runs from the cut points (`S`, `g0` the entry's stack pointer and registers, `e₂.add j₂`
 the return address, `I0`–`I5`, `P`, `Q4`, `D`, `Jd`, `Iz` the invariants of the bytes). -/
 structure Ev (prof : Profile) (F : Footprint) (Wl : List Rgn) (L : List (Addr × List Byte)) (s₀ : State)
@@ -334,8 +340,6 @@ structure Ev (prof : Profile) (F : Footprint) (Wl : List Rgn) (L : List (Addr ×
     KC prof F Wl L s₀ o gev gP gE S 0x6014e0#64 308 W (fun g => g.rdi = p ∧ g.rsi = 16#64) (fun _ => D A k)
   k328 : ∀ A W, A ≠ 0 → D A 0 W → KC prof F Wl L s₀ o gev gP gE S 0x6014f0#64 333 W (fun g => g.rdi = A)
     (fun _ => Iz)
-  h425 : AtJ prof F Wl L s₀ o gev gP gE 425 fun g W => Fm S g0 g ∧
-    ∃ m x, g.r15 = BitVec.setWidth 64 m ∧ g.rdx = BitVec.setWidth 64 x ∧ Q4 m x W
   kr : ∀ (W : Addr → Byte) (Z' : State) (t' : Nat), KeptW Wl s₀ Z' → Agree F Z'.proc.mm.mem W →
     Z'.cpu.rip = e₂.add j₂ → Z'.cpu.gpr.rsp = S + 8 → KS g0 Z'.cpu.gpr → Iz W →
       GoG prof L o gev gP gE Z' t'
@@ -954,6 +958,7 @@ theorem from221 (E : Ev prof F Wl L s₀ o gev gP gE fb S g0 e₂ code₂ j₂ I
 /-- From 188 (back from the copy `r` = `r12`, the bytes with `I5 r`): the append, then `pathParts._size` 0 to 221
 (`z221`), else to 425 (`z425`, `h425`). -/
 theorem from188 (E : Ev prof F Wl L s₀ o gev gP gE fb S g0 e₂ code₂ j₂ I0 I1 I3 I2 I4 I5 P Q4 D Jd Iz)
+    (h425 : AtJ prof F Wl L s₀ o gev gP gE 425 (P425 S g0 Q4))
     {r : BitVec 64} (hK : KeptW Wl s₀ Y) (hA : Agree F Y.proc.mm.mem W) (hr : Y.cpu.rip = cpr_at.add 188)
     (hm : Fm S g0 Y.cpu.gpr) (h12 : Y.cpu.gpr.r12 = r) (hI : I5 r W) :
     GoG prof L o gev gP gE Y t := by
@@ -974,11 +979,12 @@ theorem from188 (E : Ev prof F Wl L s₀ o gev gP gE fb S g0 e₂ code₂ j₂ I
   have hmU := Fm.fr hm gf
   rcases hj with ⟨rfl, h0⟩ | ⟨rfl, h0, g15, gdx⟩
   · exact from221 E hKU hAU hrU hmU (E.z221 r W hI h0)
-  · exact E.h425 U _ t₁ hKU hAU hrU ⟨hmU, _, _, g15, gdx, E.z425 r W hI h0⟩
+  · exact h425 U _ t₁ hKU hAU hrU ⟨hmU, _, _, g15, gdx, E.z425 r W hI h0⟩
 
 /-- From 174 (back from `operator new (0x10)`, its result `rax`, the bytes with `I4 rax`): the copy of `Name` into it
 (`k183`), from its return 188. -/
 theorem from174 (E : Ev prof F Wl L s₀ o gev gP gE fb S g0 e₂ code₂ j₂ I0 I1 I3 I2 I4 I5 P Q4 D Jd Iz)
+    (h425 : AtJ prof F Wl L s₀ o gev gP gE 425 (P425 S g0 Q4))
     (hK : KeptW Wl s₀ Y) (hA : Agree F Y.proc.mm.mem W) (hr : Y.cpu.rip = cpr_at.add 174)
     (hm : Fm S g0 Y.cpu.gpr) (hI : I4 Y.cpu.gpr.rax W) :
     GoG prof L o gev gP gE Y t := by
@@ -990,11 +996,12 @@ theorem from174 (E : Ev prof F Wl L s₀ o gev gP gE fb S g0 e₂ code₂ j₂ I
   have hmU := Fm.fr hm gf
   refine callK E hKU hAU hrU hmU.1 (lt_len (by decide)) (call_183 _) tgt_183 E.cU (E.k183 _ _ hI) gdi ?_
   intro Z W' t₃ hKZ hAZ hrZ hsZ hkZ hIZ
-  exact from188 E hKZ hAZ hrZ (fm_ret hmU hsZ hkZ) (hkZ.2.2.1.trans g12) hIZ
+  exact from188 E h425 hKZ hAZ hrZ (fm_ret hmU hsZ hkZ) (hkZ.2.2.1.trans g12) hIZ
 
 /-- From 117 (back from `operator new [] (8)`, the bytes with `I2`): the slots 0 (`h117`), the stores at 146,
 `operator new (0x10)` (`k169`), from its return 174. -/
 theorem from117 (E : Ev prof F Wl L s₀ o gev gP gE fb S g0 e₂ code₂ j₂ I0 I1 I3 I2 I4 I5 P Q4 D Jd Iz)
+    (h425 : AtJ prof F Wl L s₀ o gev gP gE 425 (P425 S g0 Q4))
     (hK : KeptW Wl s₀ Y) (hA : Agree F Y.proc.mm.mem W) (hr : Y.cpu.rip = cpr_at.add 117)
     (hm : Fm S g0 Y.cpu.gpr) (hI : I2 Y.cpu.gpr W) :
     GoG prof L o gev gP gE Y t := by
@@ -1017,11 +1024,12 @@ theorem from117 (E : Ev prof F Wl L s₀ o gev gP gE fb S g0 e₂ code₂ j₂ I
   refine callK E hKU₂ hAU₂ hrU₂ hmU₂.1 (lt_len (by decide)) (call_169 _) tgt_169 E.cN
     (E.k169 _ (E.z146 _ _ hI)) gdi₂ ?_
   intro Z W' t₃ hKZ hAZ hrZ hsZ hkZ hIZ
-  exact from174 E hKZ hAZ hrZ (fm_ret hmU₂ hsZ hkZ) hIZ
+  exact from174 E h425 hKZ hAZ hrZ (fm_ret hmU₂ hsZ hkZ) hIZ
 
 /-- From 59 (back from `CheckPathCurrent`, the bytes with `I0`): its result or `Parent` null to 333 (`hz0`), else
 the stores of 0 (`z80`), `operator new [] (8)` (`k112`), from its return 117. -/
 theorem from59 (E : Ev prof F Wl L s₀ o gev gP gE fb S g0 e₂ code₂ j₂ I0 I1 I3 I2 I4 I5 P Q4 D Jd Iz)
+    (h425 : AtJ prof F Wl L s₀ o gev gP gE 425 (P425 S g0 Q4))
     (hK : KeptW Wl s₀ Y) (hA : Agree F Y.proc.mm.mem W) (hr : Y.cpu.rip = cpr_at.add 59)
     (hm : Fm S g0 Y.cpu.gpr) (hI : I0 W) :
     GoG prof L o gev gP gE Y t := by
@@ -1039,7 +1047,7 @@ theorem from59 (E : Ev prof F Wl L s₀ o gev gP gE fb S g0 e₂ code₂ j₂ I0
     refine callK E hKU hAU hrU hmU.1 (lt_len (by decide)) (call_112 _) tgt_112 E.cA (E.k112 _ (E.z80 W hI))
       gdi ?_
     intro Z W' t₃ hKZ hAZ hrZ hsZ hkZ hIZ
-    exact from117 E hKZ hAZ hrZ (fm_ret hmU hsZ hkZ) hIZ
+    exact from117 E h425 hKZ hAZ hrZ (fm_ret hmU hsZ hkZ) hIZ
 
 end Runs
 
@@ -1048,7 +1056,8 @@ variable {prof : Profile} {F : Footprint} {Wl : List Rgn} {L : List (Addr × Lis
   {X : State} {t : Nat} {V : Addr → Byte}
 
 /-- `NWildcard::CCensorNode::CheckPathToRoot (include, pathParts, isFile)` from its entry, `fb` the `fs` base, the
-run from 425 (`pathParts` not empty: the growth and the copy loop) a hypothesis (`h425`): the pushes' slots, the
+run from 425 (`pathParts` not empty: the growth and the copy loop) a hypothesis for any `Ev` (`h425`, discharged by
+`Cpr.from425` in `Cpr.cpr_full`): the pushes' slots, the
 guard's slot, the local's slots and the calls' return address slot in what the run may store into; the guard at
 `fs:0x28`, `Parent`, `pathParts._size`, the return address readable. The callees and the invariants as in `Ev`
 (`k54`: `CheckPathCurrent`, from its return the bytes with `I0`). At the return address (`kr`): `rsp` 8 above the
@@ -1119,8 +1128,8 @@ theorem cpr_ok {fb : Addr} {e₂ : Addr} {code₂ : List Byte} {j₂ : Nat}
         (fun _ => D A k))
     (k328 : ∀ A W, A ≠ 0 → D A 0 W →
       KC prof F Wl L s₀ o gev gP gE X.cpu.gpr.rsp 0x6014f0#64 333 W (fun g => g.rdi = A) (fun _ => Iz))
-    (h425 : AtJ prof F Wl L s₀ o gev gP gE 425 fun g W => Fm X.cpu.gpr.rsp X.cpu.gpr g ∧
-      ∃ m x, g.r15 = BitVec.setWidth 64 m ∧ g.rdx = BitVec.setWidth 64 x ∧ Q4 m x W)
+    (h425 : Ev prof F Wl L s₀ o gev gP gE fb X.cpu.gpr.rsp X.cpu.gpr e₂ code₂ j₂ I0 I1 I3 I2 I4 I5 P Q4 D Jd Iz →
+      AtJ prof F Wl L s₀ o gev gP gE 425 (P425 X.cpu.gpr.rsp X.cpu.gpr Q4))
     (kr : ∀ (W : Addr → Byte) (Z' : State) (t' : Nat), KeptW Wl s₀ Z' → Agree F Z'.proc.mm.mem W →
       Z'.cpu.rip = e₂.add j₂ → Z'.cpu.gpr.rsp = X.cpu.gpr.rsp + 8 → KS X.cpu.gpr Z'.cpu.gpr → Iz W →
       GoG prof L o gev gP gE Z' t') :
@@ -1137,7 +1146,7 @@ theorem cpr_ok {fb : Addr} {e₂ : Addr} {code₂ : List Byte} {j₂ : Nat}
       hDa := hDa, fe := fe, fp := fp, hP0 := hP0, hQ0 := hQ0, hA0 := hA0,
       cA := cA, cN := cN, cU := cU, cP := cP, cD := cD, cE := cE,
       k112 := k112, k169 := k169, k183 := k183, k238 := k238, k290 := k290, k303 := k303, k328 := k328,
-      h425 := h425, kr := kr }
+      kr := kr }
   -- the prologue, to the first `call`
   have hrip' : X.cpu.rip = cpr_at.add 0 := by rw [addr_add_zero]; exact hrip
   refine (c_0 prof fb).run c hfs hin (fun j' g' _ V' => j' = 54 ∧ V' = V0 fb V X.cpu.gpr ∧
@@ -1147,6 +1156,6 @@ theorem cpr_ok {fb : Addr} {e₂ : Addr} {code₂ : List Byte} {j₂ : Nat}
   subst V₁ hgY
   refine callK E hKY hAY hrY hm.1 (lt_len (by decide)) (call_54 _) tgt_54 cK k54 ⟨gdi, gdx⟩ ?_
   intro Z W' t₃ hKZ hAZ hrZ hsZ hkZ hIZ
-  exact from59 E hKZ hAZ hrZ (fm_ret hm hsZ hkZ) hIZ
+  exact from59 E (h425 E) hKZ hAZ hrZ (fm_ret hm hsZ hkZ) hIZ
 
 end FV7z.Cpr
