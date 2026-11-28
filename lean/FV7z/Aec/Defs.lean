@@ -122,7 +122,6 @@ theorem call_652 (feat : Features) : Dec feat aec 652 (FV7z.mk .call 64 [.rel 18
   Dec.shift (j := 652) (k := 0) (pc652_0 feat) wc_652 (Nat.zero_le _)
 theorem tgt_652 : aec_at.add (652 + 5) + BitVec.ofNat 64 18446744073708097807 = 0x44d3e0#64 := by decide
 
-[131, 69, 8, 1] 195
 /-- `add dword [rbp + 8], 1` (537). -/
 def pad : List Byte := [0x83, 0x45, 0x08, 0x01]
 theorem pad_0 : ∀ feat, Dec feat pad 0 (FV7z.mk .add 32 [.mem (mbd 5 8 32), .imm 32 1] 4) := by dec_rfl
