@@ -1,7 +1,7 @@
-import FV7z.Sdt.Run
-import FV7z.Adl.Holds
-import FV7z.Owc.Holds
+import FV7z.Tup.Holds
+import FV7z.Npp.Holds
+import FV7z.Olg.Holds
 open FV7z
-#print axioms FV7z.Sdt.sdt_ok
-#print axioms FV7z.Adl.adl_ok
-#print axioms FV7z.Owc.owc_ok
+#print axioms FV7z.Tup.tup_fnK
+#print axioms FV7z.Npp.npp_ok
+#print axioms FV7z.Olg.olg_ok
