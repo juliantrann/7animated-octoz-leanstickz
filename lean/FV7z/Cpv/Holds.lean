@@ -455,18 +455,28 @@ theorem vc_0 (hP : Pc F Wl V0 g0) : W_0 F Wl (Nx V0 g0 2) g0 f V0 := by
   have hjv := jt_V hP
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g0
   dsimp only at fP wD sp hjv
-  wpx [W_0, W_13, o0, o1, Op.cmpmi, Op.ldsx, sp]
-  all_goals repeat' (first
-    | assumption
-    | exact fun i hi => wD i (by omega)
-    | exact eI (by decide) (cl_ja ‹_›) ⟨_, _, rfl⟩ (by decide)
-    | exact jt_foot fT _ (ja_w ‹_›)
-    | exact tg _ _ (ja_w ‹_›) (hjv _ (by simp [toBytesLE_length])) (eT (ja_w ‹_›) ⟨_, _, rfl⟩)
-    | refine tg _ _ (ja_w ‹_›) (hjv _ (by simp [toBytesLE_length])) ?_
-    | exact (show Nx _ _ _ (cpv_cases.getD _ _) _ _ _ from eT (ja_w ‹_›) ⟨_, _, rfl⟩)
-    | rfl
-    | apply And.intro
-    | intro _)
+  have wD0 : ∀ i < 1, Foot Wl (Addr.add rsi i) := fun i hi => wD i (by omega)
+  cases hja : (!(decide ((ofBytesLE 16 (List.map V0 (byteAddrs rdi 2))).toNat < 64) ||
+      decide (ofBytesLE 16 (List.map V0 (byteAddrs rdi 2)) = 64#16)))
+  · have jT := jt_foot fT _ (ja_w hja)
+    wpx [W_0, W_13, o0, o1, Op.cmpmi, Op.ldsx, sp, hja, Bool.not_true, Bool.not_false, Bool.false_eq_true,
+      Bool.true_eq_false, false_implies, true_implies, implies_true, eq_self_iff_true, and_self]
+    all_goals repeat' (first
+      | with_reducible assumption
+      | (intro h; exact absurd (h.symm.trans hja) (by decide))
+      | apply And.intro
+      | intro _)
+    all_goals exact tg _ _ (ja_w hja) (hjv _ (by simp [toBytesLE_length])) (eT (ja_w hja) ⟨_, _, rfl⟩)
+  · have h48 : ∀ f', Nx V0 ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ 2 48 ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ f' (Vst V0 rsi (toBytesLE 0#8 1)) :=
+      fun _ => eI (by decide) (cl_ja hja) ⟨_, _, rfl⟩ (by decide)
+    wpx [W_0, W_13, o0, o1, Op.cmpmi, Op.ldsx, sp, hja, Bool.not_true, Bool.not_false, Bool.false_eq_true,
+      Bool.true_eq_false, false_implies, true_implies, implies_true, eq_self_iff_true, and_self]
+    all_goals repeat' (first
+      | with_reducible assumption
+      | (intro h; exact absurd (h.symm.trans hja) (by decide))
+      | exact h48 _
+      | apply And.intro
+      | intro _)
 
 /-- The "?:" for an unknown `vt`, `vt` and `dest + 2` for `ConvertUInt64ToString`. -/
 theorem vc_48 (hP : Pc F Wl V0 g0) (hR : Rg g0 g) (hℓ : 48 = clw (vtg V0 g0)) :
