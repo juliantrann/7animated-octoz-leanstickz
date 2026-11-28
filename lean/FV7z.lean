@@ -1268,3 +1268,6 @@ import FV7z.Ifd.Blocks1
 import FV7z.Ifd.Blocks
 import FV7z.Ifd.Cuts
 import FV7z.Ifd.Holds
+import FV7z.Lza.Blocks
+import FV7z.Lza.Cuts
+import FV7z.Lza.Holds
