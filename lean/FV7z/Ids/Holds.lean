@@ -47,6 +47,14 @@ theorem lc (n : BitVec 32)
   · left; bv_omega
   · right; bv_omega
 
+/-! `decide` with whatever instance the code's `wpx` goal carries (`rw [decide_eq_true h]` misses it). -/
+theorem nd1 {p : Prop} {inst : Decidable p} (h : (!@decide p inst) = true) : ¬p :=
+  of_decide_eq_false (by simpa using h)
+theorem nd0 {p : Prop} {inst : Decidable p} (h : (!@decide p inst) = false) : p :=
+  of_decide_eq_true (by simpa using h)
+theorem dt {p : Prop} {inst : Decidable p} (h : p) : @decide p inst = true := @decide_eq_true p inst h
+theorem df {p : Prop} {inst : Decidable p} (h : ¬p) : @decide p inst = false := @decide_eq_false p inst h
+
 variable {F : Footprint} {Wl : List Rgn}
 
 /-- The code from the entry to the `ret` at 23 or at 58. -/
@@ -66,20 +74,20 @@ theorem vc_0 {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post}
     fun hC => ⟨fun hD => ?_, fun hD => ⟨fs1, ?_⟩⟩⟩, fun hB => ?_⟩⟩⟩
   · have ha : ¬ ofBytesLE 8 ((byteAddrs (rdi + 8#64) 1).map V) &&& 251#8 = 0#8 := by simpa using hA
     exact h 23 _ _ _ _ (.inl rfl) (by rw [if_neg fun hd => ha hd.1]; exact xz _)
-  · have hc : ¬ ofBytesLE 8 ((byteAddrs rdq(V, rdi + 16#64) 1).map V) = 46#8 := by simpa using hC
+  · have hc : ¬ ofBytesLE 8 ((byteAddrs rdq(V, rdi + 16#64) 1).map V) = 46#8 := nd1 hC
     exact h 23 _ _ _ _ (.inl rfl) (by rw [if_neg fun hd => hc hd.2.2.1]; exact xz _)
   · have ha : ofBytesLE 8 ((byteAddrs (rdi + 8#64) 1).map V) &&& 251#8 = 0#8 := by simpa using hA
-    have hc : ofBytesLE 8 ((byteAddrs rdq(V, rdi + 16#64) 1).map V) = 46#8 := by simpa using hC
+    have hc : ofBytesLE 8 ((byteAddrs rdq(V, rdi + 16#64) 1).map V) = 46#8 := nd0 hC
     have hn : rdd(V, rdi + 24#64) = 1#32 := of_decide_eq_true hD
     exact h 23 _ _ _ _ (.inl rfl) (by rw [if_pos ⟨ha, .inl hn, hc, .inl hn⟩]; decide)
   · have ha : ofBytesLE 8 ((byteAddrs (rdi + 8#64) 1).map V) &&& 251#8 = 0#8 := by simpa using hA
-    have hc : ofBytesLE 8 ((byteAddrs rdq(V, rdi + 16#64) 1).map V) = 46#8 := by simpa using hC
+    have hc : ofBytesLE 8 ((byteAddrs rdq(V, rdi + 16#64) 1).map V) = 46#8 := nd0 hC
     have hn : ¬ rdd(V, rdi + 24#64) = 1#32 := of_decide_eq_false hD
     have hb := lc rdd(V, rdi + 24#64) hB
     refine h 58 _ _ _ _ (.inr rfl) ?_
     by_cases hy : ofBytesLE 8 ((byteAddrs (rdq(V, rdi + 16#64) + 1#64) 1).map V) = 46#8
-    · rw [if_pos ⟨ha, hb, hc, .inr hy⟩, decide_eq_true hy]; decide
-    · rw [if_neg fun hd => hy (hd.2.2.2.resolve_left hn), decide_eq_false hy]; decide
+    · rw [if_pos ⟨ha, hb, hc, .inr hy⟩, dt hy]; decide
+    · rw [if_neg fun hd => hy (hd.2.2.2.resolve_left hn), df hy]; decide
   · have hn : ¬ (rdd(V, rdi + 24#64) = 1#32 ∨ rdd(V, rdi + 24#64) = 2#32) := by
       rintro (hn | hn) <;> rw [hn] at hB <;> exact absurd hB (by decide)
     exact h 23 _ _ _ _ (.inl rfl) (by rw [if_neg fun hd => hn hd.2.1]; exact xz _)
