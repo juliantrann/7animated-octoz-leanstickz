@@ -46,9 +46,9 @@ theorem vc_23 {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post} {I : (Addr 
   wpx [W_23, o1, BitVec.add_assoc, BitVec.reduceAdd]
   all_goals repeat' (first
     | refine h _ _ ?_ ?_ ?_ ?_ ?_ _
-    | refine hc0 _ _ (toBytesLE_length _ _) ?_
+    | with_reducible refine hc0 _ _ (toBytesLE_length _ _) ?_
     | refine hcl _ _ _ _ (toBytesLE_length _ _) (by decide) ?_
-    | exact ob0
+    | with_reducible exact ob0
     | exact ob _ _ (by decide)
     | astep)
 
