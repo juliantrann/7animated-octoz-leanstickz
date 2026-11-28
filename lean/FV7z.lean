@@ -1765,6 +1765,12 @@ import FV7z.Alf.Blocks1
 import FV7z.Alf.Blocks
 import FV7z.Alf.Cuts
 import FV7z.Alf.Holds
+import FV7z.Osc.Code
+import FV7z.Osc.Pats
+import FV7z.Osc.Blocks1
+import FV7z.Osc.Blocks
+import FV7z.Osc.Cuts
+import FV7z.Osc.Holds
 import FV7z.Uad.Code
 import FV7z.Uad.Pats
 import FV7z.Uad.Blocks1
