@@ -1,24 +1,16 @@
-import FV7z.Lri.Cuts
-import FV7z.Lri.Holds
+import FV7z.Lemmas.SubMr64
+import FV7z.Sli.Cuts
+import FV7z.Sli.Holds
 open FV7z
-#print axioms FV7z.Lri.spAll
-#print axioms FV7z.Lri.vc_0
-#print axioms FV7z.Lri.vc_35e
-#print axioms FV7z.Lri.vc_35z
-#print axioms FV7z.Lri.vc_35p
-#print axioms FV7z.Lri.vc_64z
-#print axioms FV7z.Lri.vc_64c
-#print axioms FV7z.Lri.vc_64e
-#print axioms FV7z.Lri.vc_64r
-#print axioms FV7z.Lri.vc_120d
-#print axioms FV7z.Lri.vc_120i
-#print axioms FV7z.Lri.vc_167
-#print axioms FV7z.Lri.vc_250
-#print axioms FV7z.Lri.vc_171z
-#print axioms FV7z.Lri.vc_171c
-#print axioms FV7z.Lri.vc_183
-#print axioms FV7z.Lri.vc_224z
-#print axioms FV7z.Lri.vc_224n
-#print axioms FV7z.Lri.vc_97
-#print axioms FV7z.Lri.tail97
-#print axioms FV7z.Lri.lri_ok
+#print axioms FV7z.sub_mr64
+#print axioms FV7z.Fn.Seg.s_sub_mr64
+#print axioms FV7z.Sli.spAll
+#print axioms  FV7z.Sli.vc_0 FV7z.Sli.vc_62 FV7z.Sli.vc_122 FV7z.Sli.vc_137 FV7z.Sli.vc_148 FV7z.Sli.vc_150 FV7z.Sli.vc_169 FV7z.Sli.vc_189 FV7z.Sli.vc_207 FV7z.Sli.vc_216 FV7z.Sli.vc_242
+#print axioms FV7z.Sli.callK
+#print axioms FV7z.Sli.tail62
+#print axioms FV7z.Sli.from150
+#print axioms FV7z.Sli.from216
+#print axioms FV7z.Sli.from189
+#print axioms FV7z.Sli.from137
+#print axioms FV7z.Sli.from122
+#print axioms FV7z.Sli.sli_ok
