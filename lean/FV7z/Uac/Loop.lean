@@ -256,7 +256,7 @@ theorem slen (c : Seg prof F Wl L s₀ o) (hin : CodeIn L uac_at uac) {W : Addr 
       · rw [hgY]; exact elo
       · rw [hgY]; exact e4
       · rw [hgY]
-        show rdq(W, X.cpu.gpr.r15) = _
+        show rdq(_, X.cpu.gpr.r15) = _
         rw [h15]
   | succ m ih =>
     intro j hj X t hK hA hrip hbx hks
