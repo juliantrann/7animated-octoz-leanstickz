@@ -1329,6 +1329,14 @@ FNS = {
     "ndp": dict(grp="Ndp", cn="NWindows::NFile::NName::NormalizeDirPathPrefix", a=0x4568a0, n=102, pos=True,
                 stops=(0x1f, 0x41), calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `NormalizeDirPathPrefix` (`CPP/Windows/FileName.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/Windows/FileName.cpp `NormalizeDirPathPrefix (AString &dirPath)` (as `ndp` with 1-byte
+    # characters): nothing (the `ret`, 0x17) when `dirPath` is empty or ends in `/`; when `_len != _limit` the stores
+    # (`_chars[_len] = '/'`, `_chars[_len + 1] = 0`, `_len += 1`) and the `ret` (0x35); else (a frame of 24 bytes,
+    # `dirPath` saved at `rsp + 8`) `AString::Grow_1 ()` (the `call` at 0x49, to `ag1`), the length and the
+    # characters read again, the same stores (from 0x5c, split there) and the `ret` (0x70).
+    "nda": dict(grp="Nda", cn="NWindows::NFile::NName::NormalizeDirPathPrefix(AString&)", a=0x456820, n=113, pos=True,
+                stops=(0x17, 0x35, 0x70), split=(0x5c,), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `NormalizeDirPathPrefix` (`CPP/Windows/FileName.cpp`; `objdump -d`)"),
     # 7-Zip 26.06 CPP/Windows/FileDir.cpp `MyGetTempPath (AString &path)`: `path = "/tmp"` (the `call` at 0xf, to
     # `AString::operator= (const char *)`, the string at `0x6d944d`), `NFind::DoesDirExist (path._chars, true)` (0x1d),
     # then `path = "/tmp/"` (`0x6d9447`) when it answers true, else `path = "./"` (`0x6ee956`; the `call` at 0x39),
@@ -1559,6 +1567,16 @@ FNS = {
     "cxd": dict(grp="Cxd", cn="CObjectVector<CXmlProp>::~CObjectVector", a=0x5f63c0, n=117, pos=True,
                 stops=(0x69, 0x74), calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `CObjectVector<T>::~CObjectVector` (`CPP/Common/MyVector.h`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/Common/CommandLineParser.cpp `NCommandLineParser::CParser::~CParser ()`: `delete []
+    # _switches` (the array of `CSwitchResult`s, 24 bytes each, behind its count at `_switches - 8`): the items from
+    # the last down (the outer loop, head 0x30, `rbx` the item), each item's `UStringVector PostStrings` destroyed
+    # (the inner loop, head 0x50: the `UString`s' chars freed unless NULL, 0x61, the `UString`s freed, 0x6e; the
+    # array freed unless NULL, 0x86), then `operator delete [] (_switches - 8, 24 n + 8)` (0xa5); from 0xaa two
+    # buffers freed unless NULL (0xb4, 0xc3), then `NonSwitchStrings` as `ocv` (the loop, head 0xe0, the calls at
+    # 0xf2, 0xff) and its array as a tail jump (0x120) unless NULL, else the `ret` (0x140).
+    "cpd": dict(grp="Cpd", cn="NCommandLineParser::CParser::~CParser", a=0x5a0500, n=321, pos=True,
+                stops=(0x120, 0x140), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CParser::~CParser` (`CPP/Common/CommandLineParser.cpp`; `objdump -d`)"),
     # 7-Zip 26.06 CPP/Common/StdOutStream.cpp `CStdOutStream::Normalize_UString (s)`: in terminal mode (the byte at
     # `this + 8`) each `wchar_t` of `s` below 0x20 (signed), in 0x7f..0x9f, 0x202a..0x202e or 0x2066..0x2069 made
     # '_' (the loop at 0x59), else each '\n' made '_' (the loop at 0x80). Stops: the `ret`s (0x6f, 0x94).
@@ -1644,6 +1662,26 @@ FNS = {
     "api": dict(grp="Api", cn="NWildcard::CCensor::AddPreItem", a=0x453650, n=246, pos=True, stops=(0xcf,),
                 hand=(0x2b,), calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `NWildcard::CCensor::AddPreItem` (`CPP/Common/Wildcard.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/7zip/UI/Console/List.cpp `GetUInt64Value (archive, index, propID, value)` (static): a frame of
+    # 0x20 under three pushes, the stack guard at `rsp + 0x18`, `value.Val = 0; value.Def = false`, `prop` (a
+    # `CPropVariant` at `rsp`) emptied; `archive->GetProperty (index, propID, &prop)` (`call [rax + 0x30]` at 0x3f);
+    # a result not 0 is returned; else `ConvertPropVariantToUInt64` in line: `vt` above 21 (`ja` at 0x7d, by hand, to
+    # the cold `throw` at `0x419b70`) or by the jump table at `0x6ea208` (`jt`, 22 entries, `jtx`: those not
+    # VT_EMPTY, VT_UI1, VT_UI2, VT_UI4, VT_UI8 lead to the same `throw`): `value.Val` and `value.Def` set (0xa0..0xf0);
+    # then `prop.Clear ()` (`call 0x456f60` at 0x4c), the guard's check. Stops: the `ret` (0x70), the call of
+    # `__stack_chk_fail` (0xf4).
+    "guv": dict(grp="Guv", cn="GetUInt64Value", a=0x5ebcd0, n=249, pos=True, fs=True, stops=(0x70, 0xf4), hand=(0x7d,),
+                calls=True, jt=(0x6ea208, 22), jtx=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `GetUInt64Value` (`CPP/7zip/UI/Console/List.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/7zip/UI/Common/OpenArchive.cpp `CArc::GetItem_DefaultPath (index, result)`: a frame of 48 bytes
+    # under five pushes with the stack guard at `rsp + 0x28`, `isDir` at `rsp + 0xf` and a `CPropVariant` at
+    # `rsp + 0x10`; `result.Empty ()` inline, `Archive_IsItem_Dir` (0x41); a directory or an error to the epilogue;
+    # else `result = DefaultName` (0x8c), `Archive->GetProperty (index, kpidExtension, &prop)` (`call qword [rax +
+    # 0x30]` at 0xb3); `VT_BSTR` gives `Add_Dot` (0xf3) and `+= bstrVal` (0x100), another non-empty type `E_FAIL`;
+    # `prop.Clear ()` (0xd0). Stops: the `ret` (0x77), the call of `__stack_chk_fail` (0x107).
+    "gdp": dict(grp="Gdp", cn="CArc::GetItem_DefaultPath", a=0x5d2040, n=268, pos=True, fs=True, stops=(0x77, 0x107),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CArc::GetItem_DefaultPath` (`CPP/7zip/UI/Common/OpenArchive.cpp`; `objdump -d`)"),
     # 7-Zip 26.06 CPP/Common/Wildcard.cpp `NWildcard::CCensorNode::AddItemSimple (include, item)`: `IncludeItems`
     # (`this + 0x28`) or `ExcludeItems` (`+ 0x38`) by `cmove` (a `CObjectVector<CItem>`: `_items`, `_size` at `+ 8`,
     # `_capacity` at `+ 0xc`) grown when full (above 0x7ffffffe the `ja` at 0x31 to the throw, by hand: its target is
@@ -1654,6 +1692,56 @@ FNS = {
     "ais": dict(grp="Ais", cn="NWildcard::CCensorNode::AddItemSimple", a=0x452bc0, n=356, pos=True, stops=(0xc7,),
                 hand=(0x31,), calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `NWildcard::CCensorNode::AddItemSimple` (`CPP/Common/Wildcard.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/Common/StringConvert.cpp `MultiByteToUnicodeString2 (dest, src, codePage)`: `dest.Empty ()`;
+    # for an empty `src` the return; for `CP_UTF8` or `g_ForceToUTF8` (the byte at 0x792178) `ConvertUTF8ToUnicode`
+    # (call, 0x1b6); else `dest.GetBuf (limit)` (`ReAlloc2`, call 0x1c3, when `limit` = `2 len + 2` is above
+    # `_limit`), `mbstowcs` (call 0x74); on -1 the bytes copied (loop 0x170); else the end set, the scan for a
+    # character above 0xffff (loop 0xc3) and, for one, a copy of the rest (`UString (const wchar_t *)`, call 0xd2)
+    # written back as surrogate pairs (loop 0x138), its buffer freed (call 0x1e8). Stops: the `ret` (0x1aa), the
+    # stack guard failing (0x1ef).
+    "mbu": dict(grp="Mbu", cn="MultiByteToUnicodeString2", a=0x450a60, n=500, pos=True, fs=True, stops=(0x1aa, 0x1ef),
+                calls=True, cut=(0xc3, 0x138, 0x170), tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `MultiByteToUnicodeString2` (`CPP/Common/StringConvert.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/Common/Wildcard.cpp `SplitPathToParts (path, pathParts)`: `pathParts.Clear ()` inline (the items
+    # from the last: `delete []` of the chars at 0x56 when not null, `operator delete (p, 16)` at 0x63 when not null),
+    # `_size` = 0; `path` empty to the epilogue. Else `name` made (0xb8), the chars scanned for `'/'`: at each,
+    # `name.SetFrom (path + prev, i - prev)` (0xfe) and `pathParts.Add (name)` inline (grown when full: above
+    # 0x7ffffffe the `ja` at 0x110 to the throw, by hand: its target is outside; `operator new []` at 0x135, `memcpy`
+    # at 0x273, `delete []` at 0x288; `operator new (16)` at 0x165, the copy at 0x175); then the last part the same
+    # way (0x1b8, the `ja` at 0x1ca by hand, 0x1ee, 0x2ae, 0x2b6, 0x21a, 0x228) and `delete []` of `name`'s chars
+    # (0x24c). Stops: the `ret` (0xa9), the call of `__stack_chk_fail` (0x2c0).
+    "spp": dict(grp="Spp", cn="SplitPathToParts", a=0x452500, n=709, pos=True, fs=True, stops=(0xa9, 0x2c0),
+                calls=True, hand=(0x110, 0x1ca), tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `SplitPathToParts` (`CPP/Common/Wildcard.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/Windows/FileName.cpp `NName::ResolveDotsFolders (s)` (static; no frame: three pushes, `r12` the
+    # string, `ebp` the index `i`, `rbx` = `4 i`, `rsi` its chars): the loop (0x35 the check of `s[i]`, 0x20 its head)
+    # over `s`: a `.` after a separator or at 0 followed by `/` or the end deletes it (`UString::Delete` at 0x86);
+    # `..` likewise deletes the folder before it, found by two backward scans (0xb8, 0xf0), the start reached either
+    # way or none (returns false at 0xc8); `Delete` at 0x127. Stops: the `ret`s (0x45 after the pops, 0x13a for the
+    # empty string).
+    "rdf": dict(grp="Rdf", cn="NWindows::NFile::NName::ResolveDotsFolders", a=0x456630, n=315, pos=True,
+                stops=(0x45, 0x13a), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `NName::ResolveDotsFolders` (`CPP/Windows/FileName.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/7zip/UI/Common/EnumDirItems.cpp `CDirItems::ReserveDown ()`: `CRecordVector::ReserveDown` in
+    # line for `Prefixes` (`this`, 8-byte items), `PhyParents` (`+ 0x10`, 4-byte), `LogParents` (`+ 0x20`, 4-byte)
+    # and `Items` (`+ 0x30`, 8-byte), each `_items`, `_size` at `+ 8`, `_capacity` at `+ 0xc`: when `_size` is not
+    # `_capacity`, a `_size` not 0 gives `operator new []` (0xdc, 0xa4, 0x14c, 0x114), `memcpy` of the items (0xf4,
+    # 0xbd, 0x165, 0x12d) and `delete []` of the old array (0xfc, 0xc5, 0x16d, 0x135); a `_size` of 0 `delete []` of the
+    # old array when not null (by the stubs at 0x190, 0x1a0, 0x1b0, 0x180); then `_items` and `_capacity` = `_size`
+    # stored. Stop: the `ret` (0x99).
+    "rsv": dict(grp="Rsv", cn="CDirItems::ReserveDown", a=0x5c03e0, n=439, pos=True, stops=(0x99,), calls=True,
+                tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CDirItems::ReserveDown` (`CPP/7zip/UI/Common/EnumDirItems.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/Common/Wildcard.cpp `NWildcard::CCensorNode::CheckPathToRoot (include, pathParts, isFile)`: six
+    # pushes and a frame of 0x48 bytes with the stack guard at `rsp + 0x38` and a local `UStringVector` at `rsp + 0x20`;
+    # `CheckPathCurrent` (0x36); `Parent` not null: the local's first item (`operator new []` 0x70, `operator new`
+    # 0xa9, the `UString` copy of `Name` 0xb7), `pathParts` appended (grown when full: the two jumps to the throw at
+    # 0x1a9 and 0x1b2, by hand: their target is outside; the loop at 0x1e0), `Parent->CheckPathToRoot` (0xee); the
+    # local's items freed from the last down (the loop at 0x110). Stops: the `ret` (0x172), the call of
+    # `__stack_chk_fail` (0x2a7).
+    "cpr": dict(grp="Cpr", cn="NWildcard::CCensorNode::CheckPathToRoot", a=0x454330, n=684, pos=True, fs=True,
+                stops=(0x172, 0x2a7), hand=(0x1a9, 0x1b2), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `NWildcard::CCensorNode::CheckPathToRoot` (`CPP/Common/Wildcard.cpp`; `objdump -d`)"),
 }
 
 
@@ -1983,11 +2071,15 @@ def main():
     OPN = f"open FV7z.{cgrp} ({nm} {nm}_at {nm}_length)\n" if "code" in F else ""
     grp, cn, a, n, pos, stops, tag = F["grp"], F["cn"], F["a"], F["n"], F["pos"], set(F["stops"]), F["tag"]
     # the jump table's bytes and the offsets of the cases
-    jtb, jtg = b"", []
+    jtb, jtg, jta = b"", [], []
     if "jt" in F:
         ja, jn = F["jt"]
         jtb = file_bytes("../release/26.06/7zzs", ja, 4 * jn)
         jtg = [ja + int.from_bytes(jtb[4 * k: 4 * k + 4], "little", signed=True) - a for k in range(jn)]
+        # `jtx`: entries out of the code (a cold part) are allowed; `_cases` has them as offsets mod 2^64, the
+        # proof shows they are not taken or takes them by hand
+        jta = [x % 2 ** 64 for x in jtg]
+        if F.get("jtx"): jtg = sorted({x for x in jtg if 0 <= x < n})
         assert all(0 <= x < n for x in jtg)
     # the code's place in the statements: a binder and its use, or the address where the code lies in 7zzs
     EB, EA, ER = ("", f" {nm}_at", "") if pos else (" (e' : Addr)", " e'", " e'")
@@ -2071,7 +2163,7 @@ def {nm}_jt : List Byte := [
 theorem {nm}_jt_pin : Exe.bytesAt V2606.zzs.blob {F["jt"][0]:#x} {len(jtb)} = some {nm}_jt := by decide +kernel
 
 /-- The cases: where in the code the table's entries lead. -/
-def {nm}_cases : List Nat := [{", ".join(map(str, jtg))}]
+def {nm}_cases : List Nat := [{", ".join(map(str, jta))}]
 """ if jtg else ""
     atdef = f"\n/-- Where the code lies in `7zzs`. -/\nabbrev {nm}_at : Addr := {a:#x}\n" if pos else ""
     if "code" not in F: open(out + "/Code.lean", "w").write(f"""import ZellicX86.Spec.Executable
