@@ -55,6 +55,12 @@ theorem nd0 {p : Prop} {inst : Decidable p} (h : (!@decide p inst) = false) : p 
 theorem dt {p : Prop} {inst : Decidable p} (h : p) : @decide p inst = true := @decide_eq_true p inst h
 theorem df {p : Prop} {inst : Decidable p} (h : ¬p) : @decide p inst = false := @decide_eq_false p inst h
 
+/-- `mov eax, 1; …; sete al` of a flag `b`. -/
+theorem sete1 (b : Bool) :
+    BitVec.setWidth 64 1#32 &&& ~~~BitVec.ofNat 64 ((256 - 1) * 1) |||
+      BitVec.setWidth 64 (BitVec.setWidth 8 (BitVec.ofBool b)) <<< 0 = if b then 1#64 else 0#64 := by
+  cases b <;> decide
+
 variable {F : Footprint} {Wl : List Rgn}
 
 /-- The code from the entry to the `ret` at 23 or at 58. -/
@@ -86,8 +92,9 @@ theorem vc_0 {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post}
     have hb := lc rdd(V, rdi + 24#64) hB
     refine h 58 _ _ _ _ (.inr rfl) ?_
     by_cases hy : ofBytesLE 8 ((byteAddrs (rdq(V, rdi + 16#64) + 1#64) 1).map V) = 46#8
-    · rw [if_pos ⟨ha, hb, hc, .inr hy⟩, dt hy]; decide
-    · rw [if_neg fun hd => hy (hd.2.2.2.resolve_left hn), df hy]; decide
+    · rw [if_pos ⟨ha, hb, hc, .inr hy⟩]; exact (sete1 _).trans (if_pos (dt hy))
+    · rw [if_neg fun hd => hy (hd.2.2.2.resolve_left hn)]
+      exact (sete1 _).trans (if_neg fun e => hy (of_decide_eq_true e))
   · have hn : ¬ (rdd(V, rdi + 24#64) = 1#32 ∨ rdd(V, rdi + 24#64) = 2#32) := by
       rintro (hn | hn) <;> rw [hn] at hB <;> exact absurd hB (by decide)
     exact h 23 _ _ _ _ (.inl rfl) (by rw [if_neg fun hd => hn hd.2.1]; exact xz _)
