@@ -131,8 +131,8 @@ local macro "iskc" : tactic => `(tactic| all_goals repeat'
     | exact trivial
     | (intro hh; contradiction)
     | exact rfl
-    | (apply Or.inl; repeat' (first | exact trivial | exact rfl | apply And.intro); done)
-    | (apply Or.inr; repeat' (first | exact trivial | exact rfl | apply And.intro); done)
+    | (apply Or.inl; (repeat' (first | exact trivial | exact rfl | apply And.intro)); done)
+    | (apply Or.inr; (repeat' (first | exact trivial | exact rfl | apply And.intro)); done)
     | apply And.intro
     | intro _)
 

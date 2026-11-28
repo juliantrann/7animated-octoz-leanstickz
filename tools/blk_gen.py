@@ -1491,6 +1491,12 @@ FNS = {
     # (0x5a), the result stored. Stop: the `ret` (0x34); the bytes from 0x78 on are the landing pads.
     "isk": dict(grp="Isk", cn="CInFileStream::Seek", a=0x5a3770, n=120, pos=True, stops=(0x34,), calls=True,
                 tag="PLAN.md §M, M1", src="7-Zip 26.06's `CInFileStream::Seek` (`FileStreams.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/7zip/Common/FileStreams.cpp `CInFileStream::Read (data, size, processedSize)`: `File.read_part`
+    # (the `call`s at 0x21 and 0x40, with and without `processedSize`), on -1 `GetLastError_noZero_HRESULT` (0x50) and
+    # `if (Callback) Callback->InFileStream_On_Error (CallbackRef, errorCode)` (`call qword [rax]` at 0x71). Stops: the
+    # `ret`s (0x36, 0x79); the bytes from 0xa0 on are the landing pads.
+    "ird": dict(grp="Ird", cn="CInFileStream::Read", a=0x5a35a0, n=160, pos=True, stops=(0x36, 0x79), calls=True,
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `CInFileStream::Read` (`FileStreams.cpp`; `objdump -d`)"),
 }
 
 
