@@ -840,15 +840,6 @@ FNS = {
     "ucu": dict(grp="Ucu", cn="UString::UString(unsigned, const UString&)", a=0x44d240, n=64, pos=True, stops=(0x3f,),
                 calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip's `UString::UString (unsigned, const UString &)` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
-    # `AString::Add_UInt32 (v)`: `Grow (10)` (the `call` at 0x14 to `agr`), `ConvertUInt32ToString (v, _chars +
-    # _len)` (0x21, `u2s`), `_len = end - _chars`; the `ret` at 0x32.
-    "aui": dict(grp="Aui", cn="AString::Add_UInt32", a=0x44c980, n=51, pos=True, stops=(0x32,), calls=True,
-                tag="PLAN.md §M, M1", src="7-Zip's `AString::Add_UInt32` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
-    # `NWindows::NCOM::CPropVariant::Clear ()`: for `vt` (2 bytes at `this`) 0 `wReserved1 = 0` and `return 0` (the
-    # `ret` at 0x12), else a tail jump (0x18) to `PropVariant_Clear (this)` (0x456fb0).
-    "pvc": dict(grp="Pvc", cn="NWindows::NCOM::CPropVariant::Clear", a=0x457020, n=29, pos=True, stops=(0x12, 0x18),
-                calls=True, tag="PLAN.md §M, M1",
-                src="7-Zip's `CPropVariant::Clear` (`CPP/Windows/PropVariant.cpp`; `objdump -d`)"),
     # `UString::UString (const UString &s, c)`: `SetStartLen (s._len + 1)` (the `call` at 0x1d), `wmemcpy (_chars,
     # s._chars, s._len)` (0x33), `_chars[s._len] = c`, `_chars[s._len + 1] = 0`; the `ret` at 0x50.
     "uch": dict(grp="Uch", cn="UString::UString(const UString&, wchar_t)", a=0x44d280, n=81, pos=True, stops=(0x50,),
