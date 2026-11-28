@@ -1460,3 +1460,9 @@ import FV7z.Rsv.Blocks1
 import FV7z.Rsv.Blocks
 import FV7z.Rsv.Cuts
 import FV7z.Rsv.Holds
+import FV7z.Alr.Code
+import FV7z.Alr.Pats
+import FV7z.Alr.Blocks1
+import FV7z.Alr.Blocks
+import FV7z.Alr.Cuts
+import FV7z.Alr.Pieces
