@@ -1541,3 +1541,11 @@ import FV7z.Cfn.Blocks2
 import FV7z.Cfn.Blocks
 import FV7z.Cfn.Cuts
 import FV7z.Cfn.Holds
+import FV7z.Pew.Code
+import FV7z.Pew.Pats
+import FV7z.Pew.Blocks1
+import FV7z.Pew.Blocks
+import FV7z.Pew.Cuts
+import FV7z.Pew.Defs
+import FV7z.Pew.Pieces
+import FV7z.Pew.Holds

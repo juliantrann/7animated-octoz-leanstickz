@@ -1827,6 +1827,11 @@ FNS = {
     "cfd": dict(grp="Cfd", cn="__libc_check_standard_fds", a=0x613860, n=419, pos=True, fs=True,
                 stops=(0x59, 0xc0, 0x130, 0x1a0), calls=True, tag="PLAN.md G3, startup",
                 src="glibc 2.31's `__libc_check_standard_fds` (`csu/check_fds.c`; `objdump -d`)"),
+    # 7-Zip 26.06 UI/Console/ExtractCallbackConsole.cpp, without the landing pads (from 0x11e). Stops: the `ret`
+    # (0xfe), the call of `__stack_chk_fail` (0x119).
+    "pew": dict(grp="Pew", cn="Print_ErrorFormatIndex_Warning", a=0x5e96e0, n=286, pos=True, fs=True,
+                stops=(254, 281), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `Print_ErrorFormatIndex_Warning` (`ExtractCallbackConsole.cpp`; `objdump -d`)"),
 }
 
 def file_bytes(path, va, n):
