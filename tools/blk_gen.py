@@ -1426,6 +1426,12 @@ FNS = {
                 tag="PLAN.md §M, M1", src="glibc 2.31's `__pthread_once` (`nptl/pthread_once.c`; `objdump -d`)"),
     # glibc 2.31 stdlib/strtol.c `__strtol`: `____strtol_l_internal (nptr, endptr, base, 0, _NL_CURRENT_LOCALE)` as
     # `mov rax, -128; xor ecx, ecx; mov r8, fs:[rax]` (the thread's locale), then a tail jump (0x11) to 0x6238b0 (`stl`)
+    # 7-Zip 26.06 CPP/Common/MyString.cpp `AString::operator+= (const AString &s)`: `Grow (s._len)` (the `call` at
+    # 20), then the copy loop of `s._chars` through the 0 to `_chars + _len` (48, as in `aas`), `_len += s._len`,
+    # `rax` = `this`, the `ret` at 82. By hand: `add dword [r12 + 8], eax` (0x43).
+    "ape": dict(grp="Ape", cn="AString::operator+=(const AString &)", a=0x44c920, n=83, pos=True, stops=(0x52,), hand=(0x43,),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `AString::operator+= (const AString &)` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
     "stw": dict(grp="Stw", cn="__strtol", a=0x623890, n=22, pos=True, fs=True, stops=(0x11,), calls=True,
                 tag="PLAN.md §M, M1", src="glibc 2.31's `__strtol` (`stdlib/strtol.c`; `objdump -d`)"),
 }
