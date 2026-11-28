@@ -1367,6 +1367,7 @@ import FV7z.Dfn.Cuts
 import FV7z.Dfn.Holds
 import FV7z.Lemmas.BlkOps27
 import FV7z.Lemmas.BlkOps28
+import FV7z.Lemmas.CmpMrF
 import FV7z.Cpv.Code
 import FV7z.Cpv.Pats
 import FV7z.Cpv.Blocks1
@@ -1777,6 +1778,12 @@ import FV7z.Ldp.Blocks1
 import FV7z.Ldp.Blocks
 import FV7z.Ldp.Cuts
 import FV7z.Ldp.Holds
+import FV7z.Npc.Code
+import FV7z.Npc.Pats
+import FV7z.Npc.Blocks1
+import FV7z.Npc.Blocks
+import FV7z.Npc.Cuts
+import FV7z.Npc.Holds
 import FV7z.Uad.Code
 import FV7z.Uad.Pats
 import FV7z.Uad.Blocks1
