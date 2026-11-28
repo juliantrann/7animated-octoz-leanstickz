@@ -1,7 +1,7 @@
 import FV7z.Lemmas.Sp
 import FV7z.Lemmas.BlkOps2
 /-!
-# The stretches of straight-line code of `NWindows::NFile::NDir::SetCurrentDir(char const*)` (PLAN.md §M, M1)
+# The stretches of straight-line code of `NWindows::NFile::NDir::RemoveDir(char const*)` (PLAN.md §M, M1)
 
 Each distinct stretch between labels and jumps (`p*`, 2 of them) and each distinct jump (`j*`, 0) as its own
 list of bytes: what the model's decoder makes of its instructions on every processor, whatever bytes follow

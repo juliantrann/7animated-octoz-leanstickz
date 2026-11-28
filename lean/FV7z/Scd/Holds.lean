@@ -4,10 +4,11 @@ import FV7z.Lemmas.LeafRet
 import FV7z.Lemmas.FnFar
 import FV7z.Lemmas.Lock2
 /-!
-# `NWindows::NFile::NDir::SetCurrentDir (path)` (PLAN.md §M, M1)
+# `NWindows::NFile::NDir::RemoveDir (path)` (PLAN.md §M, M1)
 
-7-Zip 26.06's `NDir::SetCurrentDir (path)` at `0x454b90` in `7zzs` (`CPP/Windows/FileDir.cpp`; `objdump -d`;
-its bytes folded with two other wrappers), `path` in `rdi`: `sub rsp, 8`, the `call` (8) of `rmdir`
+7-Zip 26.06's `NDir::RemoveDir (path)` at `0x454b90` in `7zzs` (`CPP/Windows/FileDir.cpp`; `objdump -d`; the
+symbol table's sizes also match `SetCurrentDir`, `DeleteFileAlways`, but this code calls `rmdir`), `path` in `rdi`:
+`return rmdir (path) == 0;` as `sub rsp, 8`, the `call` (8) of `rmdir`
 (`Rmd.rmd_at`), then `test eax, eax; sete al; add rsp, 8; ret` (22). As `FV7z/Osl/Holds.lean`, the same shape.
 
 The callee is a hypothesis (`kf`): a continuation at its entry, given the run from its return (`scd_at + 13`, `rsp` 8
@@ -87,9 +88,9 @@ variable {prof : Profile} {L : List (Addr × List Byte)} {s₀ : State} {o : Ora
   {gev : List Event} {gP : State → Nat → List Event → Prop} {gE : Outcome → List Event → Prop}
   {X : State} {t : Nat} {V : Addr → Byte}
 
-/-- `NWindows::NFile::NDir::SetCurrentDir (path)` from its entry. At `rmdir`'s entry the registers are `gC`
-with `rsp` 16 below the entry's and the return address into `SetCurrentDir` pushed (`kf`); if `rmdir` returns to
-`scd_at + 13` with `rsp` as at its call and `SetCurrentDir`'s return address as it was, the run reaches that return
+/-- `NWindows::NFile::NDir::RemoveDir (path)` from its entry. At `rmdir`'s entry the registers are `gC`
+with `rsp` 16 below the entry's and the return address into `RemoveDir` pushed (`kf`); if `rmdir` returns to
+`scd_at + 13` with `rsp` as at its call and `RemoveDir`'s return address as it was, the run reaches that return
 address with `rsp` restored and `al` = 1 if `rmdir`'s `eax` is 0, else 0 (`kr`). -/
 theorem scd_ok {Pc : State → (Addr → Byte) → Prop} (c : Seg prof F Wl L s₀ o) (hin : CodeIn L scd_at scd)
     (hinC : CodeIn L Rmd.rmd_at Rmd.rmd)
