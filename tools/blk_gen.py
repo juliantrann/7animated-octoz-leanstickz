@@ -1462,6 +1462,11 @@ FNS = {
     "ifd": dict(grp="Ifd", cn="CInFileStream::~CInFileStream", a=0x5a4040, n=135, pos=True, stops=(0x86,), calls=True,
                 tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `CInFileStream::~CInFileStream` (`FileStreams.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/7zip/Common/FileStreams.cpp `CInFileStream::Seek (offset, seekOrigin, newPosition)`: the origin
+    # checked (0x0b), `File.seek` (the `call` at 0x17), on -1 `GetLastError_noZero_HRESULT` (0x38) and `File.GetPosition`
+    # (0x5a), the result stored. Stop: the `ret` (0x34); the bytes from 0x78 on are the landing pads.
+    "isk": dict(grp="Isk", cn="CInFileStream::Seek", a=0x5a3770, n=120, pos=True, stops=(0x34,), calls=True,
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `CInFileStream::Seek` (`FileStreams.cpp`; `objdump -d`)"),
 }
 
 
