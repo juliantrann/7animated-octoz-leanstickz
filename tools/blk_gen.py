@@ -1558,6 +1558,12 @@ FNS = {
     "cxd": dict(grp="Cxd", cn="CObjectVector<CXmlProp>::~CObjectVector", a=0x5f63c0, n=117, pos=True,
                 stops=(0x69, 0x74), calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `CObjectVector<T>::~CObjectVector` (`CPP/Common/MyVector.h`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/Common/StdOutStream.cpp `CStdOutStream::Normalize_UString (s)`: in terminal mode (the byte at
+    # `this + 8`) each `wchar_t` of `s` below 0x20 (signed), in 0x7f..0x9f, 0x202a..0x202e or 0x2066..0x2069 made
+    # '_' (the loop at 0x59), else each '\n' made '_' (the loop at 0x80). Stops: the `ret`s (0x6f, 0x94).
+    "nus": dict(grp="Nus", cn="CStdOutStream::Normalize_UString", a=0x5a15e0, n=149, pos=True, stops=(0x6f, 0x94),
+                tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CStdOutStream::Normalize_UString` (`CPP/Common/StdOutStream.cpp`; `objdump -d`)"),
 }
 
 
