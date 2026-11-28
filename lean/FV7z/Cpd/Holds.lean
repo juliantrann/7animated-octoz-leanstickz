@@ -118,7 +118,6 @@ variable {prof : Profile} {L : List (Addr × List Byte)} {s₀ : State} {o : Ora
   {gev : List Event} {gP : State → Nat → List Event → Prop} {gE : Outcome → List Event → Prop}
   {X : State} {t : Nat} {V : Addr → Byte}
 
-set_option maxHeartbeats 1000000 in
 /-- `~CParser (this)` (`rdi`) from its entry, `b` = `_switches` (the 8 bytes at `this` after the pushes). When `b` is
 0, `B0` (`h00`); else `N` its count (`hc`, `24 N` below `2 ^ 64`) and `O N` (`hO`), the items as in `from48` and
 `operator delete [] (b - 8, …)` giving `B0` (`hDA`). From `B0` on as in `from170`: the run reaches the return address

@@ -236,9 +236,114 @@ end
 variable {prof : Profile} {L : List (Addr × List Byte)} {s₀ : State} {o : Oracle}
   {gev : List Event} {gP : State → Nat → List Event → Prop} {gE : Outcome → List Event → Prop}
 
-set_option maxHeartbeats 1000000 in
-/-- From 275 with `I 0`, the saved registers and the return address in the bytes, `rdi` = `it`: the pops, then the
-`ret` when `it` is 0 (`kr`), else the `jmp` to `0x6014f0` (`kt`). -/
+/-! ### From 275: the pops, then the `ret` or the `jmp` -/
+
+theorem pops5_rsp {g₀ g : Gprs} {W : Addr → Byte} (hs : g.rsp = g₀.rsp - 8 - 8 - 8 - 8 - 8) :
+    (pops5 W g).rsp = g₀.rsp := by
+  show g.rsp + 8 + 8 + 8 + 8 + 8 = _
+  rw [hs, a5s, a4s, a3s, a2s, a1s]
+
+theorem pops5_kp {g₀ g : Gprs} {ra : Addr} {W : Addr → Byte} (hs : g.rsp = g₀.rsp - 8 - 8 - 8 - 8 - 8)
+    (hfr : Fr g₀ ra W) (h15 : g.r15 = g₀.r15) : Kp g₀ (pops5 W g) := by
+  refine ⟨?_, ?_, ?_, ?_, ?_, h15⟩
+  · show rdq(W, g.rsp) = _
+    rw [hs]; exact hfr.2.2.2.2.1
+  · show rdq(W, g.rsp + 8) = _
+    rw [hs, a5s]; exact hfr.2.2.2.1
+  · show rdq(W, g.rsp + 8 + 8) = _
+    rw [hs, a5s, a4s]; exact hfr.2.2.1
+  · show rdq(W, g.rsp + 8 + 8 + 8) = _
+    rw [hs, a5s, a4s, a3s]; exact hfr.2.1
+  · show rdq(W, g.rsp + 8 + 8 + 8 + 8) = _
+    rw [hs, a5s, a4s, a3s, a2s]; exact hfr.1
+
+/-- The 40 bytes the pops read, from the pushes' footprint. -/
+theorem feet5 (c : Seg prof F Wl L s₀ o) {g₀ g : Gprs} (hs : g.rsp = g₀.rsp - 8 - 8 - 8 - 8 - 8)
+    (w1 : ∀ i < 8, Foot Wl (Addr.add (g₀.rsp - 8) i))
+    (w2 : ∀ i < 8, Foot Wl (Addr.add (g₀.rsp - 8 - 8) i))
+    (w3 : ∀ i < 8, Foot Wl (Addr.add (g₀.rsp - 8 - 8 - 8) i))
+    (w4 : ∀ i < 8, Foot Wl (Addr.add (g₀.rsp - 8 - 8 - 8 - 8) i))
+    (w5 : ∀ i < 8, Foot Wl (Addr.add (g₀.rsp - 8 - 8 - 8 - 8 - 8) i)) :
+    (∀ i < 8, Foot F.data (Addr.add g.rsp i)) ∧ (∀ i < 8, Foot F.data (Addr.add (g.rsp + 8) i)) ∧
+      (∀ i < 8, Foot F.data (Addr.add (g.rsp + 8 + 8) i)) ∧
+      (∀ i < 8, Foot F.data (Addr.add (g.rsp + 8 + 8 + 8) i)) ∧
+      (∀ i < 8, Foot F.data (Addr.add (g.rsp + 8 + 8 + 8 + 8) i)) := by
+  rw [hs]
+  refine ⟨fun i hi => c.hws _ (w5 i hi), ?_, ?_, ?_, ?_⟩
+  · rw [a5s]; exact fun i hi => c.hws _ (w4 i hi)
+  · rw [a5s, a4s]; exact fun i hi => c.hws _ (w3 i hi)
+  · rw [a5s, a4s, a3s]; exact fun i hi => c.hws _ (w2 i hi)
+  · rw [a5s, a4s, a3s, a2s]; exact fun i hi => c.hws _ (w1 i hi)
+
+/-- From 275 with `it` = 0: the pops, then the `ret` to the return address (`kr`). -/
+theorem from275z {g₀ : Gprs} {it : BitVec 64} {I : Nat → (Addr → Byte) → Prop} {e₂ : Addr} {code₂ : List Byte}
+    {j₂ : Nat} (c : Seg prof F Wl L s₀ o) (hin : CodeIn L cpd_at cpd)
+    (w1 : ∀ i < 8, Foot Wl (Addr.add (g₀.rsp - 8) i))
+    (w2 : ∀ i < 8, Foot Wl (Addr.add (g₀.rsp - 8 - 8) i))
+    (w3 : ∀ i < 8, Foot Wl (Addr.add (g₀.rsp - 8 - 8 - 8) i))
+    (w4 : ∀ i < 8, Foot Wl (Addr.add (g₀.rsp - 8 - 8 - 8 - 8) i))
+    (w5 : ∀ i < 8, Foot Wl (Addr.add (g₀.rsp - 8 - 8 - 8 - 8 - 8) i))
+    (hl : ∀ i < 8, Foot F.data (Addr.add g₀.rsp i))
+    (hin₂ : CodeIn L e₂ code₂) (h₂ : j₂ < code₂.length) (hz0 : it = 0)
+    (kr : ∀ (Z : State) (W : Addr → Byte) (t' : Nat), KeptW Wl s₀ Z → Agree F Z.proc.mm.mem W → I 0 W →
+      Z.cpu.rip = e₂.add j₂ → Bk g₀ Z.cpu.gpr → it = 0 → GoG prof L o gev gP gE Z t') :
+    AtJ prof F Wl L s₀ o gev gP gE 275 fun g W => I 0 W ∧ Fr g₀ (e₂.add j₂) W ∧ Rs g₀ g ∧ g.rdi = it := by
+  rintro Y W t' hKY hAY hrY ⟨hI0, hfr, ⟨hs, h12, h15⟩, hdi⟩
+  obtain ⟨l5, l4, l3, l2, l1⟩ := feet5 c hs w1 w2 w3 w4 w5
+  have hsP : (pops5 W Y.cpu.gpr).rsp = g₀.rsp := pops5_rsp hs
+  have hkP : Kp g₀ (pops5 W Y.cpu.gpr) := pops5_kp hs hfr h15
+  have hz : Y.cpu.gpr.rdi = 0 := hdi.trans hz0
+  have hW : W_275 F Wl (fun j' g' _ V₁ => j' = 320 ∧ g' = pops5 W Y.cpu.gpr ∧ V₁ = W) Y.cpu.gpr Y.cpu.rflags W :=
+    vc_275z hz l5 l4 l3 l2 l1 fun _ => ⟨rfl, rfl, rfl⟩
+  refine (c_275 prof).run c hin _ hKY hAY hrY hW ?_
+  rintro j' g fl V₁ ⟨rfl, rfl, hV₁⟩ U t₁ hKU hAU hrU hgU -
+  subst V₁
+  have hsU : U.cpu.gpr.rsp = g₀.rsp := (congrArg Gprs.rsp hgU).trans hsP
+  refine c.s_ret hKU hAU hin (lt_len (by decide)) hrU (ret_320 _) (by rw [hsU]; exact hl) hin₂ h₂
+    (by rw [hsU]; exact hfr.2.2.2.2.2) ?_
+  rintro Z t₂ hKZ hAZ ⟨hrZ, hgZ⟩
+  refine kr Z W t₂ hKZ hAZ hI0 hrZ ⟨?_, ?_⟩ hz0
+  · rw [hgZ]
+    show U.cpu.gpr.rsp + 8 = _
+    rw [hsU]
+  · rw [hgZ, hgU]
+    exact hkP
+
+/-- From 275 with `it` not 0: the pops, then the `jmp` to `0x6014f0` (`kt`). -/
+theorem from275n {g₀ : Gprs} {it : BitVec 64} {I : Nat → (Addr → Byte) → Prop} {e₂ : Addr}
+    {j₂ : Nat} (c : Seg prof F Wl L s₀ o) (hin : CodeIn L cpd_at cpd) (hin1 : CodeIn L 0x6014f0#64 Tiny.c6014f0)
+    (w1 : ∀ i < 8, Foot Wl (Addr.add (g₀.rsp - 8) i))
+    (w2 : ∀ i < 8, Foot Wl (Addr.add (g₀.rsp - 8 - 8) i))
+    (w3 : ∀ i < 8, Foot Wl (Addr.add (g₀.rsp - 8 - 8 - 8) i))
+    (w4 : ∀ i < 8, Foot Wl (Addr.add (g₀.rsp - 8 - 8 - 8 - 8) i))
+    (w5 : ∀ i < 8, Foot Wl (Addr.add (g₀.rsp - 8 - 8 - 8 - 8 - 8) i))
+    (hz0 : it ≠ 0)
+    (kt : ∀ (Y : State) (W : Addr → Byte) (t' : Nat), KeptW Wl s₀ Y → Agree F Y.proc.mm.mem W → I 0 W →
+      Fr g₀ (e₂.add j₂) W → Y.cpu.rip = 0x6014f0#64 → Y.cpu.gpr.rsp = g₀.rsp →
+      Y.cpu.gpr.rdi = it → it ≠ 0 → Kp g₀ Y.cpu.gpr → GoG prof L o gev gP gE Y t') :
+    AtJ prof F Wl L s₀ o gev gP gE 275 fun g W => I 0 W ∧ Fr g₀ (e₂.add j₂) W ∧ Rs g₀ g ∧ g.rdi = it := by
+  rintro Y W t' hKY hAY hrY ⟨hI0, hfr, ⟨hs, h12, h15⟩, hdi⟩
+  obtain ⟨l5, l4, l3, l2, l1⟩ := feet5 c hs w1 w2 w3 w4 w5
+  have hsP : (pops5 W Y.cpu.gpr).rsp = g₀.rsp := pops5_rsp hs
+  have hkP : Kp g₀ (pops5 W Y.cpu.gpr) := pops5_kp hs hfr h15
+  have hz : Y.cpu.gpr.rdi ≠ 0 := by rw [hdi]; exact hz0
+  have hW : W_275 F Wl (fun j' g' _ V₁ => j' = 288 ∧ g' = pops5 W Y.cpu.gpr ∧ V₁ = W) Y.cpu.gpr Y.cpu.rflags W :=
+    vc_275n hz l5 l4 l3 l2 l1 fun _ => ⟨rfl, rfl, rfl⟩
+  refine (c_275 prof).run c hin _ hKY hAY hrY hW ?_
+  rintro j' g fl V₁ ⟨rfl, rfl, hV₁⟩ U t₁ hKU hAU hrU hgU -
+  subst V₁
+  refine c.s_jmp_x hKU hAU hin (lt_len (by decide)) hrU (jmp_288 _) (tgt := 0) hin1 (by decide) (by decide) ?_
+  rintro Z t₂ hKZ hAZ ⟨hrZ, hgZ⟩
+  refine kt Z W t₂ hKZ hAZ hI0 hfr (by rw [hrZ, addr_add_zero]) ?_ ?_ hz0 ?_
+  · rw [hgZ, hgU]
+    exact hsP
+  · rw [hgZ, hgU]
+    exact hdi
+  · rw [hgZ, hgU]
+    exact hkP
+
+/-- From 275 with `I 0`, the saved registers and the return address in the bytes, `rdi` = `it`: `from275z` when
+`it` is 0, else `from275n`. -/
 theorem from275 {g₀ : Gprs} {it : BitVec 64} {I : Nat → (Addr → Byte) → Prop} {e₂ : Addr} {code₂ : List Byte}
     {j₂ : Nat} (c : Seg prof F Wl L s₀ o) (hin : CodeIn L cpd_at cpd) (hin1 : CodeIn L 0x6014f0#64 Tiny.c6014f0)
     (w1 : ∀ i < 8, Foot Wl (Addr.add (g₀.rsp - 8) i))
@@ -254,66 +359,189 @@ theorem from275 {g₀ : Gprs} {it : BitVec 64} {I : Nat → (Addr → Byte) → 
     (kr : ∀ (Z : State) (W : Addr → Byte) (t' : Nat), KeptW Wl s₀ Z → Agree F Z.proc.mm.mem W → I 0 W →
       Z.cpu.rip = e₂.add j₂ → Bk g₀ Z.cpu.gpr → it = 0 → GoG prof L o gev gP gE Z t') :
     AtJ prof F Wl L s₀ o gev gP gE 275 fun g W => I 0 W ∧ Fr g₀ (e₂.add j₂) W ∧ Rs g₀ g ∧ g.rdi = it := by
-  rintro Y W t' hKY hAY hrY ⟨hI0, hfr, ⟨hs, h12, h15⟩, hdi⟩
-  have l5 : ∀ i < 8, Foot F.data (Addr.add Y.cpu.gpr.rsp i) := by
-    rw [hs]; exact fun i hi => c.hws _ (w5 i hi)
-  have l4 : ∀ i < 8, Foot F.data (Addr.add (Y.cpu.gpr.rsp + 8) i) := by
-    rw [hs, a5s]; exact fun i hi => c.hws _ (w4 i hi)
-  have l3 : ∀ i < 8, Foot F.data (Addr.add (Y.cpu.gpr.rsp + 8 + 8) i) := by
-    rw [hs, a5s, a4s]; exact fun i hi => c.hws _ (w3 i hi)
-  have l2 : ∀ i < 8, Foot F.data (Addr.add (Y.cpu.gpr.rsp + 8 + 8 + 8) i) := by
-    rw [hs, a5s, a4s, a3s]; exact fun i hi => c.hws _ (w2 i hi)
-  have l1 : ∀ i < 8, Foot F.data (Addr.add (Y.cpu.gpr.rsp + 8 + 8 + 8 + 8) i) := by
-    rw [hs, a5s, a4s, a3s, a2s]; exact fun i hi => c.hws _ (w1 i hi)
-  have hsP : (pops5 W Y.cpu.gpr).rsp = g₀.rsp := by
-    show Y.cpu.gpr.rsp + 8 + 8 + 8 + 8 + 8 = _
-    rw [hs, a5s, a4s, a3s, a2s, a1s]
-  have hkP : Kp g₀ (pops5 W Y.cpu.gpr) := by
-    refine ⟨?_, ?_, ?_, ?_, ?_, h15⟩
-    · show rdq(W, Y.cpu.gpr.rsp) = _
-      rw [hs]; exact hfr.2.2.2.2.1
-    · show rdq(W, Y.cpu.gpr.rsp + 8) = _
-      rw [hs, a5s]; exact hfr.2.2.2.1
-    · show rdq(W, Y.cpu.gpr.rsp + 8 + 8) = _
-      rw [hs, a5s, a4s]; exact hfr.2.2.1
-    · show rdq(W, Y.cpu.gpr.rsp + 8 + 8 + 8) = _
-      rw [hs, a5s, a4s, a3s]; exact hfr.2.1
-    · show rdq(W, Y.cpu.gpr.rsp + 8 + 8 + 8 + 8) = _
-      rw [hs, a5s, a4s, a3s, a2s]; exact hfr.1
   by_cases hz0 : it = 0
-  · have hW : W_275 F Wl (fun j' g' _ V₁ => j' = 320 ∧ g' = pops5 W Y.cpu.gpr ∧ V₁ = W) Y.cpu.gpr Y.cpu.rflags W :=
-      vc_275z (Q := fun j' g' _ V₁ => j' = 320 ∧ g' = pops5 W Y.cpu.gpr ∧ V₁ = W) (g := Y.cpu.gpr)
-        (f := Y.cpu.rflags) (V := W) (hdi.trans hz0) l5 l4 l3 l2 l1 fun _ => ⟨rfl, rfl, rfl⟩
-    refine (c_275 prof).run c hin _ hKY hAY hrY hW ?_
-    rintro j' g fl V₁ ⟨rfl, rfl, hV₁⟩ U t₁ hKU hAU hrU hgU -
-    subst V₁
-    have hsU : U.cpu.gpr.rsp = g₀.rsp := (congrArg Gprs.rsp hgU).trans hsP
-    refine c.s_ret hKU hAU hin (lt_len (by decide)) hrU (ret_320 _) (by rw [hsU]; exact hl) hin₂ h₂
-      (by rw [hsU]; exact hfr.2.2.2.2.2) ?_
-    rintro Z t₂ hKZ hAZ ⟨hrZ, hgZ⟩
-    refine kr Z W t₂ hKZ hAZ hI0 hrZ ⟨?_, ?_⟩ hz0
-    · rw [hgZ]
-      show U.cpu.gpr.rsp + 8 = _
-      rw [hsU]
-    · rw [hgZ, hgU]
-      exact hkP
-  · have hW : W_275 F Wl (fun j' g' _ V₁ => j' = 288 ∧ g' = pops5 W Y.cpu.gpr ∧ V₁ = W) Y.cpu.gpr Y.cpu.rflags W :=
-      vc_275n (Q := fun j' g' _ V₁ => j' = 288 ∧ g' = pops5 W Y.cpu.gpr ∧ V₁ = W) (g := Y.cpu.gpr)
-        (f := Y.cpu.rflags) (V := W) (fun h => hz0 (hdi.symm.trans h)) l5 l4 l3 l2 l1 fun _ => ⟨rfl, rfl, rfl⟩
-    refine (c_275 prof).run c hin _ hKY hAY hrY hW ?_
-    rintro j' g fl V₁ ⟨rfl, rfl, hV₁⟩ U t₁ hKU hAU hrU hgU -
-    subst V₁
-    refine c.s_jmp_x hKU hAU hin (lt_len (by decide)) hrU (jmp_288 _) (tgt := 0) hin1 (by decide) (by decide) ?_
-    rintro Z t₂ hKZ hAZ ⟨hrZ, hgZ⟩
-    refine kt Z W t₂ hKZ hAZ hI0 hfr (by rw [hrZ, addr_add_zero]) ?_ ?_ hz0 ?_
-    · rw [hgZ, hgU]
-      exact hsP
-    · rw [hgZ, hgU]
-      exact hdi
-    · rw [hgZ, hgU]
-      exact hkP
+  · exact from275z c hin w1 w2 w3 w4 w5 hl hin₂ h₂ hz0 kr
+  · exact from275n c hin hin1 w1 w2 w3 w4 w5 hz0 kt
 
-set_option maxHeartbeats 1000000 in
+
+/-- 265: `rbx` -= 8, to 275 (`F275`) after the step 0, else to 224 (the next step). -/
+theorem from265 {g₀ : Gprs} {n32 : BitVec 32} {it : BitVec 64} {I : Nat → (Addr → Byte) → Prop}
+    {e₂ : Addr} {j₂ : Nat}
+    (c : Seg prof F Wl L s₀ o) (hin : CodeIn L cpd_at cpd)
+    (F275 : AtJ prof F Wl L s₀ o gev gP gE 275 fun g W => I 0 W ∧ Fr g₀ (e₂.add j₂) W ∧ Rs g₀ g ∧ g.rdi = it) :
+    ∀ k, k < n32.toNat →
+    (∀ k', k = k' + 1 → AtJ prof F Wl L s₀ o gev gP gE 224 fun g W => I (k' + 1) W ∧
+      Fr g₀ (e₂.add j₂) W ∧ Rs g₀ g ∧ g.rdi = it ∧ g.rbx = BitVec.ofNat 64 (8 * k')) →
+    AtJ prof F Wl L s₀ o gev gP gE 265 fun g W => I k W ∧ Fr g₀ (e₂.add j₂) W ∧ Rs g₀ g ∧
+      g.rdi = it ∧ g.rbx = BitVec.ofNat 64 (8 * k) := by
+  have hn32 : n32.toNat < 4294967296 := n32.isLt
+  rintro k hk hnx Y W t' hKY hAY hrY ⟨hIk, hfr, hR, hdi, hb⟩
+  cases k with
+  | zero =>
+    refine (c_265 prof).run c hin _ hKY hAY hrY (vc_265l (by rw [hb]; exact rb_last)) ?_
+    rintro j' g fl V₁ ⟨rfl, rfl, hV₁⟩ U t₁ hKU hAU hrU hgU -
+    subst V₁
+    exact F275 U W t₁ hKU hAU hrU ⟨hIk, hfr, by rw [hgU]; exact hR, (congrArg Gprs.rdi hgU).trans hdi⟩
+  | succ k =>
+    refine (c_265 prof).run c hin _ hKY hAY hrY
+      (vc_265c (by rw [hb, rb_step k (by omega)]; exact rb_ne k (by omega))) ?_
+    rintro j' g fl V₁ ⟨rfl, rfl, hV₁⟩ U t₁ hKU hAU hrU hgU -
+    subst V₁
+    have hbU : U.cpu.gpr.rbx = BitVec.ofNat 64 (8 * k) := by
+      rw [hgU]
+      show Y.cpu.gpr.rbx - 8#64 = _
+      rw [hb]
+      exact rb_step k (by omega)
+    exact hnx k rfl U W t₁ hKU hAU hrU ⟨hIk, hfr, by rw [hgU]; exact hR, (congrArg Gprs.rdi hgU).trans hdi, hbU⟩
+
+/-- 247: `operator delete (p, 16)` (`hD2`), `rdi` = `_items` again, to 265. -/
+theorem from247 {g₀ : Gprs} {n32 : BitVec 32} {it : BitVec 64} {I : Nat → (Addr → Byte) → Prop}
+    {J : Nat → BitVec 64 → (Addr → Byte) → Prop} {e₂ : Addr} {j₂ : Nat}
+    (c : Seg prof F Wl L s₀ o) (hin : CodeIn L cpd_at cpd)
+    (hin2 : CodeIn L 0x6014e0#64 Tiny.c6014e0)
+    (w6 : ∀ i < 8, Foot Wl (Addr.add (g₀.rsp - 8 - 8 - 8 - 8 - 8 - 8) i))
+    (fa : ∀ i < 8, Foot F.data (Addr.add (g₀.rdi + 8#64) i))
+    (hIt : ∀ k W, I k W → rdq(W, g₀.rdi + 8#64) = it)
+    (hD2 : ∀ k < n32.toNat, ∀ p W, p ≠ 0 → J k p W →
+      Call1 prof F Wl L s₀ o gev gP gE g₀.rsp 0x6014e0#64 (cpd_at.add 260)
+        (fun g => g.rdi = p ∧ g.rsi = 16#64) W (I k)) :
+    ∀ k, k < n32.toNat → ∀ p : BitVec 64, p ≠ 0 →
+    AtJ prof F Wl L s₀ o gev gP gE 265 (fun g W => I k W ∧ Fr g₀ (e₂.add j₂) W ∧ Rs g₀ g ∧
+      g.rdi = it ∧ g.rbx = BitVec.ofNat 64 (8 * k)) →
+    AtJ prof F Wl L s₀ o gev gP gE 247 fun g W => J k p W ∧ Fr g₀ (e₂.add j₂) W ∧ Rs g₀ g ∧
+      g.rbp = p ∧ g.rbx = BitVec.ofNat 64 (8 * k) := by
+  rintro k hk p hp h265 Y W t' hKY hAY hrY ⟨hJ, hfr, hR, hbp, hb⟩
+  refine (c_247 prof).run c hin _ hKY hAY hrY vc_247 ?_
+  rintro j' g fl V₁ ⟨rfl, rfl, hV₁⟩ U t₁ hKU hAU hrU hgU -
+  subst V₁
+  have hRU : Rs g₀ U.cpu.gpr := by rw [hgU]; exact hR
+  have hbU : U.cpu.gpr.rbx = BitVec.ofNat 64 (8 * k) := (congrArg Gprs.rbx hgU).trans hb
+  have hsU : U.cpu.gpr.rsp = g₀.rsp - 8 - 8 - 8 - 8 - 8 := hRU.1
+  refine c.s_call hKU hAU hin (lt_len (by decide)) hrU (call_255 _) hin2 (by decide) tgt_255
+    (by rw [hsU]; exact w6) ?_
+  rintro Y₂ t₂ hK₂ hA₂ ⟨hr₂, hg₂⟩
+  rw [hsU] at hA₂
+  have hsY₂ : Y₂.cpu.gpr.rsp = g₀.rsp - 8 - 8 - 8 - 8 - 8 - 8 :=
+    (congrArg Gprs.rsp hg₂).trans (congrArg (fun x : Addr => x - 8) hsU)
+  have hdi₂ : Y₂.cpu.gpr.rdi = p ∧ Y₂.cpu.gpr.rsi = 16#64 :=
+    ⟨(congrArg Gprs.rdi hg₂).trans ((congrArg Gprs.rdi hgU).trans hbp),
+      (congrArg Gprs.rsi hg₂).trans (congrArg Gprs.rsi hgU)⟩
+  refine hD2 k hk p W hp hJ Y₂ t₂ hK₂ hA₂ hr₂ hsY₂ hdi₂ ?_
+  rintro Z V'' t'' hKZ hAZ hIk hrZ ⟨b1, b2, b3, b4, b5, b6, b7⟩ hkf
+  have hsZ : Z.cpu.gpr.rsp = g₀.rsp - 8 - 8 - 8 - 8 - 8 := by rw [b1, hsY₂, a1s]
+  have h12Z : Z.cpu.gpr.r12 = g₀.rdi := b4.trans ((congrArg Gprs.r12 hg₂).trans hRU.2.1)
+  refine (c_260 prof).run c hin _ hKZ hAZ hrZ
+    (vc_260 (it := it) (by rw [h12Z]; exact hIt k V'' hIk) (by rw [h12Z]; exact fa)) ?_
+  rintro j' g fl V₁ ⟨rfl, rfl, hV₁⟩ U₂ t₃ hKU₂ hAU₂ hrU₂ hgU₂ -
+  subst V₁
+  refine h265 U₂ V'' t₃ hKU₂ hAU₂ hrU₂ ⟨hIk, hfr.kf hkf, ⟨?_, ?_, ?_⟩, ?_, ?_⟩
+  · exact (congrArg Gprs.rsp hgU₂).trans hsZ
+  · exact (congrArg Gprs.r12 hgU₂).trans h12Z
+  · exact (congrArg Gprs.r15 hgU₂).trans (b7.trans ((congrArg Gprs.r15 hg₂).trans hRU.2.2))
+  · exact congrArg Gprs.rdi hgU₂
+  · exact (congrArg Gprs.rbx hgU₂).trans (b2.trans ((congrArg Gprs.rbx hg₂).trans hbU))
+
+/-- 224: the step `k` (`hP0`, `hQ0`, `hD1`), through 247, to 265. -/
+theorem from224s {g₀ : Gprs} {n32 : BitVec 32} {it : BitVec 64} {I : Nat → (Addr → Byte) → Prop}
+    {J : Nat → BitVec 64 → (Addr → Byte) → Prop} {e₂ : Addr} {j₂ : Nat}
+    (c : Seg prof F Wl L s₀ o) (hin : CodeIn L cpd_at cpd)
+    (hin1 : CodeIn L 0x6014f0#64 Tiny.c6014f0) (hin2 : CodeIn L 0x6014e0#64 Tiny.c6014e0)
+    (w6 : ∀ i < 8, Foot Wl (Addr.add (g₀.rsp - 8 - 8 - 8 - 8 - 8 - 8) i))
+    (fa : ∀ i < 8, Foot F.data (Addr.add (g₀.rdi + 8#64) i))
+    (fe : ∀ k < n32.toNat, ∀ i < 8, Foot F.data (Addr.add (it + BitVec.ofNat 64 (8 * k)) i))
+    (fp : ∀ k < n32.toNat, ∀ W, I (k + 1) W → pk W it k ≠ 0 → ∀ i < 8, Foot F.data (Addr.add (pk W it k) i))
+    (hIt : ∀ k W, I k W → rdq(W, g₀.rdi + 8#64) = it)
+    (hP0 : ∀ k < n32.toNat, ∀ W, I (k + 1) W → pk W it k = 0 → I k W)
+    (hQ0 : ∀ k < n32.toNat, ∀ W, I (k + 1) W → pk W it k ≠ 0 → rdq(W, pk W it k) = 0 → J k (pk W it k) W)
+    (hD1 : ∀ k < n32.toNat, ∀ W, I (k + 1) W → pk W it k ≠ 0 → rdq(W, pk W it k) ≠ 0 →
+      Call1 prof F Wl L s₀ o gev gP gE g₀.rsp 0x6014f0#64 (cpd_at.add 247)
+        (fun g => g.rdi = rdq(W, pk W it k)) W (J k (pk W it k)))
+    (hD2 : ∀ k < n32.toNat, ∀ p W, p ≠ 0 → J k p W →
+      Call1 prof F Wl L s₀ o gev gP gE g₀.rsp 0x6014e0#64 (cpd_at.add 260)
+        (fun g => g.rdi = p ∧ g.rsi = 16#64) W (I k)) :
+    ∀ k, k < n32.toNat →
+    AtJ prof F Wl L s₀ o gev gP gE 265 (fun g W => I k W ∧ Fr g₀ (e₂.add j₂) W ∧ Rs g₀ g ∧
+      g.rdi = it ∧ g.rbx = BitVec.ofNat 64 (8 * k)) →
+    AtJ prof F Wl L s₀ o gev gP gE 224 fun g W => I (k + 1) W ∧ Fr g₀ (e₂.add j₂) W ∧ Rs g₀ g ∧
+      g.rdi = it ∧ g.rbx = BitVec.ofNat 64 (8 * k) := by
+  rintro k hk h265 Y W t' hKY hAY hrY ⟨hIk, hfr, hR, hdi, hb⟩
+  have hea : Y.cpu.gpr.rdi + Y.cpu.gpr.rbx = it + BitVec.ofNat 64 (8 * k) := by rw [hdi, hb]
+  by_cases hp0 : pk W it k = 0
+  · refine (c_224 prof).run c hin _ hKY hAY hrY
+      (vc_224z (p := pk W it k) (by rw [hea]) (by rw [hea]; exact fe k hk) hp0) ?_
+    rintro j' g fl V₁ ⟨rfl, rfl, hV₁⟩ U t₁ hKU hAU hrU hgU -
+    subst V₁
+    exact h265 U W t₁ hKU hAU hrU ⟨hP0 k hk W hIk hp0, hfr, by rw [hgU]; exact hR,
+      (congrArg Gprs.rdi hgU).trans hdi, (congrArg Gprs.rbx hgU).trans hb⟩
+  · refine (c_224 prof).run c hin _ hKY hAY hrY
+      (vc_224n (p := pk W it k) (q := rdq(W, pk W it k)) (by rw [hea]) (by rw [hea]; exact fe k hk) hp0 rfl
+        (fp k hk W hIk hp0)) ?_
+    rintro j' g fl V₁ ⟨hj, rfl, hV₁⟩ U t₁ hKU hAU hrU hgU -
+    subst V₁
+    have hRU : Rs g₀ U.cpu.gpr := by rw [hgU]; exact hR
+    have hbU : U.cpu.gpr.rbx = BitVec.ofNat 64 (8 * k) := (congrArg Gprs.rbx hgU).trans hb
+    have hpU : U.cpu.gpr.rbp = pk W it k := congrArg Gprs.rbp hgU
+    rcases hj with ⟨hq0, rfl⟩ | ⟨hq0, rfl⟩
+    · exact from247 c hin hin2 w6 fa hIt hD2 k hk _ hp0 h265 U W t₁ hKU hAU hrU
+        ⟨hQ0 k hk W hIk hp0 hq0, hfr, hRU, hpU, hbU⟩
+    · -- `operator delete (q)`
+      have hsU : U.cpu.gpr.rsp = g₀.rsp - 8 - 8 - 8 - 8 - 8 := hRU.1
+      refine c.s_call hKU hAU hin (lt_len (by decide)) hrU (call_242 _) hin1 (by decide) tgt_242
+        (by rw [hsU]; exact w6) ?_
+      rintro Y₂ t₂ hK₂ hA₂ ⟨hr₂, hg₂⟩
+      rw [hsU] at hA₂
+      have hsY₂ : Y₂.cpu.gpr.rsp = g₀.rsp - 8 - 8 - 8 - 8 - 8 - 8 :=
+        (congrArg Gprs.rsp hg₂).trans (congrArg (fun x : Addr => x - 8) hsU)
+      have hdi₂ : Y₂.cpu.gpr.rdi = rdq(W, pk W it k) := (congrArg Gprs.rdi hg₂).trans (congrArg Gprs.rdi hgU)
+      refine hD1 k hk W hIk hp0 hq0 Y₂ t₂ hK₂ hA₂ hr₂ hsY₂ hdi₂ ?_
+      rintro Z V'' t'' hKZ hAZ hJ hrZ ⟨b1, b2, b3, b4, b5, b6, b7⟩ hkf
+      refine from247 c hin hin2 w6 fa hIt hD2 k hk _ hp0 h265 Z V'' t'' hKZ hAZ hrZ
+        ⟨hJ, hfr.kf hkf, ⟨?_, ?_, ?_⟩, ?_, ?_⟩
+      · rw [b1, hsY₂, a1s]
+      · exact b4.trans ((congrArg Gprs.r12 hg₂).trans hRU.2.1)
+      · exact b7.trans ((congrArg Gprs.r15 hg₂).trans hRU.2.2)
+      · exact b3.trans ((congrArg Gprs.rbp hg₂).trans hpU)
+      · exact b2.trans ((congrArg Gprs.rbx hg₂).trans hbU)
+
+/-! ### The loop from 224 -/
+
+/-- The loop from 224 as in `FV7z/Ocv/Holds.lean` (`hP0`, `hQ0`, `hD1`, `hD2`), the step `k` with `I (k + 1)`,
+`rdi` = `it` and `rbx` = `8 k`; after the step 0, 275 (`F275`). -/
+theorem from224 {g₀ : Gprs} {n32 : BitVec 32} {it : BitVec 64} {I : Nat → (Addr → Byte) → Prop}
+    {J : Nat → BitVec 64 → (Addr → Byte) → Prop} {e₂ : Addr} {j₂ : Nat}
+    (c : Seg prof F Wl L s₀ o) (hin : CodeIn L cpd_at cpd)
+    (hin1 : CodeIn L 0x6014f0#64 Tiny.c6014f0) (hin2 : CodeIn L 0x6014e0#64 Tiny.c6014e0)
+    (w6 : ∀ i < 8, Foot Wl (Addr.add (g₀.rsp - 8 - 8 - 8 - 8 - 8 - 8) i))
+    (fa : ∀ i < 8, Foot F.data (Addr.add (g₀.rdi + 8#64) i))
+    (fe : ∀ k < n32.toNat, ∀ i < 8, Foot F.data (Addr.add (it + BitVec.ofNat 64 (8 * k)) i))
+    (fp : ∀ k < n32.toNat, ∀ W, I (k + 1) W → pk W it k ≠ 0 → ∀ i < 8, Foot F.data (Addr.add (pk W it k) i))
+    (hIt : ∀ k W, I k W → rdq(W, g₀.rdi + 8#64) = it)
+    (hP0 : ∀ k < n32.toNat, ∀ W, I (k + 1) W → pk W it k = 0 → I k W)
+    (hQ0 : ∀ k < n32.toNat, ∀ W, I (k + 1) W → pk W it k ≠ 0 → rdq(W, pk W it k) = 0 → J k (pk W it k) W)
+    (hD1 : ∀ k < n32.toNat, ∀ W, I (k + 1) W → pk W it k ≠ 0 → rdq(W, pk W it k) ≠ 0 →
+      Call1 prof F Wl L s₀ o gev gP gE g₀.rsp 0x6014f0#64 (cpd_at.add 247)
+        (fun g => g.rdi = rdq(W, pk W it k)) W (J k (pk W it k)))
+    (hD2 : ∀ k < n32.toNat, ∀ p W, p ≠ 0 → J k p W →
+      Call1 prof F Wl L s₀ o gev gP gE g₀.rsp 0x6014e0#64 (cpd_at.add 260)
+        (fun g => g.rdi = p ∧ g.rsi = 16#64) W (I k))
+    (F275 : AtJ prof F Wl L s₀ o gev gP gE 275 fun g W => I 0 W ∧ Fr g₀ (e₂.add j₂) W ∧ Rs g₀ g ∧ g.rdi = it) :
+    ∀ k, k < n32.toNat → AtJ prof F Wl L s₀ o gev gP gE 224 fun g W => I (k + 1) W ∧
+      Fr g₀ (e₂.add j₂) W ∧ Rs g₀ g ∧ g.rdi = it ∧ g.rbx = BitVec.ofNat 64 (8 * k) := by
+  have hn32 : n32.toNat < 4294967296 := n32.isLt
+  -- the loop, by induction on the step
+  have S265 := from265 (n32 := n32) (it := it) (I := I) c hin F275
+  have B224 := from224s (e₂ := e₂) (j₂ := j₂) c hin hin1 hin2 w6 fa fe fp hIt hP0 hQ0 hD1 hD2
+  have L224 : ∀ k, k < n32.toNat → AtJ prof F Wl L s₀ o gev gP gE 224 fun g W => I (k + 1) W ∧
+      Fr g₀ (e₂.add j₂) W ∧ Rs g₀ g ∧ g.rdi = it ∧ g.rbx = BitVec.ofNat 64 (8 * k) := by
+    intro k
+    induction k with
+    | zero => exact fun hk => B224 0 hk (S265 0 hk fun k' e => absurd e (by omega))
+    | succ k ih =>
+      exact fun hk => B224 (k + 1) hk (S265 (k + 1) hk fun k' e => by
+        obtain rfl : k = k' := by omega
+        exact ih (by omega))
+  exact L224
+
 /-- From 170 (`g₀` the registers at the entry, `this` = `g₀.rdi`): `B0` at 170; the 8 bytes at `this + 48` freed
 when not 0 (`hC1`, else `hZ1`), giving `B1`; those at `this + 32` (`hC2`, else `hZ2`), giving `I n` with `n` = `n32`
 the 4 bytes at `this + 16` (`hn`) and `it` the 8 bytes at `this + 8` whenever `I` holds (`hIt`); the steps as in
@@ -363,120 +591,8 @@ theorem from170 {g₀ : Gprs} {n32 : BitVec 32} {it : BitVec 64} {B0 B1 : (Addr 
       Z.cpu.rip = e₂.add j₂ → Bk g₀ Z.cpu.gpr → it = 0 → GoG prof L o gev gP gE Z t') :
     AtJ prof F Wl L s₀ o gev gP gE 170 fun g W => B0 W ∧ Fr g₀ (e₂.add j₂) W ∧ Rs g₀ g := by
   have hn32 : n32.toNat < 4294967296 := n32.isLt
-  -- the end, from 275 (`from275`)
   have F275 := from275 (g₀ := g₀) (I := I) c hin hin1 w1 w2 w3 w4 w5 hl hin₂ h₂ kt kr
-  -- 265: `rbx` -= 8, to 275 after the step 0, else to 224
-  have S265 : ∀ k, k < n32.toNat →
-      (∀ k', k = k' + 1 → AtJ prof F Wl L s₀ o gev gP gE 224 fun g W => I (k' + 1) W ∧
-        Fr g₀ (e₂.add j₂) W ∧ Rs g₀ g ∧ g.rdi = it ∧ g.rbx = BitVec.ofNat 64 (8 * k')) →
-      AtJ prof F Wl L s₀ o gev gP gE 265 fun g W => I k W ∧ Fr g₀ (e₂.add j₂) W ∧ Rs g₀ g ∧
-        g.rdi = it ∧ g.rbx = BitVec.ofNat 64 (8 * k) := by
-    rintro k hk hnx Y W t' hKY hAY hrY ⟨hIk, hfr, hR, hdi, hb⟩
-    cases k with
-    | zero =>
-      refine (c_265 prof).run c hin _ hKY hAY hrY (vc_265l (by rw [hb]; exact rb_last)) ?_
-      rintro j' g fl V₁ ⟨rfl, rfl, hV₁⟩ U t₁ hKU hAU hrU hgU -
-      subst V₁
-      exact F275 U W t₁ hKU hAU hrU ⟨hIk, hfr, by rw [hgU]; exact hR, (congrArg Gprs.rdi hgU).trans hdi⟩
-    | succ k =>
-      refine (c_265 prof).run c hin _ hKY hAY hrY
-        (vc_265c (by rw [hb, rb_step k (by omega)]; exact rb_ne k (by omega))) ?_
-      rintro j' g fl V₁ ⟨rfl, rfl, hV₁⟩ U t₁ hKU hAU hrU hgU -
-      subst V₁
-      have hbU : U.cpu.gpr.rbx = BitVec.ofNat 64 (8 * k) := by
-        rw [hgU]
-        show Y.cpu.gpr.rbx - 8#64 = _
-        rw [hb]
-        exact rb_step k (by omega)
-      exact hnx k rfl U W t₁ hKU hAU hrU ⟨hIk, hfr, by rw [hgU]; exact hR, (congrArg Gprs.rdi hgU).trans hdi, hbU⟩
-  -- 247: `operator delete (p, 16)`, `rdi` = `_items` again, to 265
-  have A247 : ∀ k, k < n32.toNat → ∀ p : BitVec 64, p ≠ 0 →
-      AtJ prof F Wl L s₀ o gev gP gE 265 (fun g W => I k W ∧ Fr g₀ (e₂.add j₂) W ∧ Rs g₀ g ∧
-        g.rdi = it ∧ g.rbx = BitVec.ofNat 64 (8 * k)) →
-      AtJ prof F Wl L s₀ o gev gP gE 247 fun g W => J k p W ∧ Fr g₀ (e₂.add j₂) W ∧ Rs g₀ g ∧
-        g.rbp = p ∧ g.rbx = BitVec.ofNat 64 (8 * k) := by
-    rintro k hk p hp h265 Y W t' hKY hAY hrY ⟨hJ, hfr, hR, hbp, hb⟩
-    refine (c_247 prof).run c hin _ hKY hAY hrY vc_247 ?_
-    rintro j' g fl V₁ ⟨rfl, rfl, hV₁⟩ U t₁ hKU hAU hrU hgU -
-    subst V₁
-    have hRU : Rs g₀ U.cpu.gpr := by rw [hgU]; exact hR
-    have hbU : U.cpu.gpr.rbx = BitVec.ofNat 64 (8 * k) := (congrArg Gprs.rbx hgU).trans hb
-    have hsU : U.cpu.gpr.rsp = g₀.rsp - 8 - 8 - 8 - 8 - 8 := hRU.1
-    refine c.s_call hKU hAU hin (lt_len (by decide)) hrU (call_255 _) hin2 (by decide) tgt_255
-      (by rw [hsU]; exact w6) ?_
-    rintro Y₂ t₂ hK₂ hA₂ ⟨hr₂, hg₂⟩
-    rw [hsU] at hA₂
-    have hsY₂ : Y₂.cpu.gpr.rsp = g₀.rsp - 8 - 8 - 8 - 8 - 8 - 8 :=
-      (congrArg Gprs.rsp hg₂).trans (congrArg (fun x : Addr => x - 8) hsU)
-    have hdi₂ : Y₂.cpu.gpr.rdi = p ∧ Y₂.cpu.gpr.rsi = 16#64 :=
-      ⟨(congrArg Gprs.rdi hg₂).trans ((congrArg Gprs.rdi hgU).trans hbp),
-        (congrArg Gprs.rsi hg₂).trans (congrArg Gprs.rsi hgU)⟩
-    refine hD2 k hk p W hp hJ Y₂ t₂ hK₂ hA₂ hr₂ hsY₂ hdi₂ ?_
-    rintro Z V'' t'' hKZ hAZ hIk hrZ ⟨b1, b2, b3, b4, b5, b6, b7⟩ hkf
-    have hsZ : Z.cpu.gpr.rsp = g₀.rsp - 8 - 8 - 8 - 8 - 8 := by rw [b1, hsY₂, a1s]
-    have h12Z : Z.cpu.gpr.r12 = g₀.rdi := b4.trans ((congrArg Gprs.r12 hg₂).trans hRU.2.1)
-    refine (c_260 prof).run c hin _ hKZ hAZ hrZ
-      (vc_260 (it := it) (by rw [h12Z]; exact hIt k V'' hIk) (by rw [h12Z]; exact fa)) ?_
-    rintro j' g fl V₁ ⟨rfl, rfl, hV₁⟩ U₂ t₃ hKU₂ hAU₂ hrU₂ hgU₂ -
-    subst V₁
-    refine h265 U₂ V'' t₃ hKU₂ hAU₂ hrU₂ ⟨hIk, hfr.kf hkf, ⟨?_, ?_, ?_⟩, ?_, ?_⟩
-    · exact (congrArg Gprs.rsp hgU₂).trans hsZ
-    · exact (congrArg Gprs.r12 hgU₂).trans h12Z
-    · exact (congrArg Gprs.r15 hgU₂).trans (b7.trans ((congrArg Gprs.r15 hg₂).trans hRU.2.2))
-    · exact congrArg Gprs.rdi hgU₂
-    · exact (congrArg Gprs.rbx hgU₂).trans (b2.trans ((congrArg Gprs.rbx hg₂).trans hbU))
-  -- 224: the step `k`, to 265
-  have B224 : ∀ k, k < n32.toNat →
-      AtJ prof F Wl L s₀ o gev gP gE 265 (fun g W => I k W ∧ Fr g₀ (e₂.add j₂) W ∧ Rs g₀ g ∧
-        g.rdi = it ∧ g.rbx = BitVec.ofNat 64 (8 * k)) →
-      AtJ prof F Wl L s₀ o gev gP gE 224 fun g W => I (k + 1) W ∧ Fr g₀ (e₂.add j₂) W ∧ Rs g₀ g ∧
-        g.rdi = it ∧ g.rbx = BitVec.ofNat 64 (8 * k) := by
-    rintro k hk h265 Y W t' hKY hAY hrY ⟨hIk, hfr, hR, hdi, hb⟩
-    have hea : Y.cpu.gpr.rdi + Y.cpu.gpr.rbx = it + BitVec.ofNat 64 (8 * k) := by rw [hdi, hb]
-    by_cases hp0 : pk W it k = 0
-    · refine (c_224 prof).run c hin _ hKY hAY hrY
-        (vc_224z (p := pk W it k) (by rw [hea]) (by rw [hea]; exact fe k hk) hp0) ?_
-      rintro j' g fl V₁ ⟨rfl, rfl, hV₁⟩ U t₁ hKU hAU hrU hgU -
-      subst V₁
-      exact h265 U W t₁ hKU hAU hrU ⟨hP0 k hk W hIk hp0, hfr, by rw [hgU]; exact hR,
-        (congrArg Gprs.rdi hgU).trans hdi, (congrArg Gprs.rbx hgU).trans hb⟩
-    · refine (c_224 prof).run c hin _ hKY hAY hrY
-        (vc_224n (p := pk W it k) (q := rdq(W, pk W it k)) (by rw [hea]) (by rw [hea]; exact fe k hk) hp0 rfl
-          (fp k hk W hIk hp0)) ?_
-      rintro j' g fl V₁ ⟨hj, rfl, hV₁⟩ U t₁ hKU hAU hrU hgU -
-      subst V₁
-      have hRU : Rs g₀ U.cpu.gpr := by rw [hgU]; exact hR
-      have hbU : U.cpu.gpr.rbx = BitVec.ofNat 64 (8 * k) := (congrArg Gprs.rbx hgU).trans hb
-      have hpU : U.cpu.gpr.rbp = pk W it k := congrArg Gprs.rbp hgU
-      rcases hj with ⟨hq0, rfl⟩ | ⟨hq0, rfl⟩
-      · exact A247 k hk _ hp0 h265 U W t₁ hKU hAU hrU ⟨hQ0 k hk W hIk hp0 hq0, hfr, hRU, hpU, hbU⟩
-      · -- `operator delete (q)`
-        have hsU : U.cpu.gpr.rsp = g₀.rsp - 8 - 8 - 8 - 8 - 8 := hRU.1
-        refine c.s_call hKU hAU hin (lt_len (by decide)) hrU (call_242 _) hin1 (by decide) tgt_242
-          (by rw [hsU]; exact w6) ?_
-        rintro Y₂ t₂ hK₂ hA₂ ⟨hr₂, hg₂⟩
-        rw [hsU] at hA₂
-        have hsY₂ : Y₂.cpu.gpr.rsp = g₀.rsp - 8 - 8 - 8 - 8 - 8 - 8 :=
-          (congrArg Gprs.rsp hg₂).trans (congrArg (fun x : Addr => x - 8) hsU)
-        have hdi₂ : Y₂.cpu.gpr.rdi = rdq(W, pk W it k) := (congrArg Gprs.rdi hg₂).trans (congrArg Gprs.rdi hgU)
-        refine hD1 k hk W hIk hp0 hq0 Y₂ t₂ hK₂ hA₂ hr₂ hsY₂ hdi₂ ?_
-        rintro Z V'' t'' hKZ hAZ hJ hrZ ⟨b1, b2, b3, b4, b5, b6, b7⟩ hkf
-        refine A247 k hk _ hp0 h265 Z V'' t'' hKZ hAZ hrZ ⟨hJ, hfr.kf hkf, ⟨?_, ?_, ?_⟩, ?_, ?_⟩
-        · rw [b1, hsY₂, a1s]
-        · exact b4.trans ((congrArg Gprs.r12 hg₂).trans hRU.2.1)
-        · exact b7.trans ((congrArg Gprs.r15 hg₂).trans hRU.2.2)
-        · exact b3.trans ((congrArg Gprs.rbp hg₂).trans hpU)
-        · exact b2.trans ((congrArg Gprs.rbx hg₂).trans hbU)
-  -- the loop, by induction on the step
-  have L224 : ∀ k, k < n32.toNat → AtJ prof F Wl L s₀ o gev gP gE 224 fun g W => I (k + 1) W ∧
-      Fr g₀ (e₂.add j₂) W ∧ Rs g₀ g ∧ g.rdi = it ∧ g.rbx = BitVec.ofNat 64 (8 * k) := by
-    intro k
-    induction k with
-    | zero => exact fun hk => B224 0 hk (S265 0 hk fun k' e => absurd e (by omega))
-    | succ k ih =>
-      exact fun hk => B224 (k + 1) hk (S265 (k + 1) hk fun k' e => by
-        obtain rfl : k = k' := by omega
-        exact ih (by omega))
+  have L224 := from224 (J := J) c hin hin1 hin2 w6 fa fe fp hIt hP0 hQ0 hD1 hD2 F275
   -- 200: the size and `_items`
   have E200 : AtJ prof F Wl L s₀ o gev gP gE 200 fun g W => I n32.toNat W ∧ Fr g₀ (e₂.add j₂) W ∧ Rs g₀ g := by
     rintro Y W t' hKY hAY hrY ⟨hI, hfr, hR⟩
