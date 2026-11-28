@@ -1791,6 +1791,15 @@ FNS = {
     "bop": dict(grp="Bop", cn="CExtractCallbackConsole::BeforeOpen", a=0x5e7b70, n=295, pos=True,
                 stops=(233,), hand=(61,), calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `CExtractCallbackConsole::BeforeOpen` (`ExtractCallbackConsole.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/7zip/UI/Console/ExtractCallbackConsole.cpp `CExtractCallbackConsole::ExtractResult (result)`:
+    # three pushes and a frame of 32 bytes (the stack guard at `rsp + 24`, an `AString` at `rsp`), the lock's
+    # `Enter` and `Leave` (`g_CriticalSection`), the percent printer's `ClosePrint` and clears, the `endl`s and
+    # `fwrite`s of the counts and messages, `NumArcsWithError++` etc. (the four `add qword [rbx + d], 1` by hand),
+    # `E_ABORT` from `NConsoleClose::g_BreakCounter` (`sbb`, `not`, `and`). Stops: the `ret` (233), the call of
+    # `__stack_chk_fail` (663); the landing pads after it (668..) are left out.
+    "exr": dict(grp="Exr", cn="CExtractCallbackConsole::ExtractResult", a=0x5e82c0, n=668, pos=True, fs=True,
+                stops=(233, 663), hand=(110, 265, 482, 616), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CExtractCallbackConsole::ExtractResult` (`ExtractCallbackConsole.cpp`; `objdump -d`)"),
 }
 
 
