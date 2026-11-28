@@ -1505,6 +1505,41 @@ FNS = {
     # `p` NULL (0x58); else the copy loop at 0x30 (`p[i] = (Byte)s[i]` for `i <= len`), the `ret` at 0x46.
     "aba": dict(grp="Aba", cn="AllocBstrFromAscii", a=0x456e50, n=99, pos=True, stops=(0x46, 0x58, 0x62), calls=True,
                 tag="PLAN.md §M, M1", src="7-Zip 26.06's `NCOM::AllocBstrFromAscii` (`PropVariant.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/7zip/Common/FileStreams.cpp `CInFileStream::Seek (offset, seekOrigin, newPosition)`: the origin
+    # checked (0x0b), `File.seek` (the `call` at 0x17), on -1 `GetLastError_noZero_HRESULT` (0x38) and `File.GetPosition`
+    # (0x5a), the result stored. Stop: the `ret` (0x34); the bytes from 0x78 on are the landing pads.
+    "isk": dict(grp="Isk", cn="CInFileStream::Seek", a=0x5a3770, n=120, pos=True, stops=(0x34,), calls=True,
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `CInFileStream::Seek` (`FileStreams.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/7zip/Common/FileStreams.cpp `CInFileStream::Read (data, size, processedSize)`: `File.read_part`
+    # (the `call`s at 0x21 and 0x40, with and without `processedSize`), on -1 `GetLastError_noZero_HRESULT` (0x50) and
+    # `if (Callback) Callback->InFileStream_On_Error (CallbackRef, errorCode)` (`call qword [rax]` at 0x71). Stops: the
+    # `ret`s (0x36, 0x79); the bytes from 0xa0 on are the landing pads.
+    "ird": dict(grp="Ird", cn="CInFileStream::Read", a=0x5a35a0, n=160, pos=True, stops=(0x36, 0x79), calls=True,
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `CInFileStream::Read` (`FileStreams.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 `CDummyOutStream::Write (data, size, processedSize)` (`CPP/7zip/UI/Common/Extract.cpp`, the
+    # dummy stream of `7z t`): a frame of 24 bytes under `push rbp; push rbx` with the stack guard at `rsp + 8` and
+    # `realProcessed` (= `size`) at `rsp + 4`; when `_stream` (`[rdi + 0x10]`) is not NULL, `_stream->Write (data,
+    # size, &realProcessed)` (the `call [rax + 0x18]` at 0x35); `_size += realProcessed` (by hand: `add [rbx + 0x18],
+    # rcx`, 0x3e); `*processedSize = realProcessed` unless NULL (0x47); the guard's check. Stops: the `ret` (0x60),
+    # the call of `__stack_chk_fail` (0x61).
+    "dow": dict(grp="Dow", cn="CDummyOutStream::Write", a=0x4e2470, n=102, pos=True, fs=True, stops=(0x60, 0x61),
+                hand=(0x3e,), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CDummyOutStream::Write` (`CPP/7zip/UI/Common/Extract.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/7zip/Common/StreamUtils.cpp `WriteStream (stream, data, size)`: a frame of 16 bytes under five
+    # pushes with the stack guard at `rsp + 8` and `processedSize` at `rsp + 4`; the loop (head 0x49) of
+    # `stream->Write (data, min (size, 0x80000000), &processedSize)` (the `call [rax + 0x18]` at 0x5f), `data +=`,
+    # `size -=` the processed size; a result not 0 is returned, a processed size 0 gives `E_FAIL` (0x98), size 0
+    # gives 0 (0x90). Stops: the `ret` (0x8c), the call of `__stack_chk_fail` (0x9f).
+    "wst": dict(grp="Wst", cn="WriteStream", a=0x463420, n=164, pos=True, fs=True, stops=(0x8c, 0x9f), calls=True,
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `WriteStream` (`CPP/7zip/Common/StreamUtils.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/7zip/Common/StreamUtils.cpp `ReadStream (stream, data, processedSize)`: `size = *processedSize;
+    # *processedSize = 0;` then the loop (head 0x59) of `stream->Read (data, min (size, 0x80000000), &processed)`
+    # (the `call [rax + 0x18]` at 0x6f), `*processedSize += processed` (by hand: `add [r14], rdx`, 0x76), `data +=`,
+    # `size -=`; a result not 0 is returned, a processed size 0 or size 0 give 0 (0x83, 0xa8). Stops: the `ret`
+    # (0xa1), the call of `__stack_chk_fail` (0xac).
+    "rst": dict(grp="Rst", cn="ReadStream", a=0x4632b0, n=177, pos=True, fs=True, stops=(0xa1, 0xac), hand=(0x76,),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `ReadStream` (`CPP/7zip/Common/StreamUtils.cpp`; `objdump -d`)"),
     # 7-Zip 26.06 CPP/Windows/FileDir.cpp `GetFullPathAndSplit (path, resDirPrefix, resFileName)`: `res =
     # GetFullPath (path, resDirPrefix)` (the `call` at 0x15), when false `resDirPrefix = path` (0x66, then back to
     # 0x21); `i = resDirPrefix.ReverseFind_PathSepar ()` (0x24), `resFileName = resDirPrefix.Ptr (i + 1)` (0x36),
