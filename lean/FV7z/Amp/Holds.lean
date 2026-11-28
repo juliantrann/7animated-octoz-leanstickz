@@ -158,7 +158,8 @@ theorem vc_56 {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post} (hl : ∀ i
 /-! ## The function, piece by piece -/
 
 variable {prof : Profile} {L : List (Addr × List Byte)} {s₀ : State} {o : Oracle}
-  {gev : List Event} {gP : State → Nat → List Event → Prop} {gE : Outcome → List Event → Prop} {X : State} {t : Nat}
+  {gev : List Event} {gP : State → Nat → List Event → Prop} {gE : Outcome → List Event → Prop}
+  {X : State} {t : Nat}
   {V : Addr → Byte}
 
 /-- From the entry to the first instruction of `UString::Add_LF` (`s` in `rdi`): the three saved registers and
@@ -194,7 +195,8 @@ theorem amp_b {code₂ : List Byte} (c : Seg prof F Wl L s₀ o) (hin : CodeIn L
     (hin₂ : CodeIn L pca_at code₂) (h₂ : 0 < code₂.length) (hK : KeptW Wl s₀ X)
     (hA : Agree F X.proc.mm.mem V) (hrip : X.cpu.rip = amp_at.add 19)
     (hst : ∀ i < 8, Foot Wl (Addr.add (X.cpu.gpr.rsp - 8) i))
-    (k : ∀ Y t', KeptW Wl s₀ Y → Agree F Y.proc.mm.mem (Vst V (X.cpu.gpr.rsp - 8) (toBytesLE (amp_at.add 30) 8)) →
+    (k : ∀ Y t', KeptW Wl s₀ Y →
+      Agree F Y.proc.mm.mem (Vst V (X.cpu.gpr.rsp - 8) (toBytesLE (amp_at.add 30) 8)) →
       Y.cpu.rip = pca_at → Y.cpu.gpr = (ampB X.cpu.gpr).set 4 (X.cpu.gpr.rsp - 8) → GoG prof L o gev gP gE Y t') :
     GoG prof L o gev gP gE X t := by
   refine (c_19 prof).run c hin (fun j' g' _ V' => j' = 25 ∧ g' = ampB X.cpu.gpr ∧ V' = V) hK hA hrip
@@ -213,7 +215,8 @@ theorem amp_c {code₂ : List Byte} (c : Seg prof F Wl L s₀ o) (hin : CodeIn L
     (hin₂ : CodeIn L pca_at code₂) (h₂ : 0 < code₂.length) (hK : KeptW Wl s₀ X)
     (hA : Agree F X.proc.mm.mem V) (hrip : X.cpu.rip = amp_at.add 30)
     (hst : ∀ i < 8, Foot Wl (Addr.add (X.cpu.gpr.rsp - 8) i))
-    (k : ∀ Y t', KeptW Wl s₀ Y → Agree F Y.proc.mm.mem (Vst V (X.cpu.gpr.rsp - 8) (toBytesLE (amp_at.add 45) 8)) →
+    (k : ∀ Y t', KeptW Wl s₀ Y →
+      Agree F Y.proc.mm.mem (Vst V (X.cpu.gpr.rsp - 8) (toBytesLE (amp_at.add 45) 8)) →
       Y.cpu.rip = pca_at → Y.cpu.gpr = (ampC X.cpu.gpr).set 4 (X.cpu.gpr.rsp - 8) → GoG prof L o gev gP gE Y t') :
     GoG prof L o gev gP gE X t := by
   refine (c_30 prof).run c hin (fun j' g' _ V' => j' = 40 ∧ g' = ampC X.cpu.gpr ∧ V' = V) hK hA hrip
@@ -232,7 +235,8 @@ theorem amp_d {code₂ : List Byte} (c : Seg prof F Wl L s₀ o) (hin : CodeIn L
     (hin₂ : CodeIn L pcw_at code₂) (h₂ : 0 < code₂.length) (hK : KeptW Wl s₀ X)
     (hA : Agree F X.proc.mm.mem V) (hrip : X.cpu.rip = amp_at.add 45)
     (hst : ∀ i < 8, Foot Wl (Addr.add (X.cpu.gpr.rsp - 8) i))
-    (k : ∀ Y t', KeptW Wl s₀ Y → Agree F Y.proc.mm.mem (Vst V (X.cpu.gpr.rsp - 8) (toBytesLE (amp_at.add 56) 8)) →
+    (k : ∀ Y t', KeptW Wl s₀ Y →
+      Agree F Y.proc.mm.mem (Vst V (X.cpu.gpr.rsp - 8) (toBytesLE (amp_at.add 56) 8)) →
       Y.cpu.rip = pcw_at → Y.cpu.gpr = (ampD X.cpu.gpr).set 4 (X.cpu.gpr.rsp - 8) → GoG prof L o gev gP gE Y t') :
     GoG prof L o gev gP gE X t := by
   refine (c_45 prof).run c hin (fun j' g' _ V' => j' = 51 ∧ g' = ampD X.cpu.gpr ∧ V' = V) hK hA hrip
