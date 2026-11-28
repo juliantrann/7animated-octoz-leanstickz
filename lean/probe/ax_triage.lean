@@ -1,13 +1,13 @@
-import FV7z.Aui.Blocks
-import FV7z.Aui.Cuts
-import FV7z.Aui.Holds
+import FV7z.Fob.Blocks
+import FV7z.Fob.Cuts
+import FV7z.Fob.Holds
 open FV7z
-#print axioms FV7z.Aui.call_20
-#print axioms FV7z.Aui.tgt_20
-#print axioms FV7z.Aui.call_33
-#print axioms FV7z.Aui.tgt_33
-#print axioms FV7z.Aui.ret_50
-#print axioms FV7z.Aui.vc_0
-#print axioms FV7z.Aui.vc_25
-#print axioms FV7z.Aui.vc_38
-#print axioms FV7z.Aui.aui_ok
+#print axioms FV7z.Fob.call_26
+#print axioms FV7z.Fob.tgt_26
+#print axioms FV7z.Fob.call_42
+#print axioms FV7z.Fob.tgt_42
+#print axioms FV7z.Fob.ret_65
+#print axioms FV7z.Fob.vc_0
+#print axioms FV7z.Fob.vc_31
+#print axioms FV7z.Fob.vc_47
+#print axioms FV7z.Fob.fob_ok
