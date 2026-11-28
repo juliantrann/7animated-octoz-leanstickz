@@ -70,7 +70,7 @@ theorem ta8 (a : BitVec 64) (h : a.toNat + 16 ≤ 2 ^ 64) : (a + 8#64).toNat = a
 theorem ta12 (a : BitVec 64) (h : a.toNat + 16 ≤ 2 ^ 64) : (a + 12#64).toNat = a.toNat + 12 := by bv_omega
 
 /-- `_len` = `n`, as 4 bytes. -/
-theorem sw32 {n : Nat} (hn : n < 2 ^ 32) : BitVec.setWidth 32 (BitVec.ofNat 64 n) = BitVec.ofNat 32 n := by
+theorem sw32 {n : Nat} (_hn : n < 2 ^ 32) : BitVec.setWidth 32 (BitVec.ofNat 64 n) = BitVec.ofNat 32 n := by
   apply BitVec.eq_of_toNat_eq
   simp <;> omega
 
@@ -253,7 +253,7 @@ theorem pb (g : Gprs) (f : Rflags) (V : Addr → Byte) (l0 : ∀ i < 8, Foot F.d
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at l0 l1 l2 l3 l4 l5 ⊢
   wpx [o8b]
-  all_goals repeat' (first | exact rfl | assumption | exact trivial | apply And.intro | intro _)
+  all_goals repeat' (first | with_reducible rfl | with_reducible assumption | exact trivial | apply And.intro | intro _)
 
 /-- From 101 to the `ret` at 130, the bytes after the stores `Mo`. -/
 theorem vc_101 {g : Gprs} {f : Rflags} {V Mo : Addr → Byte}
