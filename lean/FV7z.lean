@@ -1924,3 +1924,9 @@ import FV7z.Iap.Blocks1
 import FV7z.Iap.Blocks
 import FV7z.Iap.Cuts
 import FV7z.Iap.Holds
+import FV7z.Ids.Code
+import FV7z.Ids.Pats
+import FV7z.Ids.Blocks1
+import FV7z.Ids.Blocks
+import FV7z.Ids.Cuts
+import FV7z.Ids.Holds

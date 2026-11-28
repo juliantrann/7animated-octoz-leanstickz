@@ -940,7 +940,7 @@ FNS = {
                 src="7-Zip's `GetLastError_noZero_HRESULT ()` (`CPP/Windows/FileIO.cpp`; `objdump -d`)"),
     # `NDir::DeleteFileAlways`: `remove (path) == 0` (`call` at 8, a hypothesis);
     # `CTempFile::Remove`: if `_mustBeDeleted`, `_mustBeDeleted = !that (_path)`; `NName::IsAbsolutePath`:
-    # `s[0] == '/'`.
+    # `s[0] == '/'`; `CDirEntry::IsDots`: a directory named `.` or `..`.
     "rmf": dict(grp="Rmf", cn="NWindows::NFile::NDir::DeleteFileAlways(char const*)", a=0x455010, n=23, pos=True,
                 stops=(0x16,), calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip's `NDir::DeleteFileAlways` (`CPP/Windows/FileDir.cpp`; `objdump -d`)"),
@@ -950,6 +950,9 @@ FNS = {
     "iap": dict(grp="Iap", cn="NWindows::NFile::NName::IsAbsolutePath(wchar_t const*)", a=0x456a50, n=11, pos=True,
                 stops=(0xa,), calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip's `NName::IsAbsolutePath` (`CPP/Windows/FileName.cpp`; `objdump -d`)"),
+    "ids": dict(grp="Ids", cn="NWindows::NFile::NFind::CDirEntry::IsDots() const", a=0x455df0, n=59, pos=True,
+                stops=(0x17, 0x3a), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip's `CDirEntry::IsDots` (`CPP/Windows/FileFind.h`; `objdump -d`)"),
     # glibc 2.31's `remove`: only its code is used (`Rmf` takes it as a hypothesis).
     "rmv": dict(grp="Rmv", cn="remove", a=0x624030, n=63, pos=True, fs=True, stops=(0x31, 0x3e), calls=True,
                 tag="PLAN.md §M, M1", src="glibc 2.31's `remove` (`stdio-common/remove.c`; `objdump -d`)"),
