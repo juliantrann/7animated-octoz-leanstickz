@@ -1713,6 +1713,16 @@ FNS = {
     "spp": dict(grp="Spp", cn="SplitPathToParts", a=0x452500, n=709, pos=True, fs=True, stops=(0xa9, 0x2c0),
                 calls=True, hand=(0x110, 0x1ca), tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `SplitPathToParts` (`CPP/Common/Wildcard.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/7zip/UI/Common/EnumDirItems.cpp `CDirItems::ReserveDown ()`: `CRecordVector::ReserveDown` in
+    # line for `Prefixes` (`this`, 8-byte items), `PhyParents` (`+ 0x10`, 4-byte), `LogParents` (`+ 0x20`, 4-byte)
+    # and `Items` (`+ 0x30`, 8-byte), each `_items`, `_size` at `+ 8`, `_capacity` at `+ 0xc`: when `_size` is not
+    # `_capacity`, a `_size` not 0 gives `operator new []` (0xdc, 0xa4, 0x14c, 0x114), `memcpy` of the items (0xf4,
+    # 0xbd, 0x165, 0x12d) and `delete []` of the old array (0xfc, 0xc5, 0x16d, 0x135); a `_size` of 0 `delete []` of the
+    # old array when not null (by the stubs at 0x190, 0x1a0, 0x1b0, 0x180); then `_items` and `_capacity` = `_size`
+    # stored. Stop: the `ret` (0x99).
+    "rsv": dict(grp="Rsv", cn="CDirItems::ReserveDown", a=0x5c03e0, n=439, pos=True, stops=(0x99,), calls=True,
+                tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CDirItems::ReserveDown` (`CPP/7zip/UI/Common/EnumDirItems.cpp`; `objdump -d`)"),
 }
 
 
