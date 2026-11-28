@@ -1884,6 +1884,11 @@ FNS = {
                 pos=True, fs=True, stops=(134, 135), calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `CStdOutStream::NormalizePrint_UString_Path (const UString &)` (`StdOutStream.cpp`; "
                     "`objdump -d`)"),
+    # glibc 2.31 elf/dl-lookup.c `_dl_setup_hash (map)`: the GNU hash table's fields (or the SysV one's) into `map`.
+    # Stops: the two `ret`s (0x61, 0x93), the `__assert_fail` path (0x94) not covered.
+    "dsh": dict(grp="Dsh", cn="_dl_setup_hash", a=0x6ab020, n=180, pos=True, stops=(0x61, 0x93, 0x94), calls=True,
+                tag="PLAN.md G3, startup",
+                src="glibc 2.31's `_dl_setup_hash` (`elf/dl-lookup.c`; `objdump -d`)"),
     # 7-Zip 26.06 Common/StdOutStream.cpp, without the landing pad (from 0x58). Stops: the `ret` (0x52), the call of
     # `__stack_chk_fail` (0x53).
     "olg": dict(grp="Olg", cn="CStdOutStream::operator<< (Int64)", a=0x5a1a70, n=88, pos=True, fs=True,
