@@ -1601,6 +1601,12 @@ import FV7z.Oun.Cuts
 import FV7z.Oun.Defs
 import FV7z.Oun.Pieces
 import FV7z.Oun.Holds
+import FV7z.Lemmas.CmpMr8
+import FV7z.Ecq.Code
+import FV7z.Ecq.Pats
+import FV7z.Ecq.Blocks1
+import FV7z.Ecq.Blocks
+import FV7z.Ecq.Cuts
 import FV7z.Cpr.Code
 import FV7z.Cpr.Pats
 import FV7z.Cpr.Blocks1
