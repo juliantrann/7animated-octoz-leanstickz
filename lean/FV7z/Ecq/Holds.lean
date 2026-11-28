@@ -19,8 +19,8 @@ byte [rax + rcx]; cmp byte [rsi + rax], r8b`, `OpI.cmpmr8`). On a match `*ppv` =
 - `vc_88`: the counter of the second loop and its next compare; `vc_109`: to the third loop.
 - `vc_128`, `vc_192`, `vc_240`: one step of the third, fourth and fifth loop with its exits.
 
-Not yet here (not imported by `FV7z.lean`): the five loops by induction on `16 - rax` (as `Apc.slen`), the two
-`AddRef`s by `Seg.s_add_mi32` and the three `ret`s, and `ecq_ok`.
+The loops by induction are in `Loop1`, `Loop2`, `Loop3`, `Loop45`; the `AddRef`s and `ret`s in `Tail`; `ecq_ok`
+in `Ok`.
 -/
 open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn
 namespace FV7z.Ecq

@@ -91,10 +91,11 @@ jobs:
             build/7zzs.featneed.tsv
             build/7zzs.dispatch.txt
             build/ci-logs
-  seed:
-    # After a green run: this build as release `seed`, which a branch without a cache starts from (actions/prep).
-    needs: [j0, checks]
-    if: ${{ success() }}
+  pack:
+    # This build as release assets next.tar.zst.NN (labelled with the commit), packed while the checks run and j0's
+    # cache is fresh: the 10 GB of caches for all lanes are evicted oldest first, so it can be gone by the time the
+    # checks end (seed of ccad2e2 found no cache). Job seed renames them to seed.tar.zst.NN after a green run.
+    needs: j0
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     permissions:
@@ -104,26 +105,54 @@ jobs:
       - uses: ./.github/actions/prep
         with:
           key: ${{ needs.j0.outputs.key }}
-      - name: pack and publish
+      - name: pack and upload
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          # the cache j0 saved can be evicted before this job (10 GB for all lanes): then keep the old seed
-          [ -d ~/.elan/toolchains ] || { echo "seed: cache gone, release kept" >> "$GITHUB_STEP_SUMMARY"; exit 0; }
+          gh release view seed >/dev/null 2>&1 ||
+            gh release create seed --target "$GITHUB_SHA" --title seed --notes 'build cache' --latest=false
+          for a in $(gh release view seed --json assets -q '.assets[].name|select(startswith("next."))'); do
+            gh release delete-asset seed "$a" -y
+          done
+          [ -d ~/.elan/toolchains ] || { echo "pack: cache gone, no new seed" >> "$GITHUB_STEP_SUMMARY"; exit 0; }
           mv ~/.elan/toolchains .elan-toolchains
           d=$RUNNER_TEMP/seed
           mkdir -p "$d"
           # the paths of the cache (actions/prep), those that exist
           tar -c $(ls -d .elan-toolchains refs upstream release/26.06 lean/.lake build/rebuild 2>/dev/null) |
             zstd -T0 -3 |
-            split -b 1900M -d -a 2 - "$d/seed.tar.zst."
+            split -b 1900M -d -a 2 - "$d/next.tar.zst."
           ls -l "$d"
-          gh release view seed >/dev/null 2>&1 ||
-            gh release create seed --target "$GITHUB_SHA" --title seed --notes 'build cache' --latest=false
-          for a in $(gh release view seed --json assets -q '.assets[].name'); do
-            gh release delete-asset seed "$a" -y
+          for f in "$d"/next.tar.zst.*; do gh release upload seed "$f#$GITHUB_SHA"; done
+          echo "pack: $(du -sh "$d" | cut -f1) from $GITHUB_SHA" >> "$GITHUB_STEP_SUMMARY"
+  seed:
+    # After a green run: the assets job pack uploaded become release `seed`, which a branch without a cache starts
+    # from (actions/prep). Needs no cache itself.
+    needs: [pack, checks]
+    if: ${{ success() }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - name: publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          a=$(gh api "repos/$GH_REPO/releases/tags/seed" --jq '.assets')
+          n=$(jq -r --arg s "$GITHUB_SHA" '[.[]|select((.name|startswith("next.")) and .label==$s)]|length' <<<"$a")
+          if [ "$n" -eq 0 ]; then
+            echo "seed: no packed build of $GITHUB_SHA, release kept" >> "$GITHUB_STEP_SUMMARY"; exit 0
+          fi
+          for id in $(jq -r '.[]|select(.name|startswith("seed."))|.id' <<<"$a"); do
+            gh api -X DELETE "repos/$GH_REPO/releases/assets/$id"
           done
-          gh release upload seed "$d"/seed.tar.zst.*
+          sel='.[]|select((.name|startswith("next.")) and .label==$s)'
+          jq -r --arg s "$GITHUB_SHA" "$sel"'|"\(.id) \(.name)"' <<<"$a" |
+            while read -r id name; do
+              gh api -X PATCH "repos/$GH_REPO/releases/assets/$id" -f name="seed.${name#next.}" -f label= >/dev/null
+            done
           # the tag stays where it was created; the notes say which build the assets are
           gh release edit seed --notes "build cache from $GITHUB_SHA (run $GITHUB_RUN_ID, $(date -u +%FT%TZ))"
-          echo "seed: $(du -sh "$d" | cut -f1) from $GITHUB_SHA" >> "$GITHUB_STEP_SUMMARY"
+          echo "seed: $n part(s) from $GITHUB_SHA" >> "$GITHUB_STEP_SUMMARY"

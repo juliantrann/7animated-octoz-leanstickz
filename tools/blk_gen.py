@@ -851,6 +851,14 @@ FNS = {
     # (`Z7_COM_QI_*`): `*ppv = NULL`, then five 16-byte loops comparing `iid` with the IIDs at 0x6eb970, 0x6eb590,
     # 0x6eb580, 0x6eb780, 0x6eb790; on a match `*ppv` = `this` + 0/0/16/24/32, `AddRef` inline (`add dword
     # [rdi + 0x138], 1` by hand: 48, 158), `S_OK`; else `E_NOINTERFACE`. Stops: the `ret`s (57, 165, 278).
+    # 7-Zip 26.06 CPP/7zip/UI/Common/ArchiveExtractCallback.h `CArchiveExtractCallback::QueryInterface`
+    # (`Z7_COM_QI_*`): `*ppv = NULL`, then seven 16-byte loops comparing `iid` with the IIDs at 0x6eb970, 0x6eb890,
+    # 0x6eb780, 0x6eb760, 0x6eb7f0, 0x6eb7e0, 0x6eb790; on a match `*ppv` = `this` + 8/8/16/24/32/40/48, `AddRef`
+    # inline (`add dword [rdi + 0x38], 1` by hand: 52, 158), `S_OK`; else `E_NOINTERFACE`. Stops: the `ret`s.
+    "aeq": dict(grp="Aeq", cn="CArchiveExtractCallback::QueryInterface", a=0x5b16d0, n=367, pos=True,
+                stops=(58, 162, 366), calls=True, hand=(52, 158), tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CArchiveExtractCallback::QueryInterface` "
+                    "(`CPP/7zip/UI/Common/ArchiveExtractCallback.h`; `objdump -d`)"),
     "ecq": dict(grp="Ecq", cn="CExtractCallbackConsole::QueryInterface", a=0x5e9f00, n=279, pos=True,
                 stops=(57, 165, 278), calls=True, hand=(48, 158), tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `CExtractCallbackConsole::QueryInterface` "
@@ -1154,6 +1162,16 @@ FNS = {
     "psp": dict(grp="Psp", cn="PrintSpaces", a=0x5ebdd0, n=60, pos=True, stops=(0x2c, 0x2d), calls=True,
                 tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `PrintSpaces` (`CPP/7zip/UI/Console/List.cpp`, `.part.0`; `objdump -d`)"),
+    # `PrintString (adj, width, s)`: `strlen (s)` (the PLT `call` at 0x18), `PrintSpaces` before (the `call` at 0x85;
+    # `kRight`, or half for `kCenter`), `fputs (s, *g_StdOut)` (the `call` at 0x3f), `PrintSpaces` after (the tail jump
+    # at 0x6d). Stops: the `ret` (0x57), the tail jump (0x6d), the landing pad (0x9c).
+    "pst": dict(grp="Pst", cn="PrintString", a=0x5ebf50, n=171, pos=True, stops=(0x57, 0x6d, 0x9c), calls=True,
+                tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `PrintString` (`CPP/7zip/UI/Console/List.cpp`; `objdump -d`)"),
+    "ppd": dict(grp="Ppd", cn="CPercentPrinter::~CPercentPrinter", a=0x5f68a0, n=162, pos=True, stops=(0x95, 0xa1),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CPercentPrinter::~CPercentPrinter` (`CPP/7zip/UI/Console/PercentPrinter.h`; "
+                    "`objdump -d`)"),
     # `CFileBase::OpenBinary (name, flags, mode)`: `Close ()` (the `call` at 0x1a), `open64 (name, flags, mode)` (the
     # `call` at 0x2a), the result stored as `_handle`, `al` = it is not -1. Stop: the `ret` (0x41).
     "fob": dict(grp="Fob", cn="NWindows::NFile::NIO::CFileBase::OpenBinary", a=0x456060, n=66, pos=True, stops=(0x41,),
@@ -2288,6 +2306,13 @@ FNS = {
     "ifw": dict(grp="Ifw", cn="_IO_new_file_write", a=0x6287d0, n=156, pos=True, stops=(0x25, 0x8b, 0x8c),
                 calls=True, hand=(0x60,), tag="PLAN.md §M, M1",
                 src="glibc's `_IO_new_file_write` (`libio/fileops.c`, static in 7zzs 26.06; `objdump -d`)"),
+    # glibc's `__gettimeofday (tv, tz)` (static in 7zzs): `tz` not null (0x14): `*(char *) tz = 0` (0x80) and back
+    # (0x83); the vDSO's pointer at 0x791cd0 (0x16): null to the `syscall` 96 (0x6b), else `call rax` (0x28); a
+    # result in `-4095 .. -1` (0x34) other than `-ENOSYS` (0x3a, to the `syscall`) or from the `syscall` (0x76):
+    # `errno` = minus it (`fs:[-0x48]`, 0x45) and -1. Stops: the `ret`s (0x58, 0x7f), the padding (0x59).
+    "gtd": dict(grp="Gtd", cn="__gettimeofday", a=0x660360, n=133, pos=True, fs=True, stops=(0x58, 0x59, 0x7f),
+                calls=True, tag="PLAN.md §M, M1",
+                src="glibc's `__gettimeofday` (`gettimeofday.c`, static in 7zzs 26.06; `objdump -d`)"),
 }
 
 def file_bytes(path, va, n):
