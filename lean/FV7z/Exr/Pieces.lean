@@ -185,7 +185,6 @@ theorem vc_167 {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post
     (fg : ∀ i < 4, Foot F.data (Addr.add 7991432#64 i)) (h : ∀ g', Fr g g' → ∀ fl, Q 190 g' fl V) :
     W_167 fb F Wl Q g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
-  dsimp only at h ⊢
   wpx [W_167, o9, Op.cmpmi, Op.not32]
   all_goals repeat' (first
     | refine h _ ?_ _
@@ -197,7 +196,6 @@ theorem vc_190 {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post
     (h : ∀ g', Fr g g' → ∀ fl, Q 197 g' fl V) :
     W_190 fb F Wl Q g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
-  dsimp only at h ⊢
   wpx [W_190, o10]
   all_goals repeat' (first
     | refine h _ ?_ _
@@ -371,7 +369,6 @@ theorem vc_532 {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post
     (h : ∀ g', Fr g g' → ∀ fl, Q 535 g' fl V) :
     W_532 fb F Wl Q g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
-  dsimp only at h ⊢
   wpx [W_532, o17]
   all_goals repeat' (first
     | refine h _ ?_ _
@@ -400,7 +397,6 @@ theorem vc_600 {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post
     (h : ∀ g', Fr g g' → ∀ fl, Q 603 g' fl V) :
     W_600 fb F Wl Q g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
-  dsimp only at h ⊢
   wpx [W_600, o32]
   all_goals repeat' (first
     | refine h _ ?_ _
