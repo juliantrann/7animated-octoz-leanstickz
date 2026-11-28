@@ -49,8 +49,14 @@ theorem vc_0z {b : BitVec 64} (hb : rdq(Vp V g, g.rdi) = b) (hb0 : b = 0)
   have e : (b == 0) = true := beq_iff_eq.2 hb0
   wpx [W_0, W_27, o0, o1, Op.shl64, Rs, hb, e, BitVec.and_self, Bool.false_eq_true, Bool.true_eq_false,
     false_implies, eq_self_iff_true, true_implies, implies_true]
-  all_goals repeat' (first | exact rfl | assumption | exact trivial | (intro h; exact absurd h (by decide))
-    | apply And.intro | intro _)
+  all_goals repeat' (first
+    | with_reducible rfl
+    | with_reducible assumption
+    | exact rfl
+    | exact trivial
+    | (intro h; exact absurd h (by decide))
+    | apply And.intro
+    | intro _)
 
 /-- From the entry with `_switches` = `b` not 0 and `rbx` = `b + sz24 c` = `b`: to 157. -/
 theorem vc_0e {b c : BitVec 64} (hb : rdq(Vp V g, g.rdi) = b) (hb0 : b ≠ 0)
@@ -68,8 +74,15 @@ theorem vc_0e {b c : BitVec 64} (hb : rdq(Vp V g, g.rdi) = b) (hb0 : b ≠ 0)
   have e2 : decide (b = b + sz24 c) = true := decide_eq_true hs
   wpx [W_0, W_27, o0, o1, Op.shl64, Rs, hb, hc, e, e2, BitVec.and_self, Bool.false_eq_true, Bool.true_eq_false,
     false_implies, eq_self_iff_true, true_implies, implies_true, decide_eq_true_eq, decide_eq_false_iff_not]
-  all_goals repeat' (first | exact rfl | assumption | exact trivial | (intro h; exact absurd hs h)
-    | (intro h; exact absurd h (by decide)) | apply And.intro | intro _)
+  all_goals repeat' (first
+    | with_reducible rfl
+    | with_reducible assumption
+    | exact rfl
+    | exact trivial
+    | (intro h; exact absurd hs h)
+    | (intro h; exact absurd h (by decide))
+    | apply And.intro
+    | intro _)
 
 /-- From the entry with `_switches` = `b` not 0 and `rbx` = `b + sz24 c` not `b`: to 48. -/
 theorem vc_0l {b c : BitVec 64} (hb : rdq(Vp V g, g.rdi) = b) (hb0 : b ≠ 0)
@@ -87,8 +100,15 @@ theorem vc_0l {b c : BitVec 64} (hb : rdq(Vp V g, g.rdi) = b) (hb0 : b ≠ 0)
   have e2 : decide (b = b + sz24 c) = false := decide_eq_false hs
   wpx [W_0, W_27, o0, o1, Op.shl64, Rs, hb, hc, e, e2, BitVec.and_self, Bool.false_eq_true, Bool.true_eq_false,
     false_implies, eq_self_iff_true, true_implies, implies_true, decide_eq_true_eq, decide_eq_false_iff_not]
-  all_goals repeat' (first | exact rfl | assumption | exact trivial | (intro h; exact absurd h hs)
-    | (intro h; exact absurd h (by decide)) | apply And.intro | intro _)
+  all_goals repeat' (first
+    | with_reducible rfl
+    | with_reducible assumption
+    | exact rfl
+    | exact trivial
+    | (intro h; exact absurd h hs)
+    | (intro h; exact absurd h (by decide))
+    | apply And.intro
+    | intro _)
 
 end
 
@@ -98,6 +118,7 @@ variable {prof : Profile} {L : List (Addr × List Byte)} {s₀ : State} {o : Ora
   {gev : List Event} {gP : State → Nat → List Event → Prop} {gE : Outcome → List Event → Prop}
   {X : State} {t : Nat} {V : Addr → Byte}
 
+set_option maxHeartbeats 1000000 in
 /-- `~CParser (this)` (`rdi`) from its entry, `b` = `_switches` (the 8 bytes at `this` after the pushes). When `b` is
 0, `B0` (`h00`); else `N` its count (`hc`, `24 N` below `2 ^ 64`) and `O N` (`hO`), the items as in `from48` and
 `operator delete [] (b - 8, …)` giving `B0` (`hDA`). From `B0` on as in `from170`: the run reaches the return address

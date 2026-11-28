@@ -49,6 +49,7 @@ theorem from157 {g₀ : Gprs} {ra b : Addr} {P B0 : (Addr → Byte) → Prop}
   · exact b4.trans ((congrArg Gprs.r12 hg₂).trans h12U)
   · exact b7.trans ((congrArg Gprs.r15 hg₂).trans h15U)
 
+set_option maxHeartbeats 1000000 in
 /-- From 48 for each item `i` below `N` (`g₀` the registers at the entry, `this` = `g₀.rdi`, `b` the 8 bytes at
 `this` whenever `O` holds): the size `nI i` (`hn`) and `_items` = `itI i` (`hIt`) of the item; the steps as in
 `FV7z/Cpd/Tail.lean` (`hP0`, `hQ0`, `hD1`, `hD2`) from `H i (nI i)` (`hOH`) to `H i 0`; `_items` freed when not 0

@@ -69,6 +69,15 @@ local macro "ocl" : tactic => `(tactic| (all_goals repeat'
     | apply And.intro
     | intro _))
 
+/-- The closer at reducible transparency (`rfl`, `assumption` at the default one unfold `Foot` and the addresses). -/
+local macro "ocr" : tactic => `(tactic| (all_goals repeat'
+    first
+    | with_reducible rfl
+    | with_reducible assumption
+    | exact trivial
+    | apply And.intro
+    | intro _))
+
 variable {F : Footprint} {Wl : List Rgn}
 
 /-! ## The pieces -/
@@ -204,7 +213,7 @@ theorem vc_139e {b : BitVec 64} (hb : rdq(V, g.r12) = b) (heq : b = g.rbx)
   have e := decide_eq_true heq
   wpx [W_139, W_145, o10, o11, Op.cmpmr, Op.shl64, hb, e, Bool.not_true, Bool.not_false, Bool.false_eq_true,
     Bool.true_eq_false, false_implies, eq_self_iff_true, true_implies, implies_true]
-  ocl
+  ocr
 
 /-- 157: `rsi` += 8, `rdi` = `rbx - 8`; to the `call` at 165. -/
 theorem vc_157 :
