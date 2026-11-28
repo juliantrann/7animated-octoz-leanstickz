@@ -1441,6 +1441,14 @@ FNS = {
     "fkd": dict(grp="Fkd", cn="FindFile_KeepDots", a=0x5bff20, n=117, pos=True, stops=(0x68,), calls=True,
                 tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `FindFile_KeepDots` (`CPP/UI/Common/EnumDirItems.cpp`; `objdump -d`)"),
+    # 7-Zip's `Set_ModuleDirPrefix_From_ProgArg0 (s)` (`CPP/7zip/UI/Common/ArchiveCommandLine.cpp`): a frame of 32
+    # bytes under `push rbp` with the stack guard at `rsp + 24` and an `AString` at `rsp` (`rbp`): its constructor
+    # from `s` (call at 0x22), `ReverseFind_PathSepar ()` (0x2a), the string cut after the separator when that is
+    # shorter (0x32..0x43), `operator=` into the global prefix at 0x79ed90 (0x4e), `delete []` of the chars unless
+    # NULL (0x5c), the guard's check. Stops: the `ret` (0x76), the call of `__stack_chk_fail` (0x77).
+    "smd": dict(grp="Smd", cn="Set_ModuleDirPrefix_From_ProgArg0", a=0x5a9ed0, n=124, pos=True, fs=True,
+                stops=(0x76, 0x77), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `Set_ModuleDirPrefix_From_ProgArg0` (`ArchiveCommandLine.cpp`; `objdump -d`)"),
 }
 
 

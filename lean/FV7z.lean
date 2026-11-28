@@ -1218,6 +1218,12 @@ import FV7z.Fkd.Blocks1
 import FV7z.Fkd.Blocks
 import FV7z.Fkd.Cuts
 import FV7z.Fkd.Holds
+import FV7z.Smd.Code
+import FV7z.Smd.Pats
+import FV7z.Smd.Blocks1
+import FV7z.Smd.Blocks
+import FV7z.Smd.Cuts
+import FV7z.Smd.Holds
 import FV7z.Lemmas.Rmw8
 import FV7z.Sfn.Cuts
 import FV7z.Aac.Holds
