@@ -1,7 +1,5 @@
-import FV7z.Alf.Holds
+import FV7z.Osc.Holds
 open FV7z
-#print axioms FV7z.Alf.vc_0e
-#print axioms FV7z.Alf.vc_0n
-#print axioms FV7z.Alf.vc_16
-#print axioms FV7z.Alf.vc_53
-#print axioms FV7z.Alf.alf_ok
+#print axioms FV7z.Osc.vc_0
+#print axioms FV7z.Osc.vc_21
+#print axioms FV7z.Osc.osc_ok
