@@ -1084,6 +1084,12 @@ FNS = {
     # 0x20, `0x424290`), then bit 19 of `ecx` (`a[2]`, `rsp + 8`). Stops: the `ret` (0x43), `__stack_chk_fail` (0x44).
     "sse": dict(grp="Sse", cn="CPU_IsSupported_SSE41", a=0x424390, n=73, pos=True, fs=True, stops=(0x43, 0x44),
                 calls=True, tag="PLAN.md §M, M1", src="7-Zip's `CPU_IsSupported_SSE41` (`C/CpuArch.c`; `objdump -d`)"),
+    # `CPU_IsSupported_AVX2 ()`: the stack guard (`fs:0x28`), the OS test (the `call` at 0x18, `0x424440`); if it
+    # passes, `z7_x86_cpuid_GetMaxFunc ()` (the `call` at 0x40, `0x4242b0`) above 6, then `z7_x86_cpuid (a, 7)` (the
+    # `call` at 0x52, `0x424290`) and bit 5 of `ebx` (`a[1]`, `rsp + 4`); else 0 (0x21). Stops: the `ret` (0x37),
+    # `__stack_chk_fail` (0x63).
+    "av2": dict(grp="Av2", cn="CPU_IsSupported_AVX2", a=0x4244b0, n=104, pos=True, fs=True, stops=(0x37, 0x63),
+                calls=True, tag="PLAN.md §M, M1", src="7-Zip's `CPU_IsSupported_AVX2` (`C/CpuArch.c`; `objdump -d`)"),
     # `CFileBase::OpenBinary (name, flags, mode)`: `Close ()` (the `call` at 0x1a), `open64 (name, flags, mode)` (the
     # `call` at 0x2a), the result stored as `_handle`, `al` = it is not -1. Stop: the `ret` (0x41).
     "fob": dict(grp="Fob", cn="NWindows::NFile::NIO::CFileBase::OpenBinary", a=0x456060, n=66, pos=True, stops=(0x41,),
