@@ -1,7 +1,4 @@
 import FV7z.Cu8.Code
-import FV7z.Cu8.Pats
-import FV7z.Cu8.Blocks1
-import FV7z.Cu8.Blocks
 import FV7z.Cu8.Cuts
 import FV7z.Cu8.Holds
 open FV7z

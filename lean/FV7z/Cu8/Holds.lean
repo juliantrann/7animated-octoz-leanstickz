@@ -35,6 +35,7 @@ theorem vc_0 {g : Gprs} {f : Rflags} {V : Addr → Byte}
   wpx [W_0, o0]
   all_goals repeat' (first
     | exact ⟨rfl, ⟨_, _, rfl⟩, rfl⟩
+    | exact ⟨_, _, rfl⟩
     | with_reducible exact ff
     | exact ff
     | exact trivial
