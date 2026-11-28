@@ -1449,6 +1449,15 @@ FNS = {
     "smd": dict(grp="Smd", cn="Set_ModuleDirPrefix_From_ProgArg0", a=0x5a9ed0, n=124, pos=True, fs=True,
                 stops=(0x76, 0x77), calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `Set_ModuleDirPrefix_From_ProgArg0` (`ArchiveCommandLine.cpp`; `objdump -d`)"),
+    # 7-Zip's `CDirItems::GetPrefixesPath (parents, index, name)` (`CPP/7zip/UI/Common/EnumDirItems.cpp`), the result
+    # (`r14`) built in place: six pushes, `UString ()` on it (call at 0x21); the length `name.Len ()` plus the prefixes'
+    # lengths along the parents' chain from `index` (the loop at 0x40, `rsi` = `Prefixes._items`, `rcx` = the parents'
+    # items); `ReAlloc2 (len)` when the limit is below it (0xc0, call at 0xc5, back to 0x55); `_chars[len] = 0`, `_len =
+    # len`, `wmemcpy` of the name to the end (0x76); the chain again (the loop at 0x80), each prefix copied before the
+    # last (`wmemcpy` at 0x9c); the pops and the `ret` (0xbe). Stop: the `ret` (0xbe).
+    "gpp": dict(grp="Gpp", cn="CDirItems::GetPrefixesPath", a=0x5c0210, n=204, pos=True, stops=(0xbe,), calls=True,
+                tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CDirItems::GetPrefixesPath` (`EnumDirItems.cpp`; `objdump -d`)"),
 }
 
 
