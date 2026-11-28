@@ -12,6 +12,7 @@ open FV7z
 #print axioms FV7z.Ifw.vc_0
 #print axioms FV7z.Ifw.vc_45
 #print axioms FV7z.Ifw.vc_61
+#print axioms FV7z.Ifw.vc_101
 #print axioms FV7z.Ifw.vc_107
 #print axioms FV7z.Ifw.vc_129
 #print axioms FV7z.Sbp.sbp_ok
