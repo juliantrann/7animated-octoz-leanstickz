@@ -249,7 +249,7 @@ end
 
 variable {F : Footprint} {Wl : List Rgn}
 
-set_option maxHeartbeats 800000 in
+set_option maxHeartbeats 1600000 in
 /-- From the entry to 18 or a `ret`. -/
 theorem vc_0 {g : Gprs} {f : Rflags} {V : Addr → Byte} (hF : Ft F Wl V g) :
     W_0 F Wl (fun j' g' _ V' => P0 V g j' g' V') g f V := by
@@ -261,20 +261,20 @@ theorem vc_0 {g : Gprs} {f : Rflags} {V : Addr → Byte} (hF : Ft F Wl V g) :
     Bool.not_eq_false', and_imp]
   all_goals repeat'
     (first
-      | exact k48 ‹_›
-      | exact k14 ‹_› ‹_›
-      | exact k16 ‹_› ‹_›
-      | exact k60 ‹_› ‹_› ‹_› ‹_›
-      | exact k66 ‹_› ‹_› ‹_› ‹_›
-      | exact k68 ‹_› ‹_› ‹_› ‹_› ‹_›
+      | with_reducible exact k48 ‹_›
+      | with_reducible exact k14 ‹_› ‹_›
+      | with_reducible exact k16 ‹_› ‹_›
+      | with_reducible exact k60 ‹_› ‹_› ‹_› ‹_›
+      | with_reducible exact k66 ‹_› ‹_› ‹_› ‹_›
+      | with_reducible exact k68 ‹_› ‹_› ‹_› ‹_› ‹_›
       | exact rfl
       | exact trivial
       | assumption
-      | exact fs ‹_›
+      | with_reducible exact fs ‹_›
       | apply And.intro
       | intro _)
 
-set_option maxHeartbeats 800000 in
+set_option maxHeartbeats 1600000 in
 /-- From 18 to a `ret`. -/
 theorem vc_18 {g : Gprs} {f : Rflags} {V : Addr → Byte} (hF : Ft F Wl V g) (h0 : dty(V, g) ≠ 0#32)
     (h3 : dty(V, g) ≠ 3#32) (hd : g.rdx = dv(V, g)) :
@@ -287,9 +287,9 @@ theorem vc_18 {g : Gprs} {f : Rflags} {V : Addr → Byte} (hF : Ft F Wl V g) (h0
     Bool.or_eq_false_iff, Bool.not_eq_true', Bool.not_eq_false', and_imp]
   all_goals repeat'
     (first
-      | exact m22 ‹_› ‹_› ‹_›
-      | exact m28 ‹_› ‹_› ‹_› ‹_›
-      | exact m30 ‹_› ‹_› ‹_› ‹_›
+      | with_reducible exact m22 ‹_› ‹_› ‹_›
+      | with_reducible exact m28 ‹_› ‹_› ‹_› ‹_›
+      | with_reducible exact m30 ‹_› ‹_› ‹_› ‹_›
       | exact rfl
       | exact trivial
       | assumption
@@ -332,8 +332,10 @@ theorem dtu_ok (c : Seg prof F Wl L s₀ o) (hin : CodeIn L dtu_at dtu) (hK : Ke
     (by rw [addr_add_zero]; exact hrip) (vc_0 hF) ?_
   rintro j' g fl V₁ hP Y t₁ hKY hAY hrY hgY -
   rcases hP with ⟨rfl, h0, h3, hg, rfl⟩ | ⟨hj, hg, rfl⟩
-  · have e1 : Y.cpu.gpr = { X.cpu.gpr with rax := BitVec.setWidth 64 dty(V, X.cpu.gpr),
-        rdx := dv(V, X.cpu.gpr) } := hgY.trans hg
+  · have e1 : Y.cpu.gpr =
+        { X.cpu.gpr with
+          rax := BitVec.setWidth 64 dty(V, X.cpu.gpr),
+          rdx := dv(V, X.cpu.gpr) } := hgY.trans hg
     have hF' : Ft F Wl V Y.cpu.gpr := by
       rw [e1]
       exact ⟨hF.f8, hF.fs, hF.f16, hF.f24, hF.w32, hF.w40⟩

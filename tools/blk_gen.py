@@ -908,6 +908,10 @@ FNS = {
     # PLT entry) of the rest down and `_len` - `count`. Stops: the `ret`s (0x25, 0x5d).
     "udl": dict(grp="Udl", cn="UString::Delete", a=0x44e0b0, n=94, pos=True, stops=(0x25, 0x5d), calls=True,
                 hand=(0x54,), tag="PLAN.md §M, M1", src="7-Zip's `UString::Delete` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
+    # `AString::Delete (index, count)`: `count` cut to `_len - index`; if not 0, `memmove` (the `call` at 0x4a, the
+    # PLT entry) of the rest down and `_len` - `count`. Stops: the `ret`s (0x25, 0x58).
+    "adl": dict(grp="Adl", cn="AString::Delete", a=0x44ce70, n=89, pos=True, stops=(0x25, 0x58), calls=True,
+                hand=(0x4f,), tag="PLAN.md §M, M1", src="7-Zip's `AString::Delete` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
     # 7-Zip's CPP/Windows/FileIO.cpp `CFileBase::seek (off, whence)`: the descriptor (`this->_handle`, at 0), then
     # `lseek`. Stop: the `jmp` to `__libc_lseek` (6), a branch to another segment (`Seg.s_jmp_x`).
     "fsk": dict(grp="Fsk", cn="NWindows::NFile::NIO::CFileBase::seek", a=0x4560b0, n=11, pos=True, stops=(6,),
@@ -1840,11 +1844,45 @@ FNS = {
     "cfd": dict(grp="Cfd", cn="__libc_check_standard_fds", a=0x613860, n=419, pos=True, fs=True,
                 stops=(0x59, 0xc0, 0x130, 0x1a0), calls=True, tag="PLAN.md G3, startup",
                 src="glibc 2.31's `__libc_check_standard_fds` (`csu/check_fds.c`; `objdump -d`)"),
+    # glibc 2.31 wctype/wcfuncs.c `towupper (wc)` with `wctrans_table_lookup` (`locale/C-translit.h`'s three-level
+    # table) inlined: the thread's locale (`fs:-0x70`), its `LC_CTYPE` data, the `toupper` table's offset at index
+    # `_NL_CTYPE_MAP_OFFSET` (the word at 0xd0); `wc` itself (`ret` at 0x4c) past the first level's bound or at an
+    # empty entry of either level, else `wc` plus the third level's entry (`ret` at 0x5c). No calls, no stores.
+    "tup": dict(grp="Tup", cn="towupper", a=0x669660, n=93, pos=True, fs=True, stops=(0x4c, 0x5c),
+                tag="PLAN.md §M, M1", src="glibc 2.31's `towupper` (`wctype/wcfuncs.c`; `objdump -d`)"),
     # 7-Zip 26.06 UI/Console/ExtractCallbackConsole.cpp, without the landing pads (from 0x11e). Stops: the `ret`
     # (0xfe), the call of `__stack_chk_fail` (0x119).
     "pew": dict(grp="Pew", cn="Print_ErrorFormatIndex_Warning", a=0x5e96e0, n=286, pos=True, fs=True,
                 stops=(254, 281), calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `Print_ErrorFormatIndex_Warning` (`ExtractCallbackConsole.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/UI/Common/ArchiveExtractCallback.cpp `CArchiveExtractCallback::SetDirsTimes ()`: nothing without
+    # `_arc` (0x2b2). Else `pairs` of `_extractedFolders.Size ()` (`n`, `this + 0x220`; saved at `rsp + 12`; above
+    # 0x7fffffff the `js` at 0x32 to the throw, by hand: its target is outside) made by `operator new []` (0x45), each
+    # filled by `SetNumSlashes` (0x7b; `Index` = `i`), `pairs.Sort2 ()` inline (the heap sort: the heap built from
+    # 0x98, sorted from 0x220), `SetDirTime` of each folder in the pairs' order (0x184), then
+    # `ClearExtractedDirsInfo ()` inline (from the last: `delete []` of the path's chars at 0x1c9 when not null,
+    # `operator delete (p, 0x48)` at 0x1d6 when not null), `_size` = 0, `delete []` of the pairs (0x1f7). Stops: the
+    # `ret`s (0x20c, 0x2b2).
+    "sdt": dict(grp="Sdt", cn="CArchiveExtractCallback::SetDirsTimes", a=0x5ad610, n=705, pos=True,
+                stops=(0x20c, 0x2b2), calls=True, hand=(0x32,), tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CArchiveExtractCallback::SetDirsTimes` "
+                    "(`CPP/UI/Common/ArchiveExtractCallback.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 Common/StdOutStream.cpp, without the landing pads (from 0x8f). Stops: the `ret` (0x89), the call of
+    # `__stack_chk_fail` (0x8a).
+    "owc": dict(grp="Owc", cn="CStdOutStream::operator<< (const wchar_t *)", a=0x5a1530, n=143, pos=True, fs=True,
+                stops=(137, 138), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CStdOutStream::operator<< (const wchar_t *)` (`StdOutStream.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 Common/StdOutStream.cpp, without the landing pads (from 0x8c). Stops: the `ret` (0x86), the call of
+    # `__stack_chk_fail` (0x87).
+    "npp": dict(grp="Npp", cn="CStdOutStream::NormalizePrint_UString_Path (const UString &)", a=0x5a1710, n=140,
+                pos=True, fs=True, stops=(134, 135), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CStdOutStream::NormalizePrint_UString_Path (const UString &)` (`StdOutStream.cpp`; "
+                    "`objdump -d`)"),
+    # 7-Zip 26.06 Common/StdOutStream.cpp, without the landing pad (from 0x58). Stops: the `ret` (0x52), the call of
+    # `__stack_chk_fail` (0x53).
+    "olg": dict(grp="Olg", cn="CStdOutStream::operator<< (Int64)", a=0x5a1a70, n=88, pos=True, fs=True,
+                stops=(82, 83), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CStdOutStream::operator<< (Int64)` (`StdOutStream.cpp`; `objdump -d`)"),
 }
 
 def file_bytes(path, va, n):
