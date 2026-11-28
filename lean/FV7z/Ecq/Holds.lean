@@ -126,4 +126,138 @@ theorem vc_109 {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post}
   wpx [W_109, o8, lf_xz, BitVec.xor_self, BitVec.setWidth_zero]
   all_goals repeat' (first | exact h _ | assumption | exact trivial | apply And.intro | intro _)
 
+/-- The counter of the second loop (`rcx` = `0x6eb590`), then its next compare: to 45 after the 16th byte, else
+to 88 (match) or 109 (mismatch). -/
+theorem vc_88 {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post}
+    (fa : ∀ i : Nat, i < 1 → Foot F.data (Addr.add (g.rax + 1#64 + g.rcx) i))
+    (fb : ∀ i : Nat, i < 1 → Foot F.data (Addr.add (g.rsi + (g.rax + 1#64)) i))
+    (h45 : g.rax + 1#64 = 16#64 → ∀ fl, Q 45 { g with rax := g.rax + 1#64 } fl V)
+    (h88 : ¬ g.rax + 1#64 = 16#64 → bq V (g.rsi + (g.rax + 1#64)) = bq V (g.rax + 1#64 + g.rcx) →
+      ∀ fl, Q 88 { g with
+        rax := g.rax + 1#64
+        r9 := BitVec.setWidth 64 (BitVec.setWidth 32 (bq V (g.rax + 1#64 + g.rcx))) } fl V)
+    (h109 : ¬ g.rax + 1#64 = 16#64 → ¬ bq V (g.rsi + (g.rax + 1#64)) = bq V (g.rax + 1#64 + g.rcx) →
+      ∀ fl, Q 109 { g with
+        rax := g.rax + 1#64
+        r9 := BitVec.setWidth 64 (BitVec.setWidth 32 (bq V (g.rax + 1#64 + g.rcx))) } fl V) :
+    W_88 F Wl Q g f V := by
+  obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
+  dsimp only [bq] at fa fb h45 h88 h109 ⊢
+  wpx [W_88, W_98, o2, o7, Op.cmpmr, sw8,
+    Bool.not_eq_true', Bool.not_eq_false', decide_eq_true_eq, decide_eq_false_iff_not]
+  all_goals repeat' (first
+    | exact rfl
+    | exact trivial
+    | assumption
+    | (apply h45 <;> assumption)
+    | (apply h88 <;> assumption)
+    | (apply h109 <;> assumption)
+    | apply And.intro
+    | intro _)
+
+/-- One step of the third loop (`rcx` = `0x6eb580`): on a match on to 128, or (the 16 bytes done) `*ppv = this +
+16; xor eax, eax` to the `AddRef` at 158; on a mismatch `mov ecx, 0x6eb780; xor eax, eax` to the fourth loop at
+192. -/
+theorem vc_128 {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post}
+    (fa : ∀ i : Nat, i < 1 → Foot F.data (Addr.add (g.rax + g.rcx) i))
+    (fb : ∀ i : Nat, i < 1 → Foot F.data (Addr.add (g.rsi + g.rax) i))
+    (fw : ∀ i < 8, Foot Wl (Addr.add g.rdx i))
+    (h128 : bq V (g.rsi + g.rax) = bq V (g.rax + g.rcx) → ¬ g.rax + 1#64 = 16#64 →
+      ∀ fl, Q 128 { g with
+        rax := g.rax + 1#64
+        r10 := BitVec.setWidth 64 (BitVec.setWidth 32 (bq V (g.rax + g.rcx))) } fl V)
+    (h158 : bq V (g.rsi + g.rax) = bq V (g.rax + g.rcx) → g.rax + 1#64 = 16#64 →
+      ∀ fl, Q 158 { g with
+        rax := 0#64
+        r10 := BitVec.setWidth 64 (BitVec.setWidth 32 (bq V (g.rax + g.rcx))) }
+        fl (Vst V g.rdx (toBytesLE (g.rdi + 16#64) 8)))
+    (h192 : ¬ bq V (g.rsi + g.rax) = bq V (g.rax + g.rcx) →
+      ∀ fl, Q 192 { g with
+        rax := 0#64
+        rcx := 7255936#64
+        r10 := BitVec.setWidth 64 (BitVec.setWidth 32 (bq V (g.rax + g.rcx))) } fl V) :
+    W_128 F Wl Q g f V := by
+  obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
+  dsimp only [bq] at fa fb fw h128 h158 h192 ⊢
+  wpx [W_128, W_139, W_149, W_176, o2, o9, o10, o11, Op.cmpmr, lf_xz, BitVec.xor_self, BitVec.setWidth_zero, sw8,
+    Bool.not_eq_true', Bool.not_eq_false', decide_eq_true_eq, decide_eq_false_iff_not]
+  all_goals repeat' (first
+    | exact rfl
+    | exact trivial
+    | assumption
+    | (apply h128 <;> assumption)
+    | (apply h158 <;> assumption)
+    | (apply h192 <;> assumption)
+    | apply And.intro
+    | intro _)
+
+/-- One step of the fourth loop (`rcx` = `0x6eb780`): on a match on to 192, or (the 16 bytes done) `*ppv = this +
+24` to the `AddRef` at 48; on a mismatch `mov ecx, 0x6eb790; xor eax, eax` to the fifth loop at 240. -/
+theorem vc_192 {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post}
+    (fa : ∀ i : Nat, i < 1 → Foot F.data (Addr.add (g.rax + g.rcx) i))
+    (fb : ∀ i : Nat, i < 1 → Foot F.data (Addr.add (g.rsi + g.rax) i))
+    (fw : ∀ i < 8, Foot Wl (Addr.add g.rdx i))
+    (h192 : bq V (g.rsi + g.rax) = bq V (g.rax + g.rcx) → ¬ g.rax + 1#64 = 16#64 →
+      ∀ fl, Q 192 { g with
+        rax := g.rax + 1#64
+        r11 := BitVec.setWidth 64 (BitVec.setWidth 32 (bq V (g.rax + g.rcx))) } fl V)
+    (h48 : bq V (g.rsi + g.rax) = bq V (g.rax + g.rcx) → g.rax + 1#64 = 16#64 →
+      ∀ fl, Q 48 { g with
+        rax := g.rdi + 24#64
+        r11 := BitVec.setWidth 64 (BitVec.setWidth 32 (bq V (g.rax + g.rcx))) }
+        fl (Vst V g.rdx (toBytesLE (g.rdi + 24#64) 8)))
+    (h240 : ¬ bq V (g.rsi + g.rax) = bq V (g.rax + g.rcx) →
+      ∀ fl, Q 240 { g with
+        rax := 0#64
+        rcx := 7255952#64
+        r11 := BitVec.setWidth 64 (BitVec.setWidth 32 (bq V (g.rax + g.rcx))) } fl V) :
+    W_192 F Wl Q g f V := by
+  obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
+  dsimp only [bq] at fa fb fw h192 h48 h240 ⊢
+  wpx [W_192, W_203, W_213, W_225, o2, o12, o13, o14, Op.cmpmr, lf_xz, BitVec.xor_self, BitVec.setWidth_zero, sw8,
+    Bool.not_eq_true', Bool.not_eq_false', decide_eq_true_eq, decide_eq_false_iff_not]
+  all_goals repeat' (first
+    | exact rfl
+    | exact trivial
+    | assumption
+    | (apply h192 <;> assumption)
+    | (apply h48 <;> assumption)
+    | (apply h240 <;> assumption)
+    | apply And.intro
+    | intro _)
+
+/-- One step of the fifth loop (`rcx` = `0x6eb790`): on a match on to 240, or (the 16 bytes done) `*ppv = this +
+32` to the `AddRef` at 48; on a mismatch `mov eax, E_NOINTERFACE` to the `ret` at 278. -/
+theorem vc_240 {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post}
+    (fa : ∀ i : Nat, i < 1 → Foot F.data (Addr.add (g.rax + g.rcx) i))
+    (fb : ∀ i : Nat, i < 1 → Foot F.data (Addr.add (g.rsi + g.rax) i))
+    (fw : ∀ i < 8, Foot Wl (Addr.add g.rdx i))
+    (h240 : bq V (g.rsi + g.rax) = bq V (g.rax + g.rcx) → ¬ g.rax + 1#64 = 16#64 →
+      ∀ fl, Q 240 { g with
+        rax := g.rax + 1#64
+        r11 := BitVec.setWidth 64 (BitVec.setWidth 32 (bq V (g.rax + g.rcx))) } fl V)
+    (h48 : bq V (g.rsi + g.rax) = bq V (g.rax + g.rcx) → g.rax + 1#64 = 16#64 →
+      ∀ fl, Q 48 { g with
+        rax := g.rdi + 32#64
+        r11 := BitVec.setWidth 64 (BitVec.setWidth 32 (bq V (g.rax + g.rcx))) }
+        fl (Vst V g.rdx (toBytesLE (g.rdi + 32#64) 8)))
+    (h278 : ¬ bq V (g.rsi + g.rax) = bq V (g.rax + g.rcx) →
+      ∀ fl, Q 278 { g with
+        rax := 2147500034#64
+        r11 := BitVec.setWidth 64 (BitVec.setWidth 32 (bq V (g.rax + g.rcx))) } fl V) :
+    W_240 F Wl Q g f V := by
+  obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
+  dsimp only [bq] at fa fb fw h240 h48 h278 ⊢
+  wpx [W_240, W_251, W_261, W_273, o2, o12, o15, o16, Op.cmpmr, sw8,
+    Bool.not_eq_true', Bool.not_eq_false', decide_eq_true_eq, decide_eq_false_iff_not]
+  all_goals repeat' (first
+    | exact rfl
+    | exact trivial
+    | assumption
+    | (apply h240 <;> assumption)
+    | (apply h48 <;> assumption)
+    | (apply h278 <;> assumption)
+    | apply And.intro
+    | intro _)
+
 end FV7z.Ecq

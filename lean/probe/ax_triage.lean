@@ -1,8 +1,6 @@
 import FV7z.Ecq.Holds
 open FV7z
-#print axioms FV7z.Ecq.vc_0
-#print axioms FV7z.Ecq.vc_24
-#print axioms FV7z.Ecq.vc_35
-#print axioms FV7z.Ecq.vc_45
-#print axioms FV7z.Ecq.vc_55
-#print axioms FV7z.Ecq.vc_109
+#print axioms FV7z.Ecq.vc_88
+#print axioms FV7z.Ecq.vc_128
+#print axioms FV7z.Ecq.vc_192
+#print axioms FV7z.Ecq.vc_240
