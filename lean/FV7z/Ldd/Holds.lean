@@ -303,7 +303,7 @@ theorem ldd_ok {P1 P2 P3 : State → (Addr → Byte) → Prop} (c : Seg prof F W
   rintro Z V' t₃ hKZ hAZ hrZ ⟨hzs, hzb, -, -⟩ hP1
   refine (c_115 prof).run c hin (fun j' g' _ V'' => j' = 119 ∧
       g' = { Z.cpu.gpr with rdi := rdq(V', X.cpu.gpr.rdi + 96#64) } ∧ V'' = V') hKZ hAZ hrZ
-    (vc_115 (by rw [hzb]; exact f96) fun _ => ⟨rfl, by rw [hzb], rfl⟩) ?_
+    (vc_115 (by rw [hzb]; exact f96) fun _ => ⟨rfl, by simp only [hzb], rfl⟩) ?_
   rintro j' g fl V₂ ⟨rfl, rfl, hV₂⟩ Y₃ t₄ hK₃ hA₃ hr₃ hg₃ -
   subst V₂
   have hs3 : Y₃.cpu.gpr.rsp = X.cpu.gpr.rsp - 8 := by rw [hg₃]; exact hzs
