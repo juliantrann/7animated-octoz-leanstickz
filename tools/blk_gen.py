@@ -1817,6 +1817,16 @@ FNS = {
     "exr": dict(grp="Exr", cn="CExtractCallbackConsole::ExtractResult", a=0x5e82c0, n=668, pos=True, fs=True,
                 stops=(233, 663), hand=(110, 265, 482, 616), calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `CExtractCallbackConsole::ExtractResult` (`ExtractCallbackConsole.cpp`; `objdump -d`)"),
+    # glibc 2.31 csu/check_fds.c `__libc_check_standard_fds ()` (a setuid start, `__libc_enable_secure`): a frame of
+    # 0x98 bytes with a `struct stat` at `rsp`; for each of the fds 0, 1, 2 `__fcntl64_nocancel (fd, F_GETFD)` (calls
+    # at 0x14, 0x2a, 0x44); on -1 with `errno` (`fs:-0x48`) = `EBADF` the fd is opened again (`__open64_nocancel`,
+    # 0x7d, 0xe9, 0x159: "/dev/full" `O_WRONLY|O_NOFOLLOW` for 0, "/dev/null" `O_RDONLY|O_NOFOLLOW` for 1 and 2) and
+    # checked by `__fxstat (1, fd, &st)` (0x90, 0x100, 0x170): the same fd, a character device (`st_mode`, `rsp +
+    # 0x18`) with the expected `st_rdev` (`rsp + 0x28`), else `hlt`. Stops: the `ret` (0x59), the `hlt`s (0xc0,
+    # 0x130, 0x1a0).
+    "cfd": dict(grp="Cfd", cn="__libc_check_standard_fds", a=0x613860, n=419, pos=True, fs=True,
+                stops=(0x59, 0xc0, 0x130, 0x1a0), calls=True, tag="PLAN.md G3, startup",
+                src="glibc 2.31's `__libc_check_standard_fds` (`csu/check_fds.c`; `objdump -d`)"),
 }
 
 def file_bytes(path, va, n):
