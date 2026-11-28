@@ -1434,6 +1434,13 @@ FNS = {
                 src="7-Zip 26.06's `AString::operator+= (const AString &)` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
     "stw": dict(grp="Stw", cn="__strtol", a=0x623890, n=22, pos=True, fs=True, stops=(0x11,), calls=True,
                 tag="PLAN.md §M, M1", src="glibc 2.31's `__strtol` (`stdlib/strtol.c`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/UI/Common/EnumDirItems.cpp `FindFile_KeepDots (fi, path, followLink)`: `fi.Find (path,
+    # followLink)` (the `call` at 16, to `fnd`); when it answers true and `path` ends in "." after a '/', at its start,
+    # or as ".." likewise, `fi.Name = p` (`AString::operator= (const char *)`, the `call` at 92, to `aac`) with `p` the
+    # dots; `eax` = the answer, the `ret` (104).
+    "fkd": dict(grp="Fkd", cn="FindFile_KeepDots", a=0x5bff20, n=117, pos=True, stops=(0x68,), calls=True,
+                tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `FindFile_KeepDots` (`CPP/UI/Common/EnumDirItems.cpp`; `objdump -d`)"),
 }
 
 
