@@ -124,4 +124,6 @@ jobs:
             gh release delete-asset seed "$a" -y
           done
           gh release upload seed "$d"/seed.tar.zst.*
+          # the tag stays where it was created; the notes say which build the assets are
+          gh release edit seed --notes "build cache from $GITHUB_SHA (run $GITHUB_RUN_ID, $(date -u +%FT%TZ))"
           echo "seed: $(du -sh "$d" | cut -f1) from $GITHUB_SHA" >> "$GITHUB_STEP_SUMMARY"
