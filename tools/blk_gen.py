@@ -1449,6 +1449,30 @@ FNS = {
     "smd": dict(grp="Smd", cn="Set_ModuleDirPrefix_From_ProgArg0", a=0x5a9ed0, n=124, pos=True, fs=True,
                 stops=(0x76, 0x77), calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `Set_ModuleDirPrefix_From_ProgArg0` (`ArchiveCommandLine.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/7zip/UI/Console/List.cpp `GetPropName (propID, name, nameA, nameU)` (static): a known `propID`
+    # (<= 0x68) `nameA = kPropIdToName[propID]` (the table at 0x77f520, a tail jump to `AString::operator= (const char
+    # *)` at 0x43); else with `name` `nameU = name` (a tail jump to `UString::operator= (const wchar_t *)`, 0x14),
+    # without, `nameA.Empty (); nameA.Add_UInt32 (propID)` (the stores, a tail jump to `Add_UInt32`, 0x30)
+    "gpn": dict(grp="Gpn", cn="GetPropName", a=0x5ebc80, n=72, pos=True, stops=(0x14, 0x30, 0x43), calls=True,
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `GetPropName` (`CPP/7zip/UI/Console/List.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/7zip/UI/Common/ExtractingFilePath.cpp `Get_Correct_FsFile_Name (name)`: `UString res = name`
+    # (the copy constructor's `call` at 0xe), `Correct_PathPart (res)` when not empty (0x1f), `res = '_'` when it is
+    # empty then (0x48); `rax` = the result's place, the `ret`s (0x37, 0x57). The landing pad (0x58..) is left out.
+    "gcf": dict(grp="Gcf", cn="Get_Correct_FsFile_Name", a=0x5c7070, n=88, pos=True, stops=(0x37, 0x57), calls=True,
+                tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `Get_Correct_FsFile_Name` (`ExtractingFilePath.cpp`; `objdump -d`)"),
+    # 7-Zip's CPP/7zip/Compress/LzmaDecoder.cpp `CDecoder::CDecoder ()`: the 8 vtable pointers (the class's
+    # interfaces, from 0x78c498) at `this + 8 * i`, the flags and sizes 0, `_inBufSize` = `_outStep` = 1 MiB. Stop:
+    # the `ret` (184).
+    "ldc": dict(grp="Ldc", cn="NCompress::NLzma::CDecoder::CDecoder", a=0x57fb70, n=185, pos=True, stops=(184,),
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `CDecoder` constructor (`LzmaDecoder.cpp`; `objdump -d`)"),
+    # 7-Zip's CPP/7zip/Compress/LzmaDecoder.cpp `CDecoder::~CDecoder ()`: the 8 vtable pointers back, then
+    # `LzmaDec_Free (&_state, &g_AlignedAlloc)` (the `call` at 110, to `ldf`), `MidFree (_inBuf)` (119), and
+    # `_inStream.Release ()` through the vtable (`call [rax + 16]`, 139) when `_inStream` (at `this + 256`) is set.
+    # Stop: the `ret` (143).
+    "ldd": dict(grp="Ldd", cn="NCompress::NLzma::CDecoder::~CDecoder", a=0x57fc30, n=144, pos=True, stops=(143,),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CDecoder` destructor (`LzmaDecoder.cpp`; `objdump -d`)"),
     # 7-Zip 26.06 CPP/7zip/Common/FileStreams.h `CInFileStream::CInFileStream ()`: the five vtable pointers (from
     # 0x78e748), `File` (a `CFileBase` at 0x2c) set up in line, `Callback` and `CallbackRef` 0, then the two `UString`s
     # at 0xd0 (the `call` at 0x7a) and 0xe0 (0x86, `UString::UString ()`), the three fields after them 0. Stop: the `ret`
@@ -1462,6 +1486,11 @@ FNS = {
     "ifd": dict(grp="Ifd", cn="CInFileStream::~CInFileStream", a=0x5a4040, n=135, pos=True, stops=(0x86,), calls=True,
                 tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `CInFileStream::~CInFileStream` (`FileStreams.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/7zip/Common/FileStreams.cpp `CInFileStream::Seek (offset, seekOrigin, newPosition)`: the origin
+    # checked (0x0b), `File.seek` (the `call` at 0x17), on -1 `GetLastError_noZero_HRESULT` (0x38) and `File.GetPosition`
+    # (0x5a), the result stored. Stop: the `ret` (0x34); the bytes from 0x78 on are the landing pads.
+    "isk": dict(grp="Isk", cn="CInFileStream::Seek", a=0x5a3770, n=120, pos=True, stops=(0x34,), calls=True,
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `CInFileStream::Seek` (`FileStreams.cpp`; `objdump -d`)"),
 }
 
 
