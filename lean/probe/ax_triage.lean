@@ -1,5 +1,3 @@
-import FV7z.Bop.Holds
-import FV7z.Cpr.Loop
+import FV7z.Exr.Holds
 open FV7z
-#print axioms FV7z.Bop.bop_ok
-#print axioms FV7z.Cpr.cpr_full
+#print axioms FV7z.Exr.exr_ok
