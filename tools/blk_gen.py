@@ -2229,6 +2229,13 @@ FNS = {
     "ifw": dict(grp="Ifw", cn="_IO_new_file_write", a=0x6287d0, n=156, pos=True, stops=(0x25, 0x8b, 0x8c),
                 calls=True, hand=(0x60,), tag="PLAN.md §M, M1",
                 src="glibc's `_IO_new_file_write` (`libio/fileops.c`, static in 7zzs 26.06; `objdump -d`)"),
+    # glibc's `__gettimeofday (tv, tz)` (static in 7zzs): `tz` not null (0x14): `*(char *) tz = 0` (0x80) and back
+    # (0x83); the vDSO's pointer at 0x791cd0 (0x16): null to the `syscall` 96 (0x6b), else `call rax` (0x28); a
+    # result in `-4095 .. -1` (0x34) other than `-ENOSYS` (0x3a, to the `syscall`) or from the `syscall` (0x76):
+    # `errno` = minus it (`fs:[-0x48]`, 0x45) and -1. Stops: the `ret`s (0x58, 0x7f), the padding (0x59).
+    "gtd": dict(grp="Gtd", cn="__gettimeofday", a=0x660360, n=133, pos=True, stops=(0x58, 0x59, 0x7f),
+                calls=True, tag="PLAN.md §M, M1",
+                src="glibc's `__gettimeofday` (`gettimeofday.c`, static in 7zzs 26.06; `objdump -d`)"),
 }
 
 def file_bytes(path, va, n):
