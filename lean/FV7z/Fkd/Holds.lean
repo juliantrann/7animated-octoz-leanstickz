@@ -56,7 +56,10 @@ theorem ret_104 (feat : Features) : Dec feat fkd 104 (FV7z.mk .ret 64 [] 1) :=
 /-! ## The path -/
 
 /-- The last char of a string with chars at `cc`, of length `ll`. -/
-abbrev pc (cc : Addr) (ll : BitVec 32) : Addr := cc + BitVec.setWidth 64 ll + 18446744073709551615#64
+abbrev pck (cc : Addr) (ll : BitVec 32) (k : Addr) : Addr := cc + BitVec.setWidth 64 ll + k
+
+/-- `pck` with `k` = -1. -/
+abbrev pc (cc : Addr) (ll : BitVec 32) : Addr := pck cc ll 18446744073709551615#64
 
 /-- The last char of the path (`b`: the `AString`, its chars at `b`, its length at `b + 8`). -/
 abbrev pe (V : Addr → Byte) (b : Addr) : Addr := pc rdq(V, b) rdd(V, b + 8#64)
@@ -115,39 +118,41 @@ theorem vc_0 {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post}
     | intro _)
 
 /-- Back from `Find` at 21: `r12d` = `eax`; to 97, or (`al` not 0) to 88 with `rsi` the last char, the one before
-it, or the first. The path's chars' address and length are named (`cc`, `ll`), so that no two addresses are compared
-through the reads. -/
-theorem vc_21 {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post} {cc : Addr} {ll : BitVec 32}
+it, or the first. The path's chars' address and length are named (`cc`, `ll`), and so are the displacements -1 and -2
+(`k1`, `k2`): with the literals in the addresses, a failed check of two addresses (a closer tried on the wrong goal)
+hit the recursion limit (kt3440, kt3441). Closers are refine-first; premises go to `with_reducible assumption`. -/
+theorem vc_21 {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post} {cc : Addr} {ll : BitVec 32} {k1 k2 : Addr}
     (hc : rdq(V, g.rbx) = cc) (hl : rdd(V, g.rbx + 8#64) = ll)
+    (hk1 : 18446744073709551615#64 = k1) (hk2 : 18446744073709551614#64 = k2)
     (n4 : ∀ i < 4, Foot F.data (Addr.add (g.rbx + 8#64) i)) (c8 : ∀ i < 8, Foot F.data (Addr.add g.rbx i))
-    (l1 : ¬ll = 0 → ∀ i < 1, Foot F.data (Addr.add (pc cc ll) i))
-    (m1 : ¬ll = 0 → V (pc cc ll) = 46#8 → ¬cc = pc cc ll →
-      ∀ i < 1, Foot F.data (Addr.add (pc cc ll + 18446744073709551615#64) i))
-    (m2 : ¬ll = 0 → V (pc cc ll) = 46#8 → ¬cc = pc cc ll → V (pc cc ll + 18446744073709551615#64) = 46#8 →
-      ¬cc = pc cc ll + 18446744073709551615#64 →
-      ∀ i < 1, Foot F.data (Addr.add (pc cc ll + 18446744073709551614#64) i))
+    (l1 : ¬ll = 0 → ∀ i < 1, Foot F.data (Addr.add (pck cc ll k1) i))
+    (m1 : ¬ll = 0 → V (pck cc ll k1) = 46#8 → ¬cc = pck cc ll k1 →
+      ∀ i < 1, Foot F.data (Addr.add (pck cc ll k1 + k1) i))
+    (m2 : ¬ll = 0 → V (pck cc ll k1) = 46#8 → ¬cc = pck cc ll k1 → V (pck cc ll k1 + k1) = 46#8 →
+      ¬cc = pck cc ll k1 + k1 → ∀ i < 1, Foot F.data (Addr.add (pck cc ll k1 + k2) i))
     (h97 : ∀ g', g'.r12 = BitVec.setWidth 64 (BitVec.setWidth 32 g.rax) → Fr g g' → ∀ fl, Q 97 g' fl V)
     (h88 : ¬BitVec.setWidth 8 g.rax = 0 → ∀ g',
-      (g'.rsi = pc cc ll ∨ g'.rsi = pc cc ll + 18446744073709551615#64 ∨ g'.rsi = cc) →
+      (g'.rsi = pck cc ll k1 ∨ g'.rsi = pck cc ll k1 + k1 ∨ g'.rsi = cc) →
       g'.r12 = BitVec.setWidth 64 (BitVec.setWidth 32 g.rax) → Fr g g' → ∀ fl, Q 88 g' fl V) :
     W_21 F Wl Q g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
-  dsimp only [pc] at hc hl n4 c8 l1 m1 m2 h97 h88 ⊢
+  dsimp only [pck] at hc hl n4 c8 l1 m1 m2 h97 h88 ⊢
   wpx [W_21, W_28, W_35, W_48, W_53, W_61, W_65, W_74, W_80, W_112, o1, o2, o3, o4, o5, o6, o7, o8, o9, o12,
-    Op.cmpmi, Tun.rd1, Tun.sw_8_32_8, hc, hl, BitVec.and_self, beq_iff_eq, beq_eq_false_iff_ne, ne_eq,
+    Op.cmpmi, Tun.rd1, Tun.sw_8_32_8, hc, hl, hk1, hk2, BitVec.and_self, beq_iff_eq, beq_eq_false_iff_ne, ne_eq,
     Bool.not_eq_true', Bool.not_eq_false', decide_eq_true_eq, decide_eq_false_iff_not]
   all_goals repeat' (first
     | refine h97 _ ?_ ?_ _
-    | refine h88 (by assumption) _ ?_ ?_ ?_ _
+    | refine h88 ?_ _ ?_ ?_ ?_ _
     | with_reducible rfl
-    | with_reducible exact Or.inr (Or.inr rfl)
     | with_reducible exact Or.inl rfl
     | with_reducible exact Or.inr (Or.inl rfl)
+    | with_reducible exact Or.inr (Or.inr rfl)
     | with_reducible exact n4
     | with_reducible exact c8
-    | with_reducible exact l1 (by assumption)
-    | with_reducible exact m1 (by assumption) (by assumption) (by assumption)
-    | with_reducible exact m2 (by assumption) (by assumption) (by assumption) (by assumption) (by assumption)
+    | with_reducible refine l1 ?_
+    | with_reducible refine m1 ?_ ?_ ?_
+    | with_reducible refine m2 ?_ ?_ ?_ ?_ ?_
+    | with_reducible assumption
     | apply And.intro
     | intro _)
 
@@ -341,8 +346,9 @@ theorem fkd_ok {P1 P2 : State → (Addr → Byte) → Prop} (c : Seg prof F Wl L
       (j' = 97 ∨ (j' = 88 ∧ ¬BitVec.setWidth 8 Z.cpu.gpr.rax = 0 ∧
         (g'.rsi = pe V' X.cpu.gpr.rsi ∨ g'.rsi = pe V' X.cpu.gpr.rsi + 18446744073709551615#64 ∨
           g'.rsi = rdq(V', X.cpu.gpr.rsi))))) hKZ hAZ hrZ
-    (vc_21 (cc := rdq(V', Z.cpu.gpr.rbx)) (ll := rdd(V', Z.cpu.gpr.rbx + 8#64)) rfl rfl hT'.n4 hT'.c8 hT'.l1
-      hT'.m1 hT'.m2 (fun _ a b _ => ⟨rfl, a, b, Or.inl rfl⟩)
+    (vc_21 (cc := rdq(V', Z.cpu.gpr.rbx)) (ll := rdd(V', Z.cpu.gpr.rbx + 8#64)) (k1 := 18446744073709551615#64)
+      (k2 := 18446744073709551614#64) rfl rfl rfl rfl hT'.n4 hT'.c8 hT'.l1 hT'.m1 hT'.m2
+      (fun _ a b _ => ⟨rfl, a, b, Or.inl rfl⟩)
       (fun h0 _ hs a b _ => ⟨rfl, a, b, Or.inr ⟨rfl, h0, by rw [hmZ.2.1] at hs; exact hs⟩⟩)) ?_
   rintro j' g fl V₂ ⟨hV₂, g12, gf, hpost⟩ U t₄ hKU hAU hrU hgU -
   subst V₂ hgU
