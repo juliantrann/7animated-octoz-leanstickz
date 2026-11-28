@@ -1540,6 +1540,12 @@ FNS = {
     "rst": dict(grp="Rst", cn="ReadStream", a=0x4632b0, n=177, pos=True, fs=True, stops=(0xa1, 0xac), hand=(0x76,),
                 calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `ReadStream` (`CPP/7zip/Common/StreamUtils.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/Common/StdOutStream.cpp `CStdOutStream::Normalize_UString (s)`: in terminal mode (the byte at
+    # `this + 8`) each `wchar_t` of `s` below 0x20 (signed), in 0x7f..0x9f, 0x202a..0x202e or 0x2066..0x2069 made
+    # '_' (the loop at 0x59), else each '\n' made '_' (the loop at 0x80). Stops: the `ret`s (0x6f, 0x94).
+    "nus": dict(grp="Nus", cn="CStdOutStream::Normalize_UString", a=0x5a15e0, n=149, pos=True, stops=(0x6f, 0x94),
+                tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CStdOutStream::Normalize_UString` (`CPP/Common/StdOutStream.cpp`; `objdump -d`)"),
 }
 
 
