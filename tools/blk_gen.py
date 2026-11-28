@@ -1505,6 +1505,13 @@ FNS = {
     # `p` NULL (0x58); else the copy loop at 0x30 (`p[i] = (Byte)s[i]` for `i <= len`), the `ret` at 0x46.
     "aba": dict(grp="Aba", cn="AllocBstrFromAscii", a=0x456e50, n=99, pos=True, stops=(0x46, 0x58, 0x62), calls=True,
                 tag="PLAN.md §M, M1", src="7-Zip 26.06's `NCOM::AllocBstrFromAscii` (`PropVariant.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/Windows/FileDir.cpp `GetFullPathAndSplit (path, resDirPrefix, resFileName)`: `res =
+    # GetFullPath (path, resDirPrefix)` (the `call` at 0x15), when false `resDirPrefix = path` (0x66, then back to
+    # 0x21); `i = resDirPrefix.ReverseFind_PathSepar ()` (0x24), `resFileName = resDirPrefix.Ptr (i + 1)` (0x36),
+    # `resDirPrefix.DeleteFrom (i + 1)` (the stores at 0x3b..0x4c). Stop: the `ret` (0x58).
+    "gfs": dict(grp="Gfs", cn="NWindows::NFile::NDir::GetFullPathAndSplit", a=0x454a50, n=109, pos=True,
+                stops=(0x58,), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `NDir::GetFullPathAndSplit` (`FileDir.cpp`; `objdump -d`)"),
 }
 
 
