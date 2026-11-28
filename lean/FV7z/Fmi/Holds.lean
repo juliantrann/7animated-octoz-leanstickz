@@ -19,6 +19,15 @@ just when `Same k`, as `Ffp.Cmp`. Equal: `*idxp` is the slot's module index and 
 - `fmi_ok`: the function, for a first `N` with `Stop N`: at the first slot `k` with `Stop k`, `kE` (empty, `rax` -1)
   or `kF` (found, `eax` 0, `*idxp` stored).
 -/
+/-! ## Fixes after triage kt788 (run 45838289885)
+- `m2w`: the kernel ran out of memory on `omega` over `18446744073709551614#64`; now `m2`, `bv_omega` on the 32-bit
+  form (as `Ugr.m1`).
+- The VCs' posts say `V' = V`; the `rfl` in `rintro … V' ⟨rfl, rfl, …⟩` eliminates the older `V` (or `V₂`).
+  The new bytes are named `V` (`V₂`) there, so the later uses still resolve.
+- `lpE`: `congrArg Gprs.rdi hg₁` against an expected type assigns the wrong argument (`Y₁.cpu.gpr.set 4 _` or
+  `X.cpu.gpr`); the projections of `hg₁` are named first, without ascription (`edi₁`, `e14₁`, `e12₁`).
+- `lpHead`: no `swap`; `by_cases hc : ¬ …` takes the out-of-bounds case first, then `Decidable.of_not_not`.
+-/
 open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn
 open FV7z.Mcn (fr6 fr_e6 rdo rds)
 open FV7z.Stm (Km stk)
@@ -140,12 +149,13 @@ theorem up_r {S : Addr} (hS : 96 ≤ S.toNat) :
     BitVec.eq_of_toNat_eq (by omega), BitVec.eq_of_toNat_eq (by omega), BitVec.eq_of_toNat_eq (by omega),
     BitVec.eq_of_toNat_eq (by omega)⟩
 
-/-- `ebx - 2` in 32 bits, `ebx` a word zero-extended. -/
-theorem m2w (x : BitVec 16) : (zw x + 18446744073709551614#64).setWidth 32 = x.setWidth 32 - 2#32 := by
-  apply BitVec.eq_of_toNat_eq
-  have := x.isLt
-  simp only [zw, BitVec.toNat_setWidth, BitVec.toNat_add, BitVec.toNat_sub, BitVec.toNat_ofNat]
-  omega
+/-- `y - 2` in 32 bits through 64. -/
+theorem m2 (y : BitVec 32) : BitVec.setWidth 32 (BitVec.setWidth 64 y + 18446744073709551614#64) = y - 2#32 := by
+  bv_omega
+
+/-- `ebx - 2` in 32 bits, `ebx` a word zero-extended (as `Ugr.m1`: `bv_omega` on the 32-bit form). -/
+theorem m2w (x : BitVec 16) : (zw x + 18446744073709551614#64).setWidth 32 = x.setWidth 32 - 2#32 :=
+  m2 (x.setWidth 32)
 
 /-- `edx + 1` in 32 bits. -/
 theorem p1w (x : BitVec 32) : (x.setWidth 64 + 1#64).setWidth 32 = x + 1#32 := by
@@ -335,9 +345,9 @@ theorem t127 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L fmi_at fmi) {V0 : Addr
     (hr : Y.cpu.rip = fmi_at.add 127) (hL : Lp V0 g0 n ra V Y.cpu.gpr k)
     (kn : LpAt prof F Wl L s₀ o gev gP gE V0 g0 n ra (k + 1)) : GoG prof L o gev gP gE Y t := by
   refine (c_127 prof).run c hin _ hK hA hr vc_127 ?_
-  rintro j' g fl V' ⟨rfl, rfl, hsp, h12, h14, hbx, hbp, h13⟩ Z t' hKZ hAZ hrZ hgZ -
+  rintro j' g fl V ⟨rfl, rfl, hsp, h12, h14, hbx, hbp, h13⟩ Z t' hKZ hAZ hrZ hgZ -
   subst hgZ
-  refine kn Z t' V hKZ hAZ hrZ ⟨hL.mem, hsp.trans hL.sp, h12.trans hL.r12, ?_, h14.trans hL.r14,
+  refine kn Z t' _ hKZ hAZ hrZ ⟨hL.mem, hsp.trans hL.sp, h12.trans hL.r12, ?_, h14.trans hL.r14,
     hbx.trans hL.rbx, hbp.trans hL.rbp⟩
   rw [h13, hL.r13, hL.rbp, hL.rbx]
   simp only [zw, sw_64_32]
@@ -410,10 +420,13 @@ theorem lpE (c : Seg prof F Wl L s₀ o) {V0 : Addr → Byte} {X : State} {t n N
     rw [hg₂]
     show Y₁.cpu.gpr.rsp - 8 = _
     rw [esp₁]
-  have edi₂ : Y₂.cpu.gpr.rdi = X.cpu.gpr.rdi := (congrArg Gprs.rdi hg₂).trans (congrArg Gprs.rdi hg₁)
-  have e14₂ : Y₂.cpu.gpr.r14 = cc V0 := ((congrArg Gprs.r14 hg₂).trans (congrArg Gprs.r14 hg₁)).trans ecc
-  have e12₂ : Y₂.cpu.gpr.r12 = zw (ho V0) :=
-    ((congrArg Gprs.r12 hg₂).trans (congrArg Gprs.r12 hg₁)).trans (congrArg zw eho)
+  -- no type ascription: against `Y₁.cpu.gpr.rdi = X.cpu.gpr.rdi`, `congrArg` takes `X.cpu.gpr` as its argument
+  have edi₁ := congrArg Gprs.rdi hg₁
+  have e14₁ := congrArg Gprs.r14 hg₁
+  have e12₁ := congrArg Gprs.r12 hg₁
+  have edi₂ : Y₂.cpu.gpr.rdi = X.cpu.gpr.rdi := (congrArg Gprs.rdi hg₂).trans edi₁
+  have e14₂ : Y₂.cpu.gpr.r14 = cc V0 := ((congrArg Gprs.r14 hg₂).trans e14₁).trans ecc
+  have e12₂ : Y₂.cpu.gpr.r12 = zw (ho V0) := ((congrArg Gprs.r12 hg₂).trans e12₁).trans (congrArg zw eho)
   -- the hash
   refine Hsh.hsh_ok c E.hinH hK₂ hA₂ hr₂ (n := n) (by rw [edi₂]; exact E.fs)
     (by rw [edi₂]; intro i hi; rw [fo₂.rb (E.os i (by omega))]; exact E.snz i hi)
@@ -434,7 +447,7 @@ theorem lpE (c : Seg prof F Wl L s₀ o) {V0 : Addr → Byte} {X : State} {t n N
     rw [edi₂, hashN_fo fo₂ n (fun i hi => E.os i (by omega))]
   -- `hash_size`, `cache_size`, to the first `div`
   refine (c_51 prof).run c E.hin _ hK₃ hA₃ hr₃ (vc_51 (by rw [e14₃]; exact E.f8) E.fZ) ?_
-  rintro j' g₄ fl V' ⟨rfl, rfl, rfl⟩ Y₄ t₄ hK₄ hA₄ hr₄ hg₄ -
+  rintro j' g₄ fl V₂ ⟨rfl, rfl, rfl⟩ Y₄ t₄ hK₄ hA₄ hr₄ hg₄ -
   have ehs : rw16 V₂ (cc V0 + 8#64) = hs V0 := fo₂.w16 E.o8
   have ebx₄ : Y₄.cpu.gpr.rbx = zw (hs V0) := by
     rw [hg₄]
@@ -471,7 +484,7 @@ theorem lpE (c : Seg prof F Wl L s₀ o) {V0 : Addr → Byte} {X : State} {t n N
   have ebp₅ := (congrArg (BitVec.setWidth 32) (congrArg Gprs.rbp hg₅)).trans ebp₄
   -- `hash_size - 2`, to the second `div`
   refine (c_68 prof).run c E.hin _ hK₅ hA₅ hr₅ vc_68 ?_
-  rintro j' g₆ fl V' ⟨rfl, rfl, rfl⟩ Y₆ t₆ hK₆ hA₆ hr₆ hg₆ -
+  rintro j' g₆ fl V₂ ⟨rfl, rfl, rfl⟩ Y₆ t₆ hK₆ hA₆ hr₆ hg₆ -
   have r60 : rv Y₆ 32 0 = hv V0 X.cpu.gpr.rdi n := by
     show (Y₆.cpu.gpr.rax).setWidth 32 = _
     rw [hg₆]
@@ -570,7 +583,7 @@ theorem lpHead (c : Seg prof F Wl L s₀ o) {V0 : Addr → Byte} {g0 : Gprs} {n 
       (by rw [esp, q2]; exact ffr _ (by omega) 8 (by omega)) (by rw [esp, q3]; exact ffr _ (by omega) 8 (by omega))
       (by rw [esp, q4]; exact ffr _ (by omega) 8 (by omega)) (by rw [esp, q5]; exact ffr _ (by omega) 8 (by omega)))
       ?_
-    rintro j' g fl V' ⟨rfl, rfl, hsp, hax, hbx, hbp, h12, h13, h14, h15⟩ Z t' hKZ hAZ hrZ hgZ -
+    rintro j' g fl V ⟨rfl, rfl, hsp, hax, hbx, hbp, h12, h13, h14, h15⟩ Z t' hKZ hAZ hrZ hgZ -
     subst hgZ
     rw [esp] at hsp hbx hbp h12 h13 h14 h15
     rw [q6] at hsp
@@ -584,28 +597,28 @@ theorem lpHead (c : Seg prof F Wl L s₀ o) {V0 : Addr → Byte} {g0 : Gprs} {n 
     refine c.s_ret hKZ hAZ E.hin (lt_len (by decide)) hrZ (ret_186 _) (by rw [hsp]; exact E.fra) hcR hjR
       (by rw [hsp]; exact r7) ?_
     rintro W t'' hKW hAW ⟨hrW, hgW⟩
-    exact kE k hk hb hz W t'' V hKW hAW hL.mem.fo hrW
+    exact kE k hk hb hz W t'' _ hKW hAW hL.mem.fo hrW
       (by rw [hgW]; show Z.cpu.gpr.rsp + 8 = _; rw [hsp])
       (by show W.cpu.gpr.rax = _; rw [hgW]; exact hax)
       ⟨(congrArg Gprs.rbx hgW).trans (hbx.trans r1), (congrArg Gprs.rbp hgW).trans (hbp.trans r2),
         (congrArg Gprs.r12 hgW).trans (h12.trans r3), (congrArg Gprs.r13 hgW).trans (h13.trans r4),
         (congrArg Gprs.r14 hgW).trans (h14.trans r5), (congrArg Gprs.r15 hgW).trans (h15.trans r6)⟩
   have hz' : (rw16 V (sl Y.cpu.gpr) == 0) = false := by rw [eN]; exact beq_eq_false_iff_ne.mpr hz
-  by_cases hc : ((nmk V0 g0.rdi n k).setWidth 32).toNat < (lim V0).toNat
-  swap
+  by_cases hc : ¬ ((nmk V0 g0.rdi n k).setWidth 32).toNat < (lim V0).toNat
   · -- the name out of bounds: to the next probe
     have hns : ¬ Stop V0 g0.rdi n Same k := fun h => Or.elim h hz fun h' => hc h'.1
     refine (c_147 prof).run c E.hin _ hK hA hr (vc_147s hz' (by rw [eN, eL]; exact hc) fN fL) ?_
-    rintro j' g fl V' ⟨rfl, rfl, hkp⟩ Z t' hKZ hAZ hrZ hgZ -
+    rintro j' g fl V ⟨rfl, rfl, hkp⟩ Z t' hKZ hAZ hrZ hgZ -
     subst hgZ
     exact t127 c E.hin hKZ hAZ hrZ (hL.kp hkp) (kn (hb1 hns))
+  replace hc := Decidable.of_not_not hc
   -- the call of `strcmp`
   have f8 : ∀ i < 8, Foot F.data (Addr.add (Y.cpu.gpr.rsp + 8#64) i) := by
     rw [esp]; exact ffr _ (by omega) 8 (by omega)
   have f16 : ∀ i < 8, Foot F.data (Addr.add (Y.cpu.gpr.rsp + 16#64) i) := by
     rw [esp]; exact ffr _ (by omega) 8 (by omega)
   refine (c_147 prof).run c E.hin _ hK hA hr (vc_147c hz' (by rw [eN, eL]; exact hc) fN fL f8 f16) ?_
-  rintro j' g fl V' ⟨rfl, rfl, hkp, hdi, hsi, h15⟩ Y₁ t₁ hK₁ hA₁ hr₁ hg₁ -
+  rintro j' g fl V ⟨rfl, rfl, hkp, hdi, hsi, h15⟩ Y₁ t₁ hK₁ hA₁ hr₁ hg₁ -
   subst hg₁
   have hL₁ := hL.kp hkp
   have esp₁ := hL₁.sp
