@@ -1,4 +1,5 @@
-import FV7z.Oci.Holds
+import FV7z.Gdp.Cuts
+import FV7z.Gdp.Holds
 open FV7z
-#print axioms FV7z.Oci.spAll
-#print axioms FV7z.Oci.oci_ok
+#print axioms FV7z.Gdp.spAll
+#print axioms FV7z.Gdp.gdp_ok
