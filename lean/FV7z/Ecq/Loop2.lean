@@ -33,8 +33,12 @@ theorem loop2 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L ecq_at ecq) {W : Addr
     refine (c_88 prof).run c hin
       (fun j' g' _ V' => Kq g₀ g' ∧ V' = W ∧ j' = 45 ∧ ∀ i < 16, Eqb W g₀.rsi 7255440#64 i)
       hK hA hrip (vc_88 ?_ ?_ ?_ ?_ ?_) ?_
-    · rw [hax, hcx, ofNat_succ]; exact hfa (j + 1) (by omega)
-    · rw [hax, hks.2.1, ofNat_succ]; exact hfb (j + 1) (by omega)
+    · intro hn
+      have : j + 1 ≠ 16 := by rwa [hax, ofNat_succ, ofNat_eq16 (j := j + 1) (by omega)] at hn
+      rw [hax, hcx, ofNat_succ]; exact hfa (j + 1) (by omega)
+    · intro hn
+      have : j + 1 ≠ 16 := by rwa [hax, ofNat_succ, ofNat_eq16 (j := j + 1) (by omega)] at hn
+      rw [hax, hks.2.1, ofNat_succ]; exact hfb (j + 1) (by omega)
     · intro _ _
       exact ⟨hks, rfl, rfl, fun i hi => hpre i (by omega)⟩
     · intro hn _ _
@@ -55,8 +59,12 @@ theorem loop2 (c : Seg prof F Wl L s₀ o) (hin : CodeIn L ecq_at ecq) {W : Addr
         ((j' = 88 ∧ g'.rax = BitVec.ofNat 64 (j + 1) ∧ g'.rcx = 7255440#64 ∧ Eqb W g₀.rsi 7255440#64 (j + 1)) ∨
          (j' = 109 ∧ ∃ i < 16, ¬ Eqb W g₀.rsi 7255440#64 i)))
       hK hA hrip (vc_88 ?_ ?_ ?_ ?_ ?_) ?_
-    · rw [hax, hcx, ofNat_succ]; exact hfa (j + 1) (by omega)
-    · rw [hax, hks.2.1, ofNat_succ]; exact hfb (j + 1) (by omega)
+    · intro hn
+      have : j + 1 ≠ 16 := by rwa [hax, ofNat_succ, ofNat_eq16 (j := j + 1) (by omega)] at hn
+      rw [hax, hcx, ofNat_succ]; exact hfa (j + 1) (by omega)
+    · intro hn
+      have : j + 1 ≠ 16 := by rwa [hax, ofNat_succ, ofNat_eq16 (j := j + 1) (by omega)] at hn
+      rw [hax, hks.2.1, ofNat_succ]; exact hfb (j + 1) (by omega)
     · intro hn _
       exfalso
       rw [hax, ofNat_succ, ofNat_eq16 (j := j + 1) (by omega)] at hn
