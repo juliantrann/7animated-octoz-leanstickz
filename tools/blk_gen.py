@@ -554,6 +554,13 @@ FNS = {
     "uad": dict(grp="Uad", cn="UString::Add_Dot", a=0x44d9b0, n=58, pos=True, stops=(0x2a,), calls=True,
                 tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `UString::Add_Dot` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
+    # glibc 2.31 elf/dl-tunables.c `do_tunable_update_val (cur, valp)` (static, called by `__tunables_init`): the type
+    # (the 4 bytes at `cur + 8`) 3, a string: the pointer `valp` stored at `cur + 0x20`; else the value `*valp` against
+    # the bounds at `cur + 0x10`, `cur + 0x18` (signed for the type 0, unsigned else), within them stored at
+    # `cur + 0x20` and `cur->initialized` (`cur + 0x28`) set. Stops: the three `ret`s (0x26, 0x34, 0x4c).
+    "dtu": dict(grp="Dtu", cn="do_tunable_update_val", a=0x66ed50, n=77, pos=True, stops=(0x26, 0x34, 0x4c),
+                tag="PLAN.md G3, startup",
+                src="glibc 2.31's `do_tunable_update_val` (`elf/dl-tunables.c`; `objdump -d`)"),
     # 7-Zip 26.06 C/LzmaDec + CPP/7zip/Compress/LzmaDecoder.cpp `CDecoder::SetOutStreamSizeResume (outSize)`: the
     # flags and sizes, then a tail jump (0x2f) to `LzmaDec_Init (&_state)`.
     "sos": dict(grp="Sos", cn="NCompress::NLzma::CDecoder::SetOutStreamSizeResume", a=0x57fd80, n=52, pos=True,
@@ -1742,6 +1749,15 @@ FNS = {
     "spp": dict(grp="Spp", cn="SplitPathToParts", a=0x452500, n=709, pos=True, fs=True, stops=(0xa9, 0x2c0),
                 calls=True, hand=(0x110, 0x1ca), tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `SplitPathToParts` (`CPP/Common/Wildcard.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/7zip/Common/ProgressUtils.cpp `CLocalProgress::Init (progress, inSizeIsMain)`:
+    # `_ratioProgress.Release ()` with `CLocalProgress::Release` (0x462290) inlined four levels deep where the
+    # vtable's slot is it (else `call rax`: 0x1c3, 0x1d3, 0x1e3, 0x1ea), each level's `delete this` its fields'
+    # releases (`call [rax + 16]`) and `operator delete (p, 0x38)`; then `_progress = progress` (`AddRef` at 0x58,
+    # the old one's `Release` at 0x67), `QueryInterface` (0x80), `_inSizeIsMain` stored. Stop: the `ret` (0x94).
+    # By hand: the counts' `sub dword [r + 8], 1` (0x3c, 0xc5, 0xf0, 0x117), their flags followed.
+    "clp": dict(grp="Clp", cn="CLocalProgress::Init", a=0x461ff0, n=497, pos=True, stops=(0x94,),
+                calls=True, hand=(0x3c, 0xc5, 0xf0, 0x117), tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CLocalProgress::Init` (`CPP/7zip/Common/ProgressUtils.cpp`; `objdump -d`)"),
     # 7-Zip 26.06 CPP/Windows/FileName.cpp `NName::ResolveDotsFolders (s)` (static; no frame: three pushes, `r12` the
     # string, `ebp` the index `i`, `rbx` = `4 i`, `rsi` its chars): the loop (0x35 the check of `s[i]`, 0x20 its head)
     # over `s`: a `.` after a separator or at 0 followed by `/` or the end deletes it (`UString::Delete` at 0x86);
@@ -1814,8 +1830,22 @@ FNS = {
     "exr": dict(grp="Exr", cn="CExtractCallbackConsole::ExtractResult", a=0x5e82c0, n=668, pos=True, fs=True,
                 stops=(233, 663), hand=(110, 265, 482, 616), calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `CExtractCallbackConsole::ExtractResult` (`ExtractCallbackConsole.cpp`; `objdump -d`)"),
+    # glibc 2.31 csu/check_fds.c `__libc_check_standard_fds ()` (a setuid start, `__libc_enable_secure`): a frame of
+    # 0x98 bytes with a `struct stat` at `rsp`; for each of the fds 0, 1, 2 `__fcntl64_nocancel (fd, F_GETFD)` (calls
+    # at 0x14, 0x2a, 0x44); on -1 with `errno` (`fs:-0x48`) = `EBADF` the fd is opened again (`__open64_nocancel`,
+    # 0x7d, 0xe9, 0x159: "/dev/full" `O_WRONLY|O_NOFOLLOW` for 0, "/dev/null" `O_RDONLY|O_NOFOLLOW` for 1 and 2) and
+    # checked by `__fxstat (1, fd, &st)` (0x90, 0x100, 0x170): the same fd, a character device (`st_mode`, `rsp +
+    # 0x18`) with the expected `st_rdev` (`rsp + 0x28`), else `hlt`. Stops: the `ret` (0x59), the `hlt`s (0xc0,
+    # 0x130, 0x1a0).
+    "cfd": dict(grp="Cfd", cn="__libc_check_standard_fds", a=0x613860, n=419, pos=True, fs=True,
+                stops=(0x59, 0xc0, 0x130, 0x1a0), calls=True, tag="PLAN.md G3, startup",
+                src="glibc 2.31's `__libc_check_standard_fds` (`csu/check_fds.c`; `objdump -d`)"),
+    # 7-Zip 26.06 UI/Console/ExtractCallbackConsole.cpp, without the landing pads (from 0x11e). Stops: the `ret`
+    # (0xfe), the call of `__stack_chk_fail` (0x119).
+    "pew": dict(grp="Pew", cn="Print_ErrorFormatIndex_Warning", a=0x5e96e0, n=286, pos=True, fs=True,
+                stops=(254, 281), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `Print_ErrorFormatIndex_Warning` (`ExtractCallbackConsole.cpp`; `objdump -d`)"),
 }
-
 
 def file_bytes(path, va, n):
     """`n` bytes at virtual address `va` of the ELF file (its `PT_LOAD` segments)"""
