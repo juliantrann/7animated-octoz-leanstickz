@@ -1876,6 +1876,10 @@ FNS = {
     "olg": dict(grp="Olg", cn="CStdOutStream::operator<< (Int64)", a=0x5a1a70, n=88, pos=True, fs=True,
                 stops=(82, 83), calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `CStdOutStream::operator<< (Int64)` (`StdOutStream.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 Common/StdOutStream.cpp, without the landing pad (from 0x28). Stop: the `ret` (0x27).
+    "pus": dict(grp="Pus", cn="CStdOutStream::PrintUString", a=0x5a14f0, n=40, pos=True, stops=(39,), calls=True,
+                tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CStdOutStream::PrintUString` (`StdOutStream.cpp`; `objdump -d`)"),
 }
 
 def file_bytes(path, va, n):
