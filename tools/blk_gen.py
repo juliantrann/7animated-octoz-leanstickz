@@ -852,6 +852,21 @@ FNS = {
                 src="7-Zip's `UString::UString (unsigned, const UString &)` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
     # `UString::UString (const UString &s, c)`: `SetStartLen (s._len + 1)` (the `call` at 0x1d), `wmemcpy (_chars,
     # s._chars, s._len)` (0x33), `_chars[s._len] = c`, `_chars[s._len + 1] = 0`; the `ret` at 0x50.
+    # `umask` (glibc 2.31, `syscall` 95) and `__errno_location`: only their code is used (`Cum`, `Gle` take them as
+    # hypotheses).
+    "umk": dict(grp="Umk", cn="umask", a=0x665480, n=12, pos=True, stops=(0xb,), calls=True, tag="PLAN.md §M, M1",
+                src="glibc 2.31's `umask` (`sysdeps/unix/syscalls.list`; `objdump -d`)"),
+    "erl": dict(grp="Erl", cn="__errno_location", a=0x5ffea0, n=21, pos=True, fs=True, stops=(0x14,), calls=True,
+                tag="PLAN.md §M, M1", src="glibc 2.31's `__errno_location` (`csu/errno-loc.c`; `objdump -d`)"),
+    # `NWindows::NFile::NDir::C_umask::C_umask ()`: `umask (0)` (0x0a), `mask = ~r & 0x1ff`, then the tail
+    # `jmp umask` (0x1b) restores it; both calls to `umask` are hypotheses.
+    "cum": dict(grp="Cum", cn="NWindows::NFile::NDir::C_umask::C_umask()", a=0x455720, n=32, pos=True, stops=(0x1b,),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip's `C_umask::C_umask ()` (`CPP/Windows/FileDir.h`; `objdump -d`)"),
+    # `GetLastError ()`: `return errno` through `__errno_location` (0x08, a hypothesis).
+    "gle": dict(grp="Gle", cn="GetLastError()", a=0x5a0200, n=20, pos=True, stops=(0x13,),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip's `GetLastError ()` (`CPP/Common/MyWindows.cpp`; `objdump -d`)"),
     "uch": dict(grp="Uch", cn="UString::UString(const UString&, wchar_t)", a=0x44d280, n=81, pos=True, stops=(0x50,),
                 calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip's `UString::UString (const UString &, wchar_t)` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
