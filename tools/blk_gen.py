@@ -1652,6 +1652,17 @@ FNS = {
     "api": dict(grp="Api", cn="NWildcard::CCensor::AddPreItem", a=0x453650, n=246, pos=True, stops=(0xcf,),
                 hand=(0x2b,), calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `NWildcard::CCensor::AddPreItem` (`CPP/Common/Wildcard.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/7zip/UI/Console/List.cpp `GetUInt64Value (archive, index, propID, value)` (static): a frame of
+    # 0x20 under three pushes, the stack guard at `rsp + 0x18`, `value.Val = 0; value.Def = false`, `prop` (a
+    # `CPropVariant` at `rsp`) emptied; `archive->GetProperty (index, propID, &prop)` (`call [rax + 0x30]` at 0x3f);
+    # a result not 0 is returned; else `ConvertPropVariantToUInt64` in line: `vt` above 21 (`ja` at 0x7d, by hand, to
+    # the cold `throw` at `0x419b70`) or by the jump table at `0x6ea208` (`jt`, 22 entries, `jtx`: those not
+    # VT_EMPTY, VT_UI1, VT_UI2, VT_UI4, VT_UI8 lead to the same `throw`): `value.Val` and `value.Def` set (0xa0..0xf0);
+    # then `prop.Clear ()` (`call 0x456f60` at 0x4c), the guard's check. Stops: the `ret` (0x70), the call of
+    # `__stack_chk_fail` (0xf4).
+    "guv": dict(grp="Guv", cn="GetUInt64Value", a=0x5ebcd0, n=249, pos=True, fs=True, stops=(0x70, 0xf4), hand=(0x7d,),
+                calls=True, jt=(0x6ea208, 22), jtx=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `GetUInt64Value` (`CPP/7zip/UI/Console/List.cpp`; `objdump -d`)"),
 }
 
 
@@ -1981,11 +1992,15 @@ def main():
     OPN = f"open FV7z.{cgrp} ({nm} {nm}_at {nm}_length)\n" if "code" in F else ""
     grp, cn, a, n, pos, stops, tag = F["grp"], F["cn"], F["a"], F["n"], F["pos"], set(F["stops"]), F["tag"]
     # the jump table's bytes and the offsets of the cases
-    jtb, jtg = b"", []
+    jtb, jtg, jta = b"", [], []
     if "jt" in F:
         ja, jn = F["jt"]
         jtb = file_bytes("../release/26.06/7zzs", ja, 4 * jn)
         jtg = [ja + int.from_bytes(jtb[4 * k: 4 * k + 4], "little", signed=True) - a for k in range(jn)]
+        # `jtx`: entries out of the code (a cold part) are allowed; `_cases` has them as offsets mod 2^64, the
+        # proof shows they are not taken or takes them by hand
+        jta = [x % 2 ** 64 for x in jtg]
+        if F.get("jtx"): jtg = sorted({x for x in jtg if 0 <= x < n})
         assert all(0 <= x < n for x in jtg)
     # the code's place in the statements: a binder and its use, or the address where the code lies in 7zzs
     EB, EA, ER = ("", f" {nm}_at", "") if pos else (" (e' : Addr)", " e'", " e'")
@@ -2069,7 +2084,7 @@ def {nm}_jt : List Byte := [
 theorem {nm}_jt_pin : Exe.bytesAt V2606.zzs.blob {F["jt"][0]:#x} {len(jtb)} = some {nm}_jt := by decide +kernel
 
 /-- The cases: where in the code the table's entries lead. -/
-def {nm}_cases : List Nat := [{", ".join(map(str, jtg))}]
+def {nm}_cases : List Nat := [{", ".join(map(str, jta))}]
 """ if jtg else ""
     atdef = f"\n/-- Where the code lies in `7zzs`. -/\nabbrev {nm}_at : Addr := {a:#x}\n" if pos else ""
     if "code" not in F: open(out + "/Code.lean", "w").write(f"""import ZellicX86.Spec.Executable
