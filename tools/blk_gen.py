@@ -230,6 +230,22 @@ FNS = {
     # jump (0x2f) to `NDir::SetDirTime` (0x4556e0). Stop: the jump.
     # 7-Zip's CPP/Windows/PropVariantConv.cpp `ConvertUtcFileTimeToString (ft, s, level)`: a tail jump (14) to
     # `ConvertUtcFileTimeToString2 (ft, 0, s, level, 0)` (0x4576f0).
+    # glibc's debug/chk_fail.c `__stack_chk_fail ()`: `push rax; pop rax`, `rdi` = the message, `sub rsp, 8`, then
+    # `call __fortify_fail` (0x669810, noreturn). Stop: the call (17).
+    "scf": dict(grp="Scf", cn="__stack_chk_fail", a=0x6697f0, n=22, pos=True, stops=(17,),
+                tag="PLAN.md §M, M1", src="glibc's `__stack_chk_fail` (`debug/chk_fail.c`; `objdump -d`)"),
+    # glibc's sysdeps/posix/libc_fatal.c `__libc_fatal (msg)`: `push rax; pop rax`, `__libc_message (1, "%s", msg)`
+    # (0x6275b0, noreturn). Stop: the call (27).
+    "lfa": dict(grp="Lfa", cn="__libc_fatal", a=0x627a00, n=32, pos=True, stops=(27,),
+                tag="PLAN.md §M, M1", src="glibc's `__libc_fatal` (`sysdeps/posix/libc_fatal.c`; `objdump -d`)"),
+    # glibc's stdlib/exit.c `exit (status)`: `push rax; pop rax`, `__run_exit_handlers (status, &__exit_funcs, 1, 1)`
+    # (0x623150, noreturn). Stop: the call (27).
+    "exi": dict(grp="Exi", cn="exit", a=0x623410, n=32, pos=True, stops=(27,),
+                tag="PLAN.md §M, M1", src="glibc's `exit` (`stdlib/exit.c`; `objdump -d`)"),
+    # glibc's malloc/malloc.c `malloc_printerr (str)`: `push rax; pop rax`, `__libc_message (1, "%s\n", str)`
+    # (0x627710, noreturn). Stop: the call (23).
+    "mpe": dict(grp="Mpe", cn="malloc_printerr", a=0x62e490, n=28, pos=True, stops=(23,),
+                tag="PLAN.md §M, M1", src="glibc's `malloc_printerr` (`malloc/malloc.c`; `objdump -d`)"),
     "uts": dict(grp="Uts", cn="ConvertUtcFileTimeToString", a=0x457a10, n=19, pos=True, stops=(14,),
                 tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `ConvertUtcFileTimeToString` (`CPP/Windows/PropVariantConv.cpp`; `objdump -d`)"),
@@ -1021,6 +1037,11 @@ FNS = {
     # PLT entry) of the rest down and `_len` - `count`. Stops: the `ret`s (0x25, 0x5d).
     "udl": dict(grp="Udl", cn="UString::Delete", a=0x44e0b0, n=94, pos=True, stops=(0x25, 0x5d), calls=True,
                 hand=(0x54,), tag="PLAN.md §M, M1", src="7-Zip's `UString::Delete` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
+    # `LzFindPrepare ()`: the first CPU test (the `call` at 0x8); 0 into `g_LzFind_GetMatchesSpec` (`0x7967a0`) when it
+    # fails, else the second (the `call` at 0x28) picks one of two functions by a `cmovne`. Stops: the `ret`s (0x22,
+    # 0x4c).
+    "lzp": dict(grp="Lzp", cn="LzFindPrepare", a=0x427de0, n=77, pos=True, stops=(0x22, 0x4c), calls=True,
+                tag="PLAN.md §M, M1", src="7-Zip's `LzFindPrepare` (`C/LzFind.c`; `objdump -d`)"),
     # `CFileBase::OpenBinary (name, flags, mode)`: `Close ()` (the `call` at 0x1a), `open64 (name, flags, mode)` (the
     # `call` at 0x2a), the result stored as `_handle`, `al` = it is not -1. Stop: the `ret` (0x41).
     "fob": dict(grp="Fob", cn="NWindows::NFile::NIO::CFileBase::OpenBinary", a=0x456060, n=66, pos=True, stops=(0x41,),
@@ -2062,6 +2083,19 @@ FNS = {
     # glibc 2.31 libio/genops.c `_IO_iter_begin ()`: `_IO_list_all`. Stop: the `ret` (0xb).
     "iib": dict(grp="Iib", cn="_IO_iter_begin", a=0x60e050, n=12, pos=True, stops=(11,), tag="PLAN.md §M, M1",
                 src="glibc 2.31's `_IO_iter_begin` (`libio/genops.c`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/7zip/UI/Common/ArchiveCommandLine.cpp `StringToUInt32 (s, v)`: `ConvertStringToUInt32 (s,
+    # &end)`, `v` set, `*end == 0`. Stops: the `ret` (0x42), the call of `__stack_chk_fail` (0x43).
+    "sti": dict(grp="Sti", cn="StringToUInt32 (const wchar_t *, UInt32 &)", a=0x5a6760, n=72, pos=True, fs=True,
+                stops=(66, 67), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `StringToUInt32` (`ArchiveCommandLine.cpp`; `objdump -d`)"),
+    # glibc 2.31 iconv/gconv_db.c `__gconv_alias_compare (p1, p2)`: `strcmp` of the two `fromname`s as a tail jump.
+    # Stop: the jump (10).
+    "gac": dict(grp="Gac", cn="__gconv_alias_compare", a=0x452930, n=15, pos=True, stops=(10,),
+                tag="PLAN.md §M, M1", src="glibc 2.31's `__gconv_alias_compare` (`iconv/gconv_db.c`; `objdump -d`)"),
+    # glibc 2.31 wcsmbs/mbsrtowcs.c `__mbsrtowcs (dst, src, len, ps)`: `__mbsrtowcs_l (dst, src, len, ps ?: &state,
+    # _NL_CURRENT_LOCALE)` as a tail jump. Stop: the jump (29).
+    "mbr": dict(grp="Mbr", cn="__mbsrtowcs", a=0x65d320, n=34, pos=True, fs=True, stops=(29,),
+                tag="PLAN.md §M, M1", src="glibc 2.31's `__mbsrtowcs` (`wcsmbs/mbsrtowcs.c`; `objdump -d`)"),
     # glibc 2.31 elf/dl-lookup.c `_dl_setup_hash (map)`: the GNU hash table's fields (or the SysV one's) into `map`.
     # Stops: the two `ret`s (0x61, 0x93), the `__assert_fail` path (0x94) not covered.
     "dsh": dict(grp="Dsh", cn="_dl_setup_hash", a=0x6ab020, n=180, pos=True, stops=(0x61, 0x93, 0x94), calls=True,
@@ -2092,6 +2126,16 @@ FNS = {
     # 0x79217c), a tail jump to `ConvertUnicodeToUTF8_Flags`. Stop: the jump (0xd).
     "cu8": dict(grp="Cu8", cn="ConvertUnicodeToUTF8", a=0x4520b0, n=18, pos=True, stops=(13,), tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `ConvertUnicodeToUTF8` (`UTFConvert.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 Common/StdOutStream.cpp `CStdOutStream::NormalizePrint_UString_Path (s, tempU, tempA)`: three pushes,
+    # `tempU = s` (0x44d710), `NormalizePrint_UString (tempU)` (0x5a1680), the pops, a tail jump to `PrintUString`.
+    # Stop: the jump (0x33).
+    "npu": dict(grp="Npu", cn="CStdOutStream::NormalizePrint_UString_Path", a=0x5a16d0, n=56, pos=True, stops=(51,),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CStdOutStream::NormalizePrint_UString_Path` (`StdOutStream.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 Windows/FileIO.cpp `CFileBase::seekToCur ()`: `seek (0, SEEK_CUR)` (0x4560b0). Stop: the ret (0x18).
+    "stc": dict(grp="Stc", cn="NWindows::NFile::NIO::CFileBase::seekToCur", a=0x4560f0, n=25, pos=True, stops=(24,),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CFileBase::seekToCur` (`FileIO.cpp`; `objdump -d`)"),
 }
 
 def file_bytes(path, va, n):
