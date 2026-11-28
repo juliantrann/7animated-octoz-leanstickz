@@ -1486,6 +1486,25 @@ FNS = {
     "ifd": dict(grp="Ifd", cn="CInFileStream::~CInFileStream", a=0x5a4040, n=135, pos=True, stops=(0x86,), calls=True,
                 tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `CInFileStream::~CInFileStream` (`FileStreams.cpp`; `objdump -d`)"),
+    # glibc 2.31 math/s_nan.c `__nan (tagp)`: `__strtod_nan (tagp, NULL, 0)` as `xor edx, edx; xor esi, esi`, then a
+    # tail jump (8) to 0x461ed0
+    "nan": dict(grp="Nan", cn="__nan", a=0x4621f0, n=13, pos=True, stops=(0x8,), calls=True,
+                tag="PLAN.md §M, M1", src="glibc 2.31's `__nan` (`math/s_nan.c`; `objdump -d`)"),
+    # 7-Zip 26.06 `CArchiveExtractCallback::Release ()` (`MY_ADDREF_RELEASE`, `CPP/Common/MyCom.h`): as the `_ZThn24`
+    # thunk (`trl`) with `this` in `rdi` and the count at `rdi + 0x38`; the destructor's `call` (0x1e, `0x5b2340`), the
+    # sized `operator delete (p, 0x2c0)` (0x2b, `0x6014e0`); the `ret` at 0x3a with the count in `eax`
+    "rel": dict(grp="Rel", cn="CArchiveExtractCallback::Release", a=0x5b2840, n=59, pos=True, stops=(0x3a,),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `MY_ADDREF_RELEASE` `Release ()` (`CPP/Common/MyCom.h`; `objdump -d`)"),
+    # `AString::operator+=(const char *)`: length loop, `Grow` as a continuation, copy loop, `_len += n`
+    "apc": dict(grp="Apc", cn="AString::operator+=(const char *)", a=0x44c890, n=93, pos=True, stops=(0x5c,),
+                hand=(0x50,), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `AString::operator+= (const char *)` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/Windows/PropVariant.cpp `NCOM::AllocBstrFromAscii (s)`: NULL for `s` NULL (the `ret` at 0x62);
+    # `len = strlen (s)` (the `call` of the PLT entry at 0x12), `p = SysAllocStringLen (NULL, len)` (0x1e), NULL for
+    # `p` NULL (0x58); else the copy loop at 0x30 (`p[i] = (Byte)s[i]` for `i <= len`), the `ret` at 0x46.
+    "aba": dict(grp="Aba", cn="AllocBstrFromAscii", a=0x456e50, n=99, pos=True, stops=(0x46, 0x58, 0x62), calls=True,
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `NCOM::AllocBstrFromAscii` (`PropVariant.cpp`; `objdump -d`)"),
 }
 
 
