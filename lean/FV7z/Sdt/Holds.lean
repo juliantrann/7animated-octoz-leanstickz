@@ -392,19 +392,28 @@ theorem vc_475z {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post}
   have t := beq_iff_eq.2 hp
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at he w544 t h ⊢
-  sdx [W_475, W_485, W_500, o32, o33, o34, he, t]
+  sdx [W_475, W_485, o32, o33, he, t]
   all_goals repeat' (first | refine h _ ?_ _ | sdc)
 
-/-- Past the first item: `_size = 0`; the pairs not null, `rdi` = them, to the `call` of `delete[]` (503). -/
+/-- Past the first item: `_size = 0`; the pairs not null, to 500. -/
 theorem vc_475p {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post}
     (he : g.r12 - 8#64 = 18446744073709551608#64) (w544 : ∀ i < 4, Foot Wl (Addr.add (g.rbx + 544#64) i))
     (hp : ¬ g.rbp = 0)
-    (h : ∀ g', g'.rsp = g.rsp → g'.rdi = g.rbp → ∀ fl, Q 503 g' fl (Vst V (g.rbx + 544#64) (toBytesLE 0#32 4))) :
+    (h : ∀ g', g'.rsp = g.rsp → g'.rbp = g.rbp → ∀ fl, Q 500 g' fl (Vst V (g.rbx + 544#64) (toBytesLE 0#32 4))) :
     W_475 F Wl Q g f V := by
   have t := beq_eq_false_iff_ne.2 hp
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at he w544 t h ⊢
-  sdx [W_475, W_485, W_500, o32, o33, o34, he, t]
+  sdx [W_475, W_485, o32, o33, he, t]
+  all_goals repeat' (first | refine h _ ?_ ?_ _ | sdc)
+
+/-- `rdi` = the pairs, to the `call` of `delete[]` (503). -/
+theorem vc_500 {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post}
+    (h : ∀ g', g'.rsp = g.rsp → g'.rdi = g.rbp → ∀ fl, Q 503 g' fl V) :
+    W_500 F Wl Q g f V := by
+  obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
+  dsimp only at h ⊢
+  sdx [W_500, o34]
   all_goals repeat' (first | refine h _ ?_ ?_ _ | sdc)
 
 /-- `add rsp, 0x18`, `eax` = 0, the six pops, to the `ret` (524). -/

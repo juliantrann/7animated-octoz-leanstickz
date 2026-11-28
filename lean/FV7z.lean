@@ -1461,3 +1461,4 @@ import FV7z.Sdt.Blocks2
 import FV7z.Sdt.Blocks
 import FV7z.Sdt.Cuts
 import FV7z.Sdt.Holds
+import FV7z.Sdt.Heap
