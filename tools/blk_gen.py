@@ -1736,6 +1736,15 @@ FNS = {
     "spp": dict(grp="Spp", cn="SplitPathToParts", a=0x452500, n=709, pos=True, fs=True, stops=(0xa9, 0x2c0),
                 calls=True, hand=(0x110, 0x1ca), tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `SplitPathToParts` (`CPP/Common/Wildcard.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/7zip/Common/ProgressUtils.cpp `CLocalProgress::Init (progress, inSizeIsMain)`:
+    # `_ratioProgress.Release ()` with `CLocalProgress::Release` (0x462290) inlined four levels deep where the
+    # vtable's slot is it (else `call rax`: 0x1c3, 0x1d3, 0x1e3, 0x1ea), each level's `delete this` its fields'
+    # releases (`call [rax + 16]`) and `operator delete (p, 0x38)`; then `_progress = progress` (`AddRef` at 0x58,
+    # the old one's `Release` at 0x67), `QueryInterface` (0x80), `_inSizeIsMain` stored. Stop: the `ret` (0x94).
+    # By hand: the counts' `sub dword [r + 8], 1` (0x3c, 0xc5, 0xf0, 0x117), their flags followed.
+    "clp": dict(grp="Clp", cn="CLocalProgress::Init", a=0x461ff0, n=497, pos=True, stops=(0x94,),
+                calls=True, hand=(0x3c, 0xc5, 0xf0, 0x117), tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CLocalProgress::Init` (`CPP/7zip/Common/ProgressUtils.cpp`; `objdump -d`)"),
     # 7-Zip 26.06 CPP/Windows/FileName.cpp `NName::ResolveDotsFolders (s)` (static; no frame: three pushes, `r12` the
     # string, `ebp` the index `i`, `rbx` = `4 i`, `rsi` its chars): the loop (0x35 the check of `s[i]`, 0x20 its head)
     # over `s`: a `.` after a separator or at 0 followed by `/` or the end deletes it (`UString::Delete` at 0x86);
@@ -1809,7 +1818,6 @@ FNS = {
                 stops=(233, 663), hand=(110, 265, 482, 616), calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `CExtractCallbackConsole::ExtractResult` (`ExtractCallbackConsole.cpp`; `objdump -d`)"),
 }
-
 
 def file_bytes(path, va, n):
     """`n` bytes at virtual address `va` of the ELF file (its `PT_LOAD` segments)"""
