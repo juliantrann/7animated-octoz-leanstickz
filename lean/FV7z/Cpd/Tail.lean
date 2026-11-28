@@ -19,8 +19,8 @@ bytes `V'`, `P V'`, the registers a call keeps (`Bk`) and the saved registers an
 
 - `Fr`: the saved registers and the return address in the bytes; `Rs`: the registers kept from 170 on (`rsp` below
   the pushes, `r12` = `this`, `r15`); `pk V it k`: `_items[k]`; `pops5`: the registers after the pops.
-- `vc_*`: the verification conditions of the pieces; `from170`: from 170 to the return address (`kr`) or to
-  `0x6014f0` (`kt`).
+- `vc_*`: the verification conditions of the pieces; `from275`: from 275 on; `from170`: from 170 to the return
+  address (`kr`) or to `0x6014f0` (`kt`).
 -/
 open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn
 open FV7z.Ocv (rbx0 rbx0_eq rb_step rb_ne rb_last)
@@ -236,6 +236,84 @@ end
 variable {prof : Profile} {L : List (Addr × List Byte)} {s₀ : State} {o : Oracle}
   {gev : List Event} {gP : State → Nat → List Event → Prop} {gE : Outcome → List Event → Prop}
 
+set_option maxHeartbeats 1000000 in
+/-- From 275 with `I 0`, the saved registers and the return address in the bytes, `rdi` = `it`: the pops, then the
+`ret` when `it` is 0 (`kr`), else the `jmp` to `0x6014f0` (`kt`). -/
+theorem from275 {g₀ : Gprs} {it : BitVec 64} {I : Nat → (Addr → Byte) → Prop} {e₂ : Addr} {code₂ : List Byte}
+    {j₂ : Nat} (c : Seg prof F Wl L s₀ o) (hin : CodeIn L cpd_at cpd) (hin1 : CodeIn L 0x6014f0#64 Tiny.c6014f0)
+    (w1 : ∀ i < 8, Foot Wl (Addr.add (g₀.rsp - 8) i))
+    (w2 : ∀ i < 8, Foot Wl (Addr.add (g₀.rsp - 8 - 8) i))
+    (w3 : ∀ i < 8, Foot Wl (Addr.add (g₀.rsp - 8 - 8 - 8) i))
+    (w4 : ∀ i < 8, Foot Wl (Addr.add (g₀.rsp - 8 - 8 - 8 - 8) i))
+    (w5 : ∀ i < 8, Foot Wl (Addr.add (g₀.rsp - 8 - 8 - 8 - 8 - 8) i))
+    (hl : ∀ i < 8, Foot F.data (Addr.add g₀.rsp i))
+    (hin₂ : CodeIn L e₂ code₂) (h₂ : j₂ < code₂.length)
+    (kt : ∀ (Y : State) (W : Addr → Byte) (t' : Nat), KeptW Wl s₀ Y → Agree F Y.proc.mm.mem W → I 0 W →
+      Fr g₀ (e₂.add j₂) W → Y.cpu.rip = 0x6014f0#64 → Y.cpu.gpr.rsp = g₀.rsp →
+      Y.cpu.gpr.rdi = it → it ≠ 0 → Kp g₀ Y.cpu.gpr → GoG prof L o gev gP gE Y t')
+    (kr : ∀ (Z : State) (W : Addr → Byte) (t' : Nat), KeptW Wl s₀ Z → Agree F Z.proc.mm.mem W → I 0 W →
+      Z.cpu.rip = e₂.add j₂ → Bk g₀ Z.cpu.gpr → it = 0 → GoG prof L o gev gP gE Z t') :
+    AtJ prof F Wl L s₀ o gev gP gE 275 fun g W => I 0 W ∧ Fr g₀ (e₂.add j₂) W ∧ Rs g₀ g ∧ g.rdi = it := by
+  rintro Y W t' hKY hAY hrY ⟨hI0, hfr, ⟨hs, h12, h15⟩, hdi⟩
+  have l5 : ∀ i < 8, Foot F.data (Addr.add Y.cpu.gpr.rsp i) := by
+    rw [hs]; exact fun i hi => c.hws _ (w5 i hi)
+  have l4 : ∀ i < 8, Foot F.data (Addr.add (Y.cpu.gpr.rsp + 8) i) := by
+    rw [hs, a5s]; exact fun i hi => c.hws _ (w4 i hi)
+  have l3 : ∀ i < 8, Foot F.data (Addr.add (Y.cpu.gpr.rsp + 8 + 8) i) := by
+    rw [hs, a5s, a4s]; exact fun i hi => c.hws _ (w3 i hi)
+  have l2 : ∀ i < 8, Foot F.data (Addr.add (Y.cpu.gpr.rsp + 8 + 8 + 8) i) := by
+    rw [hs, a5s, a4s, a3s]; exact fun i hi => c.hws _ (w2 i hi)
+  have l1 : ∀ i < 8, Foot F.data (Addr.add (Y.cpu.gpr.rsp + 8 + 8 + 8 + 8) i) := by
+    rw [hs, a5s, a4s, a3s, a2s]; exact fun i hi => c.hws _ (w1 i hi)
+  have hsP : (pops5 W Y.cpu.gpr).rsp = g₀.rsp := by
+    show Y.cpu.gpr.rsp + 8 + 8 + 8 + 8 + 8 = _
+    rw [hs, a5s, a4s, a3s, a2s, a1s]
+  have hkP : Kp g₀ (pops5 W Y.cpu.gpr) := by
+    refine ⟨?_, ?_, ?_, ?_, ?_, h15⟩
+    · show rdq(W, Y.cpu.gpr.rsp) = _
+      rw [hs]; exact hfr.2.2.2.2.1
+    · show rdq(W, Y.cpu.gpr.rsp + 8) = _
+      rw [hs, a5s]; exact hfr.2.2.2.1
+    · show rdq(W, Y.cpu.gpr.rsp + 8 + 8) = _
+      rw [hs, a5s, a4s]; exact hfr.2.2.1
+    · show rdq(W, Y.cpu.gpr.rsp + 8 + 8 + 8) = _
+      rw [hs, a5s, a4s, a3s]; exact hfr.2.1
+    · show rdq(W, Y.cpu.gpr.rsp + 8 + 8 + 8 + 8) = _
+      rw [hs, a5s, a4s, a3s, a2s]; exact hfr.1
+  by_cases hz0 : it = 0
+  · have hW : W_275 F Wl (fun j' g' _ V₁ => j' = 320 ∧ g' = pops5 W Y.cpu.gpr ∧ V₁ = W) Y.cpu.gpr Y.cpu.rflags W :=
+      vc_275z (Q := fun j' g' _ V₁ => j' = 320 ∧ g' = pops5 W Y.cpu.gpr ∧ V₁ = W) (g := Y.cpu.gpr)
+        (f := Y.cpu.rflags) (V := W) (hdi.trans hz0) l5 l4 l3 l2 l1 fun _ => ⟨rfl, rfl, rfl⟩
+    refine (c_275 prof).run c hin _ hKY hAY hrY hW ?_
+    rintro j' g fl V₁ ⟨rfl, rfl, hV₁⟩ U t₁ hKU hAU hrU hgU -
+    subst V₁
+    have hsU : U.cpu.gpr.rsp = g₀.rsp := (congrArg Gprs.rsp hgU).trans hsP
+    refine c.s_ret hKU hAU hin (lt_len (by decide)) hrU (ret_320 _) (by rw [hsU]; exact hl) hin₂ h₂
+      (by rw [hsU]; exact hfr.2.2.2.2.2) ?_
+    rintro Z t₂ hKZ hAZ ⟨hrZ, hgZ⟩
+    refine kr Z W t₂ hKZ hAZ hI0 hrZ ⟨?_, ?_⟩ hz0
+    · rw [hgZ]
+      show U.cpu.gpr.rsp + 8 = _
+      rw [hsU]
+    · rw [hgZ, hgU]
+      exact hkP
+  · have hW : W_275 F Wl (fun j' g' _ V₁ => j' = 288 ∧ g' = pops5 W Y.cpu.gpr ∧ V₁ = W) Y.cpu.gpr Y.cpu.rflags W :=
+      vc_275n (Q := fun j' g' _ V₁ => j' = 288 ∧ g' = pops5 W Y.cpu.gpr ∧ V₁ = W) (g := Y.cpu.gpr)
+        (f := Y.cpu.rflags) (V := W) (fun h => hz0 (hdi.symm.trans h)) l5 l4 l3 l2 l1 fun _ => ⟨rfl, rfl, rfl⟩
+    refine (c_275 prof).run c hin _ hKY hAY hrY hW ?_
+    rintro j' g fl V₁ ⟨rfl, rfl, hV₁⟩ U t₁ hKU hAU hrU hgU -
+    subst V₁
+    refine c.s_jmp_x hKU hAU hin (lt_len (by decide)) hrU (jmp_288 _) (tgt := 0) hin1 (by decide) (by decide) ?_
+    rintro Z t₂ hKZ hAZ ⟨hrZ, hgZ⟩
+    refine kt Z W t₂ hKZ hAZ hI0 hfr (by rw [hrZ, addr_add_zero]) ?_ ?_ hz0 ?_
+    · rw [hgZ, hgU]
+      exact hsP
+    · rw [hgZ, hgU]
+      exact hdi
+    · rw [hgZ, hgU]
+      exact hkP
+
+set_option maxHeartbeats 1000000 in
 /-- From 170 (`g₀` the registers at the entry, `this` = `g₀.rdi`): `B0` at 170; the 8 bytes at `this + 48` freed
 when not 0 (`hC1`, else `hZ1`), giving `B1`; those at `this + 32` (`hC2`, else `hZ2`), giving `I n` with `n` = `n32`
 the 4 bytes at `this + 16` (`hn`) and `it` the 8 bytes at `this + 8` whenever `I` holds (`hIt`); the steps as in
@@ -285,63 +363,8 @@ theorem from170 {g₀ : Gprs} {n32 : BitVec 32} {it : BitVec 64} {B0 B1 : (Addr 
       Z.cpu.rip = e₂.add j₂ → Bk g₀ Z.cpu.gpr → it = 0 → GoG prof L o gev gP gE Z t') :
     AtJ prof F Wl L s₀ o gev gP gE 170 fun g W => B0 W ∧ Fr g₀ (e₂.add j₂) W ∧ Rs g₀ g := by
   have hn32 : n32.toNat < 4294967296 := n32.isLt
-  -- the end, from 275
-  have F275 : AtJ prof F Wl L s₀ o gev gP gE 275 fun g W => I 0 W ∧ Fr g₀ (e₂.add j₂) W ∧
-      Rs g₀ g ∧ g.rdi = it := by
-    rintro Y W t' hKY hAY hrY ⟨hI0, hfr, ⟨hs, h12, h15⟩, hdi⟩
-    have l5 : ∀ i < 8, Foot F.data (Addr.add Y.cpu.gpr.rsp i) := by
-      rw [hs]; exact fun i hi => c.hws _ (w5 i hi)
-    have l4 : ∀ i < 8, Foot F.data (Addr.add (Y.cpu.gpr.rsp + 8) i) := by
-      rw [hs, a5s]; exact fun i hi => c.hws _ (w4 i hi)
-    have l3 : ∀ i < 8, Foot F.data (Addr.add (Y.cpu.gpr.rsp + 8 + 8) i) := by
-      rw [hs, a5s, a4s]; exact fun i hi => c.hws _ (w3 i hi)
-    have l2 : ∀ i < 8, Foot F.data (Addr.add (Y.cpu.gpr.rsp + 8 + 8 + 8) i) := by
-      rw [hs, a5s, a4s, a3s]; exact fun i hi => c.hws _ (w2 i hi)
-    have l1 : ∀ i < 8, Foot F.data (Addr.add (Y.cpu.gpr.rsp + 8 + 8 + 8 + 8) i) := by
-      rw [hs, a5s, a4s, a3s, a2s]; exact fun i hi => c.hws _ (w1 i hi)
-    have hsP : (pops5 W Y.cpu.gpr).rsp = g₀.rsp := by
-      show Y.cpu.gpr.rsp + 8 + 8 + 8 + 8 + 8 = _
-      rw [hs, a5s, a4s, a3s, a2s, a1s]
-    have hkP : Kp g₀ (pops5 W Y.cpu.gpr) := by
-      refine ⟨?_, ?_, ?_, ?_, ?_, h15⟩
-      · show rdq(W, Y.cpu.gpr.rsp) = _
-        rw [hs]; exact hfr.2.2.2.2.1
-      · show rdq(W, Y.cpu.gpr.rsp + 8) = _
-        rw [hs, a5s]; exact hfr.2.2.2.1
-      · show rdq(W, Y.cpu.gpr.rsp + 8 + 8) = _
-        rw [hs, a5s, a4s]; exact hfr.2.2.1
-      · show rdq(W, Y.cpu.gpr.rsp + 8 + 8 + 8) = _
-        rw [hs, a5s, a4s, a3s]; exact hfr.2.1
-      · show rdq(W, Y.cpu.gpr.rsp + 8 + 8 + 8 + 8) = _
-        rw [hs, a5s, a4s, a3s, a2s]; exact hfr.1
-    by_cases hz0 : it = 0
-    · refine (c_275 prof).run c hin (fun j' g' _ V₁ => j' = 320 ∧ g' = pops5 W Y.cpu.gpr ∧ V₁ = W) hKY hAY hrY
-        (vc_275z (g := Y.cpu.gpr) (V := W) (hdi.trans hz0) l5 l4 l3 l2 l1 fun _ => ⟨rfl, rfl, rfl⟩) ?_
-      rintro j' g fl V₁ ⟨rfl, rfl, hV₁⟩ U t₁ hKU hAU hrU hgU -
-      subst V₁
-      have hsU : U.cpu.gpr.rsp = g₀.rsp := (congrArg Gprs.rsp hgU).trans hsP
-      refine c.s_ret hKU hAU hin (lt_len (by decide)) hrU (ret_320 _) (by rw [hsU]; exact hl) hin₂ h₂
-        (by rw [hsU]; exact hfr.2.2.2.2.2) ?_
-      rintro Z t₂ hKZ hAZ ⟨hrZ, hgZ⟩
-      refine kr Z W t₂ hKZ hAZ hI0 hrZ ⟨?_, ?_⟩ hz0
-      · rw [hgZ]
-        show U.cpu.gpr.rsp + 8 = _
-        rw [hsU]
-      · rw [hgZ, hgU]
-        exact hkP
-    · refine (c_275 prof).run c hin (fun j' g' _ V₁ => j' = 288 ∧ g' = pops5 W Y.cpu.gpr ∧ V₁ = W) hKY hAY hrY
-        (vc_275n (g := Y.cpu.gpr) (V := W) (fun h => hz0 (hdi.symm.trans h)) l5 l4 l3 l2 l1 fun _ => ⟨rfl, rfl, rfl⟩) ?_
-      rintro j' g fl V₁ ⟨rfl, rfl, hV₁⟩ U t₁ hKU hAU hrU hgU -
-      subst V₁
-      refine c.s_jmp_x hKU hAU hin (lt_len (by decide)) hrU (jmp_288 _) (tgt := 0) hin1 (by decide) (by decide) ?_
-      rintro Z t₂ hKZ hAZ ⟨hrZ, hgZ⟩
-      refine kt Z W t₂ hKZ hAZ hI0 hfr (by rw [hrZ, addr_add_zero]) ?_ ?_ hz0 ?_
-      · rw [hgZ, hgU]
-        exact hsP
-      · rw [hgZ, hgU]
-        exact hdi
-      · rw [hgZ, hgU]
-        exact hkP
+  -- the end, from 275 (`from275`)
+  have F275 := from275 (g₀ := g₀) (I := I) c hin hin1 w1 w2 w3 w4 w5 hl hin₂ h₂ kt kr
   -- 265: `rbx` -= 8, to 275 after the step 0, else to 224
   have S265 : ∀ k, k < n32.toNat →
       (∀ k', k = k' + 1 → AtJ prof F Wl L s₀ o gev gP gE 224 fun g W => I (k' + 1) W ∧

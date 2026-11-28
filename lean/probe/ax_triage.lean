@@ -5,6 +5,7 @@ import FV7z.Cpd.Items
 import FV7z.Cpd.Loop
 import FV7z.Cpd.Holds
 open FV7z
+#print axioms FV7z.Cpd.from275
 #print axioms FV7z.Cpd.from170
 #print axioms FV7z.Cpd.from157
 #print axioms FV7z.Cpd.from48
