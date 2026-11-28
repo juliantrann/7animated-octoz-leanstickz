@@ -1,11 +1,12 @@
-import FV7z.Ocf.Code
-import FV7z.Ocf.Pats
-import FV7z.Ocf.Blocks1
-import FV7z.Ocf.Blocks
-import FV7z.Ocf.Cuts
-import FV7z.Ocf.Holds
+import FV7z.Pva.Code
+import FV7z.Pva.Pats
+import FV7z.Pva.Blocks1
+import FV7z.Pva.Blocks
+import FV7z.Pva.Cuts
+import FV7z.Pva.Holds
 open FV7z
-#print axioms FV7z.Ocf.ocf_ok
-#print axioms FV7z.Ocf.vc_0
-#print axioms FV7z.Ocf.vc_35
-#print axioms FV7z.Ocf.vc_48
+#print axioms FV7z.Pva.pva_ok
+#print axioms FV7z.Pva.vc_0
+#print axioms FV7z.Pva.vc_22
+#print axioms FV7z.Pva.vc_38
+#print axioms FV7z.Pva.vc_52
