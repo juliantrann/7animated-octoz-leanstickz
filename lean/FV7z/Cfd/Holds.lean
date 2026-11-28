@@ -578,7 +578,8 @@ theorem R82 (E : Ev prof F Wl L s₀ o gev gP gE fb S g0 e₂ code₂ j₂ I) :
     AtJ prof F Wl L s₀ o gev gP gE 82 (PS S g0 I) := by
   intro Y W t hK hA hr ⟨hs, hks, hI⟩
   refine (c_82 prof fb).run E.c E.hfs E.hin _ hK hA hr (vc_82 (g := Y.cpu.gpr)) ?_
-  rintro j' g fl V₁ ⟨rfl, rfl, rfl⟩ U t₁ hKU hAU hrU hgU -
+  rintro j' g fl V₁ ⟨rfl, rfl, hV⟩ U t₁ hKU hAU hrU hgU -
+  subst V₁
   have hsU : U.cpu.gpr.rsp = S := by
     rw [hgU]
     show Y.cpu.gpr.rsp + 152#64 = S
@@ -604,16 +605,20 @@ theorem R373 (E : Ev prof F Wl L s₀ o gev gP gE fb S g0 e₂ code₂ j₂ I) :
   · by_cases h2 : rdd(W, Y.cpu.gpr.rsp + 24#64) &&& 61440#32 = 8192#32
     · by_cases h3 : rdq(W, Y.cpu.gpr.rsp + 40#64) = 259#64
       · refine (c_373 prof fb).run E.c E.hfs E.hin _ hK hA hr (vc_373o h1 h2 h3 f24 f40) ?_
-        rintro j' g fl V₁ ⟨rfl, ⟨ra, rfl⟩, rfl⟩ U t₁ hKU hAU hrU hgU -
+        rintro j' g fl V₁ ⟨rfl, ⟨ra, rfl⟩, hV⟩ U t₁ hKU hAU hrU hgU -
+        subst V₁
         exact R82 E U W t₁ hKU hAU hrU ⟨by rw [hgU]; exact hs, by rw [hgU]; exact hks, hI⟩
       · refine (c_373 prof fb).run E.c E.hfs E.hin _ hK hA hr (vc_373h3 h1 h2 h3 f24 f40) ?_
-        rintro j' g fl V₁ ⟨rfl, rfl⟩ U t₁ hKU hAU hrU hgU -
+        rintro j' g fl V₁ ⟨rfl, hV⟩ U t₁ hKU hAU hrU hgU -
+        subst V₁
         exact E.kh W hI U t₁ hKU hAU (Or.inr (Or.inr hrU))
     · refine (c_373 prof fb).run E.c E.hfs E.hin _ hK hA hr (vc_373h2 h1 h2 f24) ?_
-      rintro j' g fl V₁ ⟨rfl, rfl⟩ U t₁ hKU hAU hrU hgU -
+      rintro j' g fl V₁ ⟨rfl, hV⟩ U t₁ hKU hAU hrU hgU -
+      subst V₁
       exact E.kh W hI U t₁ hKU hAU (Or.inr (Or.inr hrU))
   · refine (c_373 prof fb).run E.c E.hfs E.hin _ hK hA hr (vc_373h1 (V := W) h1) ?_
-    rintro j' g fl V₁ ⟨rfl, rfl⟩ U t₁ hKU hAU hrU hgU -
+    rintro j' g fl V₁ ⟨rfl, hV⟩ U t₁ hKU hAU hrU hgU -
+    subst V₁
     exact E.kh W hI U t₁ hKU hAU (Or.inr (Or.inr hrU))
 
 /-- From 350 (back from `open`): `fxstat (1, 2, &st)` (368) when the answer is 2, else the `hlt` (416). -/
@@ -622,14 +627,16 @@ theorem R350 (E : Ev prof F Wl L s₀ o gev gP gE fb S g0 e₂ code₂ j₂ I) :
   intro Y W t hK hA hr ⟨hs, hks, hI⟩
   by_cases h : Y.cpu.gpr.rax.setWidth 32 = 2#32
   · refine (c_350 prof fb).run E.c E.hfs E.hin _ hK hA hr (vc_350o (V := W) h) ?_
-    rintro j' g fl V₁ ⟨rfl, rfl, rfl⟩ U t₁ hKU hAU hrU hgU -
+    rintro j' g fl V₁ ⟨rfl, rfl, hV⟩ U t₁ hKU hAU hrU hgU -
+    subst V₁
     have hsU : U.cpu.gpr.rsp = aR S := by rw [hgU]; exact hs
     refine callK E hKU hAU hrU hsU (lt_len (by decide)) (call_368 _) tgt_368 E.cX (E.kX2 W hI)
       (by rw [hgU]; exact ⟨rfl, rfl, hs⟩) ?_
     intro Z W' t₃ hKZ hAZ hrZ hsZ hkZ hIZ
     exact R373 E Z W' t₃ hKZ hAZ hrZ ⟨hsZ, ks_tr (by rw [hgU]; exact hks) hkZ, hIZ⟩
   · refine (c_350 prof fb).run E.c E.hfs E.hin _ hK hA hr (vc_350f (V := W) h) ?_
-    rintro j' g fl V₁ ⟨rfl, rfl⟩ U t₁ hKU hAU hrU hgU -
+    rintro j' g fl V₁ ⟨rfl, hV⟩ U t₁ hKU hAU hrU hgU -
+    subst V₁
     exact E.kh W hI U t₁ hKU hAU (Or.inr (Or.inr hrU))
 
 /-- From 73 (back from `fcntl`): on to 82 unless the fd 2 is closed (`EBADF`), else `open` (345). -/
@@ -639,17 +646,20 @@ theorem R73 (E : Ev prof F Wl L s₀ o gev gP gE fb S g0 e₂ code₂ j₂ I) :
   by_cases h1 : Y.cpu.gpr.rax.setWidth 32 = 4294967295#32
   · by_cases h2 : rdd(W, errnoAt fb) = 9#32
     · refine (c_73 prof fb).run E.c E.hfs E.hin _ hK hA hr (vc_73o h1 h2 E.fe) ?_
-      rintro j' g fl V₁ ⟨rfl, rfl, rfl⟩ U t₁ hKU hAU hrU hgU -
+      rintro j' g fl V₁ ⟨rfl, rfl, hV⟩ U t₁ hKU hAU hrU hgU -
+      subst V₁
       have hsU : U.cpu.gpr.rsp = aR S := by rw [hgU]; exact hs
       refine callK E hKU hAU hrU hsU (lt_len (by decide)) (call_345 _) tgt_345 E.cO (E.kO2 W hI)
         (by rw [hgU]; exact ⟨rfl, rfl, rfl⟩) ?_
       intro Z W' t₃ hKZ hAZ hrZ hsZ hkZ hIZ
       exact R350 E Z W' t₃ hKZ hAZ hrZ ⟨hsZ, ks_tr (by rw [hgU]; exact hks) hkZ, hIZ⟩
     · refine (c_73 prof fb).run E.c E.hfs E.hin _ hK hA hr (vc_73b h1 h2 E.fe) ?_
-      rintro j' g fl V₁ ⟨rfl, rfl, rfl⟩ U t₁ hKU hAU hrU hgU -
+      rintro j' g fl V₁ ⟨rfl, rfl, hV⟩ U t₁ hKU hAU hrU hgU -
+      subst V₁
       exact R82 E U W t₁ hKU hAU hrU ⟨by rw [hgU]; exact hs, by rw [hgU]; exact hks, hI⟩
   · refine (c_73 prof fb).run E.c E.hfs E.hin _ hK hA hr (vc_73n (V := W) h1) ?_
-    rintro j' g fl V₁ ⟨rfl, rfl, rfl⟩ U t₁ hKU hAU hrU hgU -
+    rintro j' g fl V₁ ⟨rfl, rfl, hV⟩ U t₁ hKU hAU hrU hgU -
+    subst V₁
     exact R82 E U W t₁ hKU hAU hrU ⟨by rw [hgU]; exact hs, by rw [hgU]; exact hks, hI⟩
 
 /-- From 56: `fcntl (2, F_GETFD)` (68), from its return to 73. -/
@@ -657,7 +667,8 @@ theorem R56 (E : Ev prof F Wl L s₀ o gev gP gE fb S g0 e₂ code₂ j₂ I) :
     AtJ prof F Wl L s₀ o gev gP gE 56 (PS S g0 I) := by
   intro Y W t hK hA hr ⟨hs, hks, hI⟩
   refine (c_56 prof fb).run E.c E.hfs E.hin _ hK hA hr (vc_56 (g := Y.cpu.gpr) (V := W)) ?_
-  rintro j' g fl V₁ ⟨rfl, rfl, rfl⟩ U t₁ hKU hAU hrU hgU -
+  rintro j' g fl V₁ ⟨rfl, rfl, hV⟩ U t₁ hKU hAU hrU hgU -
+  subst V₁
   have hsU : U.cpu.gpr.rsp = aR S := by rw [hgU]; exact hs
   refine callK E hKU hAU hrU hsU (lt_len (by decide)) (call_68 _) tgt_68 E.cF (E.kF2 W hI)
     (by rw [hgU]; exact ⟨rfl, rfl⟩) ?_
@@ -674,16 +685,20 @@ theorem R261 (E : Ev prof F Wl L s₀ o gev gP gE fb S g0 e₂ code₂ j₂ I) :
   · by_cases h2 : rdd(W, Y.cpu.gpr.rsp + 24#64) &&& 61440#32 = 8192#32
     · by_cases h3 : rdq(W, Y.cpu.gpr.rsp + 40#64) = 259#64
       · refine (c_261 prof fb).run E.c E.hfs E.hin _ hK hA hr (vc_261o h1 h2 h3 f24 f40) ?_
-        rintro j' g fl V₁ ⟨rfl, ⟨ra, rfl⟩, rfl⟩ U t₁ hKU hAU hrU hgU -
+        rintro j' g fl V₁ ⟨rfl, ⟨ra, rfl⟩, hV⟩ U t₁ hKU hAU hrU hgU -
+        subst V₁
         exact R56 E U W t₁ hKU hAU hrU ⟨by rw [hgU]; exact hs, by rw [hgU]; exact hks, hI⟩
       · refine (c_261 prof fb).run E.c E.hfs E.hin _ hK hA hr (vc_261h3 h1 h2 h3 f24 f40) ?_
-        rintro j' g fl V₁ ⟨rfl, rfl⟩ U t₁ hKU hAU hrU hgU -
+        rintro j' g fl V₁ ⟨rfl, hV⟩ U t₁ hKU hAU hrU hgU -
+        subst V₁
         exact E.kh W hI U t₁ hKU hAU (Or.inr (Or.inl hrU))
     · refine (c_261 prof fb).run E.c E.hfs E.hin _ hK hA hr (vc_261h2 h1 h2 f24) ?_
-      rintro j' g fl V₁ ⟨rfl, rfl⟩ U t₁ hKU hAU hrU hgU -
+      rintro j' g fl V₁ ⟨rfl, hV⟩ U t₁ hKU hAU hrU hgU -
+      subst V₁
       exact E.kh W hI U t₁ hKU hAU (Or.inr (Or.inl hrU))
   · refine (c_261 prof fb).run E.c E.hfs E.hin _ hK hA hr (vc_261h1 (V := W) h1) ?_
-    rintro j' g fl V₁ ⟨rfl, rfl⟩ U t₁ hKU hAU hrU hgU -
+    rintro j' g fl V₁ ⟨rfl, hV⟩ U t₁ hKU hAU hrU hgU -
+    subst V₁
     exact E.kh W hI U t₁ hKU hAU (Or.inr (Or.inl hrU))
 
 /-- From 238 (back from `open`): `fxstat (1, 1, &st)` (256) when the answer is 1, else the `hlt` (304). -/
@@ -692,14 +707,16 @@ theorem R238 (E : Ev prof F Wl L s₀ o gev gP gE fb S g0 e₂ code₂ j₂ I) :
   intro Y W t hK hA hr ⟨hs, hks, hI⟩
   by_cases h : Y.cpu.gpr.rax.setWidth 32 = 1#32
   · refine (c_238 prof fb).run E.c E.hfs E.hin _ hK hA hr (vc_238o (V := W) h) ?_
-    rintro j' g fl V₁ ⟨rfl, rfl, rfl⟩ U t₁ hKU hAU hrU hgU -
+    rintro j' g fl V₁ ⟨rfl, rfl, hV⟩ U t₁ hKU hAU hrU hgU -
+    subst V₁
     have hsU : U.cpu.gpr.rsp = aR S := by rw [hgU]; exact hs
     refine callK E hKU hAU hrU hsU (lt_len (by decide)) (call_256 _) tgt_256 E.cX (E.kX1 W hI)
       (by rw [hgU]; exact ⟨rfl, rfl, hs⟩) ?_
     intro Z W' t₃ hKZ hAZ hrZ hsZ hkZ hIZ
     exact R261 E Z W' t₃ hKZ hAZ hrZ ⟨hsZ, ks_tr (by rw [hgU]; exact hks) hkZ, hIZ⟩
   · refine (c_238 prof fb).run E.c E.hfs E.hin _ hK hA hr (vc_238f (V := W) h) ?_
-    rintro j' g fl V₁ ⟨rfl, rfl⟩ U t₁ hKU hAU hrU hgU -
+    rintro j' g fl V₁ ⟨rfl, hV⟩ U t₁ hKU hAU hrU hgU -
+    subst V₁
     exact E.kh W hI U t₁ hKU hAU (Or.inr (Or.inl hrU))
 
 /-- From 47 (back from `fcntl`): on to 56 unless the fd 1 is closed (`EBADF`), else `open` (233). -/
@@ -709,17 +726,20 @@ theorem R47 (E : Ev prof F Wl L s₀ o gev gP gE fb S g0 e₂ code₂ j₂ I) :
   by_cases h1 : Y.cpu.gpr.rax.setWidth 32 = 4294967295#32
   · by_cases h2 : rdd(W, errnoAt fb) = 9#32
     · refine (c_47 prof fb).run E.c E.hfs E.hin _ hK hA hr (vc_47o h1 h2 E.fe) ?_
-      rintro j' g fl V₁ ⟨rfl, rfl, rfl⟩ U t₁ hKU hAU hrU hgU -
+      rintro j' g fl V₁ ⟨rfl, rfl, hV⟩ U t₁ hKU hAU hrU hgU -
+      subst V₁
       have hsU : U.cpu.gpr.rsp = aR S := by rw [hgU]; exact hs
       refine callK E hKU hAU hrU hsU (lt_len (by decide)) (call_233 _) tgt_233 E.cO (E.kO1 W hI)
         (by rw [hgU]; exact ⟨rfl, rfl, rfl⟩) ?_
       intro Z W' t₃ hKZ hAZ hrZ hsZ hkZ hIZ
       exact R238 E Z W' t₃ hKZ hAZ hrZ ⟨hsZ, ks_tr (by rw [hgU]; exact hks) hkZ, hIZ⟩
     · refine (c_47 prof fb).run E.c E.hfs E.hin _ hK hA hr (vc_47b h1 h2 E.fe) ?_
-      rintro j' g fl V₁ ⟨rfl, rfl, rfl⟩ U t₁ hKU hAU hrU hgU -
+      rintro j' g fl V₁ ⟨rfl, rfl, hV⟩ U t₁ hKU hAU hrU hgU -
+      subst V₁
       exact R56 E U W t₁ hKU hAU hrU ⟨by rw [hgU]; exact hs, by rw [hgU]; exact hks, hI⟩
   · refine (c_47 prof fb).run E.c E.hfs E.hin _ hK hA hr (vc_47n (V := W) h1) ?_
-    rintro j' g fl V₁ ⟨rfl, rfl, rfl⟩ U t₁ hKU hAU hrU hgU -
+    rintro j' g fl V₁ ⟨rfl, rfl, hV⟩ U t₁ hKU hAU hrU hgU -
+    subst V₁
     exact R56 E U W t₁ hKU hAU hrU ⟨by rw [hgU]; exact hs, by rw [hgU]; exact hks, hI⟩
 
 /-- From 30: `fcntl (1, F_GETFD)` (42), from its return to 47. -/
@@ -727,7 +747,8 @@ theorem R30 (E : Ev prof F Wl L s₀ o gev gP gE fb S g0 e₂ code₂ j₂ I) :
     AtJ prof F Wl L s₀ o gev gP gE 30 (PS S g0 I) := by
   intro Y W t hK hA hr ⟨hs, hks, hI⟩
   refine (c_30 prof fb).run E.c E.hfs E.hin _ hK hA hr (vc_30 (g := Y.cpu.gpr) (V := W)) ?_
-  rintro j' g fl V₁ ⟨rfl, rfl, rfl⟩ U t₁ hKU hAU hrU hgU -
+  rintro j' g fl V₁ ⟨rfl, rfl, hV⟩ U t₁ hKU hAU hrU hgU -
+  subst V₁
   have hsU : U.cpu.gpr.rsp = aR S := by rw [hgU]; exact hs
   refine callK E hKU hAU hrU hsU (lt_len (by decide)) (call_42 _) tgt_42 E.cF (E.kF1 W hI)
     (by rw [hgU]; exact ⟨rfl, rfl⟩) ?_
@@ -744,16 +765,20 @@ theorem R149 (E : Ev prof F Wl L s₀ o gev gP gE fb S g0 e₂ code₂ j₂ I) :
   · by_cases h2 : rdd(W, Y.cpu.gpr.rsp + 24#64) &&& 61440#32 = 8192#32
     · by_cases h3 : rdq(W, Y.cpu.gpr.rsp + 40#64) = 263#64
       · refine (c_149 prof fb).run E.c E.hfs E.hin _ hK hA hr (vc_149o h1 h2 h3 f24 f40) ?_
-        rintro j' g fl V₁ ⟨rfl, ⟨ra, rfl⟩, rfl⟩ U t₁ hKU hAU hrU hgU -
+        rintro j' g fl V₁ ⟨rfl, ⟨ra, rfl⟩, hV⟩ U t₁ hKU hAU hrU hgU -
+        subst V₁
         exact R30 E U W t₁ hKU hAU hrU ⟨by rw [hgU]; exact hs, by rw [hgU]; exact hks, hI⟩
       · refine (c_149 prof fb).run E.c E.hfs E.hin _ hK hA hr (vc_149h3 h1 h2 h3 f24 f40) ?_
-        rintro j' g fl V₁ ⟨rfl, rfl⟩ U t₁ hKU hAU hrU hgU -
+        rintro j' g fl V₁ ⟨rfl, hV⟩ U t₁ hKU hAU hrU hgU -
+        subst V₁
         exact E.kh W hI U t₁ hKU hAU (Or.inl hrU)
     · refine (c_149 prof fb).run E.c E.hfs E.hin _ hK hA hr (vc_149h2 h1 h2 f24) ?_
-      rintro j' g fl V₁ ⟨rfl, rfl⟩ U t₁ hKU hAU hrU hgU -
+      rintro j' g fl V₁ ⟨rfl, hV⟩ U t₁ hKU hAU hrU hgU -
+      subst V₁
       exact E.kh W hI U t₁ hKU hAU (Or.inl hrU)
   · refine (c_149 prof fb).run E.c E.hfs E.hin _ hK hA hr (vc_149h1 (V := W) h1) ?_
-    rintro j' g fl V₁ ⟨rfl, rfl⟩ U t₁ hKU hAU hrU hgU -
+    rintro j' g fl V₁ ⟨rfl, hV⟩ U t₁ hKU hAU hrU hgU -
+    subst V₁
     exact E.kh W hI U t₁ hKU hAU (Or.inl hrU)
 
 /-- From 130 (back from `open`): `fxstat (1, 0, &st)` (144) when the answer is 0, else the `hlt` (192). -/
@@ -762,14 +787,16 @@ theorem R130 (E : Ev prof F Wl L s₀ o gev gP gE fb S g0 e₂ code₂ j₂ I) :
   intro Y W t hK hA hr ⟨hs, hks, hI⟩
   by_cases h : Y.cpu.gpr.rax.setWidth 32 = 0#32
   · refine (c_130 prof fb).run E.c E.hfs E.hin _ hK hA hr (vc_130o (V := W) h) ?_
-    rintro j' g fl V₁ ⟨rfl, rfl, rfl⟩ U t₁ hKU hAU hrU hgU -
+    rintro j' g fl V₁ ⟨rfl, rfl, hV⟩ U t₁ hKU hAU hrU hgU -
+    subst V₁
     have hsU : U.cpu.gpr.rsp = aR S := by rw [hgU]; exact hs
     refine callK E hKU hAU hrU hsU (lt_len (by decide)) (call_144 _) tgt_144 E.cX (E.kX0 W hI)
       (by rw [hgU]; exact ⟨rfl, rfl, hs⟩) ?_
     intro Z W' t₃ hKZ hAZ hrZ hsZ hkZ hIZ
     exact R149 E Z W' t₃ hKZ hAZ hrZ ⟨hsZ, ks_tr (by rw [hgU]; exact hks) hkZ, hIZ⟩
   · refine (c_130 prof fb).run E.c E.hfs E.hin _ hK hA hr (vc_130f (V := W) h) ?_
-    rintro j' g fl V₁ ⟨rfl, rfl⟩ U t₁ hKU hAU hrU hgU -
+    rintro j' g fl V₁ ⟨rfl, hV⟩ U t₁ hKU hAU hrU hgU -
+    subst V₁
     exact E.kh W hI U t₁ hKU hAU (Or.inl hrU)
 
 /-- From 25 (back from `fcntl`): on to 30 unless the fd 0 is closed (`EBADF`), else `open` (125). -/
@@ -779,17 +806,20 @@ theorem R25 (E : Ev prof F Wl L s₀ o gev gP gE fb S g0 e₂ code₂ j₂ I) :
   by_cases h1 : Y.cpu.gpr.rax.setWidth 32 = 4294967295#32
   · by_cases h2 : rdd(W, errnoAt fb) = 9#32
     · refine (c_25 prof fb).run E.c E.hfs E.hin _ hK hA hr (vc_25o h1 h2 E.fe) ?_
-      rintro j' g fl V₁ ⟨rfl, rfl, rfl⟩ U t₁ hKU hAU hrU hgU -
+      rintro j' g fl V₁ ⟨rfl, rfl, hV⟩ U t₁ hKU hAU hrU hgU -
+      subst V₁
       have hsU : U.cpu.gpr.rsp = aR S := by rw [hgU]; exact hs
       refine callK E hKU hAU hrU hsU (lt_len (by decide)) (call_125 _) tgt_125 E.cO (E.kO0 W hI)
         (by rw [hgU]; exact ⟨rfl, rfl, rfl⟩) ?_
       intro Z W' t₃ hKZ hAZ hrZ hsZ hkZ hIZ
       exact R130 E Z W' t₃ hKZ hAZ hrZ ⟨hsZ, ks_tr (by rw [hgU]; exact hks) hkZ, hIZ⟩
     · refine (c_25 prof fb).run E.c E.hfs E.hin _ hK hA hr (vc_25b h1 h2 E.fe) ?_
-      rintro j' g fl V₁ ⟨rfl, rfl, rfl⟩ U t₁ hKU hAU hrU hgU -
+      rintro j' g fl V₁ ⟨rfl, rfl, hV⟩ U t₁ hKU hAU hrU hgU -
+      subst V₁
       exact R30 E U W t₁ hKU hAU hrU ⟨by rw [hgU]; exact hs, by rw [hgU]; exact hks, hI⟩
   · refine (c_25 prof fb).run E.c E.hfs E.hin _ hK hA hr (vc_25n (V := W) h1) ?_
-    rintro j' g fl V₁ ⟨rfl, rfl, rfl⟩ U t₁ hKU hAU hrU hgU -
+    rintro j' g fl V₁ ⟨rfl, rfl, hV⟩ U t₁ hKU hAU hrU hgU -
+    subst V₁
     exact R30 E U W t₁ hKU hAU hrU ⟨by rw [hgU]; exact hs, by rw [hgU]; exact hks, hI⟩
 
 /-- `__libc_check_standard_fds ()` from its entry (`rsp` = `S`, the registers `g0`, the bytes with `I`): to the
@@ -798,7 +828,8 @@ theorem cfd_ok (E : Ev prof F Wl L s₀ o gev gP gE fb S g0 e₂ code₂ j₂ I)
     (hK : KeptW Wl s₀ X) (hA : Agree F X.proc.mm.mem V) (hrip : X.cpu.rip = cfd_at) (hS : X.cpu.gpr.rsp = S)
     (hg : X.cpu.gpr = g0) (hI : I V) : GoG prof L o gev gP gE X t := by
   refine (c_0 prof fb).run E.c E.hfs E.hin _ hK hA (by rw [addr_add_zero]; exact hrip) (vc_0 (g := X.cpu.gpr)) ?_
-  rintro j' g fl V₁ ⟨rfl, rfl, rfl⟩ U t₁ hKU hAU hrU hgU -
+  rintro j' g fl V₁ ⟨rfl, rfl, hV⟩ U t₁ hKU hAU hrU hgU -
+  subst V₁
   have hsU : U.cpu.gpr.rsp = aR S := by
     rw [hgU]
     show aR X.cpu.gpr.rsp = aR S
