@@ -161,7 +161,8 @@ theorem jmpP {j j' : Nat} {Wj : Wpt} (H : Hyp prof F Wl L s₀ o gev gP gE g₀ 
     AtJ prof F Wl L s₀ o gev gP gE j P := by
   rintro Y W t hKY hAY hrY hP
   refine cj.run H.c H.hin _ hKY hAY hrY (vj _ _ _ _ _) ?_
-  rintro j'' g fl V₁ ⟨rfl, rfl, rfl⟩ U t₁ hKU hAU hrU hgU -
+  rintro j'' g fl V₁ ⟨rfl, rfl, hV₁⟩ U t₁ hKU hAU hrU hgU -
+  subst V₁
   exact k U W t₁ hKU hAU hrU (by rw [hgU]; exact hP)
 
 /-- The registers after the six pops: `rsp` back at the entry's, the saved ones restored. -/
@@ -193,7 +194,8 @@ theorem a130 (H : Hyp prof F Wl L s₀ o gev gP gE g₀ e₂ code₂ j₂ I K T)
     (fun j' g' _ V₁ => j' = 148 ∧ g' = pops6 (Vb g₀ W) Y.cpu.gpr ∧ V₁ = Vb g₀ W) hKY hAY hrY
     (vc_130 (by rw [hbx]; exact H.w14) l1 l2 l3 l4 l5 l6
       fun _ => ⟨rfl, by rw [hbx, h13], by rw [hbx, h13]⟩) ?_
-  rintro j' g fl V₁ ⟨rfl, rfl, rfl⟩ U t₁ hKU hAU hrU hgU -
+  rintro j' g fl V₁ ⟨rfl, rfl, hV₁⟩ U t₁ hKU hAU hrU hgU -
+  subst V₁
   have hfr := H.fr W hT
   obtain ⟨hsP, hkP⟩ := pops6_bk (W := Vb g₀ W) hs hfr
   have hsU : U.cpu.gpr.rsp = g₀.rsp := (congrArg Gprs.rsp hgU).trans hsP
@@ -216,7 +218,8 @@ theorem a106 (H : Hyp prof F Wl L s₀ o gev gP gE g₀ e₂ code₂ j₂ I K T)
   obtain ⟨hcO, kc⟩ := H.kQ W hT
   refine (c_106 prof).run H.c H.hin _ hKY hAY hrY
     (vc_106 (v := rdq(W, g₀.rsi)) (by rw [hbp]) (by rw [hbp]; exact fp) (by rw [hbx]; exact H.w16)) ?_
-  rintro j' g fl V₁ ⟨rfl, rfl, rfl⟩ U t₁ hKU hAU hrU hgU -
+  rintro j' g fl V₁ ⟨rfl, rfl, hV₁⟩ U t₁ hKU hAU hrU hgU -
+  subst V₁
   rw [hbx, hbp] at hAU
   have hRU : Rr g₀ U.cpu.gpr := by rw [hgU]; exact ⟨hs, hbx, hbp, h13⟩
   have hax : U.cpu.gpr.rax = rdq(W, g₀.rsi) := by rw [hgU]; try rfl
@@ -241,13 +244,15 @@ theorem a91 (H : Hyp prof F Wl L s₀ o gev gP gE g₀ e₂ code₂ j₂ I K T) 
   by_cases hd0 : rdq(W, g₀.rdi + 16#64) = 0
   · refine (c_91 prof).run H.c H.hin _ hKY hAY hrY
       (vc_91z (d := rdq(W, g₀.rdi + 16#64)) (by rw [hbx]) hd0 fd) ?_
-    rintro j' g fl V₁ ⟨rfl, rfl, rfl⟩ U t₁ hKU hAU hrU hgU -
+    rintro j' g fl V₁ ⟨rfl, rfl, hV₁⟩ U t₁ hKU hAU hrU hgU -
+    subst V₁
     exact a106 H U W t₁ hKU hAU hrU ⟨by rw [hgU]; exact ⟨hs, hbx, hbp, h13⟩, H.q0 W hT hd0⟩
   · obtain ⟨fv, fx⟩ := H.fq W hT hd0
     obtain ⟨hcO, kc⟩ := H.kQ1 W hT hd0
     refine (c_91 prof).run H.c H.hin _ hKY hAY hrY
       (vc_91n (d := rdq(W, g₀.rdi + 16#64)) (v := rdq(W, rdq(W, g₀.rdi + 16#64))) (by rw [hbx]) hd0 fd rfl fv) ?_
-    rintro j' g fl V₁ ⟨rfl, rfl, rfl⟩ U t₁ hKU hAU hrU hgU -
+    rintro j' g fl V₁ ⟨rfl, rfl, hV₁⟩ U t₁ hKU hAU hrU hgU -
+    subst V₁
     have hRU : Rr g₀ U.cpu.gpr := by rw [hgU]; exact ⟨hs, hbx, hbp, h13⟩
     have hax : U.cpu.gpr.rax = rdq(W, rdq(W, g₀.rdi + 16#64)) := by rw [hgU]; try rfl
     have hdi : U.cpu.gpr.rdi = rdq(W, g₀.rdi + 16#64) := by rw [hgU]; try rfl
@@ -266,7 +271,8 @@ theorem a76 (H : Hyp prof F Wl L s₀ o gev gP gE g₀ e₂ code₂ j₂ I K T) 
   obtain ⟨hcO, kc⟩ := H.kA W hT
   refine (c_76 prof).run H.c H.hin _ hKY hAY hrY
     (vc_76 (v := rdq(W, g₀.rsi)) (by rw [hbp]; exact H.pz) (by rw [hbp]) (by rw [hbp]; exact fp)) ?_
-  rintro j' g fl V₁ ⟨rfl, rfl, rfl⟩ U t₁ hKU hAU hrU hgU -
+  rintro j' g fl V₁ ⟨rfl, rfl, hV₁⟩ U t₁ hKU hAU hrU hgU -
+  subst V₁
   have hRU : Rr g₀ U.cpu.gpr := by rw [hgU]; exact ⟨hs, hbx, hbp, h13⟩
   have hax : U.cpu.gpr.rax = rdq(W, g₀.rsi) := by rw [hgU]; try rfl
   have hdi : U.cpu.gpr.rdi = g₀.rsi := by rw [hgU]; exact hbp
@@ -282,7 +288,8 @@ theorem a68 (H : Hyp prof F Wl L s₀ o gev gP gE g₀ e₂ code₂ j₂ I K T) 
     AtJ prof F Wl L s₀ o gev gP gE 68 fun g W => Rr g₀ g ∧ I [] W := by
   rintro Y W t hKY hAY hrY ⟨⟨hs, hbx, hbp, h13⟩, hI⟩
   refine (c_68 prof).run H.c H.hin _ hKY hAY hrY (vc_68 (by rw [hbx]; exact H.w24)) ?_
-  rintro j' g fl V₁ ⟨rfl, rfl, rfl⟩ U t₁ hKU hAU hrU hgU -
+  rintro j' g fl V₁ ⟨rfl, rfl, hV₁⟩ U t₁ hKU hAU hrU hgU -
+  subst V₁
   rw [hbx] at hAU
   exact a76 H U _ t₁ hKU hAU hrU ⟨by rw [hgU]; exact ⟨hs, hbx, hbp, h13⟩, H.z24 W hI⟩
 
@@ -297,7 +304,8 @@ theorem a424 (H : Hyp prof F Wl L s₀ o gev gP gE g₀ e₂ code₂ j₂ I K T)
     AtJ prof F Wl L s₀ o gev gP gE 424 fun g W => ∃ q1, L1 g₀ q1 g ∧ I [q1] W := by
   rintro Y W t hKY hAY hrY ⟨q1, hL, hI⟩
   refine (c_424 prof).run H.c H.hin _ hKY hAY hrY vc_424 ?_
-  rintro j' g fl V₁ ⟨rfl, rfl, rfl⟩ U t₁ hKU hAU hrU hgU -
+  rintro j' g fl V₁ ⟨rfl, rfl, hV₁⟩ U t₁ hKU hAU hrU hgU -
+  subst V₁
   refine callD H (Rg := Rr g₀) (fun _ _ h k => h.sk k) (fun _ h => h.1) (by decide) (calld_432 _) tgt_432
     (q := q1) (ps := []) (a437 H) U W t₁ hKU hAU hrU ⟨?_, hI, ?_, ?_⟩
   · rw [hgU]; exact hL.1
@@ -313,14 +321,16 @@ theorem a408 (H : Hyp prof F Wl L s₀ o gev gP gE g₀ e₂ code₂ j₂ I K T)
   by_cases hd0 : rdq(W, q1 + 16#64) = 0
   · refine (c_408 prof).run H.c H.hin _ hKY hAY hrY
       (vc_408z (d := rdq(W, q1 + 16#64)) (by rw [h12]) hd0 (by rw [h12]; exact f16)) ?_
-    rintro j' g fl V₁ ⟨rfl, rfl, rfl⟩ U t₁ hKU hAU hrU hgU -
+    rintro j' g fl V₁ ⟨rfl, rfl, hV₁⟩ U t₁ hKU hAU hrU hgU -
+    subst V₁
     exact a424 H U W t₁ hKU hAU hrU ⟨q1, by rw [hgU]; exact hL, hI⟩
   · have hch : Ch K [q1] W (rdq(W, q1 + 16#64)) := Or.inr ⟨q1, [], rfl, rfl⟩
     obtain ⟨fd, -⟩ := H.vf [q1] W _ hI hch hd0
     refine (c_408 prof).run H.c H.hin _ hKY hAY hrY
       (vc_408n (d := rdq(W, q1 + 16#64)) (v := rdq(W, rdq(W, q1 + 16#64))) (by rw [h12]) hd0
         (by rw [h12]; exact f16) rfl fd) ?_
-    rintro j' g fl V₁ ⟨rfl, rfl, rfl⟩ U t₁ hKU hAU hrU hgU -
+    rintro j' g fl V₁ ⟨rfl, rfl, hV₁⟩ U t₁ hKU hAU hrU hgU -
+    subst V₁
     refine callM H (Rg := L1 g₀ q1) (ps := [q1]) (fun _ _ h k => h.sk k) (fun _ h => h.1.1) (by decide)
       (callm_421 _) ?_ U W t₁ hKU hAU hrU ⟨by rw [hgU]; exact hL, hI, _, hch, hd0, by rw [hgU]; try rfl,
         by rw [hgU]; try rfl⟩
@@ -332,7 +342,8 @@ theorem a395 (H : Hyp prof F Wl L s₀ o gev gP gE g₀ e₂ code₂ j₂ I K T)
     AtJ prof F Wl L s₀ o gev gP gE 395 fun g W => ∃ q1 q2, L2 g₀ q1 q2 g ∧ I [q2, q1] W := by
   rintro Y W t hKY hAY hrY ⟨q1, q2, hL, hI⟩
   refine (c_395 prof).run H.c H.hin _ hKY hAY hrY vc_395 ?_
-  rintro j' g fl V₁ ⟨rfl, rfl, rfl⟩ U t₁ hKU hAU hrU hgU -
+  rintro j' g fl V₁ ⟨rfl, rfl, hV₁⟩ U t₁ hKU hAU hrU hgU -
+  subst V₁
   refine callD H (Rg := L1 g₀ q1) (fun _ _ h k => h.sk k) (fun _ h => h.1.1) (by decide) (calld_403 _) tgt_403
     (q := q2) (ps := [q1]) ?_ U W t₁ hKU hAU hrU ⟨?_, hI, ?_, ?_⟩
   · intro Z W' t' hKZ hAZ hrZ hP
@@ -350,14 +361,16 @@ theorem a380 (H : Hyp prof F Wl L s₀ o gev gP gE g₀ e₂ code₂ j₂ I K T)
   by_cases hd0 : rdq(W, q2 + 16#64) = 0
   · refine (c_380 prof).run H.c H.hin _ hKY hAY hrY
       (vc_380z (d := rdq(W, q2 + 16#64)) (by rw [h14]) hd0 (by rw [h14]; exact f16)) ?_
-    rintro j' g fl V₁ ⟨rfl, rfl, rfl⟩ U t₁ hKU hAU hrU hgU -
+    rintro j' g fl V₁ ⟨rfl, rfl, hV₁⟩ U t₁ hKU hAU hrU hgU -
+    subst V₁
     exact a395 H U W t₁ hKU hAU hrU ⟨q1, q2, by rw [hgU]; exact hL, hI⟩
   · have hch : Ch K [q2, q1] W (rdq(W, q2 + 16#64)) := Or.inr ⟨q2, [q1], rfl, rfl⟩
     obtain ⟨fd, -⟩ := H.vf [q2, q1] W _ hI hch hd0
     refine (c_380 prof).run H.c H.hin _ hKY hAY hrY
       (vc_380n (d := rdq(W, q2 + 16#64)) (v := rdq(W, rdq(W, q2 + 16#64))) (by rw [h14]) hd0
         (by rw [h14]; exact f16) rfl fd) ?_
-    rintro j' g fl V₁ ⟨rfl, rfl, rfl⟩ U t₁ hKU hAU hrU hgU -
+    rintro j' g fl V₁ ⟨rfl, rfl, hV₁⟩ U t₁ hKU hAU hrU hgU -
+    subst V₁
     refine callM H (Rg := L2 g₀ q1 q2) (ps := [q2, q1]) (fun _ _ h k => h.sk k) (fun _ h => h.1.1.1)
       (by decide) (callm_392 _) ?_ U W t₁ hKU hAU hrU ⟨by rw [hgU]; exact hL, hI, _, hch, hd0,
         by rw [hgU]; try rfl, by rw [hgU]; try rfl⟩
@@ -369,7 +382,8 @@ theorem a367 (H : Hyp prof F Wl L s₀ o gev gP gE g₀ e₂ code₂ j₂ I K T)
     AtJ prof F Wl L s₀ o gev gP gE 367 fun g W => ∃ q1 q2 q3, L3 g₀ q1 q2 q3 g ∧ I [q3, q2, q1] W := by
   rintro Y W t hKY hAY hrY ⟨q1, q2, q3, hL, hI⟩
   refine (c_367 prof).run H.c H.hin _ hKY hAY hrY vc_367 ?_
-  rintro j' g fl V₁ ⟨rfl, rfl, rfl⟩ U t₁ hKU hAU hrU hgU -
+  rintro j' g fl V₁ ⟨rfl, rfl, hV₁⟩ U t₁ hKU hAU hrU hgU -
+  subst V₁
   refine callD H (Rg := L2 g₀ q1 q2) (fun _ _ h k => h.sk k) (fun _ h => h.1.1.1) (by decide) (calld_375 _)
     tgt_375 (q := q3) (ps := [q2, q1]) ?_ U W t₁ hKU hAU hrU ⟨?_, hI, ?_, ?_⟩
   · intro Z W' t' hKZ hAZ hrZ hP
@@ -387,14 +401,16 @@ theorem a352 (H : Hyp prof F Wl L s₀ o gev gP gE g₀ e₂ code₂ j₂ I K T)
   by_cases hd0 : rdq(W, q3 + 16#64) = 0
   · refine (c_352 prof).run H.c H.hin _ hKY hAY hrY
       (vc_352z (d := rdq(W, q3 + 16#64)) (by rw [h15]) hd0 (by rw [h15]; exact f16)) ?_
-    rintro j' g fl V₁ ⟨rfl, rfl, rfl⟩ U t₁ hKU hAU hrU hgU -
+    rintro j' g fl V₁ ⟨rfl, rfl, hV₁⟩ U t₁ hKU hAU hrU hgU -
+    subst V₁
     exact a367 H U W t₁ hKU hAU hrU ⟨q1, q2, q3, by rw [hgU]; exact hL, hI⟩
   · have hch : Ch K [q3, q2, q1] W (rdq(W, q3 + 16#64)) := Or.inr ⟨q3, [q2, q1], rfl, rfl⟩
     obtain ⟨fd, -⟩ := H.vf [q3, q2, q1] W _ hI hch hd0
     refine (c_352 prof).run H.c H.hin _ hKY hAY hrY
       (vc_352n (d := rdq(W, q3 + 16#64)) (v := rdq(W, rdq(W, q3 + 16#64))) (by rw [h15]) hd0
         (by rw [h15]; exact f16) rfl fd) ?_
-    rintro j' g fl V₁ ⟨rfl, rfl, rfl⟩ U t₁ hKU hAU hrU hgU -
+    rintro j' g fl V₁ ⟨rfl, rfl, hV₁⟩ U t₁ hKU hAU hrU hgU -
+    subst V₁
     refine callM H (Rg := L3 g₀ q1 q2 q3) (ps := [q3, q2, q1]) (fun _ _ h k => h.sk k) (fun _ h => h.1.1.1.1)
       (by decide) (callm_364 _) ?_ U W t₁ hKU hAU hrU ⟨by rw [hgU]; exact hL, hI, _, hch, hd0,
         by rw [hgU]; try rfl, by rw [hgU]; try rfl⟩
@@ -407,7 +423,8 @@ theorem a339 (H : Hyp prof F Wl L s₀ o gev gP gE g₀ e₂ code₂ j₂ I K T)
       I [q4, q3, q2, q1] W := by
   rintro Y W t hKY hAY hrY ⟨q1, q2, q3, q4, hL, h8, hI⟩
   refine (c_339 prof).run H.c H.hin _ hKY hAY hrY vc_339 ?_
-  rintro j' g fl V₁ ⟨rfl, rfl, rfl⟩ U t₁ hKU hAU hrU hgU -
+  rintro j' g fl V₁ ⟨rfl, rfl, hV₁⟩ U t₁ hKU hAU hrU hgU -
+  subst V₁
   refine callD H (Rg := L3 g₀ q1 q2 q3) (fun _ _ h k => h.sk k) (fun _ h => h.1.1.1.1) (by decide)
     (calld_347 _) tgt_347 (q := q4) (ps := [q3, q2, q1]) ?_ U W t₁ hKU hAU hrU ⟨?_, hI, ?_, ?_⟩
   · intro Z W' t' hKZ hAZ hrZ hP
@@ -424,7 +441,8 @@ theorem a334 (H : Hyp prof F Wl L s₀ o gev gP gE g₀ e₂ code₂ j₂ I K T)
   have hs : Y.cpu.gpr.rsp = sp72 g₀.rsp := hL.1.1.1.1
   refine (c_334 prof).run H.c H.hin _ hKY hAY hrY
     (vc_334 (x := q4) (by rw [hs]; exact hq) (by rw [hs]; exact fun i hi => H.c.hws _ (H.ws i hi))) ?_
-  rintro j' g fl V₁ ⟨rfl, rfl, rfl⟩ U t₁ hKU hAU hrU hgU -
+  rintro j' g fl V₁ ⟨rfl, rfl, hV₁⟩ U t₁ hKU hAU hrU hgU -
+  subst V₁
   exact a339 H U W t₁ hKU hAU hrU ⟨q1, q2, q3, q4, by rw [hgU]; exact hL, by rw [hgU]; try rfl, hI⟩
 
 /-- 314: `q4->_progress` released (331, `q4` spilled) when not NULL. -/
@@ -437,14 +455,16 @@ theorem a314 (H : Hyp prof F Wl L s₀ o gev gP gE g₀ e₂ code₂ j₂ I K T)
   by_cases hd0 : rdq(W, q4 + 16#64) = 0
   · refine (c_314 prof).run H.c H.hin _ hKY hAY hrY
       (vc_314z (d := rdq(W, q4 + 16#64)) (by rw [h8]) hd0 (by rw [h8]; exact f16)) ?_
-    rintro j' g fl V₁ ⟨rfl, rfl, rfl⟩ U t₁ hKU hAU hrU hgU -
+    rintro j' g fl V₁ ⟨rfl, rfl, hV₁⟩ U t₁ hKU hAU hrU hgU -
+    subst V₁
     exact a339 H U W t₁ hKU hAU hrU ⟨q1, q2, q3, q4, by rw [hgU]; exact hL, by rw [hgU]; exact h8, hI⟩
   · have hch : Ch K [q4, q3, q2, q1] W (rdq(W, q4 + 16#64)) := Or.inr ⟨q4, [q3, q2, q1], rfl, rfl⟩
     obtain ⟨fd, -⟩ := H.vf [q4, q3, q2, q1] W _ hI hch hd0
     refine (c_314 prof).run H.c H.hin _ hKY hAY hrY
       (vc_314n (d := rdq(W, q4 + 16#64)) (v := rdq(W, rdq(W, q4 + 16#64))) (S := g₀.rsp) hs (by rw [h8]) hd0
         (by rw [h8]; exact f16) rfl fd H.ws) ?_
-    rintro j' g fl V₁ ⟨rfl, rfl, rfl⟩ U t₁ hKU hAU hrU hgU -
+    rintro j' g fl V₁ ⟨rfl, rfl, hV₁⟩ U t₁ hKU hAU hrU hgU -
+    subst V₁
     rw [h8] at hAU
     refine callS H (Rg := L3 g₀ q1 q2 q3) (q := q4) (ps := [q3, q2, q1]) (fun _ _ h k => h.sk k)
       (fun _ h => h.1.1.1.1) (by decide) (callm_331 _) ?_ U _ t₁ hKU hAU hrU
@@ -460,7 +480,8 @@ theorem a309 (H : Hyp prof F Wl L s₀ o gev gP gE g₀ e₂ code₂ j₂ I K T)
   have hs : Y.cpu.gpr.rsp = sp72 g₀.rsp := hL.1.1.1.1
   refine (c_309 prof).run H.c H.hin _ hKY hAY hrY
     (vc_309 (x := q4) (by rw [hs]; exact hq) (by rw [hs]; exact fun i hi => H.c.hws _ (H.ws i hi))) ?_
-  rintro j' g fl V₁ ⟨rfl, rfl, rfl⟩ U t₁ hKU hAU hrU hgU -
+  rintro j' g fl V₁ ⟨rfl, rfl, hV₁⟩ U t₁ hKU hAU hrU hgU -
+  subst V₁
   exact a314 H U W t₁ hKU hAU hrU ⟨q1, q2, q3, q4, by rw [hgU]; exact hL, by rw [hgU]; try rfl, hI⟩
 
 /-! ## The levels: the count dropped, the object destroyed when it reaches 0 -/
@@ -488,7 +509,8 @@ theorem d279 (H : Hyp prof F Wl L s₀ o gev gP gE g₀ e₂ code₂ j₂ I K T)
     · refine (c_284 prof).run H.c H.hin _ hKU hAU hrU
         (vc_284z0 (c := rdq(Wdec W c, c + 24#64)) hz' hcxU (by rw [h8U]; try rfl) (by rw [h8U]; exact o24)
           (by rw [h8U]; exact o0) h0) ?_
-      rintro j' g fl V₁ ⟨rfl, rfl, rfl⟩ Z t₂ hKZ hAZ hrZ hgZ -
+      rintro j' g fl V₁ ⟨rfl, rfl, hV₁⟩ Z t₂ hKZ hAZ hrZ hgZ -
+      subst V₁
       rw [h8U] at hAZ
       exact a314 H Z _ t₂ hKZ hAZ hrZ ⟨q1, q2, q3, c, by rw [hgZ]; exact hLU, by rw [hgZ]; exact h8U, hI'⟩
     · obtain ⟨fv, -⟩ := H.vf _ _ _ hI' (Or.inl hK') h0
@@ -496,7 +518,8 @@ theorem d279 (H : Hyp prof F Wl L s₀ o gev gP gE g₀ e₂ code₂ j₂ I K T)
         (vc_284zn (c := rdq(Wdec W c, c + 24#64)) (v := rdq(Vv (Wdec W c) c, rdq(Wdec W c, c + 24#64)))
           (S := g₀.rsp) hz' hcxU hLU.1.1.1.1 (by rw [h8U]; try rfl) (by rw [h8U]; exact o24)
           (by rw [h8U]; exact o0) h0 (by rw [h8U]; try rfl) fv H.ws) ?_
-      rintro j' g fl V₁ ⟨rfl, rfl, rfl⟩ Z t₂ hKZ hAZ hrZ hgZ -
+      rintro j' g fl V₁ ⟨rfl, rfl, hV₁⟩ Z t₂ hKZ hAZ hrZ hgZ -
+      subst V₁
       rw [h8U] at hAZ
       refine callS H (Rg := L3 g₀ q1 q2 q3) (q := c) (ps := [q3, q2, q1]) (fun _ _ h k => h.sk k)
         (fun _ h => h.1.1.1.1) (by decide) (callm_306 _) ?_ Z _ t₂ hKZ hAZ hrZ
@@ -505,7 +528,8 @@ theorem d279 (H : Hyp prof F Wl L s₀ o gev gP gE g₀ e₂ code₂ j₂ I K T)
       exact a309 H Z' W' t' hKZ' hAZ' hrZ' ⟨q1, q2, q3, c, hP.1, hP.2.1, hP.2.2⟩
   · have hz' : U.cpu.rflags.zf = false := hz.trans (decide_eq_false h1)
     refine (c_284 prof).run H.c H.hin _ hKU hAU hrU (vc_284n hz') ?_
-    rintro j' g fl V₁ ⟨rfl, rfl, rfl⟩ Z t₂ hKZ hAZ hrZ hgZ -
+    rintro j' g fl V₁ ⟨rfl, rfl, hV₁⟩ Z t₂ hKZ hAZ hrZ hgZ -
+    subst V₁
     exact a352 H Z _ t₂ hKZ hAZ hrZ ⟨q1, q2, q3, by rw [hgZ]; exact hLU, H.dn _ W c hI hK hc0 hrl h1⟩
 
 theorem a492 (H : Hyp prof F Wl L s₀ o gev gP gE g₀ e₂ code₂ j₂ I K T) :
@@ -536,7 +560,8 @@ theorem d240 (H : Hyp prof F Wl L s₀ o gev gP gE g₀ e₂ code₂ j₂ I K T)
     · refine (c_245 prof).run H.c H.hin _ hKU hAU hrU
         (vc_245z0 (c := rdq(Wdec W c, c + 24#64)) hz' hcxU (by rw [h15U]; try rfl) (by rw [h15U]; exact o24)
           (by rw [h15U]; exact o0) h0) ?_
-      rintro j' g fl V₁ ⟨rfl, rfl, rfl⟩ Z t₂ hKZ hAZ hrZ hgZ -
+      rintro j' g fl V₁ ⟨rfl, rfl, hV₁⟩ Z t₂ hKZ hAZ hrZ hgZ -
+      subst V₁
       rw [h15U] at hAZ
       exact a352 H Z _ t₂ hKZ hAZ hrZ ⟨q1, q2, c, by rw [hgZ]; exact ⟨hLU, h15U⟩, hI'⟩
     · obtain ⟨fv, fx⟩ := H.vf _ _ _ hI' (Or.inl hK') h0
@@ -545,7 +570,8 @@ theorem d240 (H : Hyp prof F Wl L s₀ o gev gP gE g₀ e₂ code₂ j₂ I K T)
           (vc_245zk (c := rdq(Wdec W c, c + 24#64)) (vt := rdq(Vv (Wdec W c) c, rdq(Wdec W c, c + 24#64)))
             (x := rlK) hz' hcxU (by rw [h15U]; try rfl) (by rw [h15U]; exact o24) (by rw [h15U]; exact o0) h0
             hdxU (by rw [h15U]; try rfl) (by rw [h15U]; exact hx) rfl fv fx) ?_
-        rintro j' g fl V₁ ⟨rfl, rfl, rfl⟩ Z t₂ hKZ hAZ hrZ hgZ -
+        rintro j' g fl V₁ ⟨rfl, rfl, hV₁⟩ Z t₂ hKZ hAZ hrZ hgZ -
+        subst V₁
         rw [h15U] at hAZ
         exact d279 H Z _ t₂ hKZ hAZ hrZ ⟨q1, q2, c, _, by rw [hgZ]; exact ⟨hLU, h15U⟩, by rw [hgZ]; try rfl,
           by rw [hgZ]; exact hcxU, hI', hK', h0, hx⟩
@@ -554,7 +580,8 @@ theorem d240 (H : Hyp prof F Wl L s₀ o gev gP gE g₀ e₂ code₂ j₂ I K T)
             (x := rdq(Vv (Wdec W c) c, rdq(Vv (Wdec W c) c, rdq(Wdec W c, c + 24#64)) + 16#64))
             hz' hcxU (by rw [h15U]; try rfl) (by rw [h15U]; exact o24) (by rw [h15U]; exact o0) h0
             hdxU (by rw [h15U]; try rfl) (by rw [h15U]; try rfl) hx fv fx) ?_
-        rintro j' g fl V₁ ⟨rfl, rfl, rfl⟩ Z t₂ hKZ hAZ hrZ hgZ -
+        rintro j' g fl V₁ ⟨rfl, rfl, hV₁⟩ Z t₂ hKZ hAZ hrZ hgZ -
+        subst V₁
         rw [h15U] at hAZ
         refine callR H (Rg := L3 g₀ q1 q2 c) (ps := [c, q2, q1]) (fun _ _ h k => h.sk k) (fun _ h => h.1.1.1.1)
           (by decide) (callr_490 _) ?_ Z _ t₂ hKZ hAZ hrZ
@@ -563,7 +590,8 @@ theorem d240 (H : Hyp prof F Wl L s₀ o gev gP gE g₀ e₂ code₂ j₂ I K T)
         exact a492 H Z' W' t' hKZ' hAZ' hrZ' ⟨q1, q2, c, hP.1, hP.2⟩
   · have hz' : U.cpu.rflags.zf = false := hz.trans (decide_eq_false h1)
     refine (c_245 prof).run H.c H.hin _ hKU hAU hrU (vc_245n hz') ?_
-    rintro j' g fl V₁ ⟨rfl, rfl, rfl⟩ Z t₂ hKZ hAZ hrZ hgZ -
+    rintro j' g fl V₁ ⟨rfl, rfl, hV₁⟩ Z t₂ hKZ hAZ hrZ hgZ -
+    subst V₁
     exact a380 H Z _ t₂ hKZ hAZ hrZ ⟨q1, q2, by rw [hgZ]; exact hLU, H.dn _ W c hI hK hc0 hrl h1⟩
 
 theorem a469 (H : Hyp prof F Wl L s₀ o gev gP gE g₀ e₂ code₂ j₂ I K T) :
@@ -594,7 +622,8 @@ theorem d197 (H : Hyp prof F Wl L s₀ o gev gP gE g₀ e₂ code₂ j₂ I K T)
     · refine (c_202 prof).run H.c H.hin _ hKU hAU hrU
         (vc_202z0 (c := rdq(Wdec W c, c + 24#64)) hz' hcxU (by rw [h14U]; try rfl) (by rw [h14U]; exact o24)
           (by rw [h14U]; exact o0) h0) ?_
-      rintro j' g fl V₁ ⟨rfl, rfl, rfl⟩ Z t₂ hKZ hAZ hrZ hgZ -
+      rintro j' g fl V₁ ⟨rfl, rfl, hV₁⟩ Z t₂ hKZ hAZ hrZ hgZ -
+      subst V₁
       rw [h14U] at hAZ
       exact a380 H Z _ t₂ hKZ hAZ hrZ ⟨q1, c, by rw [hgZ]; exact ⟨hLU, h14U⟩, hI'⟩
     · obtain ⟨fv, fx⟩ := H.vf _ _ _ hI' (Or.inl hK') h0
@@ -603,7 +632,8 @@ theorem d197 (H : Hyp prof F Wl L s₀ o gev gP gE g₀ e₂ code₂ j₂ I K T)
           (vc_202zk (c := rdq(Wdec W c, c + 24#64)) (vt := rdq(Vv (Wdec W c) c, rdq(Wdec W c, c + 24#64)))
             (x := rlK) hz' hcxU (by rw [h14U]; try rfl) (by rw [h14U]; exact o24) (by rw [h14U]; exact o0) h0
             hdxU (by rw [h14U]; try rfl) (by rw [h14U]; exact hx) rfl fv fx) ?_
-        rintro j' g fl V₁ ⟨rfl, rfl, rfl⟩ Z t₂ hKZ hAZ hrZ hgZ -
+        rintro j' g fl V₁ ⟨rfl, rfl, hV₁⟩ Z t₂ hKZ hAZ hrZ hgZ -
+        subst V₁
         rw [h14U] at hAZ
         exact d240 H Z _ t₂ hKZ hAZ hrZ ⟨q1, c, _, by rw [hgZ]; exact ⟨hLU, h14U⟩, by rw [hgZ]; try rfl,
           by rw [hgZ]; exact hcxU, by rw [hgZ]; exact hdxU, hI', hK', h0, hx⟩
@@ -612,7 +642,8 @@ theorem d197 (H : Hyp prof F Wl L s₀ o gev gP gE g₀ e₂ code₂ j₂ I K T)
             (x := rdq(Vv (Wdec W c) c, rdq(Vv (Wdec W c) c, rdq(Wdec W c, c + 24#64)) + 16#64))
             hz' hcxU (by rw [h14U]; try rfl) (by rw [h14U]; exact o24) (by rw [h14U]; exact o0) h0
             hdxU (by rw [h14U]; try rfl) (by rw [h14U]; try rfl) hx fv fx) ?_
-        rintro j' g fl V₁ ⟨rfl, rfl, rfl⟩ Z t₂ hKZ hAZ hrZ hgZ -
+        rintro j' g fl V₁ ⟨rfl, rfl, hV₁⟩ Z t₂ hKZ hAZ hrZ hgZ -
+        subst V₁
         rw [h14U] at hAZ
         refine callR H (Rg := L2 g₀ q1 c) (ps := [c, q1]) (fun _ _ h k => h.sk k) (fun _ h => h.1.1.1)
           (by decide) (callr_467 _) ?_ Z _ t₂ hKZ hAZ hrZ
@@ -621,7 +652,8 @@ theorem d197 (H : Hyp prof F Wl L s₀ o gev gP gE g₀ e₂ code₂ j₂ I K T)
         exact a469 H Z' W' t' hKZ' hAZ' hrZ' ⟨q1, c, hP.1, hP.2⟩
   · have hz' : U.cpu.rflags.zf = false := hz.trans (decide_eq_false h1)
     refine (c_202 prof).run H.c H.hin _ hKU hAU hrU (vc_202n hz') ?_
-    rintro j' g fl V₁ ⟨rfl, rfl, rfl⟩ Z t₂ hKZ hAZ hrZ hgZ -
+    rintro j' g fl V₁ ⟨rfl, rfl, hV₁⟩ Z t₂ hKZ hAZ hrZ hgZ -
+    subst V₁
     exact a408 H Z _ t₂ hKZ hAZ hrZ ⟨q1, by rw [hgZ]; exact hLU, H.dn _ W c hI hK hc0 hrl h1⟩
 
 theorem a485 (H : Hyp prof F Wl L s₀ o gev gP gE g₀ e₂ code₂ j₂ I K T) :
@@ -651,7 +683,8 @@ theorem d60 (H : Hyp prof F Wl L s₀ o gev gP gE g₀ e₂ code₂ j₂ I K T) 
     · refine (c_66 prof).run H.c H.hin _ hKU hAU hrU
         (vc_66z0 (c := rdq(Wdec W c, c + 24#64)) hz' (by rw [h12U]; try rfl) (by rw [h12U]; exact o24)
           (by rw [h12U]; exact o0) h0) ?_
-      rintro j' g fl V₁ ⟨rfl, rfl, rfl⟩ Z t₂ hKZ hAZ hrZ hgZ -
+      rintro j' g fl V₁ ⟨rfl, rfl, hV₁⟩ Z t₂ hKZ hAZ hrZ hgZ -
+      subst V₁
       rw [h12U] at hAZ
       exact a408 H Z _ t₂ hKZ hAZ hrZ ⟨c, by rw [hgZ]; exact ⟨hRU, h12U⟩, hI'⟩
     · obtain ⟨fv, fx⟩ := H.vf _ _ _ hI' (Or.inl hK') h0
@@ -660,7 +693,8 @@ theorem d60 (H : Hyp prof F Wl L s₀ o gev gP gE g₀ e₂ code₂ j₂ I K T) 
           (vc_66zk (c := rdq(Wdec W c, c + 24#64)) (vt := rdq(Vv (Wdec W c) c, rdq(Wdec W c, c + 24#64)))
             (x := rlK) hz' (by rw [h12U]; try rfl) (by rw [h12U]; exact o24) (by rw [h12U]; exact o0) h0
             hdxU (by rw [h12U]; try rfl) (by rw [h12U]; exact hx) rfl fv fx) ?_
-        rintro j' g fl V₁ ⟨rfl, rfl, rfl⟩ Z t₂ hKZ hAZ hrZ hgZ -
+        rintro j' g fl V₁ ⟨rfl, rfl, hV₁⟩ Z t₂ hKZ hAZ hrZ hgZ -
+        subst V₁
         rw [h12U] at hAZ
         exact d197 H Z _ t₂ hKZ hAZ hrZ ⟨c, _, by rw [hgZ]; exact ⟨hRU, h12U⟩, by rw [hgZ]; try rfl,
           by rw [hgZ]; try rfl, by rw [hgZ]; exact hdxU, hI', hK', h0, hx⟩
@@ -669,7 +703,8 @@ theorem d60 (H : Hyp prof F Wl L s₀ o gev gP gE g₀ e₂ code₂ j₂ I K T) 
             (x := rdq(Vv (Wdec W c) c, rdq(Vv (Wdec W c) c, rdq(Wdec W c, c + 24#64)) + 16#64))
             hz' (by rw [h12U]; try rfl) (by rw [h12U]; exact o24) (by rw [h12U]; exact o0) h0
             hdxU (by rw [h12U]; try rfl) (by rw [h12U]; try rfl) hx fv fx) ?_
-        rintro j' g fl V₁ ⟨rfl, rfl, rfl⟩ Z t₂ hKZ hAZ hrZ hgZ -
+        rintro j' g fl V₁ ⟨rfl, rfl, hV₁⟩ Z t₂ hKZ hAZ hrZ hgZ -
+        subst V₁
         rw [h12U] at hAZ
         refine callR H (Rg := L1 g₀ c) (ps := [c]) (fun _ _ h k => h.sk k) (fun _ h => h.1.1)
           (by decide) (callr_483 _) ?_ Z _ t₂ hKZ hAZ hrZ
@@ -678,7 +713,8 @@ theorem d60 (H : Hyp prof F Wl L s₀ o gev gP gE g₀ e₂ code₂ j₂ I K T) 
         exact a485 H Z' W' t' hKZ' hAZ' hrZ' ⟨c, hP.1, hP.2⟩
   · have hz' : U.cpu.rflags.zf = false := hz.trans (decide_eq_false h1)
     refine (c_66 prof).run H.c H.hin _ hKU hAU hrU (vc_66n hz') ?_
-    rintro j' g fl V₁ ⟨rfl, rfl, rfl⟩ Z t₂ hKZ hAZ hrZ hgZ -
+    rintro j' g fl V₁ ⟨rfl, rfl, hV₁⟩ Z t₂ hKZ hAZ hrZ hgZ -
+    subst V₁
     exact a68 H Z _ t₂ hKZ hAZ hrZ ⟨by rw [hgZ]; exact hRU, H.dn _ W c hI hK hc0 hrl h1⟩
 
 theorem a453 (H : Hyp prof F Wl L s₀ o gev gP gE g₀ e₂ code₂ j₂ I K T) :
