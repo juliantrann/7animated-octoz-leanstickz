@@ -2165,6 +2165,11 @@ FNS = {
     "npl": dict(grp="Npl", cn="CStdOutStream::NormalizePrint_UString", a=0x5a1680, n=68, pos=True, stops=(42, 47),
                 calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `CStdOutStream::NormalizePrint_UString` (`StdOutStream.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 C/SwapBytes.c `z7_SwapBytesPrepare ()`: `CPU_IsSupported_AVX2 ()` (0x4244b0); not 0: the mode 3 stored
+    # at 0x7967b8, `ret` (0x24); 0: `CPU_IsSupported_SSSE3 ()` (0x424340), the mode 1 + (not 0) stored, `ret` (0x42).
+    # Stops: the `ret`s (0x24, 0x42), the padding after the first (0x25).
+    "sbp": dict(grp="Sbp", cn="z7_SwapBytesPrepare", a=0x43d3d0, n=67, pos=True, stops=(36, 37, 66), calls=True,
+                tag="PLAN.md §M, M1", src="7-Zip 26.06's `z7_SwapBytesPrepare` (`SwapBytes.c`; `objdump -d`)"),
 }
 
 def file_bytes(path, va, n):
