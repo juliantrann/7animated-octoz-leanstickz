@@ -1,9 +1,6 @@
-import FV7z.Rdd.Holds
+import FV7z.Gpn.Holds
+import FV7z.Gcf.Holds
 open FV7z
-#print axioms vc_0
-#print axioms vc_80n
-#print axioms vc_109g
-#print axioms vc_133o
-#print axioms vc_133z
-#print axioms dn_ret
-#print axioms vc_193
+#print axioms FV7z.Gpn.gpn_ok
+#print axioms FV7z.Gpn.vc_0
+#print axioms FV7z.Gcf.gcf_ok
