@@ -1,4 +1,6 @@
 import FV7z.Alr.Pieces
+import FV7z.Lemmas.CallM
+import FV7z.Lemmas.CallReg
 /-!
 # `CArchiveLink::Release` (PLAN.md §M, M1): the runs through the callees, part 1
 
@@ -493,7 +495,8 @@ theorem R222 (E : Ev prof F Wl L s₀ o gev gP gE S g0 e₂ code₂ j₂ I D J) 
 `call rax` (515, `kB`), from its return the `jmp` (517) to 463. -/
 theorem R237 (E : Ev prof F Wl L s₀ o gev gP gE S g0 e₂ code₂ j₂ I D J) (k : Nat) (p : Addr)
     (h463 : AtJ prof F Wl L s₀ o gev gP gE 463 (PA S g0 J k p))
-    (h270 : ∀ b : Addr, b ≠ 0 → AtJ prof F Wl L s₀ o gev gP gE 270 fun g W => J k p W ∧ Fa S g0 p g ∧ g.r14 = b) :
+    (h270 : ∀ b : Addr, b ≠ 0 → AtJ prof F Wl L s₀ o gev gP gE 270 fun g W =>
+      J k p W ∧ Fa S g0 p g ∧ g.r14 = b ∧ rdq(W, p) = b) :
     AtJ prof F Wl L s₀ o gev gP gE 237 (PA S g0 J k p) := by
   rintro Y W t hK hA hr ⟨hJ, hm⟩
   have hb : Y.cpu.gpr.rbp = p := hm.2.2.2
@@ -510,7 +513,7 @@ theorem R237 (E : Ev prof F Wl L s₀ o gev gP gE S g0 e₂ code₂ j₂ I D J) 
     ⟨gf.1.trans hm.1, gf.2.2.2.2.1.trans hm.2.1, gf.2.2.2.2.2.trans hm.2.2.1, gf.2.2.1.trans hm.2.2.2⟩
   rcases hj with rfl | ⟨rfl, h0⟩ | ⟨rfl, h0, gax, gdi⟩
   · exact h463 U W t₁ hKU hAU hrU ⟨hJ, haU⟩
-  · exact h270 _ h0 U W t₁ hKU hAU hrU ⟨hJ, haU, g14⟩
+  · exact h270 _ h0 U W t₁ hKU hAU hrU ⟨hJ, haU, g14, rfl⟩
   · refine callRK E hKU hAU hrU haU.1 (lt_len (by decide)) (callr_515 _) gax (E.hB k p W hJ h0).2.2
       (E.kB k p W _ hJ h0) gdi ?_
     intro Z W' t₃ hKZ hAZ hrZ hsZ hkZ hJZ
