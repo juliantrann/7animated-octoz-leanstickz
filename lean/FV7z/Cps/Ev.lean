@@ -6,7 +6,7 @@ import FV7z.Cps.Pieces3
 
 - `e24`, the arithmetic of the indices (`w32`, `i32`, `nxe`, `s64`, `pl`, `kexit`, `knext`, `sz24_eq`).
 - `Fo` (a switch form's fields the code reads), `Ro` (a switch result's fields it stores into), `Ky` (a key: its
-  length below `2^32`, its bytes readable, nonzero before the NUL), `Lp`, `Bt` (the switch loop's registers), `Nx`
+  NUL below `2^32`, its bytes and the NUL readable), `Lp`, `Bt` (the switch loop's registers), `Nx`
   (the next round of the switch loop as a continuation).
 - `Ev`: the hypotheses of the runs from the cut points; `callK`: a `call` of a callee given as `KC`.
 - `tail331`: the stack guard's check, the epilogue, the `ret`; the error messages (`AString::operator=` at 407, 504,

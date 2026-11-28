@@ -1489,3 +1489,13 @@ import FV7z.Cps.Str
 import FV7z.Cps.Sel
 import FV7z.Cps.Loop
 import FV7z.Cps.Holds
+import FV7z.Aec.Code
+import FV7z.Aec.Pats
+import FV7z.Aec.Blocks1
+import FV7z.Aec.Blocks
+import FV7z.Aec.Cuts
+import FV7z.Aec.Defs
+import FV7z.Aec.Pieces1
+import FV7z.Aec.Pieces2
+import FV7z.Aec.Holds
+import FV7z.Cpr.Loop
