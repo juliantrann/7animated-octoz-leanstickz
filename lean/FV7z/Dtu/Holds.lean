@@ -331,8 +331,9 @@ theorem dtu_ok (c : Seg prof F Wl L s₀ o) (hin : CodeIn L dtu_at dtu) (hK : Ke
   refine (c_0 prof).run c hin (fun j' g' _ V' => P0 V X.cpu.gpr j' g' V') hK hA
     (by rw [addr_add_zero]; exact hrip) (vc_0 hF) ?_
   rintro j' g fl V₁ hP Y t₁ hKY hAY hrY hgY -
-  rcases hP with ⟨rfl, h0, h3, hg, rfl⟩ | ⟨hj, hg, rfl⟩
-  · have e1 : Y.cpu.gpr =
+  rcases hP with ⟨rfl, h0, h3, hg, hV₁⟩ | ⟨hj, hg, rfl⟩
+  · subst V₁
+    have e1 : Y.cpu.gpr =
         { X.cpu.gpr with
           rax := BitVec.setWidth 64 dty(V, X.cpu.gpr),
           rdx := dv(V, X.cpu.gpr) } := hgY.trans hg
