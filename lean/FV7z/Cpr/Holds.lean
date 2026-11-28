@@ -356,14 +356,14 @@ theorem vc_0 {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post} 
     (hs6 : ∀ i < 8, Foot Wl (Addr.add (g.rsp - 8 - 8 - 8 - 8 - 8 - 8) i))
     (hcl : ∀ i < 8, Foot F.data (Addr.add (fb + 40#64) i))
     (hw : ∀ i < 8, Foot Wl (Addr.add (aR g.rsp + 56#64) i))
-    (h : ∀ g', g'.rsp = aR g.rsp → g'.rbx = g.rdi → g'.rbp = g.rdx →
+    (h : ∀ g', g'.rsp = aR g.rsp → g'.rbx = g.rdi → g'.rbp = g.rdx → g'.rdi = g.rdi → g'.rdx = g.rdx →
       ∀ fl, Q 54 g' fl (Vst (P6 V g) (aR g.rsp + 56#64) (toBytesLE cn 8))) :
     W_0 fb F Wl Q g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only [aR, P6] at hcn hs1 hs2 hs3 hs4 hs5 hs6 hw h ⊢
   wpx [W_0, o0, Op.ldf, Op.zxr, hcn]
   all_goals repeat' (first
-    | refine h _ ?_ ?_ ?_ _
+    | refine h _ ?_ ?_ ?_ ?_ ?_ _
     | with_reducible rfl
     | with_reducible exact hs1
     | with_reducible exact hs2
@@ -710,5 +710,443 @@ theorem vc_333 {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post
     | intro _)
 
 end Pieces
+
+/-! ## The runs from the cut points -/
+
+section Runs
+variable {prof : Profile} {F : Footprint} {Wl : List Rgn} {L : List (Addr × List Byte)} {s₀ : State} {o : Oracle}
+  {gev : List Event} {gP : State → Nat → List Event → Prop} {gE : Outcome → List Event → Prop}
+  {fb S : Addr} {g0 : Gprs} {e₂ : Addr} {code₂ : List Byte} {j₂ : Nat}
+  {I0 I1 I3 : (Addr → Byte) → Prop} {I2 : Gprs → (Addr → Byte) → Prop} {I4 I5 : BitVec 64 → (Addr → Byte) → Prop}
+  {P : (Addr → Byte) → Prop} {Q4 : BitVec 32 → BitVec 32 → (Addr → Byte) → Prop}
+  {D : BitVec 64 → Nat → (Addr → Byte) → Prop} {Jd : BitVec 64 → Nat → BitVec 64 → (Addr → Byte) → Prop}
+  {Iz : (Addr → Byte) → Prop} {Y : State} {t : Nat} {W : Addr → Byte}
+
+/-- A `call` at `j` (`rsp` = `aR S`, the bytes `W`) of the callee `k`, and from its return at `j + 5`. -/
+theorem callK (E : Ev prof F Wl L s₀ o gev gP gE fb S g0 e₂ code₂ j₂ I0 I1 I3 I2 I4 I5 P Q4 D Jd Iz)
+    {U : State} {t₁ : Nat} {j R : Nat} {ent : Addr} {A : Gprs → Prop} {N : Gprs → (Addr → Byte) → Prop}
+    (hKU : KeptW Wl s₀ U) (hAU : Agree F U.proc.mm.mem W) (hrU : U.cpu.rip = cpr_at.add j)
+    (hs : U.cpu.gpr.rsp = aR S) (hj : j < cpr.length) (hd : Dec prof.feat cpr j (FV7z.mk .call 64 [.rel R] 5))
+    (htgt : cpr_at.add (j + 5) + BitVec.ofNat 64 R = ent)
+    (hc : ∃ code : List Byte, CodeIn L ent code ∧ 0 < code.length)
+    (k : KC prof F Wl L s₀ o gev gP gE S ent (j + 5) W A N) (hA : A (U.cpu.gpr.set 4 (aR S - 8)))
+    (h : ∀ (Z : State) (W' : Addr → Byte) (t'' : Nat), KeptW Wl s₀ Z → Agree F Z.proc.mm.mem W' →
+      Z.cpu.rip = cpr_at.add (j + 5) → Z.cpu.gpr.rsp = aR S → KS U.cpu.gpr Z.cpu.gpr → N Z.cpu.gpr W' →
+      GoG prof L o gev gP gE Z t'') :
+    GoG prof L o gev gP gE U t₁ := by
+  have hU : U.cpu.gpr.rsp - 8 = aR S - 8 := by rw [hs]
+  obtain ⟨cc, hinc, hcc⟩ := hc
+  refine E.c.s_call hKU hAU E.hin hj hrU hd hinc hcc htgt (by rw [hU]; exact E.hr8) ?_
+  rintro Y₂ t₂ hK₂ hA₂ ⟨hr₂, hg₂⟩
+  rw [hU] at hA₂
+  refine k Y₂ t₂ hK₂ hA₂ hr₂ (by rw [hg₂]; exact hU) (by rw [hg₂, hU]; exact hA) ?_
+  intro Z W' t₃ hKZ hAZ hrZ hsZ hkZ hNZ
+  rw [hg₂] at hkZ
+  exact h Z W' t₃ hKZ hAZ hrZ hsZ hkZ hNZ
+
+/-- From 333 (`rsp` = `aR S`, the bytes `W` with `Iz`): the guard's check, the epilogue, the `ret`, to `kr`. -/
+theorem tail333 (E : Ev prof F Wl L s₀ o gev gP gE fb S g0 e₂ code₂ j₂ I0 I1 I3 I2 I4 I5 P Q4 D Jd Iz)
+    (hK : KeptW Wl s₀ Y) (hA : Agree F Y.proc.mm.mem W) (hr : Y.cpu.rip = cpr_at.add 333)
+    (hs : Y.cpu.gpr.rsp = aR S) (hIW : Iz W) :
+    GoG prof L o gev gP gE Y t := by
+  obtain ⟨⟨s1, s2, s3, s4, s5, s6, s7⟩, sg⟩ := E.hIz W hIW
+  have e1 : rdq(W, Y.cpu.gpr.rsp + 72#64) = g0.rbx := by rw [hs, q1]; exact s1
+  have e2 : rdq(W, Y.cpu.gpr.rsp + 72#64 + 8) = g0.rbp := by rw [hs, q2]; exact s2
+  have e3 : rdq(W, Y.cpu.gpr.rsp + 72#64 + 8 + 8) = g0.r12 := by rw [hs, q3]; exact s3
+  have e4 : rdq(W, Y.cpu.gpr.rsp + 72#64 + 8 + 8 + 8) = g0.r13 := by rw [hs, q4]; exact s4
+  have e5 : rdq(W, Y.cpu.gpr.rsp + 72#64 + 8 + 8 + 8 + 8) = g0.r14 := by rw [hs, q5]; exact s5
+  have e6 : rdq(W, Y.cpu.gpr.rsp + 72#64 + 8 + 8 + 8 + 8 + 8) = g0.r15 := by rw [hs, q6]; exact s6
+  refine (c_333 prof fb).run E.c E.hfs E.hin (fun j' g' _ V' => j' = 370 ∧ V' = W ∧
+      g'.rsp = Y.cpu.gpr.rsp + 72#64 + 8 + 8 + 8 + 8 + 8 + 8 ∧ g'.rbx = rdq(W, Y.cpu.gpr.rsp + 72#64) ∧
+      g'.rbp = rdq(W, Y.cpu.gpr.rsp + 72#64 + 8) ∧ g'.r12 = rdq(W, Y.cpu.gpr.rsp + 72#64 + 8 + 8) ∧
+      g'.r13 = rdq(W, Y.cpu.gpr.rsp + 72#64 + 8 + 8 + 8) ∧
+      g'.r14 = rdq(W, Y.cpu.gpr.rsp + 72#64 + 8 + 8 + 8 + 8) ∧
+      g'.r15 = rdq(W, Y.cpu.gpr.rsp + 72#64 + 8 + 8 + 8 + 8 + 8))
+    hK hA hr
+    (vc_333 (by rw [hs]; exact sg) (by rw [hs]; exact E.fg) E.hcl (by rw [hs, q1]; exact E.fb48)
+      (by rw [hs, q2]; exact E.fb40) (by rw [hs, q3]; exact E.fb32) (by rw [hs, q4]; exact E.fb24)
+      (by rw [hs, q5]; exact E.fb16) (by rw [hs, q6]; exact E.fb8)
+      fun _ a b d e f g h _ => ⟨rfl, rfl, a, b, d, e, f, g, h⟩) ?_
+  rintro j' g fl V₁ ⟨rfl, hV₁, gs, gx, gp, g12, g13, g14, g15⟩ U t₁ hKU hAU hrU hgU -
+  subst V₁ hgU
+  have hsU : U.cpu.gpr.rsp = S := by rw [gs, hs]; exact q7 S
+  refine E.c.s_ret hKU hAU E.hin (lt_len (by decide)) hrU (ret_370 _) (by rw [hsU]; exact E.hl) E.hin₂ E.h₂
+    (by rw [hsU]; exact s7) ?_
+  rintro Z' t₂ hKZ' hAZ' ⟨hrZ', hgZ'⟩
+  refine E.kr W Z' t₂ hKZ' hAZ' hrZ' ?_ ?_ hIW
+  · rw [hgZ']
+    show U.cpu.gpr.rsp + 8 = _
+    rw [hsU]
+  · rw [hgZ']
+    exact ⟨gx.trans e1, gp.trans e2, g12.trans e3, g13.trans e4, g14.trans e5, g15.trans e6⟩
+
+/-- From 323 (`rdi` = `_items` = `A`, the bytes with `D A 0`): null to 333 (`hA0`), else `delete []` (`k328`) and
+from its return 333. -/
+theorem from323 (E : Ev prof F Wl L s₀ o gev gP gE fb S g0 e₂ code₂ j₂ I0 I1 I3 I2 I4 I5 P Q4 D Jd Iz)
+    (A : BitVec 64) :
+    AtJ prof F Wl L s₀ o gev gP gE 323 fun g W => D A 0 W ∧ g.rsp = aR S ∧ g.rdi = A := by
+  rintro Y W t hK hA hr ⟨hD, hs, hdi⟩
+  by_cases hA0 : A = 0
+  · subst hA0
+    refine (c_323 prof fb).run E.c E.hfs E.hin (fun j' g' _ V' => j' = 333 ∧ V' = W ∧ g'.rsp = Y.cpu.gpr.rsp)
+      hK hA hr (vc_323z hdi fun _ a _ => ⟨rfl, rfl, a⟩) ?_
+    rintro j' g fl V₁ ⟨rfl, hV₁, gs⟩ U t₁ hKU hAU hrU hgU -
+    subst V₁ hgU
+    exact tail333 E hKU hAU hrU (gs.trans hs) (E.hA0 W hD)
+  · refine (c_323 prof fb).run E.c E.hfs E.hin (fun j' g' _ V' => j' = 328 ∧ V' = W ∧ g'.rsp = Y.cpu.gpr.rsp ∧
+        g'.rdi = Y.cpu.gpr.rdi) hK hA hr (vc_323n (by rw [hdi]; exact hA0) fun _ a b _ => ⟨rfl, rfl, a, b⟩) ?_
+    rintro j' g fl V₁ ⟨rfl, hV₁, gs, gdi⟩ U t₁ hKU hAU hrU hgU -
+    subst V₁ hgU
+    refine callK E hKU hAU hrU (gs.trans hs) (lt_len (by decide)) (call_328 _) tgt_328 E.cD
+      (E.k328 A W hA0 hD) (by show U.cpu.gpr.rdi = _; rw [gdi, hdi]) ?_
+    intro Z W' t₃ hKZ hAZ hrZ hsZ hkZ hIZ
+    exact tail333 E hKZ hAZ hrZ hsZ hIZ
+
+/-- 295 (the step `k`, the item `p` with null or freed chars): `operator delete (p, 16)` (`k303`), from its return
+308 (`rdi` = `_items` again) to 313. -/
+theorem A295 (E : Ev prof F Wl L s₀ o gev gP gE fb S g0 e₂ code₂ j₂ I0 I1 I3 I2 I4 I5 P Q4 D Jd Iz)
+    (A : BitVec 64) (k : Nat) (p : BitVec 64) (hp : p ≠ 0)
+    (h313 : AtJ prof F Wl L s₀ o gev gP gE 313 fun g W => D A k W ∧ Lp S A k g) :
+    AtJ prof F Wl L s₀ o gev gP gE 295 fun g W => Jd A k p W ∧ g.rsp = aR S ∧ g.rbx = BitVec.ofNat 64 (8 * k) ∧
+      g.rbp = p := by
+  rintro Y W t hK hA hr ⟨hJ, hs, hb, hbp⟩
+  refine (c_295 prof fb).run E.c E.hfs E.hin (fun j' g' _ V' => j' = 303 ∧ V' = W ∧ g'.rsp = Y.cpu.gpr.rsp ∧
+      g'.rbx = Y.cpu.gpr.rbx ∧ g'.rdi = Y.cpu.gpr.rbp ∧ g'.rsi = 16#64) hK hA hr
+    (vc_295 fun _ a b d e _ => ⟨rfl, rfl, a, b, d, e⟩) ?_
+  rintro j' g fl V₁ ⟨rfl, hV₁, gs, gb, gdi, gsi⟩ U t₁ hKU hAU hrU hgU -
+  subst V₁ hgU
+  refine callK E hKU hAU hrU (gs.trans hs) (lt_len (by decide)) (call_303 _) tgt_303 E.cE
+    (E.k303 A k p W hp hJ) ⟨gdi.trans hbp, gsi⟩ ?_
+  intro Z W' t₃ hKZ hAZ hrZ hsZ hkZ hDZ
+  have hbZ : Z.cpu.gpr.rbx = BitVec.ofNat 64 (8 * k) := hkZ.1.trans (gb.trans hb)
+  refine (c_308 prof fb).run E.c E.hfs E.hin (fun j' g' _ V' => j' = 313 ∧ V' = W' ∧ g'.rsp = Z.cpu.gpr.rsp ∧
+      g'.rbx = Z.cpu.gpr.rbx ∧ g'.rdi = rdq(W', Z.cpu.gpr.rsp + 32#64)) hKZ hAZ hrZ
+    (vc_308 (by rw [hsZ]; exact E.f32) fun _ a b d _ => ⟨rfl, rfl, a, b, d⟩) ?_
+  rintro j' g fl V₁ ⟨rfl, hV₁, gs', gb', gdi'⟩ U' t₄ hKU' hAU' hrU' hgU' -
+  subst V₁ hgU'
+  refine h313 U' W' t₄ hKU' hAU' hrU' ⟨hDZ, gs'.trans hsZ, gb'.trans hbZ, ?_⟩
+  rw [gdi', hsZ]
+  exact E.hDa A k W' hDZ
+
+/-- 272, the step `k` (`rbx` = `8 k`): the item `p` = `_items[k]`; null to 313, else its chars freed unless null
+(`k290`) and to 295. -/
+theorem B272 (E : Ev prof F Wl L s₀ o gev gP gE fb S g0 e₂ code₂ j₂ I0 I1 I3 I2 I4 I5 P Q4 D Jd Iz)
+    (A : BitVec 64) (k : Nat)
+    (h313 : AtJ prof F Wl L s₀ o gev gP gE 313 fun g W => D A k W ∧ Lp S A k g) :
+    AtJ prof F Wl L s₀ o gev gP gE 272 fun g W => D A (k + 1) W ∧ Lp S A k g := by
+  rintro Y W t hK hA hr ⟨hD, hs, hb, hdi⟩
+  have hea : Y.cpu.gpr.rdi + Y.cpu.gpr.rbx = A + BitVec.ofNat 64 (8 * k) := by rw [hdi, hb]
+  have fe := E.fe A k W hD
+  by_cases hp0 : pk W A k = 0
+  · refine (c_272 prof fb).run E.c E.hfs E.hin (fun j' g' _ V' => j' = 313 ∧ V' = W ∧ g'.rsp = Y.cpu.gpr.rsp ∧
+        g'.rbx = Y.cpu.gpr.rbx ∧ g'.rdi = Y.cpu.gpr.rdi) hK hA hr
+      (vc_272z (p := pk W A k) (by rw [hea]) (by rw [hea]; exact fe) hp0
+        fun _ a b d _ => ⟨rfl, rfl, a, b, d⟩) ?_
+    rintro j' g fl V₁ ⟨rfl, hV₁, gs, gb, gdi⟩ U t₁ hKU hAU hrU hgU -
+    subst V₁ hgU
+    exact h313 U W t₁ hKU hAU hrU ⟨E.hP0 A k W hD hp0, gs.trans hs, gb.trans hb, gdi.trans hdi⟩
+  · have fpp := E.fp A k W hD hp0
+    refine (c_272 prof fb).run E.c E.hfs E.hin (fun j' g' _ V' => V' = W ∧ g'.rsp = Y.cpu.gpr.rsp ∧
+        g'.rbx = Y.cpu.gpr.rbx ∧ g'.rbp = pk W A k ∧ ((rdq(W, pk W A k) = 0 ∧ j' = 295) ∨
+          (rdq(W, pk W A k) ≠ 0 ∧ j' = 290 ∧ g'.rdi = rdq(W, pk W A k)))) hK hA hr
+      (vc_272n (p := pk W A k) (q := rdq(W, pk W A k)) (by rw [hea]) (by rw [hea]; exact fe) hp0 rfl fpp
+        (fun hq _ a b d _ => ⟨rfl, a, b, d, Or.inl ⟨hq, rfl⟩⟩)
+        (fun hq _ a b d e _ => ⟨rfl, a, b, d, Or.inr ⟨hq, rfl, e⟩⟩)) ?_
+    rintro j' g fl V₁ ⟨hV₁, gs, gb, gbp, hj⟩ U t₁ hKU hAU hrU hgU -
+    subst V₁ hgU
+    have hsU : U.cpu.gpr.rsp = aR S := gs.trans hs
+    have hbU : U.cpu.gpr.rbx = BitVec.ofNat 64 (8 * k) := gb.trans hb
+    rcases hj with ⟨hq0, rfl⟩ | ⟨hq0, rfl, gdi⟩
+    · exact A295 E A k _ hp0 h313 U W t₁ hKU hAU hrU ⟨E.hQ0 A k W hD hp0 hq0, hsU, hbU, gbp⟩
+    · refine callK E hKU hAU hrU hsU (lt_len (by decide)) (call_290 _) tgt_290 E.cD
+        (E.k290 A k W hD hp0 hq0) gdi ?_
+      intro Z W' t₃ hKZ hAZ hrZ hsZ hkZ hJZ
+      exact A295 E A k _ hp0 h313 Z W' t₃ hKZ hAZ hrZ ⟨hJZ, hsZ, hkZ.1.trans hbU, hkZ.2.1.trans gbp⟩
+
+/-- 313, the step `k`: `rbx` -= 8; after the step 0 to 323, else to 272 with the step `k - 1` (`hnx`). -/
+theorem S313 (E : Ev prof F Wl L s₀ o gev gP gE fb S g0 e₂ code₂ j₂ I0 I1 I3 I2 I4 I5 P Q4 D Jd Iz)
+    (A : BitVec 64) (k : Nat) (hk : k < 4294967296)
+    (h323 : AtJ prof F Wl L s₀ o gev gP gE 323 fun g W => D A 0 W ∧ g.rsp = aR S ∧ g.rdi = A)
+    (hnx : ∀ k', k = k' + 1 → AtJ prof F Wl L s₀ o gev gP gE 272 fun g W => D A (k' + 1) W ∧ Lp S A k' g) :
+    AtJ prof F Wl L s₀ o gev gP gE 313 fun g W => D A k W ∧ Lp S A k g := by
+  rintro Y W t hK hA hr ⟨hD, hs, hb, hdi⟩
+  cases k with
+  | zero =>
+    refine (c_313 prof fb).run E.c E.hfs E.hin (fun j' g' _ V' => j' = 323 ∧ V' = W ∧ g'.rsp = Y.cpu.gpr.rsp ∧
+        g'.rdi = Y.cpu.gpr.rdi) hK hA hr
+      (vc_313l (by rw [hb]; exact rb_last) fun _ a b _ => ⟨rfl, rfl, a, b⟩) ?_
+    rintro j' g fl V₁ ⟨rfl, hV₁, gs, gdi⟩ U t₁ hKU hAU hrU hgU -
+    subst V₁ hgU
+    exact h323 U W t₁ hKU hAU hrU ⟨hD, gs.trans hs, gdi.trans hdi⟩
+  | succ k =>
+    refine (c_313 prof fb).run E.c E.hfs E.hin (fun j' g' _ V' => j' = 272 ∧ V' = W ∧ g'.rsp = Y.cpu.gpr.rsp ∧
+        g'.rbx = Y.cpu.gpr.rbx - 8#64 ∧ g'.rdi = Y.cpu.gpr.rdi) hK hA hr
+      (vc_313c (by rw [hb, rb_step k (by omega)]; exact rb_ne k (by omega))
+        fun _ a b d _ => ⟨rfl, rfl, a, b, d⟩) ?_
+    rintro j' g fl V₁ ⟨rfl, hV₁, gs, gb, gdi⟩ U t₁ hKU hAU hrU hgU -
+    subst V₁ hgU
+    exact hnx k rfl U W t₁ hKU hAU hrU
+      ⟨hD, gs.trans hs, by rw [gb, hb]; exact rb_step k (by omega), gdi.trans hdi⟩
+
+/-- The destruction loop, by induction on the step. -/
+theorem L272 (E : Ev prof F Wl L s₀ o gev gP gE fb S g0 e₂ code₂ j₂ I0 I1 I3 I2 I4 I5 P Q4 D Jd Iz)
+    (A : BitVec 64) (h323 : AtJ prof F Wl L s₀ o gev gP gE 323 fun g W => D A 0 W ∧ g.rsp = aR S ∧ g.rdi = A) :
+    ∀ k, k < 4294967296 → AtJ prof F Wl L s₀ o gev gP gE 272 fun g W => D A (k + 1) W ∧ Lp S A k g := by
+  intro k
+  induction k with
+  | zero => exact fun hk => B272 E A 0 (S313 E A 0 hk h323 fun k' e => absurd e (by omega))
+  | succ k ih =>
+    exact fun hk => B272 E A (k + 1) (S313 E A (k + 1) hk h323 fun k' e => by
+      obtain rfl : k = k' := by omega
+      exact ih (by omega))
+
+/-- From 243 (back from `CheckPathToRoot_Change`, the bytes with `D A N` for the vector's `_items` `A` and `_size`
+`N`): `N` 0 to 323, else the loop from the step `N - 1`. -/
+theorem from243 (E : Ev prof F Wl L s₀ o gev gP gE fb S g0 e₂ code₂ j₂ I0 I1 I3 I2 I4 I5 P Q4 D Jd Iz)
+    (hK : KeptW Wl s₀ Y) (hA : Agree F Y.proc.mm.mem W) (hr : Y.cpu.rip = cpr_at.add 243)
+    (hs : Y.cpu.gpr.rsp = aR S) (hD : D rdq(W, aR S + 32#64) rdd(W, aR S + 40#64).toNat W) :
+    GoG prof L o gev gP gE Y t := by
+  obtain ⟨N, hN⟩ : ∃ N, rdd(W, aR S + 40#64) = N := ⟨_, rfl⟩
+  obtain ⟨A, hAa⟩ : ∃ A, rdq(W, aR S + 32#64) = A := ⟨_, rfl⟩
+  rw [hN, hAa] at hD
+  have hn' : rdd(W, Y.cpu.gpr.rsp + 40#64) = N := by rw [hs]; exact hN
+  have hA' : rdq(W, Y.cpu.gpr.rsp + 32#64) = A := by rw [hs]; exact hAa
+  have f40 : ∀ i < 4, Foot F.data (Addr.add (Y.cpu.gpr.rsp + 40#64) i) := by rw [hs]; exact E.f40
+  have f32 : ∀ i < 8, Foot F.data (Addr.add (Y.cpu.gpr.rsp + 32#64) i) := by rw [hs]; exact E.f32
+  by_cases hn0 : N = 0
+  · refine (c_243 prof fb).run E.c E.hfs E.hin (fun j' g' _ V' => j' = 323 ∧ V' = W ∧ g'.rsp = Y.cpu.gpr.rsp ∧
+        g'.rdi = rdq(W, Y.cpu.gpr.rsp + 32#64)) hK hA hr
+      (vc_243z hn' hn0 f40 f32 fun _ a b _ => ⟨rfl, rfl, a, b⟩) ?_
+    rintro j' g fl V₁ ⟨rfl, hV₁, gs, gdi⟩ U t₁ hKU hAU hrU hgU -
+    subst V₁ hgU
+    have e0 : N.toNat = 0 := (congrArg BitVec.toNat hn0).trans rfl
+    rw [e0] at hD
+    exact from323 E A U W t₁ hKU hAU hrU ⟨hD, gs.trans hs, gdi.trans hA'⟩
+  · refine (c_243 prof fb).run E.c E.hfs E.hin (fun j' g' _ V' => j' = 272 ∧ V' = W ∧ g'.rsp = Y.cpu.gpr.rsp ∧
+        g'.rdi = rdq(W, Y.cpu.gpr.rsp + 32#64) ∧ g'.rbx = rbx0 N) hK hA hr
+      (vc_243n hn' hn0 f40 f32 fun _ a b d _ => ⟨rfl, rfl, a, b, d⟩) ?_
+    rintro j' g fl V₁ ⟨rfl, hV₁, gs, gdi, gb⟩ U t₁ hKU hAU hrU hgU -
+    subst V₁ hgU
+    have hnz : N.toNat ≠ 0 := fun e => hn0 (BitVec.eq_of_toNat_eq (e.trans rfl))
+    have h2 : N.toNat < 4294967296 := N.isLt
+    have e1 : N.toNat - 1 + 1 = N.toNat := by omega
+    rw [← e1] at hD
+    exact L272 E A (from323 E A) (N.toNat - 1) (by omega) U W t₁ hKU hAU hrU
+      ⟨hD, gs.trans hs, by rw [gb, rbx0_eq hn0], gdi.trans hA'⟩
+
+/-- From 221 (the bytes with `P`): `Parent->CheckPathToRoot_Change (include, pathParts2, isFile)` (`k238`), from its
+return 243. -/
+theorem from221 (E : Ev prof F Wl L s₀ o gev gP gE fb S g0 e₂ code₂ j₂ I0 I1 I3 I2 I4 I5 P Q4 D Jd Iz)
+    (hK : KeptW Wl s₀ Y) (hA : Agree F Y.proc.mm.mem W) (hr : Y.cpu.rip = cpr_at.add 221)
+    (hm : Fm S g0 Y.cpu.gpr) (hP : P W) :
+    GoG prof L o gev gP gE Y t := by
+  refine (c_221 prof fb).run E.c E.hfs E.hin (fun j' g' _ V' => j' = 238 ∧ V' = W ∧ Fr Y.cpu.gpr g' ∧
+      g'.rdx = Y.cpu.gpr.rsp + 32#64) hK hA hr
+    (vc_221 (by rw [hm.2.1]; exact E.fpar) fun _ a b _ => ⟨rfl, rfl, a, b⟩) ?_
+  rintro j' g fl V₁ ⟨rfl, hV₁, gf, gdx⟩ U t₁ hKU hAU hrU hgU -
+  subst V₁ hgU
+  have hmU := Fm.fr hm gf
+  refine callK E hKU hAU hrU hmU.1 (lt_len (by decide)) (call_238 _) tgt_238 E.cP (E.k238 W hP)
+    (by show U.cpu.gpr.rdx = _; rw [gdx, hm.1]) ?_
+  intro Z W' t₃ hKZ hAZ hrZ hsZ hkZ hDZ
+  exact from243 E hKZ hAZ hrZ hsZ hDZ
+
+/-- From 188 (back from the copy `r` = `r12`, the bytes with `I5 r`): the append, then `pathParts._size` 0 to 221
+(`z221`), else to 425 (`z425`, `h425`). -/
+theorem from188 (E : Ev prof F Wl L s₀ o gev gP gE fb S g0 e₂ code₂ j₂ I0 I1 I3 I2 I4 I5 P Q4 D Jd Iz)
+    {r : BitVec 64} (hK : KeptW Wl s₀ Y) (hA : Agree F Y.proc.mm.mem W) (hr : Y.cpu.rip = cpr_at.add 188)
+    (hm : Fm S g0 Y.cpu.gpr) (h12 : Y.cpu.gpr.r12 = r) (hI : I5 r W) :
+    GoG prof L o gev gP gE Y t := by
+  have e40 : Y.cpu.gpr.rsp + 40#64 = aR S + 40#64 := by rw [hm.1]
+  have e32 : Y.cpu.gpr.rsp + 32#64 = aR S + 32#64 := by rw [hm.1]
+  have e8 : Y.cpu.gpr.rbp + 8#64 = g0.rdx + 8#64 := by rw [hm.2.2]
+  refine (c_188 prof fb).run E.c E.hfs E.hin (fun j' g' _ V' => Fr Y.cpu.gpr g' ∧ V' = St188 S r W ∧
+      ((j' = 221 ∧ rdd(W, g0.rdx + 8#64) = 0) ∨ (j' = 425 ∧ rdd(W, g0.rdx + 8#64) ≠ 0 ∧
+        g'.r15 = BitVec.setWidth 64 rdd(W, g0.rdx + 8#64) ∧
+        g'.rdx = BitVec.setWidth 64 (rdd(W, aR S + 40#64) + 1#32)))) hK hA hr
+    (vc_188 (by rw [e40]; exact E.f40) (by rw [e32]; exact E.f32) (by rw [e8]; exact E.fn8)
+      (by rw [e40]; exact fun i hi => E.w40 i (by omega)) (by rw [e40, e32]; exact E.wsl r W hI)
+      (fun _ x hx h0 a _ => ⟨a, by rw [hx, h12, e40, e32], Or.inl ⟨rfl, by rw [← e8]; exact h0⟩⟩)
+      (fun _ x hx h0 a d e _ => ⟨a, by rw [hx, h12, e40, e32],
+        Or.inr ⟨rfl, by rw [← e8]; exact h0, by rw [d, e8], by rw [e, hx, e40]⟩⟩)) ?_
+  rintro j' g fl V₁ ⟨gf, rfl, hj⟩ U t₁ hKU hAU hrU hgU -
+  subst hgU
+  have hmU := Fm.fr hm gf
+  rcases hj with ⟨rfl, h0⟩ | ⟨rfl, h0, g15, gdx⟩
+  · exact from221 E hKU hAU hrU hmU (E.z221 r W hI h0)
+  · exact E.h425 U _ t₁ hKU hAU hrU ⟨hmU, _, _, g15, gdx, E.z425 r W hI h0⟩
+
+/-- From 174 (back from `operator new (0x10)`, its result `rax`, the bytes with `I4 rax`): the copy of `Name` into it
+(`k183`), from its return 188. -/
+theorem from174 (E : Ev prof F Wl L s₀ o gev gP gE fb S g0 e₂ code₂ j₂ I0 I1 I3 I2 I4 I5 P Q4 D Jd Iz)
+    (hK : KeptW Wl s₀ Y) (hA : Agree F Y.proc.mm.mem W) (hr : Y.cpu.rip = cpr_at.add 174)
+    (hm : Fm S g0 Y.cpu.gpr) (hI : I4 Y.cpu.gpr.rax W) :
+    GoG prof L o gev gP gE Y t := by
+  refine (c_174 prof fb).run E.c E.hfs E.hin (fun j' g' _ V' => j' = 183 ∧ V' = W ∧ Fr Y.cpu.gpr g' ∧
+      g'.rdi = Y.cpu.gpr.rax ∧ g'.r12 = Y.cpu.gpr.rax) hK hA hr
+    (vc_174 fun _ a b d _ => ⟨rfl, rfl, a, b, d⟩) ?_
+  rintro j' g fl V₁ ⟨rfl, hV₁, gf, gdi, g12⟩ U t₁ hKU hAU hrU hgU -
+  subst V₁ hgU
+  have hmU := Fm.fr hm gf
+  refine callK E hKU hAU hrU hmU.1 (lt_len (by decide)) (call_183 _) tgt_183 E.cU (E.k183 _ _ hI) gdi ?_
+  intro Z W' t₃ hKZ hAZ hrZ hsZ hkZ hIZ
+  exact from188 E hKZ hAZ hrZ (fm_ret hmU hsZ hkZ) (hkZ.2.2.1.trans g12) hIZ
+
+/-- From 117 (back from `operator new [] (8)`, the bytes with `I2`): the slots 0 (`h117`), the stores at 146,
+`operator new (0x10)` (`k169`), from its return 174. -/
+theorem from117 (E : Ev prof F Wl L s₀ o gev gP gE fb S g0 e₂ code₂ j₂ I0 I1 I3 I2 I4 I5 P Q4 D Jd Iz)
+    (hK : KeptW Wl s₀ Y) (hA : Agree F Y.proc.mm.mem W) (hr : Y.cpu.rip = cpr_at.add 117)
+    (hm : Fm S g0 Y.cpu.gpr) (hI : I2 Y.cpu.gpr W) :
+    GoG prof L o gev gP gE Y t := by
+  obtain ⟨hn, hp⟩ := E.h117 _ W hI
+  refine (c_117 prof fb).run E.c E.hfs E.hin (fun j' g' _ V' => j' = 146 ∧ V' = W ∧ Fr Y.cpu.gpr g' ∧
+      g'.r12 = Y.cpu.gpr.rax) hK hA hr
+    (vc_117 (n32 := 0#32) (p := 0#64) (by rw [hm.1]; exact hn) rfl (by rw [hm.1]; exact hp) rfl
+      (by rw [hm.1]; exact E.f40) (by rw [hm.1]; exact E.f32) fun _ a b _ => ⟨rfl, rfl, a, b⟩) ?_
+  rintro j' g fl V₁ ⟨rfl, hV₁, gf, g12⟩ U t₁ hKU hAU hrU hgU -
+  subst V₁ hgU
+  have hmU := Fm.fr hm gf
+  refine (c_146 prof fb).run E.c E.hfs E.hin (fun j' g' _ V' => j' = 169 ∧
+      V' = Vst (Vst W (U.cpu.gpr.rsp + 32#64) (toBytesLE U.cpu.gpr.r12 8)) (U.cpu.gpr.rsp + 44#64)
+        (toBytesLE 1#32 4) ∧ Fr U.cpu.gpr g' ∧ g'.rdi = 16#64) hKU hAU hrU
+    (vc_146 (by rw [hmU.1]; exact E.w32) (by rw [hmU.1]; exact E.w44) fun _ a b _ => ⟨rfl, rfl, a, b⟩) ?_
+  rintro j' g fl V₂ ⟨rfl, hV₂, gf₂, gdi₂⟩ U₂ t₂ hKU₂ hAU₂ hrU₂ hgU₂ -
+  subst V₂ hgU₂
+  rw [hmU.1, g12] at hAU₂
+  have hmU₂ := Fm.fr hmU gf₂
+  refine callK E hKU₂ hAU₂ hrU₂ hmU₂.1 (lt_len (by decide)) (call_169 _) tgt_169 E.cN
+    (E.k169 _ (E.z146 _ _ hI)) gdi₂ ?_
+  intro Z W' t₃ hKZ hAZ hrZ hsZ hkZ hIZ
+  exact from174 E hKZ hAZ hrZ (fm_ret hmU₂ hsZ hkZ) hIZ
+
+/-- From 59 (back from `CheckPathCurrent`, the bytes with `I0`): its result or `Parent` null to 333 (`hz0`), else
+the stores of 0 (`z80`), `operator new [] (8)` (`k112`), from its return 117. -/
+theorem from59 (E : Ev prof F Wl L s₀ o gev gP gE fb S g0 e₂ code₂ j₂ I0 I1 I3 I2 I4 I5 P Q4 D Jd Iz)
+    (hK : KeptW Wl s₀ Y) (hA : Agree F Y.proc.mm.mem W) (hr : Y.cpu.rip = cpr_at.add 59)
+    (hm : Fm S g0 Y.cpu.gpr) (hI : I0 W) :
+    GoG prof L o gev gP gE Y t := by
+  refine (c_59 prof fb).run E.c E.hfs E.hin (fun j' g' _ V' => Fr Y.cpu.gpr g' ∧ ((j' = 333 ∧ V' = W) ∨
+      (j' = 112 ∧ g'.rdi = 8#64 ∧ V' = Vst (Vst W (Y.cpu.gpr.rsp + 32#64) (toBytesLE 0#64 8))
+        (Y.cpu.gpr.rsp + 40#64) (toBytesLE 0#64 8)))) hK hA hr
+    (vc_59 (by rw [hm.2.1]; exact E.fpar) (by rw [hm.1]; exact E.w32) (by rw [hm.1]; exact E.w40)
+      (fun _ a _ => ⟨a, Or.inl ⟨rfl, rfl⟩⟩) (fun _ a b _ => ⟨a, Or.inr ⟨rfl, b, rfl⟩⟩)) ?_
+  rintro j' g fl V₁ ⟨gf, ⟨rfl, rfl⟩ | ⟨rfl, gdi, rfl⟩⟩ U t₁ hKU hAU hrU hgU -
+  · subst hgU
+    exact tail333 E hKU hAU hrU (gf.1.trans hm.1) (E.hz0 W hI)
+  · subst hgU
+    have hmU := Fm.fr hm gf
+    rw [hm.1] at hAU
+    refine callK E hKU hAU hrU hmU.1 (lt_len (by decide)) (call_112 _) tgt_112 E.cA (E.k112 _ (E.z80 W hI))
+      gdi ?_
+    intro Z W' t₃ hKZ hAZ hrZ hsZ hkZ hIZ
+    exact from117 E hKZ hAZ hrZ (fm_ret hmU hsZ hkZ) hIZ
+
+end Runs
+
+variable {prof : Profile} {F : Footprint} {Wl : List Rgn} {L : List (Addr × List Byte)} {s₀ : State} {o : Oracle}
+  {gev : List Event} {gP : State → Nat → List Event → Prop} {gE : Outcome → List Event → Prop}
+  {X : State} {t : Nat} {V : Addr → Byte}
+
+/-- `NWildcard::CCensorNode::CheckPathToRoot (include, pathParts, isFile)` from its entry, `fb` the `fs` base, the
+run from 425 (`pathParts` not empty: the growth and the copy loop) a hypothesis (`h425`): the pushes' slots, the
+guard's slot, the local's slots and the calls' return address slot in what the run may store into; the guard at
+`fs:0x28`, `Parent`, `pathParts._size`, the return address readable. The callees and the invariants as in `Ev`
+(`k54`: `CheckPathCurrent`, from its return the bytes with `I0`). At the return address (`kr`): `rsp` 8 above the
+entry's, the callee-saved registers as they were, bytes with `Iz`. -/
+theorem cpr_ok {fb : Addr} {e₂ : Addr} {code₂ : List Byte} {j₂ : Nat}
+    {I0 I1 I3 : (Addr → Byte) → Prop} {I2 : Gprs → (Addr → Byte) → Prop} {I4 I5 : BitVec 64 → (Addr → Byte) → Prop}
+    {P : (Addr → Byte) → Prop} {Q4 : BitVec 32 → BitVec 32 → (Addr → Byte) → Prop}
+    {D : BitVec 64 → Nat → (Addr → Byte) → Prop} {Jd : BitVec 64 → Nat → BitVec 64 → (Addr → Byte) → Prop}
+    {Iz : (Addr → Byte) → Prop}
+    (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsBase = fb) (hin : CodeIn L cpr_at cpr)
+    (hK : KeptW Wl s₀ X) (hA : Agree F X.proc.mm.mem V) (hrip : X.cpu.rip = cpr_at)
+    (hcl : ∀ i < 8, Foot F.data (Addr.add (fb + 40#64) i))
+    (hs1 : ∀ i < 8, Foot Wl (Addr.add (X.cpu.gpr.rsp - 8) i))
+    (hs2 : ∀ i < 8, Foot Wl (Addr.add (X.cpu.gpr.rsp - 8 - 8) i))
+    (hs3 : ∀ i < 8, Foot Wl (Addr.add (X.cpu.gpr.rsp - 8 - 8 - 8) i))
+    (hs4 : ∀ i < 8, Foot Wl (Addr.add (X.cpu.gpr.rsp - 8 - 8 - 8 - 8) i))
+    (hs5 : ∀ i < 8, Foot Wl (Addr.add (X.cpu.gpr.rsp - 8 - 8 - 8 - 8 - 8) i))
+    (hs6 : ∀ i < 8, Foot Wl (Addr.add (X.cpu.gpr.rsp - 8 - 8 - 8 - 8 - 8 - 8) i))
+    (hw : ∀ i < 8, Foot Wl (Addr.add (aR X.cpu.gpr.rsp + 56#64) i))
+    (w32 : ∀ i < 8, Foot Wl (Addr.add (aR X.cpu.gpr.rsp + 32#64) i))
+    (w40 : ∀ i < 8, Foot Wl (Addr.add (aR X.cpu.gpr.rsp + 40#64) i))
+    (w44 : ∀ i < 4, Foot Wl (Addr.add (aR X.cpu.gpr.rsp + 44#64) i))
+    (hr8 : ∀ i < 8, Foot Wl (Addr.add (aR X.cpu.gpr.rsp - 8) i))
+    (hl : ∀ i < 8, Foot F.data (Addr.add X.cpu.gpr.rsp i))
+    (hin₂ : CodeIn L e₂ code₂) (h₂ : j₂ < code₂.length)
+    (fpar : ∀ i < 8, Foot F.data (Addr.add X.cpu.gpr.rdi i))
+    (fn8 : ∀ i < 4, Foot F.data (Addr.add (X.cpu.gpr.rdx + 8#64) i))
+    (hIz : ∀ W, Iz W → Stk W X.cpu.gpr.rsp X.cpu.gpr (e₂.add j₂) ∧ Gd fb W X.cpu.gpr.rsp)
+    (hz0 : ∀ W, I0 W → Iz W)
+    (z80 : ∀ W, I0 W → I1 (Vst (Vst W (aR X.cpu.gpr.rsp + 32#64) (toBytesLE 0#64 8)) (aR X.cpu.gpr.rsp + 40#64)
+      (toBytesLE 0#64 8)))
+    (h117 : ∀ g W, I2 g W → rdd(W, aR X.cpu.gpr.rsp + 40#64) = 0#32 ∧ rdq(W, aR X.cpu.gpr.rsp + 32#64) = 0#64)
+    (z146 : ∀ g W, I2 g W → I3 (Vst (Vst W (aR X.cpu.gpr.rsp + 32#64) (toBytesLE g.rax 8))
+      (aR X.cpu.gpr.rsp + 44#64) (toBytesLE 1#32 4)))
+    (wsl : ∀ r W, I5 r W → ∀ i < 8, Foot Wl (Addr.add (rdq(W, aR X.cpu.gpr.rsp + 32#64) +
+      BitVec.setWidth 64 rdd(W, aR X.cpu.gpr.rsp + 40#64) * 8#64) i))
+    (z221 : ∀ r W, I5 r W → rdd(W, X.cpu.gpr.rdx + 8#64) = 0 → P (St188 X.cpu.gpr.rsp r W))
+    (z425 : ∀ r W, I5 r W → rdd(W, X.cpu.gpr.rdx + 8#64) ≠ 0 →
+      Q4 rdd(W, X.cpu.gpr.rdx + 8#64) (rdd(W, aR X.cpu.gpr.rsp + 40#64) + 1#32) (St188 X.cpu.gpr.rsp r W))
+    (hDa : ∀ A k W, D A k W → rdq(W, aR X.cpu.gpr.rsp + 32#64) = A)
+    (fe : ∀ A k W, D A (k + 1) W → ∀ i < 8, Foot F.data (Addr.add (A + BitVec.ofNat 64 (8 * k)) i))
+    (fp : ∀ A k W, D A (k + 1) W → pk W A k ≠ 0 → ∀ i < 8, Foot F.data (Addr.add (pk W A k) i))
+    (hP0 : ∀ A k W, D A (k + 1) W → pk W A k = 0 → D A k W)
+    (hQ0 : ∀ A k W, D A (k + 1) W → pk W A k ≠ 0 → rdq(W, pk W A k) = 0 → Jd A k (pk W A k) W)
+    (hA0 : ∀ W, D 0 0 W → Iz W)
+    (cK : ∃ code : List Byte, CodeIn L 0x453050#64 code ∧ 0 < code.length)
+    (cA : ∃ code : List Byte, CodeIn L 0x6029b0#64 code ∧ 0 < code.length)
+    (cN : ∃ code : List Byte, CodeIn L 0x602970#64 code ∧ 0 < code.length)
+    (cU : ∃ code : List Byte, CodeIn L 0x44d5d0#64 code ∧ 0 < code.length)
+    (cP : ∃ code : List Byte, CodeIn L 0x4530c0#64 code ∧ 0 < code.length)
+    (cD : ∃ code : List Byte, CodeIn L 0x6014f0#64 code ∧ 0 < code.length)
+    (cE : ∃ code : List Byte, CodeIn L 0x6014e0#64 code ∧ 0 < code.length)
+    (k54 : KC prof F Wl L s₀ o gev gP gE X.cpu.gpr.rsp 0x453050#64 59 (V0 fb V X.cpu.gpr)
+      (fun g => g.rdi = X.cpu.gpr.rdi ∧ g.rdx = X.cpu.gpr.rdx) (fun _ => I0))
+    (k112 : ∀ W, I1 W → KC prof F Wl L s₀ o gev gP gE X.cpu.gpr.rsp 0x6029b0#64 117 W (fun g => g.rdi = 8#64) I2)
+    (k169 : ∀ W, I3 W → KC prof F Wl L s₀ o gev gP gE X.cpu.gpr.rsp 0x602970#64 174 W (fun g => g.rdi = 16#64)
+      (fun g W' => I4 g.rax W'))
+    (k183 : ∀ r W, I4 r W → KC prof F Wl L s₀ o gev gP gE X.cpu.gpr.rsp 0x44d5d0#64 188 W (fun g => g.rdi = r)
+      (fun _ => I5 r))
+    (k238 : ∀ W, P W → KC prof F Wl L s₀ o gev gP gE X.cpu.gpr.rsp 0x4530c0#64 243 W
+      (fun g => g.rdx = aR X.cpu.gpr.rsp + 32#64)
+      (fun _ W' => D rdq(W', aR X.cpu.gpr.rsp + 32#64) rdd(W', aR X.cpu.gpr.rsp + 40#64).toNat W'))
+    (k290 : ∀ A k W, D A (k + 1) W → pk W A k ≠ 0 → rdq(W, pk W A k) ≠ 0 →
+      KC prof F Wl L s₀ o gev gP gE X.cpu.gpr.rsp 0x6014f0#64 295 W (fun g => g.rdi = rdq(W, pk W A k))
+        (fun _ => Jd A k (pk W A k)))
+    (k303 : ∀ A k p W, p ≠ 0 → Jd A k p W →
+      KC prof F Wl L s₀ o gev gP gE X.cpu.gpr.rsp 0x6014e0#64 308 W (fun g => g.rdi = p ∧ g.rsi = 16#64)
+        (fun _ => D A k))
+    (k328 : ∀ A W, A ≠ 0 → D A 0 W →
+      KC prof F Wl L s₀ o gev gP gE X.cpu.gpr.rsp 0x6014f0#64 333 W (fun g => g.rdi = A) (fun _ => Iz))
+    (h425 : AtJ prof F Wl L s₀ o gev gP gE 425 fun g W => Fm X.cpu.gpr.rsp X.cpu.gpr g ∧
+      ∃ m x, g.r15 = BitVec.setWidth 64 m ∧ g.rdx = BitVec.setWidth 64 x ∧ Q4 m x W)
+    (kr : ∀ (W : Addr → Byte) (Z' : State) (t' : Nat), KeptW Wl s₀ Z' → Agree F Z'.proc.mm.mem W →
+      Z'.cpu.rip = e₂.add j₂ → Z'.cpu.gpr.rsp = X.cpu.gpr.rsp + 8 → KS X.cpu.gpr Z'.cpu.gpr → Iz W →
+      GoG prof L o gev gP gE Z' t') :
+    GoG prof L o gev gP gE X t := by
+  have E : Ev prof F Wl L s₀ o gev gP gE fb X.cpu.gpr.rsp X.cpu.gpr e₂ code₂ j₂ I0 I1 I3 I2 I4 I5 P Q4 D Jd Iz :=
+    { c := c, hfs := hfs, hin := hin, hin₂ := hin₂, h₂ := h₂, hIz := hIz, hcl := hcl,
+      fg := fun i hi => c.hws _ (hw i hi), w32 := w32, w40 := w40, w44 := w44,
+      f32 := fun i hi => c.hws _ (w32 i hi), f40 := fun i hi => c.hws _ (w40 i (by omega)),
+      fpar := fpar, fn8 := fn8,
+      fb48 := fun i hi => c.hws _ (hs6 i hi), fb40 := fun i hi => c.hws _ (hs5 i hi),
+      fb32 := fun i hi => c.hws _ (hs4 i hi), fb24 := fun i hi => c.hws _ (hs3 i hi),
+      fb16 := fun i hi => c.hws _ (hs2 i hi), fb8 := fun i hi => c.hws _ (hs1 i hi), hl := hl, hr8 := hr8,
+      hz0 := hz0, z80 := z80, h117 := h117, z146 := z146, wsl := wsl, z221 := z221, z425 := z425,
+      hDa := hDa, fe := fe, fp := fp, hP0 := hP0, hQ0 := hQ0, hA0 := hA0,
+      cA := cA, cN := cN, cU := cU, cP := cP, cD := cD, cE := cE,
+      k112 := k112, k169 := k169, k183 := k183, k238 := k238, k290 := k290, k303 := k303, k328 := k328,
+      h425 := h425, kr := kr }
+  -- the prologue, to the first `call`
+  have hrip' : X.cpu.rip = cpr_at.add 0 := by rw [addr_add_zero]; exact hrip
+  refine (c_0 prof fb).run c hfs hin (fun j' g' _ V' => j' = 54 ∧ V' = V0 fb V X.cpu.gpr ∧
+      Fm X.cpu.gpr.rsp X.cpu.gpr g' ∧ g'.rdi = X.cpu.gpr.rdi ∧ g'.rdx = X.cpu.gpr.rdx) hK hA hrip'
+    (vc_0 rfl hs1 hs2 hs3 hs4 hs5 hs6 hcl hw fun _ a b d e i _ => ⟨rfl, rfl, ⟨a, b, d⟩, e, i⟩) ?_
+  rintro j' g fl V₁ ⟨rfl, hV₁, hm, gdi, gdx⟩ Y t₁ hKY hAY hrY hgY -
+  subst V₁ hgY
+  refine callK E hKY hAY hrY hm.1 (lt_len (by decide)) (call_54 _) tgt_54 cK k54 ⟨gdi, gdx⟩ ?_
+  intro Z W' t₃ hKZ hAZ hrZ hsZ hkZ hIZ
+  exact from59 E hKZ hAZ hrZ (fm_ret hm hsZ hkZ) hIZ
 
 end FV7z.Cpr
