@@ -150,16 +150,12 @@ def gV (V : Addr → Byte) (g : Gprs) : Addr → Byte :=
 
 theorem gV_n {V : Addr → Byte} {g : Gprs} (hz : g.rax.setWidth 32 ≠ 0#32) : gV V g = V := by
   unfold gV
-  split
-  · next h => exact absurd h.1 hz
-  · rw [if_neg hz]
+  rw [if_neg (fun h => hz h.1), if_neg hz]
 
 theorem gV_e {V : Addr → Byte} {g : Gprs} (hz : g.rax.setWidth 32 = 0#32)
     (hc : guv_cases.getD (vtw V g.rsp).toNat 0 = 240) : gV V g = Vst V (g.rbx + 8#64) (toBytesLE 0#8 1) := by
   unfold gV
-  split
-  · next h => exact absurd hc h.2
-  · rw [if_pos hz]
+  rw [if_neg (fun h => h.2 hc), if_pos hz]
 
 theorem gV_v {V : Addr → Byte} {g : Gprs} (hz : g.rax.setWidth 32 = 0#32)
     (hc : guv_cases.getD (vtw V g.rsp).toNat 0 ≠ 240) :
@@ -441,12 +437,12 @@ theorem guv_mid {fb : Addr} (c : Seg prof F Wl L s₀ o) (hfs : s₀.cpu.seg.fsB
       (∃ ra rd, Y.cpu.gpr = { X.cpu.gpr with rax := ra, rdx := rd, r12 := zl X.cpu.gpr.rax }) →
       GoG prof L o gev gP gE Y t') :
     GoG prof L o gev gP gE X t := by
-  by_cases hz : X.cpu.gpr.rax.setWidth 32 = 0#32
-  swap
+  rcases em (X.cpu.gpr.rax.setWidth 32 ≠ 0#32) with hz | hz'
   · refine (c_66 prof fb).run c hfs hin _ hK hA hrip (vc_66n hz) ?_
     rintro j' g fl V₁ ⟨rfl, rfl, hV₁⟩ Y t₁ hKY hAY hrY hgY -
     subst V₁
     exact k Y t₁ hKY (by rw [gV_n hz]; exact hAY) hrY ⟨X.cpu.gpr.rax, X.cpu.gpr.rdx, by rw [hgY]; try rfl⟩
+  have hz : X.cpu.gpr.rax.setWidth 32 = 0#32 := Decidable.of_not_not hz'
   -- the answer 0: `cmp word [rsp], 21` and the `ja`
   refine (c_66 prof fb).run c hfs hin (fun j' g' f' V' => j' = 125 ∧
       g' = { X.cpu.gpr with r12 := zl X.cpu.gpr.rax } ∧ f'.cond 7 = decide (21 < (vtw V X.cpu.gpr.rsp).toNat) ∧
