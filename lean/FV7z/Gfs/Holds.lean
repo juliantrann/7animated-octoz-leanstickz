@@ -254,7 +254,7 @@ theorem vc_59d {g : Gprs} {f : Rflags} {V : Addr → Byte}
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only [Dl] at f4 f8 w4 w1 h ⊢
   have hc' := eq_true h
-  wpx [W_59, W_65, o4, o5, hc', Bool.not_true, Bool.not_false, Bool.false_eq_true, Bool.true_eq_false,
+  wpx [W_59, W_65, o4, o5, hc', not_true_eq_false, Bool.not_true, Bool.not_false, Bool.false_eq_true, Bool.true_eq_false,
     false_implies, implies_true, beq_iff_eq, beq_eq_false_iff_ne, ne_eq, Bool.not_eq_true', Bool.not_eq_false',
     decide_eq_true_eq, decide_eq_false_iff_not]
   all_goals repeat' (first
@@ -263,6 +263,7 @@ theorem vc_59d {g : Gprs} {f : Rflags} {V : Addr → Byte}
     | exact trivial
     | (intro hh; exact absurd hh h)
     | (intro hh; exact absurd h hh)
+    | (intro hh; exact absurd trivial hh)
     | apply And.intro
     | intro _)
 
