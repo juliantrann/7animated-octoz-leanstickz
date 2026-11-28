@@ -851,6 +851,14 @@ FNS = {
     # (`Z7_COM_QI_*`): `*ppv = NULL`, then five 16-byte loops comparing `iid` with the IIDs at 0x6eb970, 0x6eb590,
     # 0x6eb580, 0x6eb780, 0x6eb790; on a match `*ppv` = `this` + 0/0/16/24/32, `AddRef` inline (`add dword
     # [rdi + 0x138], 1` by hand: 48, 158), `S_OK`; else `E_NOINTERFACE`. Stops: the `ret`s (57, 165, 278).
+    # 7-Zip 26.06 CPP/7zip/UI/Common/ArchiveExtractCallback.h `CArchiveExtractCallback::QueryInterface`
+    # (`Z7_COM_QI_*`): `*ppv = NULL`, then seven 16-byte loops comparing `iid` with the IIDs at 0x6eb970, 0x6eb890,
+    # 0x6eb780, 0x6eb760, 0x6eb7f0, 0x6eb7e0, 0x6eb790; on a match `*ppv` = `this` + 8/8/16/24/32/40/48, `AddRef`
+    # inline (`add dword [rdi + 0x38], 1` by hand: 52, 158), `S_OK`; else `E_NOINTERFACE`. Stops: the `ret`s.
+    "aeq": dict(grp="Aeq", cn="CArchiveExtractCallback::QueryInterface", a=0x5b16d0, n=367, pos=True,
+                stops=(58, 162, 366), calls=True, hand=(52, 158), tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CArchiveExtractCallback::QueryInterface` "
+                    "(`CPP/7zip/UI/Common/ArchiveExtractCallback.h`; `objdump -d`)"),
     "ecq": dict(grp="Ecq", cn="CExtractCallbackConsole::QueryInterface", a=0x5e9f00, n=279, pos=True,
                 stops=(57, 165, 278), calls=True, hand=(48, 158), tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `CExtractCallbackConsole::QueryInterface` "
