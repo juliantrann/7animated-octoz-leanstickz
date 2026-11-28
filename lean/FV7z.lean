@@ -1472,3 +1472,7 @@ import FV7z.Cps.Pieces1
 import FV7z.Cps.Pieces2
 import FV7z.Cps.Pieces3
 import FV7z.Cps.Ev
+import FV7z.Cps.Str
+import FV7z.Cps.Sel
+import FV7z.Cps.Loop
+import FV7z.Cps.Holds
