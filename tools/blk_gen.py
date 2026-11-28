@@ -2124,6 +2124,11 @@ FNS = {
     # `L'\n'` and the 0 at `_len`, `_len + 1`. Stops: the `ret` (0x2a), the `call` (0x30).
     "alf": dict(grp="Alf", cn="UString::Add_LF", a=0x44dab0, n=58, pos=True, stops=(42,), calls=True,
                 tag="PLAN.md §M, M1", src="7-Zip 26.06's `UString::Add_LF` (`MyString.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/Common/StdOutStream.cpp `CStdOutStream::operator<< (const char *s)`: `fputs (s, _stream)`
+    # (0x624cc0), returns `this`. Without the landing pad (from 0x1b). Stops: the `ret` (0x1a).
+    "osc": dict(grp="Osc", cn="CStdOutStream::operator<< (const char *)", a=0x5f4be0, n=27, pos=True, stops=(26,),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CStdOutStream::operator<< (const char *)` (`StdOutStream.cpp`; `objdump -d`)"),
     # glibc 2.31 elf/dl-lookup.c `_dl_setup_hash (map)`: the GNU hash table's fields (or the SysV one's) into `map`.
     # Stops: the two `ret`s (0x61, 0x93), the `__assert_fail` path (0x94) not covered.
     "dsh": dict(grp="Dsh", cn="_dl_setup_hash", a=0x6ab020, n=180, pos=True, stops=(0x61, 0x93, 0x94), calls=True,
