@@ -65,6 +65,9 @@ theorem vc_0 {g : Gprs} {f : Rflags} {V : Addr → Byte}
     | exact ⟨rfl, Or.inl ⟨rfl, _, rfl⟩⟩
     | exact ⟨rfl, Or.inr (Or.inl ⟨rfl, _, rfl⟩)⟩
     | exact ⟨rfl, Or.inr (Or.inr ⟨rfl, _, rfl⟩)⟩
+    | exact Or.inl ⟨_, rfl⟩
+    | exact Or.inr (Or.inl ⟨_, rfl⟩)
+    | exact Or.inr (Or.inr ⟨_, rfl⟩)
     | with_reducible exact f12
     | exact trivial
     | apply And.intro
