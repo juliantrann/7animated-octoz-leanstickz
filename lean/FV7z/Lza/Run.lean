@@ -253,7 +253,10 @@ theorem vc_173 {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post
     W_173 fb F Wl Q g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at f24 f32 h204 h238 ⊢
-  wpx [W_173, W_198, o7, o8]
+  -- the `cmovae`'s condition, so that the registers after it are a structure, not an `if`
+  by_cases hc : rax.toNat < (rdx + rax &&& rbx).toNat
+  all_goals wpx [W_173, W_198, o7, o8, hc, decide_true, decide_false, Bool.not_true, Bool.not_false,
+    Bool.false_eq_true, eq_self_iff_true, ↓reduceIte]
   all_goals repeat' (first
     | refine h204 _ ?_ _
     | refine h238 _ ?_ _
