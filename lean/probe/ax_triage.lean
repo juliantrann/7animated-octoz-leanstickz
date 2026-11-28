@@ -1,8 +1,3 @@
-import FV7z.Dsh.Code
-import FV7z.Dsh.Pats
-import FV7z.Dsh.Blocks1
-import FV7z.Dsh.Blocks
-import FV7z.Dsh.Cuts
 import FV7z.Dsh.Holds
 open FV7z
 #print axioms FV7z.Dsh.dsh_ok
