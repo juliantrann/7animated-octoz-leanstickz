@@ -852,6 +852,32 @@ FNS = {
                 src="7-Zip's `UString::UString (unsigned, const UString &)` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
     # `UString::UString (const UString &s, c)`: `SetStartLen (s._len + 1)` (the `call` at 0x1d), `wmemcpy (_chars,
     # s._chars, s._len)` (0x33), `_chars[s._len] = c`, `_chars[s._len + 1] = 0`; the `ret` at 0x50.
+    # `COutFile::OpenBinary_forWrite_oflag (name, flags)`: `Path = name` (`AString::operator=`, 0x16), then the tail
+    # `jmp` to `CFileBase::OpenBinary (name, flags, mode)` (0x2c), `mode` the field at `this + 0x58`.
+    "obw": dict(grp="Obw", cn="NWindows::NFile::NIO::COutFile::OpenBinary_forWrite_oflag(char const*, int)", a=0x456250, n=49, pos=True,
+                stops=(0x2c,), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `NIO::COutFile::OpenBinary_forWrite_oflag` (`CPP/Windows/FileIO.cpp`; `objdump -d`)"),
+    # The `COutFile::Open_EXISTING`, `Create_ALWAYS`, `Create_NEW` and `Create_ALWAYS_or_Open_ALWAYS` wrappers: the
+    # flags in `edx`, then the tail `jmp` to `OpenBinary_forWrite_oflag`.
+    "oex": dict(grp="Oex", cn="NWindows::NFile::NIO::COutFile::Open_EXISTING(char const*)", a=0x456290, n=14, pos=True,
+                stops=(0x9,), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `NIO::COutFile::Open_EXISTING` (`CPP/Windows/FileIO.cpp`; `objdump -d`)"),
+    "ocl": dict(grp="Ocl", cn="NWindows::NFile::NIO::COutFile::Create_ALWAYS(char const*)", a=0x4562a0, n=14, pos=True,
+                stops=(0x9,), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `NIO::COutFile::Create_ALWAYS` (`CPP/Windows/FileIO.cpp`; `objdump -d`)"),
+    "cnw": dict(grp="Cnw", cn="NWindows::NFile::NIO::COutFile::Create_NEW(char const*)", a=0x4562b0, n=14, pos=True,
+                stops=(0x9,), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `NIO::COutFile::Create_NEW` (`CPP/Windows/FileIO.cpp`; `objdump -d`)"),
+    "cao": dict(grp="Cao", cn="NWindows::NFile::NIO::COutFile::Create_ALWAYS_or_Open_ALWAYS(char const*, bool)", a=0x4562c0, n=26, pos=True,
+                stops=(0x15,), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `NIO::COutFile::Create_ALWAYS_or_Open_ALWAYS` (`CPP/Windows/FileIO.cpp`; `objdump -d`)"),
+    # `COutFile::SetLength (length)`: `ftruncate (_handle, length) == 0` (`call` at 0xa, a hypothesis).
+    "osl": dict(grp="Osl", cn="NWindows::NFile::NIO::COutFile::SetLength(unsigned long)", a=0x456390, n=25, pos=True,
+                stops=(0x18,), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `NIO::COutFile::SetLength` (`CPP/Windows/FileIO.cpp`; `objdump -d`)"),
+    # glibc 2.31's `ftruncate64` (`syscall` 77): only its code is used (`Osl` takes it as a hypothesis).
+    "ftr": dict(grp="Ftr", cn="ftruncate64", a=0x6664f0, n=42, pos=True, fs=True, stops=(0x13, 0x29), calls=True,
+                tag="PLAN.md §M, M1", src="glibc 2.31's `ftruncate64` (`sysdeps/unix/syscalls.list`; `objdump -d`)"),
     # `umask` (glibc 2.31, `syscall` 95) and `__errno_location`: only their code is used (`Cum`, `Gle` take them as
     # hypotheses).
     "umk": dict(grp="Umk", cn="umask", a=0x665480, n=12, pos=True, stops=(0xb,), calls=True, tag="PLAN.md §M, M1",
