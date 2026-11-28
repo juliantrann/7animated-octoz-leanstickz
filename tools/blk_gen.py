@@ -1567,6 +1567,16 @@ FNS = {
     "cxd": dict(grp="Cxd", cn="CObjectVector<CXmlProp>::~CObjectVector", a=0x5f63c0, n=117, pos=True,
                 stops=(0x69, 0x74), calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `CObjectVector<T>::~CObjectVector` (`CPP/Common/MyVector.h`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/Common/CommandLineParser.cpp `NCommandLineParser::CParser::~CParser ()`: `delete []
+    # _switches` (the array of `CSwitchResult`s, 24 bytes each, behind its count at `_switches - 8`): the items from
+    # the last down (the outer loop, head 0x30, `rbx` the item), each item's `UStringVector PostStrings` destroyed
+    # (the inner loop, head 0x50: the `UString`s' chars freed unless NULL, 0x61, the `UString`s freed, 0x6e; the
+    # array freed unless NULL, 0x86), then `operator delete [] (_switches - 8, 24 n + 8)` (0xa5); from 0xaa two
+    # buffers freed unless NULL (0xb4, 0xc3), then `NonSwitchStrings` as `ocv` (the loop, head 0xe0, the calls at
+    # 0xf2, 0xff) and its array as a tail jump (0x120) unless NULL, else the `ret` (0x140).
+    "cpd": dict(grp="Cpd", cn="NCommandLineParser::CParser::~CParser", a=0x5a0500, n=321, pos=True,
+                stops=(0x120, 0x140), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CParser::~CParser` (`CPP/Common/CommandLineParser.cpp`; `objdump -d`)"),
     # 7-Zip 26.06 CPP/Common/StdOutStream.cpp `CStdOutStream::Normalize_UString (s)`: in terminal mode (the byte at
     # `this + 8`) each `wchar_t` of `s` below 0x20 (signed), in 0x7f..0x9f, 0x202a..0x202e or 0x2066..0x2069 made
     # '_' (the loop at 0x59), else each '\n' made '_' (the loop at 0x80). Stops: the `ret`s (0x6f, 0x94).
@@ -1672,6 +1682,26 @@ FNS = {
     "gdp": dict(grp="Gdp", cn="CArc::GetItem_DefaultPath", a=0x5d2040, n=268, pos=True, fs=True, stops=(0x77, 0x107),
                 calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `CArc::GetItem_DefaultPath` (`CPP/7zip/UI/Common/OpenArchive.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/Common/Wildcard.cpp `NWildcard::CCensorNode::AddItemSimple (include, item)`: `IncludeItems`
+    # (`this + 0x28`) or `ExcludeItems` (`+ 0x38`) by `cmove` (a `CObjectVector<CItem>`: `_items`, `_size` at `+ 8`,
+    # `_capacity` at `+ 0xc`) grown when full (above 0x7ffffffe the `ja` at 0x31 to the throw, by hand: its target is
+    # outside; `operator new []` at 0x56, `memcpy` at 0x152 when any, `delete []` at 0x15a when not null); then
+    # `new CItem (item)` (`operator new` at 0x80, 0x18 bytes): its `PathParts` copied (`operator new []` at 0xd7, the
+    # loop at 0x100: `operator new` at 0x10d, the `UString` copy at 0x11b), the flags word, appended. Stop: the `ret`
+    # (0xc7).
+    "ais": dict(grp="Ais", cn="NWildcard::CCensorNode::AddItemSimple", a=0x452bc0, n=356, pos=True, stops=(0xc7,),
+                hand=(0x31,), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `NWildcard::CCensorNode::AddItemSimple` (`CPP/Common/Wildcard.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/Common/StringConvert.cpp `MultiByteToUnicodeString2 (dest, src, codePage)`: `dest.Empty ()`;
+    # for an empty `src` the return; for `CP_UTF8` or `g_ForceToUTF8` (the byte at 0x792178) `ConvertUTF8ToUnicode`
+    # (call, 0x1b6); else `dest.GetBuf (limit)` (`ReAlloc2`, call 0x1c3, when `limit` = `2 len + 2` is above
+    # `_limit`), `mbstowcs` (call 0x74); on -1 the bytes copied (loop 0x170); else the end set, the scan for a
+    # character above 0xffff (loop 0xc3) and, for one, a copy of the rest (`UString (const wchar_t *)`, call 0xd2)
+    # written back as surrogate pairs (loop 0x138), its buffer freed (call 0x1e8). Stops: the `ret` (0x1aa), the
+    # stack guard failing (0x1ef).
+    "mbu": dict(grp="Mbu", cn="MultiByteToUnicodeString2", a=0x450a60, n=500, pos=True, fs=True, stops=(0x1aa, 0x1ef),
+                calls=True, cut=(0xc3, 0x138, 0x170), tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `MultiByteToUnicodeString2` (`CPP/Common/StringConvert.cpp`; `objdump -d`)"),
     # 7-Zip 26.06 CPP/Common/Wildcard.cpp `SplitPathToParts (path, pathParts)`: `pathParts.Clear ()` inline (the items
     # from the last: `delete []` of the chars at 0x56 when not null, `operator delete (p, 16)` at 0x63 when not null),
     # `_size` = 0; `path` empty to the epilogue. Else `name` made (0xb8), the chars scanned for `'/'`: at each,
@@ -1683,6 +1713,16 @@ FNS = {
     "spp": dict(grp="Spp", cn="SplitPathToParts", a=0x452500, n=709, pos=True, fs=True, stops=(0xa9, 0x2c0),
                 calls=True, hand=(0x110, 0x1ca), tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `SplitPathToParts` (`CPP/Common/Wildcard.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/7zip/UI/Common/EnumDirItems.cpp `CDirItems::ReserveDown ()`: `CRecordVector::ReserveDown` in
+    # line for `Prefixes` (`this`, 8-byte items), `PhyParents` (`+ 0x10`, 4-byte), `LogParents` (`+ 0x20`, 4-byte)
+    # and `Items` (`+ 0x30`, 8-byte), each `_items`, `_size` at `+ 8`, `_capacity` at `+ 0xc`: when `_size` is not
+    # `_capacity`, a `_size` not 0 gives `operator new []` (0xdc, 0xa4, 0x14c, 0x114), `memcpy` of the items (0xf4,
+    # 0xbd, 0x165, 0x12d) and `delete []` of the old array (0xfc, 0xc5, 0x16d, 0x135); a `_size` of 0 `delete []` of the
+    # old array when not null (by the stubs at 0x190, 0x1a0, 0x1b0, 0x180); then `_items` and `_capacity` = `_size`
+    # stored. Stop: the `ret` (0x99).
+    "rsv": dict(grp="Rsv", cn="CDirItems::ReserveDown", a=0x5c03e0, n=439, pos=True, stops=(0x99,), calls=True,
+                tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CDirItems::ReserveDown` (`CPP/7zip/UI/Common/EnumDirItems.cpp`; `objdump -d`)"),
 }
 
 
