@@ -1365,3 +1365,9 @@ import FV7z.Dfn.Blocks1
 import FV7z.Dfn.Blocks
 import FV7z.Dfn.Cuts
 import FV7z.Dfn.Holds
+import FV7z.Lri.Code
+import FV7z.Lri.Pats
+import FV7z.Lri.Blocks1
+import FV7z.Lri.Blocks
+import FV7z.Lri.Cuts
+import FV7z.Lri.Holds
