@@ -1485,6 +1485,12 @@ import FV7z.Cfd.Blocks1
 import FV7z.Cfd.Blocks
 import FV7z.Cfd.Cuts
 import FV7z.Cfd.Holds
+import FV7z.Tup.Code
+import FV7z.Tup.Pats
+import FV7z.Tup.Blocks1
+import FV7z.Tup.Blocks
+import FV7z.Tup.Cuts
+import FV7z.Tup.Holds
 import FV7z.Cpr.Code
 import FV7z.Cpr.Pats
 import FV7z.Cpr.Blocks1
