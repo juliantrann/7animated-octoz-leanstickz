@@ -59,8 +59,10 @@ theorem vc_35 {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post}
 match the counter (to 24 or 45); on a mismatch the second loop's first compare (`rcx` = `0x6eb590`, `rax` = 0), to
 88 or 109. -/
 theorem vc_24 {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post}
-    (fa : ∀ i < 1, Foot F.data ((g.rax + g.rcx).add i)) (fb : ∀ i < 1, Foot F.data ((g.rsi + g.rax).add i))
-    (fc : ∀ i < 1, Foot F.data ((0#64 + 7255440#64).add i)) (fd : ∀ i < 1, Foot F.data (Addr.add g.rsi i))
+    (fa : ∀ i : Nat, i < 1 → Foot F.data (Addr.add (g.rax + g.rcx) i))
+    (fb : ∀ i : Nat, i < 1 → Foot F.data (Addr.add (g.rsi + g.rax) i))
+    (fc : ∀ i : Nat, i < 1 → Foot F.data (Addr.add (0#64 + 7255440#64) i))
+    (fd : ∀ i : Nat, i < 1 → Foot F.data (Addr.add g.rsi i))
     (h24 : bq V (g.rsi + g.rax) = bq V (g.rax + g.rcx) → ¬ g.rax + 1#64 = 16#64 →
       ∀ fl, Q 24 { g with
         rax := g.rax + 1#64
@@ -96,5 +98,32 @@ theorem vc_24 {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post}
     | (apply h88 <;> assumption)
     | apply And.intro
     | intro _)
+
+/-- `*ppv = this` on a match of the first or second IID, on to the `AddRef` at 48. -/
+theorem vc_45 {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post} (fw : ∀ i < 8, Foot Wl (Addr.add g.rdx i))
+    (h : ∀ fl, Q 48 g fl (Vst V g.rdx (toBytesLE g.rdi 8))) :
+    W_45 F Wl Q g f V := by
+  obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
+  dsimp only at fw h ⊢
+  wpx [W_45, o3]
+  all_goals repeat' (first | exact h _ | assumption | exact trivial | apply And.intro | intro _)
+
+/-- `xor eax, eax` (`S_OK`), on to the `ret` at 57. -/
+theorem vc_55 {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post}
+    (h : ∀ fl, Q 57 { g with rax := 0#64 } fl V) :
+    W_55 F Wl Q g f V := by
+  obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
+  dsimp only at h ⊢
+  wpx [W_55, o4, lf_xz, BitVec.xor_self, BitVec.setWidth_zero]
+  all_goals repeat' (first | exact h _ | assumption | exact trivial | apply And.intro | intro _)
+
+/-- `mov ecx, 0x6eb580; xor eax, eax`, to the third loop at 128. -/
+theorem vc_109 {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post}
+    (h : ∀ fl, Q 128 { g with rax := 0#64, rcx := 7255424#64 } fl V) :
+    W_109 F Wl Q g f V := by
+  obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
+  dsimp only at h ⊢
+  wpx [W_109, o8, lf_xz, BitVec.xor_self, BitVec.setWidth_zero]
+  all_goals repeat' (first | exact h _ | assumption | exact trivial | apply And.intro | intro _)
 
 end FV7z.Ecq
