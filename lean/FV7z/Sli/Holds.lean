@@ -322,7 +322,6 @@ theorem vc_148 {fb : Addr} {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post
     (h : ∀ g', Fr g g' → ∀ fl, Q 150 g' fl V) :
     W_148 fb F Wl Q g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
-  dsimp only at h ⊢
   wpx [W_148, o8]
   all_goals repeat' (first
     | refine h _ ?_ _
