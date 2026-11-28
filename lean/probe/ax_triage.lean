@@ -1,6 +1,7 @@
-import FV7z.Lemmas.SysTod
+import FV7z.Gtd.Holds
 open FV7z
-#print axioms FV7z.putUser_ok
-#print axioms FV7z.sysGettimeofday_ok
-#print axioms FV7z.syscall_gettimeofday
-#print axioms FV7z.Fn.Seg.s_gettimeofday_re
+#print axioms FV7z.Gtd.vc_0
+#print axioms FV7z.Gtd.vc_22
+#print axioms FV7z.Gtd.vc_96
+#print axioms FV7z.Gtd.vc_109
+#print axioms FV7z.Gtd.gtd_ok
