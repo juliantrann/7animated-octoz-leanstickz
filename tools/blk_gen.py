@@ -238,6 +238,13 @@ FNS = {
     "pvc": dict(grp="Pvc", cn="NWindows::NCOM::CPropVariant::Clear", a=0x457020, n=29, pos=True, stops=(18, 24),
                 tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `CPropVariant::Clear` (`CPP/Windows/PropVariant.cpp`; `objdump -d`)"),
+    # 7-Zip's CPP/Windows/PropVariant.cpp `PropVariant_Clear (prop)`: the types without resources (`vt` <= 7, or
+    # `vt - 10` a bit of 0x40000000003fc3): `vt`, `wReserved1`, `wReserved2`, `wReserved3` and the value zeroed
+    # (the `ret`, 0x5b); else `VariantClear (prop)` (the `call`, 0x2d), its result kept if not 0 (the `ret`, 0x3d),
+    # else the same zeroing past `vt` if `vt` is 0 (0x43).
+    "pcl": dict(grp="Pcl", cn="NWindows::NCOM::PropVariant_Clear", a=0x456fb0, n=92, pos=True,
+                stops=(0x3d, 0x5b), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `PropVariant_Clear` (`CPP/Windows/PropVariant.cpp`; `objdump -d`)"),
     "sdf": dict(grp="Sdf", cn="CFiTimesCAM::SetDirTime_to_FS", a=0x5ad590, n=52, pos=True, stops=(0x2f,),
                 tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `CFiTimesCAM::SetDirTime_to_FS` (`ArchiveExtractCallback.cpp`; `objdump -d`)"),
@@ -948,6 +955,11 @@ FNS = {
     # PLT entry) of the rest down and `_len` - `count`. Stops: the `ret`s (0x25, 0x5d).
     "udl": dict(grp="Udl", cn="UString::Delete", a=0x44e0b0, n=94, pos=True, stops=(0x25, 0x5d), calls=True,
                 hand=(0x54,), tag="PLAN.md §M, M1", src="7-Zip's `UString::Delete` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
+    # `AString::Add_UInt32 (v)`: `Grow (10)` (the `call` at 0x14), `ConvertUInt32ToString (v, _chars + _len)` (the
+    # `call` at 0x21), `_len` = the returned end minus `_chars` (0x29). Stop: the `ret` (0x32).
+    "aui": dict(grp="Aui", cn="AString::Add_UInt32", a=0x44c980, n=51, pos=True, stops=(0x32,), calls=True,
+                tag="PLAN.md §M, M1",
+                src="7-Zip's `AString::Add_UInt32` (`CPP/Common/MyString.cpp`; `objdump -d`)"),
     # `AString::Find (s, startIndex)`: `strstr (_chars + startIndex, s)` (the `call` at 0xd, the PLT's entry), then the
     # found pointer minus `_chars`, or -1 when none. Stops: the `ret`s (0x1a, 0x21).
     "afd": dict(grp="Afd", cn="AString::Find", a=0x44cae0, n=34, pos=True, stops=(0x1a, 0x21), calls=True,
@@ -1975,6 +1987,10 @@ FNS = {
     "um2": dict(grp="Um2", cn="UnicodeStringToMultiByte2", a=0x450d20, n=65, pos=True, fs=True, stops=(59, 60),
                 calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `UnicodeStringToMultiByte2` (`StringConvert.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 Common/UTFConvert.cpp `ConvertUnicodeToUTF8 (src, dest)`: `edx` = the global flags (4 bytes at
+    # 0x79217c), a tail jump to `ConvertUnicodeToUTF8_Flags`. Stop: the jump (0xd).
+    "cu8": dict(grp="Cu8", cn="ConvertUnicodeToUTF8", a=0x4520b0, n=18, pos=True, stops=(13,), tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `ConvertUnicodeToUTF8` (`UTFConvert.cpp`; `objdump -d`)"),
 }
 
 def file_bytes(path, va, n):
