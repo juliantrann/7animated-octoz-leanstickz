@@ -93,7 +93,8 @@ theorem ldc_ok (c : Seg prof F Wl L s₀ o) (hin : CodeIn L ldc_at ldc) (hK : Ke
     {e₂ : Addr} {code₂ : List Byte} (hin₂ : CodeIn L e₂ code₂) {j₂ : Nat} (h₂ : j₂ < code₂.length)
     (hra : rdq(M V X.cpu.gpr.rdi, X.cpu.gpr.rsp) = e₂.add j₂)
     (k : ∀ (Z : State) (t' : Nat), KeptW Wl s₀ Z → Agree F Z.proc.mm.mem (M V X.cpu.gpr.rdi) →
-      Z.cpu.rip = e₂.add j₂ → (∃ a d, Z.cpu.gpr = { X.cpu.gpr with rax := a, rdx := d }.set 4 (X.cpu.gpr.rsp + 8)) →
+      Z.cpu.rip = e₂.add j₂ →
+      (∃ a d, Z.cpu.gpr = { X.cpu.gpr with rax := a, rdx := d }.set 4 (X.cpu.gpr.rsp + 8)) →
       GoG prof L o gev gP gE Z t') :
     GoG prof L o gev gP gE X t := by
   refine (c_0 prof).run c hin
