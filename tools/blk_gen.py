@@ -810,6 +810,12 @@ FNS = {
     "pvq": dict(grp="Pvq", cn="CPropVariant::operator=(UInt64)", a=0x457470, n=62, pos=True, stops=(0x3d,), calls=True,
                 tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `CPropVariant::operator= (UInt64)` (`CPP/Windows/PropVariant.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/Windows/PropVariant.cpp `CPropVariant::operator= (const FILETIME &)`: as `operator= (UInt64)`
+    # with `VT_FILETIME` (64) and the 8 bytes `filetime` loaded from the argument. Stop: the `ret` (0x40).
+    "pvf": dict(grp="Pvf", cn="CPropVariant::operator=(const FILETIME &)", a=0x4574b0, n=65, pos=True, stops=(0x40,),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CPropVariant::operator= (const FILETIME &)` (`CPP/Windows/PropVariant.cpp`; "
+                    "`objdump -d`)"),
     # 7-Zip 26.06 CPP/Common/Wildcard.cpp `ExtractFileNameFromPath (path)`: `path.ReverseFind_PathSepar ()` (the `call`,
     # 0x14), then `UString (path + it + 1)` into the result (0x26). Stop: the `ret` (0x35).
     "efn": dict(grp="Efn", cn="ExtractFileNameFromPath(const UString &)", a=0x4528f0, n=54, pos=True, stops=(0x35,),
@@ -1071,6 +1077,10 @@ FNS = {
     # 0x4c).
     "lzp": dict(grp="Lzp", cn="LzFindPrepare", a=0x427de0, n=77, pos=True, stops=(0x22, 0x4c), calls=True,
                 tag="PLAN.md §M, M1", src="7-Zip's `LzFindPrepare` (`C/LzFind.c`; `objdump -d`)"),
+    # `CPU_IsSupported_SSE41 ()`: the stack guard (`fs:0x28`), `z7_x86_cpuid (a, 1)` into the frame (the `call` at
+    # 0x20, `0x424290`), then bit 19 of `ecx` (`a[2]`, `rsp + 8`). Stops: the `ret` (0x43), `__stack_chk_fail` (0x44).
+    "sse": dict(grp="Sse", cn="CPU_IsSupported_SSE41", a=0x424390, n=73, pos=True, fs=True, stops=(0x43, 0x44),
+                calls=True, tag="PLAN.md §M, M1", src="7-Zip's `CPU_IsSupported_SSE41` (`C/CpuArch.c`; `objdump -d`)"),
     # `CFileBase::OpenBinary (name, flags, mode)`: `Close ()` (the `call` at 0x1a), `open64 (name, flags, mode)` (the
     # `call` at 0x2a), the result stored as `_handle`, `al` = it is not -1. Stop: the `ret` (0x41).
     "fob": dict(grp="Fob", cn="NWindows::NFile::NIO::CFileBase::OpenBinary", a=0x456060, n=66, pos=True, stops=(0x41,),
@@ -2112,6 +2122,19 @@ FNS = {
     # glibc 2.31 libio/genops.c `_IO_iter_begin ()`: `_IO_list_all`. Stop: the `ret` (0xb).
     "iib": dict(grp="Iib", cn="_IO_iter_begin", a=0x60e050, n=12, pos=True, stops=(11,), tag="PLAN.md §M, M1",
                 src="glibc 2.31's `_IO_iter_begin` (`libio/genops.c`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/7zip/UI/Common/ArchiveCommandLine.cpp `StringToUInt32 (s, v)`: `ConvertStringToUInt32 (s,
+    # &end)`, `v` set, `*end == 0`. Stops: the `ret` (0x42), the call of `__stack_chk_fail` (0x43).
+    "sti": dict(grp="Sti", cn="StringToUInt32 (const wchar_t *, UInt32 &)", a=0x5a6760, n=72, pos=True, fs=True,
+                stops=(66, 67), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `StringToUInt32` (`ArchiveCommandLine.cpp`; `objdump -d`)"),
+    # glibc 2.31 iconv/gconv_db.c `__gconv_alias_compare (p1, p2)`: `strcmp` of the two `fromname`s as a tail jump.
+    # Stop: the jump (10).
+    "gac": dict(grp="Gac", cn="__gconv_alias_compare", a=0x452930, n=15, pos=True, stops=(10,),
+                tag="PLAN.md §M, M1", src="glibc 2.31's `__gconv_alias_compare` (`iconv/gconv_db.c`; `objdump -d`)"),
+    # glibc 2.31 wcsmbs/mbsrtowcs.c `__mbsrtowcs (dst, src, len, ps)`: `__mbsrtowcs_l (dst, src, len, ps ?: &state,
+    # _NL_CURRENT_LOCALE)` as a tail jump. Stop: the jump (29).
+    "mbr": dict(grp="Mbr", cn="__mbsrtowcs", a=0x65d320, n=34, pos=True, fs=True, stops=(29,),
+                tag="PLAN.md §M, M1", src="glibc 2.31's `__mbsrtowcs` (`wcsmbs/mbsrtowcs.c`; `objdump -d`)"),
     # glibc 2.31 elf/dl-lookup.c `_dl_setup_hash (map)`: the GNU hash table's fields (or the SysV one's) into `map`.
     # Stops: the two `ret`s (0x61, 0x93), the `__assert_fail` path (0x94) not covered.
     "dsh": dict(grp="Dsh", cn="_dl_setup_hash", a=0x6ab020, n=180, pos=True, stops=(0x61, 0x93, 0x94), calls=True,
@@ -2152,6 +2175,12 @@ FNS = {
     "stc": dict(grp="Stc", cn="NWindows::NFile::NIO::CFileBase::seekToCur", a=0x4560f0, n=25, pos=True, stops=(24,),
                 calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `CFileBase::seekToCur` (`FileIO.cpp`; `objdump -d`)"),
+    # 7-Zip 26.06 Common/StdOutStream.cpp `CStdOutStream::NormalizePrint_UString (s)` (UString&): two pushes; with
+    # `IsTerminalMode` (byte 10) and not `ListPathSeparatorSlash` (byte 9), `s.Replace (L'/', L'\\')` (0x44e010); the
+    # pops, a tail jump to `Normalize_UString (s)` (0x5a15e0). Stops: the jump (0x2a), the padding after it (0x2f).
+    "npl": dict(grp="Npl", cn="CStdOutStream::NormalizePrint_UString", a=0x5a1680, n=68, pos=True, stops=(42, 47),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CStdOutStream::NormalizePrint_UString` (`StdOutStream.cpp`; `objdump -d`)"),
 }
 
 def file_bytes(path, va, n):
