@@ -1403,3 +1403,9 @@ import FV7z.Nda.Blocks1
 import FV7z.Nda.Blocks
 import FV7z.Nda.Cuts
 import FV7z.Nda.Holds
+import FV7z.Cpd.Code
+import FV7z.Cpd.Pats
+import FV7z.Cpd.Blocks1
+import FV7z.Cpd.Blocks
+import FV7z.Cpd.Cuts
+import FV7z.Cpd.Tail

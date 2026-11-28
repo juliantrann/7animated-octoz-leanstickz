@@ -1567,6 +1567,16 @@ FNS = {
     "cxd": dict(grp="Cxd", cn="CObjectVector<CXmlProp>::~CObjectVector", a=0x5f63c0, n=117, pos=True,
                 stops=(0x69, 0x74), calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `CObjectVector<T>::~CObjectVector` (`CPP/Common/MyVector.h`; `objdump -d`)"),
+    # 7-Zip 26.06 CPP/Common/CommandLineParser.cpp `NCommandLineParser::CParser::~CParser ()`: `delete []
+    # _switches` (the array of `CSwitchResult`s, 24 bytes each, behind its count at `_switches - 8`): the items from
+    # the last down (the outer loop, head 0x30, `rbx` the item), each item's `UStringVector PostStrings` destroyed
+    # (the inner loop, head 0x50: the `UString`s' chars freed unless NULL, 0x61, the `UString`s freed, 0x6e; the
+    # array freed unless NULL, 0x86), then `operator delete [] (_switches - 8, 24 n + 8)` (0xa5); from 0xaa two
+    # buffers freed unless NULL (0xb4, 0xc3), then `NonSwitchStrings` as `ocv` (the loop, head 0xe0, the calls at
+    # 0xf2, 0xff) and its array as a tail jump (0x120) unless NULL, else the `ret` (0x140).
+    "cpd": dict(grp="Cpd", cn="NCommandLineParser::CParser::~CParser", a=0x5a0500, n=321, pos=True,
+                stops=(0x120, 0x140), calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CParser::~CParser` (`CPP/Common/CommandLineParser.cpp`; `objdump -d`)"),
     # 7-Zip 26.06 CPP/Common/StdOutStream.cpp `CStdOutStream::Normalize_UString (s)`: in terminal mode (the byte at
     # `this + 8`) each `wchar_t` of `s` below 0x20 (signed), in 0x7f..0x9f, 0x202a..0x202e or 0x2066..0x2069 made
     # '_' (the loop at 0x59), else each '\n' made '_' (the loop at 0x80). Stops: the `ret`s (0x6f, 0x94).
