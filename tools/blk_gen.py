@@ -1349,6 +1349,13 @@ FNS = {
                 stops=(0x49, 0x59, 0x5f), calls=True, tag="PLAN.md §M, M1",
                 src="7-Zip 26.06's `CCodecs::FindFormatForArchiveType` (`CPP/UI/Common/LoadCodecs.cpp`; "
                     "`objdump -d`)"),
+    # 7-Zip 26.06 CPP/Windows/FileFind.cpp `CFileInfo::Find (CFSTR path, bool followLink)`: `Find_DontFill_Name`
+    # (the `call` at 0x11, to `fdn`); when it answers true, the last part of `path` (the loop at 0x3a over its bytes,
+    # after each `/` followed by a byte not 0), `Name = ...` (`AString::operator=`, the `call` at 0x57, to `aac`), and
+    # a trailing `/` dropped from `Name` (the store at 0x76); `eax` = the answer, the `ret` (0x81).
+    "fnd": dict(grp="Fnd", cn="NWindows::NFile::NFind::CFileInfo::Find", a=0x455b80, n=130, pos=True, stops=(0x81,),
+                calls=True, tag="PLAN.md §M, M1",
+                src="7-Zip 26.06's `CFileInfo::Find` (`CPP/Windows/FileFind.cpp`; `objdump -d`)"),
 }
 
 
