@@ -21,7 +21,8 @@ and `AddRef` inline (`add dword [rdi + 0x38], 1`, by hand at 52 and 158), `S_OK`
 - `vc_88`: the counter of the second loop and its next compare; `vc_109`: to the third loop.
 - `vc_128`, `vc_184`, `vc_232`, `vc_280`, `vc_328`: one step of the third to seventh loop with its exits.
 -/
-open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn FV7z.Ecq
+open ZellicX86 Decode FV7z FV7z.Leaf FV7z.Fn
+open FV7z.Ecq (bq sw8)
 namespace FV7z.Aeq
 
 variable {F : Footprint} {Wl : List Rgn}
