@@ -351,7 +351,8 @@ def TtOk (g₀ : Gprs) (V₀ : Addr → Byte) (Tt : Gprs → (Addr → Byte) →
 
 /-- The registers in the loops: the strings' pointers at the characters `j`, `r12`, `r13` the characters. -/
 def Sh (g₀ : Gprs) (j : Nat) (a c d si di p q : BitVec 64) (g : Gprs) : Prop :=
-  g = { g₀ with rax := a, rcx := c, rdx := d, rbx := Addr.add g₀.rdi (4 * j),
+  g = { g₀ with
+    rax := a, rcx := c, rdx := d, rbx := Addr.add g₀.rdi (4 * j),
     rsp := g₀.rsp - 8 - 8 - 8 - 8 - 8#64, rbp := Addr.add g₀.rsi (4 * j), rsi := si, rdi := di, r12 := p, r13 := q }
 
 def I34 (ci : Bool) (g₀ : Gprs) (i : Nat) (g : Gprs) : Prop :=
@@ -449,7 +450,8 @@ section X
 variable {m : Nat} {V : Addr → Byte} {g : Gprs} {fl : Rflags} {a c d si di p q : BitVec 64}
 
 theorem x34z (hm : 20 * N + 19 < m) (hK : Keep g₀ V₀ V) (hci : ci = false)
-    (hg : g = { g₀ with rax := a, rdx := 0#64, rbx := g₀.rdi, rsp := g₀.rsp - 8 - 8 - 8 - 8 - 8#64,
+    (hg : g = { g₀ with
+      rax := a, rdx := 0#64, rbx := g₀.rdi, rsp := g₀.rsp - 8 - 8 - 8 - 8 - 8#64,
       rbp := g₀.rsi }) :
     Nx ci U N g₀ V₀ m 34 g fl V := by
   refine Or.inl ⟨_, hm, Or.inr ⟨hK, Or.inr (Or.inr (Or.inr ⟨0, pre0, Or.inl ⟨rfl, by omega, hci, a, g₀.rcx,
@@ -467,7 +469,8 @@ theorem x125z (hm : 20 * N + 19 < m) (hK : Keep g₀ V₀ V) (hci : ci = true)
 
 theorem x34s (hN : c1 g₀ V₀ N = 0#32) (hK : Keep g₀ V₀ V) (hP : Pre ci U g₀ V₀ i) (hci : ci = false)
     (hgo : Go ci U (c1 g₀ V₀ i) (c2 g₀ V₀ i)) (hm : 20 * (N - i) ≤ m)
-    (hg : g = { g₀ with rax := a, rcx := c, rdx := 0#64, rbx := Addr.add g₀.rdi (4 * (i + 1)),
+    (hg : g = { g₀ with
+      rax := a, rcx := c, rdx := 0#64, rbx := Addr.add g₀.rdi (4 * (i + 1)),
       rsp := g₀.rsp - 8 - 8 - 8 - 8 - 8#64, rbp := Addr.add g₀.rsi (4 * (i + 1)), rsi := si, rdi := di,
       r12 := p, r13 := q }) :
     Nx ci U N g₀ V₀ m 34 g fl V := by
@@ -480,7 +483,8 @@ theorem x34s (hN : c1 g₀ V₀ N = 0#32) (hK : Keep g₀ V₀ V) (hP : Pre ci U
 
 theorem x125s (hN : c1 g₀ V₀ N = 0#32) (hK : Keep g₀ V₀ V) (hP : Pre ci U g₀ V₀ i) (hci : ci = true)
     (hgo : Go ci U (c1 g₀ V₀ i) (c2 g₀ V₀ i)) (hm : 20 * (N - i) ≤ m)
-    (hg : g = { g₀ with rax := a, rcx := c, rdx := d, rbx := Addr.add g₀.rdi (4 * (i + 1)),
+    (hg : g = { g₀ with
+      rax := a, rcx := c, rdx := d, rbx := Addr.add g₀.rdi (4 * (i + 1)),
       rsp := g₀.rsp - 8 - 8 - 8 - 8 - 8#64, rbp := Addr.add g₀.rsi (4 * (i + 1)), rsi := si, rdi := di,
       r12 := p, r13 := q }) :
     Nx ci U N g₀ V₀ m 125 g fl V := by
@@ -494,7 +498,8 @@ theorem x125s (hN : c1 g₀ V₀ N = 0#32) (hK : Keep g₀ V₀ V) (hP : Pre ci 
 theorem x86 (hm : 20 * (N - i) + 18 < m) (hK : Keep g₀ V₀ V) (hP : Pre ci U g₀ V₀ i) (hci : ci = false)
     (hne : ¬ c1 g₀ V₀ i = c2 g₀ V₀ i) (h0 : ¬ c1 g₀ V₀ i = 0#32) (hy0 : ¬ c2 g₀ V₀ i = 0#32)
     (hp : BitVec.setWidth 32 p = Mp false U (c1 g₀ V₀ i)) (ha : BitVec.setWidth 32 a = Mp false U (c2 g₀ V₀ i))
-    (hg : g = { g₀ with rax := a, rcx := c, rdx := 0#64, rbx := Addr.add g₀.rdi (4 * (i + 1)),
+    (hg : g = { g₀ with
+      rax := a, rcx := c, rdx := 0#64, rbx := Addr.add g₀.rdi (4 * (i + 1)),
       rsp := g₀.rsp - 8 - 8 - 8 - 8 - 8#64, rbp := Addr.add g₀.rsi (4 * (i + 1)), rsi := si, rdi := di,
       r12 := p, r13 := q }) :
     Nx ci U N g₀ V₀ m 86 g fl V :=
@@ -504,7 +509,8 @@ theorem x86 (hm : 20 * (N - i) + 18 < m) (hK : Keep g₀ V₀ V) (hP : Pre ci U 
 theorem x175 (hm : 20 * (N - i) + 18 < m) (hK : Keep g₀ V₀ V) (hP : Pre ci U g₀ V₀ i) (hci : ci = true)
     (hne : ¬ c1 g₀ V₀ i = c2 g₀ V₀ i) (h0 : ¬ c1 g₀ V₀ i = 0#32) (hy0 : ¬ c2 g₀ V₀ i = 0#32)
     (h47 : ¬ c1 g₀ V₀ i = 47#32) (hy47 : ¬ c2 g₀ V₀ i = 47#32)
-    (hg : g = { g₀ with rax := a, rcx := c, rdx := d, rbx := Addr.add g₀.rdi (4 * (i + 1)),
+    (hg : g = { g₀ with
+      rax := a, rcx := c, rdx := d, rbx := Addr.add g₀.rdi (4 * (i + 1)),
       rsp := g₀.rsp - 8 - 8 - 8 - 8 - 8#64, rbp := Addr.add g₀.rsi (4 * (i + 1)), rsi := si, rdi := di,
       r12 := BitVec.setWidth 64 (c1 g₀ V₀ i), r13 := BitVec.setWidth 64 (c2 g₀ V₀ i) }) :
     Nx ci U N g₀ V₀ m 175 g fl V :=
@@ -514,7 +520,8 @@ theorem x175 (hm : 20 * (N - i) + 18 < m) (hK : Keep g₀ V₀ V) (hP : Pre ci U
 theorem x200 (hm : 20 * (N - i) + 17 < m) (hK : Keep g₀ V₀ V) (hP : Pre ci U g₀ V₀ i) (hci : ci = true)
     (hne : ¬ c1 g₀ V₀ i = c2 g₀ V₀ i) (h0 : ¬ c1 g₀ V₀ i = 0#32) (hy0 : ¬ c2 g₀ V₀ i = 0#32)
     (h47 : ¬ c1 g₀ V₀ i = 47#32) (hy47 : ¬ c2 g₀ V₀ i = 47#32) (h127 : 127 < (c1 g₀ V₀ i).toInt)
-    (hg : g = { g₀ with rax := a, rcx := c, rdx := d, rbx := Addr.add g₀.rdi (4 * (i + 1)),
+    (hg : g = { g₀ with
+      rax := a, rcx := c, rdx := d, rbx := Addr.add g₀.rdi (4 * (i + 1)),
       rsp := g₀.rsp - 8 - 8 - 8 - 8 - 8#64, rbp := Addr.add g₀.rsi (4 * (i + 1)), rsi := si,
       rdi := BitVec.setWidth 64 (c1 g₀ V₀ i), r12 := BitVec.setWidth 64 (c1 g₀ V₀ i),
       r13 := BitVec.setWidth 64 (c2 g₀ V₀ i) }) :
@@ -526,7 +533,8 @@ theorem x205 (hm : 20 * (N - i) + 16 < m) (hK : Keep g₀ V₀ V) (hP : Pre ci U
     (hne : ¬ c1 g₀ V₀ i = c2 g₀ V₀ i) (h0 : ¬ c1 g₀ V₀ i = 0#32) (hy0 : ¬ c2 g₀ V₀ i = 0#32)
     (h47 : ¬ c1 g₀ V₀ i = 47#32) (hy47 : ¬ c2 g₀ V₀ i = 47#32) (h127 : 127 < (c1 g₀ V₀ i).toInt)
     (ha : BitVec.setWidth 32 a = U (c1 g₀ V₀ i))
-    (hg : g = { g₀ with rax := a, rcx := c, rdx := d, rbx := Addr.add g₀.rdi (4 * (i + 1)),
+    (hg : g = { g₀ with
+      rax := a, rcx := c, rdx := d, rbx := Addr.add g₀.rdi (4 * (i + 1)),
       rsp := g₀.rsp - 8 - 8 - 8 - 8 - 8#64, rbp := Addr.add g₀.rsi (4 * (i + 1)), rsi := si, rdi := di,
       r12 := BitVec.setWidth 64 (c1 g₀ V₀ i), r13 := BitVec.setWidth 64 (c2 g₀ V₀ i) }) :
     Nx ci U N g₀ V₀ m 205 g fl V :=
@@ -536,7 +544,8 @@ theorem x205 (hm : 20 * (N - i) + 16 < m) (hK : Keep g₀ V₀ V) (hP : Pre ci U
 theorem x208 (hm : 20 * (N - i) + 15 < m) (hK : Keep g₀ V₀ V) (hP : Pre ci U g₀ V₀ i) (hci : ci = true)
     (hne : ¬ c1 g₀ V₀ i = c2 g₀ V₀ i) (h0 : ¬ c1 g₀ V₀ i = 0#32) (hy0 : ¬ c2 g₀ V₀ i = 0#32)
     (hy47 : ¬ c2 g₀ V₀ i = 47#32) (hp : BitVec.setWidth 32 p = Mp true U (c1 g₀ V₀ i))
-    (hg : g = { g₀ with rax := a, rcx := c, rdx := d, rbx := Addr.add g₀.rdi (4 * (i + 1)),
+    (hg : g = { g₀ with
+      rax := a, rcx := c, rdx := d, rbx := Addr.add g₀.rdi (4 * (i + 1)),
       rsp := g₀.rsp - 8 - 8 - 8 - 8 - 8#64, rbp := Addr.add g₀.rsi (4 * (i + 1)), rsi := si, rdi := di,
       r12 := p, r13 := BitVec.setWidth 64 (c2 g₀ V₀ i) }) :
     Nx ci U N g₀ V₀ m 208 g fl V :=
@@ -547,7 +556,8 @@ theorem x233 (hm : 20 * (N - i) + 14 < m) (hK : Keep g₀ V₀ V) (hP : Pre ci U
     (hne : ¬ c1 g₀ V₀ i = c2 g₀ V₀ i) (h0 : ¬ c1 g₀ V₀ i = 0#32) (hy0 : ¬ c2 g₀ V₀ i = 0#32)
     (hy47 : ¬ c2 g₀ V₀ i = 47#32) (h127 : 127 < (c2 g₀ V₀ i).toInt)
     (hp : BitVec.setWidth 32 p = Mp true U (c1 g₀ V₀ i))
-    (hg : g = { g₀ with rax := a, rcx := c, rdx := d, rbx := Addr.add g₀.rdi (4 * (i + 1)),
+    (hg : g = { g₀ with
+      rax := a, rcx := c, rdx := d, rbx := Addr.add g₀.rdi (4 * (i + 1)),
       rsp := g₀.rsp - 8 - 8 - 8 - 8 - 8#64, rbp := Addr.add g₀.rsi (4 * (i + 1)), rsi := si,
       rdi := BitVec.setWidth 64 (c2 g₀ V₀ i), r12 := p, r13 := BitVec.setWidth 64 (c2 g₀ V₀ i) }) :
     Nx ci U N g₀ V₀ m 233 g fl V :=
@@ -558,7 +568,8 @@ theorem x238 (hm : 20 * (N - i) + 13 < m) (hK : Keep g₀ V₀ V) (hP : Pre ci U
     (hne : ¬ c1 g₀ V₀ i = c2 g₀ V₀ i) (h0 : ¬ c1 g₀ V₀ i = 0#32) (hy0 : ¬ c2 g₀ V₀ i = 0#32)
     (hy47 : ¬ c2 g₀ V₀ i = 47#32) (h127 : 127 < (c2 g₀ V₀ i).toInt)
     (hp : BitVec.setWidth 32 p = Mp true U (c1 g₀ V₀ i)) (ha : BitVec.setWidth 32 a = U (c2 g₀ V₀ i))
-    (hg : g = { g₀ with rax := a, rcx := c, rdx := d, rbx := Addr.add g₀.rdi (4 * (i + 1)),
+    (hg : g = { g₀ with
+      rax := a, rcx := c, rdx := d, rbx := Addr.add g₀.rdi (4 * (i + 1)),
       rsp := g₀.rsp - 8 - 8 - 8 - 8 - 8#64, rbp := Addr.add g₀.rsi (4 * (i + 1)), rsi := si, rdi := di,
       r12 := p, r13 := BitVec.setWidth 64 (c2 g₀ V₀ i) }) :
     Nx ci U N g₀ V₀ m 238 g fl V :=
@@ -569,7 +580,8 @@ theorem x238 (hm : 20 * (N - i) + 13 < m) (hK : Keep g₀ V₀ V) (hP : Pre ci U
 theorem x241 (hm : 20 * (N - i) + 12 < m) (hK : Keep g₀ V₀ V) (hP : Pre ci U g₀ V₀ i) (hci : ci = true)
     (hne : ¬ c1 g₀ V₀ i = c2 g₀ V₀ i) (h0 : ¬ c1 g₀ V₀ i = 0#32) (hy0 : ¬ c2 g₀ V₀ i = 0#32)
     (hp : BitVec.setWidth 32 p = Mp true U (c1 g₀ V₀ i)) (hq : BitVec.setWidth 32 q = Mp true U (c2 g₀ V₀ i))
-    (hg : g = { g₀ with rax := a, rcx := c, rdx := d, rbx := Addr.add g₀.rdi (4 * (i + 1)),
+    (hg : g = { g₀ with
+      rax := a, rcx := c, rdx := d, rbx := Addr.add g₀.rdi (4 * (i + 1)),
       rsp := g₀.rsp - 8 - 8 - 8 - 8 - 8#64, rbp := Addr.add g₀.rsi (4 * (i + 1)), rsi := si, rdi := di,
       r12 := p, r13 := q }) :
     Nx ci U N g₀ V₀ m 241 g fl V :=
@@ -580,7 +592,8 @@ theorem x241 (hm : 20 * (N - i) + 12 < m) (hK : Keep g₀ V₀ V) (hP : Pre ci U
 theorem x328 (hm : 20 * (N - i) + 18 < m) (hK : Keep g₀ V₀ V) (hP : Pre ci U g₀ V₀ i) (hci : ci = true)
     (hne : ¬ c1 g₀ V₀ i = c2 g₀ V₀ i) (h0 : ¬ c1 g₀ V₀ i = 0#32) (h47 : ¬ c1 g₀ V₀ i = 47#32)
     (hy : c2 g₀ V₀ i = 47#32)
-    (hg : g = { g₀ with rax := a, rcx := c, rdx := d, rbx := Addr.add g₀.rdi (4 * (i + 1)),
+    (hg : g = { g₀ with
+      rax := a, rcx := c, rdx := d, rbx := Addr.add g₀.rdi (4 * (i + 1)),
       rsp := g₀.rsp - 8 - 8 - 8 - 8 - 8#64, rbp := Addr.add g₀.rsi (4 * (i + 1)), rsi := si, rdi := di,
       r12 := BitVec.setWidth 64 (c1 g₀ V₀ i), r13 := BitVec.setWidth 64 (c2 g₀ V₀ i) }) :
     Nx ci U N g₀ V₀ m 328 g fl V :=
@@ -591,7 +604,8 @@ theorem x328 (hm : 20 * (N - i) + 18 < m) (hK : Keep g₀ V₀ V) (hP : Pre ci U
 theorem x356 (hm : 20 * (N - i) + 17 < m) (hK : Keep g₀ V₀ V) (hP : Pre ci U g₀ V₀ i) (hci : ci = true)
     (hne : ¬ c1 g₀ V₀ i = c2 g₀ V₀ i) (h0 : ¬ c1 g₀ V₀ i = 0#32) (h47 : ¬ c1 g₀ V₀ i = 47#32)
     (hy : c2 g₀ V₀ i = 47#32) (h127 : 127 < (c1 g₀ V₀ i).toInt)
-    (hg : g = { g₀ with rax := a, rcx := c, rdx := d, rbx := Addr.add g₀.rdi (4 * (i + 1)),
+    (hg : g = { g₀ with
+      rax := a, rcx := c, rdx := d, rbx := Addr.add g₀.rdi (4 * (i + 1)),
       rsp := g₀.rsp - 8 - 8 - 8 - 8 - 8#64, rbp := Addr.add g₀.rsi (4 * (i + 1)), rsi := si,
       rdi := BitVec.setWidth 64 (c1 g₀ V₀ i), r12 := BitVec.setWidth 64 (c1 g₀ V₀ i), r13 := 0#64 }) :
     Nx ci U N g₀ V₀ m 356 g fl V :=
@@ -602,7 +616,8 @@ theorem x356 (hm : 20 * (N - i) + 17 < m) (hK : Keep g₀ V₀ V) (hP : Pre ci U
 theorem x361 (hm : 20 * (N - i) + 16 < m) (hK : Keep g₀ V₀ V) (hP : Pre ci U g₀ V₀ i) (hci : ci = true)
     (hne : ¬ c1 g₀ V₀ i = c2 g₀ V₀ i) (h0 : ¬ c1 g₀ V₀ i = 0#32) (h47 : ¬ c1 g₀ V₀ i = 47#32)
     (hy : c2 g₀ V₀ i = 47#32) (h127 : 127 < (c1 g₀ V₀ i).toInt) (ha : BitVec.setWidth 32 a = U (c1 g₀ V₀ i))
-    (hg : g = { g₀ with rax := a, rcx := c, rdx := d, rbx := Addr.add g₀.rdi (4 * (i + 1)),
+    (hg : g = { g₀ with
+      rax := a, rcx := c, rdx := d, rbx := Addr.add g₀.rdi (4 * (i + 1)),
       rsp := g₀.rsp - 8 - 8 - 8 - 8 - 8#64, rbp := Addr.add g₀.rsi (4 * (i + 1)), rsi := si, rdi := di,
       r12 := BitVec.setWidth 64 (c1 g₀ V₀ i), r13 := 0#64 }) :
     Nx ci U N g₀ V₀ m 361 g fl V :=
@@ -611,14 +626,16 @@ theorem x361 (hm : 20 * (N - i) + 16 < m) (hK : Keep g₀ V₀ V) (hP : Pre ci U
     hg, ha⟩)))))))))))⟩))⟩⟩
 
 theorem x97 {j : Nat} (hm : 3 < m) (hK : Keep g₀ V₀ V) (hA : Ans ci U g₀ V₀ 1#32)
-    (hg : g = { g₀ with rax := a, rcx := c, rdx := d, rbx := Addr.add g₀.rdi (4 * j),
+    (hg : g = { g₀ with
+      rax := a, rcx := c, rdx := d, rbx := Addr.add g₀.rdi (4 * j),
       rsp := g₀.rsp - 8 - 8 - 8 - 8 - 8#64, rbp := Addr.add g₀.rsi (4 * j), rsi := si, rdi := di,
       r12 := p, r13 := q }) :
     Nx ci U N g₀ V₀ m 97 g fl V :=
   Or.inl ⟨_, hm, Or.inr ⟨hK, Or.inl ⟨rfl, rfl, hA, j, a, c, d, si, di, p, q, hg⟩⟩⟩
 
 theorem x400 {j : Nat} (hm : 3 < m) (hK : Keep g₀ V₀ V) (hA : Ans ci U g₀ V₀ 4294967295#32)
-    (hg : g = { g₀ with rax := a, rcx := c, rdx := d, rbx := Addr.add g₀.rdi (4 * j),
+    (hg : g = { g₀ with
+      rax := a, rcx := c, rdx := d, rbx := Addr.add g₀.rdi (4 * j),
       rsp := g₀.rsp - 8 - 8 - 8 - 8 - 8#64, rbp := Addr.add g₀.rsi (4 * j), rsi := si, rdi := di,
       r12 := p, r13 := q }) :
     Nx ci U N g₀ V₀ m 400 g fl V :=
@@ -626,7 +643,8 @@ theorem x400 {j : Nat} (hm : 3 < m) (hK : Keep g₀ V₀ V) (hA : Ans ci U g₀ 
 
 theorem x103 {j : Nat} (hm : 2 < m) (hK : Keep g₀ V₀ V) (r : BitVec 32) (hA : Ans ci U g₀ V₀ r)
     (hp : p = BitVec.setWidth 64 r)
-    (hg : g = { g₀ with rax := a, rcx := c, rdx := d, rbx := Addr.add g₀.rdi (4 * j),
+    (hg : g = { g₀ with
+      rax := a, rcx := c, rdx := d, rbx := Addr.add g₀.rdi (4 * j),
       rsp := g₀.rsp - 8 - 8 - 8 - 8 - 8#64, rbp := Addr.add g₀.rsi (4 * j), rsi := si, rdi := di,
       r12 := p, r13 := q }) :
     Nx ci U N g₀ V₀ m 103 g fl V := by
