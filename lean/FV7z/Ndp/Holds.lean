@@ -110,9 +110,12 @@ theorem vc_0 {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post}
   dsimp only at f8 fp fl f12 hs2 h31 h41 h77 ⊢
   wpx [W_0, W_11, W_32, W_72, o0, o1, o2, o4, Op.cmpmi]
   all_goals repeat' (first
-    | exact h31 _ rfl ⟨rfl, rfl, rfl, rfl, rfl, rfl⟩ _
-    | exact h41 _ ⟨rfl, lea4 _ _, sw_64_32 _, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩ _
-    | exact h77 _ rfl rfl ⟨rfl, rfl, rfl, rfl, rfl, rfl⟩ _
+    | refine h31 _ ?_ ?_ _
+    | refine h41 _ ?_ _
+    | refine h77 _ ?_ ?_ ?_ _
+    | with_reducible rfl
+    | exact lea4 _ _
+    | exact sw_64_32 _
     | with_reducible exact f8
     | with_reducible exact fp
     | with_reducible exact fl
@@ -148,12 +151,22 @@ theorem vc_82 {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post} {p S : Addr
     (fp : ∀ i < 8, Foot F.data (Addr.add p i)) (h : ∀ g', P41 V p S g₀ g' → ∀ fl, Q 41 g' fl V) :
     W_82 F Wl Q g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
-  dsimp only at hS hk hz fs
+  obtain ⟨k1, k2, k3, k4, k5, k6⟩ := hk
+  dsimp only at hS k1 k2 k3 k4 k5 k6 hz fs
   subst hS
   wpx [W_82, o5, Op.shl64]
   simp only [hz]
   all_goals repeat' (first
-    | exact h _ ⟨rfl, shl4a _ _, sw_64_32 _, rfl, rfl, by exact hk⟩ _
+    | refine h _ ?_ _
+    | with_reducible rfl
+    | exact shl4a _ _
+    | exact sw_64_32 _
+    | with_reducible exact k1
+    | with_reducible exact k2
+    | with_reducible exact k3
+    | with_reducible exact k4
+    | with_reducible exact k5
+    | with_reducible exact k6
     | with_reducible exact fs
     | with_reducible exact f8
     | with_reducible exact fp
