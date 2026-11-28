@@ -107,13 +107,14 @@ theorem sysGettimeofday_ok (h : TodOk prof o t s) :
   · simp only [if_pos hz]
     rfl
   · obtain ⟨ht, w3⟩ := h.tz hz
+    have l3 : (toBytesLE (o (t + 1) Request.timezone) 8).length = 8 := toBytesLE_length _ _
     have p3 : copyOut prof (st (st s s.cpu.gpr.rdi (toBytesLE (o t (.clock 0)).sec 8)) (s.cpu.gpr.rdi.add 8)
         (toBytesLE (BitVec.ofNat 64 ((o t (.clock 0)).nsec.val / 1000)) 8)) s.cpu.gpr.rsi
         (toBytesLE (o (t + 1) .timezone) 8) =
         Pure.pure (st (st (st s s.cpu.gpr.rdi (toBytesLE (o t (.clock 0)).sec 8)) (s.cpu.gpr.rdi.add 8)
           (toBytesLE (BitVec.ofNat 64 ((o t (.clock 0)).nsec.val / 1000)) 8)) s.cpu.gpr.rsi
           (toBytesLE (o (t + 1) .timezone) 8), (toBytesLE (o (t + 1) .timezone) 8).length, true) :=
-      copyOut_ok (by rw [toBytesLE_length]; exact accessOk_le ht) (by rw [toBytesLE_length]; exact w3)
+      copyOut_ok (by rw [l3]; exact accessOk_le ht) (by rw [l3]; exact w3)
     simp only [if_neg hz]
     rw [req_ask_run]
     simp only [p3, req_pure_bind, ↓reduceIte, eq_self_iff_true]
@@ -159,9 +160,9 @@ theorem s_gettimeofday_re (c : Seg prof F Wl L s₀ o) (hrs : s₀.thread.rseq =
     (hA : Agree F X.proc.mm.mem V) (hin : CodeIn L e' code) (hj : j < code.length) (hrip : X.cpu.rip = e'.add j)
     {len : Nat} (hd : Dec prof.feat code j (FV7z.mk .syscall 32 [] len)) (hnr : X.cpu.gpr.rax.toNat % 2 ^ 32 = 96)
     (htv : X.cpu.gpr.rdi ≠ 0) (htop : X.cpu.gpr.rdi.toNat + 16 ≤ userPtrMax prof.feat)
-    (hst : ∀ i < 16, Foot Wl (X.cpu.gpr.rdi.add i))
+    (hst : ∀ i < 16, Foot Wl (Addr.add X.cpu.gpr.rdi i))
     (hz : X.cpu.gpr.rsi ≠ 0 → X.cpu.gpr.rsi.toNat + 8 ≤ userPtrMax prof.feat ∧
-      ∀ i < 8, Foot Wl (X.cpu.gpr.rsi.add i))
+      ∀ i < 8, Foot Wl (Addr.add X.cpu.gpr.rsi i))
     (k' : ∀ (M : Memory) (t₁ : Nat), KeptW Wl s₀ (X.withMem M) → Agree F M V →
       Seg prof F Wl L (todY (X.withMem M) len o t₁) o →
       Agree F (todY (X.withMem M) len o t₁).proc.mm.mem (todV o t₁ X.cpu.gpr.rdi X.cpu.gpr.rsi V) →
