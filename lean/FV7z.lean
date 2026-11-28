@@ -1346,3 +1346,10 @@ import FV7z.Nus.Blocks1
 import FV7z.Nus.Blocks
 import FV7z.Nus.Cuts
 import FV7z.Nus.Holds
+import FV7z.Lemmas.BlkOps27
+import FV7z.Cpv.Code
+import FV7z.Cpv.Pats
+import FV7z.Cpv.Blocks1
+import FV7z.Cpv.Blocks
+import FV7z.Cpv.Cuts
+import FV7z.Cpv.Holds
