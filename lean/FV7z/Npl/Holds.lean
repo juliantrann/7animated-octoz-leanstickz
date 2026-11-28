@@ -151,8 +151,8 @@ theorem vc_29 {g : Gprs} {f : Rflags} {V : Addr → Byte} {Q : Post}
     (f1 : ∀ i < 8, Foot F.data (Addr.add (g.rsp + 8#64) i))
     (f2 : ∀ i < 8, Foot F.data (Addr.add (g.rsp + 8#64 + 8) i))
     (h : ∀ g', g'.rsp = g.rsp + 8#64 + 8 + 8 → g'.rbp = rdq(V, g.rsp + 8#64) →
-      g'.r12 = rdq(V, g.rsp + 8#64 + 8) → g'.rbx = g.rbx → g'.r13 = g.r13 → g'.r14 = g.r14 → g'.r15 = g.r15 → g'.rdi = g.rbp → g'.rsi = g.r12 →
-      ∀ fl, Q 42 g' fl V) :
+      g'.r12 = rdq(V, g.rsp + 8#64 + 8) → g'.rbx = g.rbx → g'.r13 = g.r13 → g'.r14 = g.r14 → g'.r15 = g.r15 →
+      g'.rdi = g.rbp → g'.rsi = g.r12 → ∀ fl, Q 42 g' fl V) :
     W_29 F Wl Q g f V := by
   obtain ⟨rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15⟩ := g
   dsimp only at f1 f2 h ⊢
