@@ -1,17 +1,17 @@
-import FV7z.Mbs.Holds
-import FV7z.Mbc.Holds
+import FV7z.Ufs.Holds
+import FV7z.Usm.Holds
 open FV7z
-#print axioms FV7z.Mbs.mbs_ok
-#print axioms FV7z.Mbs.from23
-#print axioms FV7z.Mbs.from37
-#print axioms FV7z.Mbs.vc_0
-#print axioms FV7z.Mbs.vc_23
-#print axioms FV7z.Mbs.vc_37
-#print axioms FV7z.Mbc.mbc_ok
-#print axioms FV7z.Mbc.from46
-#print axioms FV7z.Mbc.from60
-#print axioms FV7z.Mbc.from74
-#print axioms FV7z.Mbc.vc_0
-#print axioms FV7z.Mbc.vc_46
-#print axioms FV7z.Mbc.vc_60
-#print axioms FV7z.Mbc.vc_74
+#print axioms FV7z.Ufs.ufs_ok
+#print axioms FV7z.Ufs.from41
+#print axioms FV7z.Ufs.from54
+#print axioms FV7z.Ufs.from68
+#print axioms FV7z.Ufs.vc_0
+#print axioms FV7z.Ufs.vc_41
+#print axioms FV7z.Ufs.vc_54
+#print axioms FV7z.Ufs.vc_68
+#print axioms FV7z.Usm.usm_ok
+#print axioms FV7z.Usm.from43
+#print axioms FV7z.Usm.from67
+#print axioms FV7z.Usm.vc_0
+#print axioms FV7z.Usm.vc_43
+#print axioms FV7z.Usm.vc_67
